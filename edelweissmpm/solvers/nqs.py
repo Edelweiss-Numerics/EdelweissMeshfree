@@ -24,9 +24,8 @@
 #  The full text of the license can be found in the file LICENSE.md at
 #  the top level directory of EdelweissMPM.
 #  ---------------------------------------------------------------------
-
-
 import edelweissfe.utils.performancetiming as performancetiming
+import numpy as np
 from edelweissfe.constraints.base.constraintbase import ConstraintBase
 from edelweissfe.journal.journal import Journal
 from edelweissfe.numerics.dofmanager import DofManager, DofVector
@@ -488,40 +487,29 @@ class NonlinearQuasistaticSolver(NonlinearImplicitSolverBase):
         quasi_Newton = False
 
         while True:
-            PInt[:] = K_VIJ[:] = F[:] = PExt[:] = 0.0
 
-            self._prepareMaterialPoints(materialPoints, timeStep.totalTime, timeStep.timeIncrement)
-            self._interpolateFieldsToMaterialPoints(activeCells, dU)
-            self._interpolateFieldsToMaterialPoints(cellElements, dU)
-            self._computeMaterialPoints(materialPoints, timeStep.totalTime, timeStep.timeIncrement)
-
-            self._computeCells(
-                activeCells, dU, PInt, F, K_VIJ, timeStep.totalTime, timeStep.timeIncrement, theDofManager
+            Rhs, K_VIJ, F, PInt, PExt = self._computeSystem(
+                dirichlets,
+                bodyLoads,
+                distributedLoads,
+                particleDistributedLoads,
+                reducedNodeSets,
+                elements,
+                Un,
+                activeCells,
+                cellElements,
+                materialPoints,
+                particles,
+                constraints,
+                timeStep,
+                theDofManager,
+                dU,
+                Rhs,
+                K_VIJ,
+                PInt,
+                PExt,
+                F,
             )
-
-            self._computeElements(
-                elements, dU, Un, PInt, F, K_VIJ, timeStep.totalTime, timeStep.timeIncrement, theDofManager
-            )
-
-            self._computeCellElements(
-                cellElements, dU, Un, PInt, F, K_VIJ, timeStep.totalTime, timeStep.timeIncrement, theDofManager
-            )
-
-            self._computeParticles(
-                particles, dU, PInt, F, K_VIJ, timeStep.totalTime, timeStep.timeIncrement, theDofManager
-            )
-
-            self._computeConstraints(constraints, dU, PInt, K_VIJ, timeStep)
-
-            PExt, K = self._computeBodyLoads(bodyLoads, PExt, K_VIJ, timeStep, theDofManager, activeCells)
-            PExt, K = self._computeCellDistributedLoads(distributedLoads, PExt, K_VIJ, timeStep, theDofManager)
-
-            PExt, K = self._computeParticleDistributedLoads(
-                particleDistributedLoads, PExt, K_VIJ, timeStep, theDofManager
-            )
-
-            Rhs[:] = -PInt
-            Rhs -= PExt
 
             if iterationCounter == 0 and dirichlets:
                 Rhs = self._applyDirichlet(timeStep, Rhs, dirichlets, reducedNodeSets, theDofManager)
@@ -585,9 +573,160 @@ class NonlinearQuasistaticSolver(NonlinearImplicitSolverBase):
             K_CSR = self._applyDirichletKCsr(K_CSR, dirichlets, theDofManager, reducedNodeSets)
 
             ddU = self._linearSolve(K_CSR, Rhs, linearSolver)
-            dU += ddU
+
+            # line search:
+            alpha = 1.0
+            if iterationCounter > 4:
+
+                c = 1e-4
+                rho = 0.5
+                # delta = -0.5
+                maxLineSearchIterations = 5
+                lineSearchIteration = -1
+
+                while True:
+                    Rhs_trial = dU.copy()
+                    dU_linesearch = dU.copy()
+                    dU_linesearch += alpha * ddU
+
+                    Rhs_trial, *rest = self._computeSystem(
+                        dirichlets,
+                        bodyLoads,
+                        distributedLoads,
+                        particleDistributedLoads,
+                        reducedNodeSets,
+                        elements,
+                        Un,
+                        activeCells,
+                        cellElements,
+                        materialPoints,
+                        particles,
+                        constraints,
+                        timeStep,
+                        theDofManager,
+                        dU_linesearch,
+                        Rhs_trial,
+                        K_VIJ,
+                        PInt,
+                        PExt,
+                        F,
+                    )
+
+                    lineSearchIteration += 1
+                    if lineSearchIteration == 0:
+                        R0 = np.linalg.norm(Rhs_trial)
+                        # R_prev = R0
+                        R_trial = R0 + 1.0  # just to make sure we enter the loop
+
+                    # R_prev = R_trial
+                    R_trial = np.linalg.norm(Rhs_trial)
+
+                    self.journal.message(
+                        "  line search iteration {:2d}: alpha {:7.4f}, ||R||∞ {:11.9e}".format(
+                            lineSearchIteration, alpha, R_trial
+                        ),
+                        self.identification,
+                        level=2,
+                    )
+
+                    if np.linalg.norm(R_trial) <= (1 - c * alpha) * R0:
+                        break
+                    else:
+                        alpha *= rho
+
+                    # if R_trial < (1 - c * alpha) * R0:
+                    #     self.journal.message(
+                    #         "  line search accepted step with alpha {:7.4f}, ||R||∞ {:11.2e}".format(
+                    #             alpha, R_trial
+                    #         ),
+                    #         self.identification,
+                    #         level=2,
+                    #     )
+                    #     break
+
+                    # alpha *= rho
+
+                    if lineSearchIteration == maxLineSearchIterations - 1:
+                        self.journal.message(
+                            "line search did not converge, continuing anyway", self.identification, level=1
+                        )
+
+                        break
+
+                    # if R_trial < R_prev:
+                    #    alpha += delta
+                    #    delta *= 0.5
+                    # else:
+                    #    #flip direction
+                    #    alpha -= delta
+                    #    delta *= -1.0
+                    #    delta *= 0.5
+                    #    alpha += delta
+
+            else:
+                if initialGuess is not None:
+                    # We only do one iteration with the initial guess, then we switch to standard Newton
+                    quasi_Newton = False
+
+            dU += alpha * ddU
             iterationCounter += 1
 
         iterationHistory = {"iterations": iterationCounter, "incrementResidualHistory": incrementResidualHistory}
 
         return dU, PInt, iterationHistory, newtonCache
+
+    @performancetiming.timeit("residual only")
+    def _computeSystem(
+        self,
+        dirichlets: list[DirichletBase],
+        bodyLoads: list,
+        distributedLoads: list,
+        particleDistributedLoads: list,
+        reducedNodeSets: list,
+        elements: list,
+        Un: DofVector,
+        activeCells: list,
+        cellElements: list,
+        materialPoints: list,
+        particles: list,
+        constraints: list,
+        timeStep: TimeStep,
+        theDofManager: DofManager,
+        dU,
+        Rhs,
+        K_VIJ,
+        PInt,
+        PExt,
+        F,
+    ):
+
+        PInt[:] = K_VIJ[:] = F[:] = PExt[:] = 0.0
+
+        self._prepareMaterialPoints(materialPoints, timeStep.totalTime, timeStep.timeIncrement)
+        self._interpolateFieldsToMaterialPoints(activeCells, dU)
+        self._interpolateFieldsToMaterialPoints(cellElements, dU)
+        self._computeMaterialPoints(materialPoints, timeStep.totalTime, timeStep.timeIncrement)
+
+        self._computeCells(activeCells, dU, PInt, F, K_VIJ, timeStep.totalTime, timeStep.timeIncrement, theDofManager)
+
+        self._computeElements(
+            elements, dU, Un, PInt, F, K_VIJ, timeStep.totalTime, timeStep.timeIncrement, theDofManager
+        )
+
+        self._computeCellElements(
+            cellElements, dU, Un, PInt, F, K_VIJ, timeStep.totalTime, timeStep.timeIncrement, theDofManager
+        )
+
+        self._computeParticles(particles, dU, PInt, F, K_VIJ, timeStep.totalTime, timeStep.timeIncrement, theDofManager)
+
+        self._computeConstraints(constraints, dU, PInt, K_VIJ, timeStep)
+
+        PExt, K = self._computeBodyLoads(bodyLoads, PExt, K_VIJ, timeStep, theDofManager, activeCells)
+        PExt, K = self._computeCellDistributedLoads(distributedLoads, PExt, K_VIJ, timeStep, theDofManager)
+
+        PExt, K = self._computeParticleDistributedLoads(particleDistributedLoads, PExt, K_VIJ, timeStep, theDofManager)
+
+        Rhs[:] = -PInt
+        Rhs -= PExt
+
+        return Rhs, K, F, PInt, PExt
