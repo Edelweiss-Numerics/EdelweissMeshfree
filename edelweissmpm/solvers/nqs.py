@@ -574,101 +574,43 @@ class NonlinearQuasistaticSolver(NonlinearImplicitSolverBase):
 
             ddU = self._linearSolve(K_CSR, Rhs, linearSolver)
 
-            # line search:
-            alpha = 1.0
-            if iterationCounter > 4:
+            if iterationCounter > 5 and iterationCounter % 1 == 0:
 
-                c = 1e-4
-                rho = 0.5
-                # delta = -0.5
-                maxLineSearchIterations = 5
-                lineSearchIteration = -1
-
-                while True:
-                    Rhs_trial = dU.copy()
-                    dU_linesearch = dU.copy()
-                    dU_linesearch += alpha * ddU
-
-                    Rhs_trial, *rest = self._computeSystem(
-                        dirichlets,
-                        bodyLoads,
-                        distributedLoads,
-                        particleDistributedLoads,
-                        reducedNodeSets,
-                        elements,
-                        Un,
-                        activeCells,
-                        cellElements,
-                        materialPoints,
-                        particles,
-                        constraints,
-                        timeStep,
-                        theDofManager,
-                        dU_linesearch,
-                        Rhs_trial,
-                        K_VIJ,
-                        PInt,
-                        PExt,
-                        F,
-                    )
-
-                    lineSearchIteration += 1
-                    if lineSearchIteration == 0:
-                        R0 = np.linalg.norm(Rhs_trial)
-                        # R_prev = R0
-                        R_trial = R0 + 1.0  # just to make sure we enter the loop
-
-                    # R_prev = R_trial
-                    R_trial = np.linalg.norm(Rhs_trial)
-
-                    self.journal.message(
-                        "  line search iteration {:2d}: alpha {:7.4f}, ||R||∞ {:11.9e}".format(
-                            lineSearchIteration, alpha, R_trial
-                        ),
-                        self.identification,
-                        level=2,
-                    )
-
-                    if np.linalg.norm(R_trial) <= (1 - c * alpha) * R0:
-                        break
-                    else:
-                        alpha *= rho
-
-                    # if R_trial < (1 - c * alpha) * R0:
-                    #     self.journal.message(
-                    #         "  line search accepted step with alpha {:7.4f}, ||R||∞ {:11.2e}".format(
-                    #             alpha, R_trial
-                    #         ),
-                    #         self.identification,
-                    #         level=2,
-                    #     )
-                    #     break
-
-                    # alpha *= rho
-
-                    if lineSearchIteration == maxLineSearchIterations - 1:
-                        self.journal.message(
-                            "line search did not converge, continuing anyway", self.identification, level=1
-                        )
-
-                        break
-
-                    # if R_trial < R_prev:
-                    #    alpha += delta
-                    #    delta *= 0.5
-                    # else:
-                    #    #flip direction
-                    #    alpha -= delta
-                    #    delta *= -1.0
-                    #    delta *= 0.5
-                    #    alpha += delta
+                # pack into dedicated function:
+                alphas = [0.1, 0.5]
+                R2_alpha_1 = np.linalg.norm(Rhs)
+                ddU = self._quadraticLineSearch(
+                    dirichlets,
+                    bodyLoads,
+                    distributedLoads,
+                    particleDistributedLoads,
+                    reducedNodeSets,
+                    elements,
+                    Un,
+                    activeCells,
+                    cellElements,
+                    materialPoints,
+                    particles,
+                    constraints,
+                    timeStep,
+                    theDofManager,
+                    ddU,
+                    dU,
+                    Rhs,
+                    K_VIJ,
+                    PInt,
+                    PExt,
+                    F,
+                    alphas,
+                    R2_alpha_1,
+                )
 
             else:
                 if initialGuess is not None:
                     # We only do one iteration with the initial guess, then we switch to standard Newton
                     quasi_Newton = False
 
-            dU += alpha * ddU
+            dU += ddU
             iterationCounter += 1
 
         iterationHistory = {"iterations": iterationCounter, "incrementResidualHistory": incrementResidualHistory}
@@ -730,3 +672,124 @@ class NonlinearQuasistaticSolver(NonlinearImplicitSolverBase):
         Rhs -= PExt
 
         return Rhs, K, F, PInt, PExt
+
+    def _quadraticLineSearch(
+        self,
+        dirichlets,
+        bodyLoads,
+        distributedLoads,
+        particleDistributedLoads,
+        reducedNodeSets,
+        elements,
+        Un,
+        activeCells,
+        cellElements,
+        materialPoints,
+        particles,
+        constraints,
+        timeStep,
+        theDofManager,
+        ddU,
+        dU,
+        Rhs,
+        K_VIJ,
+        PInt,
+        PExt,
+        F,
+        alphas,
+        R2_alpha_1,
+    ):
+
+        R_trial_values = []
+
+        for alpha in alphas:
+
+            Rhs_trial = dU.copy()
+            dU_linesearch = dU.copy()
+            dU_linesearch += alpha * ddU
+
+            Rhs_trial, *rest = self._computeSystem(
+                dirichlets,
+                bodyLoads,
+                distributedLoads,
+                particleDistributedLoads,
+                reducedNodeSets,
+                elements,
+                Un,
+                activeCells,
+                cellElements,
+                materialPoints,
+                particles,
+                constraints,
+                timeStep,
+                theDofManager,
+                dU_linesearch,
+                Rhs_trial,
+                K_VIJ,
+                PInt,
+                PExt,
+                F,
+            )
+
+            if dirichlets:
+                Rhs_trial = self._applyDirichlet(timeStep, Rhs_trial, dirichlets, reducedNodeSets, theDofManager)
+
+            R_trial = np.linalg.norm(Rhs_trial)
+            R_trial_values.append(R_trial)
+            self.journal.message(
+                "  line search try with alpha {:7.4f}, ||R||∞ {:11.9e}".format(alpha, R_trial),
+                self.identification,
+                level=2,
+            )
+
+        alphas.append(1.0)
+        R_trial_values.append(R2_alpha_1)
+
+        # compute new alpha based on quadratic fit
+        a = np.array(alphas)
+        R = np.array(R_trial_values)
+        coeffs = np.polyfit(a, R, 2)
+        alpha_opt = -coeffs[1] / (2 * coeffs[0])
+        alpha = max(0.1, min(2.0, alpha_opt))
+        self.journal.message(
+            "  line search selected alpha {:7.4f} from quadratic fit".format(alpha),
+            self.identification,
+            level=2,
+        )
+
+        Rhs_trial = dU.copy()
+        dU_linesearch = dU.copy()
+        dU_linesearch += alpha * ddU
+
+        Rhs_trial, *rest = self._computeSystem(
+            dirichlets,
+            bodyLoads,
+            distributedLoads,
+            particleDistributedLoads,
+            reducedNodeSets,
+            elements,
+            Un,
+            activeCells,
+            cellElements,
+            materialPoints,
+            particles,
+            constraints,
+            timeStep,
+            theDofManager,
+            dU_linesearch,
+            Rhs_trial,
+            K_VIJ,
+            PInt,
+            PExt,
+            F,
+        )
+        if dirichlets:
+            Rhs_trial = self._applyDirichlet(timeStep, Rhs_trial, dirichlets, reducedNodeSets, theDofManager)
+        R_trial = np.linalg.norm(Rhs_trial)
+        self.journal.message(
+            "  line search final ||R||∞ {:11.9e}".format(R_trial),
+            self.identification,
+            level=2,
+        )
+
+        return ddU * alpha
