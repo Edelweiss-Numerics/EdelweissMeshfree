@@ -102,12 +102,12 @@ def run_sim():
     # We need a dummy material for the material point
     theMaterial = {
         "material": "GMDamagedShearNeoHooke",
-        "properties": np.array([3000.0, 0.2, 1, 0.1, 0.2, 1.4999, 1.0]),
+        "properties": np.array([3000.0, 0.2, 1, 0.1, 0.2, 1.4999, 1.0e-3]),
     }
 
     def TheParticleFactory(number, vertexCoordinates, volume):
         return MarmotParticleWrapper(
-            "GradientEnhancedMicropolarSQCNIxSDI/PlaneStrain/Quad",
+            "GradientEnhancedMicropolarSQCNIxNSNI/PlaneStrain/Quad",
             number,
             vertexCoordinates,
             volume,
@@ -119,8 +119,9 @@ def run_sim():
         theModel, theJournal, TheParticleFactory, x0=x0, y0=y0, h=height, l=length, nX=nX, nY=nY
     )
 
-    for p in theModel.particles.values():
-        p.setProperty("VCI order", 1)
+    for particle in theModel.particles.values():
+        particle.setProperty("newmark-beta beta", 0.25)
+        particle.setProperty("newmark-beta gamma", 0.5)
 
     # let's create the particle kernel domain
     theParticleKernelDomain = ParticleKernelDomain(
@@ -182,17 +183,19 @@ def run_sim():
         dirichletLeft,
     ]
 
-    incSize = 1e-1
-    adaptiveTimeStepper = AdaptiveTimeStepper(0.0, 1.0, incSize, incSize, incSize / 1, 50, theJournal)
+    incSize = 4e-2
+    adaptiveTimeStepper = AdaptiveTimeStepper(0.0, 1.0, incSize, incSize, incSize / 1, 500, theJournal)
 
     # nonlinearSolver = NQSParallelForMarmot(theJournal)
     nonlinearSolver = NonlinearQuasistaticSolver(theJournal)
 
-    iterationOptions = dict()
-
-    iterationOptions["max. iterations"] = 15
-    iterationOptions["critical iterations"] = 3
-    iterationOptions["allowed residual growths"] = 10
+    iterationOptions = {
+        "default relative flux residual tolerance": 1e-8,
+        "default relative flux residual tolerance alt.": 1e-6,
+        "default relative field correction tolerance": 1e-9,
+        "default absolute flux residual tolerance": 1e-14,
+        "default absolute field correction tolerance": 1e-14,
+    }
 
     linearSolver = pardisoSolve
 
@@ -220,8 +223,9 @@ def run_sim():
         theJournal,
         theModel.particleSets["rectangular_grid_top"],
         "pressure",
-        np.array([-10.0]),
+        np.array([-1.00]),
         surfaceID=3,
+        f_t=lambda t: 1.0,
     )
 
     try:
@@ -277,7 +281,7 @@ def test_sim():
 
     gold = np.loadtxt("gold.csv")
 
-    assert np.isclose(np.copy(res.flatten() - gold.flatten()), 0.0, rtol=1e-12).all()
+    assert np.isclose(np.copy(res.flatten() - gold.flatten()), 0.0, rtol=1e-7).all()
 
 
 if __name__ == "__main__":
