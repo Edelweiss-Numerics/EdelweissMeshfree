@@ -65,36 +65,8 @@ from edelweissmpm.solvers.nqs import NonlinearQuasistaticSolver
 # )
 
 
-def run_sim(no_limit=False):
+def run_sim():
     dimension = 2
-
-    E = 20000
-    nu = 0.3
-    K = E / (3 * (1 - 2 * nu))
-    G = E / (2 * (1 + nu))
-
-    timeScalingFactor = 2e-5
-    massDensityScalingFactor = 1.0 / (timeScalingFactor**2)
-
-    vProjectileInitial = -200 * 1e3 * timeScalingFactor
-
-    particleSize = 1.0 / 16
-    supportRadius = particleSize * 1.7
-
-    x0Plate = 0
-    y0Plate = 0
-    heightPlate = 0.5
-    lengthPlate = 5.0
-    nXPlate = int(lengthPlate / particleSize)
-    nYPlate = int(heightPlate / particleSize)
-
-    heightProjectile = 0.5
-    lengthProjectile = 0.25
-    nXProjectile = int(lengthProjectile / particleSize)
-    nYProjectile = int(heightProjectile / particleSize)
-    # place projectile above plate, centered in x direction
-    x0Projectile = (lengthPlate - lengthProjectile) / 2
-    y0Projectile = 1.5
 
     # set nump linewidth to 200:
     np.set_printoptions(linewidth=200)
@@ -107,52 +79,35 @@ def run_sim(no_limit=False):
 
     theModel = MPMModel(dimension)
 
+    x0 = -1
+    y0 = -1
+    height = 1
+    length = 8
+    nX = 8 * 4
+    nY = 1 * 4
+    supportRadius = 0.5
+
     def theMeshfreeKernelFunctionFactory(node):
         return MarmotMeshfreeKernelFunctionWrapper(node, "BSplineBoxed", supportRadius=supportRadius, continuityOrder=3)
 
     theModel = generateRectangularKernelFunctionGrid(
-        theModel,
-        theJournal,
-        theMeshfreeKernelFunctionFactory,
-        x0=x0Plate,
-        y0=y0Plate,
-        h=heightPlate,
-        l=lengthPlate,
-        nX=nXPlate,
-        nY=nYPlate,
-        name="plate",
-    )
-
-    theModel = generateRectangularKernelFunctionGrid(
-        theModel,
-        theJournal,
-        theMeshfreeKernelFunctionFactory,
-        x0=x0Projectile,
-        y0=y0Projectile,
-        h=heightProjectile,
-        l=lengthProjectile,
-        nX=nXProjectile,
-        nY=nYProjectile,
-        name="projectile",
-        firstKernelFunctionNumber=nXPlate * nYPlate + 1,
+        theModel, theJournal, theMeshfreeKernelFunctionFactory, x0=x0, y0=y0, h=height, l=length, nX=nX, nY=nY
     )
 
     # let's define the type of approximation: We would like to have a reproducing kernel approximation of completeness order 1
-    theApproximation = MarmotMeshfreeApproximationWrapper("ReproducingKernel", dimension, completenessOrder=1)
+    theApproximation = MarmotMeshfreeApproximationWrapper(
+        "ReproducingKernelImplicitGradient", dimension, completenessOrder=1
+    )
 
+    # We need a dummy material for the material point
     theMaterial = {
-        "material": "FiniteStrainJ2Plasticity",
-        "properties": np.array([K, G, 1e1, 1e-1, 1e-0, 0, 1, 1e-9 * massDensityScalingFactor]),
+        "material": "GMDamagedShearNeoHooke",
+        "properties": np.array([3000.0, 0.2, 1, 0.1, 0.2, 1.4999, 1.0]),
     }
 
-    theMaterialProjectile = {
-        "material": "FiniteStrainJ2Plasticity",
-        "properties": np.array([K * 10, G * 10, 20e10, 20e10, 0, 0, 1, 1e-8 * massDensityScalingFactor]),
-    }
-
-    def ThePlateFactory(number, vertexCoordinates, volume):
+    def TheParticleFactory(number, vertexCoordinates, volume):
         return MarmotParticleWrapper(
-            "DisplacementSQCNI_RxNSNI/PlaneStrain/Quad",
+            "GradientEnhancedMicropolarSQCNIxSDI/PlaneStrain/Quad",
             number,
             vertexCoordinates,
             volume,
@@ -160,45 +115,12 @@ def run_sim(no_limit=False):
             theMaterial,
         )
 
-    def TheProjectileFactory(number, vertexCoordinates, volume):
-        return MarmotParticleWrapper(
-            "DisplacementSQCNI_RxNSNI/PlaneStrain/Quad",
-            number,
-            vertexCoordinates,
-            volume,
-            theApproximation,
-            theMaterialProjectile,
-        )
-
     theModel = generateRectangularQuadParticleGrid(
-        theModel,
-        theJournal,
-        ThePlateFactory,
-        x0=x0Plate,
-        y0=y0Plate,
-        h=heightPlate,
-        l=lengthPlate,
-        nX=nXPlate,
-        nY=nYPlate,
-        name="plate",
-    )
-    theModel = generateRectangularQuadParticleGrid(
-        theModel,
-        theJournal,
-        TheProjectileFactory,
-        x0=x0Projectile,
-        y0=y0Projectile,
-        h=heightProjectile,
-        l=lengthProjectile,
-        nX=nXProjectile,
-        nY=nYProjectile,
-        firstParticleNumber=nXPlate * nYPlate + 1,
-        name="projectile",
+        theModel, theJournal, TheParticleFactory, x0=x0, y0=y0, h=height, l=length, nX=nX, nY=nY
     )
 
-    for particle in theModel.particles.values():
-        particle.setProperty("newmark-beta beta", 0.28)
-        particle.setProperty("newmark-beta gamma", 0.53)
+    for p in theModel.particles.values():
+        p.setProperty("VCI order", 1)
 
     # let's create the particle kernel domain
     theParticleKernelDomain = ParticleKernelDomain(
@@ -224,44 +146,12 @@ def run_sim(no_limit=False):
 
     fieldOutputController.addPerParticleFieldOutput(
         "displacement",
-        theModel.particleSets["projectile_all"],
+        theModel.particleSets["all"],
         "displacement",
     )
     fieldOutputController.addPerParticleFieldOutput(
-        "velocity",
-        theModel.particleSets["all"],
-        "velocity",
-    )
-
-    fieldOutputController.addPerParticleFieldOutput(
-        "plate acceleration",
-        theModel.particleSets["plate_all"],
-        "acceleration",
-    )
-    fieldOutputController.addPerParticleFieldOutput(
-        "particle acceleration",
-        theModel.particleSets["all"],
-        "acceleration",
-    )
-    fieldOutputController.addPerParticleFieldOutput(
-        "plate velocity",
-        theModel.particleSets["plate_all"],
-        "velocity",
-    )
-    fieldOutputController.addPerParticleFieldOutput(
-        "particle velocity",
-        theModel.particleSets["all"],
-        "velocity",
-    )
-    fieldOutputController.addPerParticleFieldOutput(
-        "plate vertex displacements",
-        theModel.particleSets["plate_all"],
         "vertex displacements",
-        f_x=lambda x: np.pad(np.reshape(x, (-1, 2)), ((0, 0), (0, 1)), mode="constant", constant_values=0),
-    )
-    fieldOutputController.addPerParticleFieldOutput(
-        "projectile vertex displacements",
-        theModel.particleSets["projectile_all"],
+        theModel.particleSets["all"],
         "vertex displacements",
         f_x=lambda x: np.pad(np.reshape(x, (-1, 2)), ((0, 0), (0, 1)), mode="constant", constant_values=0),
     )
@@ -274,69 +164,67 @@ def run_sim(no_limit=False):
     fieldOutputController.initializeJob()
 
     ensightOutput = EnsightOutputManager("ensight", theModel, fieldOutputController, theJournal, None)
-    ensightOutput.minDTForOutput = 1e-3
+    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["displacement"], create="perElement")
     ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["plate acceleration"], create="perElement", name="acceleration"
-    )
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["particle acceleration"],
-        create="perElement",
-        name="acceleration",
-    )
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["plate velocity"], create="perElement", name="velocity"
-    )
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["particle velocity"], create="perElement", name="velocity"
-    )
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["plate vertex displacements"],
+        fieldOutput=fieldOutputController.fieldOutputs["vertex displacements"],
         create="perNode",
-        name="vertex displacements",
     )
     ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["projectile vertex displacements"],
-        create="perNode",
-        name="vertex displacements",
+        fieldOutput=fieldOutputController.fieldOutputs["deformation gradient"], create="perElement"
     )
     ensightOutput.initializeJob()
 
     dirichletLeft = ParticlePenaltyWeakDirichlet(
-        "left", theModel, theModel.particleSets["plate_left"], "displacement", {0: 0, 1: 0}, 1e6
-    )
-
-    dirichletRight = ParticlePenaltyWeakDirichlet(
-        "right", theModel, theModel.particleSets["plate_right"], "displacement", {0: 0, 1: 0.0}, 1e6
+        "left", theModel, theModel.particleSets["rectangular_grid_left"], "displacement", {0: 0, 1: 0}, 1e6
     )
 
     dirichlets = [
         dirichletLeft,
-        dirichletRight,
     ]
 
-    incSize = 5e-3
-    adaptiveTimeStepper = AdaptiveTimeStepper(
-        0.0, 1.0, incSize, incSize, incSize / 1e8, 50 if not no_limit else 10000, theJournal, increaseFactor=1.5
-    )
+    incSize = 1e-1
+    adaptiveTimeStepper = AdaptiveTimeStepper(0.0, 1.0, incSize, incSize, incSize / 1, 50, theJournal)
 
+    # nonlinearSolver = NQSParallelForMarmot(theJournal)
     nonlinearSolver = NonlinearQuasistaticSolver(theJournal)
 
-    iterationOptions = dict()
-
-    iterationOptions["max. iterations"] = 10
-    iterationOptions["critical iterations"] = 7
-    iterationOptions["allowed residual growths"] = 2
-    iterationOptions["default relative flux residual tolerance"] = 1e-3
-    iterationOptions["default absolute flux residual tolerance"] = 1e-12
-    iterationOptions["default absolute field correction tolerance"] = 1e-9
-    iterationOptions["fall back to quasi Newton after n residual growths"] = False
+    iterationOptions = {
+        "default relative flux residual tolerance": 1e-8,
+        "default relative flux residual tolerance alt.": 1e-3,
+        "default relative field correction tolerance": 1e-5,
+        "default absolute flux residual tolerance": 1e-14,
+        "default absolute field correction tolerance": 1e-14,
+    }
 
     linearSolver = pardisoSolve
 
-    for p in theModel.particleSets["projectile_all"]:
-        v = p.getResultArray("velocity")
-        v[1] = vProjectileInitial
-        p.acceptStateAndPosition()
+    from edelweissmpm.meshfree.vci import (
+        BoundaryParticleDefinition,
+        VariationallyConsistentIntegrationManager,
+    )
+
+    theBoundary = [
+        BoundaryParticleDefinition(theModel.particleSets["rectangular_grid_left"], np.empty(2), 4),
+        BoundaryParticleDefinition(theModel.particleSets["rectangular_grid_right"], np.empty(2), 2),
+        BoundaryParticleDefinition(theModel.particleSets["rectangular_grid_bottom"], np.empty(2), 1),
+        BoundaryParticleDefinition(theModel.particleSets["rectangular_grid_top"], np.empty(2), 3),
+    ]
+
+    vciManager = VariationallyConsistentIntegrationManager(
+        list(theModel.particles.values()), list(theModel.meshfreeKernelFunctions.values()), theBoundary
+    )
+
+    from edelweissmpm.stepactions.particledistributedload import ParticleDistributedLoad
+
+    pressureTop = ParticleDistributedLoad(
+        "pressureTop",
+        theModel,
+        theJournal,
+        theModel.particleSets["rectangular_grid_top"],
+        "pressure",
+        np.array([-10.0]),
+        surfaceID=3,
+    )
 
     try:
         nonlinearSolver.solveStep(
@@ -348,14 +236,13 @@ def run_sim(no_limit=False):
             particleManagers=[theParticleManager],
             constraints=dirichlets,
             userIterationOptions=iterationOptions,
+            particleDistributedLoads=[pressureTop],
+            vciManagers=[vciManager],
         )
 
     except StepFailed as e:
         theJournal.message(f"Step failed: {str(e)}", "error")
-        if not no_limit:
-            theJournal.message(
-                "This is an expected behaviour for this test. Rerun with --no-limit to run until the end.", "error"
-            )
+        raise
 
     finally:
         fieldOutputController.finalizeJob()
@@ -392,20 +279,16 @@ def test_sim():
 
     gold = np.loadtxt("gold.csv")
 
-    assert np.isclose(np.copy(res.flatten() - gold.flatten()), 0.0, rtol=1e-12).all()
+    assert np.isclose(np.copy(res.flatten() - gold.flatten()), 0.0, rtol=1e-8).all()
 
 
 if __name__ == "__main__":
+    theModel, fieldOutputController = run_sim()
+    res = fieldOutputController.fieldOutputs["displacement"].getLastResult()
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--create-gold", dest="create_gold", action="store_true", help="create the gold file.")
-    parser.add_argument(
-        "--no-limit", dest="no_limit", action="store_true", help="do not limit the number of time increments."
-    )
     args = parser.parse_args()
-
-    theModel, fieldOutputController = run_sim(args.no_limit)
-    res = fieldOutputController.fieldOutputs["displacement"].getLastResult()
 
     if args.create_gold:
         np.savetxt("gold.csv", res.flatten())
