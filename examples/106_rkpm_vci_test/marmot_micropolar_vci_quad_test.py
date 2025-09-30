@@ -99,14 +99,23 @@ def run_sim():
     theApproximation = MarmotMeshfreeApproximationWrapper("ReproducingKernel", dimension, completenessOrder=1)
 
     # We need a dummy material for the material point
+    E = 200
+    nu = 0.3
+    K = E / (3 * (1 - 2 * nu))
+    G = E / (2 * (1 + nu))
     theMaterial = {
-        "material": "GMDamagedShearNeoHooke",
-        "properties": np.array([30000.0, 0.3, 0.0, 1e-15, 2e-15, 1.4999, 1.0]),
+        "material": "FiniteStrainJ2Plasticity",
+        "properties": np.array([K, G, 1e16, 1e16, 1e-0, 0, 1, 1e-12]),
     }
 
     def TheParticleFactory(number, coordinates, volume):
         return MarmotParticleWrapper(
-            "GradientEnhancedMicropolar/PlaneStrain/Point", number, coordinates, volume, theApproximation, theMaterial
+            "Displacement/PlaneStrain/Point",
+            number,
+            coordinates,
+            volume,
+            theApproximation,
+            theMaterial,
         )
 
     theModel = generateRectangularParticleGrid(
