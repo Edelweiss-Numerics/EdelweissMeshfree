@@ -284,6 +284,15 @@ cdef class MarmotParticleWrapper:
 
         return self._vertexCoordinates
 
+    def getFaceCoordinates(self, int faceID):
+        """Get the underlying coordinates of a given face of the MarmotParticle."""
+
+        cdef np.ndarray faceCoordinates = np.zeros( self._nDim )
+        cdef double[::1] faceCoordinatesView = faceCoordinates
+        self._marmotParticle.getFaceCoordinates(faceID, &faceCoordinatesView[0])
+
+        return faceCoordinates
+
     def getEvaluationCoordinates(self):
 
         self._marmotParticle.getEvaluationCoordinates(&self._evaluationCoordinatesView[0,0])
