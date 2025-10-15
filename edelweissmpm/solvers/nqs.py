@@ -167,8 +167,10 @@ class NonlinearQuasistaticSolver(NonlinearImplicitSolverBase):
 
         iterationOptions = self.validOptions.copy()
 
-        if userIterationOptions | iterationOptions != iterationOptions:
-            raise ValueError("Invalid options in iteration options!")
+        for k in userIterationOptions.keys():
+            if k not in iterationOptions:
+                raise ValueError("Invalid option {:} in iteration options!".format(k))
+
         iterationOptions.update(userIterationOptions)
 
         table = PrettyTable(("Solver option", "value"))

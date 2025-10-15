@@ -35,6 +35,9 @@ from edelweissfe.linsolve.pardiso.pardiso import pardisoSolve
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 from edelweissfe.utils.exceptions import StepFailed
 
+from edelweissmpm.constraints.particlelagrangianequalvalue import (
+    ParticleLagrangianEqualValueConstraintOnParticleSetFactory,
+)
 from edelweissmpm.constraints.particlelagrangianweakdirichlet import (
     ParticleLagrangianWeakDirichletOnParticleSetFactory,
 )
@@ -91,17 +94,15 @@ def run_sim():
     )
 
     # let's define the type of approximation: We would like to have a reproducing kernel approximation of completeness order 1
-    theApproximation = MarmotMeshfreeApproximationWrapper(
-        "ReproducingKernelImplicitGradient", dimension, completenessOrder=1
-    )
+    theApproximation = MarmotMeshfreeApproximationWrapper("ReproducingKernel", dimension, completenessOrder=1)
 
-    E = 20000
+    E = 200
     nu = 0.3
     K = E / (3 * (1 - 2 * nu))
     G = E / (2 * (1 + nu))
     theMaterial = {
         "material": "FiniteStrainJ2Plasticity",
-        "properties": np.array([K, G, 20e10, 20e10, 0, 0, 1, 1e-9]),
+        "properties": np.array([K, G, 1e16, 1e16, 1e-0, 0, 1, 1e-12]),
     }
 
     def TheParticleFactory(number, vertexCoordinates, volume):
@@ -146,15 +147,20 @@ def run_sim():
 
     dirichletRight = ParticleLagrangianWeakDirichletOnParticleSetFactory(
         "right",
-        theModel.particleSets["rectangular_grid_right"],
+        theModel.particleSets["rectangular_grid_rightTop"],
         "displacement",
         {0: -3, 1: -2},
         theModel,
         location="center",
     )
 
+    equalValueRight = ParticleLagrangianEqualValueConstraintOnParticleSetFactory(
+        "equal right", theModel.particleSets["rectangular_grid_right"], [0, 1], "displacement", theModel
+    )
+
     theModel.constraints.update(dirichletLeft)
     theModel.constraints.update(dirichletRight)
+    theModel.constraints.update(equalValueRight)
 
     theModel.prepareYourself(theJournal)
     theJournal.printPrettyTable(theModel.makePrettyTableSummary(), "summary")
@@ -179,7 +185,7 @@ def run_sim():
     )
 
     fieldOutputController.addExpressionFieldOutput(
-        None, lambda: np.sum([d.reactionForce for d in dirichletLeft.values()], axis=0), "reaction force", export="RF"
+        None, lambda: np.sum([d.reactionForce for d in dirichletLeft.values()]), "reaction force", export="RF"
     )
 
     fieldOutputController.initializeJob()
@@ -195,18 +201,21 @@ def run_sim():
     )
     ensightOutput.initializeJob()
 
-    incSize = 1e-1
+    # dirichlets = [
+    #     dirichletLeft,
+    #     dirichletRight,
+    # ]
+
+    incSize = 2e-1
     adaptiveTimeStepper = AdaptiveTimeStepper(0.0, 1.0, incSize, incSize, incSize / 1, 50, theJournal)
 
     nonlinearSolver = NonlinearQuasistaticSolver(theJournal)
 
-    iterationOptions = {
-        "default relative flux residual tolerance": 1e-8,
-        "default relative flux residual tolerance alt.": 1e-3,
-        "default relative field correction tolerance": 1e-8,
-        "default absolute flux residual tolerance": 1e-14,
-        "default absolute field correction tolerance": 1e-14,
-    }
+    iterationOptions = dict()
+
+    iterationOptions["max. iterations"] = 15
+    iterationOptions["critical iterations"] = 3
+    iterationOptions["allowed residual growths"] = 10
 
     linearSolver = pardisoSolve
 
@@ -235,6 +244,7 @@ def run_sim():
             outputManagers=[ensightOutput],
             particleManagers=[theParticleManager],
             constraints=theModel.constraints.values(),
+            # constraints=dirichlets,
             userIterationOptions=iterationOptions,
             vciManagers=[vciManager],
         )
@@ -278,7 +288,7 @@ def test_sim():
 
     gold = np.loadtxt("gold.csv")
 
-    assert np.isclose(np.copy(res.flatten() - gold.flatten()), 0.0, rtol=1e-8).all()
+    assert np.isclose(res.flatten(), gold.flatten(), rtol=1e-12).all()
 
 
 if __name__ == "__main__":
