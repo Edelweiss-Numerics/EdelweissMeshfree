@@ -24,9 +24,10 @@
 #  The full text of the license can be found in the file LICENSE.md at
 #  the top level directory of EdelweissMPM.
 #  ---------------------------------------------------------------------
-
+from collections.abc import Callable
 
 import edelweissfe.utils.performancetiming as performancetiming
+import numpy as np
 from edelweissfe.constraints.base.constraintbase import ConstraintBase
 from edelweissfe.journal.journal import Journal
 from edelweissfe.numerics.dofmanager import DofManager, DofVector
@@ -88,6 +89,10 @@ class NonlinearQuasistaticSolver(NonlinearImplicitSolverBase):
         "spec. absolute field correction tolerances": dict(),
         "failed increment cutback factor": 0.25,
         "fall back to quasi Newton after allowed residual growths": False,
+        "line search": False,
+        "line search after n iterations": 5,
+        "line search every n iterations": 2,
+        "line search alphas": [0.8, 1.0, 1.2],
     }
 
     def __init__(self, journal: Journal):
@@ -490,40 +495,29 @@ class NonlinearQuasistaticSolver(NonlinearImplicitSolverBase):
         quasi_Newton = False
 
         while True:
-            PInt[:] = K_VIJ[:] = F[:] = PExt[:] = 0.0
 
-            self._prepareMaterialPoints(materialPoints, timeStep.totalTime, timeStep.timeIncrement)
-            self._interpolateFieldsToMaterialPoints(activeCells, dU)
-            self._interpolateFieldsToMaterialPoints(cellElements, dU)
-            self._computeMaterialPoints(materialPoints, timeStep.totalTime, timeStep.timeIncrement)
-
-            self._computeCells(
-                activeCells, dU, PInt, F, K_VIJ, timeStep.totalTime, timeStep.timeIncrement, theDofManager
+            Rhs, K_VIJ, F, PInt, PExt = self._computeSystem(
+                dirichlets,
+                bodyLoads,
+                distributedLoads,
+                particleDistributedLoads,
+                reducedNodeSets,
+                elements,
+                Un,
+                activeCells,
+                cellElements,
+                materialPoints,
+                particles,
+                constraints,
+                timeStep,
+                theDofManager,
+                dU,
+                Rhs,
+                K_VIJ,
+                PInt,
+                PExt,
+                F,
             )
-
-            self._computeElements(
-                elements, dU, Un, PInt, F, K_VIJ, timeStep.totalTime, timeStep.timeIncrement, theDofManager
-            )
-
-            self._computeCellElements(
-                cellElements, dU, Un, PInt, F, K_VIJ, timeStep.totalTime, timeStep.timeIncrement, theDofManager
-            )
-
-            self._computeParticles(
-                particles, dU, PInt, F, K_VIJ, timeStep.totalTime, timeStep.timeIncrement, theDofManager
-            )
-
-            self._computeConstraints(constraints, dU, PInt, K_VIJ, timeStep)
-
-            PExt, K = self._computeBodyLoads(bodyLoads, PExt, K_VIJ, timeStep, theDofManager, activeCells)
-            PExt, K = self._computeCellDistributedLoads(distributedLoads, PExt, K_VIJ, timeStep, theDofManager)
-
-            PExt, K = self._computeParticleDistributedLoads(
-                particleDistributedLoads, PExt, K_VIJ, timeStep, theDofManager
-            )
-
-            Rhs[:] = -PInt
-            Rhs -= PExt
 
             if iterationCounter == 0 and dirichlets:
                 Rhs = self._applyDirichlet(timeStep, Rhs, dirichlets, reducedNodeSets, theDofManager)
@@ -587,9 +581,177 @@ class NonlinearQuasistaticSolver(NonlinearImplicitSolverBase):
             K_CSR = self._applyDirichletKCsr(K_CSR, dirichlets, theDofManager, reducedNodeSets)
 
             ddU = self._linearSolve(K_CSR, Rhs, linearSolver)
+
+            if (
+                iterationOptions["line search"]
+                and iterationCounter > iterationOptions["line search after n iterations"]
+                and iterationCounter % iterationOptions["line search every n iterations"] == 0
+            ):
+
+                alphas = iterationOptions["line search alphas"]
+
+                def _computeResidualCallback(ddU_linesearch: DofVector) -> DofVector:
+
+                    dU_linesearch = dU.copy()
+                    dU_linesearch += ddU_linesearch
+
+                    Rhs_, *rest = self._computeSystem(
+                        dirichlets,
+                        bodyLoads,
+                        distributedLoads,
+                        particleDistributedLoads,
+                        reducedNodeSets,
+                        elements,
+                        Un,
+                        activeCells,
+                        cellElements,
+                        materialPoints,
+                        particles,
+                        constraints,
+                        timeStep,
+                        theDofManager,
+                        dU_linesearch,
+                        Rhs,
+                        K_VIJ,
+                        PInt,
+                        PExt,
+                        F,
+                    )
+                    for dirichlet in dirichlets:
+                        Rhs_[self._findDirichletIndices(theDofManager, dirichlet, reducedNodeSets[dirichlet.nSet])] = (
+                            0.0
+                        )
+
+                    return Rhs_
+
+                ddU = self._quadraticLineSearch(_computeResidualCallback, ddU, alphas)
+
+            else:
+                if initialGuess is not None:
+                    # We only do one iteration with the initial guess, then we switch to standard Newton
+                    quasi_Newton = False
+
             dU += ddU
             iterationCounter += 1
 
         iterationHistory = {"iterations": iterationCounter, "incrementResidualHistory": incrementResidualHistory}
 
         return dU, PInt, iterationHistory, newtonCache
+
+    @performancetiming.timeit("compute system")
+    def _computeSystem(
+        self,
+        dirichlets: list[DirichletBase],
+        bodyLoads: list,
+        distributedLoads: list,
+        particleDistributedLoads: list,
+        reducedNodeSets: list,
+        elements: list,
+        Un: DofVector,
+        activeCells: list,
+        cellElements: list,
+        materialPoints: list,
+        particles: list,
+        constraints: list,
+        timeStep: TimeStep,
+        theDofManager: DofManager,
+        dU,
+        Rhs,
+        K_VIJ,
+        PInt,
+        PExt,
+        F,
+    ):
+        """Compute the global residual vector and the global stiffness matrix."""
+
+        PInt[:] = K_VIJ[:] = F[:] = PExt[:] = 0.0
+
+        self._prepareMaterialPoints(materialPoints, timeStep.totalTime, timeStep.timeIncrement)
+        self._interpolateFieldsToMaterialPoints(activeCells, dU)
+        self._interpolateFieldsToMaterialPoints(cellElements, dU)
+        self._computeMaterialPoints(materialPoints, timeStep.totalTime, timeStep.timeIncrement)
+
+        self._computeCells(activeCells, dU, PInt, F, K_VIJ, timeStep.totalTime, timeStep.timeIncrement, theDofManager)
+
+        self._computeElements(
+            elements, dU, Un, PInt, F, K_VIJ, timeStep.totalTime, timeStep.timeIncrement, theDofManager
+        )
+
+        self._computeCellElements(
+            cellElements, dU, Un, PInt, F, K_VIJ, timeStep.totalTime, timeStep.timeIncrement, theDofManager
+        )
+
+        self._computeParticles(particles, dU, PInt, F, K_VIJ, timeStep.totalTime, timeStep.timeIncrement, theDofManager)
+
+        self._computeConstraints(constraints, dU, PInt, K_VIJ, timeStep)
+
+        PExt, K = self._computeBodyLoads(bodyLoads, PExt, K_VIJ, timeStep, theDofManager, activeCells)
+        PExt, K = self._computeCellDistributedLoads(distributedLoads, PExt, K_VIJ, timeStep, theDofManager)
+
+        PExt, K = self._computeParticleDistributedLoads(particleDistributedLoads, PExt, K_VIJ, timeStep, theDofManager)
+
+        Rhs[:] = -PInt
+        Rhs -= PExt
+
+        return Rhs, K, F, PInt, PExt
+
+    @performancetiming.timeit("line search")
+    def _quadraticLineSearch(
+        self,
+        computeResidual: Callable[[DofVector], DofVector],
+        ddU: DofVector,
+        alphas: list,
+    ):
+        """Perform a quadratic line search to determine an optimal step length.
+
+        Parameters
+        ----------
+        computeSystem
+            A callback function to compute the system residual for a given solution increment.
+        ddU
+            The current solution increment vector.
+        alphas
+            The list of alpha values to be tried.
+
+        Returns
+        -------
+        DofVector
+            The updated solution increment vector after line search.
+        """
+
+        R_trial_values = []
+        ddU_linesearch = ddU.copy()
+
+        for alpha in alphas:
+            ddU_linesearch[:] = ddU * alpha
+
+            Rhs_trial = computeResidual(ddU_linesearch)
+
+            R_trial = np.linalg.norm(Rhs_trial, np.inf)
+            R_trial_values.append(R_trial)
+            self.journal.message(
+                "  line search try with alpha {:7.4f}, ||R||∞ {:11.9e}".format(alpha, R_trial),
+                self.identification,
+                level=2,
+            )
+
+        coeffs = np.polyfit(alphas, R_trial_values, 2)
+        alpha_opt = -coeffs[1] / (2 * coeffs[0])
+
+        alpha = max(0.1, min(1.5, alpha_opt))
+        self.journal.message(
+            "  line search selected alpha {:7.4f} from quadratic fit".format(alpha),
+            self.identification,
+            level=2,
+        )
+
+        ddU_final = ddU * alpha
+        Rhs_final = computeResidual(ddU_final)
+
+        self.journal.message(
+            "  line search final ||R||∞ {:11.9e}".format(np.linalg.norm(Rhs_final, np.inf)),
+            self.identification,
+            level=2,
+        )
+
+        return ddU_final
