@@ -158,15 +158,23 @@ class ParticleLagrangianWeakDirichlet(MPMConstraintBase):
 def ParticleLagrangianWeakDirichletOnParticleSetFactory(
     baseName: str,
     particleSet: list[BaseParticle],
-    constrainedLocation: int | str,
+    constrainedLocation: list[int] | str,
     field: str,
     prescribedStepDelta: dict,
     model: MPMModel,
 ):
     constraints = dict()
     for i, p in enumerate(particleSet):
-        name = f"{baseName}_{i}"
-        constraint = ParticleLagrangianWeakDirichlet(name, p, constrainedLocation, field, prescribedStepDelta, model)
-        constraints[name] = constraint
+        if isinstance(constrainedLocation, list):
+            for vertIdx in constrainedLocation:
+                name = f"{baseName}_{i}_{vertIdx}"
+                constraint = ParticleLagrangianWeakDirichlet(
+                    name, p, vertIdx, field, prescribedStepDelta, model
+                )
+                constraints[name] = constraint
+        else:   
+            name = f"{baseName}_{i}"
+            constraint = ParticleLagrangianWeakDirichlet(name, p, constrainedLocation, field, prescribedStepDelta, model)
+            constraints[name] = constraint
 
     return constraints
