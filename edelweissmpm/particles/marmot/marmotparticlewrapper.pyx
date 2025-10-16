@@ -302,8 +302,14 @@ cdef class MarmotParticleWrapper:
 
         return self._marmotParticle.getVolumeUndeformed()
 
-    def setInitialCondition(self, stateType: str, values: np.ndarray):
-        pass
+    def setInitialCondition(self, str stateType, value):
+        """Set initial condition of the particle."""
+
+        cdef double[::1] _value = np.array(value, dtype=np.float64).reshape((1,))
+
+        self._marmotParticle.setInitialCondition(stateType.encode('utf-8'), &_value[0])
+        self.acceptStateAndPosition()
+        #pass
 
 
     def vci_getNumberOfConstraints(self, ):
