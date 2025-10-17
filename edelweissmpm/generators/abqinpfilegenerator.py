@@ -57,7 +57,6 @@ def computeParticleArea(vertices):
 
 def kernelFunctionFactoryCallback(node: Node, kernelFunction: str, supportRadius: float, continuityOrder: int) -> BaseMeshfreeKernelFunction:
     return MarmotMeshfreeKernelFunctionWrapper(node, kernelFunction, supportRadius=supportRadius, continuityOrder=continuityOrder)
-import numpy as np
 
 def parse_inp_file(input_file_path):
     nodes = {}
@@ -188,17 +187,28 @@ def generateKernelFunctionGridFromInputFile(
         The updated model.
     """
     nodes, elements, nsets, elsets, surfaces = parse_inp_file(inputFilePath)
-    #print(surfaces)
-    # Create kernel functions
+
     kfNodes = []
     particles = []
     currentKernelFunctionNumber = firstKernelFunctionNumber
     currentParticleNumber = firstParticleNumber
+    feNodesParticlesMaps = []
+
+    for nsetName, nodeLabels in nsets.items():
+        for n in nodeLabels:
+            otherNsetName = nsets.keys()
+            for nSetOther in otherNsetName:
+                if nsetName == nSetOther:
+                    continue
+                if n in nsets[nSetOther]:
+                    nsets[nsetName].remove(n)
+
     for element_id, element_nodes in elements.items():
+
         # center coordinates of element nodes
         maxXDist = max([nodes[node_id][0] for node_id in element_nodes]) - min([nodes[node_id][0] for node_id in element_nodes])
         maxYDist = max([nodes[node_id][1] for node_id in element_nodes]) - min([nodes[node_id][1] for node_id in element_nodes])
-        #compute supportRadius in dependence of the maximum edge length of each particle
+        #compute supportRadius in dependence of the maximum x or y distance of each particle
         theSupportRadius = kernelFunctionSpecifier["supportRadiusFactor"] * max(maxXDist, maxYDist)
 
         centerCoordinates = np.mean([nodes[node_id] for node_id in element_nodes], axis=0)
@@ -211,6 +221,10 @@ def generateKernelFunctionGridFromInputFile(
         model.meshfreeKernelFunctions[currentKernelFunctionNumber] = kf
         # create particle for each element
         particleVertices = np.asarray([nodes[node_id] for node_id in element_nodes])
+        # create map from fe node id to particle vertex index
+        feNodesParticleVerticesMap = {node_id: idx for idx, node_id in enumerate(element_nodes)}
+        feNodesParticlesMaps.append(feNodesParticleVerticesMap)
+
         particleVolume = computeParticleArea(particleVertices)
         particle = particleFactoryCallback(currentParticleNumber, particleVertices, particleVolume)
         model.particles[currentParticleNumber] = particle
@@ -228,13 +242,33 @@ def generateKernelFunctionGridFromInputFile(
     model.nodes.update({n.label: n for n in kfNodes})
 
     model.nodeSets["{:}_all".format(name)] = NodeSet("{:}_all".format(name), kfNodes)
+
     # create particle- and nodeSets for model
     model.particleSets[f"{name}_all"] = ParticleSet(f"{name}_all", particles)
+
     for elsetName, elementLabels in elsets.items():
-        #print(elsetName, elementLabels)
+
         model.particleSets[f"{name}_{elsetName}"] = ParticleSet(f"{name}_{elsetName}", [particles[e-1] for e in elementLabels])
         model.nodeSets[f"{name}_{elsetName}"] = NodeSet(f"{name}_{elsetName}", [kfNodes[e-1] for e in elementLabels])
 
+        if not elsetName.startswith("_"):
+            model.vertexSets[f"{name}_{elsetName}_verts"] = []
+            for idx,e in enumerate(elementLabels):
+                if idx == 0:
+                    estart = e
+
+                vertices = []
+                for n in feNodesParticlesMaps[e-1].keys():
+                    if n in nsets[elsetName]:
+                        if idx > 0:
+                            if (not n in feNodesParticlesMaps[eold-1].keys() and
+                               not n in feNodesParticlesMaps[estart-1].keys()):
+                                vertices.append(feNodesParticlesMaps[e-1][n])
+                        else:
+                            vertices.append(feNodesParticlesMaps[e-1][n])
+                eold = e
+                model.vertexSets[f"{name}_{elsetName}_verts"].append(vertices)
+    
     # add surface to model
     #for surfaceName, surfaceData in surfaces.items():
     #    modelSurfaceName = f"{name}_{surfaceName}"
@@ -261,7 +295,7 @@ if __name__ == "__main__":
     theModel = MPMModel(dimension=2)
     theJournal = Journal()
 
-    marmotParticleType = "GradientEnhancedMicropolarSQCNIxSDIv2/PlaneStrain/Quad"
+    marmotParticleType = "GradientEnhancedMicropolarSQCNIxSDI/PlaneStrain/Quad"
     theApproximation = MarmotMeshfreeApproximationWrapper("ReproducingKernelImplicitGradient", 2, completenessOrder=2)
     theMaterial = {
         "material": "GMDamagedShearNeoHooke",
@@ -269,8 +303,8 @@ if __name__ == "__main__":
     }
 
     theModel = generateKernelFunctionGridFromInputFile(
-        #inputFilePath="example.inp",
-        inputFilePath="inputBorehole.inp",
+        inputFilePath="inputBorehole_finer.inp",
+        #inputFilePath="inputBorehole.inp",
         journal=theJournal,
         model=theModel,
         kernelFunctionSpecifier={"kernelFunction": "BSplineBoxed", "continuityOrder": 3, "supportRadiusFactor": 1.1},
@@ -284,8 +318,7 @@ if __name__ == "__main__":
         firstParticleNumber=1,
         name="grid_from_file",
     )
-    #print(theModel.nodes)
-    #print(theModel.nodeSets["grid_from_file_all"].nodes)
+
     import matplotlib.pyplot as plt
     plt.figure()
     for n in theModel.nodes.values():
@@ -296,36 +329,46 @@ if __name__ == "__main__":
         #verts = np.vstack((p.getVertexCoordinates(), p.vertexCoordinates[0]))
         plt.plot(verts[:, 0], verts[:, 1], linestyle='-', linewidth=.5, color='k')
 
-    for f in theModel.meshfreeKernelFunctions.values():
-        boundingBox = f.getBoundingBox()
-        boundingBoxMin = boundingBox[0]
-        boundingBoxMax = boundingBox[1]
-        width = boundingBoxMax[0] - boundingBoxMin[0]
-        height = boundingBoxMax[1] - boundingBoxMin[1]
-        #plt.plot(boundingBoxMin[0], boundingBoxMin[1], 'ro', markersize=1)
-        plt.gca().add_patch(plt.Rectangle(boundingBoxMin, width, height, linestyle='-', linewidth=1, edgecolor='r', facecolor='none'))
+    #for f in theModel.meshfreeKernelFunctions.values():
+    #    boundingBox = f.getBoundingBox()
+    #    boundingBoxMin = boundingBox[0]
+    #    boundingBoxMax = boundingBox[1]
+    #    width = boundingBoxMax[0] - boundingBoxMin[0]
+    #    height = boundingBoxMax[1] - boundingBoxMin[1]
+    #    #plt.plot(boundingBoxMin[0], boundingBoxMin[1], 'ro', markersize=1)
+    #    plt.gca().add_patch(plt.Rectangle(boundingBoxMin, width, height, linestyle='-', linewidth=1, edgecolor='r', facecolor='none'))
 
     for pSet in theModel.particleSets.values():
-        #print(pSet)
-        # get random color
         color = np.random.rand(3,)
         for p in pSet.particles:
             verts = p.getVertexCoordinates()
             plt.fill(verts[:, 0], verts[:, 1], color=color, alpha=0.3)
 
-    for nSet in theModel.nodeSets.values():
-        #print(nSet)
-        # get random color
-        color = np.random.rand(3,)
-        for n in nSet.nodes:
-            plt.plot(n.coordinates[0], n.coordinates[1], 'o', color=color, markersize=3)
+    for vSetName,vSet in theModel.vertexSets.items():
+        for i,vertices in enumerate(vSet):
+            #vertices = [0,1]
+            for ver in vertices:
+                vert = theModel.particleSets[vSetName.removesuffix("_verts")][i].getVertexCoordinates()[ver]
+                plt.plot(vert[0], vert[1], 'ro', markersize=5)
+                plt.text(vert[0], vert[1], f"{i}|{ver}", color='r')
+        verts = theModel.particleSets[vSetName.removesuffix("_verts")][i].getVertexCoordinates()[ver]
+        verts = theModel.particleSets[vSetName.removesuffix("_verts")][i].getVertexCoordinates()[vertices]
 
-    for surfaceName, surfaceData in theModel.surfaces.items():
-        for orientation, particles in surfaceData.items():
-            #print(surfaceName, orientation, len(particles))
-            for p in particles:
-                verts = p.getVertexCoordinates()
-                plt.plot(verts[:, 0], verts[:, 1], linestyle='-', linewidth=2, color='b')
+    #for nSet in theModel.nodeSets.values():
+    #    if isinstance(nSet, list):
+    #        continue
+    #    #print(nSet)
+    #    # get random color
+    #    color = np.random.rand(3,)
+    #    for n in nSet.nodes:
+    #        plt.plot(n.coordinates[0], n.coordinates[1], 'o', color=color, markersize=3)
+
+    #for surfaceName, surfaceData in theModel.surfaces.items():
+    #    for orientation, particles in surfaceData.items():
+    #        #print(surfaceName, orientation, len(particles))
+    #        for p in particles:
+    #            verts = p.getVertexCoordinates()
+    #            plt.plot(verts[:, 0], verts[:, 1], linestyle='-', linewidth=2, color='b')
 
     plt.axis('equal')
     plt.show()
