@@ -193,10 +193,12 @@ def generateKernelFunctionGridFromInputFile(
     currentKernelFunctionNumber = firstKernelFunctionNumber
     currentParticleNumber = firstParticleNumber
     feNodesParticlesMaps = []
+    #print(nsets)
 
     for nsetName, nodeLabels in nsets.items():
         for n in nodeLabels:
             otherNsetName = nsets.keys()
+            #print(otherNsetName)
             for nSetOther in otherNsetName:
                 if nsetName == nSetOther:
                     continue
@@ -245,30 +247,25 @@ def generateKernelFunctionGridFromInputFile(
 
     # create particle- and nodeSets for model
     model.particleSets[f"{name}_all"] = ParticleSet(f"{name}_all", particles)
-
     for elsetName, elementLabels in elsets.items():
-
+    
         model.particleSets[f"{name}_{elsetName}"] = ParticleSet(f"{name}_{elsetName}", [particles[e-1] for e in elementLabels])
         model.nodeSets[f"{name}_{elsetName}"] = NodeSet(f"{name}_{elsetName}", [kfNodes[e-1] for e in elementLabels])
-
+    
         if not elsetName.startswith("_"):
             model.vertexSets[f"{name}_{elsetName}_verts"] = []
-            for idx,e in enumerate(elementLabels):
-                if idx == 0:
-                    estart = e
-
-                vertices = []
-                for n in feNodesParticlesMaps[e-1].keys():
-                    if n in nsets[elsetName]:
-                        if idx > 0:
-                            if (not n in feNodesParticlesMaps[eold-1].keys() and
-                               not n in feNodesParticlesMaps[estart-1].keys()):
-                                vertices.append(feNodesParticlesMaps[e-1][n])
-                        else:
-                            vertices.append(feNodesParticlesMaps[e-1][n])
-                eold = e
-                model.vertexSets[f"{name}_{elsetName}_verts"].append(vertices)
     
+            seen_nodes = []
+            for idx, e in enumerate(elementLabels):
+                vertices = []
+                for n in feNodesParticlesMaps[e - 1].keys():
+                    if n in nsets[elsetName]:
+                        v = feNodesParticlesMaps[e - 1][n]
+                        if n not in seen_nodes:
+                            vertices.append(v)
+                            seen_nodes.append(n)
+                model.vertexSets[f"{name}_{elsetName}_verts"].append(vertices)
+
     # add surface to model
     #for surfaceName, surfaceData in surfaces.items():
     #    modelSurfaceName = f"{name}_{surfaceName}"
@@ -345,13 +342,14 @@ if __name__ == "__main__":
             plt.fill(verts[:, 0], verts[:, 1], color=color, alpha=0.3)
 
     for vSetName,vSet in theModel.vertexSets.items():
+        #if "right" in vSetName:
         for i,vertices in enumerate(vSet):
             #vertices = [0,1]
             for ver in vertices:
                 vert = theModel.particleSets[vSetName.removesuffix("_verts")][i].getVertexCoordinates()[ver]
                 plt.plot(vert[0], vert[1], 'ro', markersize=5)
                 plt.text(vert[0], vert[1], f"{i}|{ver}", color='r')
-        verts = theModel.particleSets[vSetName.removesuffix("_verts")][i].getVertexCoordinates()[ver]
+        #verts = theModel.particleSets[vSetName.removesuffix("_verts")][i].getVertexCoordinates()[ver]
         verts = theModel.particleSets[vSetName.removesuffix("_verts")][i].getVertexCoordinates()[vertices]
 
     #for nSet in theModel.nodeSets.values():
