@@ -142,30 +142,42 @@ def run_sim():
     theModel.particleKernelDomains["my_all_with_all"] = theParticleKernelDomain
 
 
-    dirichletLeft = ParticleLagrangianWeakDirichletOnParticleSetFactory("left", 
-                                                                        theModel.particleSets[f"rectangular_grid_left"],
-                                                                        "center",
-                                                                        "displacement",
-                                                                        {0: 0},
-                                                                        theModel)
-    dirichletBottom = ParticleLagrangianWeakDirichletOnParticleSetFactory("bottom", 
-                                                                          theModel.particleSets[f"rectangular_grid_bottom"],
-                                                                          "center",
-                                                                          "displacement",
-                                                                          {1: 0},
-                                                                          theModel)
- 
+    
+    constraintsLeft = []
+    i = 0
+    for particle in theModel.particleSets["rectangular_grid_left"]:
+        constraintsLeft.append(ParticleLagrangianWeakDirichletOnParticleSetFactory(f"left_{i}", 
+                                [particle],
+                                [0,1],
+                                "displacement",
+                                {0: 0},
+                                theModel))
+        i += 1
+    constraintsBottom = []
+    i = 0
+    for particle in theModel.particleSets["rectangular_grid_bottom"]:
+        constraintsBottom.append(ParticleLagrangianWeakDirichletOnParticleSetFactory(f"bottom_{i}", 
+                                [particle],
+                                [1,2],
+                                "displacement",
+                                {1: 0},
+                                theModel))
+        i += 1
 
-    theModel.constraints.update(dirichletLeft)
-    theModel.constraints.update(dirichletBottom)
+
+
+    for c in constraintsLeft:
+        theModel.constraints.update(c)
+    for c in constraintsBottom:
+        theModel.constraints.update(c)
+
     theModel.prepareYourself(theJournal)
     #=====================================================================
     #                      SET INITIAL STRESS STATE
     #=====================================================================
 
     for particle in theModel.particles.values():
-        particle.setInitialCondition("geostaticstress", -100)
-
+        particle.setInitialCondition("geostaticstress", -100.)
 
     theJournal.printPrettyTable(theModel.makePrettyTableSummary(), "summary")
 
@@ -234,6 +246,8 @@ def run_sim():
     ensightOutput.initializeJob()
 
 
+
+
     #=====================================================================
     #                      DISTRIBUTED LOADS
     #=====================================================================
@@ -256,6 +270,31 @@ def run_sim():
         distributedLoadType = "pressure",
         loadVector          = np.array([-100]),
         surfaceID=2,
+        f_t=lambda t: 1.
+    )
+
+    #=====================================================================
+    #                      CWF CORRECTION 
+    #=====================================================================
+
+    cwf_left = ParticleDistributedLoad(
+        name                = "cwf_left",
+        model               = theModel,
+        journal             = theJournal,
+        particles           = theModel.particleSets["rectangular_grid_left"],
+        distributedLoadType = "cwfcorrection",
+        loadVector          = np.array([0]),
+        surfaceID=4,
+        f_t=lambda t: 1.
+    )
+    cwf_bottom = ParticleDistributedLoad(
+        name                = "cwf_bottom",
+        model               = theModel,
+        journal             = theJournal,
+        particles           = theModel.particleSets["rectangular_grid_bottom"],
+        distributedLoadType = "cwfcorrection",
+        loadVector          = np.array([0]),
+        surfaceID=1,
         f_t=lambda t: 1.
     )
 
@@ -302,7 +341,8 @@ def run_sim():
             particleManagers=[theParticleManager],
             constraints=theModel.constraints.values(),
             userIterationOptions=iterationOptions,
-            particleDistributedLoads=[pressure_top, pressure_right],
+            #particleDistributedLoads=[pressure_top, pressure_right],
+            particleDistributedLoads=[pressure_top, pressure_right, cwf_left, cwf_bottom],
             vciManagers=[vciManager],
         )
 
