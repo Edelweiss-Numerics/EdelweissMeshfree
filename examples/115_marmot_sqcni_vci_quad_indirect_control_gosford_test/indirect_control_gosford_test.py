@@ -269,6 +269,7 @@ def run_sim(particleSize, supportRadius, continuityOrder, completenessOrder):
         cVector,
         "displacement",
         theJournal,
+        f_t = lambda t: t
     )
 
     try:
