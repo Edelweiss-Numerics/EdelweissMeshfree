@@ -1,0 +1,121 @@
+# -*- coding: mbcs -*-
+from part import *
+from material import *
+from section import *
+from assembly import *
+from step import *
+from interaction import *
+from load import *
+from mesh import *
+from optimization import *
+from job import *
+from sketch import *
+from visualization import *
+from connectorBehavior import *
+mdb.models['Model-1'].ConstrainedSketch(name='__profile__', sheetSize=200.0)
+mdb.models['Model-1'].sketches['__profile__'].Spline(points=((0.0, 15.0), (
+    -15.0, 15.0), (-23.75, 8.75), (-30.0, -2.5), (-26.25, -15.0), (-2.5, 
+    -23.75), (8.75, -18.75), (18.75, -13.75), (35.0, -18.75), (43.75, -12.5), (
+    46.25, 0.0), (32.5, 8.75), (5.0, 12.5), (0.0, 15.0)))
+mdb.models['Model-1'].Part(dimensionality=TWO_D_PLANAR, name='potato', type=
+    DEFORMABLE_BODY)
+mdb.models['Model-1'].parts['potato'].BaseShell(sketch=
+    mdb.models['Model-1'].sketches['__profile__'])
+del mdb.models['Model-1'].sketches['__profile__']
+mdb.models['Model-1'].ConstrainedSketch(gridSpacing=4.34, name='__profile__', 
+    sheetSize=173.62, transform=
+    mdb.models['Model-1'].parts['potato'].MakeSketchTransform(
+    sketchPlane=mdb.models['Model-1'].parts['potato'].faces[0], 
+    sketchPlaneSide=SIDE1, sketchOrientation=RIGHT, origin=(4.803079, 
+    -5.032334, 0.0)))
+mdb.models['Model-1'].parts['potato'].projectReferencesOntoSketch(filter=
+    COPLANAR_EDGES, sketch=mdb.models['Model-1'].sketches['__profile__'])
+mdb.models['Model-1'].sketches['__profile__'].Line(point1=(-34.9039625615099, 
+    0.0), point2=(41.9002256311309, 0.0))
+mdb.models['Model-1'].sketches['__profile__'].HorizontalConstraint(
+    addUndoState=False, entity=
+    mdb.models['Model-1'].sketches['__profile__'].geometry[3])
+mdb.models['Model-1'].sketches['__profile__'].CoincidentConstraint(
+    addUndoState=False, entity1=
+    mdb.models['Model-1'].sketches['__profile__'].vertices[1], entity2=
+    mdb.models['Model-1'].sketches['__profile__'].geometry[2])
+mdb.models['Model-1'].sketches['__profile__'].CoincidentConstraint(
+    addUndoState=False, entity1=
+    mdb.models['Model-1'].sketches['__profile__'].vertices[2], entity2=
+    mdb.models['Model-1'].sketches['__profile__'].geometry[2])
+mdb.models['Model-1'].sketches['__profile__'].Line(point1=(0.0, 
+    17.6305964946671), point2=(0.0, -16.0993482636443))
+mdb.models['Model-1'].sketches['__profile__'].VerticalConstraint(addUndoState=
+    False, entity=mdb.models['Model-1'].sketches['__profile__'].geometry[4])
+mdb.models['Model-1'].sketches['__profile__'].CoincidentConstraint(
+    addUndoState=False, entity1=
+    mdb.models['Model-1'].sketches['__profile__'].vertices[3], entity2=
+    mdb.models['Model-1'].sketches['__profile__'].geometry[2])
+mdb.models['Model-1'].sketches['__profile__'].CoincidentConstraint(
+    addUndoState=False, entity1=
+    mdb.models['Model-1'].sketches['__profile__'].vertices[4], entity2=
+    mdb.models['Model-1'].sketches['__profile__'].geometry[2])
+mdb.models['Model-1'].sketches['__profile__'].Line(point1=(30.38, 
+    13.1061689708025), point2=(30.38, -13.7012092359868))
+mdb.models['Model-1'].sketches['__profile__'].VerticalConstraint(addUndoState=
+    False, entity=mdb.models['Model-1'].sketches['__profile__'].geometry[5])
+mdb.models['Model-1'].sketches['__profile__'].CoincidentConstraint(
+    addUndoState=False, entity1=
+    mdb.models['Model-1'].sketches['__profile__'].vertices[5], entity2=
+    mdb.models['Model-1'].sketches['__profile__'].geometry[2])
+mdb.models['Model-1'].sketches['__profile__'].CoincidentConstraint(
+    addUndoState=False, entity1=
+    mdb.models['Model-1'].sketches['__profile__'].vertices[6], entity2=
+    mdb.models['Model-1'].sketches['__profile__'].geometry[2])
+mdb.models['Model-1'].parts['potato'].PartitionFaceBySketch(faces=
+    mdb.models['Model-1'].parts['potato'].faces.getSequenceFromMask(('[#1 ]', 
+    ), ), sketch=mdb.models['Model-1'].sketches['__profile__'])
+del mdb.models['Model-1'].sketches['__profile__']
+mdb.models['Model-1'].parts['potato'].Set(edges=
+    mdb.models['Model-1'].parts['potato'].edges.getSequenceFromMask((
+    '[#1000 ]', ), ), name='b_leftBottom')
+mdb.models['Model-1'].parts['potato'].Set(edges=
+    mdb.models['Model-1'].parts['potato'].edges.getSequenceFromMask(('[#400 ]', 
+    ), ), name='b_rightBottom')
+mdb.models['Model-1'].parts['potato'].Surface(name='s_top', side1Edges=
+    mdb.models['Model-1'].parts['potato'].edges.getSequenceFromMask(('[#100 ]', 
+    ), ))
+mdb.models['Model-1'].parts['potato'].Set(edges=
+    mdb.models['Model-1'].parts['potato'].edges.getSequenceFromMask(('[#100 ]', 
+    ), ), name='b_top')
+mdb.models['Model-1'].parts['potato'].Surface(name='s_wholeBoundary', 
+    side1Edges=mdb.models['Model-1'].parts['potato'].edges.getSequenceFromMask(
+    ('[#3562 ]', ), ))
+mdb.models['Model-1'].parts['potato'].seedPart(deviationFactor=0.1, 
+    minSizeFactor=0.1, size=4.1)
+mdb.models['Model-1'].parts['potato'].setMeshControls(elemShape=QUAD, regions=
+    mdb.models['Model-1'].parts['potato'].faces.getSequenceFromMask(('[#3f ]', 
+    ), ))
+mdb.models['Model-1'].parts['potato'].setElementType(elemTypes=(ElemType(
+    elemCode=CPE4, elemLibrary=STANDARD), ElemType(elemCode=CPE3, 
+    elemLibrary=STANDARD)), regions=(
+    mdb.models['Model-1'].parts['potato'].faces.getSequenceFromMask(('[#3f ]', 
+    ), ), ))
+mdb.models['Model-1'].parts['potato'].generateMesh()
+mdb.models['Model-1'].Material(name='material')
+mdb.models['Model-1'].materials['material'].Elastic(table=((210000.0, 0.3), ))
+mdb.models['Model-1'].HomogeneousSolidSection(material='material', name=
+    'homogeneous', thickness=1.0)
+mdb.models['Model-1'].parts['potato'].Set(faces=
+    mdb.models['Model-1'].parts['potato'].faces.getSequenceFromMask(('[#3f ]', 
+    ), ), name='all')
+mdb.models['Model-1'].parts['potato'].SectionAssignment(offset=0.0, 
+    offsetField='', offsetType=MIDDLE_SURFACE, region=
+    mdb.models['Model-1'].parts['potato'].sets['all'], sectionName=
+    'homogeneous', thicknessAssignment=FROM_SECTION)
+mdb.Job(activateLoadBalancing=False, atTime=None, contactPrint=OFF, 
+    description='', echoPrint=OFF, explicitPrecision=SINGLE, 
+    getMemoryFromAnalysis=True, historyPrint=OFF, memory=90, memoryUnits=
+    PERCENTAGE, model='Model-1', modelPrint=OFF, multiprocessingMode=DEFAULT, 
+    name='test_potato', nodalOutputPrecision=SINGLE, numCpus=1, numDomains=1, 
+    numGPUs=0, numThreadsPerMpiProcess=1, queue=None, resultsFormat=ODB, 
+    scratch='', type=ANALYSIS, userSubroutine='', waitHours=0, waitMinutes=0)
+mdb.models['Model-1'].rootAssembly.DatumCsysByDefault(CARTESIAN)
+mdb.models['Model-1'].rootAssembly.Instance(dependent=ON, name='potato-1', 
+    part=mdb.models['Model-1'].parts['potato'])
+# Save by tom on 2025_11_05-10.57.12; build 2024 2023_09_21-14.55.25 RELr426 190762
