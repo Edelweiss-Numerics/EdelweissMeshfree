@@ -38,6 +38,7 @@ from edelweissfe.utils.fieldoutput import FieldOutputController
 
 from edelweissmpm.models.mpmmodel import MPMModel
 from edelweissmpm.mpmmanagers.base.mpmmanagerbase import MPMManagerBase
+from edelweissmpm.numerics.predictors.basepredictor import BasePredictor
 from edelweissmpm.particlemanagers.base.baseparticlemanager import BaseParticleManager
 from edelweissmpm.solvers.nqsmarmotparallel import NQSParallelForMarmot
 from edelweissmpm.stepactions.base.arclengthcontrollerbase import (
@@ -81,6 +82,7 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
         allowFallBackToRestart: bool = False,
         numberOfRestartsToStore=3,
         restartBaseName: str = "restart",
+        predictor: BasePredictor = None,
     ) -> tuple[bool, MPMModel]:
         """Public interface to solve for a step.
 
@@ -120,6 +122,8 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
             The flag to allow falling back to the last restart.
         restartBaseName
             The base name for the restart.
+        predictor
+            The predictor instance to be used for making predictions on the next solution increment.
 
         Returns
         -------
@@ -152,6 +156,7 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
             allowFallBackToRestart=allowFallBackToRestart,
             numberOfRestartsToStore=numberOfRestartsToStore,
             restartBaseName=restartBaseName,
+            predictor=predictor,
         )
 
     @performancetiming.timeit("newton iteration")
@@ -176,6 +181,8 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
         model: MPMModel,
         newtonCache: tuple = None,
         dUGuess: DofVector = None,
+        dLambdaGuess: float = None,
+        predictor: BasePredictor = None
     ) -> tuple[DofVector, DofVector, dict, tuple]:
         """Standard Newton-Raphson scheme to solve for an increment.
 
@@ -241,6 +248,7 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
                 timeStep,
                 model,
                 newtonCache,
+                dUGuess
             )
 
         iterationCounter = 0
@@ -252,14 +260,14 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
             newtonCache = self._createArcLengthNewtonCache(theDofManager)
         K_VIJ, csrGenerator, dU, Rhs_, F, PInt, PExt, PExt_0, PExt_f, K_VIJ_0, K_VIJ_f = newtonCache
 
-        dU[:] = 0.0
+        dU[:] = dUGuess if dUGuess is not None else 0.0
         Rhs_0 = Rhs_[:, 0]
         Rhs_f = Rhs_[:, 1]
 
         ddU = None
 
         Lambda = model.additionalParameters["arc length parameter"]
-        dLambda = 0.0
+        dLambda = dLambdaGuess if dLambdaGuess is not None else 0.0
         ddLambda = 0.0
 
         referenceTimeStep = TimeStep(timeStep.number, 1.0, 1.0, 0.0, 0.0, 0.0)
@@ -389,7 +397,10 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
 
         model.additionalParameters["arc length parameter"] = Lambda + dLambda
 
-        return dU, PInt, iterationHistory, newtonCache
+        if predictor:
+            return dU, dLambda, PInt, iterationHistory, newtonCache
+        else:
+            return dU, PInt, iterationHistory, newtonCache
 
     @performancetiming.timeit("creation newton cache")
     def _createArcLengthNewtonCache(self, theDofManager: DofManager) -> tuple:

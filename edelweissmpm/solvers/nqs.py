@@ -290,7 +290,10 @@ class NonlinearQuasistaticSolver(NonlinearImplicitSolverBase):
 
                 dUPrediction = None
                 if predictor:
-                    dUPrediction = predictor.getPrediction(timeStep)
+                    if predictor._arcLength:
+                        dUPrediction, dLambdaPrediction = predictor.getPrediction(timeStep)
+                    else:
+                        dUPrediction = predictor.getPrediction(timeStep)
 
                 nVariables = len(presentVariableNames)
                 iterationHeader = ("{:^25}" * nVariables).format(*presentVariableNames)
@@ -300,38 +303,74 @@ class NonlinearQuasistaticSolver(NonlinearImplicitSolverBase):
                 self.journal.message(iterationHeader2, self.identification, level=2)
 
                 try:
-                    for initialGuess in (dUPrediction, None):
-                        try:
-                            dU, P, iterationHistory, newtonCache = self._newtonSolve(
-                                dirichlets,
-                                bodyLoads,
-                                distributedLoads,
-                                particleDistributedLoads,
-                                reducedNodeSets,
-                                elements,
-                                U,
-                                activeCells,
-                                model.cellElements.values(),
-                                materialPoints,
-                                particles,
-                                constraints,
-                                theDofManager,
-                                linearSolver,
-                                iterationOptions,
-                                timeStep,
-                                model,
-                                newtonCache,
-                                initialGuess,
-                            )
-                            break
-                        except Exception as e:
-                            if initialGuess is not None:
-                                self.journal.message(str(e), self.identification, 1)
-                                self.journal.message(
-                                    "Prediction failed, trying without prediction", self.identification, level=1
+                    if predictor and predictor._arcLength:
+                        for initialGuess in ((dUPrediction, dLambdaPrediction), (None, None)):
+                            try:
+                                dU, dLambda, P, iterationHistory, newtonCache = self._newtonSolve(
+                                    dirichlets,
+                                    bodyLoads,
+                                    distributedLoads,
+                                    particleDistributedLoads,
+                                    reducedNodeSets,
+                                    elements,
+                                    U,
+                                    activeCells,
+                                    model.cellElements.values(),
+                                    materialPoints,
+                                    particles,
+                                    constraints,
+                                    theDofManager,
+                                    linearSolver,
+                                    iterationOptions,
+                                    timeStep,
+                                    model,
+                                    newtonCache,
+                                    initialGuess[0],
+                                    initialGuess[1],
+                                    predictor
                                 )
-                            else:
-                                raise
+                                break
+                            except Exception as e:
+                                if initialGuess is not (None, None):
+                                    self.journal.message(str(e), self.identification, 1)
+                                    self.journal.message(
+                                        "Prediction failed, trying without prediction", self.identification, level=1
+                                    )
+                                else:
+                                    raise
+                    else:
+                        for initialGuess in (dUPrediction, None):
+                            try:
+                                dU, P, iterationHistory, newtonCache = self._newtonSolve(
+                                    dirichlets,
+                                    bodyLoads,
+                                    distributedLoads,
+                                    particleDistributedLoads,
+                                    reducedNodeSets,
+                                    elements,
+                                    U,
+                                    activeCells,
+                                    model.cellElements.values(),
+                                    materialPoints,
+                                    particles,
+                                    constraints,
+                                    theDofManager,
+                                    linearSolver,
+                                    iterationOptions,
+                                    timeStep,
+                                    model,
+                                    newtonCache,
+                                    initialGuess,
+                                )
+                                break
+                            except Exception as e:
+                                if initialGuess is not None:
+                                    self.journal.message(str(e), self.identification, 1)
+                                    self.journal.message(
+                                        "Prediction failed, trying without prediction", self.identification, level=1
+                                    )
+                                else:
+                                    raise
 
                 except (RuntimeError, DivergingSolution, ReachedMaxIterations) as e:
                     self.journal.message(str(e), self.identification, 1)
@@ -356,7 +395,10 @@ class NonlinearQuasistaticSolver(NonlinearImplicitSolverBase):
                     U += dU
 
                     if predictor:
-                        predictor.updateHistory(dU, timeStep)
+                        if predictor._arcLength:
+                            predictor.updateHistory(dU, timeStep, dLambda)
+                        else:
+                            predictor.updateHistory(dU, timeStep)
 
                     # TODO: Make this optional/flexibel via function arguments (?)
                     for field in reducedNodeFields.values():
