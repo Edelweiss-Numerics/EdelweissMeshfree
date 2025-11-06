@@ -34,25 +34,40 @@ from edelweissmpm.numerics.predictors.basepredictor import BasePredictor
 class LinearPredictor(BasePredictor):
     """A linear extrapolator which uses the last solution increment to predict the next solution."""
 
-    def __init__(self):
+    def __init__(self, arcLength: bool = False):
         self._dU_n = None
         self._deltaT_n = None
+        self._arcLength = arcLength
+        if self._arcLength:
+            self._dLambda_n = None
 
-    def resetHistory(
-        self,
-    ):
+    def resetHistory(self,):
         self._dU_n = None
         self._deltaT_n = None
+        if self._arcLength:
+            self._dLambda_n = None
 
     def getPrediction(self, timeStep: TimeStep):
         if self._dU_n is None:
-            return None
+            if self._arcLength:
+                return None, None
+            else:
+                return None
         if timeStep.timeIncrement < 1e-15 or self._deltaT_n < 1e-15:
-            return None
+            if self._arcLength:
+                return None, None
+            else:
+                return None
         else:
             dU = self._dU_n * (timeStep.timeIncrement / self._deltaT_n)
-            return dU
+            if self._arcLength:
+                dLambda = self._dLambda_n * (timeStep.timeIncrement / self._deltaT_n)
+                return dU, dLambda
+            else:
+                return dU
 
-    def updateHistory(self, dU: DofVector, timeStep: TimeStep):
+    def updateHistory(self, dU: DofVector, timeStep: TimeStep, dLambda: float = None):
         self._dU_n = dU.copy()
         self._deltaT_n = timeStep.timeIncrement
+        if self._arcLength:
+            self._dLambda_n = dLambda
