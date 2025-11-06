@@ -10,9 +10,12 @@
 #
 #  Unit of Strength of Materials and Structural Analysis
 #  University of Innsbruck,
+#  Computational Mechanics of Materials, Institute of Structural Engineering,
+#  BOKU University, Vienna
 #  2023 - today
 #
 #  Matthias Neuner matthias.neuner@uibk.ac.at
+#  Thomas Mader thomas.mader@boku.ac.at
 #
 #  This file is part of EdelweissMPM.
 #
@@ -25,6 +28,7 @@
 #  the top level directory of EdelweissMPM.
 #  ---------------------------------------------------------------------
 
+from edelweissfe.journal.journal import Journal
 from edelweissfe.numerics.dofmanager import DofVector
 from edelweissfe.timesteppers.timestep import TimeStep
 
@@ -34,10 +38,11 @@ from edelweissmpm.numerics.predictors.basepredictor import BasePredictor
 class LinearPredictor(BasePredictor):
     """A linear extrapolator which uses the last solution increment to predict the next solution."""
 
-    def __init__(self, arcLength: bool = False):
+    def __init__(self, journal: Journal = None, arcLength: bool = False):
         self._dU_n = None
         self._deltaT_n = None
         self._arcLength = arcLength
+        self._journal = journal
         if self._arcLength:
             self._dLambda_n = None
 
@@ -70,4 +75,4 @@ class LinearPredictor(BasePredictor):
         self._dU_n = dU.copy()
         self._deltaT_n = timeStep.timeIncrement
         if self._arcLength:
-            self._dLambda_n = dLambda
+            self._dLambda_n = dLambda.copy()
