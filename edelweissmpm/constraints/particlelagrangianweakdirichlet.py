@@ -34,10 +34,12 @@ class ParticleLagrangianWeakDirichlet(MPMConstraintBase):
         self,
         name: str,
         constrainedParticle: BaseParticle,
-        constrainedLocation: int | str,
         field: str,
         prescribedStepDelta: dict,
         model,
+        location: str = "center",
+        faceID: int = None,
+        vertexID: int = None,
     ):
         self._name = name
         self._constrainedParticle = constrainedParticle
@@ -45,13 +47,22 @@ class ParticleLagrangianWeakDirichlet(MPMConstraintBase):
         self._prescribedStepDelta = prescribedStepDelta
         self._fieldSize = getFieldSize(self._field, model.domainSize)
         self._nodes = dict()
-        self._constrainedLocation = constrainedLocation
 
-        if isinstance(constrainedLocation, str):
-            if constrainedLocation != "center":
-                raise ValueError("Constrain must be 'center' or a vertex index.")
-        # elif isinstance(constrainedLocation, int):
-        #     raise ValueError(f"Constrain must be 'center' or a vertex index, got {type(constrainedLocation)}.")
+        def _getConstraintLocation():
+            particle = self._constrainedParticle
+            if location == "center":
+                constraintLocation = particle.getCenterCoordinates()
+            elif location == "face":
+                if faceID is None:
+                    raise ValueError("faceID must be specified when location is 'face'.")
+                constraintLocation = particle.getFaceCoordinates(faceID)
+            elif location == "vertex":
+                if vertexID is None:
+                    raise ValueError("vertexID must be specified when location is 'vertex'.")
+                constraintLocation = particle.getVertexCoordinates(vertexID)
+            return constraintLocation
+
+        self._getConstraintLocation = _getConstraintLocation
 
         self._nLagrangianMultipliers = len(self._prescribedStepDelta)
         self.reactionForce = np.zeros(self._fieldSize)
@@ -119,10 +130,12 @@ class ParticleLagrangianWeakDirichlet(MPMConstraintBase):
         self.reactionForce.fill(0.0)
         p = self._constrainedParticle
 
-        if self._constrainedLocation == "center":
-            constrainedCoordinates = p.getCenterCoordinates()
-        elif isinstance(self._constrainedLocation, int):
-            constrainedCoordinates = p.getVertexCoordinates()[self._constrainedLocation]
+        # if self._constrainedLocation == "center":
+        #     constrainedCoordinates = p.getCenterCoordinates()
+        # elif isinstance(self._constrainedLocation, int):
+        #     constrainedCoordinates = p.getVertexCoordinates()[self._constrainedLocation]
+
+        constrainedCoordinates = self._getConstraintLocation()
 
         for lag, (i, prescribedComponent) in enumerate(self._prescribedStepDelta.items()):
             # lag is the lagrange multiplier index
@@ -158,15 +171,19 @@ class ParticleLagrangianWeakDirichlet(MPMConstraintBase):
 def ParticleLagrangianWeakDirichletOnParticleSetFactory(
     baseName: str,
     particleSet: list[BaseParticle],
-    constrainedLocation: int | str,
     field: str,
     prescribedStepDelta: dict,
     model: MPMModel,
+    location: str = "center",
+    faceID: int = None,
+    vertexID: int = None,
 ):
     constraints = dict()
     for i, p in enumerate(particleSet):
         name = f"{baseName}_{i}"
-        constraint = ParticleLagrangianWeakDirichlet(name, p, constrainedLocation, field, prescribedStepDelta, model)
+        constraint = ParticleLagrangianWeakDirichlet(
+            name, p, field, prescribedStepDelta, model, location, faceID, vertexID
+        )
         constraints[name] = constraint
 
     return constraints

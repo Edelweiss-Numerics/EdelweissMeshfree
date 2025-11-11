@@ -74,6 +74,8 @@ cdef extern from "Marmot/MarmotParticle.h" namespace "Marmot::Meshfree":
 
         void getVertexCoordinates(double* )
 
+        void getFaceCoordinates(int, double* )
+
         void getEvaluationCoordinates(double* )
 
         void getVisualizationVertexCoordinates(double* )

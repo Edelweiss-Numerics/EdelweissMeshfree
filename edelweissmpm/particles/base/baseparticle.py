@@ -127,6 +127,22 @@ class BaseParticle(BaseNodeCouplingEntity):
             All coordinates for all bounding vertices."""
 
     @abstractmethod
+    def getFaceCoordinates(
+        self,
+        faceID: int,
+    ) -> np.ndarray:
+        """The vertices defining the shape of the particle.
+        Parameters
+        ----------
+        faceID
+            The ID of the face to be returned.
+
+        Returns
+        -------
+        np.ndarray
+            All coordinates for all bounding vertices."""
+
+    @abstractmethod
     def getEvaluationCoordinates(
         self,
     ) -> np.ndarray:

@@ -35,8 +35,8 @@ from edelweissfe.linsolve.pardiso.pardiso import pardisoSolve
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 from edelweissfe.utils.exceptions import StepFailed
 
-from edelweissmpm.constraints.particlelagrangianweakdirichlet import (
-    ParticleLagrangianWeakDirichletOnParticleSetFactory,
+from edelweissmpm.constraints.particlepenaltyweakdirichtlet import (
+    ParticlePenaltyWeakDirichlet,
 )
 from edelweissmpm.fieldoutput.fieldoutput import MPMFieldOutputController
 from edelweissmpm.generators.rectangularkernelfunctiongridgenerator import (
@@ -59,6 +59,10 @@ from edelweissmpm.particlemanagers.kdbinorganizedparticlemanager import (
 )
 from edelweissmpm.particles.marmot.marmotparticlewrapper import MarmotParticleWrapper
 from edelweissmpm.solvers.nqs import NonlinearQuasistaticSolver
+
+# from edelweissmpm.generators.rectangularparticlegridgenerator import (
+#     generateRectangularParticleGrid,
+# )
 
 
 def run_sim():
@@ -95,18 +99,15 @@ def run_sim():
         "ReproducingKernelImplicitGradient", dimension, completenessOrder=1
     )
 
-    E = 20000
-    nu = 0.3
-    K = E / (3 * (1 - 2 * nu))
-    G = E / (2 * (1 + nu))
+    # We need a dummy material for the material point
     theMaterial = {
-        "material": "FiniteStrainJ2Plasticity",
-        "properties": np.array([K, G, 20e10, 20e10, 0, 0, 1, 1e-9]),
+        "material": "GMDamagedShearNeoHooke",
+        "properties": np.array([3000.0, 0.2, 1, 0.1, 0.2, 1.4999, 1.0e-3]),
     }
 
     def TheParticleFactory(number, vertexCoordinates, volume):
         return MarmotParticleWrapper(
-            "DisplacementSQCNIxSDI/PlaneStrain/Quad",
+            "GradientEnhancedMicropolarSQCNIxSDI/PlaneStrain/Quad",
             number,
             vertexCoordinates,
             volume,
@@ -117,6 +118,10 @@ def run_sim():
     theModel = generateRectangularQuadParticleGrid(
         theModel, theJournal, TheParticleFactory, x0=x0, y0=y0, h=height, l=length, nX=nX, nY=nY
     )
+
+    for particle in theModel.particles.values():
+        particle.setProperty("newmark-beta beta", 0.25)
+        particle.setProperty("newmark-beta gamma", 0.5)
 
     # let's create the particle kernel domain
     theParticleKernelDomain = ParticleKernelDomain(
@@ -134,27 +139,6 @@ def run_sim():
     # We now create a bundled model.
     # We need this model to create the dof manager
     theModel.particleKernelDomains["my_all_with_all"] = theParticleKernelDomain
-
-    dirichletLeft = ParticleLagrangianWeakDirichletOnParticleSetFactory(
-        "left",
-        theModel.particleSets["rectangular_grid_left"],
-        "displacement",
-        {0: 0, 1: 2},
-        theModel,
-        location="center",
-    )
-
-    dirichletRight = ParticleLagrangianWeakDirichletOnParticleSetFactory(
-        "right",
-        theModel.particleSets["rectangular_grid_right"],
-        "displacement",
-        {0: -3, 1: -2},
-        theModel,
-        location="center",
-    )
-
-    theModel.constraints.update(dirichletLeft)
-    theModel.constraints.update(dirichletRight)
 
     theModel.prepareYourself(theJournal)
     theJournal.printPrettyTable(theModel.makePrettyTableSummary(), "summary")
@@ -178,10 +162,6 @@ def run_sim():
         "deformation gradient",
     )
 
-    fieldOutputController.addExpressionFieldOutput(
-        None, lambda: np.sum([d.reactionForce for d in dirichletLeft.values()], axis=0), "reaction force", export="RF"
-    )
-
     fieldOutputController.initializeJob()
 
     ensightOutput = EnsightOutputManager("ensight", theModel, fieldOutputController, theJournal, None)
@@ -195,18 +175,25 @@ def run_sim():
     )
     ensightOutput.initializeJob()
 
-    incSize = 1e-1
-    adaptiveTimeStepper = AdaptiveTimeStepper(0.0, 1.0, incSize, incSize, incSize / 1, 50, theJournal)
+    dirichletLeft = ParticlePenaltyWeakDirichlet(
+        "left", theModel, theModel.particleSets["rectangular_grid_left"], "displacement", {0: 0, 1: 0}, 1e6
+    )
 
+    dirichlets = [
+        dirichletLeft,
+    ]
+
+    incSize = 1e-1
+    adaptiveTimeStepper = AdaptiveTimeStepper(0.0, 1.0, incSize, incSize, incSize / 1, 500, theJournal)
+
+    # nonlinearSolver = NQSParallelForMarmot(theJournal)
     nonlinearSolver = NonlinearQuasistaticSolver(theJournal)
 
-    iterationOptions = {
-        "default relative flux residual tolerance": 1e-8,
-        "default relative flux residual tolerance alt.": 1e-3,
-        "default relative field correction tolerance": 1e-8,
-        "default absolute flux residual tolerance": 1e-14,
-        "default absolute field correction tolerance": 1e-14,
-    }
+    iterationOptions = dict()
+
+    iterationOptions["max. iterations"] = 15
+    iterationOptions["critical iterations"] = 3
+    iterationOptions["allowed residual growths"] = 10
 
     linearSolver = pardisoSolve
 
@@ -226,6 +213,19 @@ def run_sim():
         list(theModel.particles.values()), list(theModel.meshfreeKernelFunctions.values()), theBoundary
     )
 
+    from edelweissmpm.stepactions.particledistributedload import ParticleDistributedLoad
+
+    pressureTop = ParticleDistributedLoad(
+        "pressureTop",
+        theModel,
+        theJournal,
+        theModel.particleSets["rectangular_grid_top"],
+        "pressure",
+        np.array([-0.50]),
+        surfaceID=3,
+        f_t=lambda t: 1.0,
+    )
+
     try:
         nonlinearSolver.solveStep(
             adaptiveTimeStepper,
@@ -234,8 +234,9 @@ def run_sim():
             fieldOutputController,
             outputManagers=[ensightOutput],
             particleManagers=[theParticleManager],
-            constraints=theModel.constraints.values(),
+            constraints=dirichlets,
             userIterationOptions=iterationOptions,
+            particleDistributedLoads=[pressureTop],
             vciManagers=[vciManager],
         )
 
@@ -278,7 +279,7 @@ def test_sim():
 
     gold = np.loadtxt("gold.csv")
 
-    assert np.isclose(np.copy(res.flatten() - gold.flatten()), 0.0, rtol=1e-8).all()
+    assert np.isclose(np.copy(res.flatten() - gold.flatten()), 0.0, rtol=1e-12).all()
 
 
 if __name__ == "__main__":
