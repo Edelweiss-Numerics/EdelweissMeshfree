@@ -107,7 +107,7 @@ cdef class MarmotParticleWrapper:
                                                                                        nMaterialProperties,
                                                                                        self._marmotMeshfreeApproximation[0],
                                                                                        )
-        except IndexError:
+        except ValueError:
             raise NotImplementedError("Failed to create instance of MarmotParticle {:}.".format(particleType))
 
         self._nStateVars =           self._marmotParticle.getNumberOfRequiredStateVars()
@@ -283,6 +283,15 @@ cdef class MarmotParticleWrapper:
         self._marmotParticle.getVertexCoordinates(&self._vertexCoordinatesView[0,0])
 
         return self._vertexCoordinates
+
+    def getFaceCoordinates(self, int faceID):
+        """Get the underlying coordinates of a given face of the MarmotParticle."""
+
+        cdef np.ndarray faceCoordinates = np.zeros( self._nDim )
+        cdef double[::1] faceCoordinatesView = faceCoordinates
+        self._marmotParticle.getFaceCoordinates(faceID, &faceCoordinatesView[0])
+
+        return faceCoordinates
 
     def getEvaluationCoordinates(self):
 
