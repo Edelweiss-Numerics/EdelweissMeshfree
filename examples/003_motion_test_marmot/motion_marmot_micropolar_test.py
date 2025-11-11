@@ -30,18 +30,14 @@ import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 import pytest
 from edelweissfe.journal.journal import Journal
-from edelweissfe.linsolve.pardiso.pardiso import pardisoSolve
-from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
-from edelweissfe.utils.exceptions import StepFailed
 
 from edelweissmpm.fieldoutput.fieldoutput import MPMFieldOutputController
+from edelweissmpm.fields.nodefield import MPMNodeField
 from edelweissmpm.generators import rectangulargridgenerator, rectangularmpgenerator
 from edelweissmpm.models.mpmmodel import MPMModel
-from edelweissmpm.mpmmanagers.smartmpmmanager import SmartMaterialPointManager
+from edelweissmpm.mpmmanagers.simplempmmanager import SimpleMaterialPointManager
+from edelweissmpm.numerics.dofmanager import MPMDofManager
 from edelweissmpm.outputmanagers.ensight import OutputManager as EnsightOutputManager
-from edelweissmpm.solvers.nqs import NonlinearQuasistaticSolver
-from edelweissmpm.stepactions.bodyload import BodyLoad
-from edelweissmpm.stepactions.dirichlet import Dirichlet
 
 
 def run_sim():
@@ -49,35 +45,34 @@ def run_sim():
 
     journal = Journal()
 
-    np.set_printoptions(precision=3)
-
     mpmModel = MPMModel(dimension)
+
+    linearElasticMaterial = {"material": "LINEARELASTIC", "properties": np.array([30000.0, 0.3])}
 
     rectangulargridgenerator.generateModelData(
         mpmModel,
         journal,
         x0=0.0,
-        l=50.0,
+        l=200.0,
         y0=0.0,
         h=100.0,
-        nX=15,
-        nY=30,
+        nX=40,
+        nY=20,
         cellProvider="LagrangianMarmotCell",
         cellType="Displacement/SmallStrain/Quad4",
     )
-    linearElastic = {"material": "LINEARELASTIC", "properties": np.array([30000.0, 0.3])}
     rectangularmpgenerator.generateModelData(
         mpmModel,
         journal,
-        x0=1e-3,
+        x0=5.0,
         l=20.0,
-        y0=1e-3,
-        h=90.0,
-        nX=15,
-        nY=60,
+        y0=40.0,
+        h=20.0,
+        nX=3,
+        nY=3,
         mpProvider="marmot",
         mpType="Displacement/SmallStrain/PlaneStrain",
-        material=linearElastic,
+        material=linearElasticMaterial,
     )
 
     mpmModel.prepareYourself(journal)
@@ -86,7 +81,10 @@ def run_sim():
     allCells = mpmModel.cellSets["all"]
     allMPs = mpmModel.materialPointSets["all"]
 
-    mpmManager = SmartMaterialPointManager(allCells, allMPs, dimension, options={"KDTreeLevels": 3})
+    mpmManager = SimpleMaterialPointManager(allCells, allMPs)
+
+    activeCells = None
+    activeNodes = None
 
     journal.printSeperationLine()
 
@@ -122,78 +120,81 @@ def run_sim():
 
     ensightOutput.initializeJob()
 
-    outputManagers = [
-        ensightOutput,
-    ]
-
-    dirichletBottom = Dirichlet(
-        "bottom",
-        mpmModel.nodeSets["rectangular_grid_bottom"],
-        "displacement",
-        {0: 0.0, 1: 0.0},
-        mpmModel,
-        journal,
-    )
-
-    dirichletLeft = Dirichlet(
-        "left",
-        mpmModel.nodeSets["rectangular_grid_left"],
-        "displacement",
-        {
-            0: 0.0,
-        },
-        mpmModel,
-        journal,
-    )
-
-    gravityLoad = BodyLoad(
-        "theGravity",
-        mpmModel,
-        journal,
-        mpmModel.cells.values(),
-        "BodyForce",
-        # np.array([15.0, 00.0]),
-        np.array([0.0, -600.0]),
-    )
-
-    adaptiveTimeStepper = AdaptiveTimeStepper(0.0, 1.0, 1e-2, 1e-2, 1e-2, 1000, journal)
-
-    nonlinearSolver = NonlinearQuasistaticSolver(journal)
-
-    iterationOptions = dict()
-
-    iterationOptions["max. iterations"] = 5
-    iterationOptions["critical iterations"] = 3
-    iterationOptions["allowed residual growths"] = 3
-
-    linearSolver = pardisoSolve
-
     try:
-        nonlinearSolver.solveStep(
-            adaptiveTimeStepper,
-            linearSolver,
-            mpmModel,
-            fieldOutputController,
-            mpmManagers=[mpmManager],
-            dirichlets=[dirichletBottom, dirichletLeft],
-            bodyLoads=[gravityLoad],
-            outputManagers=outputManagers,
-            userIterationOptions=iterationOptions,
-        )
+        for i in range(100):
+            print("time step {:}".format(i))
 
-    except StepFailed as e:
-        journal.errorMessage(str(e), "StepFailed")
+            mpmManager.updateConnectivity()
+
+            activeCells = mpmManager.getActiveCells()
+            activeNodes = set([n for cell in activeCells for n in cell.nodes])
+
+            print("active cells:")
+            print([c.cellNumber for c in activeCells])
+
+            print("active nodes:")
+            print([n.label for n in activeNodes])
+
+            for c in activeCells:
+                print(
+                    "cell {:} hosts material points {:}".format(
+                        c.cellNumber, [mp.number for mp in c.assignedMaterialPoints]
+                    )
+                )
+
+            activeNodeFields = {
+                nodeField.name: MPMNodeField(nodeField.name, nodeField.dimension, activeNodes)
+                for nodeField in mpmModel.nodeFields.values()
+            }
+            activeNodeFields["displacement"].createFieldValueEntry("dU")
+
+            scalarVariables = []
+            elements = []
+            cellElements = []
+            constraints = []
+            nodeSets = []
+
+            dofManager = MPMDofManager(
+                activeNodeFields.values(), scalarVariables, elements, constraints, nodeSets, activeCells, cellElements
+            )
+
+            dofVector = dofManager.constructDofVector()
+
+            time = 10 * i
+            shift = np.asarray([2.0, 2.0 * np.cos(4 * np.pi * i / 100.0)])
+
+            activeNodeFields["displacement"]["dU"][:] = shift
+            dofManager.writeNodeFieldToDofVector(dofVector, activeNodeFields["displacement"], "dU")
+
+            for c in activeCells:
+                dUCell = dofVector[c]
+                c.interpolateFieldsToMaterialPoints(dUCell)
+
+            for mp in allMPs:
+                mp.computeYourself(time, i)
+
+            mpmModel.nodeFields["displacement"].copyEntriesFromOther(activeNodeFields["displacement"])
+
+            mpmModel.advanceToTime(time)
+
+            fieldOutputController.finalizeIncrement()
+
+            ensightOutput.finalizeIncrement()
+
+            journal.printSeperationLine()
+
+    except Exception as e:
+        print(str(e))
         raise
 
     finally:
         fieldOutputController.finalizeJob()
         ensightOutput.finalizeJob()
-
         prettytable = performancetiming.makePrettyTable()
         prettytable.min_table_width = journal.linewidth
-        journal.printPrettyTable(prettytable, "Summary")
+        print(prettytable)
 
-    return mpmModel
+        return mpmModel
 
 
 @pytest.fixture(autouse=True)
@@ -211,10 +212,9 @@ def test_sim():
         pytest.skip(str(e))
         return
 
-    res = np.array([mp.getResultArray("displacement") for mp in mpmModel.materialPoints.values()])
-    gold = np.loadtxt("gold.csv")
+    res = mpmModel.nodeFields["displacement"]["dU"]
 
-    print(res - gold)
+    gold = np.loadtxt("gold.csv")
 
     assert np.isclose(res, gold).all()
 
@@ -223,9 +223,13 @@ if __name__ == "__main__":
     mpmModel = run_sim()
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--create-gold", dest="create_gold", action="store_true", help="create the gold file.")
+    parser.add_argument(
+        "--create-gold",
+        dest="create_gold",
+        action="store_true",
+        help="create the gold file.",
+    )
     args = parser.parse_args()
 
     if args.create_gold:
-        gold = np.array([mp.getResultArray("displacement") for mp in mpmModel.materialPoints.values()])
-        np.savetxt("gold.csv", gold)
+        np.savetxt("gold.csv", mpmModel.nodeFields["displacement"]["dU"])
