@@ -141,35 +141,23 @@ def run_sim():
     # We need this model to create the dof manager
     theModel.particleKernelDomains["my_all_with_all"] = theParticleKernelDomain
 
-    
-    constraintsLeft = []
-    i = 0
-    for particle in theModel.particleSets["rectangular_grid_left"]:
-        constraintsLeft.append(ParticleLagrangianWeakDirichletOnParticleSetFactory(f"left_{i}", 
-                                [particle],
-                                [0,1],
-                                "displacement",
-                                {0: 0},
-                                theModel))
-        i += 1
-    constraintsBottom = []
-    i = 0
-    for particle in theModel.particleSets["rectangular_grid_bottom"]:
-        constraintsBottom.append(ParticleLagrangianWeakDirichletOnParticleSetFactory(f"bottom_{i}", 
-                                [particle],
-                                [1,2],
-                                "displacement",
-                                {1: 0},
-                                theModel))
-        i += 1
 
+    dirichletLeft = ParticleLagrangianWeakDirichletOnParticleSetFactory("left", 
+                                                                        theModel.particleSets[f"rectangular_grid_left"],
+                                                                        "displacement",
+                                                                        {0: 0},
+                                                                        theModel,
+                                                                        location="center")
+    dirichletBottom = ParticleLagrangianWeakDirichletOnParticleSetFactory("bottom", 
+                                                                          theModel.particleSets[f"rectangular_grid_bottom"],
+                                                                          "displacement",
+                                                                          {1: 0},
+                                                                          theModel,
+                                                                          location="center")
+ 
 
-
-    for c in constraintsLeft:
-        theModel.constraints.update(c)
-    for c in constraintsBottom:
-        theModel.constraints.update(c)
-
+    theModel.constraints.update(dirichletLeft)
+    theModel.constraints.update(dirichletBottom)
     theModel.prepareYourself(theJournal)
     #=====================================================================
     #                      SET INITIAL STRESS STATE

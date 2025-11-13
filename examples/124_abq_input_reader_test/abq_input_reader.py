@@ -154,16 +154,16 @@ def run_sim(inputFilePath = "test_potato.inp",
 
     dirichletLeftBottom = ParticleLagrangianWeakDirichletOnParticleSetFactory("leftBottom", 
                                                                         theModel.particleSets[f"{name}_b_leftBottom"],
-                                                                        "center",
                                                                         "displacement",
                                                                         {0: 0, 1: 0},
-                                                                        theModel)
+                                                                        theModel,
+                                                                        location="center")
     dirichletRightBottom = ParticleLagrangianWeakDirichletOnParticleSetFactory("rightBottom", 
                                                                         theModel.particleSets[f"{name}_b_rightBottom"],
-                                                                        "center",
                                                                         "displacement",
                                                                         {0: 0, 1: 0},
-                                                                        theModel)
+                                                                        theModel,
+                                                                        location="center")
     theModel.constraints.update(dirichletLeftBottom)
     theModel.constraints.update(dirichletRightBottom)
     theModel.prepareYourself(theJournal)

@@ -141,23 +141,37 @@ def run_sim():
     # We need this model to create the dof manager
     theModel.particleKernelDomains["my_all_with_all"] = theParticleKernelDomain
 
+    
+    constraintsLeft = []
+    i = 0
+    for particle in theModel.particleSets["rectangular_grid_left"]:
+        constraintsLeft.append(ParticleLagrangianWeakDirichletOnParticleSetFactory(f"left_{i}", 
+                                [particle],
+                                "displacement",
+                                {0: 0},
+                                theModel,
+                                location="vertex",
+                                vertexID = [0,1]))
+        i += 1
+    constraintsBottom = []
+    i = 0
+    for particle in theModel.particleSets["rectangular_grid_bottom"]:
+        constraintsBottom.append(ParticleLagrangianWeakDirichletOnParticleSetFactory(f"bottom_{i}", 
+                                [particle],
+                                "displacement",
+                                {1: 0},
+                                theModel,
+                                location="vertex",
+                                vertexID = [1,2]))
+        i += 1
 
-    dirichletLeft = ParticleLagrangianWeakDirichletOnParticleSetFactory("left", 
-                                                                        theModel.particleSets[f"rectangular_grid_left"],
-                                                                        "center",
-                                                                        "displacement",
-                                                                        {0: 0},
-                                                                        theModel)
-    dirichletBottom = ParticleLagrangianWeakDirichletOnParticleSetFactory("bottom", 
-                                                                          theModel.particleSets[f"rectangular_grid_bottom"],
-                                                                          "center",
-                                                                          "displacement",
-                                                                          {1: 0},
-                                                                          theModel)
- 
 
-    theModel.constraints.update(dirichletLeft)
-    theModel.constraints.update(dirichletBottom)
+
+    for c in constraintsLeft:
+        theModel.constraints.update(c)
+    for c in constraintsBottom:
+        theModel.constraints.update(c)
+
     theModel.prepareYourself(theJournal)
     #=====================================================================
     #                      SET INITIAL STRESS STATE
@@ -259,6 +273,31 @@ def run_sim():
         f_t=lambda t: 1.
     )
 
+    #=====================================================================
+    #                      CWF CORRECTION 
+    #=====================================================================
+
+    cwf_left = ParticleDistributedLoad(
+        name                = "cwf_left",
+        model               = theModel,
+        journal             = theJournal,
+        particles           = theModel.particleSets["rectangular_grid_left"],
+        distributedLoadType = "cwfcorrection",
+        loadVector          = np.array([0]),
+        surfaceID=4,
+        f_t=lambda t: 1.
+    )
+    cwf_bottom = ParticleDistributedLoad(
+        name                = "cwf_bottom",
+        model               = theModel,
+        journal             = theJournal,
+        particles           = theModel.particleSets["rectangular_grid_bottom"],
+        distributedLoadType = "cwfcorrection",
+        loadVector          = np.array([0]),
+        surfaceID=1,
+        f_t=lambda t: 1.
+    )
+
     incSize = 1e-1
     adaptiveTimeStepper = AdaptiveTimeStepper(0.0, 1.0, incSize, incSize, incSize / 1, 50, theJournal)
 
@@ -302,7 +341,8 @@ def run_sim():
             particleManagers=[theParticleManager],
             constraints=theModel.constraints.values(),
             userIterationOptions=iterationOptions,
-            particleDistributedLoads=[pressure_top, pressure_right],
+            #particleDistributedLoads=[pressure_top, pressure_right],
+            particleDistributedLoads=[pressure_top, pressure_right, cwf_left, cwf_bottom],
             vciManagers=[vciManager],
         )
 
