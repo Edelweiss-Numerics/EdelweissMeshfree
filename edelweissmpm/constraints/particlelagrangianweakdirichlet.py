@@ -59,7 +59,7 @@ class ParticleLagrangianWeakDirichlet(MPMConstraintBase):
             elif location == "vertex":
                 if vertexID is None:
                     raise ValueError("vertexID must be specified when location is 'vertex'.")
-                constraintLocation = particle.getVertexCoordinates(vertexID)
+                constraintLocation = particle.getVertexCoordinates()[vertexID]
             return constraintLocation
 
         self._getConstraintLocation = _getConstraintLocation
@@ -181,15 +181,15 @@ def ParticleLagrangianWeakDirichletOnParticleSetFactory(
     constraints = dict()
     for i, p in enumerate(particleSet):
         if location == "vertex":
-            if isinstance(vertexID, int):
-                name = f"{baseName}_{i}_v{vertexID}"
-                constraint = ParticleLagrangianWeakDirichlet( name, p, field, prescribedStepDelta, model, location, faceID, vertexID)
-                constraints[name] = constraint
-            else:
+            if isinstance(vertexID, list):
                 for vertIdx in vertexID:
                     name = f"{baseName}_{i}_v{vertIdx}"
                     constraint = ParticleLagrangianWeakDirichlet( name, p, field, prescribedStepDelta, model, location, faceID, vertIdx)
                     constraints[name] = constraint
+            else:
+                name = f"{baseName}_{i}_v{vertexID}"
+                constraint = ParticleLagrangianWeakDirichlet( name, p, field, prescribedStepDelta, model, location, faceID, vertexID)
+                constraints[name] = constraint
         else:
             name = f"{baseName}_{i}"
             constraint = ParticleLagrangianWeakDirichlet( name, p, field, prescribedStepDelta, model, location, faceID, vertexID)
