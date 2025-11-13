@@ -404,19 +404,19 @@ _s_wholeBoundary_S1, S1
 *Solid Section, elset=all, material=material
 1.,
 *End Part
-**  
+**
 **
 ** ASSEMBLY
 **
 *Assembly, name=Assembly
-**  
+**
 *Instance, name=potato-1, part=potato
 *End Instance
-**  
+**
 *End Assembly
-** 
+**
 ** MATERIALS
-** 
+**
 *Material, name=material
 *Elastic
 210000., 0.3

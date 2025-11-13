@@ -184,14 +184,20 @@ def ParticleLagrangianWeakDirichletOnParticleSetFactory(
             if isinstance(vertexID, list):
                 for vertIdx in vertexID:
                     name = f"{baseName}_{i}_v{vertIdx}"
-                    constraint = ParticleLagrangianWeakDirichlet( name, p, field, prescribedStepDelta, model, location, faceID, vertIdx)
+                    constraint = ParticleLagrangianWeakDirichlet(
+                        name, p, field, prescribedStepDelta, model, location, faceID, vertIdx
+                    )
                     constraints[name] = constraint
             else:
                 name = f"{baseName}_{i}_v{vertexID}"
-                constraint = ParticleLagrangianWeakDirichlet( name, p, field, prescribedStepDelta, model, location, faceID, vertexID)
+                constraint = ParticleLagrangianWeakDirichlet(
+                    name, p, field, prescribedStepDelta, model, location, faceID, vertexID
+                )
                 constraints[name] = constraint
         else:
             name = f"{baseName}_{i}"
-            constraint = ParticleLagrangianWeakDirichlet( name, p, field, prescribedStepDelta, model, location, faceID, vertexID)
+            constraint = ParticleLagrangianWeakDirichlet(
+                name, p, field, prescribedStepDelta, model, location, faceID, vertexID
+            )
             constraints[name] = constraint
     return constraints
