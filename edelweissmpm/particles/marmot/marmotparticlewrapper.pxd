@@ -149,6 +149,8 @@ cdef extern from "Marmot/MarmotParticle.h" namespace "Marmot::Meshfree":
 
         void setProperty( const string& propertyName, const double* property )
 
+        void setInitialCondition( const string& stateName, const double* stateValue )
+
         vector[ string ] getPropertyNames() const
 
 
