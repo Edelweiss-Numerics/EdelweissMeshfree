@@ -37,9 +37,6 @@ from edelweissfe.linsolve.pardiso.pardiso import pardisoSolve
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 from edelweissfe.utils.exceptions import StepFailed
 
-from edelweissmpm.constraints.particlepenaltyweakdirichtlet import (
-    ParticlePenaltyWeakDirichlet,
-)
 from edelweissmpm.constraints.particlelagrangianweakdirichlet import (
     ParticleLagrangianWeakDirichletOnParticleSetFactory,
 )
@@ -62,10 +59,9 @@ from edelweissmpm.outputmanagers.ensight import OutputManager as EnsightOutputMa
 from edelweissmpm.particlemanagers.kdbinorganizedparticlemanager import (
     KDBinOrganizedParticleManager,
 )
-from edelweissmpm.stepactions.particledistributedload import ParticleDistributedLoad
-
 from edelweissmpm.particles.marmot.marmotparticlewrapper import MarmotParticleWrapper
 from edelweissmpm.solvers.nqs import NonlinearQuasistaticSolver
+from edelweissmpm.stepactions.particledistributedload import ParticleDistributedLoad
 
 # from edelweissmpm.generators.rectangularparticlegridgenerator import (
 #     generateRectangularParticleGrid,
@@ -141,31 +137,24 @@ def run_sim():
     # We need this model to create the dof manager
     theModel.particleKernelDomains["my_all_with_all"] = theParticleKernelDomain
 
-    
     constraintsLeft = []
     i = 0
     for particle in theModel.particleSets["rectangular_grid_left"]:
-        constraintsLeft.append(ParticleLagrangianWeakDirichletOnParticleSetFactory(f"left_{i}", 
-                                [particle],
-                                "displacement",
-                                {0: 0},
-                                theModel,
-                                location="vertex",
-                                vertexID = [0,1]))
+        constraintsLeft.append(
+            ParticleLagrangianWeakDirichletOnParticleSetFactory(
+                f"left_{i}", [particle], "displacement", {0: 0}, theModel, location="vertex", vertexID=[0, 1]
+            )
+        )
         i += 1
     constraintsBottom = []
     i = 0
     for particle in theModel.particleSets["rectangular_grid_bottom"]:
-        constraintsBottom.append(ParticleLagrangianWeakDirichletOnParticleSetFactory(f"bottom_{i}", 
-                                [particle],
-                                "displacement",
-                                {1: 0},
-                                theModel,
-                                location="vertex",
-                                vertexID = [1,2]))
+        constraintsBottom.append(
+            ParticleLagrangianWeakDirichletOnParticleSetFactory(
+                f"bottom_{i}", [particle], "displacement", {1: 0}, theModel, location="vertex", vertexID=[1, 2]
+            )
+        )
         i += 1
-
-
 
     for c in constraintsLeft:
         theModel.constraints.update(c)
@@ -173,13 +162,12 @@ def run_sim():
         theModel.constraints.update(c)
 
     theModel.prepareYourself(theJournal)
-    #=====================================================================
+    # =====================================================================
     #                      SET INITIAL STRESS STATE
-    #=====================================================================
+    # =====================================================================
 
     for particle in theModel.particles.values():
         particle.setInitialCondition("geostaticstress", -100)
-
 
     theJournal.printPrettyTable(theModel.makePrettyTableSummary(), "summary")
 
@@ -233,44 +221,35 @@ def run_sim():
     ensightOutput.updateDefinition(
         fieldOutput=fieldOutputController.fieldOutputs["deformation gradient"], create="perElement"
     )
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["stress"], create="perElement"
-    )
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["F0 XX"], create="perElement"
-    )
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["F0 YY"], create="perElement"
-    )
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["F0 ZZ"], create="perElement"
-    )
+    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["stress"], create="perElement")
+    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["F0 XX"], create="perElement")
+    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["F0 YY"], create="perElement")
+    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["F0 ZZ"], create="perElement")
     ensightOutput.initializeJob()
 
-
-    #=====================================================================
+    # =====================================================================
     #                      DISTRIBUTED LOADS
-    #=====================================================================
+    # =====================================================================
 
     pressure_top = ParticleDistributedLoad(
-        name                = "pressure_top",
-        model               = theModel,
-        journal             = theJournal,
-        particles           = theModel.particleSets["rectangular_grid_top"],
-        distributedLoadType = "pressure",
-        loadVector          = np.array([-100]),
+        name="pressure_top",
+        model=theModel,
+        journal=theJournal,
+        particles=theModel.particleSets["rectangular_grid_top"],
+        distributedLoadType="pressure",
+        loadVector=np.array([-100]),
         surfaceID=3,
-        f_t=lambda t: 1.
+        f_t=lambda t: 1.0,
     )
     pressure_right = ParticleDistributedLoad(
-        name                = "pressure_right",
-        model               = theModel,
-        journal             = theJournal,
-        particles           = theModel.particleSets["rectangular_grid_right"],
-        distributedLoadType = "pressure",
-        loadVector          = np.array([-100]),
+        name="pressure_right",
+        model=theModel,
+        journal=theJournal,
+        particles=theModel.particleSets["rectangular_grid_right"],
+        distributedLoadType="pressure",
+        loadVector=np.array([-100]),
         surfaceID=2,
-        f_t=lambda t: 1.
+        f_t=lambda t: 1.0,
     )
 
     incSize = 1e-1
@@ -304,7 +283,6 @@ def run_sim():
     vciManager = VariationallyConsistentIntegrationManager(
         list(theModel.particles.values()), list(theModel.meshfreeKernelFunctions.values()), theBoundary
     )
-
 
     try:
         nonlinearSolver.solveStep(

@@ -38,12 +38,13 @@ from edelweissfe.sets.nodeset import NodeSet
 from edelweissmpm.meshfree.kernelfunctions.base.basemeshfreekernelfunction import (
     BaseMeshfreeKernelFunction,
 )
+from edelweissmpm.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunction import (
+    MarmotMeshfreeKernelFunctionWrapper,
+)
 from edelweissmpm.models.mpmmodel import MPMModel
 from edelweissmpm.particles.base.baseparticle import BaseParticle
 from edelweissmpm.sets.particleset import ParticleSet
-from edelweissmpm.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunction import (
-        MarmotMeshfreeKernelFunctionWrapper,
-    )
+
 
 def computeParticleArea(vertices):
     """
@@ -55,8 +56,14 @@ def computeParticleArea(vertices):
     s2 = sum(vertices[i][1] * vertices[(i + 1) % n][0] for i in range(n))
     return abs(s1 - s2) / 2
 
-def kernelFunctionFactoryCallback(node: Node, kernelFunction: str, supportRadius: float, continuityOrder: int) -> BaseMeshfreeKernelFunction:
-    return MarmotMeshfreeKernelFunctionWrapper(node, kernelFunction, supportRadius=supportRadius, continuityOrder=continuityOrder)
+
+def kernelFunctionFactoryCallback(
+    node: Node, kernelFunction: str, supportRadius: float, continuityOrder: int
+) -> BaseMeshfreeKernelFunction:
+    return MarmotMeshfreeKernelFunctionWrapper(
+        node, kernelFunction, supportRadius=supportRadius, continuityOrder=continuityOrder
+    )
+
 
 def parse_inp_file(input_file_path):
     nodes = {}
@@ -72,23 +79,23 @@ def parse_inp_file(input_file_path):
     current_elset = None
     generate_flag = False
 
-    with open(input_file_path, 'r') as file:
+    with open(input_file_path, "r") as file:
         for line in file:
             line = line.strip()
-            if not line or line.startswith('**'):  # Kommentar oder leer
+            if not line or line.startswith("**"):  # Kommentar oder leer
                 continue
 
             # Abschnittserkennung
             lower = line.lower()
-            if lower.startswith('*node'):
+            if lower.startswith("*node"):
                 reading_nodes = True
                 reading_elements = False
-                reading_surfaces= False
+                reading_surfaces = False
                 current_nset = None
                 current_elset = None
                 continue
 
-            elif lower.startswith('*element'):
+            elif lower.startswith("*element"):
                 reading_nodes = False
                 reading_elements = True
                 reading_surfaces = False
@@ -96,37 +103,37 @@ def parse_inp_file(input_file_path):
                 current_elset = None
                 continue
 
-            elif lower.startswith('*surface'):
+            elif lower.startswith("*surface"):
                 reading_nodes = False
                 reading_elements = False
                 reading_surfaces = True
                 current_nset = None
                 current_elset = None
-                current_surface = line.split('name=')[1].split(',')[0].strip() if '=' in line else 'default'
+                current_surface = line.split("name=")[1].split(",")[0].strip() if "=" in line else "default"
                 continue
 
-            elif lower.startswith('*nset'):
+            elif lower.startswith("*nset"):
                 reading_nodes = reading_elements = False
-                current_nset = line.split('=')[1].split(',')[0].strip() if '=' in line else 'default'
+                current_nset = line.split("=")[1].split(",")[0].strip() if "=" in line else "default"
                 current_elset = None
-                generate_flag = 'generate' in lower
+                generate_flag = "generate" in lower
                 continue
 
-            elif lower.startswith('*elset'):
+            elif lower.startswith("*elset"):
                 reading_nodes = reading_elements = False
-                current_elset = line.split('=')[1].split(',')[0].strip() if '=' in line else 'default'
+                current_elset = line.split("=")[1].split(",")[0].strip() if "=" in line else "default"
                 current_nset = None
-                generate_flag = 'generate' in lower
+                generate_flag = "generate" in lower
                 continue
 
-            elif line.startswith('*'):  # others
+            elif line.startswith("*"):  # others
                 reading_nodes = reading_elements = False
                 current_nset = current_elset = None
                 continue
 
             # --- read nodes ---
             if reading_nodes:
-                parts = [p.strip() for p in line.split(',') if p.strip()]
+                parts = [p.strip() for p in line.split(",") if p.strip()]
                 node_id = int(parts[0])
                 coords = np.array(list(map(float, parts[1:])))
                 nodes[node_id] = coords
@@ -134,14 +141,14 @@ def parse_inp_file(input_file_path):
 
             # --- read elements ---
             if reading_elements:
-                parts = [p.strip() for p in line.split(',') if p.strip()]
+                parts = [p.strip() for p in line.split(",") if p.strip()]
                 element_id = int(parts[0])
                 element_nodes = list(map(int, parts[1:]))
                 elements[element_id] = element_nodes
                 continue
 
             # --- read surfaces ---
-            #if reading_surfaces:
+            # if reading_surfaces:
             #    parts = [p.strip() for p in line.split(',') if p.strip()]
             #    surface_elSet = parts[0]
             #    surface_orientation = int(parts[1][-1])
@@ -152,7 +159,7 @@ def parse_inp_file(input_file_path):
 
             # --- read node- or element set ---
             if current_nset or current_elset:
-                parts = [p.strip() for p in line.split(',') if p.strip()]
+                parts = [p.strip() for p in line.split(",") if p.strip()]
                 if generate_flag:
                     start, end = map(int, parts[:2])
                     step = int(parts[2]) if len(parts) > 2 else 1
@@ -170,16 +177,16 @@ def parse_inp_file(input_file_path):
 
 
 def generateKernelFunctionGridFromInputFile(
-        inputFilePath: str,
-        journal: Journal,
-        model: MPMModel,
-        #kernelFunctionFactoryCallback: typing.Callable[[Node], BaseMeshfreeKernelFunction],
-        kernelFunctionSpecifier: dict,
-        particleFactoryCallback: typing.Callable[[np.ndarray, float], BaseParticle],
-        firstKernelFunctionNumber: int = 1,
-        firstParticleNumber: int = 1,
-        name: str = "grid_from_file"
-        ) -> MPMModel:
+    inputFilePath: str,
+    journal: Journal,
+    model: MPMModel,
+    # kernelFunctionFactoryCallback: typing.Callable[[Node], BaseMeshfreeKernelFunction],
+    kernelFunctionSpecifier: dict,
+    particleFactoryCallback: typing.Callable[[np.ndarray, float], BaseParticle],
+    firstKernelFunctionNumber: int = 1,
+    firstParticleNumber: int = 1,
+    name: str = "grid_from_file",
+) -> MPMModel:
     """Generate a grid of particles from an Abaqus input file.
     Returns
     -------
@@ -193,12 +200,12 @@ def generateKernelFunctionGridFromInputFile(
     currentKernelFunctionNumber = firstKernelFunctionNumber
     currentParticleNumber = firstParticleNumber
     feNodesParticlesMaps = []
-    #print(nsets)
+    # print(nsets)
 
     for nsetName, nodeLabels in nsets.items():
         for n in nodeLabels:
             otherNsetName = nsets.keys()
-            #print(otherNsetName)
+            # print(otherNsetName)
             for nSetOther in otherNsetName:
                 if nsetName == nSetOther:
                     continue
@@ -208,18 +215,24 @@ def generateKernelFunctionGridFromInputFile(
     for element_id, element_nodes in elements.items():
 
         # center coordinates of element nodes
-        maxXDist = max([nodes[node_id][0] for node_id in element_nodes]) - min([nodes[node_id][0] for node_id in element_nodes])
-        maxYDist = max([nodes[node_id][1] for node_id in element_nodes]) - min([nodes[node_id][1] for node_id in element_nodes])
-        #compute supportRadius in dependence of the maximum x or y distance of each particle
+        maxXDist = max([nodes[node_id][0] for node_id in element_nodes]) - min(
+            [nodes[node_id][0] for node_id in element_nodes]
+        )
+        maxYDist = max([nodes[node_id][1] for node_id in element_nodes]) - min(
+            [nodes[node_id][1] for node_id in element_nodes]
+        )
+        # compute supportRadius in dependence of the maximum x or y distance of each particle
         theSupportRadius = kernelFunctionSpecifier["supportRadiusFactor"] * max(maxXDist, maxYDist)
 
         centerCoordinates = np.mean([nodes[node_id] for node_id in element_nodes], axis=0)
 
-        kf = kernelFunctionFactoryCallback(Node(currentKernelFunctionNumber, centerCoordinates), 
-                                           kernelFunction=kernelFunctionSpecifier["kernelFunction"],
-                                           supportRadius=theSupportRadius,
-                                           continuityOrder=kernelFunctionSpecifier["continuityOrder"])
-        #kf = kernelFunctionFactoryCallback(Node(currentKernelFunctionNumber, centerCoordinates))
+        kf = kernelFunctionFactoryCallback(
+            Node(currentKernelFunctionNumber, centerCoordinates),
+            kernelFunction=kernelFunctionSpecifier["kernelFunction"],
+            supportRadius=theSupportRadius,
+            continuityOrder=kernelFunctionSpecifier["continuityOrder"],
+        )
+        # kf = kernelFunctionFactoryCallback(Node(currentKernelFunctionNumber, centerCoordinates))
         model.meshfreeKernelFunctions[currentKernelFunctionNumber] = kf
         # create particle for each element
         particleVertices = np.asarray([nodes[node_id] for node_id in element_nodes])
@@ -248,13 +261,15 @@ def generateKernelFunctionGridFromInputFile(
     # create particle- and nodeSets for model
     model.particleSets[f"{name}_all"] = ParticleSet(f"{name}_all", particles)
     for elsetName, elementLabels in elsets.items():
-    
-        model.particleSets[f"{name}_{elsetName}"] = ParticleSet(f"{name}_{elsetName}", [particles[e-1] for e in elementLabels])
-        model.nodeSets[f"{name}_{elsetName}"] = NodeSet(f"{name}_{elsetName}", [kfNodes[e-1] for e in elementLabels])
-    
+
+        model.particleSets[f"{name}_{elsetName}"] = ParticleSet(
+            f"{name}_{elsetName}", [particles[e - 1] for e in elementLabels]
+        )
+        model.nodeSets[f"{name}_{elsetName}"] = NodeSet(f"{name}_{elsetName}", [kfNodes[e - 1] for e in elementLabels])
+
         if not elsetName.startswith("_"):
             model.vertexSets[f"{name}_{elsetName}_verts"] = []
-    
+
             seen_nodes = []
             for idx, e in enumerate(elementLabels):
                 vertices = []
@@ -267,7 +282,7 @@ def generateKernelFunctionGridFromInputFile(
                 model.vertexSets[f"{name}_{elsetName}_verts"].append(vertices)
 
     # add surface to model
-    #for surfaceName, surfaceData in surfaces.items():
+    # for surfaceName, surfaceData in surfaces.items():
     #    modelSurfaceName = f"{name}_{surfaceName}"
     #    for elsetName, orientation in surfaceData.items():
     #        print(surfaceName, elsetName, orientation)
@@ -276,19 +291,23 @@ def generateKernelFunctionGridFromInputFile(
     #        else:
     #            model.surfaces[f"{name}_{surfaceName}"][orientation] = [particles[e-1] for e in elsets[elsetName]]
 
-    #journal.info(f"Generated {len(kernelFunctions)} kernel functions from input file.")
+    # journal.info(f"Generated {len(kernelFunctions)} kernel functions from input file.")
 
     return model
 
+
 if __name__ == "__main__":
-    from edelweissmpm.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunction import (
-        MarmotMeshfreeKernelFunctionWrapper,
-    )
     from edelweissmpm.meshfree.approximations.marmot.marmotmeshfreeapproximation import (
         MarmotMeshfreeApproximationWrapper,
     )
-    from edelweissmpm.particles.marmot.marmotparticlewrapper import MarmotParticleWrapper
-    #visualize read input file
+    from edelweissmpm.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunction import (
+        MarmotMeshfreeKernelFunctionWrapper,
+    )
+    from edelweissmpm.particles.marmot.marmotparticlewrapper import (
+        MarmotParticleWrapper,
+    )
+
+    # visualize read input file
     theModel = MPMModel(dimension=2)
     theJournal = Journal()
 
@@ -301,32 +320,30 @@ if __name__ == "__main__":
 
     theModel = generateKernelFunctionGridFromInputFile(
         inputFilePath="inputBorehole_finer.inp",
-        #inputFilePath="inputBorehole.inp",
+        # inputFilePath="inputBorehole.inp",
         journal=theJournal,
         model=theModel,
         kernelFunctionSpecifier={"kernelFunction": "BSplineBoxed", "continuityOrder": 3, "supportRadiusFactor": 1.1},
-        particleFactoryCallback=lambda number, vertexCoordinates, volume: MarmotParticleWrapper(marmotParticleType,
-                                                                                                number,
-                                                                                                vertexCoordinates,
-                                                                                                volume,
-                                                                                                theApproximation,
-                                                                                                theMaterial),
+        particleFactoryCallback=lambda number, vertexCoordinates, volume: MarmotParticleWrapper(
+            marmotParticleType, number, vertexCoordinates, volume, theApproximation, theMaterial
+        ),
         firstKernelFunctionNumber=1,
         firstParticleNumber=1,
         name="grid_from_file",
     )
 
     import matplotlib.pyplot as plt
+
     plt.figure()
     for n in theModel.nodes.values():
-        plt.plot(n.coordinates[0], n.coordinates[1], 'ko', markersize=1)
-        #plt.text(n.coordinates[0], n.coordinates[1], str(n.label))
+        plt.plot(n.coordinates[0], n.coordinates[1], "ko", markersize=1)
+        # plt.text(n.coordinates[0], n.coordinates[1], str(n.label))
     for p in theModel.particles.values():
         verts = p.getVertexCoordinates()
-        #verts = np.vstack((p.getVertexCoordinates(), p.vertexCoordinates[0]))
-        plt.plot(verts[:, 0], verts[:, 1], linestyle='-', linewidth=.5, color='k')
+        # verts = np.vstack((p.getVertexCoordinates(), p.vertexCoordinates[0]))
+        plt.plot(verts[:, 0], verts[:, 1], linestyle="-", linewidth=0.5, color="k")
 
-    #for f in theModel.meshfreeKernelFunctions.values():
+    # for f in theModel.meshfreeKernelFunctions.values():
     #    boundingBox = f.getBoundingBox()
     #    boundingBoxMin = boundingBox[0]
     #    boundingBoxMax = boundingBox[1]
@@ -336,23 +353,25 @@ if __name__ == "__main__":
     #    plt.gca().add_patch(plt.Rectangle(boundingBoxMin, width, height, linestyle='-', linewidth=1, edgecolor='r', facecolor='none'))
 
     for pSet in theModel.particleSets.values():
-        color = np.random.rand(3,)
+        color = np.random.rand(
+            3,
+        )
         for p in pSet.particles:
             verts = p.getVertexCoordinates()
             plt.fill(verts[:, 0], verts[:, 1], color=color, alpha=0.3)
 
-    for vSetName,vSet in theModel.vertexSets.items():
-        #if "right" in vSetName:
-        for i,vertices in enumerate(vSet):
-            #vertices = [0,1]
+    for vSetName, vSet in theModel.vertexSets.items():
+        # if "right" in vSetName:
+        for i, vertices in enumerate(vSet):
+            # vertices = [0,1]
             for ver in vertices:
                 vert = theModel.particleSets[vSetName.removesuffix("_verts")][i].getVertexCoordinates()[ver]
-                plt.plot(vert[0], vert[1], 'ro', markersize=5)
-                plt.text(vert[0], vert[1], f"{i}|{ver}", color='r')
-        #verts = theModel.particleSets[vSetName.removesuffix("_verts")][i].getVertexCoordinates()[ver]
+                plt.plot(vert[0], vert[1], "ro", markersize=5)
+                plt.text(vert[0], vert[1], f"{i}|{ver}", color="r")
+        # verts = theModel.particleSets[vSetName.removesuffix("_verts")][i].getVertexCoordinates()[ver]
         verts = theModel.particleSets[vSetName.removesuffix("_verts")][i].getVertexCoordinates()[vertices]
 
-    #for nSet in theModel.nodeSets.values():
+    # for nSet in theModel.nodeSets.values():
     #    if isinstance(nSet, list):
     #        continue
     #    #print(nSet)
@@ -361,12 +380,12 @@ if __name__ == "__main__":
     #    for n in nSet.nodes:
     #        plt.plot(n.coordinates[0], n.coordinates[1], 'o', color=color, markersize=3)
 
-    #for surfaceName, surfaceData in theModel.surfaces.items():
+    # for surfaceName, surfaceData in theModel.surfaces.items():
     #    for orientation, particles in surfaceData.items():
     #        #print(surfaceName, orientation, len(particles))
     #        for p in particles:
     #            verts = p.getVertexCoordinates()
     #            plt.plot(verts[:, 0], verts[:, 1], linestyle='-', linewidth=2, color='b')
 
-    plt.axis('equal')
+    plt.axis("equal")
     plt.show()

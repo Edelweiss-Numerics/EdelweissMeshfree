@@ -26,7 +26,6 @@
 #  ---------------------------------------------------------------------
 
 import argparse
-#import gstools
 
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
@@ -34,21 +33,16 @@ import pytest
 from edelweissfe.journal.journal import Journal
 from edelweissfe.linsolve.pardiso.pardiso import pardisoSolve
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
-from edelweissfe.utils.exceptions import StepFailed
 
 from edelweissmpm.constraints.particlelagrangianweakdirichlet import (
     ParticleLagrangianWeakDirichletOnParticleSetFactory,
 )
 from edelweissmpm.fieldoutput.fieldoutput import MPMFieldOutputController
-
 from edelweissmpm.generators.abqinpfilegenerator import (
     generateKernelFunctionGridFromInputFile,
 )
 from edelweissmpm.meshfree.approximations.marmot.marmotmeshfreeapproximation import (
     MarmotMeshfreeApproximationWrapper,
-)
-from edelweissmpm.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunction import (
-    MarmotMeshfreeKernelFunctionWrapper,
 )
 from edelweissmpm.meshfree.particlekerneldomain import ParticleKernelDomain
 from edelweissmpm.models.mpmmodel import MPMModel
@@ -58,16 +52,21 @@ from edelweissmpm.particlemanagers.kdbinorganizedparticlemanager import (
 )
 from edelweissmpm.particles.marmot.marmotparticlewrapper import MarmotParticleWrapper
 from edelweissmpm.solvers.nqs import NonlinearQuasistaticSolver
-#from edelweissmpm.solvers.nqsmparclength import NonlinearQuasistaticMarmotArcLengthSolver
-
 from edelweissmpm.stepactions.particledistributedload import ParticleDistributedLoad
-from edelweissmpm.stepactions.particleindirectcontrol import IndirectControl
 
-def run_sim(inputFilePath = "test_potato.inp",
-            name="potato",
-            supportRadiusFactor=1.1,
-            outputName="_potato",
-            particleType="GradientEnhancedMicropolarSQCNIxSDI/PlaneStrain/Quad"):
+# import gstools
+
+
+# from edelweissmpm.solvers.nqsmparclength import NonlinearQuasistaticMarmotArcLengthSolver
+
+
+def run_sim(
+    inputFilePath="test_potato.inp",
+    name="potato",
+    supportRadiusFactor=1.1,
+    outputName="_potato",
+    particleType="GradientEnhancedMicropolarSQCNIxSDI/PlaneStrain/Quad",
+):
     dimension = 2
 
     # set nump linewidth to 200:
@@ -81,24 +80,28 @@ def run_sim(inputFilePath = "test_potato.inp",
 
     theModel = MPMModel(dimension)
 
-    kernelFunctionSpecifier={"kernelFunction": "BSplineBoxed", "continuityOrder": 3, "supportRadiusFactor": supportRadiusFactor}
+    kernelFunctionSpecifier = {
+        "kernelFunction": "BSplineBoxed",
+        "continuityOrder": 3,
+        "supportRadiusFactor": supportRadiusFactor,
+    }
 
     theApproximation = MarmotMeshfreeApproximationWrapper(
         "ReproducingKernelImplicitGradient", dimension, completenessOrder=1
     )
 
-    #=====================================================================
+    # =====================================================================
     #                             MATERIAL
-    #=====================================================================
+    # =====================================================================
     theMaterial = {
         "material": "GMDamagedShearNeoHooke",
         # E, nu, GcToG, lb, lt, polarRatio
         "properties": np.array([4.5e3, 0.2, 1, 1, 1, 1.4999, 1.0]),
     }
-    
-    #=====================================================================
+
+    # =====================================================================
     #                       PARTICLE FACTORY & MODEL
-    #=====================================================================
+    # =====================================================================
 
     def TheParticleFactory(number, vertexCoordinates, volume):
         return MarmotParticleWrapper(
@@ -110,26 +113,28 @@ def run_sim(inputFilePath = "test_potato.inp",
             theMaterial,
         )
 
-    theModel = generateKernelFunctionGridFromInputFile(inputFilePath=inputFilePath,
-                                                       journal=theJournal,
-                                                       model=theModel,
-                                                       kernelFunctionSpecifier=kernelFunctionSpecifier,
-                                                       particleFactoryCallback=TheParticleFactory,
-                                                       firstKernelFunctionNumber=1,
-                                                       firstParticleNumber=1,
-                                                       name=name)
+    theModel = generateKernelFunctionGridFromInputFile(
+        inputFilePath=inputFilePath,
+        journal=theJournal,
+        model=theModel,
+        kernelFunctionSpecifier=kernelFunctionSpecifier,
+        particleFactoryCallback=TheParticleFactory,
+        firstKernelFunctionNumber=1,
+        firstParticleNumber=1,
+        name=name,
+    )
 
-    #=====================================================================
+    # =====================================================================
     #                      SET PARTICLE PROPERTIES
-    #=====================================================================
+    # =====================================================================
 
     for particle in theModel.particles.values():
-        particle.setProperty("newmark-beta beta", 0.0 )
-        particle.setProperty("newmark-beta gamma", 0.0 )
-        particle.setProperty("VCI order", 0 )
+        particle.setProperty("newmark-beta beta", 0.0)
+        particle.setProperty("newmark-beta gamma", 0.0)
+        particle.setProperty("VCI order", 0)
 
         if "NSNI" in particleType:
-            particle.setProperty("stabilize angular momentum", 1.0 )
+            particle.setProperty("stabilize angular momentum", 1.0)
 
     # let's create the particle kernel domain
     theParticleKernelDomain = ParticleKernelDomain(
@@ -148,31 +153,35 @@ def run_sim(inputFilePath = "test_potato.inp",
     # We need this model to create the dof manager
     theModel.particleKernelDomains["my_all_with_all"] = theParticleKernelDomain
 
-    #=====================================================================
+    # =====================================================================
     #                      SET DIRICHLET BCs
-    #=====================================================================
+    # =====================================================================
 
-    dirichletLeftBottom = ParticleLagrangianWeakDirichletOnParticleSetFactory("leftBottom", 
-                                                                        theModel.particleSets[f"{name}_b_leftBottom"],
-                                                                        "displacement",
-                                                                        {0: 0, 1: 0},
-                                                                        theModel,
-                                                                        location="center")
-    dirichletRightBottom = ParticleLagrangianWeakDirichletOnParticleSetFactory("rightBottom", 
-                                                                        theModel.particleSets[f"{name}_b_rightBottom"],
-                                                                        "displacement",
-                                                                        {0: 0, 1: 0},
-                                                                        theModel,
-                                                                        location="center")
+    dirichletLeftBottom = ParticleLagrangianWeakDirichletOnParticleSetFactory(
+        "leftBottom",
+        theModel.particleSets[f"{name}_b_leftBottom"],
+        "displacement",
+        {0: 0, 1: 0},
+        theModel,
+        location="center",
+    )
+    dirichletRightBottom = ParticleLagrangianWeakDirichletOnParticleSetFactory(
+        "rightBottom",
+        theModel.particleSets[f"{name}_b_rightBottom"],
+        "displacement",
+        {0: 0, 1: 0},
+        theModel,
+        location="center",
+    )
     theModel.constraints.update(dirichletLeftBottom)
     theModel.constraints.update(dirichletRightBottom)
     theModel.prepareYourself(theJournal)
 
     theJournal.printPrettyTable(theModel.makePrettyTableSummary(), "summary")
 
-    #=====================================================================
+    # =====================================================================
     #                      SET FIELD OUTPUT
-    #=====================================================================
+    # =====================================================================
 
     fieldOutputController = MPMFieldOutputController(theModel, theJournal)
 
@@ -202,12 +211,12 @@ def run_sim(inputFilePath = "test_potato.inp",
         theModel.particleSets["all"],
         "microrotation",
     )
-    
+
     fieldOutputController.initializeJob()
 
-    #=====================================================================
+    # =====================================================================
     #                      ENSIGHT OUTPUT
-    #=====================================================================
+    # =====================================================================
 
     ensightOutput = EnsightOutputManager(outputName, theModel, fieldOutputController, theJournal, None)
     ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["displacement"], create="perElement")
@@ -218,26 +227,24 @@ def run_sim(inputFilePath = "test_potato.inp",
     ensightOutput.updateDefinition(
         fieldOutput=fieldOutputController.fieldOutputs["deformation gradient"], create="perElement"
     )
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["stress"], create="perElement"
-    )
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["microrotation"], create="perElement"
-    )
+    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["stress"], create="perElement")
+    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["microrotation"], create="perElement")
     ensightOutput.initializeJob()
 
-    #=====================================================================
+    # =====================================================================
     #                      SOLVER SETUP
-    #=====================================================================
+    # =====================================================================
 
     incSize = 1
-    adaptiveTimeStepper = AdaptiveTimeStepper(currentTime = theModel.time,
-                                              stepLength = 1,
-                                              startIncrement = incSize,
-                                              maxIncrement = incSize,
-                                              minIncrement = incSize / 1,
-                                              maxNumberIncrements = 5000,
-                                              journal = theJournal)
+    adaptiveTimeStepper = AdaptiveTimeStepper(
+        currentTime=theModel.time,
+        stepLength=1,
+        startIncrement=incSize,
+        maxIncrement=incSize,
+        minIncrement=incSize / 1,
+        maxNumberIncrements=5000,
+        journal=theJournal,
+    )
 
     nonlinearSolver = NonlinearQuasistaticSolver(theJournal)
     iterationOptions = nonlinearSolver.validOptions.copy()
@@ -259,8 +266,6 @@ def run_sim(inputFilePath = "test_potato.inp",
     iterationOptions["spec. relative field correction tolerances"]["micro rotation"] = 1e10
     iterationOptions["spec. absolute field correction tolerances"]["micro rotation"] = 1e10
 
-
-
     linearSolver = pardisoSolve
 
     from edelweissmpm.meshfree.vci import (
@@ -268,9 +273,9 @@ def run_sim(inputFilePath = "test_potato.inp",
         VariationallyConsistentIntegrationManager,
     )
 
-    #=====================================================================
+    # =====================================================================
     #                      VCI SETUP
-    #=====================================================================
+    # =====================================================================
 
     theBoundary = [
         BoundaryParticleDefinition(theModel.particleSets[f"{name}__s_wholeBoundary_S1"], np.empty(2), 1),
@@ -283,34 +288,34 @@ def run_sim(inputFilePath = "test_potato.inp",
         list(theModel.particles.values()), list(theModel.meshfreeKernelFunctions.values()), theBoundary
     )
 
-    #=====================================================================
+    # =====================================================================
     #                      DISTRIBUTED LOADS
-    #=====================================================================
+    # =====================================================================
 
     pressure_S1 = ParticleDistributedLoad(
-        name                = "pressure_S1",
-        model               = theModel,
-        journal             = theJournal,
-        particles           = theModel.particleSets[f"{name}__s_top_S1"],
-        distributedLoadType = "pressure",
-        loadVector          = np.array([-10]),
+        name="pressure_S1",
+        model=theModel,
+        journal=theJournal,
+        particles=theModel.particleSets[f"{name}__s_top_S1"],
+        distributedLoadType="pressure",
+        loadVector=np.array([-10]),
         surfaceID=1,
-        f_t=lambda t: t
+        f_t=lambda t: t,
     )
     pressure_S3 = ParticleDistributedLoad(
-        name                = "pressure_S3",
-        model               = theModel,
-        journal             = theJournal,
-        particles           = theModel.particleSets[f"{name}__s_top_S3"],
-        distributedLoadType = "pressure",
-        loadVector          = np.array([-10]),
+        name="pressure_S3",
+        model=theModel,
+        journal=theJournal,
+        particles=theModel.particleSets[f"{name}__s_top_S3"],
+        distributedLoadType="pressure",
+        loadVector=np.array([-10]),
         surfaceID=3,
-        f_t=lambda t: t
+        f_t=lambda t: t,
     )
-   
-    #=====================================================================
+
+    # =====================================================================
     #                      SOLVE STEPS
-    #=====================================================================
+    # =====================================================================
 
     try:
         theJournal.printSeperationLine()
