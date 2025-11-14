@@ -5,7 +5,7 @@
 ## A light-weight, platform-independent, parallel meshfree module for EdelweissFE.
 
 <!-- <p align="center"> -->
-<!--   <img width="512" height="512" src="./doc/source/borehole_damage_lowdilation.gif"> -->
+<!--   <img width="512" height="512" src="./doc/source/borehole.gif"> -->
 <!-- </p> -->
 
 <!-- See the [documentation](https://edelweissfe.github.io/EdelweissMPM). -->
