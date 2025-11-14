@@ -4,9 +4,9 @@
 # EdelweissMeshfree
 ## A light-weight, platform-independent, parallel meshfree module for EdelweissFE.
 
-<!-- <p align="center"> -->
-<!--   <img width="512" height="512" src="./doc/source/borehole.gif"> -->
-<!-- </p> -->
+<p align="center">
+<img width="400" height="400" src="./doc/source/borehole.gif">
+</p>
 
 <!-- See the [documentation](https://edelweissfe.github.io/EdelweissMPM). -->
 
