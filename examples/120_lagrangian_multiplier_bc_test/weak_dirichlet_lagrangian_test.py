@@ -95,15 +95,18 @@ def run_sim():
         "ReproducingKernelImplicitGradient", dimension, completenessOrder=1
     )
 
-    # We need a dummy material for the material point
+    E = 20000
+    nu = 0.3
+    K = E / (3 * (1 - 2 * nu))
+    G = E / (2 * (1 + nu))
     theMaterial = {
-        "material": "GMDamagedShearNeoHooke",
-        "properties": np.array([3000.0, 0.2, 1, 0.1, 0.2, 1.4999, 1.0]),
+        "material": "FiniteStrainJ2Plasticity",
+        "properties": np.array([K, G, 20e10, 20e10, 0, 0, 1, 1e-9]),
     }
 
     def TheParticleFactory(number, vertexCoordinates, volume):
         return MarmotParticleWrapper(
-            "GradientEnhancedMicropolarSQCNIxNSNI/PlaneStrain/Quad",
+            "DisplacementSQCNIxSDI/PlaneStrain/Quad",
             number,
             vertexCoordinates,
             volume,
@@ -133,11 +136,21 @@ def run_sim():
     theModel.particleKernelDomains["my_all_with_all"] = theParticleKernelDomain
 
     dirichletLeft = ParticleLagrangianWeakDirichletOnParticleSetFactory(
-        "left", theModel.particleSets["rectangular_grid_left"], "center", "displacement", {0: 0, 1: 2}, theModel
+        "left",
+        theModel.particleSets["rectangular_grid_left"],
+        "displacement",
+        {0: 0, 1: 2},
+        theModel,
+        location="center",
     )
 
     dirichletRight = ParticleLagrangianWeakDirichletOnParticleSetFactory(
-        "right", theModel.particleSets["rectangular_grid_right"], "center", "displacement", {0: -3, 1: -2}, theModel
+        "right",
+        theModel.particleSets["rectangular_grid_right"],
+        "displacement",
+        {0: -3, 1: -2},
+        theModel,
+        location="center",
     )
 
     theModel.constraints.update(dirichletLeft)
@@ -187,11 +200,13 @@ def run_sim():
 
     nonlinearSolver = NonlinearQuasistaticSolver(theJournal)
 
-    iterationOptions = dict()
-
-    iterationOptions["max. iterations"] = 15
-    iterationOptions["critical iterations"] = 3
-    iterationOptions["allowed residual growths"] = 10
+    iterationOptions = {
+        "default relative flux residual tolerance": 1e-8,
+        "default relative flux residual tolerance alt.": 1e-3,
+        "default relative field correction tolerance": 1e-8,
+        "default absolute flux residual tolerance": 1e-14,
+        "default absolute field correction tolerance": 1e-14,
+    }
 
     linearSolver = pardisoSolve
 
@@ -263,7 +278,7 @@ def test_sim():
 
     gold = np.loadtxt("gold.csv")
 
-    assert np.isclose(np.copy(res.flatten() - gold.flatten()), 0.0, rtol=1e-12).all()
+    assert np.isclose(np.copy(res.flatten() - gold.flatten()), 0.0, rtol=1e-8).all()
 
 
 if __name__ == "__main__":
