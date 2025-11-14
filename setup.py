@@ -14,7 +14,7 @@
 #
 #  Matthias Neuner matthias.neuner@uibk.ac.at
 #
-#  This file is part of EdelweissMPM.
+#  This file is part of EdelweissMeshfree.
 #
 #  This library is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU Lesser General Public
@@ -22,7 +22,7 @@
 #  version 2.1 of the License, or (at your option) any later version.
 #
 #  The full text of the license can be found in the file LICENSE.md at
-#  the top level directory of EdelweissMPM.
+#  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 import os
 import sys
@@ -42,7 +42,7 @@ directives = {
 
 default_install_prefix = sys.prefix
 print("*" * 80)
-print("EdelweissMPM setup")
+print("EdelweissMeshfree setup")
 print("System prefix: " + sys.prefix)
 print("*" * 80)
 
@@ -73,22 +73,22 @@ def MarmotExtension(pyxpath, *args, **kwargs):
 
 
 extensions += [
-    MarmotExtension("edelweissmpm/cells/marmotcell/marmotcell.pyx"),
+    MarmotExtension("edelweissmeshfree/cells/marmotcell/marmotcell.pyx"),
 ]
 
 extensions += [
-    MarmotExtension("edelweissmpm/cells/marmotcell/lagrangianmarmotcell.pyx"),
+    MarmotExtension("edelweissmeshfree/cells/marmotcell/lagrangianmarmotcell.pyx"),
 ]
 
 extensions += [
-    MarmotExtension("edelweissmpm/cells/marmotcell/bsplinemarmotcell.pyx"),
+    MarmotExtension("edelweissmeshfree/cells/marmotcell/bsplinemarmotcell.pyx"),
 ]
 
 extensions += [
     Extension(
         "*",
         sources=[
-            "edelweissmpm/mpmmanagers/utils.pyx",
+            "edelweissmeshfree/mpmmanagers/utils.pyx",
         ],
         include_dirs=[join(marmot_dir, "include"), numpy.get_include()],
         runtime_library_dirs=[join(marmot_dir, "lib")],
@@ -100,7 +100,7 @@ extensions += [
     Extension(
         "*",
         sources=[
-            "edelweissmpm/fieldoutput/mpresultcollector.pyx",
+            "edelweissmeshfree/fieldoutput/mpresultcollector.pyx",
         ],
         include_dirs=[join(marmot_dir, "include"), numpy.get_include()],
         runtime_library_dirs=[join(marmot_dir, "lib")],
@@ -109,14 +109,14 @@ extensions += [
 ]
 
 extensions += [
-    MarmotExtension("edelweissmpm/materialpoints/marmotmaterialpoint/mp.pyx"),
+    MarmotExtension("edelweissmeshfree/materialpoints/marmotmaterialpoint/mp.pyx"),
 ]
 
 extensions += [
     Extension(
         "*",
         sources=[
-            "edelweissmpm/solvers/base/parallelization.pyx",
+            "edelweissmeshfree/solvers/base/parallelization.pyx",
         ],
         include_dirs=[join(marmot_dir, "include"), join(marmot_dir, "include", "eigen3"), numpy.get_include()],
         language="c++",
@@ -129,18 +129,18 @@ extensions += [
 ]
 
 extensions += [
-    MarmotExtension("edelweissmpm/cellelements/marmotcellelement/marmotcellelement.pyx"),
+    MarmotExtension("edelweissmeshfree/cellelements/marmotcellelement/marmotcellelement.pyx"),
 ]
 
 extensions += [
-    MarmotExtension("edelweissmpm/cellelements/marmotcellelement/lagrangianmarmotcellelement.pyx"),
+    MarmotExtension("edelweissmeshfree/cellelements/marmotcellelement/lagrangianmarmotcellelement.pyx"),
 ]
 
 
-extensions += [MarmotExtension("edelweissmpm/meshfree/kernelfunctions/marmot/marmotmeshfreekernelfunction.pyx")]
-extensions += [MarmotExtension("edelweissmpm/meshfree/approximations/marmot/marmotmeshfreeapproximation.pyx")]
+extensions += [MarmotExtension("edelweissmeshfree/meshfree/kernelfunctions/marmot/marmotmeshfreekernelfunction.pyx")]
+extensions += [MarmotExtension("edelweissmeshfree/meshfree/approximations/marmot/marmotmeshfreeapproximation.pyx")]
 extensions += [
-    MarmotExtension("edelweissmpm/particles/marmot/marmotparticlewrapper.pyx"),
+    MarmotExtension("edelweissmeshfree/particles/marmot/marmotparticlewrapper.pyx"),
 ]
 
 setup(

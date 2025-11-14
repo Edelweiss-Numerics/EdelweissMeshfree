@@ -2,15 +2,16 @@
 requires = ["setuptools", "Cython", "numpy"]
 
 [project]
-name = "EdelweissMPM"
+name = "EdelweissMeshfree"
 version = "25.08"
-description = "EdelweissMPM: A meshfree module for EdelweissFE."
+description = "EdelweissMeshfree: A meshfree module for EdelweissFE."
 readme = "README.md"
 authors = [
-    { name = "Matthias Neuner", email = "matthias.neuner@uibk.ac.at" }
+    { name = "Matthias Neuner", email = "matthias.neuner@uibk.ac.at" },
+    { name = "Thomas Mader", email = "thomas.mader@boku.ac.at" },
 ]
 license = { text = "LGPL-2.1" }
-urls = { Homepage = "https://github.com/EdelweissFE/EdelweissMPM" }
+urls = { Homepage = "https://github.com/Edelweiss-Numerics/EdelweissMeshfree" }
 requires-python = ">=3.12"
 
 [tool.setuptools]
