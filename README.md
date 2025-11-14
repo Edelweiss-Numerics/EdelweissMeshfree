@@ -10,8 +10,9 @@
 
 <!-- See the [documentation](https://edelweissfe.github.io/EdelweissMPM). -->
 
-EdelweissMeshfree aims at an easy to understand, yet efficient implementation of meshfree methods for solving partial differential equations. Current implementaions offer the **Material Point Method (MPM)** and the **Reproducing Kernel Particle Method (RKPM)**.
-Some features are:
+**EdelweissMeshfree** provides at an easy-to-understand yet efficient implementation of meshfree numerical methods for solving partial differential equations. The current release includes implementations of the **Material Point Method (MPM)** and the **Reproducing Kernel Particle Method (RKPM)**.
+
+**Key features are:**
 
  * Python for non performance-critical routines
  * Cython for performance-critical routines
@@ -19,7 +20,6 @@ Some features are:
  * Modular system, which is easy to extend
  * Output to Paraview, Ensight, CSV, matplotlib
  * Interfaces to powerful direct and iterative linear solvers
+ * Integration with the [Marmot](https://github.com/MAteRialMOdelingToolbox/Marmot/), providing cells, material points, particles and constitutive model formulations
 
-EdelweissMeshfree makes use of the [Marmot](https://github.com/MAteRialMOdelingToolbox/Marmot/) library for cells, material points, particles and constitutive model formulations.
-
-Please note that the current public EdelweissMeshfree requires Marmot cells, material points, and particles for being able to run simulations.
+**Note:** The current public version of **EdelweissMeshfree** depends on the infrastructure of Marmot cells, material points, and particles; these components are required to run simulations.
