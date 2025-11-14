@@ -1,18 +1,27 @@
 # -*- coding: utf-8 -*-
 #  ---------------------------------------------------------------------
 #
-#  _____    _      _              _         __  __ ____  __  __
-# | ____|__| | ___| |_      _____(_)___ ___|  \/  |  _ \|  \/  |
-# |  _| / _` |/ _ \ \ \ /\ / / _ \ / __/ __| |\/| | |_) | |\/| |
-# | |__| (_| |  __/ |\ V  V /  __/ \__ \__ \ |  | |  __/| |  | |
-# |_____\__,_|\___|_| \_/\_/ \___|_|___/___/_|  |_|_|   |_|  |_|
+#  _____    _      _              _          
+# | ____|__| | ___| |_      _____(_)___ ___  
+# |  _| / _` |/ _ \ \ \ /\ / / _ \ / __/ __| 
+# | |__| (_| |  __/ |\ V  V /  __/ \__ \__ \ 
+# |_____\__,_|\___|_| \_/\_/_\___|_|___/___/ 
+# |  \/  | ___  ___| |__  / _|_ __ ___  ___  
+# | |\/| |/ _ \/ __| '_ \| |_| '__/ _ \/ _ \ 
+# | |  | |  __/\__ \ | | |  _| | |  __/  __/ 
+# |_|  |_|\___||___/_| |_|_| |_|  \___|\___| 
 #
 #
 #  Unit of Strength of Materials and Structural Analysis
 #  University of Innsbruck,
+#
+#  Research Group for Computational Mechanics of Materials
+#  Institute of Structural Engineering, BOKU University, Vienna
+#
 #  2023 - today
 #
-#  Matthias Neuner matthias.neuner@uibk.ac.at
+#  Matthias Neuner |  matthias.neuner@boku.ac.at
+#  Thomas Mader    |  thomas.mader@bokut.ac.at
 #
 #  This file is part of EdelweissMeshfree.
 #
