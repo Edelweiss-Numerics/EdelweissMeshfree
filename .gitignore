@@ -11,4 +11,5 @@
 *.so
 *build*
 *egg-info*
+*rename*
 __pycache__

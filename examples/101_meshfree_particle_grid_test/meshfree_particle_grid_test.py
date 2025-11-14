@@ -43,7 +43,7 @@ def run_sim():
 
     from edelweissfe.points.node import Node
 
-    from edelweissmpm.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunction import (
+    from edelweissmeshfree.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunction import (
         MarmotMeshfreeKernelFunctionWrapper,
     )
 
@@ -64,7 +64,7 @@ def run_sim():
     ]
 
     # let's define the type of approximation: We would like to have a reproducing kernel approximation of completeness order 1
-    from edelweissmpm.meshfree.approximations.marmot.marmotmeshfreeapproximation import (
+    from edelweissmeshfree.meshfree.approximations.marmot.marmotmeshfreeapproximation import (
         MarmotMeshfreeApproximationWrapper,
     )
 
@@ -79,7 +79,7 @@ def run_sim():
     mpVolume = 1.0
 
     # and finally .. create the particle. The particle hosts the material point, which again hosts the material.
-    from edelweissmpm.particles.marmot.marmotparticlewrapper import (
+    from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
         MarmotParticleWrapper,
     )
 
@@ -96,13 +96,13 @@ def run_sim():
     ]
 
     # let's create the particle kernel domain
-    from edelweissmpm.meshfree.particlekerneldomain import ParticleKernelDomain
+    from edelweissmeshfree.meshfree.particlekerneldomain import ParticleKernelDomain
 
     theParticleKernelDomain = ParticleKernelDomain(marmotParticles, kernelFunctions)
 
     from edelweissfe.journal.journal import Journal
 
-    from edelweissmpm.particlemanagers.kdbinorganizedparticlemanager import (
+    from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
         KDBinOrganizedParticleManager,
     )
 

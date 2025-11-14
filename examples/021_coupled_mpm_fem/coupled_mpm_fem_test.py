@@ -33,18 +33,18 @@ from edelweissfe.journal.journal import Journal
 from edelweissfe.linsolve.pardiso.pardiso import pardisoSolve
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 
-from edelweissmpm.constraints.penaltyconstrainmp2node import PenaltyConstrainMP2Node
-from edelweissmpm.fieldoutput.fieldoutput import MPMFieldOutputController
-from edelweissmpm.generators import (
+from edelweissmeshfree.constraints.penaltyconstrainmp2node import PenaltyConstrainMP2Node
+from edelweissmeshfree.fieldoutput.fieldoutput import MPMFieldOutputController
+from edelweissmeshfree.generators import (
     rectangularbsplinegridgenerator,
     rectangularcellelementgridgenerator,
     rectangularmpgenerator,
 )
-from edelweissmpm.models.mpmmodel import MPMModel
-from edelweissmpm.mpmmanagers.smartmpmmanager import SmartMaterialPointManager
-from edelweissmpm.outputmanagers.ensight import OutputManager as EnsightOutputManager
-from edelweissmpm.solvers.nqs import NonlinearQuasistaticSolver
-from edelweissmpm.stepactions.dirichlet import Dirichlet
+from edelweissmeshfree.models.mpmmodel import MPMModel
+from edelweissmeshfree.mpmmanagers.smartmpmmanager import SmartMaterialPointManager
+from edelweissmeshfree.outputmanagers.ensight import OutputManager as EnsightOutputManager
+from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
+from edelweissmeshfree.stepactions.dirichlet import Dirichlet
 
 
 @performancetiming.timeit("simulation")
@@ -57,7 +57,7 @@ def run_sim():
 
     mpmModel = MPMModel(dimension)
 
-    from edelweissmpm.materialpoints.marmotmaterialpoint.mp import (
+    from edelweissmeshfree.materialpoints.marmotmaterialpoint.mp import (
         MarmotMaterialPointWrapper,
     )
 

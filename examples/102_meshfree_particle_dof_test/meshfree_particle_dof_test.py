@@ -43,7 +43,7 @@ def run_sim():
 
     from edelweissfe.points.node import Node
 
-    from edelweissmpm.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunction import (
+    from edelweissmeshfree.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunction import (
         MarmotMeshfreeKernelFunctionWrapper,
     )
 
@@ -64,7 +64,7 @@ def run_sim():
     ]
 
     # let's define the type of approximation: We would like to have a reproducing kernel approximation of completeness order 1
-    from edelweissmpm.meshfree.approximations.marmot.marmotmeshfreeapproximation import (
+    from edelweissmeshfree.meshfree.approximations.marmot.marmotmeshfreeapproximation import (
         MarmotMeshfreeApproximationWrapper,
     )
 
@@ -82,7 +82,7 @@ def run_sim():
     mpVolume = 1.0
 
     # and finally .. create the particle. The particle hosts the material point, which again hosts the material.
-    from edelweissmpm.particles.marmot.marmotparticlewrapper import (
+    from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
         MarmotParticleWrapper,
     )
 
@@ -105,11 +105,11 @@ def run_sim():
     theJournal = Journal()
 
     # let's create the particle kernel domain
-    from edelweissmpm.meshfree.particlekerneldomain import ParticleKernelDomain
+    from edelweissmeshfree.meshfree.particlekerneldomain import ParticleKernelDomain
 
     theParticleKernelDomain = ParticleKernelDomain(marmotParticles, kernelFunctions)
 
-    from edelweissmpm.particlemanagers.kdbinorganizedparticlemanager import (
+    from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
         KDBinOrganizedParticleManager,
     )
 
@@ -126,7 +126,7 @@ def run_sim():
     for p in marmotParticles:
         p.initializeYourself()
 
-    from edelweissmpm.models.mpmmodel import MPMModel
+    from edelweissmeshfree.models.mpmmodel import MPMModel
 
     # We now create a bundled model.
     # We need this model to create the dof manager
@@ -141,7 +141,7 @@ def run_sim():
     theModel.prepareYourself(theJournal)
     theJournal.printPrettyTable(theModel.makePrettyTableSummary(), "summary")
 
-    from edelweissmpm.numerics.dofmanager import MPMDofManager
+    from edelweissmeshfree.numerics.dofmanager import MPMDofManager
 
     nSteps = 12
     for i in range(nSteps):

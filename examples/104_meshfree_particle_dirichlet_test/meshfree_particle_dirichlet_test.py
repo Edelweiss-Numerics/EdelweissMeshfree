@@ -44,14 +44,14 @@ def run_sim():
     from edelweissfe.journal.journal import Journal
 
     theJournal = Journal()
-    from edelweissmpm.models.mpmmodel import MPMModel
+    from edelweissmeshfree.models.mpmmodel import MPMModel
 
     theModel = MPMModel(dimension)
 
-    from edelweissmpm.generators.rectangularkernelfunctiongridgenerator import (
+    from edelweissmeshfree.generators.rectangularkernelfunctiongridgenerator import (
         generateRectangularKernelFunctionGrid,
     )
-    from edelweissmpm.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunction import (
+    from edelweissmeshfree.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunction import (
         MarmotMeshfreeKernelFunctionWrapper,
     )
 
@@ -63,7 +63,7 @@ def run_sim():
     )
 
     # let's define the type of approximation: We would like to have a reproducing kernel approximation of completeness order 1
-    from edelweissmpm.meshfree.approximations.marmot.marmotmeshfreeapproximation import (
+    from edelweissmeshfree.meshfree.approximations.marmot.marmotmeshfreeapproximation import (
         MarmotMeshfreeApproximationWrapper,
     )
 
@@ -75,7 +75,7 @@ def run_sim():
         "properties": np.array([30000.0, 0.3, 1, 1, 2, 1.4999, 1.0]),
     }
 
-    from edelweissmpm.particles.marmot.marmotparticlewrapper import (
+    from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
         MarmotParticleWrapper,
     )
 
@@ -84,7 +84,7 @@ def run_sim():
             "GradientEnhancedMicropolar/PlaneStrain/Point", number, coordinates, volume, theApproximation, theMaterial
         )
 
-    from edelweissmpm.generators.rectangularparticlegridgenerator import (
+    from edelweissmeshfree.generators.rectangularparticlegridgenerator import (
         generateRectangularParticleGrid,
     )
 
@@ -95,13 +95,13 @@ def run_sim():
     # for Semi-Lagrangian particle methods, we assoicate a particle with a kernel function.
 
     # let's create the particle kernel domain
-    from edelweissmpm.meshfree.particlekerneldomain import ParticleKernelDomain
+    from edelweissmeshfree.meshfree.particlekerneldomain import ParticleKernelDomain
 
     theParticleKernelDomain = ParticleKernelDomain(
         list(theModel.particles.values()), list(theModel.meshfreeKernelFunctions.values())
     )
 
-    from edelweissmpm.particlemanagers.kdbinorganizedparticlemanager import (
+    from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
         KDBinOrganizedParticleManager,
     )
 
@@ -120,8 +120,8 @@ def run_sim():
     theModel.prepareYourself(theJournal)
     theJournal.printPrettyTable(theModel.makePrettyTableSummary(), "summary")
 
-    from edelweissmpm.fieldoutput.fieldoutput import MPMFieldOutputController
-    from edelweissmpm.numerics.dofmanager import MPMDofManager
+    from edelweissmeshfree.fieldoutput.fieldoutput import MPMFieldOutputController
+    from edelweissmeshfree.numerics.dofmanager import MPMDofManager
 
     fieldOutputController = MPMFieldOutputController(theModel, theJournal)
 
@@ -133,7 +133,7 @@ def run_sim():
 
     fieldOutputController.initializeJob()
 
-    from edelweissmpm.outputmanagers.ensight import (
+    from edelweissmeshfree.outputmanagers.ensight import (
         OutputManager as EnsightOutputManager,
     )
 

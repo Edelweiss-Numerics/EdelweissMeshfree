@@ -34,30 +34,30 @@ from edelweissfe.journal.journal import Journal
 from edelweissfe.linsolve.pardiso.pardiso import pardisoSolve
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 
-from edelweissmpm.constraints.particlelagrangianweakdirichlet import (
+from edelweissmeshfree.constraints.particlelagrangianweakdirichlet import (
     ParticleLagrangianWeakDirichletOnParticleSetFactory,
 )
-from edelweissmpm.fieldoutput.fieldoutput import MPMFieldOutputController
-from edelweissmpm.generators.abqinpfilegenerator import (
+from edelweissmeshfree.fieldoutput.fieldoutput import MPMFieldOutputController
+from edelweissmeshfree.generators.abqinpfilegenerator import (
     generateKernelFunctionGridFromInputFile,
 )
-from edelweissmpm.meshfree.approximations.marmot.marmotmeshfreeapproximation import (
+from edelweissmeshfree.meshfree.approximations.marmot.marmotmeshfreeapproximation import (
     MarmotMeshfreeApproximationWrapper,
 )
-from edelweissmpm.meshfree.particlekerneldomain import ParticleKernelDomain
-from edelweissmpm.models.mpmmodel import MPMModel
-from edelweissmpm.outputmanagers.ensight import OutputManager as EnsightOutputManager
-from edelweissmpm.particlemanagers.kdbinorganizedparticlemanager import (
+from edelweissmeshfree.meshfree.particlekerneldomain import ParticleKernelDomain
+from edelweissmeshfree.models.mpmmodel import MPMModel
+from edelweissmeshfree.outputmanagers.ensight import OutputManager as EnsightOutputManager
+from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
     KDBinOrganizedParticleManager,
 )
-from edelweissmpm.particles.marmot.marmotparticlewrapper import MarmotParticleWrapper
-from edelweissmpm.solvers.nqs import NonlinearQuasistaticSolver
-from edelweissmpm.stepactions.particledistributedload import ParticleDistributedLoad
+from edelweissmeshfree.particles.marmot.marmotparticlewrapper import MarmotParticleWrapper
+from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
+from edelweissmeshfree.stepactions.particledistributedload import ParticleDistributedLoad
 
 # import gstools
 
 
-# from edelweissmpm.solvers.nqsmparclength import NonlinearQuasistaticMarmotArcLengthSolver
+# from edelweissmeshfree.solvers.nqsmparclength import NonlinearQuasistaticMarmotArcLengthSolver
 
 
 def run_sim(
@@ -268,7 +268,7 @@ def run_sim(
 
     linearSolver = pardisoSolve
 
-    from edelweissmpm.meshfree.vci import (
+    from edelweissmeshfree.meshfree.vci import (
         BoundaryParticleDefinition,
         VariationallyConsistentIntegrationManager,
     )
