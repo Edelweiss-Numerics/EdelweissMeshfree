@@ -33,24 +33,24 @@ from edelweissfe.journal.journal import Journal
 from edelweissfe.linsolve.pardiso.pardiso import pardisoSolve
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 
-from edelweissmpm.constraints.penaltyequalvalue import PenaltyEqualValue
-from edelweissmpm.fieldoutput.fieldoutput import MPMFieldOutputController
-from edelweissmpm.generators import (
+from edelweissmeshfree.constraints.penaltyequalvalue import PenaltyEqualValue
+from edelweissmeshfree.fieldoutput.fieldoutput import MPMFieldOutputController
+from edelweissmeshfree.generators import (
     rectangularbsplinegridgenerator,
     rectangularmpgenerator,
 )
-from edelweissmpm.models.mpmmodel import MPMModel
-from edelweissmpm.mpmmanagers.smartmpmmanager import SmartMaterialPointManager
-from edelweissmpm.outputmanagers.ensight import OutputManager as EnsightOutputManager
-from edelweissmpm.solvers.nqsmparclength import (
+from edelweissmeshfree.models.mpmmodel import MPMModel
+from edelweissmeshfree.mpmmanagers.smartmpmmanager import SmartMaterialPointManager
+from edelweissmeshfree.outputmanagers.ensight import OutputManager as EnsightOutputManager
+from edelweissmeshfree.solvers.nqsmparclength import (
     NonlinearQuasistaticMarmotArcLengthSolver,
 )
-from edelweissmpm.stepactions.bodyload import BodyLoad
-from edelweissmpm.stepactions.dirichlet import Dirichlet
-from edelweissmpm.stepactions.distributedload import (
+from edelweissmeshfree.stepactions.bodyload import BodyLoad
+from edelweissmeshfree.stepactions.dirichlet import Dirichlet
+from edelweissmeshfree.stepactions.distributedload import (
     MaterialPointPointWiseDistributedLoad,
 )
-from edelweissmpm.stepactions.indirectcontrol import IndirectControl
+from edelweissmeshfree.stepactions.indirectcontrol import IndirectControl
 
 
 def run_sim(logFile=None):

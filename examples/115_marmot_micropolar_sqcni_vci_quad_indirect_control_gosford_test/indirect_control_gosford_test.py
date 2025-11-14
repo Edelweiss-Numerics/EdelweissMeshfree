@@ -35,35 +35,35 @@ from edelweissfe.linsolve.pardiso.pardiso import pardisoSolve
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 from edelweissfe.utils.exceptions import StepFailed
 
-from edelweissmpm.constraints.particlepenaltyequalvalue import ParticlePenaltyEqualValue
-from edelweissmpm.constraints.particlepenaltyweakdirichtlet import (
+from edelweissmeshfree.constraints.particlepenaltyequalvalue import ParticlePenaltyEqualValue
+from edelweissmeshfree.constraints.particlepenaltyweakdirichtlet import (
     ParticlePenaltyWeakDirichlet,
 )
-from edelweissmpm.fieldoutput.fieldoutput import MPMFieldOutputController
-from edelweissmpm.generators.rectangularkernelfunctiongridgenerator import (
+from edelweissmeshfree.fieldoutput.fieldoutput import MPMFieldOutputController
+from edelweissmeshfree.generators.rectangularkernelfunctiongridgenerator import (
     generateRectangularKernelFunctionGrid,
 )
-from edelweissmpm.generators.rectangularquadparticlegridgenerator import (
+from edelweissmeshfree.generators.rectangularquadparticlegridgenerator import (
     generateRectangularQuadParticleGrid,
 )
-from edelweissmpm.meshfree.approximations.marmot.marmotmeshfreeapproximation import (
+from edelweissmeshfree.meshfree.approximations.marmot.marmotmeshfreeapproximation import (
     MarmotMeshfreeApproximationWrapper,
 )
-from edelweissmpm.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunction import (
+from edelweissmeshfree.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunction import (
     MarmotMeshfreeKernelFunctionWrapper,
 )
-from edelweissmpm.meshfree.particlekerneldomain import ParticleKernelDomain
-from edelweissmpm.models.mpmmodel import MPMModel
-from edelweissmpm.outputmanagers.ensight import OutputManager as EnsightOutputManager
-from edelweissmpm.particlemanagers.kdbinorganizedparticlemanager import (
+from edelweissmeshfree.meshfree.particlekerneldomain import ParticleKernelDomain
+from edelweissmeshfree.models.mpmmodel import MPMModel
+from edelweissmeshfree.outputmanagers.ensight import OutputManager as EnsightOutputManager
+from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
     KDBinOrganizedParticleManager,
 )
-from edelweissmpm.particles.marmot.marmotparticlewrapper import MarmotParticleWrapper
-from edelweissmpm.solvers.nqsmparclength import (
+from edelweissmeshfree.particles.marmot.marmotparticlewrapper import MarmotParticleWrapper
+from edelweissmeshfree.solvers.nqsmparclength import (
     NonlinearQuasistaticMarmotArcLengthSolver,
 )
-from edelweissmpm.stepactions.particledistributedload import ParticleDistributedLoad
-from edelweissmpm.stepactions.particleindirectcontrol import IndirectControl
+from edelweissmeshfree.stepactions.particledistributedload import ParticleDistributedLoad
+from edelweissmeshfree.stepactions.particleindirectcontrol import IndirectControl
 
 
 def run_sim(particleSize, supportRadius, continuityOrder, completenessOrder):
@@ -239,7 +239,7 @@ def run_sim(particleSize, supportRadius, continuityOrder, completenessOrder):
 
     linearSolver = pardisoSolve
 
-    from edelweissmpm.meshfree.vci import (
+    from edelweissmeshfree.meshfree.vci import (
         BoundaryParticleDefinition,
         VariationallyConsistentIntegrationManager,
     )

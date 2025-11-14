@@ -31,13 +31,13 @@ import numpy as np
 import pytest
 from edelweissfe.journal.journal import Journal
 
-from edelweissmpm.fieldoutput.fieldoutput import MPMFieldOutputController
-from edelweissmpm.fields.nodefield import MPMNodeField
-from edelweissmpm.generators import rectangulargridgenerator, rectangularmpgenerator
-from edelweissmpm.models.mpmmodel import MPMModel
-from edelweissmpm.mpmmanagers.smartmpmmanager import SmartMaterialPointManager
-from edelweissmpm.numerics.dofmanager import MPMDofManager
-from edelweissmpm.outputmanagers.ensight import OutputManager as EnsightOutputManager
+from edelweissmeshfree.fieldoutput.fieldoutput import MPMFieldOutputController
+from edelweissmeshfree.fields.nodefield import MPMNodeField
+from edelweissmeshfree.generators import rectangulargridgenerator, rectangularmpgenerator
+from edelweissmeshfree.models.mpmmodel import MPMModel
+from edelweissmeshfree.mpmmanagers.smartmpmmanager import SmartMaterialPointManager
+from edelweissmeshfree.numerics.dofmanager import MPMDofManager
+from edelweissmeshfree.outputmanagers.ensight import OutputManager as EnsightOutputManager
 
 
 def run_sim():

@@ -34,14 +34,14 @@ from edelweissfe.linsolve.pardiso.pardiso import pardisoSolve
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 from edelweissfe.utils.exceptions import StepFailed
 
-from edelweissmpm.constraints.penaltyweakdirichlet import PenaltyWeakDirichlet
-from edelweissmpm.fieldoutput.fieldoutput import MPMFieldOutputController
-from edelweissmpm.generators import rectangulargridgenerator, rectangularmpgenerator
-from edelweissmpm.models.mpmmodel import MPMModel
-from edelweissmpm.mpmmanagers.smartmpmmanager import SmartMaterialPointManager
-from edelweissmpm.outputmanagers.ensight import OutputManager as EnsightOutputManager
-from edelweissmpm.solvers.nqsmarmotparallel import NQSParallelForMarmot
-from edelweissmpm.stepactions.dirichlet import Dirichlet
+from edelweissmeshfree.constraints.penaltyweakdirichlet import PenaltyWeakDirichlet
+from edelweissmeshfree.fieldoutput.fieldoutput import MPMFieldOutputController
+from edelweissmeshfree.generators import rectangulargridgenerator, rectangularmpgenerator
+from edelweissmeshfree.models.mpmmodel import MPMModel
+from edelweissmeshfree.mpmmanagers.smartmpmmanager import SmartMaterialPointManager
+from edelweissmeshfree.outputmanagers.ensight import OutputManager as EnsightOutputManager
+from edelweissmeshfree.solvers.nqsmarmotparallel import NQSParallelForMarmot
+from edelweissmeshfree.stepactions.dirichlet import Dirichlet
 
 
 @performancetiming.timeit("simulation")
