@@ -20,6 +20,6 @@
  * Modular system, which is easy to extend
  * Output to Paraview, Ensight, CSV, matplotlib
  * Interfaces to powerful direct and iterative linear solvers
- * Integration with the [Marmot](https://github.com/MAteRialMOdelingToolbox/Marmot/), providing cells, material points, particles and constitutive model formulations
+ * Integration of the [Marmot](https://github.com/MAteRialMOdelingToolbox/Marmot/) library, providing cells, material points, particles and constitutive model formulations
 
 **Note:** The current public version of **EdelweissMeshfree** depends on the infrastructure of Marmot cells, material points, and particles; these components are required to run simulations.
