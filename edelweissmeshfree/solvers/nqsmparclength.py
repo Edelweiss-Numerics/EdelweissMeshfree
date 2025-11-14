@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 #  ---------------------------------------------------------------------
 #
-#  _____    _      _              _          
-# | ____|__| | ___| |_      _____(_)___ ___  
-# |  _| / _` |/ _ \ \ \ /\ / / _ \ / __/ __| 
-# | |__| (_| |  __/ |\ V  V /  __/ \__ \__ \ 
-# |_____\__,_|\___|_| \_/\_/_\___|_|___/___/ 
-# |  \/  | ___  ___| |__  / _|_ __ ___  ___  
-# | |\/| |/ _ \/ __| '_ \| |_| '__/ _ \/ _ \ 
-# | |  | |  __/\__ \ | | |  _| | |  __/  __/ 
-# |_|  |_|\___||___/_| |_|_| |_|  \___|\___| 
+#  _____    _      _              _
+# | ____|__| | ___| |_      _____(_)___ ___
+# |  _| / _` |/ _ \ \ \ /\ / / _ \ / __/ __|
+# | |__| (_| |  __/ |\ V  V /  __/ \__ \__ \
+# |_____\__,_|\___|_| \_/\_/_\___|_|___/___/
+# |  \/  | ___  ___| |__  / _|_ __ ___  ___
+# | |\/| |/ _ \/ __| '_ \| |_| '__/ _ \/ _ \
+# | |  | |  __/\__ \ | | |  _| | |  __/  __/
+# |_|  |_|\___||___/_| |_|_| |_|  \___|\___|
 #
 #
 #  Unit of Strength of Materials and Structural Analysis
@@ -48,14 +48,20 @@ from edelweissfe.utils.fieldoutput import FieldOutputController
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.mpmmanagers.base.mpmmanagerbase import MPMManagerBase
 from edelweissmeshfree.numerics.predictors.basepredictor import BasePredictor
-from edelweissmeshfree.particlemanagers.base.baseparticlemanager import BaseParticleManager
+from edelweissmeshfree.particlemanagers.base.baseparticlemanager import (
+    BaseParticleManager,
+)
 from edelweissmeshfree.solvers.nqsmarmotparallel import NQSParallelForMarmot
 from edelweissmeshfree.stepactions.base.arclengthcontrollerbase import (
     ArcLengthControllerBase,
 )
 from edelweissmeshfree.stepactions.base.mpmbodyloadbase import MPMBodyLoadBase
-from edelweissmeshfree.stepactions.base.mpmdistributedloadbase import MPMDistributedLoadBase
-from edelweissmeshfree.stepactions.particledistributedload import ParticleDistributedLoad
+from edelweissmeshfree.stepactions.base.mpmdistributedloadbase import (
+    MPMDistributedLoadBase,
+)
+from edelweissmeshfree.stepactions.particledistributedload import (
+    ParticleDistributedLoad,
+)
 
 
 class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
@@ -191,7 +197,7 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
         newtonCache: tuple = None,
         dUGuess: DofVector = None,
         dLambdaGuess: float = None,
-        predictor: BasePredictor = None
+        predictor: BasePredictor = None,
     ) -> tuple[DofVector, DofVector, dict, tuple]:
         """Standard Newton-Raphson scheme to solve for an increment.
 
@@ -257,7 +263,7 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
                 timeStep,
                 model,
                 newtonCache,
-                dUGuess
+                dUGuess,
             )
 
         iterationCounter = 0

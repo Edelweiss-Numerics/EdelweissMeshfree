@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 #  ---------------------------------------------------------------------
 #
-#  _____    _      _              _          
-# | ____|__| | ___| |_      _____(_)___ ___  
-# |  _| / _` |/ _ \ \ \ /\ / / _ \ / __/ __| 
-# | |__| (_| |  __/ |\ V  V /  __/ \__ \__ \ 
-# |_____\__,_|\___|_| \_/\_/_\___|_|___/___/ 
-# |  \/  | ___  ___| |__  / _|_ __ ___  ___  
-# | |\/| |/ _ \/ __| '_ \| |_| '__/ _ \/ _ \ 
-# | |  | |  __/\__ \ | | |  _| | |  __/  __/ 
-# |_|  |_|\___||___/_| |_|_| |_|  \___|\___| 
+#  _____    _      _              _
+# | ____|__| | ___| |_      _____(_)___ ___
+# |  _| / _` |/ _ \ \ \ /\ / / _ \ / __/ __|
+# | |__| (_| |  __/ |\ V  V /  __/ \__ \__ \
+# |_____\__,_|\___|_| \_/\_/_\___|_|___/___/
+# |  \/  | ___  ___| |__  / _|_ __ ___  ___
+# | |\/| |/ _ \/ __| '_ \| |_| '__/ _ \/ _ \
+# | |  | |  __/\__ \ | | |  _| | |  __/  __/
+# |_|  |_|\___||___/_| |_|_| |_|  \___|\___|
 #
 #
 #  Unit of Strength of Materials and Structural Analysis
@@ -44,10 +44,15 @@ from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 from edelweissfe.utils.exceptions import StepFailed
 
 from edelweissmeshfree.fieldoutput.fieldoutput import MPMFieldOutputController
-from edelweissmeshfree.generators import rectangulargridgenerator, rectangularmpgenerator
+from edelweissmeshfree.generators import (
+    rectangulargridgenerator,
+    rectangularmpgenerator,
+)
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.mpmmanagers.simplempmmanager import SimpleMaterialPointManager
-from edelweissmeshfree.outputmanagers.ensight import OutputManager as EnsightOutputManager
+from edelweissmeshfree.outputmanagers.ensight import (
+    OutputManager as EnsightOutputManager,
+)
 from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
 from edelweissmeshfree.stepactions.dirichlet import Dirichlet
 

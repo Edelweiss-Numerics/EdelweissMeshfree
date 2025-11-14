@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 #  ---------------------------------------------------------------------
 #
-#  _____    _      _              _          
-# | ____|__| | ___| |_      _____(_)___ ___  
-# |  _| / _` |/ _ \ \ \ /\ / / _ \ / __/ __| 
-# | |__| (_| |  __/ |\ V  V /  __/ \__ \__ \ 
-# |_____\__,_|\___|_| \_/\_/_\___|_|___/___/ 
-# |  \/  | ___  ___| |__  / _|_ __ ___  ___  
-# | |\/| |/ _ \/ __| '_ \| |_| '__/ _ \/ _ \ 
-# | |  | |  __/\__ \ | | |  _| | |  __/  __/ 
-# |_|  |_|\___||___/_| |_|_| |_|  \___|\___| 
+#  _____    _      _              _
+# | ____|__| | ___| |_      _____(_)___ ___
+# |  _| / _` |/ _ \ \ \ /\ / / _ \ / __/ __|
+# | |__| (_| |  __/ |\ V  V /  __/ \__ \__ \
+# |_____\__,_|\___|_| \_/\_/_\___|_|___/___/
+# |  \/  | ___  ___| |__  / _|_ __ ___  ___
+# | |\/| |/ _ \/ __| '_ \| |_| '__/ _ \/ _ \
+# | |  | |  __/\__ \ | | |  _| | |  __/  __/
+# |_|  |_|\___||___/_| |_|_| |_|  \___|\___|
 #
 #
 #  Unit of Strength of Materials and Structural Analysis
@@ -62,11 +62,15 @@ from edelweissmeshfree.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunct
 )
 from edelweissmeshfree.meshfree.particlekerneldomain import ParticleKernelDomain
 from edelweissmeshfree.models.mpmmodel import MPMModel
-from edelweissmeshfree.outputmanagers.ensight import OutputManager as EnsightOutputManager
+from edelweissmeshfree.outputmanagers.ensight import (
+    OutputManager as EnsightOutputManager,
+)
 from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
     KDBinOrganizedParticleManager,
 )
-from edelweissmeshfree.particles.marmot.marmotparticlewrapper import MarmotParticleWrapper
+from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
+    MarmotParticleWrapper,
+)
 from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
 
 # from edelweissmeshfree.generators.rectangularparticlegridgenerator import (
@@ -224,7 +228,9 @@ def run_sim():
         list(theModel.particles.values()), list(theModel.meshfreeKernelFunctions.values()), theBoundary
     )
 
-    from edelweissmeshfree.stepactions.particledistributedload import ParticleDistributedLoad
+    from edelweissmeshfree.stepactions.particledistributedload import (
+        ParticleDistributedLoad,
+    )
 
     pressureTop = ParticleDistributedLoad(
         "pressureTop",
