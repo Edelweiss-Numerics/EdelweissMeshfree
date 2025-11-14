@@ -35,7 +35,9 @@ from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 
 from edelweissmeshfree.fieldoutput.fieldoutput import MPMFieldOutputController
 from edelweissmeshfree.models.mpmmodel import MPMModel
-from edelweissmeshfree.outputmanagers.ensight import OutputManager as EnsightOutputManager
+from edelweissmeshfree.outputmanagers.ensight import (
+    OutputManager as EnsightOutputManager,
+)
 from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
 from edelweissmeshfree.stepactions.dirichlet import Dirichlet
 

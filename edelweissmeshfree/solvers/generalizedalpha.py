@@ -51,14 +51,20 @@ from prettytable import PrettyTable
 
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.mpmmanagers.base.mpmmanagerbase import MPMManagerBase
-from edelweissmeshfree.particlemanagers.base.baseparticlemanager import BaseParticleManager
+from edelweissmeshfree.particlemanagers.base.baseparticlemanager import (
+    BaseParticleManager,
+)
 from edelweissmeshfree.solvers.base.nonlinearsolverbase import (
     NonlinearImplicitSolverBase,
     RestartHistoryManager,
 )
 from edelweissmeshfree.stepactions.base.mpmbodyloadbase import MPMBodyLoadBase
-from edelweissmeshfree.stepactions.base.mpmdistributedloadbase import MPMDistributedLoadBase
-from edelweissmeshfree.stepactions.particledistributedload import ParticleDistributedLoad
+from edelweissmeshfree.stepactions.base.mpmdistributedloadbase import (
+    MPMDistributedLoadBase,
+)
+from edelweissmeshfree.stepactions.particledistributedload import (
+    ParticleDistributedLoad,
+)
 
 
 class NonlinearDynamicSolver(NonlinearImplicitSolverBase):

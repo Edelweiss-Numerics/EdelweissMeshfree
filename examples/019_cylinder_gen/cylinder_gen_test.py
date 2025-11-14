@@ -37,7 +37,9 @@ from edelweissmeshfree.fieldoutput.fieldoutput import MPMFieldOutputController
 from edelweissmeshfree.generators import boxbsplinegridgenerator, cylindermpgenerator
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.mpmmanagers.smartmpmmanager import SmartMaterialPointManager
-from edelweissmeshfree.outputmanagers.ensight import OutputManager as EnsightOutputManager
+from edelweissmeshfree.outputmanagers.ensight import (
+    OutputManager as EnsightOutputManager,
+)
 from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
 from edelweissmeshfree.stepactions.dirichlet import Dirichlet
 from edelweissmeshfree.stepactions.distributedload import (
