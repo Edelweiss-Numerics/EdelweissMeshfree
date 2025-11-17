@@ -7,6 +7,7 @@
 <p align="center">
 <img width="400" height="400" src="./doc/source/borehole.gif">
 </p>
+<p align="center"><em>Implicit RKPM simulation of a borehole breakout using a gradient-enhanced micropolar damage–plasticity constitutive model.</em></p>
 
 <!-- See the [documentation](https://edelweissfe.github.io/EdelweissMPM). -->
 
