@@ -6,10 +6,10 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = "EdelweissMPM"
+project = "EdelweissMeshfree"
 copyright = "2024, Matthias Neuner"
-author = "Matthias Neuner"
-release = "v24.04"
+authors = ["Matthias Neuner", "Thomas Mader"]
+release = "v25.08"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

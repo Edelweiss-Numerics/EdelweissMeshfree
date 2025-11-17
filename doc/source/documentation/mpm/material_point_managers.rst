@@ -1,21 +1,21 @@
 Material Point Managers
 =======================
 
-.. automodule:: edelweissmpm.mpmmanagers.base.mpmmanagerbase
+.. automodule:: edelweissmeshfree.mpmmanagers.base.mpmmanagerbase
    :members:
    :private-members:
 
 Simple Material Point Manager
 -----------------------------
 
-.. automodule:: edelweissmpm.mpmmanagers.simplempmmanager
+.. automodule:: edelweissmeshfree.mpmmanagers.simplempmmanager
    :private-members:
    :members:
 
 Smart Material Point Manager
 ----------------------------
 
-.. automodule:: edelweissmpm.mpmmanagers.smartmpmmanager
+.. automodule:: edelweissmeshfree.mpmmanagers.smartmpmmanager
    :private-members:
    :members:
 
