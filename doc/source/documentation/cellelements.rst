@@ -1,20 +1,20 @@
 Cellelements
 ============
 
-.. automodule:: edelweissmpm.cellelements.base.cellelement
+.. automodule:: edelweissmeshfree.cellelements.base.cellelement
    :members:
    :private-members:
 
 ``MarmotCellElement`` class
 ---------------------------
 
-.. automodule:: edelweissmpm.cellelements.marmotcellelement.marmotcellelement
+.. automodule:: edelweissmeshfree.cellelements.marmotcellelement.marmotcellelement
    :members:
    :private-members:
 
 ``LagrangianMarmotCellElement`` class
 -------------------------------------
 
-.. automodule:: edelweissmpm.cellelements.marmotcellelement.lagrangianmarmotcellelement
+.. automodule:: edelweissmeshfree.cellelements.marmotcellelement.lagrangianmarmotcellelement
    :members:
    :private-members:

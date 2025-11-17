@@ -1,13 +1,13 @@
-Welcome to EdelweissMPM
-=======================
+Welcome to EdelweissMeshfree
+============================
 
-EdelweissMPM is a light-weight, platform-independent, parallel mateiral point method framework for the simulation of coupled problems in solid mechanics.
-It is based on `EdelweissFE <https://github.com/EdelweissFE/EdelweissFE/>`_, which is a hard dependency.
-Furthermore, by default, it makes use of the `Marmot <https://github.com/MAteRialMOdelingToolbox/Marmot/>`_ library for cell, material point, and material formulations.
+EdelweissMeshfree is a light-weight, platform-independent, parallel meshfree framework for the simulation of coupled problems in solid mechanics.
+It is based on `EdelweissFE <https://github.com/EdelweissNumerics/EdelweissFE/>`_, which is a hard dependency.
+Furthermore, by default, it makes use of the `Marmot <https://github.com/MAteRialMOdelingToolbox/Marmot/>`_ library for cell, material point, particle, and material formulations.
 
-EdelweissMPM aims to be...
+EdelweissMeshfree aims to be...
 
- - ... a development and learning environment for constitutive models and the material point method,
+ - ... a development and learning environment for constitutive models and meshfree methods such as the **Material Point Method (MPM)** and **Reproducing Kernel Particle Method (RKPM)**,
  - ... an easy to use tool for coupled problems,
  - ... a very flexible tool for implementing and employing special techniques (e.g., the indirect displacement control technique),
    which are often more difficult and time consuming to implement in mature, MPI-parallelized codes,
@@ -26,8 +26,8 @@ EdelweissMPM aims to be...
 Execute a simulation
 ********************
 
-Unline EdelweissFE, EdelweissMPM does not make use of input files.
-All simulations are directly implemented in Python scripts.
+Unline EdelweissFE, EdelweissMeshfree does not make use of input files.
+All simulations are directly executed via Python scripts.
 
 Run a simulation simply by calling
 

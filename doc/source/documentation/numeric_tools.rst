@@ -7,7 +7,7 @@ problems.
 ``DofManager`` class
 --------------------
 
-.. automodule:: edelweissmpm.numerics.dofmanager
+.. automodule:: edelweissmeshfree.numerics.dofmanager
    :members:
    :private-members:
    :inherited-members:
