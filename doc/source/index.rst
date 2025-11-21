@@ -13,7 +13,7 @@ EdelweissMeshfree aims to be...
    which are often more difficult and time consuming to implement in mature, MPI-parallelized codes,
  - ... an efficient tool for nonlinear simulations up to medium sized problems (~ :math:`10^5` degrees of freedom).
 
-.. figure:: borehole.png
+.. figure:: borehole.gif
    :align: center
    :width: 240px
 
@@ -21,7 +21,7 @@ EdelweissMeshfree aims to be...
    :maxdepth: 2
    :hidden:
 
-   documentation/index
+   features/index
 
 Execute a simulation
 ********************
