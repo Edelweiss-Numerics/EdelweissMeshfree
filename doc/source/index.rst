@@ -21,7 +21,11 @@ EdelweissMeshfree aims to be...
    :maxdepth: 2
    :hidden:
 
-   features/index
+   documentation/index
+   installation
+   contributors
+   publications
+
 
 Execute a simulation
 ********************
