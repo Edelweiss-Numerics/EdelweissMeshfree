@@ -30,7 +30,7 @@ EdelweissMeshfree aims to be...
 Execute a simulation
 ********************
 
-Unline EdelweissFE, EdelweissMeshfree does not make use of input files.
+Unlike EdelweissFE, EdelweissMeshfree does not make use of input files.
 All simulations are directly executed via Python scripts.
 
 Run a simulation simply by calling
