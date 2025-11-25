@@ -7,7 +7,7 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "EdelweissMeshfree"
-copyright = "2024, Matthias Neuner"
+copyright = "2024, Edelweiss Numerics"
 authors = ["Matthias Neuner", "Thomas Mader"]
 release = "v25.08"
 
