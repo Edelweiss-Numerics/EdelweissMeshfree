@@ -6,6 +6,25 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
+try:
+    from StringIO import StringIO  # noqa: F401
+except ImportError:
+    pass
+
+from importlib import import_module
+
+from docutils import nodes
+from docutils.parsers.rst import Directive  # noqa: F401
+from pygments.lexer import RegexLexer
+from pygments.token import Comment, Keyword, Literal, Name, Operator, Text
+from sphinx import addnodes  # noqa: F401
+from sphinx.directives.code import (  # noqa: F401
+    CodeBlock,
+    container_wrapper,
+    dedent_lines,
+)
+from sphinx.highlighting import lexers
+
 project = "EdelweissMeshfree"
 copyright = "2024, Edelweiss Numerics"
 authors = ["Matthias Neuner", "Thomas Mader"]
@@ -63,14 +82,77 @@ html_css_files = [
 
 # for execution python code in text
 
-try:
-    pass
-except ImportError:
-    pass
+#try:
+#    pass
+#except ImportError:
+#    pass
+#
+#
+#from docutils import nodes
+#
+class EdelweissFELexer(RegexLexer):
+    name = "EdelweissFE lexer"
+    expression_in_quotes = r'(["\'])(?:(?=(\\?))\2.)*?\1'
+    expression_no_quotes = r"\w+"
+    expression_no_quotes = r'[^,\n\'"]+'
+    equalsign_with_potential_whitespaces = r"\s*=\s*"
+    tokens = {
+        "root": [
+            (r"\s*\*{2}.*\n", Comment.Singleline),
+            (r",", Text),
+            (r"\*{1}[^,\n]*", Keyword),
+            (expression_in_quotes + r"\s*(?==)", Name.Variable),
+            (r"(?<==)\s*" + expression_in_quotes, Literal.String),
+            (expression_no_quotes + r"\s*(?==)", Name.Variable),
+            (r"(?<==)\s*" + expression_no_quotes, Literal.Number),
+            (r"=", Operator.Word),
+            (r"[^=,\n]+", Text),
+        ],
+    }
 
 
-from docutils import nodes
+lexers["edelweiss"] = EdelweissFELexer(startinline=True)
+pygments_style = "nord"
 
+
+class PrettyPrintDirective(CodeBlock):
+    has_content = True
+    optional_arguments = 1
+    required_arguments = 1
+
+    def run(self):
+        module_path, member_name = self.arguments[0].rsplit(".", 1)
+        member_data = getattr(import_module(module_path), member_name)
+
+        table = nodes.table(cols=2)
+        group = nodes.tgroup()
+        head = nodes.thead()
+        body = nodes.tbody()
+
+        if "caption" in self.options:
+            title = nodes.title(text=self.options["caption"])
+            table += title
+
+        table += group
+        group += nodes.colspec(colwidth=6)
+        group += nodes.colspec(colwidth=6)
+        group += head
+        group += body
+
+        row = nodes.row()
+        row += nodes.entry("", nodes.paragraph("", nodes.Text("Option")))
+        row += nodes.entry("", nodes.paragraph("", nodes.Text("Description")))
+        head += row
+
+        for key, val in member_data.items():
+            row = nodes.row()
+            row += nodes.entry("", nodes.literal(text=key))
+            row += nodes.entry("", nodes.paragraph("", nodes.Text(val)))
+            body += row
+
+        return [
+            table,
+        ]
 
 def doi_role(name, rawtext, text, lineno, inliner, options={}, content=[]):
     # rendered = nodes.Text(text)
