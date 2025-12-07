@@ -1,3 +1,5 @@
+from collections.abc import Iterable
+
 import numpy as np
 from edelweissfe.config.phenomena import getFieldSize
 from edelweissfe.surfaces.entitybasedsurface import EntityBasedSurface
@@ -171,7 +173,7 @@ class ParticleLagrangianWeakDirichlet(MPMConstraintBase):
 
 def ParticleLagrangianWeakDirichletOnParticleSetFactory(
     baseName: str,
-    particleCollection: list[BaseParticle] | EntityBasedSurface,
+    particleCollection: Iterable[BaseParticle] | EntityBasedSurface,
     field: str,
     prescribedStepDelta: dict,
     model: MPMModel,
@@ -179,6 +181,34 @@ def ParticleLagrangianWeakDirichletOnParticleSetFactory(
     faceID: int = None,
     vertexID: int = None,
 ):
+    """
+    Factory function to create ParticleLagrangianWeakDirichlet constraints on a collection of particles.
+
+    Parameters
+    ----------
+    baseName
+        The base name for the constraints.
+    particleCollection
+        An iterable collection of particles or an EntityBasedSurface.
+    field
+        The field to be constrained.
+    prescribedStepDelta
+        A dictionary mapping field component indices to their prescribed step increments.
+    model
+        The MPMModel instance.
+    location
+        The location on the particle to apply the constraint. Can be "center", "face", or "vertex".
+    faceID
+        The face ID if location is "face" and if particleCollection is not an EntityBasedSurface.
+    vertexID
+        The vertex ID if location is "vertex".
+
+    Returns
+    -------
+    dict
+        A dictionary mapping constraint names to ParticleLagrangianWeakDirichlet instances.
+    """
+
     constraints = dict()
 
     if isinstance(particleCollection, EntityBasedSurface):
@@ -191,7 +221,7 @@ def ParticleLagrangianWeakDirichletOnParticleSetFactory(
                 constraints[name] = constraint
         return constraints
 
-    elif isinstance(particleCollection, list):
+    elif isinstance(particleCollection, Iterable):
 
         for i, p in enumerate(particleCollection):
             name = f"{baseName}_{i}"
