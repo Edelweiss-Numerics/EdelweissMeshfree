@@ -1,6 +1,7 @@
 import netCDF4
 import numpy as np
 from edelweissfe.journal.journal import Journal
+from edelweissfe.surfaces.entitybasedsurface import EntityBasedSurface
 
 from edelweissmpm.models.mpmmodel import MPMModel
 from edelweissmpm.particles.base.baseparticle import BaseParticle
@@ -230,7 +231,9 @@ def generateParticlesFromExodus(
                     surface_entries[aba_face_id].append(p)
 
             if surface_entries:
-                model.surfaces[f"{name}_sideset_{setname}"] = surface_entries
+                model.surfaces[f"{name}_sideset_{setname}"] = EntityBasedSurface(
+                    f"{name}_sideset_{setname}", surface_entries
+                )
                 for fid, plist in surface_entries.items():
                     journal.message(f"Sideset '{setname}': Face {fid}, count={len(plist)}", "exo", 1)
 

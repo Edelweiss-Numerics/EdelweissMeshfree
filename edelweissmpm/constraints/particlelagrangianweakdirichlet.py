@@ -1,5 +1,6 @@
 import numpy as np
 from edelweissfe.config.phenomena import getFieldSize
+from edelweissfe.surfaces.entitybasedsurface import EntityBasedSurface
 from edelweissfe.timesteppers.timestep import TimeStep
 from edelweissfe.variables.scalarvariable import ScalarVariable
 
@@ -170,7 +171,7 @@ class ParticleLagrangianWeakDirichlet(MPMConstraintBase):
 
 def ParticleLagrangianWeakDirichletOnParticleSetFactory(
     baseName: str,
-    particleSet: list[BaseParticle] | dict,
+    particleCollection: list[BaseParticle] | EntityBasedSurface,
     field: str,
     prescribedStepDelta: dict,
     model: MPMModel,
@@ -180,8 +181,8 @@ def ParticleLagrangianWeakDirichletOnParticleSetFactory(
 ):
     constraints = dict()
 
-    if isinstance(particleSet, dict):
-        for faceID, particles in particleSet.items():
+    if isinstance(particleCollection, EntityBasedSurface):
+        for faceID, particles in particleCollection.items():
             for i, p in enumerate(particles):
                 name = f"{baseName}_face{faceID}_{i}"
                 constraint = ParticleLagrangianWeakDirichlet(
@@ -190,11 +191,16 @@ def ParticleLagrangianWeakDirichletOnParticleSetFactory(
                 constraints[name] = constraint
         return constraints
 
-    for i, p in enumerate(particleSet):
-        name = f"{baseName}_{i}"
-        constraint = ParticleLagrangianWeakDirichlet(
-            name, p, field, prescribedStepDelta, model, location, faceID, vertexID
-        )
-        constraints[name] = constraint
+    elif isinstance(particleCollection, list):
 
-    return constraints
+        for i, p in enumerate(particleCollection):
+            name = f"{baseName}_{i}"
+            constraint = ParticleLagrangianWeakDirichlet(
+                name, p, field, prescribedStepDelta, model, location, faceID, vertexID
+            )
+            constraints[name] = constraint
+
+        return constraints
+
+    else:
+        raise TypeError("particleCollection must be a list of particles or an EntityBasedSurface.")
