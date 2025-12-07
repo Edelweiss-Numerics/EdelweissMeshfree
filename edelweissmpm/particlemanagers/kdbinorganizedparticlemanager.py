@@ -179,6 +179,10 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
             if len(self._particles) != len(self._meshfreeKernelFunctions):
                 raise ValueError("The number of particles and kernel functions must be equal.")
 
+            for particle, kernelFunction in zip(self._particles, self._meshfreeKernelFunctions):
+                particleCoordinates = particle.getCenterCoordinates()
+                kernelFunction.moveTo(particleCoordinates)
+
         self.signalizeKernelFunctionUpdate()
 
     def signalizeKernelFunctionUpdate(
@@ -201,7 +205,8 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
                 if self._randomlyShiftPartliceShapeFunctions:
                     if isinstance(self._randomlyShiftPartliceShapeFunctions, float):
                         particleVol = particle.getVolumeUndeformed()
-                        particleSize = np.pow(particleVol, 1.0 / self._dimension)
+                        # particleSize = np.pow(particleVol, 1.0 / self._dimension)
+                        particleSize = particleVol ** (1.0 / self._dimension)
                         randdisp = (
                             (np.random.rand(self._dimension) - 0.5)
                             * np.sqrt(particle.getVolumeUndeformed())
