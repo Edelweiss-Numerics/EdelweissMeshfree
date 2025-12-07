@@ -121,7 +121,7 @@ def run_sim():
             "DisplacementSQCNIxNSNI/3D/Hexa",
             number,
             vertexCoordinates,
-            volume,
+            0.0,
             theApproximation,
             theMaterial,
         )
@@ -226,10 +226,9 @@ def run_sim():
         "pressureTop",
         theModel,
         theJournal,
-        theModel.particleSets["box_grid_top"],
+        theModel.surfaces["box_grid_top"],
         "pressure",
         np.array([-5e2]),
-        surfaceID=2,
     )
 
     from edelweissmpm.numerics.predictors.quadraticpredictor import QuadraticPredictor
