@@ -159,22 +159,21 @@ def run_sim(particleSize, supportRadius, continuityOrder, completenessOrder):
         "pressureTop",
         theModel,
         theJournal,
-        theModel.particleSets["rectangular_grid_top"],
+        theModel.surfaces["rectangular_grid_top"],
         "pressure",
         np.array([1.0]),
-        surfaceID=3,
     )
 
     import sympy as sp
+    from edelweissfe.surfaces.entitybasedsurface import EntityBasedSurface
 
     disturbance = ParticleDistributedLoad(
         "disturbance",
         theModel,
         theJournal,
-        theModel.particleSets["rectangular_grid_rightTop"],
+        EntityBasedSurface("rightTop", {2: theModel.particleSets["rectangular_grid_rightTop"]}),
         "pressure",
         np.array([-10.0 * nY / 80]),
-        surfaceID=2,
         f_t=sp.lambdify(
             sp.symbols("t"),
             sp.sympify("Heaviside(t)"),

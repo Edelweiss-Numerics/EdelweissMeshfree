@@ -224,11 +224,9 @@ def run_sim():
         "pressureTop",
         theModel,
         theJournal,
-        theModel.particleSets["rectangular_grid_top"],
+        theModel.surfaces["rectangular_grid_top"],
         "pressure",
         np.array([-1.00]),
-        surfaceID=3,
-        # f_t=lambda t: 1.0,
     )
 
     from edelweissmpm.numerics.predictors.quadraticpredictor import QuadraticPredictor
