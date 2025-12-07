@@ -26,6 +26,7 @@
 #  ---------------------------------------------------------------------
 import numpy as np
 from edelweissfe.journal.journal import Journal
+from edelweissfe.surfaces.entitybasedsurface import EntityBasedSurface
 from edelweissfe.timesteppers.timestep import TimeStep
 
 from edelweissmpm.models.mpmmodel import MPMModel
@@ -45,8 +46,8 @@ class ParticleDistributedLoad:
         The MPM model tree.
     journal : Journal
         The journal to write messages to.
-    particleSurface : dict[int, ParticleSet]
-        A dictionary mapping surface IDs to ParticleSets where the load is applied.
+    particleSurface : EntityBasedSurface
+        The surface defining the particles to which the load is applied.
     distributedLoadType : str
         The type of the distributed load, e.g., "pressure".
     loadVector : np.ndarray
@@ -62,7 +63,7 @@ class ParticleDistributedLoad:
         name: str,
         model: MPMModel,
         journal: Journal,
-        particleSurface: dict[int, ParticleSet],
+        particleSurface: EntityBasedSurface,
         distributedLoadType: str,
         loadVector: np.ndarray,
         **kwargs,

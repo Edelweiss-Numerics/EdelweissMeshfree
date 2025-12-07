@@ -29,6 +29,7 @@ import typing
 
 import numpy as np
 from edelweissfe.journal.journal import Journal
+from edelweissfe.surfaces.entitybasedsurface import EntityBasedSurface
 
 from edelweissmpm.models.mpmmodel import MPMModel
 from edelweissmpm.particles.base.baseparticle import BaseParticle
@@ -141,21 +142,33 @@ def generateBoxHexaParticleGrid(
     # --- ID CORRECTION: ABAQUS STANDARD ---
 
     # Bottom (-Z) -> S1 (ID 1)
-    model.surfaces["{:}_bottom".format(name)] = {1: np.ravel(particleGrid[:, :, 0])}
+    model.surfaces["{:}_bottom".format(name)] = EntityBasedSurface(
+        "{:}_bottom".format(name), {1: list(np.ravel(particleGrid[:, :, 0]))}
+    )
 
     # Top (+Z) -> S2 (ID 2)
-    model.surfaces["{:}_top".format(name)] = {2: np.ravel(particleGrid[:, :, -1])}
+    model.surfaces["{:}_top".format(name)] = EntityBasedSurface(
+        "{:}_top".format(name), {2: list(np.ravel(particleGrid[:, :, -1]))}
+    )
 
     # Right (+X) -> S4 (ID 4)
-    model.surfaces["{:}_right".format(name)] = {4: np.ravel(particleGrid[-1, :, :])}
+    model.surfaces["{:}_right".format(name)] = EntityBasedSurface(
+        "{:}_right".format(name), {4: list(np.ravel(particleGrid[-1, :, :]))}
+    )
 
     # Left (-X) -> S6 (ID 6)
-    model.surfaces["{:}_left".format(name)] = {6: np.ravel(particleGrid[0, :, :])}
+    model.surfaces["{:}_left".format(name)] = EntityBasedSurface(
+        "{:}_left".format(name), {6: list(np.ravel(particleGrid[0, :, :]))}
+    )
 
     # Front (-Y) -> S3 (ID 3)
-    model.surfaces["{:}_front".format(name)] = {3: np.ravel(particleGrid[:, 0, :])}
+    model.surfaces["{:}_front".format(name)] = EntityBasedSurface(
+        "{:}_front".format(name), {3: list(np.ravel(particleGrid[:, 0, :]))}
+    )
 
     # Back (+Y) -> S5 (ID 5)
-    model.surfaces["{:}_back".format(name)] = {5: np.ravel(particleGrid[:, -1, :])}
+    model.surfaces["{:}_back".format(name)] = EntityBasedSurface(
+        "{:}_back".format(name), {5: list(np.ravel(particleGrid[:, -1, :]))}
+    )
 
     return model
