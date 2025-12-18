@@ -33,6 +33,128 @@ from edelweissmpm.meshfree.particlekerneldomain import ParticleKernelDomain
 from edelweissmpm.particlemanagers.base.baseparticlemanager import BaseParticleManager
 
 
+class _FastKDBinOrganizer:
+    """
+    Optimized Bin Organizer using pure NumPy vectorization and integer indexing.
+    """
+
+    def __init__(self, kernelFunctions, dimension):
+        self._dimension = dimension
+        self._kernelFunctions = kernelFunctions
+
+        # --- 1. Vectorized Bounding Box Extraction ---
+        bboxes = [sf.getBoundingBox() for sf in kernelFunctions]
+
+        if not bboxes:
+            self._mins = np.empty((0, dimension))
+            self._maxs = np.empty((0, dimension))
+            self._bins = []
+            # specific fix: ensure these attributes exist even if empty
+            self._boundingBoxMin = np.zeros(dimension)
+            self._boundingBoxMax = np.zeros(dimension)
+            self._nBins = np.zeros(dimension, dtype=int)
+            return
+
+        bboxes = np.array(bboxes)
+        self._mins = bboxes[:, 0, :]
+        self._maxs = bboxes[:, 1, :]
+
+        # --- 2. Grid Setup ---
+        # RESTORED: Naming compatibility with Manager
+        self._boundingBoxMin = np.min(self._mins, axis=0) - 1e-12
+        self._boundingBoxMax = np.max(self._maxs, axis=0) + 1e-12
+
+        avg_size = np.mean(self._maxs - self._mins, axis=0)
+        self._binSize = avg_size / 2.0
+
+        # Calculate grid dimensions
+        # RESTORED: _nBins naming
+        self._nBins = np.ceil((self._boundingBoxMax - self._boundingBoxMin) / self._binSize).astype(int)
+
+        # Calculate strides for 1D flattening
+        self._strides = np.ones(3, dtype=int)
+        if dimension >= 2:
+            self._strides[1] = self._nBins[0]
+        if dimension == 3:
+            self._strides[2] = self._nBins[0] * self._nBins[1]
+
+        total_bins = np.prod(self._nBins)
+
+        self._bins = [[] for _ in range(total_bins)]
+
+        # --- 3. Vectorized Bin Index Calculation ---
+        min_indices = ((self._mins - self._boundingBoxMin) / self._binSize).astype(int)
+        max_indices = ((self._maxs - self._boundingBoxMin) / self._binSize).astype(int)
+
+        # --- 4. Fill Bins ---
+        _, sy, sz = self._strides[0], self._strides[1], self._strides[2]
+        bins = self._bins
+
+        for k_idx, (l, u) in enumerate(zip(min_indices, max_indices)):
+            if dimension == 3:
+                for z in range(l[2], u[2] + 1):
+                    z_offset = z * sz
+                    for y in range(l[1], u[1] + 1):
+                        y_offset = z_offset + y * sy
+                        start = y_offset + l[0]
+                        end = y_offset + u[0] + 1
+                        for bin_idx in range(start, end):
+                            bins[bin_idx].append(k_idx)
+            elif dimension == 2:
+                for y in range(l[1], u[1] + 1):
+                    y_offset = y * sy
+                    start = y_offset + l[0]
+                    end = y_offset + u[0] + 1
+                    for bin_idx in range(start, end):
+                        bins[bin_idx].append(k_idx)
+            else:
+                for bin_idx in range(l[0], u[0] + 1):
+                    bins[bin_idx].append(k_idx)
+
+    def getCandidateIndices(self, query_min, query_max):
+        """Returns a set of Kernel Indices that overlap the query box."""
+        if not self._bins:
+            return set()
+
+        _l = ((query_min - self._boundingBoxMin) / self._binSize).astype(int)
+        _u = ((query_max - self._boundingBoxMin) / self._binSize).astype(int)
+
+        # Clamp to grid bounds
+        np.maximum(_l, 0, out=_l)
+        np.minimum(_u, self._nBins - 1, out=_u)
+
+        candidates = set()
+        bins = self._bins
+        _, sy, sz = self._strides[0], self._strides[1], self._strides[2]
+
+        if self._dimension == 3:
+            for z in range(_l[2], _u[2] + 1):
+                z_offset = z * sz
+                for y in range(_l[1], _u[1] + 1):
+                    y_offset = z_offset + y * sy
+                    start = y_offset + _l[0]
+                    end = y_offset + _u[0] + 1
+                    for bin_idx in range(start, end):
+                        if bins[bin_idx]:
+                            candidates.update(bins[bin_idx])
+
+        elif self._dimension == 2:
+            for y in range(_l[1], _u[1] + 1):
+                y_offset = y * sy
+                start = y_offset + _l[0]
+                end = y_offset + _u[0] + 1
+                for bin_idx in range(start, end):
+                    if bins[bin_idx]:
+                        candidates.update(bins[bin_idx])
+
+        elif self._dimension == 1:
+            for bin_idx in range(_l[0], _u[0] + 1):
+                if bins[bin_idx]:
+                    candidates.update(bins[bin_idx])
+
+        return candidates
+
+
 class _KDBinOrganizer:
     """A class to manage the kernel functions in cartesian bins in multiple dimension for fast access.
 
@@ -185,21 +307,16 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
 
         self.signalizeKernelFunctionUpdate()
 
-    def signalizeKernelFunctionUpdate(
-        self,
-    ):
-        self._theBins = _KDBinOrganizer(self._meshfreeKernelFunctions, self._dimension)
+    def signalizeKernelFunctionUpdate(self):
+        # Use the new fast organizer
+        self._theBins = _FastKDBinOrganizer(self._meshfreeKernelFunctions, self._dimension)
 
-    def updateConnectivity(
-        self,
-    ):
+    def updateConnectivity(self):
         hasChanged = False
 
+        # --- Bonding Logic (Existing code) ---
         if self._bondParticlesToKernelFunctions:
-            self._journal.message(
-                f"Updating kernel function positions for the bonding definition with {len(self._particles)} particles.",
-                "ParticleManager",
-            )
+            self._journal.message("Updating kernel function positions...", "ParticleManager")
             for particle, kernelFunction in zip(self._particles, self._meshfreeKernelFunctions):
                 particleCoordinates = particle.getCenterCoordinates()
                 if self._randomlyShiftPartliceShapeFunctions:
@@ -217,34 +334,134 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
 
                 kernelFunction.moveTo(particleCoordinates)
 
+            # Rebuild grid after moving kernels
             self.signalizeKernelFunctionUpdate()
+
+        # --- Fast Search Logic ---
+
+        # Local references for speed
+        all_kernels = self._meshfreeKernelFunctions
+        kernel_mins = self._theBins._mins  # (N, D) array
+        kernel_maxs = self._theBins._maxs  # (N, D) array
+        dim = self._dimension
 
         for p in self._particles:
             evaluationCoordinates = p.getEvaluationCoordinates()
 
-            # rough search based on the bounding box of the kernel functions
-            kernelFunctionCandidates = {
-                candidate
-                for vertex in evaluationCoordinates
-                for candidate in self._theBins.getKernelFunctionCandidates(vertex)
-            }
-            # fine search based on the actual support of the kernel functions
-            kernelFunctions = {
-                sf
-                for coordinate in evaluationCoordinates
-                for sf in kernelFunctionCandidates
-                if sf.isCoordinateInCurrentSupport(coordinate)
-            }
+            # 1. Broad Phase: Particle Bounding Box
+            # Instead of querying the grid 8 times (for 8 vertices),
+            # we query it once for the particle's bounding box.
+            p_min = np.min(evaluationCoordinates, axis=0)
+            p_max = np.max(evaluationCoordinates, axis=0)
 
-            # we need to sort the kernel functions using their node number to ensure that the order is always the same
-            kernelFunctions = list(sorted(kernelFunctions, key=lambda x: x.node.label))
+            # Get INDICES of potential kernels
+            candidate_indices = self._theBins.getCandidateIndices(p_min, p_max)
 
-            if hasChanged or kernelFunctions != p.kernelFunctions:
+            valid_kernels = []
+
+            # 2. Narrow Phase: AABB Intersection + Precise Check
+            for k_idx in candidate_indices:
+
+                # A. FAST AABB CHECK (Box vs Box)
+                # If the particle box doesn't touch the kernel box, skip expensive math.
+                # This filters out ~90% of candidates returned by the bins.
+                k_min = kernel_mins[k_idx]
+                k_max = kernel_maxs[k_idx]
+
+                # Check for separation (no overlap)
+                if p_max[0] < k_min[0] or p_min[0] > k_max[0]:
+                    continue
+                if dim > 1:
+                    if p_max[1] < k_min[1] or p_min[1] > k_max[1]:
+                        continue
+                if dim > 2:
+                    if p_max[2] < k_min[2] or p_min[2] > k_max[2]:
+                        continue
+
+                # B. PRECISE CHECK (Vertices vs Support)
+                sf = all_kernels[k_idx]
+
+                # Check actual vertices. Stop at the first one found.
+                is_covered = False
+                for coord in evaluationCoordinates:
+                    if sf.isCoordinateInCurrentSupport(coord):
+                        is_covered = True
+                        break  # Optimization: Found one, no need to check others
+
+                if is_covered:
+                    valid_kernels.append(sf)
+
+            # 3. Assignment
+            # Sort by node label for determinism
+            valid_kernels.sort(key=lambda x: x.node.label)
+
+            if not hasChanged and valid_kernels != p.kernelFunctions:
                 hasChanged = True
 
-            p.assignKernelFunctions(kernelFunctions)
+            p.assignKernelFunctions(valid_kernels)
 
         return hasChanged
+
+    # def signalizeKernelFunctionUpdate(
+    #     self,
+    # ):
+    #     self._theBins = _KDBinOrganizer(self._meshfreeKernelFunctions, self._dimension)
+
+    # def updateConnectivity(
+    #     self,
+    # ):
+    #     hasChanged = False
+
+    #     if self._bondParticlesToKernelFunctions:
+    #         self._journal.message(
+    #             f"Updating kernel function positions for the bonding definition with {len(self._particles)} particles.",
+    #             "ParticleManager",
+    #         )
+    #         for particle, kernelFunction in zip(self._particles, self._meshfreeKernelFunctions):
+    #             particleCoordinates = particle.getCenterCoordinates()
+    #             if self._randomlyShiftPartliceShapeFunctions:
+    #                 if isinstance(self._randomlyShiftPartliceShapeFunctions, float):
+    #                     particleVol = particle.getVolumeUndeformed()
+    #                     # particleSize = np.pow(particleVol, 1.0 / self._dimension)
+    #                     particleSize = particleVol ** (1.0 / self._dimension)
+    #                     randdisp = (
+    #                         (np.random.rand(self._dimension) - 0.5)
+    #                         * np.sqrt(particle.getVolumeUndeformed())
+    #                         * self._randomlyShiftPartliceShapeFunctions
+    #                         * particleSize
+    #                     )
+    #                 particleCoordinates += randdisp
+
+    #             kernelFunction.moveTo(particleCoordinates)
+
+    #         self.signalizeKernelFunctionUpdate()
+
+    #     for p in self._particles:
+    #         evaluationCoordinates = p.getEvaluationCoordinates()
+
+    #         # rough search based on the bounding box of the kernel functions
+    #         kernelFunctionCandidates = {
+    #             candidate
+    #             for vertex in evaluationCoordinates
+    #             for candidate in self._theBins.getKernelFunctionCandidates(vertex)
+    #         }
+    #         # fine search based on the actual support of the kernel functions
+    #         kernelFunctions = {
+    #             sf
+    #             for coordinate in evaluationCoordinates
+    #             for sf in kernelFunctionCandidates
+    #             if sf.isCoordinateInCurrentSupport(coordinate)
+    #         }
+
+    #         # we need to sort the kernel functions using their node number to ensure that the order is always the same
+    #         kernelFunctions = list(sorted(kernelFunctions, key=lambda x: x.node.label))
+
+    #         if hasChanged or kernelFunctions != p.kernelFunctions:
+    #             hasChanged = True
+
+    #         p.assignKernelFunctions(kernelFunctions)
+
+    #     return hasChanged
 
     def getCoveredDomain(
         self,
