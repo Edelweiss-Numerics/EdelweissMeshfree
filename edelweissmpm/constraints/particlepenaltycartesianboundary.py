@@ -1,9 +1,13 @@
+from collections.abc import Iterable
+
 import numpy as np
 from edelweissfe.config.phenomena import getFieldSize
+from edelweissfe.surfaces.entitybasedsurface import EntityBasedSurface
 from edelweissfe.timesteppers.timestep import TimeStep
 from edelweissfe.variables.scalarvariable import ScalarVariable
 
 from edelweissmpm.constraints.base.mpmconstraintbase import MPMConstraintBase
+from edelweissmpm.models.mpmmodel import MPMModel
 from edelweissmpm.particles.base.baseparticle import BaseParticle
 
 
@@ -36,6 +40,20 @@ class ParticlePenaltyContactCartesianBoundaryConstraint(MPMConstraintBase):
         The position of the boundary along the specified component.
     model
         The simulation model.
+    location : str
+        The location on the particle to apply the constraint. Can be "center", "face", or "vertex".
+    faceID : int
+        The face ID if location is "face".
+    vertexID : int
+        The vertex ID if location is "vertex".
+    velocity : float
+        The velocity of the boundary along the constrained component.
+    penaltyParameter : float
+        The penalty parameter for the constraint.
+    doProximityCheck : bool
+        Whether to perform a proximity check before applying the constraint.
+    proximityFactor : float
+        The factor to multiply the particle characteristic length for proximity checking.
     """
 
     def __init__(
@@ -50,6 +68,8 @@ class ParticlePenaltyContactCartesianBoundaryConstraint(MPMConstraintBase):
         vertexID: int = None,
         velocity: float = 0.0,
         penaltyParameter: float = 1e5,
+        doProximityCheck: bool = True,
+        proximityFactor: float = 2.0,
     ):
         self._name = name
         self._field = "displacement"
@@ -89,6 +109,14 @@ class ParticlePenaltyContactCartesianBoundaryConstraint(MPMConstraintBase):
 
         self._velocity = velocity
         self._penaltyParameter = penaltyParameter
+        self._doProximityCheck = doProximityCheck
+
+        if self._doProximityCheck:
+            self._particleCharacteristicLength_x_proximityFactor = (
+                particle.getVolumeUndeformed() ** (1.0 / domainSize) * proximityFactor
+            )
+
+        self.isActive = True
 
     @property
     def name(self) -> str:
@@ -116,6 +144,10 @@ class ParticlePenaltyContactCartesianBoundaryConstraint(MPMConstraintBase):
     ) -> list:
         return list()
 
+    @property
+    def active(self) -> bool:
+        return self.isActive
+
     def getNumberOfAdditionalNeededScalarVariables(
         self,
     ) -> int:
@@ -133,30 +165,39 @@ class ParticlePenaltyContactCartesianBoundaryConstraint(MPMConstraintBase):
 
         self._nodes = nodes
 
-        # self._particle_coordinate_j = self._particle.getCenterCoordinates()[self._component]
         self._particle_coordinate_j = self._getConstraintLocation()[self._component]
+
+        if self._doProximityCheck:
+            distanceToBoundary = abs(self._particle_coordinate_j - self._boundaryPosition)
+            if distanceToBoundary > self._particleCharacteristicLength_x_proximityFactor:
+                hasChanged = self.isActive is not False
+                self.isActive = False
+            else:
+                hasChanged = self.isActive is not True
+                self.isActive = True
+
+        if not self.isActive:
+            self.reactionForce = 0.0
 
         return hasChanged
 
     def applyConstraint(self, dU_: np.ndarray, PExt: np.ndarray, V: np.ndarray, timeStep: TimeStep):
+
+        if not self.isActive:
+            return
 
         dU_U = dU_
         PExt_U = PExt
 
         K = V.reshape((self.nDof, self.nDof))
 
-        K_UU = K[:, :]
-        # K_LU = K[-self._nPenaltyMultipliers :, : -self._nLagrangianMultipliers]
+        K_UU = K
 
-        # lag is the index of the lagrangian multiplier
-        # i is the component of the field being constrained
         i = self._component
 
         P_U_i = PExt_U[i :: self._fieldSize]
         dU_U_j = dU_U[i :: self._fieldSize]
         K_UU_ij = K_UU[i :: self._fieldSize, i :: self._fieldSize]
-
-        # self.reactionForce = dL_l
 
         N = self._particle.getInterpolationVector(self._getConstraintLocation())
 
@@ -172,7 +213,7 @@ class ParticlePenaltyContactCartesianBoundaryConstraint(MPMConstraintBase):
             return
 
         penaltyForce = g_l * self._penaltyParameter
-        self.reactionForce = -penaltyForce
+        self.reactionForce = penaltyForce
 
         dg_dU_j = N * self._orientation
 
@@ -183,58 +224,95 @@ class ParticlePenaltyContactCartesianBoundaryConstraint(MPMConstraintBase):
 
 def ParticlePenaltyContactCartesianBoundaryConstraintFactory(
     baseName: str,
-    particles: list[BaseParticle],
-    component: int,
     boundaryPosition: float,
-    model,
+    component: int,
+    particleCollection: Iterable[BaseParticle] | EntityBasedSurface,
+    field: str,
+    model: MPMModel,
     location: str = "center",
     faceID: int = None,
     vertexID: int = None,
-    velocity: float = 0.0,
     penaltyParameter: float = 1e5,
-) -> dict[str, ParticlePenaltyContactCartesianBoundaryConstraint]:
+    doProximityCheck: bool = True,
+    proximityFactor: float = 2.0,
+):
     """
-    Factory function to create multiple ParticlePenaltyContactBoundaryConstraint instances.
+    Factory function to create ParticlePenaltyWeakDirichlet constraints on a collection of particles.
 
     Parameters
     ----------
-    baseName : str
-        Base name for the constraints.
-    particles : list[BaseParticle]
-        List of particles to which the constraints will be applied.
-    component : int
-        The component (0 for x, 1 for y, 2 for z) of the boundary normal.
-    boundaryPosition : float
+    baseName
+        The base name for the constraints.
+    boundaryPosition
         The position of the boundary along the specified component.
+    component
+        The component (0 for x, 1 for y, 2 for z) of the boundary normal.
+    particleCollection
+        An iterable collection of particles or an EntityBasedSurface.
+    field
+        The field to be constrained.
     model
-        The simulation model.
-    location: str
-        Either "center", "face" or "vertex. For face or vertex, the IDs need
-        to be specified in the particle definition. Note that faceIDs start (Abaqus-convention) at 1.
-    faceID: int, optional
-        The ID of the face if location is "face".
-    vertexID: int, optional
-        The ID of the vertex if location is "vertex".
+        The MPMModel instance.
+    location
+        The location on the particle to apply the constraint. Can be "center", "face", or "vertex".
+    faceID
+        The face ID if location is "face" and if particleCollection is not an EntityBasedSurface.
+    vertexID
+        The vertex ID if location is "vertex".
+    penaltyParameter
+        The penalty parameter for the constraint.
+    doProximityCheck
+        Whether to perform a proximity check before applying the constraint.
+    proximityFactor
+        The factor to multiply the particle characteristic length for proximity checking.
 
     Returns
     -------
-    dict[str, ParticlePenaltyContactBoundaryConstraint]
-        A dictionary of created constraints with their names as keys.
+    dict
+        A dictionary mapping constraint names to ParticlePenaltyWeakDirichlet instances.
     """
+
     constraints = dict()
-    for i, p in enumerate(particles):
-        name = f"{baseName}_{i}"
-        constraint = ParticlePenaltyContactCartesianBoundaryConstraint(
-            name=name,
-            particle=p,
-            component=component,
-            boundaryPosition=boundaryPosition,
-            model=model,
-            location=location,
-            faceID=faceID,
-            vertexID=vertexID,
-            velocity=velocity,
-            penaltyParameter=penaltyParameter,
-        )
-        constraints[name] = constraint
-    return constraints
+
+    if isinstance(particleCollection, EntityBasedSurface):
+        for faceID, particles in particleCollection.items():
+            for i, p in enumerate(particles):
+                name = f"{baseName}_face{faceID}_{i}"
+                constraint = ParticlePenaltyContactCartesianBoundaryConstraint(
+                    name,
+                    p,
+                    component,
+                    boundaryPosition,
+                    model,
+                    location="face",
+                    faceID=faceID,
+                    penaltyParameter=penaltyParameter,
+                    doProximityCheck=doProximityCheck,
+                    proximityFactor=proximityFactor,
+                )
+                constraints[name] = constraint
+        return constraints
+
+    elif isinstance(particleCollection, Iterable):
+
+        for i, p in enumerate(particleCollection):
+            name = f"{baseName}_{i}"
+            constraint = ParticlePenaltyContactCartesianBoundaryConstraint(
+                name,
+                p,
+                component,
+                boundaryPosition,
+                model,
+                location,
+                faceID,
+                vertexID,
+                penaltyParameter=penaltyParameter,
+                doProximityCheck=doProximityCheck,
+                proximityFactor=proximityFactor,
+            )
+            constraints[name] = constraint
+
+        return constraints
+
+    else:
+        raise TypeError("particleCollection must be a list of particles or an EntityBasedSurface.")
