@@ -30,6 +30,17 @@ class MPMConstraintBase(ABC):
             The name."""
 
     @property
+    def active(self) -> bool:
+        """Whether this constraint is active or not.
+
+        Returns
+        -------
+        bool
+            The truth value.
+        """
+        return True
+
+    @property
     @abstractmethod
     def nodes(self) -> list[Node]:
         """The nodes this constraint is acting on.
