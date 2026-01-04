@@ -42,10 +42,10 @@ class ParticlePenaltyContactCartesianBoundaryConstraint(MPMConstraintBase):
         The simulation model.
     location : str
         The location on the particle to apply the constraint. Can be "center", "face", or "vertex".
-    faceID : int
-        The face ID if location is "face".
-    vertexID : int
-        The vertex ID if location is "vertex".
+    faceIDs : list[int]
+        The face IDs if location is "face".
+    vertexIDs : list[int]
+        The vertex IDs if location is "vertex".
     velocity : float
         The velocity of the boundary along the constrained component.
     penaltyParameter : float
@@ -64,8 +64,8 @@ class ParticlePenaltyContactCartesianBoundaryConstraint(MPMConstraintBase):
         boundaryPosition: float,
         model,
         location: str = "center",
-        faceID: int = None,
-        vertexID: int = None,
+        faceIDs: list[int] = None,
+        vertexIDs: list[int] = None,
         velocity: float = 0.0,
         penaltyParameter: float = 1e5,
         doProximityCheck: bool = True,
@@ -82,30 +82,52 @@ class ParticlePenaltyContactCartesianBoundaryConstraint(MPMConstraintBase):
         # determine normal direction:
         self._boundaryPosition = boundaryPosition
 
-        def _getConstraintLocation():
+        self._vertexIDs = vertexIDs
+        self._faceIDs = faceIDs
+
+        def _getConstraintLocations():
+            """
+            Get the coordinates of the constraint locations on the particle.
+
+            Returns
+            -------
+            constraintLocation : list of np.ndarray
+                The coordinates of the constraint locations.
+            """
+
             if location == "center":
-                constraintLocation = particle.getCenterCoordinates()
+                constraintLocation = [particle.getCenterCoordinates()]
             elif location == "face":
-                if faceID is None:
+                if self._faceIDs is None:
                     raise ValueError("faceID must be specified when location is 'face'.")
-                constraintLocation = particle.getFaceCoordinates(faceID)
+                if isinstance(self._faceIDs, int):
+                    self._faceIDs = [self._faceIDs]
+                constraintLocation = [particle.getFaceCoordinates(idx) for idx in self._faceIDs]
             elif location == "vertex":
-                if vertexID is None:
+                if self._vertexIDs is None:
                     raise ValueError("vertexID must be specified when location is 'vertex'.")
-                constraintLocation = particle.getVertexCoordinates(vertexID)
+                if isinstance(self._vertexIDs, int):
+                    self._vertexIDs = [self._vertexIDs]
+                constraintLocation = [particle.getVertexCoordinates()[idx] for idx in self._vertexIDs]
             return constraintLocation
 
-        self._getConstraintLocation = _getConstraintLocation
-
+        self._getConstraintLocations = _getConstraintLocations
         domainSize = model.domainSize
-
-        self._particle_coordinate_j = self._getConstraintLocation()[component]
+        self._constrained_points = self._getConstraintLocations()
         self._particle = particle
 
         if component < 0 or component >= domainSize:
             raise ValueError(f"Component {component} is out of bounds for domain size {domainSize}.")
 
-        self._orientation = 1.0 if boundaryPosition > self._particle_coordinate_j else -1.0
+        # do a sanity check that all constrained points are on the same side of the boundary
+        for constrained_point in self._constrained_points:
+            constrained_point_j = constrained_point[self._component]
+            if (constrained_point_j - boundaryPosition) * (
+                self._constrained_points[0][self._component] - boundaryPosition
+            ) < -1e-15:
+                raise ValueError("All constrained points must be on the same side of the boundary.")
+
+        self._orientation = 1.0 if boundaryPosition > self._constrained_points[0][component] else -1.0
 
         self._velocity = velocity
         self._penaltyParameter = penaltyParameter
@@ -165,16 +187,31 @@ class ParticlePenaltyContactCartesianBoundaryConstraint(MPMConstraintBase):
 
         self._nodes = nodes
 
-        self._particle_coordinate_j = self._getConstraintLocation()[self._component]
+        # get the current constrained points, as the particle may have moved
+        self._constrained_points = self._getConstraintLocations()
+
+        wasActive = self.isActive
+        self.isActive = True
 
         if self._doProximityCheck:
-            distanceToBoundary = abs(self._particle_coordinate_j - self._boundaryPosition)
-            if distanceToBoundary > self._particleCharacteristicLength_x_proximityFactor:
-                hasChanged = self.isActive is not False
-                self.isActive = False
-            else:
-                hasChanged = self.isActive is not True
-                self.isActive = True
+            # check if any of the constrained points is within proximity to the boundary
+            self.isActive = False
+
+            for constrained_point in self._constrained_points:
+                constrained_point_j = constrained_point[self._component]
+                distanceToBoundary = abs(constrained_point_j - self._boundaryPosition)
+                if distanceToBoundary > self._particleCharacteristicLength_x_proximityFactor:
+                    # not close enough to boundary
+                    hasChanged = wasActive is not False
+                    self.isActive = False
+                else:
+                    # close enough to boundary
+                    hasChanged = wasActive is not True
+                    self.isActive = True
+
+                if self.isActive:
+                    # no need to check other points, one is enough
+                    break
 
         if not self.isActive:
             self.reactionForce = 0.0
@@ -190,7 +227,6 @@ class ParticlePenaltyContactCartesianBoundaryConstraint(MPMConstraintBase):
         PExt_U = PExt
 
         K = V.reshape((self.nDof, self.nDof))
-
         K_UU = K
 
         i = self._component
@@ -199,27 +235,33 @@ class ParticlePenaltyContactCartesianBoundaryConstraint(MPMConstraintBase):
         dU_U_j = dU_U[i :: self._fieldSize]
         K_UU_ij = K_UU[i :: self._fieldSize, i :: self._fieldSize]
 
-        N = self._particle.getInterpolationVector(self._getConstraintLocation())
+        penaltyForce = 0.0
 
-        nodeIdcs = [self._nodes[kf.node] for kf in self._particle.kernelFunctions]
+        for constrained_point in self._constrained_points:
 
-        deltaU_j = N @ dU_U_j[nodeIdcs]
+            constrained_point_j = constrained_point[self._component]
 
-        g_l = self._orientation * (
-            deltaU_j - (-self._particle_coordinate_j + self._boundaryPosition + self._velocity * timeStep.stepProgress)
-        )
+            N = self._particle.getInterpolationVector(constrained_point).flatten()
 
-        if g_l < 0:
-            return
+            nodeIdcs = [self._nodes[kf.node] for kf in self._particle.kernelFunctions]
 
-        penaltyForce = g_l * self._penaltyParameter
+            deltaU_j = N @ dU_U_j[nodeIdcs]
+
+            g = self._orientation * (
+                deltaU_j - (-constrained_point_j + self._boundaryPosition + self._velocity * timeStep.stepProgress)
+            )
+
+            if g < 0:
+                # no penetration for this point, but other points may still penetrate
+                continue
+
+            penaltyForce += g * self._penaltyParameter
+
+            dg_dU_j = N * self._orientation
+            P_U_i[nodeIdcs] += self._penaltyParameter * dg_dU_j * g
+            K_UU_ij[np.ix_(nodeIdcs, nodeIdcs)] += self._penaltyParameter * np.outer(dg_dU_j, dg_dU_j)
+
         self.reactionForce = penaltyForce
-
-        dg_dU_j = N * self._orientation
-
-        P_U_i[nodeIdcs] += self._penaltyParameter * dg_dU_j * g_l
-
-        K_UU_ij[np.ix_(nodeIdcs, nodeIdcs)] += self._penaltyParameter * np.outer(dg_dU_j, dg_dU_j)
 
 
 def ParticlePenaltyContactCartesianBoundaryConstraintFactory(
@@ -230,8 +272,8 @@ def ParticlePenaltyContactCartesianBoundaryConstraintFactory(
     field: str,
     model: MPMModel,
     location: str = "center",
-    faceID: int = None,
-    vertexID: int = None,
+    faceIDs: list[int] | int = None,
+    vertexIDs: list[int] | int = None,
     penaltyParameter: float = 1e5,
     doProximityCheck: bool = True,
     proximityFactor: float = 2.0,
@@ -255,10 +297,10 @@ def ParticlePenaltyContactCartesianBoundaryConstraintFactory(
         The MPMModel instance.
     location
         The location on the particle to apply the constraint. Can be "center", "face", or "vertex".
-    faceID
-        The face ID if location is "face" and if particleCollection is not an EntityBasedSurface.
-    vertexID
-        The vertex ID if location is "vertex".
+    faceIDs
+        The face ID(s) if location is "face".
+    vertexIDs
+        The vertex ID(s) if location is "vertex".
     penaltyParameter
         The penalty parameter for the constraint.
     doProximityCheck
@@ -285,7 +327,7 @@ def ParticlePenaltyContactCartesianBoundaryConstraintFactory(
                     boundaryPosition,
                     model,
                     location="face",
-                    faceID=faceID,
+                    faceIDs=faceID,
                     penaltyParameter=penaltyParameter,
                     doProximityCheck=doProximityCheck,
                     proximityFactor=proximityFactor,
@@ -304,8 +346,8 @@ def ParticlePenaltyContactCartesianBoundaryConstraintFactory(
                 boundaryPosition,
                 model,
                 location,
-                faceID,
-                vertexID,
+                faceIDs,
+                vertexIDs,
                 penaltyParameter=penaltyParameter,
                 doProximityCheck=doProximityCheck,
                 proximityFactor=proximityFactor,
