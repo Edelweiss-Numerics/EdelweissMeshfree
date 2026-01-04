@@ -1,9 +1,13 @@
+from collections.abc import Iterable
+
 import numpy as np
 from edelweissfe.config.phenomena import getFieldSize
+from edelweissfe.surfaces.entitybasedsurface import EntityBasedSurface
 from edelweissfe.timesteppers.timestep import TimeStep
 from edelweissfe.variables.scalarvariable import ScalarVariable
 
 from edelweissmpm.constraints.base.mpmconstraintbase import MPMConstraintBase
+from edelweissmpm.models.mpmmodel import MPMModel
 from edelweissmpm.particles.base.baseparticle import BaseParticle
 
 
@@ -88,6 +92,7 @@ class ParticleLagrangianContactCartesianBoundaryConstraint(MPMConstraintBase):
         self._orientation = 1.0 if boundaryPosition > self._particle_coordinate_j else -1.0
 
         self._velocity = velocity
+        self._contactCurrentlyActive = True
 
     @property
     def name(self) -> str:
@@ -132,7 +137,6 @@ class ParticleLagrangianContactCartesianBoundaryConstraint(MPMConstraintBase):
 
         self._nodes = nodes
 
-        # self._particle_coordinate_j = self._particle.getCenterCoordinates()[self._component]
         self._particle_coordinate_j = self._getConstraintLocation()[self._component]
 
         return hasChanged
@@ -150,7 +154,6 @@ class ParticleLagrangianContactCartesianBoundaryConstraint(MPMConstraintBase):
         K_LU = K[-self._nLagrangianMultipliers :, : -self._nLagrangianMultipliers]
         K_LL = K[-self._nLagrangianMultipliers :, -self._nLagrangianMultipliers :]
 
-        self.reactionForce = 0.0
         # lag is the index of the lagrangian multiplier
         # i is the component of the field being constrained
         i = self._component
@@ -163,6 +166,7 @@ class ParticleLagrangianContactCartesianBoundaryConstraint(MPMConstraintBase):
         K_LU_j = K_LU[:, i :: self._fieldSize]
 
         dL_l = dU_L[lag]
+        self.reactionForce = dL_l
 
         N = self._particle.getInterpolationVector(self._getConstraintLocation())
 
@@ -173,10 +177,24 @@ class ParticleLagrangianContactCartesianBoundaryConstraint(MPMConstraintBase):
         g_l = self._orientation * (
             deltaU_j - (-self._particle_coordinate_j + self._boundaryPosition + self._velocity * timeStep.stepProgress)
         )
-        if g_l < -1e-12 and np.isclose(dL_l, 0.0):
+
+        gap_tol = 1e-13
+        tensile_threshhold = 1e-13
+
+        is_penetrating = g_l >= -gap_tol
+
+        is_in_tension = (dL_l) < -tensile_threshhold
+
+        should_be_active = True
+
+        if not is_penetrating or is_in_tension:
+            should_be_active = False
+
+        if not should_be_active:
             # contact not active, but we need to ensure that no force is transferred
             PExt_L[lag] += dL_l
             K_LL[lag, lag] += 1.0
+
             return
 
         dg_l_dU_j = N * self._orientation
@@ -187,61 +205,72 @@ class ParticleLagrangianContactCartesianBoundaryConstraint(MPMConstraintBase):
         K_UL_j[nodeIdcs, lag] += dg_l_dU_j
         K_LU_j[lag, nodeIdcs] += dg_l_dU_j
 
-        self.reactionForce = dL_l
+        self._contactCurrentlyActive = True
 
 
 def ParticleLagrangianContactCartesianBoundaryConstraintFactory(
     baseName: str,
-    particles: list[BaseParticle],
-    component: int,
     boundaryPosition: float,
-    model,
+    component: int,
+    particleCollection: Iterable[BaseParticle] | EntityBasedSurface,
+    field: str,
+    model: MPMModel,
     location: str = "center",
     faceID: int = None,
     vertexID: int = None,
-    velocity: float = 0.0,
-) -> dict[str, ParticleLagrangianContactCartesianBoundaryConstraint]:
+):
     """
-    Factory function to create multiple ParticleLagrangianContactBoundaryConstraint instances.
+    Factory function to create ParticleLagrangianWeakDirichlet constraints on a collection of particles.
 
     Parameters
     ----------
-    baseName : str
-        Base name for the constraints.
-    particles : list[BaseParticle]
-        List of particles to which the constraints will be applied.
-    component : int
-        The component (0 for x, 1 for y, 2 for z) of the boundary normal.
-    boundaryPosition : float
+    baseName
+        The base name for the constraints.
+    boundaryPosition
         The position of the boundary along the specified component.
+    component
+        The component (0 for x, 1 for y, 2 for z) of the boundary normal.
+    particleCollection
+        An iterable collection of particles or an EntityBasedSurface.
+    field
+        The field to be constrained.
     model
-        The simulation model.
-    location: str
-        Either "center", "face" or "vertex. For face or vertex, the IDs need
-        to be specified in the particle definition. Note that faceIDs start (Abaqus-convention) at 1.
-    faceID: int, optional
-        The ID of the face if location is "face".
-    vertexID: int, optional
-        The ID of the vertex if location is "vertex".
+        The MPMModel instance.
+    location
+        The location on the particle to apply the constraint. Can be "center", "face", or "vertex".
+    faceID
+        The face ID if location is "face" and if particleCollection is not an EntityBasedSurface.
+    vertexID
+        The vertex ID if location is "vertex".
 
     Returns
     -------
-    dict[str, ParticleLagrangianContactBoundaryConstraint]
-        A dictionary of created constraints with their names as keys.
+    dict
+        A dictionary mapping constraint names to ParticleLagrangianWeakDirichlet instances.
     """
+
     constraints = dict()
-    for i, p in enumerate(particles):
-        name = f"{baseName}_{i}"
-        constraint = ParticleLagrangianContactCartesianBoundaryConstraint(
-            name=name,
-            particle=p,
-            component=component,
-            boundaryPosition=boundaryPosition,
-            model=model,
-            location=location,
-            faceID=faceID,
-            vertexID=vertexID,
-            velocity=velocity,
-        )
-        constraints[name] = constraint
-    return constraints
+
+    if isinstance(particleCollection, EntityBasedSurface):
+        for faceID, particles in particleCollection.items():
+            for i, p in enumerate(particles):
+                name = f"{baseName}_face{faceID}_{i}"
+                constraint = ParticleLagrangianContactCartesianBoundaryConstraint(
+                    name, p, component, boundaryPosition, model, location="face", faceID=faceID
+                )
+                constraints[name] = constraint
+        return constraints
+
+    elif isinstance(particleCollection, Iterable):
+
+        for i, p in enumerate(particleCollection):
+            name = f"{baseName}_{i}"
+            constraint = ParticleLagrangianContactCartesianBoundaryConstraint(
+                name, p, component, boundaryPosition, model, location, faceID, vertexID
+            )
+            constraints[name] = constraint
+
+        return constraints
+
+    else:
+        raise TypeError("particleCollection must be a list of particles or an EntityBasedSurface.")
