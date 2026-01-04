@@ -127,7 +127,7 @@ def computeMarmotCellsInParallel(
         int nActiveCells = len(activeCells_)
         list activeCells = list(activeCells_)
 
-        long[::1] I             = K_VIJ.I
+        int[::1] I             = K_VIJ.I
         double[::1] K_mView     = K_VIJ
         double[::1] dU_mView    = dU
         double[::1] P_mView     = P
@@ -230,11 +230,12 @@ def computeMarmotParticlesInParallel(
         The number of threads to be used.
     """
     cdef:
-        int particleNDof, particleNumber, particleIdxInVIJ, particleIdxInPe, threadID, currentIdxInU
+        int particleNDof, particleNumber, particleIdxInPe, threadID, currentIdxInU
+        long particleIdxInVIJ
         int nActiveParticles = len(particles_)
         list particles = list(particles_)
 
-        long[::1] I             = K_VIJ.I
+        int[::1] I             = K_VIJ.I
         double[::1] K_mView     = K_VIJ
         double[::1] dU_mView    = dU
         double[::1] P_mView     = P
@@ -251,7 +252,7 @@ def computeMarmotParticlesInParallel(
         MarmotParticleWrapper backendBasedCythonParticle
         # lists (cpp particles + indices and nDofs), which can be accessed parallely
         MarmotParticle** cppActiveParticles =      <MarmotParticle**> malloc ( nActiveParticles * sizeof(MarmotParticle*) )
-        int[::1] particleIndicesInVIJ         = np.empty( (nActiveParticles,), dtype=np.intc )
+        long[::1] particleIndicesInVIJ         = np.empty( (nActiveParticles,), dtype=np.int64)
         int[::1] particleIndexInPe            = np.empty( (nActiveParticles,), dtype=np.intc )
         int[::1] particleNDofs                = np.empty( (nActiveParticles,), dtype=np.intc )
 
