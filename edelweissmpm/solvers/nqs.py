@@ -188,7 +188,6 @@ class NonlinearQuasistaticSolver(NonlinearImplicitSolverBase):
         self._applyStepActionsAtStepStart(model, dirichlets + bodyLoads + distributedLoads)
 
         elements = model.elements.values()
-        scalarVariables = model.scalarVariables.values()
         particles = model.particles.values()
 
         newtonCache = None
@@ -252,11 +251,16 @@ class NonlinearQuasistaticSolver(NonlinearImplicitSolverBase):
                         self._assembleActiveDomain(activeCells, model)
                     )
 
+                    activeConstraints = [c for c in constraints if c.active]
+                    activeConstraintsScalarVariables = [v for c in activeConstraints for v in c.scalarVariables]
+
+                    print("active constraints:", len(activeConstraints))
+
                     theDofManager = self._createDofManager(
                         reducedNodeFields.values(),
-                        scalarVariables,
+                        activeConstraintsScalarVariables,
                         elements,
-                        constraints,
+                        activeConstraints,
                         # TODO : Check how to make next line more elegant
                         # TODO 2
                         # list(
@@ -305,6 +309,9 @@ class NonlinearQuasistaticSolver(NonlinearImplicitSolverBase):
 
                 self.journal.message(iterationHeader, self.identification, level=2)
                 self.journal.message(iterationHeader2, self.identification, level=2)
+
+                if not newtonCache:
+                    newtonCache = self._createNewtonCache(theDofManager)
 
                 try:
                     for initialGuess in (dUPrediction, None):
@@ -483,8 +490,6 @@ class NonlinearQuasistaticSolver(NonlinearImplicitSolverBase):
 
         nAllowedResidualGrowths = iterationOptions["allowed residual growths"]
 
-        if not newtonCache:
-            newtonCache = self._createNewtonCache(theDofManager)
         K_VIJ, csrGenerator, dU, Rhs, F, PInt, PExt = newtonCache
 
         dU[:] = initialGuess if initialGuess is not None else 0.0
