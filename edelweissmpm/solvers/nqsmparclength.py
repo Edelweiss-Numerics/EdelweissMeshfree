@@ -174,7 +174,7 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
         iterationOptions: dict,
         timeStep: TimeStep,
         model: MPMModel,
-        newtonCache: tuple = None,
+        newtonCache: tuple,
         dUGuess: DofVector = None,
     ) -> tuple[DofVector, DofVector, dict, tuple]:
         """Standard Newton-Raphson scheme to solve for an increment.
@@ -248,8 +248,8 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
 
         nAllowedResidualGrowths = iterationOptions["allowed residual growths"]
 
-        if not newtonCache:
-            newtonCache = self._createArcLengthNewtonCache(theDofManager)
+        # if not newtonCache:
+        #     newtonCache = self._createArcLengthNewtonCache(theDofManager)
         K_VIJ, csrGenerator, dU, Rhs_, F, PInt, PExt, PExt_0, PExt_f, K_VIJ_0, K_VIJ_f = newtonCache
 
         dU[:] = 0.0
@@ -392,7 +392,7 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
         return dU, PInt, iterationHistory, newtonCache
 
     @performancetiming.timeit("creation newton cache")
-    def _createArcLengthNewtonCache(self, theDofManager: DofManager) -> tuple:
+    def _createNewtonCache(self, theDofManager: DofManager) -> tuple:
         """Create expensive objects, which may be reused if the global system does not change.
 
         Parameters
@@ -405,6 +405,10 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
         tuple
             The collection of expensive objects.
         """
+        arcLengthController = self._arcLengthController
+
+        if arcLengthController is None:
+            return super()._createNewtonCache(theDofManager)
 
         K_VIJ = theDofManager.constructVIJSystemMatrix()
         csrGenerator = self._makeCachedCOOToCSRGenerator(K_VIJ)
