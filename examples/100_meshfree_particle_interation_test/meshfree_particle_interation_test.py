@@ -30,7 +30,7 @@ import argparse
 import numpy as np
 import pytest
 
-from edelweissmpm.particlemanagers.kdbinorganizedparticlemanager import (
+from edelweissmpm.particlemanagers.oldkdbinorganizedparticlemanager import (
     KDBinOrganizedParticleManager,
 )
 

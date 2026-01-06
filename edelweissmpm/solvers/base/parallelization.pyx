@@ -123,7 +123,8 @@ def computeMarmotCellsInParallel(
         The number of threads to be used.
     """
     cdef:
-        int cellNDof, cellNumber, cellIdxInVIJ, cellIdxInPe, threadID, currentIdxInU
+        int cellNDof, cellNumber, cellIdxInPe, threadID, currentIdxInU
+        long cellIdxInVIJ
         int nActiveCells = len(activeCells_)
         list activeCells = list(activeCells_)
 
@@ -144,7 +145,7 @@ def computeMarmotCellsInParallel(
         MarmotCellWrapper backendBasedCythonCell
         # lists (cpp activeCells + indices and nDofs), which can be accessed parallely
         MarmotCell** cppActiveCells =      <MarmotCell**> malloc ( nActiveCells * sizeof(MarmotCell*) )
-        int[::1] cellIndicesInVIJ         = np.empty( (nActiveCells,), dtype=np.intc )
+        long[::1] cellIndicesInVIJ         = np.empty( (nActiveCells,), dtype=np.int64 )
         int[::1] cellIndexInPe            = np.empty( (nActiveCells,), dtype=np.intc )
         int[::1] cellNDofs                = np.empty( (nActiveCells,), dtype=np.intc )
 
