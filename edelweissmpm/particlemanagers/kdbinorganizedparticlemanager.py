@@ -26,8 +26,14 @@
 #  ---------------------------------------------------------------------
 
 
+import concurrent.futures
+
 import numpy as np
 from edelweissfe.journal.journal import Journal
+from edelweissfe.numerics.parallelizationutilities import (
+    getNumberOfThreads,
+    isFreeThreadingSupported,
+)
 
 from edelweissmpm.meshfree.particlekerneldomain import ParticleKernelDomain
 from edelweissmpm.particlemanagers.base.baseparticlemanager import BaseParticleManager
@@ -213,7 +219,9 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
     def updateConnectivity(self):
         hasChanged = False
 
-        # --- Bonding Logic (Existing code) ---
+        # --- 1. Bonding Logic (Serial) ---
+        # This modifies the spatial index (kernel positions), so it must run
+        # before the parallel search starts.
         if self._bondParticlesToKernelFunctions:
             self._journal.message("Updating kernel function positions...", "ParticleManager")
             for particle, kernelFunction in zip(self._particles, self._meshfreeKernelFunctions):
@@ -221,7 +229,6 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
                 if self._randomlyShiftPartliceShapeFunctions:
                     if isinstance(self._randomlyShiftPartliceShapeFunctions, float):
                         particleVol = particle.getVolumeUndeformed()
-                        # particleSize = np.pow(particleVol, 1.0 / self._dimension)
                         particleSize = particleVol ** (1.0 / self._dimension)
                         randdisp = (
                             (np.random.rand(self._dimension) - 0.5)
@@ -229,75 +236,98 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
                             * self._randomlyShiftPartliceShapeFunctions
                             * particleSize
                         )
-                    particleCoordinates += randdisp
-
+                        particleCoordinates += randdisp
                 kernelFunction.moveTo(particleCoordinates)
 
             # Rebuild grid after moving kernels
             self.signalizeKernelFunctionUpdate()
 
-        # --- Fast Search Logic ---
+        # --- 2. Parallel Fast Search Logic ---
 
-        # Local references for speed
+        # Pre-fetch shared read-only data to avoid self-lookup overhead in threads
         all_kernels = self._meshfreeKernelFunctions
-        kernel_mins = self._theBins._mins  # (N, D) array
-        kernel_maxs = self._theBins._maxs  # (N, D) array
+        kernel_mins = self._theBins._mins
+        kernel_maxs = self._theBins._maxs
         dim = self._dimension
+        bin_organizer = self._theBins  # Helper reference
 
-        for p in self._particles:
-            evaluationCoordinates = p.getEvaluationCoordinates()
+        def processParticleChunk(particleChunk: list) -> bool:
+            """Worker function to process a slice of particles for parallelization.
 
-            # 1. Broad Phase: Particle Bounding Box
-            # Instead of querying the grid 8 times (for 8 vertices),
-            # we query it once for the particle's bounding box.
-            p_min = np.min(evaluationCoordinates, axis=0)
-            p_max = np.max(evaluationCoordinates, axis=0)
+            For a given chunk of particles, finds and assigns valid kernel functions.
 
-            # Get INDICES of potential kernels
-            candidate_indices = self._theBins.getCandidateIndices(p_min, p_max)
+            Parameters
+            ----------
+            particleChunk : list
+                A list of particles to process.
 
-            valid_kernels = []
+            Returns
+            -------
+            bool
+                True if any particle in the chunk had its kernel functions changed.
+            """
+            particlesInChunkHaveChanged = False
 
-            # 2. Narrow Phase: AABB Intersection + Precise Check
-            for k_idx in candidate_indices:
+            for p in particleChunk:
+                evaluationCoordinates = p.getEvaluationCoordinates()
+                p_min = np.min(evaluationCoordinates, axis=0)
+                p_max = np.max(evaluationCoordinates, axis=0)
 
-                # A. FAST AABB CHECK (Box vs Box)
-                # If the particle box doesn't touch the kernel box, skip expensive math.
-                # This filters out ~90% of candidates returned by the bins.
-                k_min = kernel_mins[k_idx]
-                k_max = kernel_maxs[k_idx]
+                candidate_indices = bin_organizer.getCandidateIndices(p_min, p_max)
 
-                # Check for separation (no overlap)
-                if p_max[0] < k_min[0] or p_min[0] > k_max[0]:
-                    continue
-                if dim > 1:
-                    if p_max[1] < k_min[1] or p_min[1] > k_max[1]:
+                validKernels = []
+
+                for k_idx in candidate_indices:
+                    # A. FAST AABB CHECK ...
+                    k_min = kernel_mins[k_idx]
+                    k_max = kernel_maxs[k_idx]
+
+                    if p_max[0] < k_min[0] or p_min[0] > k_max[0]:
                         continue
-                if dim > 2:
-                    if p_max[2] < k_min[2] or p_min[2] > k_max[2]:
-                        continue
+                    if dim > 1:
+                        if p_max[1] < k_min[1] or p_min[1] > k_max[1]:
+                            continue
+                    if dim > 2:
+                        if p_max[2] < k_min[2] or p_min[2] > k_max[2]:
+                            continue
 
-                # B. PRECISE CHECK (Vertices vs Support)
-                sf = all_kernels[k_idx]
+                    # B. ... now the PRECISE CHECK
+                    sf = all_kernels[k_idx]
+                    isCovered = False
+                    for coord in evaluationCoordinates:
+                        if sf.isCoordinateInCurrentSupport(coord):
+                            isCovered = True
+                            break
 
-                # Check actual vertices. Stop at the first one found.
-                is_covered = False
-                for coord in evaluationCoordinates:
-                    if sf.isCoordinateInCurrentSupport(coord):
-                        is_covered = True
-                        break  # Optimization: Found one, no need to check others
+                    if isCovered:
+                        validKernels.append(sf)
 
-                if is_covered:
-                    valid_kernels.append(sf)
+                validKernels.sort(key=lambda x: x.node.label)
 
-            # 3. Assignment
-            # Sort by node label for determinism
-            valid_kernels.sort(key=lambda x: x.node.label)
+                if validKernels != p.kernelFunctions:
+                    particlesInChunkHaveChanged = True
 
-            if not hasChanged and valid_kernels != p.kernelFunctions:
+                p.assignKernelFunctions(validKernels)
+
+            return particlesInChunkHaveChanged
+
+        numThreads = getNumberOfThreads() if isFreeThreadingSupported() else 1
+        # Ensure we don't have empty chunks if particles < workers
+        if len(self._particles) < numThreads:
+            numThreads = 1
+
+        particleChunkSize = len(self._particles) // numThreads + 1
+        particleChunks = [
+            self._particles[i : i + particleChunkSize] for i in range(0, len(self._particles), particleChunkSize)
+        ]
+
+        # In free-threaded Python, ThreadPoolExecutor provides true parallelism
+        with concurrent.futures.ThreadPoolExecutor(max_workers=numThreads) as executor:
+            results = executor.map(processParticleChunk, particleChunks)
+
+            # Aggregate boolean results
+            if any(results):
                 hasChanged = True
-
-            p.assignKernelFunctions(valid_kernels)
 
         return hasChanged
 
