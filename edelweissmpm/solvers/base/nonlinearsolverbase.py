@@ -25,6 +25,7 @@
 #  the top level directory of EdelweissMPM.
 #  ---------------------------------------------------------------------
 
+import concurrent.futures
 from abc import abstractmethod
 from collections import deque
 
@@ -35,6 +36,10 @@ from edelweissfe.constraints.base.constraintbase import ConstraintBase
 from edelweissfe.journal.journal import Journal
 from edelweissfe.numerics.csrgeneratorv2 import CSRGenerator
 from edelweissfe.numerics.dofmanager import DofManager, DofVector, VIJSystemMatrix
+from edelweissfe.numerics.parallelizationutilities import (
+    getNumberOfThreads,
+    isFreeThreadingSupported,
+)
 from edelweissfe.outputmanagers.base.outputmanagerbase import OutputManagerBase
 from edelweissfe.sets.nodeset import NodeSet
 from edelweissfe.stepactions.base.dirichletbase import DirichletBase
@@ -1154,34 +1159,33 @@ class NonlinearImplicitSolverBase:
         dT: float,
         theDofManager: DofManager,
     ):
-        """Evaluate all cells.
+        if not particles:
+            return
+        particles = list(particles)  # Ensure we have a list
 
-        Parameters
-        ----------
-        elements
-            The list of elements to be evaluated.
-        dU
-            The current global solution increment vector.
-        P
-            The current global flux vector.
-        F
-            The accumulated nodal fluxes vector.
-        K_VIJ
-            The global system matrix in VIJ (COO) format.
-        time
-            The current time.
-        dT
-            The increment of time.
-        theDofManager
-            The DofManager instance.
-        """
-        for p in particles:
-            dUP = dU[p]
-            PP = np.zeros(p.nDof)
-            KP = K_VIJ[p]
-            p.computePhysicsKernels(dUP, PP, KP, time, dT)
-            P[p] += PP
-            F[p] += abs(PP)
+        scatter_P = P.createScatterVector()
+
+        def computeParticleChunk(particleChunk):
+            for p in particleChunk:
+                PP = scatter_P[p]
+                dUP = dU[p]
+                KP = K_VIJ[p]
+
+                p.computePhysicsKernels(dUP, PP, KP, time, dT)
+
+        numThreads = getNumberOfThreads() if isFreeThreadingSupported() else 1
+        if len(particles) < numThreads:
+            numThreads = 1
+
+        particleChunkSize = len(particles) // numThreads + 1
+        particleChunks = [particles[i : i + particleChunkSize] for i in range(0, len(particles), particleChunkSize)]
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=numThreads) as executor:
+            executor.map(computeParticleChunk, particleChunks)
+
+        # Scatter results back to Global P and F
+        scatter_P.assembleInto(P)
+        scatter_P.assembleInto(F, absolute=True)
 
     @performancetiming.timeit("computation particles")
     def _computeParticlesWithConsistentInertia(
