@@ -28,6 +28,7 @@
 import concurrent.futures
 from abc import abstractmethod
 from collections import deque
+from typing import Iterable
 
 import edelweissfe.utils.performancetiming as performancetiming
 import h5py
@@ -59,6 +60,7 @@ from edelweissmpm.models.mpmmodel import MPMModel
 from edelweissmpm.mpmmanagers.base.mpmmanagerbase import MPMManagerBase
 from edelweissmpm.numerics.dofmanager import MPMDofManager
 from edelweissmpm.particlemanagers.base.baseparticlemanager import BaseParticleManager
+from edelweissmpm.particles.base.baseparticle import BaseParticle
 from edelweissmpm.stepactions.base.mpmbodyloadbase import MPMBodyLoadBase
 from edelweissmpm.stepactions.base.mpmdistributedloadbase import MPMDistributedLoadBase
 from edelweissmpm.stepactions.particledistributedload import ParticleDistributedLoad
@@ -1150,7 +1152,7 @@ class NonlinearImplicitSolverBase:
     @performancetiming.timeit("computation particles")
     def _computeParticles(
         self,
-        particles: list,
+        particles: Iterable[BaseParticle],
         dU: DofVector,
         P: DofVector,
         F: DofVector,
@@ -1159,31 +1161,56 @@ class NonlinearImplicitSolverBase:
         dT: float,
         theDofManager: DofManager,
     ):
+        """Evaluate all particles.
+
+        Parameters
+        ----------
+        particles
+            The list of particles to be evaluated.
+        dU
+            The current global solution increment vector.
+        P
+            The current global flux vector.
+        F
+            The accumulated nodal fluxes vector.
+        K_VIJ
+            The global system matrix in VIJ (COO) format.
+        time
+            The current time.
+        dT
+            The increment of time.
+        theDofManager
+            The DofManager instance.
+        """
+
         if not particles:
             return
         particles = list(particles)  # Ensure we have a list
 
-        scatter_P = P.createScatterVector()
+        scatter_P = (
+            P.createScatterVector()
+        )  # make a scatter vector; which gives 1) contiguous memory access and 2) thread safety
 
-        def computeParticleChunk(particleChunk):
-            for p in particleChunk:
-                PP = scatter_P[p]
-                dUP = dU[p]
-                KP = K_VIJ[p]
+        def computeParticleWorker(particle: BaseParticle):
+            """
+            Worker function to compute physics kernels for a single particle.
 
-                p.computePhysicsKernels(dUP, PP, KP, time, dT)
+            Parameters
+            ----------
+            particle
+                The particle to be processed.
+            """
+            PP = scatter_P[particle]
+            dUP = dU[particle]
+            KP = K_VIJ[particle]
+
+            particle.computePhysicsKernels(dUP, PP, KP, time, dT)
 
         numThreads = getNumberOfThreads() if isFreeThreadingSupported() else 1
-        if len(particles) < numThreads:
-            numThreads = 1
-
-        particleChunkSize = len(particles) // numThreads + 1
-        particleChunks = [particles[i : i + particleChunkSize] for i in range(0, len(particles), particleChunkSize)]
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=numThreads) as executor:
-            executor.map(computeParticleChunk, particleChunks)
+            executor.map(computeParticleWorker, particles)
 
-        # Scatter results back to Global P and F
         scatter_P.assembleInto(P)
         scatter_P.assembleInto(F, absolute=True)
 
