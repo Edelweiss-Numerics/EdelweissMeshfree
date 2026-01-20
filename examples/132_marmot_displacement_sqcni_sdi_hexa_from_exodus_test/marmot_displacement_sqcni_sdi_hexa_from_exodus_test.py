@@ -179,10 +179,7 @@ def run_sim():
         "displacement",
     )
     fieldOutputController.addPerParticleFieldOutput(
-        "vertex displacements",
-        theModel.particleSets["all"],
-        "vertex displacements",
-        f_x=lambda x: np.reshape(x, (-1, 3)),
+        "vertex displacements", theModel.particleSets["all"], "vertex displacements", reshape_to_dimensions=3
     )
     fieldOutputController.addPerParticleFieldOutput(
         "deformation gradient",

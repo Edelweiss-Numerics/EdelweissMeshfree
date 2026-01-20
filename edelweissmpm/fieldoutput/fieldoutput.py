@@ -60,6 +60,8 @@ class MaterialPointFieldOutput(_FieldOutputBase):
         Whether to export the results.
     fExport_x
         The function to apply to the exported results.
+    reshape_to_dimensions
+        If the result should be reshaped to certain dimensions (e.g. for tensor results).
     """
 
     def __init__(
@@ -73,13 +75,14 @@ class MaterialPointFieldOutput(_FieldOutputBase):
         f_x=Callable,
         export: str = None,
         fExport_x=Callable,
+        reshape_to_dimensions: int = None,
     ):
         self.associatedSet = mpSet
         self.resultName = resultName
 
         self.mpResultCollector = MaterialPointResultCollector(list(self.associatedSet), self.resultName)
 
-        super().__init__(name, model, journal, saveHistory, f_x, export, fExport_x)
+        super().__init__(name, model, journal, saveHistory, f_x, export, fExport_x, reshape_to_dimensions)
 
     def updateResults(self, model: MPMModel):
         """Update the field output.
@@ -120,6 +123,8 @@ class ParticleFieldOutput(_FieldOutputBase):
         Whether to export the results.
     fExport_x
         The function to apply to the exported results.
+    reshape_to_dimensions
+        If the result should be reshaped to certain dimensions (e.g. for tensor results).
     """
 
     def __init__(
@@ -133,13 +138,14 @@ class ParticleFieldOutput(_FieldOutputBase):
         f_x=Callable[[np.ndarray], np.ndarray],
         export: str = None,
         fExport_x=Callable[[np.ndarray], np.ndarray],
+        reshape_to_dimensions: int = None,
     ):
         self.associatedSet = pSet
         self.resultName = resultName
 
         self.pResultCollector = MaterialPointResultCollector(list(self.associatedSet), self.resultName)
 
-        super().__init__(name, model, journal, saveHistory, f_x, export, fExport_x)
+        super().__init__(name, model, journal, saveHistory, f_x, export, fExport_x, reshape_to_dimensions)
 
     def updateResults(self, model: MPMModel):
         """Update the field output.
@@ -173,6 +179,7 @@ class MPMFieldOutputController(FieldOutputController):
         f_x=None,
         export: str = None,
         fExport_x=None,
+        reshape_to_dimensions: int = None,
     ):
         """
         Parameters
@@ -191,6 +198,8 @@ class MPMFieldOutputController(FieldOutputController):
             Whether to export the results.
         fExport_x
             The function to apply to the exported results.
+        reshape_to_dimensions
+            If the result should be reshaped to certain dimensions (e.g. for tensor results).
         """
         if name in self.fieldOutputs:
             raise Exception("FieldOutput {:} already exists!".format(name))
@@ -199,7 +208,16 @@ class MPMFieldOutputController(FieldOutputController):
             result = name
 
         self.fieldOutputs[name] = MaterialPointFieldOutput(
-            name, materialPointSet, result, self.model, self.journal, saveHistory, f_x, export, fExport_x
+            name,
+            materialPointSet,
+            result,
+            self.model,
+            self.journal,
+            saveHistory,
+            f_x,
+            export,
+            fExport_x,
+            reshape_to_dimensions,
         )
 
     def addPerParticleFieldOutput(
@@ -211,5 +229,8 @@ class MPMFieldOutputController(FieldOutputController):
         f_x=None,
         export: str = None,
         fExport_x=None,
+        reshape_to_dimensions=None,
     ):
-        return self.addPerMaterialPointFieldOutput(name, particleSet, result, saveHistory, f_x, export, fExport_x)
+        return self.addPerMaterialPointFieldOutput(
+            name, particleSet, result, saveHistory, f_x, export, fExport_x, reshape_to_dimensions
+        )
