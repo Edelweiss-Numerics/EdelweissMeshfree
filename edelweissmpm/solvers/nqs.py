@@ -24,6 +24,7 @@
 #  The full text of the license can be found in the file LICENSE.md at
 #  the top level directory of EdelweissMPM.
 #  ---------------------------------------------------------------------
+import gc
 from collections.abc import Callable
 
 import edelweissfe.utils.performancetiming as performancetiming
@@ -258,8 +259,6 @@ class NonlinearQuasistaticSolver(NonlinearImplicitSolverBase):
                     activeConstraints = [c for c in constraints if c.active]
                     activeConstraintsScalarVariables = [v for c in activeConstraints for v in c.scalarVariables]
 
-                    print("active constraints:", len(activeConstraints))
-
                     theDofManager = self._createDofManager(
                         reducedNodeFields.values(),
                         activeConstraintsScalarVariables,
@@ -320,28 +319,34 @@ class NonlinearQuasistaticSolver(NonlinearImplicitSolverBase):
                 try:
                     for initialGuess in (dUPrediction, None):
                         try:
-                            if not (skipZeroIncrements and timeStep.timeIncrement == 0.0):
-                                dU, P, iterationHistory, newtonCache = self._newtonSolve(
-                                    dirichlets,
-                                    bodyLoads,
-                                    distributedLoads,
-                                    particleDistributedLoads,
-                                    reducedNodeSets,
-                                    elements,
-                                    U,
-                                    activeCells,
-                                    model.cellElements.values(),
-                                    materialPoints,
-                                    particles,
-                                    constraints,
-                                    theDofManager,
-                                    linearSolver,
-                                    iterationOptions,
-                                    timeStep,
-                                    model,
-                                    newtonCache,
-                                    initialGuess,
-                                )
+                            if timeStep.timeIncrement == 0.0 and skipZeroIncrements:
+                                self.journal.message("Skipping zero time increment solve", self.identification, level=1)
+                                dU = theDofManager.constructDofVector()
+                                P = theDofManager.constructDofVector()
+                                iterationHistory = None
+                                break
+
+                            dU, P, iterationHistory, newtonCache = self._newtonSolve(
+                                dirichlets,
+                                bodyLoads,
+                                distributedLoads,
+                                particleDistributedLoads,
+                                reducedNodeSets,
+                                elements,
+                                U,
+                                activeCells,
+                                model.cellElements.values(),
+                                materialPoints,
+                                particles,
+                                constraints,
+                                theDofManager,
+                                linearSolver,
+                                iterationOptions,
+                                timeStep,
+                                model,
+                                newtonCache,
+                                initialGuess,
+                            )
                             break
                         except Exception as e:
                             if initialGuess is not None:
@@ -369,15 +374,21 @@ class NonlinearQuasistaticSolver(NonlinearImplicitSolverBase):
                         man.finalizeFailedIncrement()
 
                 else:
-                    if iterationHistory["iterations"] >= iterationOptions["critical iterations"]:
-                        timeStepper.preventIncrementIncrease()
+
+                    if iterationHistory is not None:
+                        if iterationHistory["iterations"] >= iterationOptions["critical iterations"]:
+                            timeStepper.preventIncrementIncrease()
+                        self.journal.message(
+                            "Converged in {:} iteration(s)".format(iterationHistory["iterations"]),
+                            self.identification,
+                            1,
+                        )
 
                     U += dU
 
                     if predictor:
                         predictor.updateHistory(dU, timeStep)
 
-                    # TODO: Make this optional/flexibel via function arguments (?)
                     for field in reducedNodeFields.values():
                         theDofManager.writeDofVectorToNodeField(dU, field, "dU")
                         theDofManager.writeDofVectorToNodeField(U, field, "U")
@@ -385,10 +396,6 @@ class NonlinearQuasistaticSolver(NonlinearImplicitSolverBase):
                         model.nodeFields[field.name].copyEntriesFromOther(field)
 
                     model.advanceToTime(timeStep.totalTime)
-
-                    self.journal.message(
-                        "Converged in {:} iteration(s)".format(iterationHistory["iterations"]), self.identification, 1
-                    )
 
                     self._finalizeIncrementOutput(fieldOutputController, outputManagers)
 
@@ -398,6 +405,9 @@ class NonlinearQuasistaticSolver(NonlinearImplicitSolverBase):
                         restartFileName = restartHistoryManager.getNextRestartFileName()
                         self._writeRestart(model, timeStepper, restartFileName)
                         restartHistoryManager.append(restartFileName)
+
+                    # as of python 3.14 with freethreading, this seems to be necessary to prevent a memory leak
+                    gc.collect()
 
         except (ReachedMaxIncrements, ReachedMinIncrementSize):
             self.journal.errorMessage("Incrementation failed", self.identification)
