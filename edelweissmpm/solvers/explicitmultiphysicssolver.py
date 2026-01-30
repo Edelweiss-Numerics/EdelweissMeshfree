@@ -1,10 +1,15 @@
 # -*- coding: utf-8 -*-
+import concurrent.futures
 from typing import Iterable
 
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 from edelweissfe.journal.journal import Journal
 from edelweissfe.numerics.dofmanager import DofVector
+from edelweissfe.numerics.parallelizationutilities import (
+    getNumberOfThreads,
+    isFreeThreadingSupported,
+)
 from edelweissfe.timesteppers.timestep import TimeStep
 from edelweissfe.utils.exceptions import StepFailed
 from edelweissfe.utils.fieldoutput import FieldOutputController
@@ -22,9 +27,7 @@ from edelweissmpm.solvers.base.nonlinearsolverbase import (
 
 class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
     """
-    Explicit solver for multiphysics MPM/FE problems.
-    Does NOT calculate Stiffness Matrix (K).
-    Calculates Lumped Mass Matrix (M).
+    Explicit solver for multiphysics RKPM problems.
     """
 
     identification = "Explicit-MP-Solver"
@@ -186,7 +189,7 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
         M
             The current global lumped inertia vector.
         Mv
-            The current global momentum vector.
+            The current global lumped momentum vector.
         """
 
         if not particles:
@@ -214,14 +217,10 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
             particle.computeLumpedInertia(MP)
             particle.computeLumpedMomentum(MVP)
 
-        # computeParticleWorker(particles)
-        for particle in particles:
-            computeParticleWorker(particle)
+        numThreads = getNumberOfThreads() if isFreeThreadingSupported() else 1
 
-        # numThreads = getNumberOfThreads() if isFreeThreadingSupported() else 1
-
-        # with concurrent.futures.ThreadPoolExecutor(max_workers=numThreads) as executor:
-        #     executor.map(computeParticleWorker, particles)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=numThreads) as executor:
+            executor.map(computeParticleWorker, particles)
 
         scatter_P.assembleInto(P)
         scatter_M.assembleInto(M)
@@ -243,10 +242,6 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
             The list of particles to be evaluated.
         dU
             The current global solution increment vector.
-        P
-            The current global flux vector.
-        M
-            The current global lumped inertia vector.
         time
             The current time.
         dT
@@ -269,17 +264,43 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
             dUP = dU[particle]
             particle.updatePhysicsExplicit(dUP, time, dT)
 
-        # computeParticleWorker(particles)
-        for particle in particles:
-            computeParticleWorker(particle)
+        numThreads = getNumberOfThreads() if isFreeThreadingSupported() else 1
 
-        # numThreads = getNumberOfThreads() if isFreeThreadingSupported() else 1
-
-        # with concurrent.futures.ThreadPoolExecutor(max_workers=numThreads) as executor:
-        #     executor.map(computeParticleWorker, particles)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=numThreads) as executor:
+            executor.map(computeParticleWorker, particles)
 
     @performancetiming.timeit("build discretization")
     def getDiscretization(self, model: MPMModel, mpmManagers: list[MPMManagerBase], constraints: list):
+        """Assemble the system discretization.
+
+        Parameters
+        ----------
+        model
+            The MPM model to be discretized.
+        mpmManagers
+            The list of MPM managers handling the discretization.
+        constraints
+            The list of constraints to be applied.
+
+        Returns
+        -------
+        theDofManager
+            The assembled DOF manager.
+        M
+            The global lumped inertia vector.
+        dU
+            The global solution increment vector.
+        P_Int
+            The global internal flux vector.
+        P_Ext
+            The global external flux vector.
+        v_np_one_half
+            The global velocity vector at time n+1/2.
+        Mv
+            The global momentum vector.
+        reducedNodeSets
+            The reduced node sets for the active domain.
+        """
 
         activeCells = self._getActiveCellsFromManagers(mpmManagers)
         (activeNodesPersistent, _, reducedNodeFields, reducedNodeSets) = self._assembleActiveDomain(activeCells, model)
@@ -298,8 +319,7 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
             initializeVIJPattern=False,
         )
 
-        # Initialize Vectors
-        M = theDofManager.constructDofVector()  # Volatile
+        M = theDofManager.constructDofVector()
         dU = theDofManager.constructDofVector()
         P_Int = theDofManager.constructDofVector()
         P_Ext = theDofManager.constructDofVector()
@@ -310,6 +330,23 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
 
     @performancetiming.timeit("compute system")
     def computeSystem(self, model, P_Int: DofVector, P_Ext: DofVector, M: DofVector, Mv: DofVector, timeStep: TimeStep):
+        """Compute the system vectors.
+
+        Parameters
+        ----------
+        model
+            The MPM model to be computed.
+        P_Int
+            The global internal flux vector.
+        P_Ext
+            The global external flux vector.
+        M
+            The global lumped inertia vector.
+        Mv
+            The global momentum vector.
+        timeStep
+            The current time increment.
+        """
 
         self._computeParticlesExplicit(
             model.particles.values(),
@@ -326,6 +363,23 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
 
     @performancetiming.timeit("update system")
     def updateSystem(self, model, totalTime, dT, dU: DofVector):
+        """Update the system state.
+
+        For RKPM, this involves applying the solution increment to the particles using the old discretization,
+        before we update the connectivity for the new configuration.
+
+        Parameters
+        ----------
+        model
+            The MPM model to be updated.
+        totalTime
+            The current total time.
+        dT
+            The time increment.
+        dU
+            The current global solution increment vector.
+        """
+
         self._updateParticlesExplicit(
             model.particles.values(),
             dU,
@@ -341,12 +395,8 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
         ----------
         constraints
             The list of constraints to be evaluated.
-        dU
-            The current global solution increment vector.
         P
             The current global flux vector.
-        K_VIJ
-            The global system matrix in VIJ (COO) format.
         timeStep
             The current time increment.
         """
