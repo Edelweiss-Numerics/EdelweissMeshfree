@@ -50,16 +50,14 @@ from edelweissmpm.models.mpmmodel import MPMModel
 from edelweissmpm.mpmmanagers.base.mpmmanagerbase import MPMManagerBase
 from edelweissmpm.numerics.predictors.basepredictor import BasePredictor
 from edelweissmpm.particlemanagers.base.baseparticlemanager import BaseParticleManager
-from edelweissmpm.solvers.base.nonlinearsolverbase import (
-    NonlinearImplicitSolverBase,
-    RestartHistoryManager,
-)
+from edelweissmpm.solvers.base.implicitbase import BaseNonlinearImplicitSolver
+from edelweissmpm.solvers.base.nonlinearsolverbase import RestartHistoryManager
 from edelweissmpm.stepactions.base.mpmbodyloadbase import MPMBodyLoadBase
 from edelweissmpm.stepactions.base.mpmdistributedloadbase import MPMDistributedLoadBase
 from edelweissmpm.stepactions.particledistributedload import ParticleDistributedLoad
 
 
-class NonlinearQuasistaticSolver(NonlinearImplicitSolverBase):
+class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
     """This is the serial nonlinear implicit quasi static solver.
 
 
@@ -218,33 +216,16 @@ class NonlinearQuasistaticSolver(NonlinearImplicitSolverBase):
                     level=1,
                 )
 
-                connectivityHasChanged = False
-
-                if materialPoints:
-                    self.journal.message(
-                        "updating material point - cell connectivity",
-                        self.identification,
-                        level=1,
-                    )
-                    self._prepareMaterialPoints(materialPoints, timeStep.totalTime, timeStep.timeIncrement)
-                    connectivityHasChanged |= self._updateConnectivity(mpmManagers)
-
-                if particleManagers:
-                    self.journal.message(
-                        "updating particle kernel connectivity",
-                        self.identification,
-                        level=1,
-                    )
-                    self._prepareParticles(particles, timeStep.totalTime, timeStep.timeIncrement)
-                    connectivityHasChanged |= self._updateConnectivity(particleManagers)
-
-                for c in constraints:
-                    connectivityHasChanged |= c.updateConnectivity(model)
+                connectivityHasChanged = self._updateModelConnectivity(
+                    materialPoints, particles, constraints, model, timeStep, mpmManagers, particleManagers
+                )
 
                 if connectivityHasChanged or not theDofManager:
-                    activeCells = set()
-                    for man in mpmManagers:
-                        activeCells |= man.getActiveCells()
+
+                    activeCells = self._getActiveCellsFromManagers(mpmManagers)
+                    # activeCells = set()
+                    # for man in mpmManagers:
+                    #     activeCells |= man.getActiveCells()
 
                     self.journal.message(
                         "active domain has changed, (re)initializing equation system & clearing cache",

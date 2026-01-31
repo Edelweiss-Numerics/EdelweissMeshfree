@@ -193,16 +193,46 @@ cdef class MarmotParticleWrapper:
     def dofIndicesPermutation(self):
         return None
 
-    cpdef void computePhysicsKernels(self,
+    def computePhysicsKernels(self,
                                      double[::1] dUc,
                                      double[::1] Pc,
                                      double[::1] Kc,
                                      double timeNew,
-                                     double dTime, ) nogil:
+                                     double dTime, ) :
         """Evaluate residual and stiffness for given time, field, and field increment."""
 
         self._initializeStateVarsTemp()
         self._marmotParticle.computePhysicsKernels(&dUc[0], &Pc[0], &Kc[0], timeNew, dTime)
+
+
+
+    def updatePhysicsExplicit(self,
+                                     double[::1] dUc,
+
+                                     double timeNew,
+                                     double dTime, ) :
+        """Evaluate residual for given time, field, and field increment."""
+
+        self._initializeStateVarsTemp()
+        self._marmotParticle.updatePhysicsExplicit(&dUc[0], timeNew, dTime)
+
+    def computePhysicsKernelsExplicit(self,
+                                     double[::1] Pc ) :
+        """Evaluate residual for given time, field, and field increment."""
+
+        self._marmotParticle.computePhysicsKernelsExplicit(&Pc[0])
+
+    def computeLumpedInertia(self, double[::1] mLumped ) :
+        """Compute the lumped mass matrix for the particle."""
+
+        self._marmotParticle.computeLumpedInertia(&mLumped[0])
+
+    def computeLumpedMomentum(self, double[::1] mLumped ) :
+        """Compute the lumped mass matrix for the particle."""
+
+        self._marmotParticle.computeLumpedMomentum(&mLumped[0])
+
+
 
     cpdef void _initializeStateVarsTemp(self, ) nogil:
         self._stateVarsTemp[:] = self._stateVars
