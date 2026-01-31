@@ -90,5 +90,17 @@ cdef class MarmotMeshfreeKernelFunctionWrapper:
         cdef int isInside = self._marmotMeshfreeKernelFunction.isInSupport(&coords[0])
         return isInside
 
+    def isAnyCoordinateInSupport(self, double[:, ::1] coords):
+        cdef int i
+        cdef int n_points = coords.shape[0]
+
+        # We loop entirely in C.
+        # &coords[i, 0] gives the pointer to the start of the i-th row.
+        for i in range(n_points):
+            if self._marmotMeshfreeKernelFunction.isInSupport(&coords[i, 0]):
+                return True
+
+        return False
+
     def computeKernelFunction(self, double[::1] coords) -> double:
         return self._marmotMeshfreeKernelFunction.computeKernelFunction(&coords[0])
