@@ -100,3 +100,18 @@ class BaseMeshfreeKernelFunction(ABC):
         bool
             True if the coordinates are in the support of the kernel function, False otherwise.
         """
+
+    @abstractmethod
+    def isAnyCoordinateInSupport(self, coords: np.ndarray) -> bool:
+        """Check if any of the given coordinates are in the support of the kernel function.
+
+        Parameters
+        ----------
+        coords
+            The coordinates to check.
+
+        Returns
+        -------
+        bool
+            True if any of the coordinates are in the support of the kernel function, False otherwise.
+        """
