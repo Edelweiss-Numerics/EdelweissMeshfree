@@ -308,6 +308,94 @@ class BaseParticle(BaseNodeCouplingEntity):
         """
 
     @abstractmethod
+    def computePhysicsKernelsExplicit(
+        self,
+        dU: np.ndarray,
+        P: np.ndarray,
+        timeTotal: float,
+        dTime: float,
+    ):
+        """Evaluate the kernel residual and stiffness for given time based for all assigned MaterialPoints.
+
+        Parameters
+        ----------
+        dU
+            The current solution increment.
+        P
+            The external load vector to be defined.
+        timeTotal
+            The current total time.
+        dTime
+            The time increment.
+        """
+
+    @abstractmethod
+    def computeBodyLoadExplicit(
+        self,
+        loadType: str,
+        load: np.ndarray,
+        P: np.ndarray,
+        timeTotal: float,
+        dTime: float,
+    ):
+        """Compute bulk loads (body loads) for given time based for all assigned MaterialPoints.
+
+        Parameters
+        ----------
+        loadType
+            The type of load to be computed (e.g., 'bodyforce')
+        load
+            The float (vector) describing the load.
+        P
+            The external load vector to be defined.
+        timeTotal
+            The current total time.
+        dTime
+            The time increment.
+        """
+
+    @abstractmethod
+    def computeDistributedLoadExplicit(
+        self,
+        loadType: str,
+        surfaceID: int,
+        load: np.ndarray,
+        P: np.ndarray,
+        timeTotal: float,
+        dTime: float,
+    ):
+        """Compute distributed (surface) a for given time based for a specific assigned material point.
+
+        Parameters
+        ----------
+        loadType
+            The type of load to be computed (e.g., 'pressure')
+        surfaceID
+            The ID describing the surface of the material point.
+        load
+            The float (vector) describing the load.
+        P
+            The external load vector to be defined.
+        timeTotal
+            The current total time.
+        dTime
+            The time increment.
+        """
+
+    @abstractmethod
+    def computeLumpedInertia(
+        self,
+        M: np.ndarray,
+    ):
+        """Compute the lumped mass matrix for explicit time integration.
+
+        Parameters
+        ----------
+        M
+            The mass matrix to be defined.
+        """
+
+    @abstractmethod
     def assignMeshfreeKernelFunctions(self, kernelFunctions: list[BaseMeshfreeKernelFunction]):
         """Assign the meshfree kernel functions to the particle.
 
