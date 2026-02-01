@@ -6,7 +6,7 @@
 
 import concurrent.futures
 import itertools
-from typing import Any, List, Optional, Set, Tuple, Union
+from typing import Any, List, Set, Tuple, Union
 
 import numpy as np
 from edelweissfe.journal.journal import Journal
@@ -148,17 +148,17 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
         bondParticlesToKernelFunctions: bool = False,
         randomlyShiftPartliceShapeFunctions: Union[bool, float] = False,
     ):
-        # -------------------------------------------------------------------------
-        # THREAD SAFETY:
-        # We explicitly convert the C++ container to a Python TUPLE here.
-        # This prevents concurrent access race conditions in the underlying C++ code.
-        # -------------------------------------------------------------------------
-        self._meshfreeKernelFunctions = tuple(particleKernelDomain.meshfreeKernelFunctions)
 
+        self._meshfreeKernelFunctions = particleKernelDomain.meshfreeKernelFunctions
         self._particles = particleKernelDomain.particles
         self._dimension = dimension
         self._bondParticlesToKernelFunctions = bondParticlesToKernelFunctions
         self._journal = journal
+
+        if isFreeThreadingSupported():
+            self._numThreads = getNumberOfThreads()
+        else:
+            self._numThreads = 1
 
         # Pre-fetch labels for integer sorting
         self._kernelLabels = np.array([k.node.label for k in self._meshfreeKernelFunctions], dtype=int)
@@ -176,14 +176,6 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
                 kernelFunction.moveTo(particleCoordinates)
 
         self.signalizeKernelFunctionUpdate()
-
-        self._numThreads = getNumberOfThreads() if isFreeThreadingSupported() else 1
-        if len(self._particles) < self._numThreads:
-            self._numThreads = 1
-
-        self._executor: Optional[concurrent.futures.ThreadPoolExecutor] = None
-        if self._numThreads > 1:
-            self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=self._numThreads)
 
     def signalizeKernelFunctionUpdate(self) -> None:
         self._theBins = _FastKDBinOrganizer(list(self._meshfreeKernelFunctions), self._dimension)
@@ -213,8 +205,6 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
 
             self.signalizeKernelFunctionUpdate()
 
-        # --- Optimized Parallel Search ---
-
         # Capture variables for closure
         all_kernels = self._meshfreeKernelFunctions
         kernel_mins = self._theBins._mins
@@ -240,12 +230,6 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
                 # 1. Grid Search
                 candidate_indices = bin_organizer.getCandidateIndices(p_min, p_max)
 
-                if not candidate_indices:
-                    if p.kernelFunctions:
-                        particlesInChunkHaveChanged = True
-                    p.assignKernelFunctions([])
-                    continue
-
                 # 2. Vectorized AABB Filter
                 cand_idx_arr = np.array(list(candidate_indices), dtype=int)
 
@@ -257,7 +241,7 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
                 overlap_mask = np.all((p_max_s >= c_mins) & (p_min_s <= c_maxs), axis=1)
                 surviving_indices = cand_idx_arr[overlap_mask]
 
-                # 3. Precise Check (Geometric) with Cython Fast Path
+                # 3. Precise Check (Geometric)
                 valid_indices = []
 
                 # Ensure coordinates are 2D for the Cython signature
@@ -269,27 +253,26 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
                 for k_idx in surviving_indices:
                     sf = all_kernels[k_idx]
 
-                    # Call the optimized Cython method directly
-                    # This pushes the loop over evaluation points entirely into C++
                     if sf.isAnyCoordinateInSupport(eval_coords_view):
                         valid_indices.append(k_idx)
 
-                # 4. Sorting & Assignment
-                if valid_indices:
-                    # Sort integers by label (Fastest sort)
-                    valid_indices.sort(key=lambda idx: kernel_labels[idx])
-                    validKernels = [all_kernels[i] for i in valid_indices]
-                else:
-                    validKernels = []
+                valid_indices.sort(key=lambda idx: kernel_labels[idx])
+                validKernels = [all_kernels[i] for i in valid_indices]
+
+                if not validKernels:
+                    raise ValueError(
+                        f"Particle at {p.getCenterCoordinates()} has no associated kernel functions after connectivity update."
+                    )
 
                 if validKernels != p.kernelFunctions:
                     particlesInChunkHaveChanged = True
 
-                p.assignKernelFunctions(validKernels)
+                p.assignKernelFunctions(
+                    validKernels
+                )  # assign the kernel functions. This happens even if they are the same, because the overlap with the particle usually changes due to movement.
 
             return particlesInChunkHaveChanged
 
-        # --- Execution ---
         if self._numThreads <= 1:
             if processParticleChunk(self._particles):
                 hasChanged = True
@@ -297,7 +280,9 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
             chunkSize = len(self._particles) // self._numThreads + 1
             chunks = [self._particles[i : i + chunkSize] for i in range(0, len(self._particles), chunkSize)]
 
-            results = self._executor.map(processParticleChunk, chunks)
+            with concurrent.futures.ThreadPoolExecutor(max_workers=self._numThreads) as executor:
+                results = executor.map(processParticleChunk, chunks)
+
             if any(results):
                 hasChanged = True
 
@@ -305,10 +290,6 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
 
     def getCoveredDomain(self) -> Tuple[NDArray[np.float64], NDArray[np.float64]]:
         return self._theBins._boundingBoxMin, self._theBins._boundingBoxMax
-
-    def __del__(self) -> None:
-        if getattr(self, "_executor", None):
-            self._executor.shutdown(wait=False)
 
     def __str__(self) -> str:
         return (
