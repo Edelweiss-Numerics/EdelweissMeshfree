@@ -35,21 +35,21 @@ from edelweissfe.linsolve.pardiso.pardiso import pardisoSolve
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 from edelweissfe.utils.exceptions import StepFailed
 
-from edelweissmpm.fieldoutput.fieldoutput import MPMFieldOutputController
-from edelweissmpm.meshfree.approximations.marmot.marmotmeshfreeapproximation import (
+from edelweissmeshfree.fieldoutput.fieldoutput import MPMFieldOutputController
+from edelweissmeshfree.meshfree.approximations.marmot.marmotmeshfreeapproximation import (
     MarmotMeshfreeApproximationWrapper,
 )
-from edelweissmpm.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunction import (
+from edelweissmeshfree.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunction import (
     MarmotMeshfreeKernelFunctionWrapper,
 )
-from edelweissmpm.meshfree.particlekerneldomain import ParticleKernelDomain
-from edelweissmpm.models.mpmmodel import MPMModel
-from edelweissmpm.outputmanagers.ensight import OutputManager as EnsightOutputManager
-from edelweissmpm.particlemanagers.kdbinorganizedparticlemanager import (
+from edelweissmeshfree.meshfree.particlekerneldomain import ParticleKernelDomain
+from edelweissmeshfree.models.mpmmodel import MPMModel
+from edelweissmeshfree.outputmanagers.ensight import OutputManager as EnsightOutputManager
+from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
     KDBinOrganizedParticleManager,
 )
-from edelweissmpm.particles.marmot.marmotparticlewrapper import MarmotParticleWrapper
-from edelweissmpm.solvers.nqs import NonlinearQuasistaticSolver
+from edelweissmeshfree.particles.marmot.marmotparticlewrapper import MarmotParticleWrapper
+from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
 
 
 def run_sim():
@@ -90,7 +90,7 @@ def run_sim():
             theMaterial,
         )
 
-    from edelweissmpm.generators.particlesfromexodus import generateParticlesFromExodus
+    from edelweissmeshfree.generators.particlesfromexodus import generateParticlesFromExodus
 
     theModel = generateParticlesFromExodus(
         theModel, theJournal, "brick_coarse.e", {"hexahedron": TheParticleFactory}, "mesh_particles", 1
@@ -101,7 +101,7 @@ def run_sim():
             node, "BSplineBoxed", supportRadius=characteristicLength, continuityOrder=3
         )
 
-    from edelweissmpm.generators.kernelmatchingtoparticlegenerator import (
+    from edelweissmeshfree.generators.kernelmatchingtoparticlegenerator import (
         generateKernelMatchingToParticle,
     )
 
@@ -133,7 +133,7 @@ def run_sim():
     # We need this model to create the dof manager
     theModel.particleKernelDomains["my_all_with_all"] = theParticleKernelDomain
 
-    from edelweissmpm.constraints.particlelagrangianweakdirichlet import (
+    from edelweissmeshfree.constraints.particlelagrangianweakdirichlet import (
         ParticleLagrangianWeakDirichletOnParticleSetFactory,
     )
 
@@ -236,7 +236,7 @@ def run_sim():
     #     np.array([-1e3]),
     # )
 
-    from edelweissmpm.numerics.predictors.quadraticpredictor import QuadraticPredictor
+    from edelweissmeshfree.numerics.predictors.quadraticpredictor import QuadraticPredictor
 
     try:
         nonlinearSolver.solveStep(

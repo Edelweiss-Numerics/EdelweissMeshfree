@@ -31,9 +31,9 @@ import numpy as np
 from edelweissfe.journal.journal import Journal
 from edelweissfe.surfaces.entitybasedsurface import EntityBasedSurface
 
-from edelweissmpm.models.mpmmodel import MPMModel
-from edelweissmpm.particles.base.baseparticle import BaseParticle
-from edelweissmpm.sets.particleset import ParticleSet
+from edelweissmeshfree.models.mpmmodel import MPMModel
+from edelweissmeshfree.particles.base.baseparticle import BaseParticle
+from edelweissmeshfree.sets.particleset import ParticleSet
 
 
 def generateBoxHexaParticleGrid(

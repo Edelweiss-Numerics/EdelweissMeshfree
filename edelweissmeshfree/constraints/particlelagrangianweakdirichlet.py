@@ -181,7 +181,6 @@ def ParticleLagrangianWeakDirichletOnParticleSetFactory(
     faceID: int = None,
     vertexID: int | list[int] = None,
 ):
-<<<<<<< HEAD:edelweissmpm/constraints/particlelagrangianweakdirichlet.py
     """
     Factory function to create ParticleLagrangianWeakDirichlet constraints on a collection of particles.
 
@@ -225,36 +224,34 @@ def ParticleLagrangianWeakDirichletOnParticleSetFactory(
     elif isinstance(particleCollection, Iterable):
 
         for i, p in enumerate(particleCollection):
-=======
-    constraints = dict()
-    for i, p in enumerate(particleSet):
-        if location == "vertex":
-            if isinstance(vertexID, list):
-                for vertIdx in vertexID:
-                    name = f"{baseName}_{i}_v{vertIdx}"
-                    constraint = ParticleLagrangianWeakDirichlet(
-                        name, p, field, prescribedStepDelta, model, location, faceID, vertIdx
-                    )
-                    constraints[name] = constraint
-            else:
-                name = f"{baseName}_{i}_v{vertexID}"
-                constraint = ParticleLagrangianWeakDirichlet(
-                    name, p, field, prescribedStepDelta, model, location, faceID, vertexID
-                )
-                constraints[name] = constraint
-        else:
->>>>>>> master:edelweissmeshfree/constraints/particlelagrangianweakdirichlet.py
+#=======
+#    constraints = dict()
+#    for i, p in enumerate(particleSet):
+#        if location == "vertex":
+#            if isinstance(vertexID, list):
+#                for vertIdx in vertexID:
+#                    name = f"{baseName}_{i}_v{vertIdx}"
+#                    constraint = ParticleLagrangianWeakDirichlet(
+#                        name, p, field, prescribedStepDelta, model, location, faceID, vertIdx
+#                    )
+#                    constraints[name] = constraint
+#            else:
+#                name = f"{baseName}_{i}_v{vertexID}"
+#                constraint = ParticleLagrangianWeakDirichlet(
+#                    name, p, field, prescribedStepDelta, model, location, faceID, vertexID
+#                )
+#                constraints[name] = constraint
+#        else:
+#>>>>>>> master:edelweissmeshfree/constraints/particlelagrangianweakdirichlet.py
             name = f"{baseName}_{i}"
             constraint = ParticleLagrangianWeakDirichlet(
                 name, p, field, prescribedStepDelta, model, location, faceID, vertexID
             )
             constraints[name] = constraint
-<<<<<<< HEAD:edelweissmpm/constraints/particlelagrangianweakdirichlet.py
+#<<<<<<< HEAD:edelweissmeshfree/constraints/particlelagrangianweakdirichlet.py
 
         return constraints
 
     else:
         raise TypeError("particleCollection must be a list of particles or an EntityBasedSurface.")
-=======
     return constraints
->>>>>>> master:edelweissmeshfree/constraints/particlelagrangianweakdirichlet.py

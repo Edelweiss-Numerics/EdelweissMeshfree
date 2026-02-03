@@ -31,10 +31,10 @@ import numpy as np
 from edelweissfe.journal.journal import Journal
 from edelweissfe.points.node import Node
 
-from edelweissmpm.meshfree.kernelfunctions.base.basemeshfreekernelfunction import (
+from edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction import (
     BaseMeshfreeKernelFunction,
 )
-from edelweissmpm.models.mpmmodel import MPMModel
+from edelweissmeshfree.models.mpmmodel import MPMModel
 
 
 def generateBoxKernelFunctionGrid(
