@@ -1,13 +1,13 @@
 Material Points
 ===============
 
-.. automodule:: edelweissmpm.materialpoints.base.mp
+.. automodule:: edelweissmeshfree.materialpoints.base.mp
    :members:
    :private-members:
 
 ``MarmotMaterialPoint`` class
 -----------------------------
 
-.. automodule:: edelweissmpm.materialpoints.marmotmaterialpoint.mp
+.. automodule:: edelweissmeshfree.materialpoints.marmotmaterialpoint.mp
    :members:
    :private-members:

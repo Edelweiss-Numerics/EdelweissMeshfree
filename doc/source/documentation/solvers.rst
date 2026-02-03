@@ -5,14 +5,14 @@ Solvers
 ``NonlinearQuasistaticSolver`` class
 ------------------------------------
 
-.. automodule:: edelweissmpm.solvers.nqs
+.. automodule:: edelweissmeshfree.solvers.nqs
    :private-members:
    :members:
 
 ``NQSParallelForMarmot`` class
 ------------------------------
 
-.. automodule:: edelweissmpm.solvers.nqsmarmotparallel
+.. automodule:: edelweissmeshfree.solvers.nqsmarmotparallel
    :private-members:
    :members:
 
@@ -20,6 +20,6 @@ Solvers
 ``NonlinearQuasistaticMarmotParallelArcLengthSolver`` class
 -----------------------------------------------------------
 
-.. automodule:: edelweissmpm.solvers.nqsmparclength
+.. automodule:: edelweissmeshfree.solvers.nqsmparclength
    :private-members:
    :members:
