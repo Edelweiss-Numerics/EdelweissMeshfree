@@ -33,14 +33,16 @@ from edelweissfe.journal.journal import Journal
 from edelweissfe.linsolve.pardiso.pardiso import pardisoSolve
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 
-from edelweissmpm.fieldoutput.fieldoutput import MPMFieldOutputController
-from edelweissmpm.generators import circlempgenerator, rectangulargridgenerator
-from edelweissmpm.models.mpmmodel import MPMModel
-from edelweissmpm.mpmmanagers.smartmpmmanager import SmartMaterialPointManager
-from edelweissmpm.outputmanagers.ensight import OutputManager as EnsightOutputManager
-from edelweissmpm.solvers.nqs import NonlinearQuasistaticSolver
-from edelweissmpm.stepactions.dirichlet import Dirichlet
-from edelweissmpm.stepactions.distributedload import (
+from edelweissmeshfree.fieldoutput.fieldoutput import MPMFieldOutputController
+from edelweissmeshfree.generators import circlempgenerator, rectangulargridgenerator
+from edelweissmeshfree.models.mpmmodel import MPMModel
+from edelweissmeshfree.mpmmanagers.smartmpmmanager import SmartMaterialPointManager
+from edelweissmeshfree.outputmanagers.ensight import (
+    OutputManager as EnsightOutputManager,
+)
+from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
+from edelweissmeshfree.stepactions.dirichlet import Dirichlet
+from edelweissmeshfree.stepactions.distributedload import (
     MaterialPointPointWiseDistributedLoad,
 )
 

@@ -1,0 +1,358 @@
+# -*- coding: utf-8 -*-
+#  ---------------------------------------------------------------------
+#
+#  _____    _      _              _
+# | ____|__| | ___| |_      _____(_)___ ___
+# |  _| / _` |/ _ \ \ \ /\ / / _ \ / __/ __|
+# | |__| (_| |  __/ |\ V  V /  __/ \__ \__ \
+# |_____\__,_|\___|_| \_/\_/_\___|_|___/___/
+# |  \/  | ___  ___| |__  / _|_ __ ___  ___
+# | |\/| |/ _ \/ __| '_ \| |_| '__/ _ \/ _ \
+# | |  | |  __/\__ \ | | |  _| | |  __/  __/
+# |_|  |_|\___||___/_| |_|_| |_|  \___|\___|
+#
+#
+#  Unit of Strength of Materials and Structural Analysis
+#  University of Innsbruck,
+#
+#  Research Group for Computational Mechanics of Materials
+#  Institute of Structural Engineering, BOKU University, Vienna
+#
+#  2023 - today
+#
+#  Matthias Neuner |  matthias.neuner@boku.ac.at
+#  Thomas Mader    |  thomas.mader@bokut.ac.at
+#
+#  This file is part of EdelweissMeshfree.
+#
+#  This library is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU Lesser General Public
+#  License as published by the Free Software Foundation; either
+#  version 2.1 of the License, or (at your option) any later version.
+#
+#  The full text of the license can be found in the file LICENSE.md at
+#  the top level directory of EdelweissMeshfree.
+#  ---------------------------------------------------------------------
+
+import argparse
+
+import edelweissfe.utils.performancetiming as performancetiming
+import numpy as np
+import pytest
+from edelweissfe.journal.journal import Journal
+from edelweissfe.linsolve.pardiso.pardiso import pardisoSolve
+from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
+from edelweissfe.utils.exceptions import StepFailed
+
+from edelweissmeshfree.constraints.particlepenaltyequalvalue import (
+    ParticlePenaltyEqualValue,
+)
+from edelweissmeshfree.constraints.particlepenaltyweakdirichtlet import (
+    ParticlePenaltyWeakDirichlet,
+)
+from edelweissmeshfree.fieldoutput.fieldoutput import MPMFieldOutputController
+from edelweissmeshfree.generators.rectangularkernelfunctiongridgenerator import (
+    generateRectangularKernelFunctionGrid,
+)
+from edelweissmeshfree.generators.rectangularquadparticlegridgenerator import (
+    generateRectangularQuadParticleGrid,
+)
+from edelweissmeshfree.meshfree.approximations.marmot.marmotmeshfreeapproximation import (
+    MarmotMeshfreeApproximationWrapper,
+)
+from edelweissmeshfree.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunction import (
+    MarmotMeshfreeKernelFunctionWrapper,
+)
+from edelweissmeshfree.meshfree.particlekerneldomain import ParticleKernelDomain
+from edelweissmeshfree.models.mpmmodel import MPMModel
+from edelweissmeshfree.outputmanagers.ensight import (
+    OutputManager as EnsightOutputManager,
+)
+from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
+    KDBinOrganizedParticleManager,
+)
+from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
+    MarmotParticleWrapper,
+)
+from edelweissmeshfree.solvers.nqsmparclength import (
+    NonlinearQuasistaticMarmotArcLengthSolver,
+)
+from edelweissmeshfree.stepactions.particledistributedload import (
+    ParticleDistributedLoad,
+)
+from edelweissmeshfree.stepactions.particleindirectcontrol import IndirectControl
+
+
+def run_sim(particleSize, supportRadius, continuityOrder, completenessOrder):
+    dimension = 2
+
+    exportName = "gosford_particleSize_{:}_supportRadius_{:}_continuity_{:}_completeness_{:}".format(
+        particleSize, supportRadius, continuityOrder, completenessOrder
+    )
+    logFile = open(exportName + ".txt", "w")
+
+    # set nump linewidth to 200:
+    np.set_printoptions(linewidth=200)
+    # set 2 digits after comma:
+    np.set_printoptions(precision=2)
+    # and let's print all the array:
+    np.set_printoptions(threshold=np.inf)
+
+    theJournal = Journal()
+    theJournal.setFileOutput(logFile)
+
+    theModel = MPMModel(dimension)
+
+    x0 = 0
+    y0 = 0
+    length = 40
+    height = 80
+    nX = int(length / particleSize)
+    nY = int(height / particleSize)
+
+    def theMeshfreeKernelFunctionFactory(node):
+        return MarmotMeshfreeKernelFunctionWrapper(
+            node, "BSplineBoxed", supportRadius=supportRadius, continuityOrder=continuityOrder
+        )
+
+    theModel = generateRectangularKernelFunctionGrid(
+        theModel, theJournal, theMeshfreeKernelFunctionFactory, x0=x0, y0=y0, h=height, l=length, nX=nX, nY=nY
+    )
+
+    # let's define the type of approximation: We would like to have a reproducing kernel approximation of completeness order 1
+    theApproximation = MarmotMeshfreeApproximationWrapper(
+        "ReproducingKernel", dimension, completenessOrder=completenessOrder
+    )
+
+    # We need a dummy material for the material point
+    theMaterial = {
+        "material": "GMDamagedShearNeoHooke",
+        "properties": np.array([3000.0, 0.2, 1, 0.01, 0.02, 1.4999, 1.0]),
+    }
+
+    def TheParticleFactory(number, vertexCoordinates, volume):
+        return MarmotParticleWrapper(
+            "GradientEnhancedMicropolarSQCNI/PlaneStrain/Quad",
+            number,
+            vertexCoordinates,
+            volume,
+            theApproximation,
+            theMaterial,
+        )
+
+    theModel = generateRectangularQuadParticleGrid(
+        theModel, theJournal, TheParticleFactory, x0=x0, y0=y0, h=height, l=length, nX=nX, nY=nY
+    )
+
+    # let's create the particle kernel domain
+    theParticleKernelDomain = ParticleKernelDomain(
+        list(theModel.particles.values()), list(theModel.meshfreeKernelFunctions.values())
+    )
+
+    # for Semi-Lagrangian particle methods, we assoicate a particle with a kernel function.
+    theParticleManager = KDBinOrganizedParticleManager(
+        theParticleKernelDomain, dimension, theJournal, bondParticlesToKernelFunctions=True
+    )
+
+    # let's print some details
+    print(theParticleManager)
+
+    # We now create a bundled model.
+    # We need this model to create the dof manager
+    theModel.particleKernelDomains["my_all_with_all"] = theParticleKernelDomain
+
+    theModel.prepareYourself(theJournal)
+    theJournal.printPrettyTable(theModel.makePrettyTableSummary(), "summary")
+
+    dirichletBottom = ParticlePenaltyWeakDirichlet(
+        "bottom", theModel, theModel.particleSets["rectangular_grid_bottom"], "displacement", {0: 0, 1: 0}, 1e6
+    )
+
+    dirichlets = [
+        dirichletBottom,
+    ]
+
+    pressureTop = ParticleDistributedLoad(
+        "pressureTop",
+        theModel,
+        theJournal,
+        theModel.particleSets["rectangular_grid_top"],
+        "pressure",
+        np.array([1.0]),
+        surfaceID=3,
+    )
+
+    import sympy as sp
+
+    disturbance = ParticleDistributedLoad(
+        "disturbance",
+        theModel,
+        theJournal,
+        theModel.particleSets["rectangular_grid_rightTop"],
+        "pressure",
+        np.array([-10.0 * nY / 80]),
+        surfaceID=2,
+        f_t=sp.lambdify(
+            sp.symbols("t"),
+            sp.sympify("Heaviside(t)"),
+        ),
+    )
+
+    rigidBodyTop = [
+        ParticlePenaltyEqualValue(
+            "PenaltyEqualValue", theModel, theModel.particleSets["rectangular_grid_top"], "displacement", [0, 1], 1e6
+        ),
+    ]
+
+    fieldOutputController = MPMFieldOutputController(theModel, theJournal)
+
+    fieldOutputController.addPerParticleFieldOutput(
+        "displacement",
+        theModel.particleSets["all"],
+        "displacement",
+    )
+    fieldOutputController.addPerParticleFieldOutput(
+        "displacement top", theModel.particleSets["rectangular_grid_rightTop"], "displacement", export=exportName + "_U"
+    )
+    fieldOutputController.addPerParticleFieldOutput(
+        "vertex displacements",
+        theModel.particleSets["all"],
+        "vertex displacements",
+        f_x=lambda x: np.pad(np.reshape(x, (-1, 2)), ((0, 0), (0, 1)), mode="constant", constant_values=0),
+    )
+    fieldOutputController.addPerParticleFieldOutput(
+        "deformation gradient",
+        theModel.particleSets["all"],
+        "deformation gradient",
+    )
+
+    fieldOutputController.addExpressionFieldOutput(
+        None, lambda: dirichletBottom.penaltyForce, "reaction force bottom", export=exportName + "_RF"
+    )
+
+    fieldOutputController.initializeJob()
+
+    ensightOutput = EnsightOutputManager(exportName, theModel, fieldOutputController, theJournal, None)
+    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["displacement"], create="perElement")
+    ensightOutput.updateDefinition(
+        fieldOutput=fieldOutputController.fieldOutputs["vertex displacements"],
+        create="perNode",
+    )
+    ensightOutput.updateDefinition(
+        fieldOutput=fieldOutputController.fieldOutputs["deformation gradient"], create="perElement"
+    )
+    ensightOutput.initializeJob()
+
+    incSize = 5e-1
+    adaptiveTimeStepper = AdaptiveTimeStepper(0.0, 1.0, incSize, incSize, incSize, 2000, theJournal)
+
+    nonlinearSolver = NonlinearQuasistaticMarmotArcLengthSolver(theJournal)
+
+    iterationOptions = dict()
+
+    iterationOptions["max. iterations"] = 25
+    iterationOptions["critical iterations"] = 7
+    iterationOptions["allowed residual growths"] = 10
+
+    linearSolver = pardisoSolve
+
+    from edelweissmeshfree.meshfree.vci import (
+        BoundaryParticleDefinition,
+        VariationallyConsistentIntegrationManager,
+    )
+
+    theBoundary = [
+        BoundaryParticleDefinition(theModel.particleSets["rectangular_grid_left"], np.empty(2), 4),
+        BoundaryParticleDefinition(theModel.particleSets["rectangular_grid_right"], np.empty(2), 2),
+        BoundaryParticleDefinition(theModel.particleSets["rectangular_grid_bottom"], np.empty(2), 1),
+        BoundaryParticleDefinition(theModel.particleSets["rectangular_grid_top"], np.empty(2), 3),
+    ]
+
+    vciManager = VariationallyConsistentIntegrationManager(
+        list(theModel.particles.values()), list(theModel.meshfreeKernelFunctions.values()), theBoundary
+    )
+
+    nParticlesSide = len(theModel.particleSets["rectangular_grid_left"])
+    theControlParticles = list(theModel.particleSets["rectangular_grid_left"]) + list(
+        theModel.particleSets["rectangular_grid_right"]
+    )
+    cVector = np.array([1.0, 0] * nParticlesSide + [-1.0, 0] * nParticlesSide) * 1.0 / (nParticlesSide)
+
+    indirectcontrol = IndirectControl(
+        "IndirectController", theModel, theControlParticles, -0.1, cVector, "displacement", theJournal, f_t=lambda t: t
+    )
+
+    from edelweissmeshfree.numerics.predictors.quadraticpredictor import (
+        QuadraticPredictor,
+    )
+
+    try:
+        nonlinearSolver.solveStep(
+            adaptiveTimeStepper,
+            linearSolver,
+            theModel,
+            fieldOutputController,
+            indirectcontrol,
+            outputManagers=[ensightOutput],
+            particleManagers=[theParticleManager],
+            constraints=dirichlets + rigidBodyTop,
+            userIterationOptions=iterationOptions,
+            particleDistributedLoads=[pressureTop, disturbance],
+            vciManagers=[vciManager],
+            restartWriteInterval=1,
+            predictor=QuadraticPredictor(journal=theJournal, arcLength=True),
+            # predictor=LinearPredictor(journal=theJournal, arcLength=True)
+        )
+
+    except StepFailed as e:
+        theJournal.message(f"Step failed: {str(e)}", "error")
+
+    finally:
+        fieldOutputController.finalizeJob()
+        ensightOutput.finalizeJob()
+
+        prettytable = performancetiming.makePrettyTable()
+        prettytable.min_table_width = theJournal.linewidth
+        theJournal.printPrettyTable(prettytable, "Summary")
+
+    return theModel, fieldOutputController
+
+
+@pytest.fixture(autouse=True)
+def change_test_dir(request, monkeypatch):
+    """No matter where pytest is ran, we set the working dir
+    to this testscript's parent directory"""
+
+    monkeypatch.chdir(request.fspath.dirname)
+
+
+def test_sim():
+
+    # disable plots and suppress warnings
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import warnings
+
+    warnings.filterwarnings("ignore")
+
+    theModel, fieldOutputController = run_sim(2.0, 4.0, 2, 1)
+
+    res = fieldOutputController.fieldOutputs["displacement"].getLastResult()
+
+    gold = np.loadtxt("gold.csv")
+
+    assert np.isclose(np.linalg.norm(res.flatten()), np.linalg.norm(gold.flatten()))
+
+
+if __name__ == "__main__":
+
+    theModel, fieldOutputController = run_sim(2.0, 4.0, 2, 1)
+    res = fieldOutputController.fieldOutputs["displacement"].getLastResult()
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--create-gold", dest="create_gold", action="store_true", help="create the gold file.")
+    args = parser.parse_args()
+
+    if args.create_gold:
+        np.savetxt("gold.csv", res)

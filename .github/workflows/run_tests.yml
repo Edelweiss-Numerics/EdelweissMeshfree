@@ -72,7 +72,7 @@ jobs:
           pip install .
           cd ..
 
-      - name: Build EdelweissMPM
+      - name: Build EdelweissMeshfree
         shell: bash -l {0}
         run: |
           pip install .

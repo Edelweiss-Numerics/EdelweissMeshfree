@@ -9,4 +9,8 @@
 *.html
 *.cpp
 *.so
+*build*
+*egg-info*
+*rename*
+docs/
 __pycache__

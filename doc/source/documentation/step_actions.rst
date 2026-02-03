@@ -10,14 +10,14 @@ Body loads
 ``MPMBodyLoadBase`` class
 *************************
 
-.. automodule:: edelweissmpm.stepactions.base.mpmbodyloadbase
+.. automodule:: edelweissmeshfree.stepactions.base.mpmbodyloadbase
    :members:
    :private-members:
 
 ``BodyLoad`` class
 ******************
 
-.. automodule:: edelweissmpm.stepactions.bodyload
+.. automodule:: edelweissmeshfree.stepactions.bodyload
    :members:
    :private-members:
 
@@ -27,14 +27,14 @@ Neumann boundary conditions
 ``MPMDistributedLoadBase`` class
 ********************************
 
-.. automodule:: edelweissmpm.stepactions.base.mpmdistributedloadbase
+.. automodule:: edelweissmeshfree.stepactions.base.mpmdistributedloadbase
    :members:
    :private-members:
 
 ``DistributedLoad`` class
 *************************
 
-.. automodule:: edelweissmpm.stepactions.distributedload
+.. automodule:: edelweissmeshfree.stepactions.distributedload
    :members:
    :private-members:
 
@@ -44,7 +44,7 @@ Dirichlet boundary conditions
 ``Dirichlet`` class
 *******************
 
-.. automodule:: edelweissmpm.stepactions.dirichlet
+.. automodule:: edelweissmeshfree.stepactions.dirichlet
    :members:
    :private-members:
 
@@ -54,13 +54,13 @@ Arclength control
 ``ArclengthControllerBase`` class
 *********************************
 
-.. automodule:: edelweissmpm.stepactions.base.arclengthcontrollerbase
+.. automodule:: edelweissmeshfree.stepactions.base.arclengthcontrollerbase
    :members:
    :private-members:
 
 ``Indirect control`` class
 **************************
 
-.. automodule:: edelweissmpm.stepactions.indirectcontrol
+.. automodule:: edelweissmeshfree.stepactions.indirectcontrol
    :members:
    :private-members:
