@@ -43,6 +43,7 @@ from edelweissfe.journal.journal import Journal
 from edelweissfe.linsolve.pardiso.pardiso import pardisoSolve
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 from edelweissfe.utils.exceptions import StepFailed
+from edelweissfe.surfaces.entitybasedsurface import EntityBasedSurface
 
 from edelweissmeshfree.constraints.particlelagrangianweakdirichlet import (
     ParticleLagrangianWeakDirichletOnParticleSetFactory,
@@ -228,25 +229,19 @@ def run_sim():
     # =====================================================================
     #                      DISTRIBUTED LOADS
     # =====================================================================
+    surfacePressure = EntityBasedSurface(name="surfacePressure",
+                                         faceToEntities={3:list(theModel.particleSets["rectangular_grid_top"]),
+                                                         2:list(theModel.particleSets["rectangular_grid_right"])})
 
-    pressure_top = ParticleDistributedLoad(
-        name="pressure_top",
+
+
+    pressure_top_right = ParticleDistributedLoad(
+        name="pressure_100",
         model=theModel,
         journal=theJournal,
-        particles=theModel.particleSets["rectangular_grid_top"],
+        particleSurface=surfacePressure,
         distributedLoadType="pressure",
         loadVector=np.array([-100]),
-        surfaceID=3,
-        f_t=lambda t: 1.0,
-    )
-    pressure_right = ParticleDistributedLoad(
-        name="pressure_right",
-        model=theModel,
-        journal=theJournal,
-        particles=theModel.particleSets["rectangular_grid_right"],
-        distributedLoadType="pressure",
-        loadVector=np.array([-100]),
-        surfaceID=2,
         f_t=lambda t: 1.0,
     )
 
@@ -292,7 +287,7 @@ def run_sim():
             particleManagers=[theParticleManager],
             constraints=theModel.constraints.values(),
             userIterationOptions=iterationOptions,
-            particleDistributedLoads=[pressure_top, pressure_right],
+            particleDistributedLoads=[pressure_top_right],
             vciManagers=[vciManager],
         )
 
