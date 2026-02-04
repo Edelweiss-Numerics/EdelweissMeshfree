@@ -96,7 +96,7 @@
       5.54e+00    0.00e+00✓    1.43e-07    0.00e+00✓    0.00e+00    0.00e+00✓          MPM-NQS-ArcLength 
       1.71e+00    1.13e+00     6.14e-01    1.73e+00     0.00e+00✓   0.00e+00✓          MPM-NQS-ArcLength 
       2.72e-04    1.15e-02     1.56e-04    1.71e-02     0.00e+00✓   0.00e+00✓          MPM-NQS-ArcLength 
-      2.01e-10✓   7.42e-06✓    6.50e-11✓   1.40e-05✓    0.00e+00✓   0.00e+00✓          MPM-NQS-ArcLength 
+      2.02e-10✓   7.42e-06✓    6.48e-11✓   1.40e-05✓    0.00e+00✓   0.00e+00✓          MPM-NQS-ArcLength 
    Converged in 3 iteration(s)                                                         MPM-NQS-ArcLength 
    Writing restart file                                                                MPM-NQS-ArcLength 
 +-------------------------------------------------------------------------------------------------------+
@@ -105,69 +105,57 @@
    Updating kernel function positions...                                                 ParticleManager 
    active domain has changed, (re)initializing equation system & clearing cache        MPM-NQS-ArcLength 
    resulting equation system has a size of 3200                                        MPM-NQS-ArcLength 
-   Only one time step in history, falling back to linear predictor.                   QuadraticPredictor 
            displacement            micro rotation           nonlocal damage            MPM-NQS-ArcLength 
       ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞           MPM-NQS-ArcLength 
-      1.75e+02    0.00e+00✓    4.45e+00    0.00e+00✓    0.00e+00    0.00e+00✓          MPM-NQS-ArcLength 
-      1.08e-02    6.68e-01     3.36e-03    4.50e+00     0.00e+00✓   0.00e+00✓          MPM-NQS-ArcLength 
-      8.72e-10✓   2.04e-04✓    2.00e-09✓   6.36e-04✓    0.00e+00✓   0.00e+00✓          MPM-NQS-ArcLength 
-   Converged in 2 iteration(s)                                                         MPM-NQS-ArcLength 
+      1.27e+02    0.00e+00✓    2.72e-04    0.00e+00✓    0.00e+00    0.00e+00✓          MPM-NQS-ArcLength 
+      1.80e+00    1.42e+00     6.44e-01    3.12e+00     0.00e+00✓   0.00e+00✓          MPM-NQS-ArcLength 
+      3.46e-04    1.30e-02     2.12e-04    1.68e-02     0.00e+00✓   0.00e+00✓          MPM-NQS-ArcLength 
+      2.02e-10✓   8.48e-06✓    1.22e-10✓   7.85e-06✓    0.00e+00✓   0.00e+00✓          MPM-NQS-ArcLength 
+   Converged in 3 iteration(s)                                                         MPM-NQS-ArcLength 
    Writing restart file                                                                MPM-NQS-ArcLength 
  +-----------------------------------------------+------------------------+----------+           Summary 
  | function                                      | acc. runtime           | calls    |           Summary 
  +-----------------------------------------------+------------------------+----------+           Summary 
- | solve step                                    |    30.4419s            | 30       |           Summary 
- |  step actions                                 |      0.0007s           | 60       |           Summary 
+ | solve step                                    |    18.1187s            | 17       |           Summary 
+ |  step actions                                 |      0.0007s           | 34       |           Summary 
  |  preparation material points                  |      0.0052s           | 37       |           Summary 
- |  update connectivity                          |      2.1787s           | 200      |           Summary 
- |  assembly active domain                       |      0.0468s           | 132      |           Summary 
- |  instancing dof manager                       |      0.7725s           | 132      |           Summary 
- |  creation newton cache                        |      0.8541s           | 132      |           Summary 
- |   instancing csr generator                    |       0.7174s          | 132      |           Summary 
- |  newton iteration                             |     24.6016s           | 200      |           Summary 
- |   step actions                                |       0.0003s          | 200      |           Summary 
- |   preparation material points                 |       0.0037s          | 50       |           Summary 
- |   interpolation to mps                        |       0.0030s          | 100      |           Summary 
- |   computation material points                 |       0.0177s          | 50       |           Summary 
- |   computation active cells                    |       0.0202s          | 50       |           Summary 
- |   computation elements                        |       0.0002s          | 50       |           Summary 
- |   computation particles                       |       0.0712s          | 50       |           Summary 
- |   computation constraints                     |       0.0859s          | 50       |           Summary 
- |   compute body loads                          |       0.0069s          | 100      |           Summary 
- |   compute distributed loads                   |       0.1067s          | 200      |           Summary 
- |   dirichlet on R                              |       0.0029s          | 87       |           Summary 
- |   conversion VIJ to CSR                       |       0.5594s          | 914      |           Summary 
- |   dirichlet on CSR                            |       0.0453s          | 914      |           Summary 
- |   linear solve                                |       9.2226s          | 914      |           Summary 
- |   evaluation residuals                        |       0.0761s          | 1077     |           Summary 
- |    computation spatial fluxes                 |        0.0230s         | 1077     |           Summary 
- |   convergence check                           |       0.0053s          | 1077     |           Summary 
- |   compute system                              |      13.5315s          | 1064     |           Summary 
- |    preparation material points                |        0.0267s         | 1064     |           Summary 
- |    interpolation to mps                       |        0.0558s         | 2128     |           Summary 
- |    computation material points                |        0.2104s         | 1064     |           Summary 
- |    computation active cells                   |        8.5090s         | 1064     |           Summary 
- |    computation elements                       |        0.0042s         | 1064     |           Summary 
- |    computation cell elements                  |        0.0007s         | 1064     |           Summary 
- |    computation particles                      |        3.7706s         | 1064     |           Summary 
- |    computation constraints                    |        0.3856s         | 1064     |           Summary 
- |    compute body loads                         |        0.0171s         | 1064     |           Summary 
- |    compute distributed loads                  |        0.2571s         | 2128     |           Summary 
- |   line search                                 |       0.1212s          | 3        |           Summary 
- |    compute system                             |        0.1203s         | 12       |           Summary 
- |     preparation material points               |         0.0000s        | 12       |           Summary 
- |     interpolation to mps                      |         0.0000s        | 24       |           Summary 
- |     computation material points               |         0.0000s        | 12       |           Summary 
- |     computation active cells                  |         0.0000s        | 12       |           Summary 
- |     computation elements                      |         0.0000s        | 12       |           Summary 
- |     computation cell elements                 |         0.0000s        | 12       |           Summary 
- |     computation particles                     |         0.1078s        | 12       |           Summary 
- |     computation constraints                   |         0.0094s        | 12       |           Summary 
- |     compute body loads                        |         0.0000s        | 12       |           Summary 
- |     compute distributed loads                 |         0.0000s        | 24       |           Summary 
- |  postprocessing & output                      |      0.0878s           | 197      |           Summary 
- |  preparation particles                        |      0.0117s           | 163      |           Summary 
- |  writing restart                              |      0.3815s           | 10       |           Summary 
+ |  update connectivity                          |      0.9824s           | 88       |           Summary 
+ |  assembly active domain                       |      0.0217s           | 50       |           Summary 
+ |  instancing dof manager                       |      0.3668s           | 50       |           Summary 
+ |  creation newton cache                        |      0.4378s           | 50       |           Summary 
+ |   instancing csr generator                    |       0.3618s          | 50       |           Summary 
+ |  newton iteration                             |     15.4987s           | 88       |           Summary 
+ |   step actions                                |       0.0001s          | 88       |           Summary 
+ |   preparation material points                 |       0.0037s          | 40       |           Summary 
+ |   interpolation to mps                        |       0.0030s          | 80       |           Summary 
+ |   computation material points                 |       0.0177s          | 40       |           Summary 
+ |   computation active cells                    |       0.0199s          | 40       |           Summary 
+ |   computation elements                        |       0.0002s          | 40       |           Summary 
+ |   computation particles                       |       0.0389s          | 40       |           Summary 
+ |   computation constraints                     |       0.0536s          | 40       |           Summary 
+ |   compute body loads                          |       0.0069s          | 80       |           Summary 
+ |   compute distributed loads                   |       0.1028s          | 160      |           Summary 
+ |   dirichlet on R                              |       0.0029s          | 77       |           Summary 
+ |   conversion VIJ to CSR                       |       0.2660s          | 321      |           Summary 
+ |   dirichlet on CSR                            |       0.0447s          | 321      |           Summary 
+ |   linear solve                                |       4.8277s          | 321      |           Summary 
+ |   evaluation residuals                        |       0.0287s          | 372      |           Summary 
+ |    computation spatial fluxes                 |        0.0087s         | 372      |           Summary 
+ |   convergence check                           |       0.0019s          | 372      |           Summary 
+ |   compute system                              |       9.6958s          | 369      |           Summary 
+ |    preparation material points                |        0.0257s         | 369      |           Summary 
+ |    interpolation to mps                       |        0.0549s         | 738      |           Summary 
+ |    computation material points                |        0.2100s         | 369      |           Summary 
+ |    computation active cells                   |        8.5086s         | 369      |           Summary 
+ |    computation elements                       |        0.0017s         | 369      |           Summary 
+ |    computation cell elements                  |        0.0003s         | 369      |           Summary 
+ |    computation particles                      |        0.5172s         | 369      |           Summary 
+ |    computation constraints                    |        0.1379s         | 369      |           Summary 
+ |    compute body loads                         |        0.0164s         | 369      |           Summary 
+ |    compute distributed loads                  |        0.0663s         | 738      |           Summary 
+ |  postprocessing & output                      |      0.0438s           | 86       |           Summary 
+ |  preparation particles                        |      0.0045s           | 51       |           Summary 
+ |  writing restart                              |      0.2582s           | 7        |           Summary 
  | simulation                                    |     0.1351s            | 3        |           Summary 
  |  solve step                                   |      0.0656s           | 1        |           Summary 
  |   step actions                                |       0.0000s          | 2        |           Summary 
