@@ -1,3 +1,5 @@
+from docutils import nodes
+
 # Configuration file for the Sphinx documentation builder.
 #
 # For the full list of built-in configuration values, see the documentation:
@@ -66,9 +68,6 @@ try:
     pass
 except ImportError:
     pass
-
-
-from docutils import nodes
 
 
 def doi_role(name, rawtext, text, lineno, inliner, options={}, content=[]):

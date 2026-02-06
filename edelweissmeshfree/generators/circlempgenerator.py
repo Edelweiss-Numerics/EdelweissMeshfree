@@ -64,7 +64,7 @@ def generateModelData(model: MPMModel, journal: Journal, **kwargs):
     Radii = np.linspace(0.0, maxR, nCirlces)
     T = [int(np.ceil(angle * r / distance)) for r in Radii]
 
-    exactV = np.pi * maxR**2 * angle / (np.pi * 2)
+    # exactV = np.pi * maxR**2 * angle / (np.pi * 2)
     numV = 0.0
     mps = []
     currentMPNumber = firstMaterialPointNumber
