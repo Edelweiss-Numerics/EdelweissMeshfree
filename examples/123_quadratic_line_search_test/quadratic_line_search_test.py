@@ -270,13 +270,13 @@ def run_sim(no_limit=False):
         "plate vertex displacements",
         theModel.particleSets["plate_all"],
         "vertex displacements",
-        f_x=lambda x: np.pad(np.reshape(x, (-1, 2)), ((0, 0), (0, 1)), mode="constant", constant_values=0),
+        reshape_to_dimensions=2,
     )
     fieldOutputController.addPerParticleFieldOutput(
         "projectile vertex displacements",
         theModel.particleSets["projectile_all"],
         "vertex displacements",
-        f_x=lambda x: np.pad(np.reshape(x, (-1, 2)), ((0, 0), (0, 1)), mode="constant", constant_values=0),
+        reshape_to_dimensions=2,
     )
     fieldOutputController.addPerParticleFieldOutput(
         "deformation gradient",

@@ -135,6 +135,7 @@ class NonlinearQuasistaticSolver(NonlinearImplicitSolverBase):
         numberOfRestartsToStore=3,
         restartBaseName: str = "restart",
         predictor: BasePredictor = None,
+        skipZeroIncrements: bool = False,
     ) -> tuple[bool, MPMModel]:
         """Public interface to solve for a step.
 
@@ -176,6 +177,9 @@ class NonlinearQuasistaticSolver(NonlinearImplicitSolverBase):
             The base name of the restart files.
         extrapolator
             The extrapolator instance to be used for making predctions on the next solution increment.
+        skipZeroIncrements
+            Don't perform an actual solve if the time increment is zero. This is useful for
+            problems with dynamic effects where the first increment(s) may be zero and cannot be correctly solved.
 
         Returns
         -------
@@ -203,7 +207,6 @@ class NonlinearQuasistaticSolver(NonlinearImplicitSolverBase):
         self._applyStepActionsAtStepStart(model, dirichlets + bodyLoads + distributedLoads)
 
         elements = model.elements.values()
-        scalarVariables = model.scalarVariables.values()
         particles = model.particles.values()
 
         newtonCache = None
@@ -267,11 +270,16 @@ class NonlinearQuasistaticSolver(NonlinearImplicitSolverBase):
                         self._assembleActiveDomain(activeCells, model)
                     )
 
+                    activeConstraints = [c for c in constraints if c.active]
+                    activeConstraintsScalarVariables = [v for c in activeConstraints for v in c.scalarVariables]
+
+                    print("active constraints:", len(activeConstraints))
+
                     theDofManager = self._createDofManager(
                         reducedNodeFields.values(),
-                        scalarVariables,
+                        activeConstraintsScalarVariables,
                         elements,
-                        constraints,
+                        activeConstraints,
                         # TODO : Check how to make next line more elegant
                         # TODO 2
                         # list(
@@ -324,36 +332,40 @@ class NonlinearQuasistaticSolver(NonlinearImplicitSolverBase):
                 self.journal.message(iterationHeader, self.identification, level=2)
                 self.journal.message(iterationHeader2, self.identification, level=2)
 
+                if not newtonCache:
+                    newtonCache = self._createNewtonCache(theDofManager)
+
                 try:
                     if predictor and predictor._arcLength:
                         for initialGuess in ((dUPrediction, dLambdaPrediction), (None, None)):
                             try:
-                                dU, dLambda, P, iterationHistory, newtonCache = self._newtonSolve(
-                                    dirichlets,
-                                    bodyLoads,
-                                    distributedLoads,
-                                    particleDistributedLoads,
-                                    reducedNodeSets,
-                                    elements,
-                                    U,
-                                    activeCells,
-                                    model.cellElements.values(),
-                                    materialPoints,
-                                    particles,
-                                    constraints,
-                                    theDofManager,
-                                    linearSolver,
-                                    iterationOptions,
-                                    timeStep,
-                                    model,
-                                    newtonCache,
-                                    initialGuess[0],
-                                    initialGuess[1],
-                                    predictor,
-                                )
+                                if not (skipZeroIncrements and timeStep.timeIncrement == 0.0):
+                                    dU, dLambda, P, iterationHistory, newtonCache = self._newtonSolve(
+                                        dirichlets,
+                                        bodyLoads,
+                                        distributedLoads,
+                                        particleDistributedLoads,
+                                        reducedNodeSets,
+                                        elements,
+                                        U,
+                                        activeCells,
+                                        model.cellElements.values(),
+                                        materialPoints,
+                                        particles,
+                                        constraints,
+                                        theDofManager,
+                                        linearSolver,
+                                        iterationOptions,
+                                        timeStep,
+                                        model,
+                                        newtonCache,
+                                        initialGuess[0],
+                                        initialGuess[1],
+                                        predictor,
+                                    )
                                 break
                             except Exception as e:
-                                if initialGuess is not (None, None):
+                                if initialGuess != (None, None):
                                     self.journal.message(str(e), self.identification, 1)
                                     self.journal.message(
                                         "Prediction failed, trying without prediction", self.identification, level=1
@@ -363,28 +375,29 @@ class NonlinearQuasistaticSolver(NonlinearImplicitSolverBase):
                     else:
                         for initialGuess in (dUPrediction, None):
                             try:
-                                dU, P, iterationHistory, newtonCache = self._newtonSolve(
-                                    dirichlets,
-                                    bodyLoads,
-                                    distributedLoads,
-                                    particleDistributedLoads,
-                                    reducedNodeSets,
-                                    elements,
-                                    U,
-                                    activeCells,
-                                    model.cellElements.values(),
-                                    materialPoints,
-                                    particles,
-                                    constraints,
-                                    theDofManager,
-                                    linearSolver,
-                                    iterationOptions,
-                                    timeStep,
-                                    model,
-                                    newtonCache,
-                                    initialGuess,
-                                )
-                                break
+                                if not (skipZeroIncrements and timeStep.timeIncrement == 0.0):
+                                    dU, P, iterationHistory, newtonCache = self._newtonSolve(
+                                        dirichlets,
+                                        bodyLoads,
+                                        distributedLoads,
+                                        particleDistributedLoads,
+                                        reducedNodeSets,
+                                        elements,
+                                        U,
+                                        activeCells,
+                                        model.cellElements.values(),
+                                        materialPoints,
+                                        particles,
+                                        constraints,
+                                        theDofManager,
+                                        linearSolver,
+                                        iterationOptions,
+                                        timeStep,
+                                        model,
+                                        newtonCache,
+                                        initialGuess,
+                                    )
+                                    break
                             except Exception as e:
                                 if initialGuess is not None:
                                     self.journal.message(str(e), self.identification, 1)
@@ -540,8 +553,6 @@ class NonlinearQuasistaticSolver(NonlinearImplicitSolverBase):
 
         nAllowedResidualGrowths = iterationOptions["allowed residual growths"]
 
-        if not newtonCache:
-            newtonCache = self._createNewtonCache(theDofManager)
         K_VIJ, csrGenerator, dU, Rhs, F, PInt, PExt = newtonCache
 
         dU[:] = initialGuess if initialGuess is not None else 0.0

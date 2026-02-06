@@ -35,9 +35,11 @@
 #  ---------------------------------------------------------------------
 import numpy as np
 from edelweissfe.journal.journal import Journal
+from edelweissfe.surfaces.entitybasedsurface import EntityBasedSurface
 from edelweissfe.timesteppers.timestep import TimeStep
 
 from edelweissmeshfree.models.mpmmodel import MPMModel
+from edelweissmeshfree.particles.base.baseparticle import BaseParticle
 from edelweissmeshfree.sets.particleset import ParticleSet
 
 
@@ -53,8 +55,8 @@ class ParticleDistributedLoad:
         The MPM model tree.
     journal : Journal
         The journal to write messages to.
-    particles : Particles
-        The particles to apply the distributed load to.
+    particleSurface : EntityBasedSurface
+        The surface defining the particles to which the load is applied.
     distributedLoadType : str
         The type of the distributed load, e.g., "pressure".
     loadVector : np.ndarray
@@ -63,8 +65,6 @@ class ParticleDistributedLoad:
         Additional keyword arguments. The following are supported:
         - f_t : Callable[[float], float]
             The amplitude function of the distributed load.
-        - surface_ID : int
-            The surface ID of the particles to apply the distributed load to.
     """
 
     def __init__(
@@ -72,7 +72,7 @@ class ParticleDistributedLoad:
         name: str,
         model: MPMModel,
         journal: Journal,
-        particles: ParticleSet,
+        particleSurface: EntityBasedSurface,
         distributedLoadType: str,
         loadVector: np.ndarray,
         **kwargs,
@@ -82,18 +82,13 @@ class ParticleDistributedLoad:
         self._loadVector = loadVector
         self._loadAtStepStart = np.zeros_like(self._loadVector)
         self._loadType = distributedLoadType
-        self._particles = particles
+        self._particleSurface = particleSurface
 
         self._delta = self._loadVector
         if "f_t" in kwargs:
             self._amplitude = kwargs["f_t"]
         else:
             self._amplitude = lambda x: x
-
-        if "surfaceID" in kwargs:
-            self._surface_ID = kwargs["surfaceID"]
-        else:
-            self._surface_ID = 0
 
         self._idle = False
 
@@ -115,7 +110,21 @@ class ParticleDistributedLoad:
             self._delta = 0
             self._idle = True
 
-    def getCurrentLoad(self, particle, timeStep: TimeStep) -> tuple[int, np.ndarray]:
+    def getCurrentParticleLoads(self, timeStep: TimeStep) -> list[tuple[BaseParticle, int, np.ndarray]]:
+        """
+        Get the current particle loads for this distributed load.
+
+        Parameters
+        ----------
+        timeStep : TimeStep
+            The current time step.
+
+        Returns
+        -------
+        list[ tuple[ BaseParticle,int, np.ndarray]]
+            A list of tuples containing the particle, surface ID, and load vector.
+        """
+
         if self._idle:
             t = 1.0
         else:
@@ -123,4 +132,9 @@ class ParticleDistributedLoad:
 
         loadVec = self._loadAtStepStart + self._delta * self._amplitude(t)
 
-        return self._surface_ID, loadVec
+        particleLoads = list()
+        for surfaceID, pSet in self._particleSurface.items():
+
+            particleLoads += [(p, surfaceID, loadVec) for p in pSet]
+
+        return particleLoads

@@ -1,5 +1,8 @@
+from collections.abc import Iterable
+
 import numpy as np
 from edelweissfe.config.phenomena import getFieldSize
+from edelweissfe.surfaces.entitybasedsurface import EntityBasedSurface
 from edelweissfe.timesteppers.timestep import TimeStep
 from edelweissfe.variables.scalarvariable import ScalarVariable
 
@@ -170,7 +173,7 @@ class ParticleLagrangianWeakDirichlet(MPMConstraintBase):
 
 def ParticleLagrangianWeakDirichletOnParticleSetFactory(
     baseName: str,
-    particleSet: list[BaseParticle],
+    particleCollection: Iterable[BaseParticle] | EntityBasedSurface,
     field: str,
     prescribedStepDelta: dict,
     model: MPMModel,
@@ -178,26 +181,57 @@ def ParticleLagrangianWeakDirichletOnParticleSetFactory(
     faceID: int = None,
     vertexID: int | list[int] = None,
 ):
+    """
+    Factory function to create ParticleLagrangianWeakDirichlet constraints on a collection of particles.
+
+    Parameters
+    ----------
+    baseName
+        The base name for the constraints.
+    particleCollection
+        An iterable collection of particles or an EntityBasedSurface.
+    field
+        The field to be constrained.
+    prescribedStepDelta
+        A dictionary mapping field component indices to their prescribed step increments.
+    model
+        The MPMModel instance.
+    location
+        The location on the particle to apply the constraint. Can be "center", "face", or "vertex".
+    faceID
+        The face ID if location is "face" and if particleCollection is not an EntityBasedSurface.
+    vertexID
+        The vertex ID if location is "vertex".
+
+    Returns
+    -------
+    dict
+        A dictionary mapping constraint names to ParticleLagrangianWeakDirichlet instances.
+    """
+
     constraints = dict()
-    for i, p in enumerate(particleSet):
-        if location == "vertex":
-            if isinstance(vertexID, list):
-                for vertIdx in vertexID:
-                    name = f"{baseName}_{i}_v{vertIdx}"
-                    constraint = ParticleLagrangianWeakDirichlet(
-                        name, p, field, prescribedStepDelta, model, location, faceID, vertIdx
-                    )
-                    constraints[name] = constraint
-            else:
-                name = f"{baseName}_{i}_v{vertexID}"
+
+    if isinstance(particleCollection, EntityBasedSurface):
+        for faceID, particles in particleCollection.items():
+            for i, p in enumerate(particles):
+                name = f"{baseName}_face{faceID}_{i}"
                 constraint = ParticleLagrangianWeakDirichlet(
-                    name, p, field, prescribedStepDelta, model, location, faceID, vertexID
+                    name, p, field, prescribedStepDelta, model, location, faceID
                 )
                 constraints[name] = constraint
-        else:
+        return constraints
+
+    elif isinstance(particleCollection, Iterable):
+
+        for i, p in enumerate(particleCollection):
             name = f"{baseName}_{i}"
             constraint = ParticleLagrangianWeakDirichlet(
                 name, p, field, prescribedStepDelta, model, location, faceID, vertexID
             )
             constraints[name] = constraint
+
+        return constraints
+
+    else:
+        raise TypeError("particleCollection must be a list of particles or an EntityBasedSurface.")
     return constraints

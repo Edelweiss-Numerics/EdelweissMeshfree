@@ -35,6 +35,7 @@
 #  ---------------------------------------------------------------------
 
 import typing
+
 import numpy as np
 from edelweissfe.journal.journal import Journal
 from edelweissfe.points.node import Node
@@ -79,7 +80,7 @@ def parse_inp_file(input_file_path):
 
     reading_nodes = False
     reading_elements = False
-    reading_surfaces = False
+    # reading_surfaces = False
     current_nset = None
     current_elset = None
     generate_flag = False
@@ -95,7 +96,7 @@ def parse_inp_file(input_file_path):
             if lower.startswith("*node"):
                 reading_nodes = True
                 reading_elements = False
-                reading_surfaces = False
+                # reading_surfaces = False
                 current_nset = None
                 current_elset = None
                 continue
@@ -103,7 +104,7 @@ def parse_inp_file(input_file_path):
             elif lower.startswith("*element"):
                 reading_nodes = False
                 reading_elements = True
-                reading_surfaces = False
+                # reading_surfaces = False
                 current_nset = None
                 current_elset = None
                 continue
@@ -111,10 +112,10 @@ def parse_inp_file(input_file_path):
             elif lower.startswith("*surface"):
                 reading_nodes = False
                 reading_elements = False
-                reading_surfaces = True
+                # reading_surfaces = True
                 current_nset = None
                 current_elset = None
-                current_surface = line.split("name=")[1].split(",")[0].strip() if "=" in line else "default"
+                # current_surface = line.split("name=")[1].split(",")[0].strip() if "=" in line else "default"
                 continue
 
             elif lower.startswith("*nset"):
@@ -305,9 +306,10 @@ if __name__ == "__main__":
     from edelweissmeshfree.meshfree.approximations.marmot.marmotmeshfreeapproximation import (
         MarmotMeshfreeApproximationWrapper,
     )
-    from edelweissmeshfree.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunction import (
-        MarmotMeshfreeKernelFunctionWrapper,
-    )
+
+    # from edelweissmeshfree.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunction import (
+    #    MarmotMeshfreeKernelFunctionWrapper,
+    # )
     from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
         MarmotParticleWrapper,
     )

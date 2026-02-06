@@ -143,7 +143,7 @@ def generateModelData(
 
     currentCellNumber = 1
 
-    cells = []
+    # cells = []
     for x in range(nX):
         for y in range(nY):
             for z in range(nZ):
