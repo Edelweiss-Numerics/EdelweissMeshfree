@@ -41,6 +41,7 @@ import numpy as np
 import pytest
 from edelweissfe.journal.journal import Journal
 from edelweissfe.linsolve.pardiso.pardiso import pardisoSolve
+from edelweissfe.surfaces.entitybasedsurface import EntityBasedSurface
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 from edelweissfe.utils.exceptions import StepFailed
 
@@ -151,10 +152,10 @@ def run_sim():
     theModel.particleKernelDomains["my_all_with_all"] = theParticleKernelDomain
 
     dirichletLeft = ParticleLagrangianWeakDirichletOnParticleSetFactory(
-        "left", theModel.particleSets[f"rectangular_grid_left"], "displacement", {0: 0}, theModel, location="center"
+        "left", theModel.particleSets["rectangular_grid_left"], "displacement", {0: 0}, theModel, location="center"
     )
     dirichletBottom = ParticleLagrangianWeakDirichletOnParticleSetFactory(
-        "bottom", theModel.particleSets[f"rectangular_grid_bottom"], "displacement", {1: 0}, theModel, location="center"
+        "bottom", theModel.particleSets["rectangular_grid_bottom"], "displacement", {1: 0}, theModel, location="center"
     )
 
     theModel.constraints.update(dirichletLeft)
@@ -228,25 +229,21 @@ def run_sim():
     # =====================================================================
     #                      DISTRIBUTED LOADS
     # =====================================================================
-
-    pressure_top = ParticleDistributedLoad(
-        name="pressure_top",
-        model=theModel,
-        journal=theJournal,
-        particles=theModel.particleSets["rectangular_grid_top"],
-        distributedLoadType="pressure",
-        loadVector=np.array([-100]),
-        surfaceID=3,
-        f_t=lambda t: 1.0,
+    surfacePressure = EntityBasedSurface(
+        name="surfacePressure",
+        faceToEntities={
+            3: list(theModel.particleSets["rectangular_grid_top"]),
+            2: list(theModel.particleSets["rectangular_grid_right"]),
+        },
     )
-    pressure_right = ParticleDistributedLoad(
-        name="pressure_right",
+
+    pressure_top_right = ParticleDistributedLoad(
+        name="pressure_100",
         model=theModel,
         journal=theJournal,
-        particles=theModel.particleSets["rectangular_grid_right"],
+        particleSurface=surfacePressure,
         distributedLoadType="pressure",
         loadVector=np.array([-100]),
-        surfaceID=2,
         f_t=lambda t: 1.0,
     )
 
@@ -292,7 +289,7 @@ def run_sim():
             particleManagers=[theParticleManager],
             constraints=theModel.constraints.values(),
             userIterationOptions=iterationOptions,
-            particleDistributedLoads=[pressure_top, pressure_right],
+            particleDistributedLoads=[pressure_top_right],
             vciManagers=[vciManager],
         )
 

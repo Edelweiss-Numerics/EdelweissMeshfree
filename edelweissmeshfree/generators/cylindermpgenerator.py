@@ -67,7 +67,7 @@ def generateModelData(model: MPMModel, journal: Journal, **kwargs):
     T = [int(np.ceil(angle * r / distance)) for r in Radii]
     heights = np.linspace(0, H, nZ)
 
-    exactV = np.pi * maxR**2 * angle / (np.pi * 2)
+    # exactV = np.pi * maxR**2 * angle / (np.pi * 2)
     numV = 0.0
     mps = []
     currentMPNumber = firstMaterialPointNumber

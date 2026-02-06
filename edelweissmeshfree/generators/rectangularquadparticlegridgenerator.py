@@ -38,6 +38,7 @@ import typing
 
 import numpy as np
 from edelweissfe.journal.journal import Journal
+from edelweissfe.surfaces.entitybasedsurface import EntityBasedSurface
 
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.particles.base.baseparticle import BaseParticle
@@ -90,7 +91,7 @@ def generateRectangularQuadParticleGrid(
     currentParticleNumber = firstParticleNumber
     particles = []
 
-    pVolume = l * h / (nX * nY) * thickness
+    # pVolume = l * h / (nX * nY) * thickness
 
     # check if particle numbers are already used
     for pN in range(firstParticleNumber, firstParticleNumber + nX * nY):
@@ -100,7 +101,7 @@ def generateRectangularQuadParticleGrid(
     for x in range(nX):
         for y in range(nY):
             particleVertices = np.asarray([nG[x, y], nG[x + 1, y], nG[x + 1, y + 1], nG[x, y + 1]])
-            particle = particleFactoryCallback(currentParticleNumber, particleVertices, pVolume)
+            particle = particleFactoryCallback(currentParticleNumber, particleVertices, 0.0)
             model.particles[currentParticleNumber] = particle
             particles.append(particle)
             currentParticleNumber += 1
@@ -132,9 +133,18 @@ def generateRectangularQuadParticleGrid(
         + [n for n in particleGrid[-1, 1:-1]],
     )
 
-    model.surfaces["{:}_bottom".format(name)] = {1: np.ravel(particleGrid[:, 0])}
-    model.surfaces["{:}_top".format(name)] = {3: np.ravel(particleGrid[:, -1])}
-    model.surfaces["{:}_right".format(name)] = {2: np.ravel(particleGrid[-1, :])}
-    model.surfaces["{:}_left".format(name)] = {4: np.ravel(particleGrid[0, :])}
+    # model.surfaces["{:}_bottom".format(name)] = {1: np.ravel(particleGrid[:, 0])}
+    # model.surfaces["{:}_top".format(name)] = {3: np.ravel(particleGrid[:, -1])}
+    # model.surfaces["{:}_right".format(name)] = {2: np.ravel(particleGrid[-1, :])}
+    # model.surfaces["{:}_left".format(name)] = {4: np.ravel(particleGrid[0, :])}
+
+    model.surfaces["{:}_bottom".format(name)] = EntityBasedSurface(
+        "{:}_bottom".format(name), {1: list(particleGrid[:, 0])}
+    )
+    model.surfaces["{:}_top".format(name)] = EntityBasedSurface("{:}_top".format(name), {3: list(particleGrid[:, -1])})
+    model.surfaces["{:}_right".format(name)] = EntityBasedSurface(
+        "{:}_right".format(name), {2: list(particleGrid[-1, :])}
+    )
+    model.surfaces["{:}_left".format(name)] = EntityBasedSurface("{:}_left".format(name), {4: list(particleGrid[0, :])})
 
     return model

@@ -165,7 +165,7 @@ class OutputManager(EnsightOutputManager):
         self.particleSetToEnsightPart = dict()
         self.cellSetToEnsightPart = dict()
         self.cellElementSetToEnsightPart = dict()
-        return super().__init__(name, model, fieldOutputController, journal, plotter)
+        return super().__init__(name, model, fieldOutputController, journal, plotter, **kwargs)
 
     def _createGeometryParts(self, firstPartID: int):
         feModelParts = super()._createGeometryParts(firstPartID)

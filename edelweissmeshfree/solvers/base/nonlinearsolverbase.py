@@ -42,7 +42,7 @@ import h5py
 import numpy as np
 from edelweissfe.constraints.base.constraintbase import ConstraintBase
 from edelweissfe.journal.journal import Journal
-from edelweissfe.numerics.csrgenerator import CSRGenerator
+from edelweissfe.numerics.csrgeneratorv2 import CSRGenerator
 from edelweissfe.numerics.dofmanager import DofManager, DofVector, VIJSystemMatrix
 from edelweissfe.outputmanagers.base.outputmanagerbase import OutputManagerBase
 from edelweissfe.sets.nodeset import NodeSet
@@ -285,8 +285,10 @@ class NonlinearImplicitSolverBase:
         """
 
         for distributedLoad in distributedLoads:
-            surfaceID, loadVector = distributedLoad.getCurrentLoad(None, timeStep)
-            for p in distributedLoad.particles:
+
+            # surfaceID, loadVector = distributedLoad.getCurrentLoad(None, timeStep)
+            # for p in distributedLoad.particles:
+            for p, surfaceID, loadVector in distributedLoad.getCurrentParticleLoads(timeStep):
                 Pc = np.zeros(p.nDof)
                 Kc = K_VIJ[p]
                 p.computeDistributedLoad(
@@ -1311,11 +1313,12 @@ class NonlinearImplicitSolverBase:
             The current time increment.
         """
         for c in constraints:
-            dUc = dU[c]
-            Pc = np.zeros(c.nDof)
-            Kc = K_VIJ[c]
-            c.applyConstraint(dUc, Pc, Kc, timeStep)
-            P[c] += Pc
+            if c.active:
+                dUc = dU[c]
+                Pc = np.zeros(c.nDof)
+                Kc = K_VIJ[c]
+                c.applyConstraint(dUc, Pc, Kc, timeStep)
+                P[c] += Pc
 
     @performancetiming.timeit("instancing dof manager")
     def _createDofManager(self, *args):

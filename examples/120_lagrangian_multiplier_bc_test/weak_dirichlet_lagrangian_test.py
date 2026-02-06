@@ -223,21 +223,16 @@ def run_sim():
 
     linearSolver = pardisoSolve
 
-    from edelweissmeshfree.meshfree.vci import (
-        BoundaryParticleDefinition,
-        VariationallyConsistentIntegrationManager,
-    )
+    # theBoundary = [
+    #    BoundaryParticleDefinition(theModel.particleSets["rectangular_grid_left"], np.empty(2), 4),
+    #    BoundaryParticleDefinition(theModel.particleSets["rectangular_grid_right"], np.empty(2), 2),
+    #    BoundaryParticleDefinition(theModel.particleSets["rectangular_grid_bottom"], np.empty(2), 1),
+    #    BoundaryParticleDefinition(theModel.particleSets["rectangular_grid_top"], np.empty(2), 3),
+    # ]
 
-    theBoundary = [
-        BoundaryParticleDefinition(theModel.particleSets["rectangular_grid_left"], np.empty(2), 4),
-        BoundaryParticleDefinition(theModel.particleSets["rectangular_grid_right"], np.empty(2), 2),
-        BoundaryParticleDefinition(theModel.particleSets["rectangular_grid_bottom"], np.empty(2), 1),
-        BoundaryParticleDefinition(theModel.particleSets["rectangular_grid_top"], np.empty(2), 3),
-    ]
-
-    vciManager = VariationallyConsistentIntegrationManager(
-        list(theModel.particles.values()), list(theModel.meshfreeKernelFunctions.values()), theBoundary
-    )
+    # vciManager = VariationallyConsistentIntegrationManager(
+    #    list(theModel.particles.values()), list(theModel.meshfreeKernelFunctions.values()), theBoundary
+    # )
 
     try:
         nonlinearSolver.solveStep(
@@ -249,7 +244,6 @@ def run_sim():
             particleManagers=[theParticleManager],
             constraints=theModel.constraints.values(),
             userIterationOptions=iterationOptions,
-            vciManagers=[vciManager],
         )
 
     except StepFailed as e:

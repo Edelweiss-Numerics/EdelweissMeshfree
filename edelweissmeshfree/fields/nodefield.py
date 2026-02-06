@@ -39,9 +39,8 @@ from edelweissfe.points.node import Node
 from edelweissmeshfree.sets.cellelementset import CellElementSet
 from edelweissmeshfree.sets.cellset import CellSet
 
-
-class MPMNodeFieldSubset:
-    pass
+# class MPMNodeFieldSubset:
+#    pass
 
 
 class MPMNodeField(NodeField):
@@ -57,7 +56,7 @@ class MPMNodeFieldSubset(NodeFieldSubset):
         super().__init__(*args, **kwargs)
 
     def _getSubsetNodes(self, subset) -> list[Node]:
-        if type(subset) == CellSet or type(subset) == CellElementSet:
+        if type(subset) is CellSet or type(subset) is CellElementSet:
             nodeCandidates = subset.extractNodeSet()
             return [n for n in nodeCandidates if n in self.parentNodeField._indicesOfNodesInArray]
 
