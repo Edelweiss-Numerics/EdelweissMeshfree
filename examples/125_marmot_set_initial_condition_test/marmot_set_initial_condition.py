@@ -41,9 +41,9 @@ import numpy as np
 import pytest
 from edelweissfe.journal.journal import Journal
 from edelweissfe.linsolve.pardiso.pardiso import pardisoSolve
+from edelweissfe.surfaces.entitybasedsurface import EntityBasedSurface
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 from edelweissfe.utils.exceptions import StepFailed
-from edelweissfe.surfaces.entitybasedsurface import EntityBasedSurface
 
 from edelweissmeshfree.constraints.particlelagrangianweakdirichlet import (
     ParticleLagrangianWeakDirichletOnParticleSetFactory,
@@ -229,11 +229,13 @@ def run_sim():
     # =====================================================================
     #                      DISTRIBUTED LOADS
     # =====================================================================
-    surfacePressure = EntityBasedSurface(name="surfacePressure",
-                                         faceToEntities={3:list(theModel.particleSets["rectangular_grid_top"]),
-                                                         2:list(theModel.particleSets["rectangular_grid_right"])})
-
-
+    surfacePressure = EntityBasedSurface(
+        name="surfacePressure",
+        faceToEntities={
+            3: list(theModel.particleSets["rectangular_grid_top"]),
+            2: list(theModel.particleSets["rectangular_grid_right"]),
+        },
+    )
 
     pressure_top_right = ParticleDistributedLoad(
         name="pressure_100",

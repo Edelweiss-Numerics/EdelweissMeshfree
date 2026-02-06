@@ -41,8 +41,8 @@ import numpy as np
 import pytest
 from edelweissfe.journal.journal import Journal
 from edelweissfe.linsolve.pardiso.pardiso import pardisoSolve
-from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 from edelweissfe.surfaces.entitybasedsurface import EntityBasedSurface
+from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 
 from edelweissmeshfree.constraints.particlelagrangianweakdirichlet import (
     ParticleLagrangianWeakDirichletOnParticleSetFactory,
@@ -307,9 +307,13 @@ def run_sim(
     # =====================================================================
     #                      DISTRIBUTED LOADS
     # =====================================================================
-    surfacePressure = EntityBasedSurface(name="surfacePressure",
-                                         faceToEntities={1:list(theModel.particleSets[f"{name}__s_top_S1"]),
-                                                         3:list(theModel.particleSets[f"{name}__s_top_S3"])})
+    surfacePressure = EntityBasedSurface(
+        name="surfacePressure",
+        faceToEntities={
+            1: list(theModel.particleSets[f"{name}__s_top_S1"]),
+            3: list(theModel.particleSets[f"{name}__s_top_S3"]),
+        },
+    )
 
     pressure_S1_S3 = ParticleDistributedLoad(
         name="pressure_S1_S3",
@@ -318,10 +322,10 @@ def run_sim(
         particleSurface=surfacePressure,
         distributedLoadType="pressure",
         loadVector=np.array([-10]),
-        #surfaceID=1,
+        # surfaceID=1,
         f_t=lambda t: t,
     )
-    #pressure_S3 = ParticleDistributedLoad(
+    # pressure_S3 = ParticleDistributedLoad(
     #    name="pressure_S3",
     #    model=theModel,
     #    journal=theJournal,
@@ -330,7 +334,7 @@ def run_sim(
     #    loadVector=np.array([-10]),
     #    surfaceID=3,
     #    f_t=lambda t: t,
-    #)
+    # )
 
     # =====================================================================
     #                      SOLVE STEPS
@@ -348,7 +352,7 @@ def run_sim(
             particleManagers=[theParticleManager],
             constraints=theModel.constraints.values(),
             userIterationOptions=iterationOptions,
-            particleDistributedLoads=[pressure_S1_S3],#, pressure_S3],
+            particleDistributedLoads=[pressure_S1_S3],  # , pressure_S3],
             vciManagers=[vciManager],
         )
 

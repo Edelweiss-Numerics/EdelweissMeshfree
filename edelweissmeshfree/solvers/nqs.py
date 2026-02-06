@@ -362,7 +362,7 @@ class NonlinearQuasistaticSolver(NonlinearImplicitSolverBase):
                                         initialGuess[0],
                                         initialGuess[1],
                                         predictor,
-                                )
+                                    )
                                 break
                             except Exception as e:
                                 if initialGuess is not (None, None):

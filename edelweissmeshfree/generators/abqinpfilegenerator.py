@@ -35,6 +35,7 @@
 #  ---------------------------------------------------------------------
 
 import typing
+
 import numpy as np
 from edelweissfe.journal.journal import Journal
 from edelweissfe.points.node import Node

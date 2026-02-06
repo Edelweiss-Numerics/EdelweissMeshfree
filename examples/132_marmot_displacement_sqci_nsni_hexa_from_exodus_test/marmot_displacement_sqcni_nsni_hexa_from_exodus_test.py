@@ -44,11 +44,15 @@ from edelweissmeshfree.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunct
 )
 from edelweissmeshfree.meshfree.particlekerneldomain import ParticleKernelDomain
 from edelweissmeshfree.models.mpmmodel import MPMModel
-from edelweissmeshfree.outputmanagers.ensight import OutputManager as EnsightOutputManager
+from edelweissmeshfree.outputmanagers.ensight import (
+    OutputManager as EnsightOutputManager,
+)
 from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
     KDBinOrganizedParticleManager,
 )
-from edelweissmeshfree.particles.marmot.marmotparticlewrapper import MarmotParticleWrapper
+from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
+    MarmotParticleWrapper,
+)
 from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
 
 
@@ -90,7 +94,9 @@ def run_sim():
             theMaterial,
         )
 
-    from edelweissmeshfree.generators.particlesfromexodus import generateParticlesFromExodus
+    from edelweissmeshfree.generators.particlesfromexodus import (
+        generateParticlesFromExodus,
+    )
 
     theModel = generateParticlesFromExodus(
         theModel, theJournal, "brick_coarse.e", {"hexahedron": TheParticleFactory}, "mesh_particles", 1
@@ -236,7 +242,9 @@ def run_sim():
     #     np.array([-1e3]),
     # )
 
-    from edelweissmeshfree.numerics.predictors.quadraticpredictor import QuadraticPredictor
+    from edelweissmeshfree.numerics.predictors.quadraticpredictor import (
+        QuadraticPredictor,
+    )
 
     try:
         nonlinearSolver.solveStep(

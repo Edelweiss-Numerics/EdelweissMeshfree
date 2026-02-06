@@ -41,9 +41,9 @@ import numpy as np
 import pytest
 from edelweissfe.journal.journal import Journal
 from edelweissfe.linsolve.pardiso.pardiso import pardisoSolve
+from edelweissfe.surfaces.entitybasedsurface import EntityBasedSurface
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 from edelweissfe.utils.exceptions import StepFailed
-from edelweissfe.surfaces.entitybasedsurface import EntityBasedSurface
 
 from edelweissmeshfree.constraints.particlelagrangianweakdirichlet import (
     ParticleLagrangianWeakDirichletOnParticleSetFactory,
@@ -151,18 +151,18 @@ def run_sim():
     # We need this model to create the dof manager
     theModel.particleKernelDomains["my_all_with_all"] = theParticleKernelDomain
 
-    #constraintsLeft = []
-    #i = 0
-    #for particle in theModel.particleSets["rectangular_grid_left"]:
+    # constraintsLeft = []
+    # i = 0
+    # for particle in theModel.particleSets["rectangular_grid_left"]:
     #    constraintsLeft.append(
     #        ParticleLagrangianWeakDirichletOnParticleSetFactory(
     #            f"left_{i}", [particle], "displacement", {0: 0}, theModel, location="vertex", vertexID=[0, 1]
     #        )
     #    )
     #    i += 1
-    #constraintsBottom = []
-    #i = 0
-    #for particle in theModel.particleSets["rectangular_grid_bottom"]:
+    # constraintsBottom = []
+    # i = 0
+    # for particle in theModel.particleSets["rectangular_grid_bottom"]:
     #    constraintsBottom.append(
     #        ParticleLagrangianWeakDirichletOnParticleSetFactory(
     #            f"bottom_{i}", [particle], "displacement", {1: 0}, theModel, location="vertex", vertexID=[1, 2]
@@ -170,9 +170,9 @@ def run_sim():
     #    )
     #    i += 1
 
-    #for c in constraintsLeft:
+    # for c in constraintsLeft:
     #    theModel.constraints.update(c)
-    #for c in constraintsBottom:
+    # for c in constraintsBottom:
     #    theModel.constraints.update(c)
     dirichletLeft = ParticleLagrangianWeakDirichletOnParticleSetFactory(
         "left", theModel.particleSets[f"rectangular_grid_left"], "displacement", {0: 0}, theModel, location="center"
@@ -253,11 +253,13 @@ def run_sim():
     # =====================================================================
     #                      DISTRIBUTED LOADS
     # =====================================================================
-    surfacePressure = EntityBasedSurface(name="surfacePressure",
-                                         faceToEntities={3:list(theModel.particleSets["rectangular_grid_top"]),
-                                                         2:list(theModel.particleSets["rectangular_grid_right"])})
-
-
+    surfacePressure = EntityBasedSurface(
+        name="surfacePressure",
+        faceToEntities={
+            3: list(theModel.particleSets["rectangular_grid_top"]),
+            2: list(theModel.particleSets["rectangular_grid_right"]),
+        },
+    )
 
     pressure_top_right = ParticleDistributedLoad(
         name="pressure_100",
@@ -268,7 +270,7 @@ def run_sim():
         loadVector=np.array([-100]),
         f_t=lambda t: 1.0,
     )
-    #pressure_right = ParticleDistributedLoad(
+    # pressure_right = ParticleDistributedLoad(
     #    name="pressure_right",
     #    model=theModel,
     #    journal=theJournal,
@@ -277,16 +279,18 @@ def run_sim():
     #    loadVector=np.array([-100]),
     #    surfaceID=2,
     #    f_t=lambda t: 1.0,
-    #)
+    # )
 
     # =====================================================================
     #                      CWF CORRECTION
     # =====================================================================
-    surfaceCWF = EntityBasedSurface(name="surfacePressure",
-                                    faceToEntities={4:list(theModel.particleSets["rectangular_grid_left"]),
-                                                    1:list(theModel.particleSets["rectangular_grid_bottom"])})
-
-
+    surfaceCWF = EntityBasedSurface(
+        name="surfacePressure",
+        faceToEntities={
+            4: list(theModel.particleSets["rectangular_grid_left"]),
+            1: list(theModel.particleSets["rectangular_grid_bottom"]),
+        },
+    )
 
     cwf_left_bottom = ParticleDistributedLoad(
         name="cwf_dirichlet",
@@ -297,7 +301,7 @@ def run_sim():
         loadVector=np.array([0]),
         f_t=lambda t: 1.0,
     )
-    #cwf_bottom = ParticleDistributedLoad(
+    # cwf_bottom = ParticleDistributedLoad(
     #    name="cwf_bottom",
     #    model=theModel,
     #    journal=theJournal,
@@ -306,7 +310,7 @@ def run_sim():
     #    loadVector=np.array([0]),
     #    surfaceID=1,
     #    f_t=lambda t: 1.0,
-    #)
+    # )
 
     incSize = 1e-1
     adaptiveTimeStepper = AdaptiveTimeStepper(0.0, 1.0, incSize, incSize, incSize / 1, 50, theJournal)
