@@ -39,7 +39,9 @@ import numpy as np
 from edelweissfe.journal.journal import Journal
 
 from edelweissmeshfree.meshfree.particlekerneldomain import ParticleKernelDomain
-from edelweissmeshfree.particlemanagers.base.baseparticlemanager import BaseParticleManager
+from edelweissmeshfree.particlemanagers.base.baseparticlemanager import (
+    BaseParticleManager,
+)
 
 
 class _KDBinOrganizer:

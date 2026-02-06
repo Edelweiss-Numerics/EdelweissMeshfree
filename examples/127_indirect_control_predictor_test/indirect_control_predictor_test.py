@@ -41,9 +41,9 @@ import numpy as np
 import pytest
 from edelweissfe.journal.journal import Journal
 from edelweissfe.linsolve.pardiso.pardiso import pardisoSolve
+from edelweissfe.surfaces.entitybasedsurface import EntityBasedSurface
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 from edelweissfe.utils.exceptions import StepFailed
-from edelweissfe.surfaces.entitybasedsurface import EntityBasedSurface
 
 from edelweissmeshfree.constraints.particlepenaltyequalvalue import (
     ParticlePenaltyEqualValue,
@@ -173,13 +173,13 @@ def run_sim(particleSize, supportRadius, continuityOrder, completenessOrder):
         dirichletBottom,
     ]
 
-    surfacePressure = EntityBasedSurface(name="surfacePressure",
-                                         faceToEntities={3:list(theModel.particleSets["rectangular_grid_top"])})
+    surfacePressure = EntityBasedSurface(
+        name="surfacePressure", faceToEntities={3: list(theModel.particleSets["rectangular_grid_top"])}
+    )
 
-    surfaceDisturbance = EntityBasedSurface(name="surfaceDisturbance",
-                                            faceToEntities={2:list(theModel.particleSets["rectangular_grid_rightTop"])})
-
-
+    surfaceDisturbance = EntityBasedSurface(
+        name="surfaceDisturbance", faceToEntities={2: list(theModel.particleSets["rectangular_grid_rightTop"])}
+    )
 
     pressureTop = ParticleDistributedLoad(
         "pressureTop",

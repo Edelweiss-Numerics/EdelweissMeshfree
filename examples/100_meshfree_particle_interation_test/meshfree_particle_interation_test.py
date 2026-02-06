@@ -43,6 +43,7 @@ from edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager import 
     KDBinOrganizedParticleManager,
 )
 
+
 def run_sim():
     dimension = 2
 
