@@ -365,7 +365,7 @@ class NonlinearQuasistaticSolver(NonlinearImplicitSolverBase):
                                     )
                                 break
                             except Exception as e:
-                                if initialGuess is not (None, None):
+                                if initialGuess != (None, None):
                                     self.journal.message(str(e), self.identification, 1)
                                     self.journal.message(
                                         "Prediction failed, trying without prediction", self.identification, level=1

@@ -152,10 +152,10 @@ def run_sim():
     theModel.particleKernelDomains["my_all_with_all"] = theParticleKernelDomain
 
     dirichletLeft = ParticleLagrangianWeakDirichletOnParticleSetFactory(
-        "left", theModel.particleSets[f"rectangular_grid_left"], "displacement", {0: 0}, theModel, location="center"
+        "left", theModel.particleSets["rectangular_grid_left"], "displacement", {0: 0}, theModel, location="center"
     )
     dirichletBottom = ParticleLagrangianWeakDirichletOnParticleSetFactory(
-        "bottom", theModel.particleSets[f"rectangular_grid_bottom"], "displacement", {1: 0}, theModel, location="center"
+        "bottom", theModel.particleSets["rectangular_grid_bottom"], "displacement", {1: 0}, theModel, location="center"
     )
 
     theModel.constraints.update(dirichletLeft)
