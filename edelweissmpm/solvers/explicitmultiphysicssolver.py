@@ -77,6 +77,8 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
         if not timeStepper.doesZeroIncrement():
             raise ValueError("The first time increment must be zero for explicit time integration.")
 
+        # activeCells = self._getActiveCellsFromManagers(mpmManagers)
+
         try:
             for timeStep in timeStepper.generateTimeStep():
                 dT = timeStep.timeIncrement
@@ -91,8 +93,27 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
                     self._updateModelConnectivity(
                         list(), model.particles.values(), constraints, model, timeStep, list(), particleManagers
                     )
-                    (theDofManager, M, dU_np, P_Int, P_Ext, v_np_one_half, momentum, reducedNodeSets) = (
-                        self.getDiscretization(model, mpmManagers, constraints)
+
+                    (activeNodesPersistent, _, reducedNodeFields, reducedNodeSets) = self._assembleActiveDomain(
+                        list(), model
+                    )
+
+                    activeConstraints = [c for c in constraints if c.active]
+                    scalarVars = [v for c in activeConstraints for v in c.scalarVariables]
+
+                    theDofManager = self._createDofManager(
+                        reducedNodeFields.values(),
+                        scalarVars,
+                        model.elements.values(),
+                        activeConstraints,
+                        list(),
+                        model.cellElements.values(),
+                        model.particles.values(),
+                        initializeVIJPattern=False,
+                    )
+
+                    (M, dU_np, P_Int, P_Ext, v_np_one_half, momentum) = self.getDiscretization(
+                        theDofManager, model, mpmManagers, constraints
                     )
                     self.updateSystem(model, timeStep.totalTime, dT, dU_np)
                     self.computeSystem(model, P_Int, P_Ext, M, momentum, timeStep)
@@ -136,8 +157,13 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
                     list(), model.particles.values(), constraints, model, timeStep, list(), particleManagers
                 )
                 if connectivityHasChanged:
-                    (theDofManager, M, dU_np, P_Int, P_Ext, _, momentum, reducedNodeSets) = self.getDiscretization(
-                        model, mpmManagers, constraints
+
+                    activeConstraints = [c for c in constraints if c.active]
+                    scalarVars = [v for c in activeConstraints for v in c.scalarVariables]
+                    theDofManager.updateParticles(model.particles.values())
+                    theDofManager.updateConstraints(activeConstraints)
+                    (M, dU_np, P_Int, P_Ext, _, momentum) = self.getDiscretization(
+                        theDofManager, model, mpmManagers, constraints
                     )
                 #    +-------------------------------+
                 # +--| new discretization at t_(n+1) |
@@ -270,7 +296,7 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
             executor.map(computeParticleWorker, particles)
 
     @performancetiming.timeit("build discretization")
-    def getDiscretization(self, model: MPMModel, mpmManagers: list[MPMManagerBase], constraints: list):
+    def getDiscretization(self, theDofManager, model: MPMModel, mpmManagers: list[MPMManagerBase], constraints: list):
         """Assemble the system discretization.
 
         Parameters
@@ -302,23 +328,6 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
             The reduced node sets for the active domain.
         """
 
-        activeCells = self._getActiveCellsFromManagers(mpmManagers)
-        (activeNodesPersistent, _, reducedNodeFields, reducedNodeSets) = self._assembleActiveDomain(activeCells, model)
-
-        activeConstraints = [c for c in constraints if c.active]
-        scalarVars = [v for c in activeConstraints for v in c.scalarVariables]
-
-        theDofManager = self._createDofManager(
-            reducedNodeFields.values(),
-            scalarVars,
-            model.elements.values(),
-            activeConstraints,
-            activeCells,
-            model.cellElements.values(),
-            model.particles.values(),
-            initializeVIJPattern=False,
-        )
-
         M = theDofManager.constructDofVector()
         dU = theDofManager.constructDofVector()
         P_Int = theDofManager.constructDofVector()
@@ -326,7 +335,7 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
         v_np_one_half = np.zeros_like(dU)
         Mv = theDofManager.constructDofVector()
 
-        return theDofManager, M, dU, P_Int, P_Ext, v_np_one_half, Mv, reducedNodeSets
+        return M, dU, P_Int, P_Ext, v_np_one_half, Mv
 
     @performancetiming.timeit("compute system")
     def computeSystem(self, model, P_Int: DofVector, P_Ext: DofVector, M: DofVector, Mv: DofVector, timeStep: TimeStep):
