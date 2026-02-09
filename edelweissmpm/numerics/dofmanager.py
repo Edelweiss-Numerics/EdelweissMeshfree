@@ -25,12 +25,15 @@
 #  the top level directory of EdelweissMPM.
 #  ---------------------------------------------------------------------
 
-import os
 from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 from edelweissfe.fields.nodefield import NodeField
 from edelweissfe.numerics.dofmanager import DofManager
+from edelweissfe.numerics.parallelizationutilities import (
+    getNumberOfThreads,
+    isFreeThreadingSupported,
+)
 from edelweissfe.variables.scalarvariable import ScalarVariable
 
 
@@ -190,24 +193,28 @@ class MPMDofManager(DofManager):
 
         return self._locateNodeCouplingEntitiesInDofVector(particles)
 
-    def updateParticles(self, elements: list, pool: ThreadPoolExecutor = None):
+    def updateParticles(self, particles: list):
         """
         Updates the connectivity mapping for particles without rebuilding
         the entire DofManager structure.
+
+        Parameters
+        ----------
+        particles : list
+            The list of particles to update.
         """
-        num_elements = len(elements)
-        if num_elements == 0:
+
+        if not particles:
             return
 
-        elements = list(elements)  # Ensure we have a list for slicing
+        elements = list(particles)  # Ensure we have a list for slicing
+        num_elements = len(particles)
 
         # 1. Access the pre-cached field variable map
         field_var_map = self.idcsOfFieldVariablesInDofVector
 
-        # 2. Parallel Processing logic
-        # We process in chunks to minimize Python's thread-management overhead
-        num_workers = pool._max_workers if pool else os.cpu_count()
-        chunk_size = max(1, num_elements // num_workers)
+        numThreads = getNumberOfThreads() if isFreeThreadingSupported() else 1
+        chunk_size = max(1, num_elements // numThreads)
 
         def process_element_chunk(chunk_elements):
             local_results = {}
@@ -231,11 +238,8 @@ class MPMDofManager(DofManager):
         # 3. Execute update
         chunks = [elements[i : i + chunk_size] for i in range(0, num_elements, chunk_size)]
 
-        if pool:
-            results = pool.map(process_element_chunk, chunks)
-        else:
-            # Fallback to serial if no pool is provided and list is small
-            results = [process_element_chunk(elements)]
+        with ThreadPoolExecutor(max_workers=numThreads) as executor:
+            results = executor.map(process_element_chunk, chunks)
 
         # 4. Merge results back into the manager
         for partial_map in results:
@@ -248,6 +252,11 @@ class MPMDofManager(DofManager):
         """
         Updates the connectivity mapping for constraints in a serial loop.
         Reuses global index maps to avoid re-instancing the manager.
+
+        Parameters
+        ----------
+        constraints : list
+            The list of constraints to be considered.
         """
         if not constraints:
             return
@@ -281,35 +290,3 @@ class MPMDofManager(DofManager):
 
         # Re-sync the higher order map for assembly
         self.idcsOfHigherOrderEntitiesInDofVector = self.idcsOfElementsInDofVector | self.idcsOfConstraintsInDofVector
-
-    # # Re-calculate VIJ pattern if system matrices are being used
-    # if hasattr(self, 'I') and self.I is not None:
-    #     self._updateVIJPattern()
-
-    # def _initializeCSRPattern(self, ):
-
-    #     nRows = self.nDof
-
-    #     rowIndices = [ list() for i in range(nRows) ]
-    #     for ( entity, entityIdcsInDofVector) in self.idcsOfHigherOrderEntitiesInDofVector.items():
-    #         for idx in entityIdcsInDofVector:
-    #             rowIndices[idx].append( entityIdcsInDofVector)
-
-    #     rowIndices = [ np.unique(np.hstack(row)) for row in rowIndices]
-
-    #     indptr = np.zeros(nRows+1, dtype=int)
-    #     indptr[0] = 0
-    #     for i in range(nRows):
-    #         indptr[i+1] = indptr[i] + len(rowIndices[i])
-
-    #     indices = np.hstack(rowIndices)
-
-    #     return (indices, indptr)
-
-    # def constructCSRMatrix(self,):
-    #     """Creates a CSR matrix from the DofManager.
-    #     """
-
-    #     import scipy as sp
-
-    #     return sp.sparse.csr_matrix((np.zeros_like(self.indices), self.indices, self.indptr), shape=(self.nDof, self.nDof))
