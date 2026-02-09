@@ -53,7 +53,6 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
         bodyLoads: list = [],
         distributedLoads: list = [],
         particleDistributedLoads: list = [],
-        constraints: list = [],
         outputManagers: list = [],
         userIterationOptions: dict = {},
         vciManagers: list = [],
@@ -77,7 +76,8 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
         if not timeStepper.doesZeroIncrement():
             raise ValueError("The first time increment must be zero for explicit time integration.")
 
-        # activeCells = self._getActiveCellsFromManagers(mpmManagers)
+        particles = list(model.particles.values())
+        constraints = list(model.constraints.values())
 
         try:
             for timeStep in timeStepper.generateTimeStep():
@@ -91,7 +91,7 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
                     # | zero increment |
                     # +----------------+
                     self._updateModelConnectivity(
-                        list(), model.particles.values(), constraints, model, timeStep, list(), particleManagers
+                        list(), particles, constraints, model, timeStep, list(), particleManagers
                     )
 
                     (activeNodesPersistent, _, reducedNodeFields, reducedNodeSets) = self._assembleActiveDomain(
@@ -99,16 +99,15 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
                     )
 
                     activeConstraints = [c for c in constraints if c.active]
-                    scalarVars = [v for c in activeConstraints for v in c.scalarVariables]
 
                     theDofManager = self._createDofManager(
                         reducedNodeFields.values(),
-                        scalarVars,
-                        model.elements.values(),
+                        list(),
+                        list(),
                         activeConstraints,
                         list(),
-                        model.cellElements.values(),
-                        model.particles.values(),
+                        list(),
+                        particles,
                         initializeVIJPattern=False,
                     )
 
@@ -116,7 +115,7 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
                         theDofManager, model, mpmManagers, constraints
                     )
                     self.updateSystem(model, timeStep.totalTime, dT, dU_np)
-                    self.computeSystem(model, P_Int, P_Ext, M, momentum, timeStep)
+                    self.computeSystem(particles, activeConstraints, P_Int, P_Ext, M, momentum, timeStep)
                     M_inv = np.reciprocal(M)
                     v_np_one_half[:] = momentum * M_inv
 
@@ -158,10 +157,8 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
                 )
                 if connectivityHasChanged:
 
-                    activeConstraints = [c for c in constraints if c.active]
-                    scalarVars = [v for c in activeConstraints for v in c.scalarVariables]
-                    theDofManager.updateParticles(model.particles.values())
-                    theDofManager.updateConstraints(activeConstraints)
+                    self._updateDofManager(theDofManager, constraints, model.particles.values())
+
                     (M, dU_np, P_Int, P_Ext, _, momentum) = self.getDiscretization(
                         theDofManager, model, mpmManagers, constraints
                     )
@@ -173,7 +170,7 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
                 # V
 
                 P_Int[:] = P_Ext[:] = M[:] = momentum[:] = 0.0
-                self.computeSystem(model, P_Int, P_Ext, M, momentum, timeStep)
+                self.computeSystem(particles, activeConstraints, P_Int, P_Ext, M, momentum, timeStep)
                 M_inv = np.reciprocal(M)
 
                 # v_np_one_half[:] = momentum * M_inv # omitting this line and simple taking v_np_one_half from previous step leads to way less dissipative results
@@ -276,6 +273,7 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
 
         if not particles:
             return
+
         particles = list(particles)  # Ensure we have a list
 
         def computeParticleWorker(particle: BaseParticle):
@@ -338,13 +336,24 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
         return M, dU, P_Int, P_Ext, v_np_one_half, Mv
 
     @performancetiming.timeit("compute system")
-    def computeSystem(self, model, P_Int: DofVector, P_Ext: DofVector, M: DofVector, Mv: DofVector, timeStep: TimeStep):
+    def computeSystem(
+        self,
+        particles: list,
+        constraints: list,
+        P_Int: DofVector,
+        P_Ext: DofVector,
+        M: DofVector,
+        Mv: DofVector,
+        timeStep: TimeStep,
+    ):
         """Compute the system vectors.
 
         Parameters
         ----------
-        model
-            The MPM model to be computed.
+        particles
+            The list of particles to be evaluated.
+        constraints
+            The list of constraints to be applied.
         P_Int
             The global internal flux vector.
         P_Ext
@@ -358,7 +367,7 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
         """
 
         self._computeParticlesExplicit(
-            model.particles.values(),
+            particles,
             P_Int,
             M,
             Mv,
@@ -366,7 +375,7 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
 
         # self._computeParticleDistributedLoads(particleDistributedLoads, P_Ext_n, None, timeStep)
 
-        self._computeConstraints(model.constraints.values(), P_Ext, timeStep)
+        self._computeConstraints(constraints, P_Ext, timeStep)
 
         return P_Int, P_Ext, M, Mv
 
@@ -414,3 +423,22 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
                 Pc = np.zeros(c.nDof)
                 c.applyConstraint(Pc, timeStep)
                 P[c] += Pc
+
+    @performancetiming.timeit("updating dof structure")
+    def _updateDofManager(self, theDofManager, constraints: list, particles: list):
+        """
+        Update the DOF manager with the current active constraints and particles.
+
+        Parameters
+        ----------
+        theDofmanager
+            The DofManager instance to be updated.
+        constraints
+            The list of constraints to be evaluated.
+        particles
+            The list of particles to be evaluated.
+        """
+
+        activeConstraints = [c for c in constraints if c.active]
+        theDofManager.updateParticles(particles)
+        theDofManager.updateConstraints(activeConstraints)
