@@ -207,27 +207,25 @@ class MPMDofManager(DofManager):
         if not particles:
             return
 
-        elements = list(particles)  # Ensure we have a list for slicing
+        particles = list(particles)  # Ensure we have a list for slicing
         num_elements = len(particles)
-
-        # 1. Access the pre-cached field variable map
-        field_var_map = self.idcsOfFieldVariablesInDofVector
 
         numThreads = getNumberOfThreads() if isFreeThreadingSupported() else 1
         chunk_size = max(1, num_elements // numThreads)
 
+        fv_map = self.idcsOfFieldVariablesInDofVector
+
         def process_element_chunk(chunk_elements):
             local_results = {}
             for ent in chunk_elements:
-                # Optimized extraction:
-                # Avoid nested generators; use list comprehension for speed
-                indices = []
-                for iNode, node in enumerate(ent.nodes):
-                    for nodeField in ent.fields[iNode]:
-                        # Direct access to the pre-calculated global indices
-                        indices.extend(field_var_map[node.fields[nodeField]])
+                indices = [
+                    idx
+                    for iNode, node in enumerate(ent.nodes)
+                    for f_name in ent.fields[iNode]
+                    for idx in fv_map[node.fields[f_name]]
+                ]
 
-                destArr = np.array(indices, dtype=int)
+                destArr = np.fromiter(indices, dtype=int)
 
                 if ent.dofIndicesPermutation is not None:
                     local_results[ent] = destArr[ent.dofIndicesPermutation]
@@ -235,17 +233,14 @@ class MPMDofManager(DofManager):
                     local_results[ent] = destArr
             return local_results
 
-        # 3. Execute update
-        chunks = [elements[i : i + chunk_size] for i in range(0, num_elements, chunk_size)]
+        chunks = [particles[i : i + chunk_size] for i in range(0, num_elements, chunk_size)]
 
         with ThreadPoolExecutor(max_workers=numThreads) as executor:
             results = executor.map(process_element_chunk, chunks)
 
-        # 4. Merge results back into the manager
         for partial_map in results:
             self.idcsOfElementsInDofVector.update(partial_map)
 
-        # 5. Crucial: Synchronize the "Higher Order" map used by System Matrices
         self.idcsOfHigherOrderEntitiesInDofVector = self.idcsOfElementsInDofVector | self.idcsOfConstraintsInDofVector
 
     def updateConstraints(self, constraints: list):

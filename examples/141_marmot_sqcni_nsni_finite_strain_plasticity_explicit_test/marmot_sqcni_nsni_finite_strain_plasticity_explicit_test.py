@@ -243,7 +243,6 @@ def run_sim():
             fieldOutputController,
             outputManagers=[ensightOutput],
             particleManagers=[theParticleManager],
-            constraints=theModel.constraints.values(),
         )
 
     except StepFailed as e:
