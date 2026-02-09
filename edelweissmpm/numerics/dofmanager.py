@@ -25,6 +25,9 @@
 #  the top level directory of EdelweissMPM.
 #  ---------------------------------------------------------------------
 
+import os
+from concurrent.futures import ThreadPoolExecutor
+
 import numpy as np
 from edelweissfe.fields.nodefield import NodeField
 from edelweissfe.numerics.dofmanager import DofManager
@@ -186,6 +189,102 @@ class MPMDofManager(DofManager):
         """
 
         return self._locateNodeCouplingEntitiesInDofVector(particles)
+
+    def updateParticles(self, elements: list, pool: ThreadPoolExecutor = None):
+        """
+        Updates the connectivity mapping for particles without rebuilding
+        the entire DofManager structure.
+        """
+        num_elements = len(elements)
+        if num_elements == 0:
+            return
+
+        elements = list(elements)  # Ensure we have a list for slicing
+
+        # 1. Access the pre-cached field variable map
+        field_var_map = self.idcsOfFieldVariablesInDofVector
+
+        # 2. Parallel Processing logic
+        # We process in chunks to minimize Python's thread-management overhead
+        num_workers = pool._max_workers if pool else os.cpu_count()
+        chunk_size = max(1, num_elements // num_workers)
+
+        def process_element_chunk(chunk_elements):
+            local_results = {}
+            for ent in chunk_elements:
+                # Optimized extraction:
+                # Avoid nested generators; use list comprehension for speed
+                indices = []
+                for iNode, node in enumerate(ent.nodes):
+                    for nodeField in ent.fields[iNode]:
+                        # Direct access to the pre-calculated global indices
+                        indices.extend(field_var_map[node.fields[nodeField]])
+
+                destArr = np.array(indices, dtype=int)
+
+                if ent.dofIndicesPermutation is not None:
+                    local_results[ent] = destArr[ent.dofIndicesPermutation]
+                else:
+                    local_results[ent] = destArr
+            return local_results
+
+        # 3. Execute update
+        chunks = [elements[i : i + chunk_size] for i in range(0, num_elements, chunk_size)]
+
+        if pool:
+            results = pool.map(process_element_chunk, chunks)
+        else:
+            # Fallback to serial if no pool is provided and list is small
+            results = [process_element_chunk(elements)]
+
+        # 4. Merge results back into the manager
+        for partial_map in results:
+            self.idcsOfElementsInDofVector.update(partial_map)
+
+        # 5. Crucial: Synchronize the "Higher Order" map used by System Matrices
+        self.idcsOfHigherOrderEntitiesInDofVector = self.idcsOfElementsInDofVector | self.idcsOfConstraintsInDofVector
+
+    def updateConstraints(self, constraints: list):
+        """
+        Updates the connectivity mapping for constraints in a serial loop.
+        Reuses global index maps to avoid re-instancing the manager.
+        """
+        if not constraints:
+            return
+
+        constraints = list(constraints)  # Ensure we have a list for iteration
+
+        # Cache lookups for local speed
+        field_var_map = self.idcsOfFieldVariablesInDofVector
+        scalar_var_map = self.idcsOfScalarVariablesInDofVector
+
+        # Persistent dictionary for the manager
+        updated_idcs = {}
+
+        for constraint in constraints:
+            # 1. Collect indices from nodes
+            # constraint.fieldsOnNodes matches the structure of constraint.nodes
+            node_indices = []
+            for iNode, node in enumerate(constraint.nodes):
+                for nodeField in constraint.fieldsOnNodes[iNode]:
+                    node_indices.extend(field_var_map[node.fields[nodeField]])
+
+            # 2. Collect indices from scalar variables
+            scalar_indices = [scalar_var_map[v] for v in constraint.scalarVariables]
+
+            # 3. Combine and store as a flat NumPy array
+            # We use concatenation to maintain the expected order (nodes then scalars)
+            updated_idcs[constraint] = np.array(node_indices + scalar_indices, dtype=int)
+
+        # Update the DofManager's internal maps
+        self.idcsOfConstraintsInDofVector.update(updated_idcs)
+
+        # Re-sync the higher order map for assembly
+        self.idcsOfHigherOrderEntitiesInDofVector = self.idcsOfElementsInDofVector | self.idcsOfConstraintsInDofVector
+
+    # # Re-calculate VIJ pattern if system matrices are being used
+    # if hasattr(self, 'I') and self.I is not None:
+    #     self._updateVIJPattern()
 
     # def _initializeCSRPattern(self, ):
 
