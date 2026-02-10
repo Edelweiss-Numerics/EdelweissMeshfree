@@ -25,15 +25,10 @@
 #  the top level directory of EdelweissMPM.
 #  ---------------------------------------------------------------------
 
-from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 from edelweissfe.fields.nodefield import NodeField
 from edelweissfe.numerics.dofmanager import DofManager
-from edelweissfe.numerics.parallelizationutilities import (
-    getNumberOfThreads,
-    isFreeThreadingSupported,
-)
 from edelweissfe.variables.scalarvariable import ScalarVariable
 
 
@@ -75,9 +70,20 @@ class MPMDofManager(DofManager):
         cellElements: list = [],
         particles: list = [],
         initializeVIJPattern: bool = True,
+        initializeAccumulatedNodalFluxesFieldwise: bool = True,
+        determiningIndexToHostObjectMappping: bool = True,
     ):
 
-        super().__init__(nodeFields, scalarVariables, elements, constraints, nodeSets, initializeVIJPattern=False)
+        super().__init__(
+            nodeFields,
+            scalarVariables,
+            elements,
+            constraints,
+            nodeSets,
+            initializeVIJPattern=False,
+            initializeAccumulatedNodalFluxesFieldwise=initializeAccumulatedNodalFluxesFieldwise,
+            determiningIndexToHostObjectMappping=determiningIndexToHostObjectMappping,
+        )
 
         (
             self.accumulatedCellNDof,
@@ -104,25 +110,29 @@ class MPMDofManager(DofManager):
         self.idcsOfCellElementsInDofVector = self._locateCellsInDofVector(cellElements)
         self.idcsOfParticlesInDofVector = self._locateParticlesInDofVector(particles)
 
-        for field in self.nAccumulatedNodalFluxesFieldwise.keys():
-            self.nAccumulatedNodalFluxesFieldwise[field] += self._nAccumulatedNodalFluxesFieldwiseFromCells[field]
-            self.nAccumulatedNodalFluxesFieldwise[field] += self._nAccumulatedNodalFluxesFieldwiseFromCellElements[
-                field
-            ]
-            self.nAccumulatedNodalFluxesFieldwise[field] += self._nAccumulatedNodalFluxesFieldwiseFromParticles[field]
+        if initializeAccumulatedNodalFluxesFieldwise:
+
+            for field in self.nAccumulatedNodalFluxesFieldwise.keys():
+                self.nAccumulatedNodalFluxesFieldwise[field] += self._nAccumulatedNodalFluxesFieldwiseFromCells[field]
+                self.nAccumulatedNodalFluxesFieldwise[field] += self._nAccumulatedNodalFluxesFieldwiseFromCellElements[
+                    field
+                ]
+                self.nAccumulatedNodalFluxesFieldwise[field] += self._nAccumulatedNodalFluxesFieldwiseFromParticles[
+                    field
+                ]
 
         self.idcsOfHigherOrderEntitiesInDofVector |= self.idcsOfCellsInDofVector
         self.idcsOfHigherOrderEntitiesInDofVector |= self.idcsOfCellElementsInDofVector
         self.idcsOfHigherOrderEntitiesInDofVector |= self.idcsOfParticlesInDofVector
 
-        self._sizeVIJ = (
-            self._accumulatedElementVIJSize
-            + self._accumulatedConstraintVIJSize
-            + self._accumulatedCellVIJSize
-            + self._accumulatedCellElementVIJSize
-            + self._accumulatedParticleVIJSize
-        )
         if initializeVIJPattern:
+            self._sizeVIJ = (
+                self._accumulatedElementVIJSize
+                + self._accumulatedConstraintVIJSize
+                + self._accumulatedCellVIJSize
+                + self._accumulatedCellElementVIJSize
+                + self._accumulatedParticleVIJSize
+            )
             (self.I, self.J, self.idcsOfHigherOrderEntitiesInVIJ) = self._initializeVIJPattern()
 
     def _gatherCellsInformation(self, entities: list) -> tuple[int, int, int, int]:
@@ -207,41 +217,10 @@ class MPMDofManager(DofManager):
         if not particles:
             return
 
-        particles = list(particles)  # Ensure we have a list for slicing
-        num_elements = len(particles)
+        particles = list(particles)  # Ensure we have a list for iteration
 
-        numThreads = getNumberOfThreads() if isFreeThreadingSupported() else 1
-        chunk_size = max(1, num_elements // numThreads)
-
-        fv_map = self.idcsOfFieldVariablesInDofVector
-
-        def process_element_chunk(chunk_elements):
-            local_results = {}
-            for ent in chunk_elements:
-                indices = [
-                    idx
-                    for iNode, node in enumerate(ent.nodes)
-                    for f_name in ent.fields[iNode]
-                    for idx in fv_map[node.fields[f_name]]
-                ]
-
-                destArr = np.fromiter(indices, dtype=int)
-
-                if ent.dofIndicesPermutation is not None:
-                    local_results[ent] = destArr[ent.dofIndicesPermutation]
-                else:
-                    local_results[ent] = destArr
-            return local_results
-
-        chunks = [particles[i : i + chunk_size] for i in range(0, num_elements, chunk_size)]
-
-        with ThreadPoolExecutor(max_workers=numThreads) as executor:
-            results = executor.map(process_element_chunk, chunks)
-
-        for partial_map in results:
-            self.idcsOfElementsInDofVector.update(partial_map)
-
-        self.idcsOfHigherOrderEntitiesInDofVector = self.idcsOfElementsInDofVector | self.idcsOfConstraintsInDofVector
+        self.idcsOfParticlesInDofVector = self._locateParticlesInDofVector(particles)
+        self.idcsOfHigherOrderEntitiesInDofVector.update(self.idcsOfParticlesInDofVector)
 
     def updateConstraints(self, constraints: list):
         """
@@ -258,30 +237,5 @@ class MPMDofManager(DofManager):
 
         constraints = list(constraints)  # Ensure we have a list for iteration
 
-        # Cache lookups for local speed
-        field_var_map = self.idcsOfFieldVariablesInDofVector
-        scalar_var_map = self.idcsOfScalarVariablesInDofVector
-
-        # Persistent dictionary for the manager
-        updated_idcs = {}
-
-        for constraint in constraints:
-            # 1. Collect indices from nodes
-            # constraint.fieldsOnNodes matches the structure of constraint.nodes
-            node_indices = []
-            for iNode, node in enumerate(constraint.nodes):
-                for nodeField in constraint.fieldsOnNodes[iNode]:
-                    node_indices.extend(field_var_map[node.fields[nodeField]])
-
-            # 2. Collect indices from scalar variables
-            scalar_indices = [scalar_var_map[v] for v in constraint.scalarVariables]
-
-            # 3. Combine and store as a flat NumPy array
-            # We use concatenation to maintain the expected order (nodes then scalars)
-            updated_idcs[constraint] = np.array(node_indices + scalar_indices, dtype=int)
-
-        # Update the DofManager's internal maps
-        self.idcsOfConstraintsInDofVector.update(updated_idcs)
-
-        # Re-sync the higher order map for assembly
-        self.idcsOfHigherOrderEntitiesInDofVector = self.idcsOfElementsInDofVector | self.idcsOfConstraintsInDofVector
+        self.idcsOfConstraintsInDofVector = self._locateConstraintsInDofVector(constraints)
+        self.idcsOfHigherOrderEntitiesInDofVector.update(self.idcsOfConstraintsInDofVector)
