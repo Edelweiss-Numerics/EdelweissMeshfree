@@ -5,7 +5,7 @@ from typing import Iterable
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 from edelweissfe.journal.journal import Journal
-from edelweissfe.numerics.dofmanager import DofVector
+from edelweissfe.numerics.dofmanager import DofManager, DofVector
 from edelweissfe.numerics.parallelizationutilities import (
     getNumberOfThreads,
     isFreeThreadingSupported,
@@ -60,7 +60,48 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
         allowFallBackToRestart: bool = False,
         numberOfRestartsToStore=3,
         restartBaseName: str = "restart",
+        shallowUpdateOfDofManager: bool = True,
     ) -> tuple[bool, MPMModel]:
+        """
+        Solve a time step for the given model.
+
+        Parameters
+        ----------
+        timeStepper
+            The time stepper to generate the time steps. Note that the first time step must have a zero increment for explicit time integration.
+        model
+            The MPM model to be solved.
+        fieldOutputController
+            The controller for managing field output.
+        mpmManagers
+            The list of MPM managers handling the discretization.
+        particleManagers
+            The list of particle managers handling the particles.
+        dirichlets
+            The list of Dirichlet boundary conditions to be applied.
+        bodyLoads
+            The list of body loads to be applied.
+        distributedLoads
+            The list of distributed loads to be applied.
+        particleDistributedLoads
+            The list of particle distributed loads to be applied.
+        outputManagers
+            The list of output managers handling the output.
+        userIterationOptions
+            The dictionary of user-defined options for this iteration.
+        vciManagers
+            The list of VCI managers handling the VCI constraints.
+        restartWriteInterval
+            The interval at which to write restart files. If zero, no restart files will be written.
+        allowFallBackToRestart
+            Whether to allow falling back to the last restart file in case of a step failure. If false, the solver will simply return False and the current model state in case of a step failure.
+        numberOfRestartsToStore
+            The number of restart files to store in the restart history manager.
+        restartBaseName
+            The base name for the restart files. The restart history manager will append an index to this base name to generate the full file name for each restart file.
+        shallowUpdateOfDofManager
+            Whether to perform a shallow update of the DOF manager in case of connectivity changes. If true, the DOF manager will be updated with the new active constraints and particles without reconstructing the entire DOF structure. If false, the DOF manager will be fully reconstructed based on the new active domain. Note that the shallow update is only applicable for pure "classical" particle simulations where nodes are always associated with the same fields, and the number of nodes does not change.
+        """
 
         options = self.validOptions.copy()
         options.update(userIterationOptions)
@@ -94,27 +135,14 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
                         list(), particles, constraints, model, timeStep, list(), particleManagers
                     )
 
-                    (activeNodesPersistent, _, reducedNodeFields, reducedNodeSets) = self._assembleActiveDomain(
-                        list(), model
-                    )
-
                     activeConstraints = [c for c in constraints if c.active]
 
-                    theDofManager = self._createDofManager(
-                        reducedNodeFields.values(),
-                        list(),
-                        list(),
-                        activeConstraints,
-                        list(),
-                        list(),
-                        particles,
-                        initializeVIJPattern=False,
-                    )
+                    theDofManager = self._instanceDofManager(model, activeConstraints, particles)
 
                     (M, dU_np, P_Int, P_Ext, v_np_one_half, momentum) = self.getDiscretization(
                         theDofManager, model, mpmManagers, constraints
                     )
-                    self.updateSystem(model, timeStep.totalTime, dT, dU_np)
+                    self.updateSystem(particles, timeStep.totalTime, dT, dU_np)
                     self.computeSystem(particles, activeConstraints, P_Int, P_Ext, M, momentum, timeStep)
                     M_inv = np.reciprocal(M)
                     v_np_one_half[:] = momentum * M_inv
@@ -142,7 +170,7 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
                 # the solution increment to t_np is formulated in terms of the old discretization at t_n
                 # so for MPM and RKPM this call connects the old discretization with the shift to the new positions
                 # This is on contrast to FE, which can be exclusively computed in the new configuration using computeSystem(...) only
-                self.updateSystem(model, timeStep.totalTime, dT, dU_np)
+                self.updateSystem(particles, timeStep.totalTime, dT, dU_np)
                 model.advanceToTime(timeStep.totalTime)
 
                 # A
@@ -153,11 +181,16 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
                 #    +---------------------------+
                 #
                 connectivityHasChanged = self._updateModelConnectivity(
-                    list(), model.particles.values(), constraints, model, timeStep, list(), particleManagers
+                    list(), particles, constraints, model, timeStep, list(), particleManagers
                 )
                 if connectivityHasChanged:
 
-                    self._updateDofManager(theDofManager, constraints, model.particles.values())
+                    activeConstraints = [c for c in constraints if c.active]
+
+                    if shallowUpdateOfDofManager:
+                        self._updateDofManager(theDofManager, activeConstraints, particles)
+                    else:
+                        theDofManager = self._instanceDofManager(model, activeConstraints, particles)
 
                     (M, dU_np, P_Int, P_Ext, _, momentum) = self.getDiscretization(
                         theDofManager, model, mpmManagers, constraints
@@ -291,7 +324,10 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
         numThreads = getNumberOfThreads() if isFreeThreadingSupported() else 1
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=numThreads) as executor:
-            executor.map(computeParticleWorker, particles)
+            results = executor.map(computeParticleWorker, particles)
+
+        for r in results:
+            pass  # Check for exceptions raised in worker threads
 
     @performancetiming.timeit("build discretization")
     def getDiscretization(self, theDofManager, model: MPMModel, mpmManagers: list[MPMManagerBase], constraints: list):
@@ -380,7 +416,7 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
         return P_Int, P_Ext, M, Mv
 
     @performancetiming.timeit("update system")
-    def updateSystem(self, model, totalTime, dT, dU: DofVector):
+    def updateSystem(self, particles, totalTime, dT, dU: DofVector):
         """Update the system state.
 
         For RKPM, this involves applying the solution increment to the particles using the old discretization,
@@ -388,8 +424,8 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
 
         Parameters
         ----------
-        model
-            The MPM model to be updated.
+        particles
+            The list of particles to be updated.
         totalTime
             The current total time.
         dT
@@ -399,7 +435,7 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
         """
 
         self._updateParticlesExplicit(
-            model.particles.values(),
+            particles,
             dU,
             totalTime,
             dT,
@@ -439,6 +475,42 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
             The list of particles to be evaluated.
         """
 
-        activeConstraints = [c for c in constraints if c.active]
         theDofManager.updateParticles(particles)
-        theDofManager.updateConstraints(activeConstraints)
+        theDofManager.updateConstraints(constraints)
+
+    @performancetiming.timeit("instance dof structure")
+    def _instanceDofManager(self, model: MPMModel, constraints: list, particles: list) -> DofManager:
+        """
+        Update the DOF manager with the current active constraints and particles.
+
+        Parameters
+        ----------
+        model
+            The MPM model containing the current state of the system.
+        constraints
+            The list of constraints to be evaluated.
+        particles
+            The list of particles to be evaluated.
+
+        Returns
+        -------
+        DofManager
+            The updated DOF manager instance.
+        """
+
+        (activeNodesPersistent, _, reducedNodeFields, reducedNodeSets) = self._assembleActiveDomain(list(), model)
+
+        theDofManager = self._createDofManager(
+            reducedNodeFields.values(),
+            list(),
+            list(),
+            constraints,
+            list(),
+            list(),
+            particles,
+            initializeVIJPattern=False,
+            initializeAccumulatedNodalFluxesFieldwise=False,
+            determiningIndexToHostObjectMappping=False,
+        )
+
+        return theDofManager
