@@ -13,13 +13,15 @@ from edelweissfe.numerics.parallelizationutilities import (
 from edelweissfe.timesteppers.timestep import TimeStep
 from edelweissfe.utils.exceptions import StepFailed
 from edelweissfe.utils.fieldoutput import FieldOutputController
-from edelweissmpm.models.mpmmodel import MPMModel
-from edelweissmpm.mpmmanagers.base.mpmmanagerbase import MPMManagerBase
-from edelweissmpm.particlemanagers.base.baseparticlemanager import BaseParticleManager
-from edelweissmpm.particles.base.baseparticle import BaseParticle
 from prettytable import PrettyTable
 
-from edelweissmpm.solvers.base.nonlinearsolverbase import (
+from edelweissmeshfree.models.mpmmodel import MPMModel
+from edelweissmeshfree.mpmmanagers.base.mpmmanagerbase import MPMManagerBase
+from edelweissmeshfree.particlemanagers.base.baseparticlemanager import (
+    BaseParticleManager,
+)
+from edelweissmeshfree.particles.base.baseparticle import BaseParticle
+from edelweissmeshfree.solvers.base.nonlinearsolverbase import (
     BaseNonlinearSolver,
     RestartHistoryManager,
 )
