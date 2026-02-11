@@ -32,7 +32,7 @@ import numpy as np
 import pytest
 from edelweissfe.journal.journal import Journal
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
-from edelweissfe.utils.exceptions import StepFailed
+from edelweissfe.utils.exceptions import ReachedMaxIncrements, StepFailed
 
 from edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit import (
     ParticleExplicitPenaltyCartesianBoundaryConstraintFactory,
@@ -64,10 +64,6 @@ from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
 from edelweissmeshfree.solvers.explicitmultiphysicssolver import (
     ExplicitMultiphysicsSolver,
 )
-
-# from edelweissmeshfree.generators.rectangularparticlegridgenerator import (
-#     generateRectangularParticleGrid,
-# )
 
 
 def run_sim():
@@ -228,9 +224,9 @@ def run_sim():
     )
     ensightOutput.initializeJob()
 
-    incSize = 1e-3
+    incSize = 2e-3
     adaptiveTimeStepper = AdaptiveTimeStepper(
-        0.0, tMax, incSize, incSize, incSize / 1e8, 2000, theJournal, increaseFactor=1.5
+        0.0, tMax, incSize, incSize, incSize / 1e8, 100, theJournal, increaseFactor=1.5
     )
 
     # nonlinearSolver = NQSParallelForMarmot(theJournal)
@@ -250,6 +246,9 @@ def run_sim():
             outputManagers=[ensightOutput],
             particleManagers=[theParticleManager],
         )
+
+    except ReachedMaxIncrements as e:
+        theJournal.message(f"Reached maximum number of increments: {str(e)}", "error")
 
     except StepFailed as e:
         theJournal.message(f"Step failed: {str(e)}", "error")
