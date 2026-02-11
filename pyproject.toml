@@ -3,7 +3,7 @@ requires = ["setuptools", "Cython", "numpy"]
 
 [project]
 name = "EdelweissMeshfree"
-version = "25.08"
+version = "26.05"
 description = "EdelweissMeshfree: A meshfree module for EdelweissFE."
 readme = "README.md"
 authors = [
