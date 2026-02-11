@@ -1,0 +1,79 @@
+# -*- coding: utf-8 -*-
+#  ---------------------------------------------------------------------
+#
+#  _____    _      _              _
+# | ____|__| | ___| |_      _____(_)___ ___
+# |  _| / _` |/ _ \ \ \ /\ / / _ \ / __/ __|
+# | |__| (_| |  __/ |\ V  V /  __/ \__ \__ \
+# |_____\__,_|\___|_| \_/\_/_\___|_|___/___/
+# |  \/  | ___  ___| |__  / _|_ __ ___  ___
+# | |\/| |/ _ \/ __| '_ \| |_| '__/ _ \/ _ \
+# | |  | |  __/\__ \ | | |  _| | |  __/  __/
+# |_|  |_|\___||___/_| |_|_| |_|  \___|\___|
+#
+#
+#  Unit of Strength of Materials and Structural Analysis
+#  University of Innsbruck,
+#
+#  Research Group for Computational Mechanics of Materials
+#  Institute of Structural Engineering, BOKU University, Vienna
+#
+#  2023 - today
+#
+#  Matthias Neuner |  matthias.neuner@boku.ac.at
+#  Thomas Mader    |  thomas.mader@bokut.ac.at
+#
+#  This file is part of EdelweissMeshfree.
+#
+#  This library is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU Lesser General Public
+#  License as published by the Free Software Foundation; either
+#  version 2.1 of the License, or (at your option) any later version.
+#
+#  The full text of the license can be found in the file LICENSE.md at
+#  the top level directory of EdelweissMeshfree.
+#  ---------------------------------------------------------------------
+
+import numpy as np
+from edelweissfe.journal.journal import Journal
+
+from edelweissmeshfree.models.mpmmodel import MPMModel
+from edelweissmeshfree.sets.materialpointset import MaterialPointSet
+
+
+def generateModelData(mpmModel: MPMModel, journal: Journal, coordinates: np.ndarray, storeIn: str):
+    """Find the mateiral point closest to a given coordinate and store it in a material point set in the model.
+
+    Parameters
+    ----------
+    mpmModel
+        The model instance.
+    journal
+        The Journal instance for logging purposes.
+    coordinates
+        The coordinates for which the closest material point should be found.
+    storeIn
+        The name of the material point set, in which the found material point is stored.
+
+    Returns
+    -------
+    MPMModel
+        The updated model.
+    """
+
+    allCoords = np.asarray([mp.getCenterCoordinates() for mp in mpmModel.materialPoints.values()])
+
+    differenceNormLeft = np.linalg.norm(allCoords - coordinates, axis=1)
+    indexClosest = differenceNormLeft.argmin()
+    closestMP = list(mpmModel.materialPoints.values())[indexClosest]
+
+    mpmModel.materialPointSets[storeIn] = MaterialPointSet(storeIn, [closestMP])
+
+    journal.message(
+        "Material point '{:}' ({:}) at {:} is closest to {:}".format(
+            storeIn, closestMP.label, closestMP.getCenterCoordinates(), coordinates
+        ),
+        "findClosestMP",
+    )
+
+    return mpmModel

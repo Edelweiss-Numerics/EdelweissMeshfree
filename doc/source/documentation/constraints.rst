@@ -1,27 +1,27 @@
 Constraints
 ===========
 
-.. automodule:: edelweissmpm.constraints.base.mpmconstraintbase
+.. automodule:: edelweissmeshfree.constraints.base.mpmconstraintbase
    :members:
    :private-members:
 
 ``PenaltyEqualValue`` constraint class
 --------------------------------------
 
-.. automodule:: edelweissmpm.constraints.penaltyequalvalue
+.. automodule:: edelweissmeshfree.constraints.penaltyequalvalue
    :members:
    :private-members:
 
 ``PenaltyConstrainMP2Node`` constraint class
 --------------------------------------------
 
-.. automodule:: edelweissmpm.constraints.penaltyconstrainmp2node
+.. automodule:: edelweissmeshfree.constraints.penaltyconstrainmp2node
    :members:
    :private-members:
 
 ``PenaltyWeakDirichlet`` constraint class
 -----------------------------------------
 
-.. automodule:: edelweissmpm.constraints.penaltyweakdirichlet
+.. automodule:: edelweissmeshfree.constraints.penaltyweakdirichlet
    :members:
    :private-members:

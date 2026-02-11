@@ -7,7 +7,7 @@ domain (cells, material points), the materials, the sets, etc.
 ``MPMModel`` class
 ------------------
 
-.. automodule:: edelweissmpm.models.mpmmodel
+.. automodule:: edelweissmeshfree.models.mpmmodel
    :members:
    :private-members:
    :inherited-members:
