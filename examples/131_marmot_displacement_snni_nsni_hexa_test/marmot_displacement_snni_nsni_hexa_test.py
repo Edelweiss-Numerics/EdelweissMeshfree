@@ -34,24 +34,29 @@ from edelweissfe.journal.journal import Journal
 from edelweissfe.linsolve.pardiso.pardiso import pardisoSolve
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 from edelweissfe.utils.exceptions import StepFailed
-from edelweissmpm.constraints.particlepenaltyweakdirichtlet import (
+
+from edelweissmeshfree.constraints.particlepenaltyweakdirichtlet import (
     ParticlePenaltyWeakDirichlet,
 )
-from edelweissmpm.fieldoutput.fieldoutput import MPMFieldOutputController
-from edelweissmpm.meshfree.approximations.marmot.marmotmeshfreeapproximation import (
+from edelweissmeshfree.fieldoutput.fieldoutput import MPMFieldOutputController
+from edelweissmeshfree.meshfree.approximations.marmot.marmotmeshfreeapproximation import (
     MarmotMeshfreeApproximationWrapper,
 )
-from edelweissmpm.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunction import (
+from edelweissmeshfree.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunction import (
     MarmotMeshfreeKernelFunctionWrapper,
 )
-from edelweissmpm.meshfree.particlekerneldomain import ParticleKernelDomain
-from edelweissmpm.models.mpmmodel import MPMModel
-from edelweissmpm.outputmanagers.ensight import OutputManager as EnsightOutputManager
-from edelweissmpm.particlemanagers.kdbinorganizedparticlemanager import (
+from edelweissmeshfree.meshfree.particlekerneldomain import ParticleKernelDomain
+from edelweissmeshfree.models.mpmmodel import MPMModel
+from edelweissmeshfree.outputmanagers.ensight import (
+    OutputManager as EnsightOutputManager,
+)
+from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
     KDBinOrganizedParticleManager,
 )
-from edelweissmpm.particles.marmot.marmotparticlewrapper import MarmotParticleWrapper
-from edelweissmpm.solvers.nqs import NonlinearQuasistaticSolver
+from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
+    MarmotParticleWrapper,
+)
+from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
 
 
 def run_sim():
@@ -82,7 +87,7 @@ def run_sim():
     def theMeshfreeKernelFunctionFactory(node):
         return MarmotMeshfreeKernelFunctionWrapper(node, "BSplineBoxed", supportRadius=supportRadius, continuityOrder=3)
 
-    from edelweissmpm.generators.boxkernelfunctiongridgenerator import (
+    from edelweissmeshfree.generators.boxkernelfunctiongridgenerator import (
         generateBoxKernelFunctionGrid,
     )
 
@@ -125,7 +130,7 @@ def run_sim():
             theMaterial,
         )
 
-    from edelweissmpm.generators.boxhexaparticlegridgenerator import (
+    from edelweissmeshfree.generators.boxhexaparticlegridgenerator import (
         generateBoxHexaParticleGrid,
     )
 
@@ -219,7 +224,9 @@ def run_sim():
 
     linearSolver = pardisoSolve
 
-    from edelweissmpm.stepactions.particledistributedload import ParticleDistributedLoad
+    from edelweissmeshfree.stepactions.particledistributedload import (
+        ParticleDistributedLoad,
+    )
 
     pressureTop = ParticleDistributedLoad(
         "pressureTop",
@@ -230,7 +237,9 @@ def run_sim():
         np.array([-5e2]),
     )
 
-    from edelweissmpm.numerics.predictors.quadraticpredictor import QuadraticPredictor
+    from edelweissmeshfree.numerics.predictors.quadraticpredictor import (
+        QuadraticPredictor,
+    )
 
     try:
         nonlinearSolver.solveStep(
