@@ -1,3 +1,5 @@
+from docutils import nodes
+
 # Configuration file for the Sphinx documentation builder.
 #
 # For the full list of built-in configuration values, see the documentation:
@@ -6,10 +8,10 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = "EdelweissMPM"
+project = "EdelweissMeshfree"
 copyright = "2024, Matthias Neuner"
-author = "Matthias Neuner"
-release = "v24.04"
+authors = ["Matthias Neuner", "Thomas Mader"]
+release = "v25.08"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -66,9 +68,6 @@ try:
     pass
 except ImportError:
     pass
-
-
-from docutils import nodes
 
 
 def doi_role(name, rawtext, text, lineno, inliner, options={}, content=[]):

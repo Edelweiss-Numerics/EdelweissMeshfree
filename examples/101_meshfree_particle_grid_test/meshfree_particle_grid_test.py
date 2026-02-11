@@ -1,20 +1,29 @@
 # -*- coding: utf-8 -*-
 #  ---------------------------------------------------------------------
 #
-#  _____    _      _              _         __  __ ____  __  __
-# | ____|__| | ___| |_      _____(_)___ ___|  \/  |  _ \|  \/  |
-# |  _| / _` |/ _ \ \ \ /\ / / _ \ / __/ __| |\/| | |_) | |\/| |
-# | |__| (_| |  __/ |\ V  V /  __/ \__ \__ \ |  | |  __/| |  | |
-# |_____\__,_|\___|_| \_/\_/ \___|_|___/___/_|  |_|_|   |_|  |_|
+#  _____    _      _              _
+# | ____|__| | ___| |_      _____(_)___ ___
+# |  _| / _` |/ _ \ \ \ /\ / / _ \ / __/ __|
+# | |__| (_| |  __/ |\ V  V /  __/ \__ \__ \
+# |_____\__,_|\___|_| \_/\_/_\___|_|___/___/
+# |  \/  | ___  ___| |__  / _|_ __ ___  ___
+# | |\/| |/ _ \/ __| '_ \| |_| '__/ _ \/ _ \
+# | |  | |  __/\__ \ | | |  _| | |  __/  __/
+# |_|  |_|\___||___/_| |_|_| |_|  \___|\___|
 #
 #
 #  Unit of Strength of Materials and Structural Analysis
 #  University of Innsbruck,
+#
+#  Research Group for Computational Mechanics of Materials
+#  Institute of Structural Engineering, BOKU University, Vienna
+#
 #  2023 - today
 #
-#  Matthias Neuner matthias.neuner@uibk.ac.at
+#  Matthias Neuner |  matthias.neuner@boku.ac.at
+#  Thomas Mader    |  thomas.mader@bokut.ac.at
 #
-#  This file is part of EdelweissMPM.
+#  This file is part of EdelweissMeshfree.
 #
 #  This library is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU Lesser General Public
@@ -22,7 +31,7 @@
 #  version 2.1 of the License, or (at your option) any later version.
 #
 #  The full text of the license can be found in the file LICENSE.md at
-#  the top level directory of EdelweissMPM.
+#  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 
 import argparse
@@ -43,7 +52,7 @@ def run_sim():
 
     from edelweissfe.points.node import Node
 
-    from edelweissmpm.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunction import (
+    from edelweissmeshfree.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunction import (
         MarmotMeshfreeKernelFunctionWrapper,
     )
 
@@ -64,7 +73,7 @@ def run_sim():
     ]
 
     # let's define the type of approximation: We would like to have a reproducing kernel approximation of completeness order 1
-    from edelweissmpm.meshfree.approximations.marmot.marmotmeshfreeapproximation import (
+    from edelweissmeshfree.meshfree.approximations.marmot.marmotmeshfreeapproximation import (
         MarmotMeshfreeApproximationWrapper,
     )
 
@@ -79,7 +88,7 @@ def run_sim():
     mpVolume = 1.0
 
     # and finally .. create the particle. The particle hosts the material point, which again hosts the material.
-    from edelweissmpm.particles.marmot.marmotparticlewrapper import (
+    from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
         MarmotParticleWrapper,
     )
 
@@ -96,13 +105,13 @@ def run_sim():
     ]
 
     # let's create the particle kernel domain
-    from edelweissmpm.meshfree.particlekerneldomain import ParticleKernelDomain
+    from edelweissmeshfree.meshfree.particlekerneldomain import ParticleKernelDomain
 
     theParticleKernelDomain = ParticleKernelDomain(marmotParticles, kernelFunctions)
 
     from edelweissfe.journal.journal import Journal
 
-    from edelweissmpm.particlemanagers.kdbinorganizedparticlemanager import (
+    from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
         KDBinOrganizedParticleManager,
     )
 

@@ -1,20 +1,29 @@
 # -*- coding: utf-8 -*-
 #  ---------------------------------------------------------------------
 #
-#  _____    _      _              _         __  __ ____  __  __
-# | ____|__| | ___| |_      _____(_)___ ___|  \/  |  _ \|  \/  |
-# |  _| / _` |/ _ \ \ \ /\ / / _ \ / __/ __| |\/| | |_) | |\/| |
-# | |__| (_| |  __/ |\ V  V /  __/ \__ \__ \ |  | |  __/| |  | |
-# |_____\__,_|\___|_| \_/\_/ \___|_|___/___/_|  |_|_|   |_|  |_|
+#  _____    _      _              _
+# | ____|__| | ___| |_      _____(_)___ ___
+# |  _| / _` |/ _ \ \ \ /\ / / _ \ / __/ __|
+# | |__| (_| |  __/ |\ V  V /  __/ \__ \__ \
+# |_____\__,_|\___|_| \_/\_/_\___|_|___/___/
+# |  \/  | ___  ___| |__  / _|_ __ ___  ___
+# | |\/| |/ _ \/ __| '_ \| |_| '__/ _ \/ _ \
+# | |  | |  __/\__ \ | | |  _| | |  __/  __/
+# |_|  |_|\___||___/_| |_|_| |_|  \___|\___|
 #
 #
 #  Unit of Strength of Materials and Structural Analysis
 #  University of Innsbruck,
+#
+#  Research Group for Computational Mechanics of Materials
+#  Institute of Structural Engineering, BOKU University, Vienna
+#
 #  2023 - today
 #
-#  Matthias Neuner matthias.neuner@uibk.ac.at
+#  Matthias Neuner |  matthias.neuner@boku.ac.at
+#  Thomas Mader    |  thomas.mader@bokut.ac.at
 #
-#  This file is part of EdelweissMPM.
+#  This file is part of EdelweissMeshfree.
 #
 #  This library is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU Lesser General Public
@@ -22,7 +31,7 @@
 #  version 2.1 of the License, or (at your option) any later version.
 #
 #  The full text of the license can be found in the file LICENSE.md at
-#  the top level directory of EdelweissMPM.
+#  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 
 import argparse
@@ -35,33 +44,37 @@ from edelweissfe.linsolve.pardiso.pardiso import pardisoSolve
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 from edelweissfe.utils.exceptions import StepFailed
 
-from edelweissmpm.constraints.particlelagrangianequalvalue import (
+from edelweissmeshfree.constraints.particlelagrangianequalvalue import (
     ParticleLagrangianEqualValueConstraintOnParticleSetFactory,
 )
-from edelweissmpm.constraints.particlelagrangianweakdirichlet import (
+from edelweissmeshfree.constraints.particlelagrangianweakdirichlet import (
     ParticleLagrangianWeakDirichletOnParticleSetFactory,
 )
-from edelweissmpm.fieldoutput.fieldoutput import MPMFieldOutputController
-from edelweissmpm.generators.rectangularkernelfunctiongridgenerator import (
+from edelweissmeshfree.fieldoutput.fieldoutput import MPMFieldOutputController
+from edelweissmeshfree.generators.rectangularkernelfunctiongridgenerator import (
     generateRectangularKernelFunctionGrid,
 )
-from edelweissmpm.generators.rectangularquadparticlegridgenerator import (
+from edelweissmeshfree.generators.rectangularquadparticlegridgenerator import (
     generateRectangularQuadParticleGrid,
 )
-from edelweissmpm.meshfree.approximations.marmot.marmotmeshfreeapproximation import (
+from edelweissmeshfree.meshfree.approximations.marmot.marmotmeshfreeapproximation import (
     MarmotMeshfreeApproximationWrapper,
 )
-from edelweissmpm.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunction import (
+from edelweissmeshfree.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunction import (
     MarmotMeshfreeKernelFunctionWrapper,
 )
-from edelweissmpm.meshfree.particlekerneldomain import ParticleKernelDomain
-from edelweissmpm.models.mpmmodel import MPMModel
-from edelweissmpm.outputmanagers.ensight import OutputManager as EnsightOutputManager
-from edelweissmpm.particlemanagers.kdbinorganizedparticlemanager import (
+from edelweissmeshfree.meshfree.particlekerneldomain import ParticleKernelDomain
+from edelweissmeshfree.models.mpmmodel import MPMModel
+from edelweissmeshfree.outputmanagers.ensight import (
+    OutputManager as EnsightOutputManager,
+)
+from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
     KDBinOrganizedParticleManager,
 )
-from edelweissmpm.particles.marmot.marmotparticlewrapper import MarmotParticleWrapper
-from edelweissmpm.solvers.nqs import NonlinearQuasistaticSolver
+from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
+    MarmotParticleWrapper,
+)
+from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
 
 
 def run_sim():
@@ -218,6 +231,17 @@ def run_sim():
     iterationOptions["allowed residual growths"] = 10
 
     linearSolver = pardisoSolve
+
+    # theBoundary = [
+    #    BoundaryParticleDefinition(theModel.particleSets["rectangular_grid_left"], np.empty(2), 4),
+    #    BoundaryParticleDefinition(theModel.particleSets["rectangular_grid_right"], np.empty(2), 2),
+    #    BoundaryParticleDefinition(theModel.particleSets["rectangular_grid_bottom"], np.empty(2), 1),
+    #    BoundaryParticleDefinition(theModel.particleSets["rectangular_grid_top"], np.empty(2), 3),
+    # ]
+
+    # vciManager = VariationallyConsistentIntegrationManager(
+    #    list(theModel.particles.values()), list(theModel.meshfreeKernelFunctions.values()), theBoundary
+    # )
 
     try:
         nonlinearSolver.solveStep(

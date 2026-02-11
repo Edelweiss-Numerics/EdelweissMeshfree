@@ -7,38 +7,38 @@ create the mesh, the material points, the cells, the elements, and sets.
 2D generators
 -------------
 
-.. automodule:: edelweissmpm.generators.rectangulargridgenerator
+.. automodule:: edelweissmeshfree.generators.rectangulargridgenerator
    :members:
 
-.. automodule:: edelweissmpm.generators.rectangularbsplinegridgenerator
+.. automodule:: edelweissmeshfree.generators.rectangularbsplinegridgenerator
    :members:
 
-.. automodule:: edelweissmpm.generators.rectangularmpgenerator
+.. automodule:: edelweissmeshfree.generators.rectangularmpgenerator
    :members:
 
-.. automodule:: edelweissmpm.generators.circlempgenerator
+.. automodule:: edelweissmeshfree.generators.circlempgenerator
    :members:
 
-.. automodule:: edelweissmpm.generators.rectangularcellelementgridgenerator
+.. automodule:: edelweissmeshfree.generators.rectangularcellelementgridgenerator
    :members:
 
 3D generators
 -------------
 
-.. automodule:: edelweissmpm.generators.boxgridgenerator
+.. automodule:: edelweissmeshfree.generators.boxgridgenerator
    :members:
 
-.. automodule:: edelweissmpm.generators.boxbsplinegridgenerator
+.. automodule:: edelweissmeshfree.generators.boxbsplinegridgenerator
    :members:
 
-.. automodule:: edelweissmpm.generators.boxmpgenerator
+.. automodule:: edelweissmeshfree.generators.boxmpgenerator
    :members:
 
-.. automodule:: edelweissmpm.generators.cylindermpgenerator
+.. automodule:: edelweissmeshfree.generators.cylindermpgenerator
    :members:
 
 utitilty generators
 -------------------
 
-.. automodule:: edelweissmpm.generators.findclosestmp
+.. automodule:: edelweissmeshfree.generators.findclosestmp
    :members:
