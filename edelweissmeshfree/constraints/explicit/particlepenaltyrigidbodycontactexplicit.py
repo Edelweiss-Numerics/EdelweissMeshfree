@@ -6,9 +6,9 @@ from edelweissfe.surfaces.entitybasedsurface import EntityBasedSurface
 from edelweissfe.timesteppers.timestep import TimeStep
 from edelweissfe.variables.scalarvariable import ScalarVariable
 
-from edelweissmpm.constraints.base.mpmconstraintbase import MPMConstraintBase
-from edelweissmpm.models.mpmmodel import MPMModel
-from edelweissmpm.particles.base.baseparticle import BaseParticle
+from edelweissmeshfree.constraints.base.mpmconstraintbase import MPMConstraintBase
+from edelweissmeshfree.models.mpmmodel import MPMModel
+from edelweissmeshfree.particles.base.baseparticle import BaseParticle
 
 
 class ParticlePenaltyContactImplicitSurfaceConstraintExplicit(MPMConstraintBase):

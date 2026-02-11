@@ -63,6 +63,7 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
         numberOfRestartsToStore=3,
         restartBaseName: str = "restart",
         shallowUpdateOfDofManager: bool = True,
+        reinitializationOfVelocitiesFromMomentum: bool = False,
     ) -> tuple[bool, MPMModel]:
         """
         Solve a time step for the given model.
@@ -103,6 +104,8 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
             The base name for the restart files. The restart history manager will append an index to this base name to generate the full file name for each restart file.
         shallowUpdateOfDofManager
             Whether to perform a shallow update of the DOF manager in case of connectivity changes. If true, the DOF manager will be updated with the new active constraints and particles without reconstructing the entire DOF structure. If false, the DOF manager will be fully reconstructed based on the new active domain. Note that the shallow update is only applicable for pure "classical" particle simulations where nodes are always associated with the same fields, and the number of nodes does not change.
+        reinitializationOfVelocitiesFromMomentum
+            Whether to reinitialize the velocities from the momentum after each time step. This is necessary for MPM, but can be omitted for RKPM to achieve less dissipative results. Note that omitting this option is only applicable for pure "classical" particle simulations where nodes are always associated with the same fields, and the number of nodes does not change.
         """
 
         options = self.validOptions.copy()
@@ -206,9 +209,13 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
 
                 P_Int[:] = P_Ext[:] = M[:] = momentum[:] = 0.0
                 self.computeSystem(particles, activeConstraints, P_Int, P_Ext, M, momentum, timeStep)
+                # prevent division close to zero:
+                M[M < 1e-12] = 1e-12
                 M_inv = np.reciprocal(M)
 
-                # v_np_one_half[:] = momentum * M_inv # omitting this line and simple taking v_np_one_half from previous step leads to way less dissipative results
+                # For RKPM omitting this step and simple taking v_np_one_half from previous step leads to way less dissipative results
+                if reinitializationOfVelocitiesFromMomentum:
+                    v_np_one_half = momentum * M_inv
 
                 self._finalizeIncrementOutput(fieldOutputController, outputManagers)
 
