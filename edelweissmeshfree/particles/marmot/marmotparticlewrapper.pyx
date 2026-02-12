@@ -258,6 +258,17 @@ cdef class MarmotParticleWrapper:
 
         self._marmotParticle.computeDistributedLoad( self._supportedDistributedLoads[loadType.upper()], surfaceID, &load[0], &Pc[0], &Kc[0], timeNew, dTime)
 
+    def computeDistributedLoadExplicit(self,
+                               str loadType,
+                               int surfaceID,
+                               double[::1] load,
+                               double[::1] Pc,
+                               double timeNew,
+                               double dTime):
+
+        self._marmotParticle.computeDistributedLoadExplicit( self._supportedDistributedLoads[loadType.upper()], surfaceID, &load[0], &Pc[0], timeNew, dTime)
+
+
     def getInterpolationVector(self, double[::1] coordinates) -> np.ndarray:
         cdef np.ndarray N = np.zeros(len(self._nodes))
         cdef double[::1] Nview_ = N

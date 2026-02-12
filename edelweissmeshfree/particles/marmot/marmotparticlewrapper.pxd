@@ -126,6 +126,14 @@ cdef extern from "Marmot/MarmotParticle.h" namespace "Marmot::Meshfree":
 
         void computeLumpedMomentum ( double* mLumped)
 
+        void computeDistributedLoadExplicit(        int type,
+                                            int surfaceID,
+                                            const double* load,
+                                            double* Pc,
+                                            double timeNewTotal,
+                                            double dT) except +
+
+
         const unordered_map[string, int]& getSupportedBodyLoadTypes()
 
         const unordered_map[string, int]& getSupportedDistributedLoadTypes()
