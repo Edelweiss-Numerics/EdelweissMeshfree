@@ -130,7 +130,7 @@ def run_sim():
 
     def TheProjectileFactory(number, vertexCoordinates, volume):
         return MarmotParticleWrapper(
-            "DisplacementSQCNIxNSNI/PlaneStrain/Quad",
+            "Displacement/SQCNIxNSNI/PlaneStrain/Quad",
             number,
             vertexCoordinates,
             volume,

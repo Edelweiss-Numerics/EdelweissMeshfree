@@ -132,7 +132,7 @@ def run_sim(no_limit=False):
 
     def TheSlabFactory(number, vertexCoordinates, volume):
         return MarmotParticleWrapper(
-            "DisplacementSQCNIxNSNI/PlaneStrain/Quad",
+            "Displacement/SQCNIxNSNI/PlaneStrain/Quad",
             number,
             vertexCoordinates,
             volume,

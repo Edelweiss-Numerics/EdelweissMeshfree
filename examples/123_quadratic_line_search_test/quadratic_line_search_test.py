@@ -165,7 +165,7 @@ def run_sim(no_limit=False):
 
     def ThePlateFactory(number, vertexCoordinates, volume):
         return MarmotParticleWrapper(
-            "DisplacementSQCNI_RxNSNI/PlaneStrain/Quad",
+            "Displacement/R-SNNIxNSNI/PlaneStrain/Quad",
             number,
             vertexCoordinates,
             volume,
@@ -175,7 +175,7 @@ def run_sim(no_limit=False):
 
     def TheProjectileFactory(number, vertexCoordinates, volume):
         return MarmotParticleWrapper(
-            "DisplacementSQCNI_RxNSNI/PlaneStrain/Quad",
+            "Displacement/R-SNNIxNSNI/PlaneStrain/Quad",
             number,
             vertexCoordinates,
             volume,

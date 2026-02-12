@@ -122,7 +122,7 @@ def run_sim():
 
     def TheParticleFactory(number, vertexCoordinates, volume):
         return MarmotParticleWrapper(
-            "DisplacementSNNIxNSNI/3D/Hexa",
+            "Displacement/SNNIxNSNI/3D/Hexa",
             number,
             vertexCoordinates,
             0.0,
