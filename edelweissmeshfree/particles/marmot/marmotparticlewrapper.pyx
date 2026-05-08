@@ -360,8 +360,6 @@ cdef class MarmotParticleWrapper:
 
         self._marmotParticle.setInitialCondition(stateType.encode('utf-8'), &_value[0])
         self.acceptStateAndPosition()
-        #pass
-
 
     def vci_getNumberOfConstraints(self, ):
         return self._marmotParticle.vci_getNumberOfConstraints()
