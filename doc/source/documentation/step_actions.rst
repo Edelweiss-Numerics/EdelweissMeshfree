@@ -38,6 +38,13 @@ Neumann boundary conditions
    :members:
    :private-members:
 
+``ParticleDistributedLoad`` class
+**********************************
+
+.. automodule:: edelweissmeshfree.stepactions.particledistributedload
+   :members:
+   :private-members:
+
 Dirichlet boundary conditions
 -----------------------------
 
@@ -62,5 +69,12 @@ Arclength control
 **************************
 
 .. automodule:: edelweissmeshfree.stepactions.indirectcontrol
+   :members:
+   :private-members:
+
+``ParticleIndirectControl`` class
+**********************************
+
+.. automodule:: edelweissmeshfree.stepactions.particleindirectcontrol
    :members:
    :private-members:

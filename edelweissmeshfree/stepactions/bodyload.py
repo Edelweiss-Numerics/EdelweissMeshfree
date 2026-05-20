@@ -61,7 +61,8 @@ class BodyLoad(MPMBodyLoadBase):
             The load vector to apply to the particles.
         **kwargs
             Additional keyword arguments. The following are supported:
-            - f_t : Callable[[float], float]
+
+            f_t : Callable[[float], float]
                 The amplitude function of the distributed load.
         """
         self.name = name

@@ -54,8 +54,10 @@ from edelweissmeshfree.mpmmanagers.base.mpmmanagerbase import MPMManagerBase
 from edelweissmeshfree.particlemanagers.base.baseparticlemanager import (
     BaseParticleManager,
 )
+from edelweissmeshfree.solvers.base.implicitbase import (
+    BaseNonlinearImplicitSolver as NonlinearImplicitSolverBase,
+)
 from edelweissmeshfree.solvers.base.nonlinearsolverbase import (
-    NonlinearImplicitSolverBase,
     RestartHistoryManager,
 )
 from edelweissmeshfree.stepactions.base.mpmbodyloadbase import MPMBodyLoadBase

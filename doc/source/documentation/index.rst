@@ -7,11 +7,15 @@ Documentation
    models
    cells
    cellelements
-   material_points
+   mpm/material_points
+   mpm/material_point_managers
+   particles
+   meshfree
+   particle_managers
    solvers
-   material_point_managers
    model_generators
    step_actions
    constraints
    numeric_tools
    output_managers
+   fieldoutput

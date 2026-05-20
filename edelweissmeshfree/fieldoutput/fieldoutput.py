@@ -54,13 +54,13 @@ class MaterialPointFieldOutput(_FieldOutputBase):
     name
         The name of this FieldOutput.
     mpSet
-        The :class:`MaterialPointSet on which this FieldOutput operates.
+        The :class:`~edelweissmeshfree.sets.materialpointset.MaterialPointSet` on which this FieldOutput operates.
     resultName
-        The name of the result entry in the :class:`ElementBase.
+        The name of the result entry in the material point.
     model
-        The :class:`MPMModel tree instance.
+        The :class:`~edelweissmeshfree.models.mpmmodel.MPMModel` tree instance.
     journal
-        The :class:`Journal instance for logging.
+        The :class:`~edelweissfe.journal.journal.Journal` instance for logging.
     saveHistory
         If the history of the results should be saved.
     f_x
@@ -110,20 +110,20 @@ class MaterialPointFieldOutput(_FieldOutputBase):
 
 class ParticleFieldOutput(_FieldOutputBase):
     """
-    A FieldOutput for material points.
+    A FieldOutput for particles.
 
     Parameters
     ----------
     name
         The name of this FieldOutput.
     pSet
-        The :class:`ParticleSet on which this FieldOutput operates.
+        The :class:`~edelweissmeshfree.sets.particleset.ParticleSet` on which this FieldOutput operates.
     resultName
-        The name of the result entry in the :class:`ElementBase.
+        The name of the result entry in the particle.
     model
-        The :class:`MPMModel tree instance.
+        The :class:`~edelweissmeshfree.models.mpmmodel.MPMModel` tree instance.
     journal
-        The :class:`Journal instance for logging.
+        The :class:`~edelweissfe.journal.journal.Journal` instance for logging.
     saveHistory
         If the history of the results should be saved.
     f_x
@@ -195,10 +195,10 @@ class MPMFieldOutputController(FieldOutputController):
         ----------
         name
             The name of this FieldOutput.
-        nodeField
-            The :class:`NodeField, on which this FieldOutput should operate.
-        resultName
-            The name of the result entry in the :class:`NodeField
+        materialPointSet
+            The :class:`~edelweissmeshfree.sets.materialpointset.MaterialPointSet` on which this FieldOutput should operate.
+        result
+            The name of the result entry in the material point.
         saveHistory
             If the history of the results should be saved.
         f_x

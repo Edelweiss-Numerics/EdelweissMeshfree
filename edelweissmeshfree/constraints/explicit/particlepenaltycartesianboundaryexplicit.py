@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Iterable
 
 import numpy as np
@@ -18,8 +20,10 @@ class ParticlePenaltyCartesianBoundaryConstraintExplicit(MPMConstraintBase):
     penalty forces directly to the grid nodes.
 
     The constraint is applied based on the current position of the particle relative to the boundary.
-    If penetration is detected:
+    If penetration is detected::
+
         F_penalty = -k * g * n
+
     where g is penetration depth, k is penalty parameter, n is normal.
 
     Parameters

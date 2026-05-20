@@ -22,6 +22,21 @@ create the mesh, the material points, the cells, the elements, and sets.
 .. automodule:: edelweissmeshfree.generators.rectangularcellelementgridgenerator
    :members:
 
+.. automodule:: edelweissmeshfree.generators.rectangularkernelfunctiongridgenerator
+   :members:
+
+.. automodule:: edelweissmeshfree.generators.rectangularparticlegridgenerator
+   :members:
+
+.. automodule:: edelweissmeshfree.generators.rectangularquadparticlegridgenerator
+   :members:
+
+.. automodule:: edelweissmeshfree.generators.cooksmembranekernelfunctiongridgenerator
+   :members:
+
+.. automodule:: edelweissmeshfree.generators.cooksmembranequadparticlegridgenerator
+   :members:
+
 3D generators
 -------------
 
@@ -37,8 +52,26 @@ create the mesh, the material points, the cells, the elements, and sets.
 .. automodule:: edelweissmeshfree.generators.cylindermpgenerator
    :members:
 
-utitilty generators
--------------------
+.. automodule:: edelweissmeshfree.generators.boxparticlegridgenerator
+   :members:
+
+.. automodule:: edelweissmeshfree.generators.boxhexaparticlegridgenerator
+   :members:
+
+.. automodule:: edelweissmeshfree.generators.boxkernelfunctiongridgenerator
+   :members:
+
+Utility generators
+------------------
 
 .. automodule:: edelweissmeshfree.generators.findclosestmp
+   :members:
+
+.. automodule:: edelweissmeshfree.generators.kernelmatchingtoparticlegenerator
+   :members:
+
+.. automodule:: edelweissmeshfree.generators.particlesfromexodus
+   :members:
+
+.. automodule:: edelweissmeshfree.generators.abqinpfilegenerator
    :members:

@@ -1,3 +1,6 @@
+import os
+import sys
+
 from docutils import nodes
 
 # Configuration file for the Sphinx documentation builder.
@@ -16,8 +19,7 @@ release = "v25.08"
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-
-# sys.path.insert(0, os.path.abspath("../../"))
+sys.path.insert(0, os.path.abspath("../../"))
 
 extensions = [
     "sphinx.ext.autodoc",
@@ -30,6 +32,28 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.autosectionlabel",
     "numpydoc",
+]
+
+# Mock imports for compiled Cython extensions and hard dependencies that may
+# not be present in the documentation build environment.
+autodoc_mock_imports = [
+    "edelweissfe",
+    "prettytable",
+    "h5py",
+    "netCDF4",
+    "scipy",
+    "edelweissmeshfree.cells.marmotcell.marmotcell",
+    "edelweissmeshfree.cells.marmotcell.lagrangianmarmotcell",
+    "edelweissmeshfree.cells.marmotcell.bsplinemarmotcell",
+    "edelweissmeshfree.cellelements.marmotcellelement.marmotcellelement",
+    "edelweissmeshfree.cellelements.marmotcellelement.lagrangianmarmotcellelement",
+    "edelweissmeshfree.materialpoints.marmotmaterialpoint.mp",
+    "edelweissmeshfree.meshfree.approximations.marmot.marmotmeshfreeapproximation",
+    "edelweissmeshfree.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunction",
+    "edelweissmeshfree.particles.marmot.marmotparticlewrapper",
+    "edelweissmeshfree.mpmmanagers.utils",
+    "edelweissmeshfree.fieldoutput.mpresultcollector",
+    "edelweissmeshfree.solvers.base.parallelization",
 ]
 
 templates_path = ["_templates"]
