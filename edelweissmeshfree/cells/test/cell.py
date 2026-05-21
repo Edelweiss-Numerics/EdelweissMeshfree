@@ -38,7 +38,6 @@ Implementing your own cells can be done easily by subclassing from
 the abstract base class :class:`~CellBase`.
 """
 
-
 import numpy as np
 from edelweissfe.points.node import Node
 

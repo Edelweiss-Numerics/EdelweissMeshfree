@@ -248,7 +248,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                         level=1,
                     )
 
-                    (activeNodesWithPersistentData, activeNodesWithVolatileData, reducedNodeFields, reducedNodeSets) = (
+                    activeNodesWithPersistentData, activeNodesWithVolatileData, reducedNodeFields, reducedNodeSets = (
                         self._assembleActiveDomain(activeCells, model)
                     )
 
