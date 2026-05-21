@@ -64,14 +64,18 @@ jobs:
             || git clone https://github.com/MAteRialMOdelingToolbox/Marmot.git
           git clone --branch "$BRANCH" "https://github.com/BOKU-CMP-MEC-MAT/MarmotMeshfreeCore.git" ./Marmot/modules/core/MarmotMeshfreeCore 2>/dev/null \
             || git clone "https://github.com/BOKU-CMP-MEC-MAT/MarmotMeshfreeCore.git" ./Marmot/modules/core/MarmotMeshfreeCore
-          git clone --branch "$BRANCH" "https://github.com/BOKU-CMP-MEC-MAT/DisplacementParticle.git" ./Marmot/modules/particles/DisplacementParticle 2>/dev/null \
-            || git clone "https://github.com/BOKU-CMP-MEC-MAT/DisplacementParticle.git" ./Marmot/modules/particles/DisplacementParticle 2>/dev/null \
-            && echo "DisplacementParticle module installed." \
-            || echo "DisplacementParticle not available, skipping."
-          git clone --branch "$BRANCH" "https://github.com/BOKU-CMP-MEC-MAT/DisplacementMaterialPoint.git" ./Marmot/modules/materialpoints/DisplacementMaterialPoint 2>/dev/null \
-            || git clone "https://github.com/BOKU-CMP-MEC-MAT/DisplacementMaterialPoint.git" ./Marmot/modules/materialpoints/DisplacementMaterialPoint 2>/dev/null \
-            && echo "DisplacementMaterialPoint module installed." \
-            || echo "DisplacementMaterialPoint not available, skipping."
+          if git clone --branch "$BRANCH" "https://github.com/BOKU-CMP-MEC-MAT/DisplacementParticle.git" ./Marmot/modules/particles/DisplacementParticle 2>/dev/null \
+               || git clone "https://github.com/BOKU-CMP-MEC-MAT/DisplacementParticle.git" ./Marmot/modules/particles/DisplacementParticle 2>/dev/null; then
+            echo "DisplacementParticle module installed."
+          else
+            echo "DisplacementParticle not available, skipping."
+          fi
+          if git clone --branch "$BRANCH" "https://github.com/BOKU-CMP-MEC-MAT/DisplacementMaterialPoint.git" ./Marmot/modules/materialpoints/DisplacementMaterialPoint 2>/dev/null \
+               || git clone "https://github.com/BOKU-CMP-MEC-MAT/DisplacementMaterialPoint.git" ./Marmot/modules/materialpoints/DisplacementMaterialPoint 2>/dev/null; then
+            echo "DisplacementMaterialPoint module installed."
+          else
+            echo "DisplacementMaterialPoint not available, skipping."
+          fi
           mkdir ./Marmot/build
           cd ./Marmot/build
           cmake -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX  ..
