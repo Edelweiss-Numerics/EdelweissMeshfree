@@ -1,6 +1,18 @@
 name: Run tests
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      edelweissfe_branch:
+        description: "Branch to use for EdelweissFE (leave empty to auto-detect)"
+        required: false
+        default: ""
+      marmot_branch:
+        description: "Branch to use for Marmot and all Marmot modules (leave empty to auto-detect)"
+        required: false
+        default: ""
 
 jobs:
   build:
@@ -20,9 +32,9 @@ jobs:
       - name: Install conda packages
         shell: bash -l {0}
         run: |
-          BRANCH="${{ github.head_ref || github.ref_name }}"
+          BRANCH="${{ inputs.edelweissfe_branch || github.head_ref || github.ref_name }}"
           git clone --branch "$BRANCH" https://github.com/EdelweissFE/EdelweissFE.git 2>/dev/null \
-            || git clone https://github.com/EdelweissFE/EdelweissFE.git
+            || { echo "Branch '$BRANCH' not found in EdelweissFE, falling back to default branch."; git clone https://github.com/EdelweissFE/EdelweissFE.git; }
           mamba install --file EdelweissFE/requirements.txt
 
       - name: Install Eigen
@@ -59,11 +71,11 @@ jobs:
       - name: Install Marmot
         shell: bash -l {0}
         run: |
-          BRANCH="${{ github.head_ref || github.ref_name }}"
+          BRANCH="${{ inputs.marmot_branch || github.head_ref || github.ref_name }}"
           git clone --branch "$BRANCH" https://github.com/MAteRialMOdelingToolbox/Marmot.git 2>/dev/null \
-            || git clone https://github.com/MAteRialMOdelingToolbox/Marmot.git
+            || { echo "Branch '$BRANCH' not found in Marmot, falling back to default branch."; git clone https://github.com/MAteRialMOdelingToolbox/Marmot.git; }
           git clone --branch "$BRANCH" "https://github.com/BOKU-CMP-MEC-MAT/MarmotMeshfreeCore.git" ./Marmot/modules/core/MarmotMeshfreeCore 2>/dev/null \
-            || git clone "https://github.com/BOKU-CMP-MEC-MAT/MarmotMeshfreeCore.git" ./Marmot/modules/core/MarmotMeshfreeCore
+            || { echo "Branch '$BRANCH' not found in MarmotMeshfreeCore, falling back to default branch."; git clone "https://github.com/BOKU-CMP-MEC-MAT/MarmotMeshfreeCore.git" ./Marmot/modules/core/MarmotMeshfreeCore; }
           if git clone --branch "$BRANCH" "https://github.com/BOKU-CMP-MEC-MAT/DisplacementParticle.git" ./Marmot/modules/particles/DisplacementParticle 2>/dev/null \
                || git clone "https://github.com/BOKU-CMP-MEC-MAT/DisplacementParticle.git" ./Marmot/modules/particles/DisplacementParticle 2>/dev/null; then
             echo "DisplacementParticle module installed."
