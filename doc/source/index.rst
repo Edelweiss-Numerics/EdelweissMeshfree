@@ -2,7 +2,7 @@ Welcome to EdelweissMeshfree
 ============================
 
 EdelweissMeshfree is a light-weight, platform-independent, parallel meshfree framework for the simulation of coupled problems in solid mechanics.
-It is based on `EdelweissFE <https://github.com/EdelweissNumerics/EdelweissFE/>`_, which is a hard dependency.
+It is based on `EdelweissFE <https://github.com/Edelweiss-Numerics/EdelweissFE/>`_, which is a hard dependency.
 Furthermore, by default, it makes use of the `Marmot <https://github.com/MAteRialMOdelingToolbox/Marmot/>`_ library for cell, material point, particle, and material formulations.
 
 EdelweissMeshfree aims to be...

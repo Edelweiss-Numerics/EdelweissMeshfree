@@ -33,8 +33,8 @@ jobs:
         shell: bash -l {0}
         run: |
           BRANCH="${{ inputs.edelweissfe_branch || github.head_ref || github.ref_name }}"
-          git clone --branch "$BRANCH" https://github.com/EdelweissFE/EdelweissFE.git 2>/dev/null \
-            || { echo "Branch '$BRANCH' not found in EdelweissFE, falling back to default branch."; git clone https://github.com/EdelweissFE/EdelweissFE.git; }
+          git clone --branch "$BRANCH" https://github.com/Edelweiss-Numerics/EdelweissFE.git 2>/dev/null \
+            || { echo "Branch '$BRANCH' not found in EdelweissFE, falling back to default branch."; git clone https://github.com/Edelweiss-Numerics/EdelweissFE.git; }
           mamba install --file EdelweissFE/requirements.txt
 
       - name: Install Eigen
