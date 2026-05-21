@@ -20,7 +20,9 @@ jobs:
       - name: Install conda packages
         shell: bash -l {0}
         run: |
-          git clone https://github.com/EdelweissFE/EdelweissFE.git
+          BRANCH="${{ github.head_ref || github.ref_name }}"
+          git clone --branch "$BRANCH" https://github.com/EdelweissFE/EdelweissFE.git 2>/dev/null \
+            || git clone https://github.com/EdelweissFE/EdelweissFE.git
           mamba install --file EdelweissFE/requirements.txt
 
       - name: Install Eigen
@@ -57,8 +59,13 @@ jobs:
       - name: Install Marmot
         shell: bash -l {0}
         run: |
-          git clone "https://github.com/MAteRialMOdelingToolbox/Marmot.git"
+          BRANCH="${{ github.head_ref || github.ref_name }}"
+          git clone --branch "$BRANCH" https://github.com/MAteRialMOdelingToolbox/Marmot.git 2>/dev/null \
+            || git clone https://github.com/MAteRialMOdelingToolbox/Marmot.git
           git clone "https://github.com/BOKU-CMP-MEC-MAT/MarmotMeshfreeCore.git" ./Marmot/modules/core/MarmotMeshfreeCore
+          git clone "https://github.com/BOKU-CMP-MEC-MAT/DisplacementParticle.git" ./Marmot/modules/particles/DisplacementParticle \
+            && echo "DisplacementParticle module installed." \
+            || echo "DisplacementParticle not available, skipping."
           mkdir ./Marmot/build
           cd ./Marmot/build
           cmake -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX  ..
