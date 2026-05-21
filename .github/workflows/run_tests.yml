@@ -81,7 +81,7 @@ jobs:
             if [ -n "$BASE_BRANCH" ] && [ "$BASE_BRANCH" != "$HEAD_BRANCH" ]; then
               git clone --branch "$BASE_BRANCH" "$repo_url" "$dest_dir" 2>/dev/null && return 0
             fi
-            git clone "$repo_url" "$dest_dir" 2>/dev/null
+            git clone "$repo_url" "$dest_dir"
           }
           clone_with_target_fallback https://github.com/MAteRialMOdelingToolbox/Marmot.git Marmot
           clone_with_target_fallback "https://github.com/BOKU-CMP-MEC-MAT/MarmotMeshfreeCore.git" ./Marmot/modules/core/MarmotMeshfreeCore
