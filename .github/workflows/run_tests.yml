@@ -66,6 +66,9 @@ jobs:
           git clone "https://github.com/BOKU-CMP-MEC-MAT/DisplacementParticle.git" ./Marmot/modules/particles/DisplacementParticle \
             && echo "DisplacementParticle module installed." \
             || echo "DisplacementParticle not available, skipping."
+          git clone "https://github.com/BOKU-CMP-MEC-MAT/DisplacementMaterialPoint.git" ./Marmot/modules/materialpoints/DisplacementMaterialPoint \
+            && echo "DisplacementMaterialPoint module installed." \
+            || echo "DisplacementMaterialPoint not available, skipping."
           mkdir ./Marmot/build
           cd ./Marmot/build
           cmake -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX  ..
@@ -88,4 +91,3 @@ jobs:
         shell: bash -l {0}
         run: |
           pytest .
-
