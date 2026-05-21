@@ -20,9 +20,20 @@ jobs:
       - name: Install conda packages
         shell: bash -l {0}
         run: |
-          BRANCH="${{ github.head_ref || github.ref_name }}"
-          git clone --branch "$BRANCH" https://github.com/EdelweissFE/EdelweissFE.git 2>/dev/null \
-            || git clone https://github.com/EdelweissFE/EdelweissFE.git
+          HEAD_BRANCH="${{ github.head_ref }}"
+          BASE_BRANCH="${{ github.base_ref }}"
+          clone_with_target_fallback() {
+            local repo_url="$1"
+            local dest_dir="$2"
+            if [ -n "$HEAD_BRANCH" ]; then
+              git clone --branch "$HEAD_BRANCH" "$repo_url" "$dest_dir" 2>/dev/null && return 0
+            fi
+            if [ -n "$BASE_BRANCH" ] && [ "$BASE_BRANCH" != "$HEAD_BRANCH" ]; then
+              git clone --branch "$BASE_BRANCH" "$repo_url" "$dest_dir" 2>/dev/null && return 0
+            fi
+            git clone "$repo_url" "$dest_dir"
+          }
+          clone_with_target_fallback https://github.com/EdelweissFE/EdelweissFE.git EdelweissFE
           mamba install --file EdelweissFE/requirements.txt
 
       - name: Install Eigen
@@ -59,19 +70,27 @@ jobs:
       - name: Install Marmot
         shell: bash -l {0}
         run: |
-          BRANCH="${{ github.head_ref || github.ref_name }}"
-          git clone --branch "$BRANCH" https://github.com/MAteRialMOdelingToolbox/Marmot.git 2>/dev/null \
-            || git clone https://github.com/MAteRialMOdelingToolbox/Marmot.git
-          git clone --branch "$BRANCH" "https://github.com/BOKU-CMP-MEC-MAT/MarmotMeshfreeCore.git" ./Marmot/modules/core/MarmotMeshfreeCore 2>/dev/null \
-            || git clone "https://github.com/BOKU-CMP-MEC-MAT/MarmotMeshfreeCore.git" ./Marmot/modules/core/MarmotMeshfreeCore
-          if git clone --branch "$BRANCH" "https://github.com/BOKU-CMP-MEC-MAT/DisplacementParticle.git" ./Marmot/modules/particles/DisplacementParticle 2>/dev/null \
-               || git clone "https://github.com/BOKU-CMP-MEC-MAT/DisplacementParticle.git" ./Marmot/modules/particles/DisplacementParticle 2>/dev/null; then
+          HEAD_BRANCH="${{ github.head_ref }}"
+          BASE_BRANCH="${{ github.base_ref }}"
+          clone_with_target_fallback() {
+            local repo_url="$1"
+            local dest_dir="$2"
+            if [ -n "$HEAD_BRANCH" ]; then
+              git clone --branch "$HEAD_BRANCH" "$repo_url" "$dest_dir" 2>/dev/null && return 0
+            fi
+            if [ -n "$BASE_BRANCH" ] && [ "$BASE_BRANCH" != "$HEAD_BRANCH" ]; then
+              git clone --branch "$BASE_BRANCH" "$repo_url" "$dest_dir" 2>/dev/null && return 0
+            fi
+            git clone "$repo_url" "$dest_dir" 2>/dev/null
+          }
+          clone_with_target_fallback https://github.com/MAteRialMOdelingToolbox/Marmot.git Marmot
+          clone_with_target_fallback "https://github.com/BOKU-CMP-MEC-MAT/MarmotMeshfreeCore.git" ./Marmot/modules/core/MarmotMeshfreeCore
+          if clone_with_target_fallback "https://github.com/BOKU-CMP-MEC-MAT/DisplacementParticle.git" ./Marmot/modules/particles/DisplacementParticle; then
             echo "DisplacementParticle module installed."
           else
             echo "DisplacementParticle not available, skipping."
           fi
-          if git clone --branch "$BRANCH" "https://github.com/BOKU-CMP-MEC-MAT/DisplacementMaterialPoint.git" ./Marmot/modules/materialpoints/DisplacementMaterialPoint 2>/dev/null \
-               || git clone "https://github.com/BOKU-CMP-MEC-MAT/DisplacementMaterialPoint.git" ./Marmot/modules/materialpoints/DisplacementMaterialPoint 2>/dev/null; then
+          if clone_with_target_fallback "https://github.com/BOKU-CMP-MEC-MAT/DisplacementMaterialPoint.git" ./Marmot/modules/materialpoints/DisplacementMaterialPoint; then
             echo "DisplacementMaterialPoint module installed."
           else
             echo "DisplacementMaterialPoint not available, skipping."
