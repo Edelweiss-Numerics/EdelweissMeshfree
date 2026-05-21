@@ -147,7 +147,7 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
 
                     theDofManager = self._instanceDofManager(model, activeConstraints, particles)
 
-                    (M, dU_np, P_Int, P_Ext, v_np_one_half, momentum) = self.getDiscretization(
+                    M, dU_np, P_Int, P_Ext, v_np_one_half, momentum = self.getDiscretization(
                         theDofManager, model, mpmManagers, constraints
                     )
                     self.updateSystem(particles, timeStep.totalTime, dT, dU_np)
@@ -202,7 +202,7 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
                     else:
                         theDofManager = self._instanceDofManager(model, activeConstraints, particles)
 
-                    (M, dU_np, P_Int, P_Ext, _, momentum) = self.getDiscretization(
+                    M, dU_np, P_Int, P_Ext, _, momentum = self.getDiscretization(
                         theDofManager, model, mpmManagers, constraints
                     )
                 #    +-------------------------------+
@@ -516,7 +516,7 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
             The updated DOF manager instance.
         """
 
-        (activeNodesPersistent, _, reducedNodeFields, reducedNodeSets) = self._assembleActiveDomain(list(), model)
+        activeNodesPersistent, _, reducedNodeFields, reducedNodeSets = self._assembleActiveDomain(list(), model)
 
         theDofManager = self._createDofManager(
             reducedNodeFields.values(),

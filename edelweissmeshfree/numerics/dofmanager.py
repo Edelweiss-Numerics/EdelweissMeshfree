@@ -142,7 +142,7 @@ class MPMDofManager(DofManager):
                 + self._accumulatedCellElementVIJSize
                 + self._accumulatedParticleVIJSize
             )
-            (self.I, self.J, self.idcsOfHigherOrderEntitiesInVIJ) = self._initializeVIJPattern()
+            self.I, self.J, self.idcsOfHigherOrderEntitiesInVIJ = self._initializeVIJPattern()
 
     def _gatherCellsInformation(self, entities: list) -> tuple[int, int, int, int]:
         """Generates some auxiliary information,
