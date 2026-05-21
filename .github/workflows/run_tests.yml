@@ -34,12 +34,12 @@ jobs:
         run: |
           BRANCH="${{ inputs.edelweissfe_branch || github.head_ref || github.ref_name }}"
 
-          if git ls-remote --exit-code --heads https://github.com/EdelweissFE/EdelweissFE.git "$BRANCH" > /dev/null 2>&1; then
+          if git ls-remote --exit-code --heads https://github.com/Edelweiss-Numerics/EdelweissFE.git "$BRANCH" > /dev/null 2>&1; then
             echo "Cloning EdelweissFE branch: $BRANCH"
-            git clone --depth 1 --branch "$BRANCH" https://github.com/EdelweissFE/EdelweissFE.git
+            git clone --depth 1 --branch "$BRANCH" https://github.com/Edelweiss-Numerics/EdelweissFE.git
           else
             echo "::warning title=EdelweissFE Branch Fallback::Branch '$BRANCH' not found. Falling back to default branch."
-            git clone --depth 1 https://github.com/EdelweissFE/EdelweissFE.git
+            git clone --depth 1 https://github.com/Edelweiss-Numerics/EdelweissFE.git
           fi
 
           mamba install --file EdelweissFE/requirements.txt
