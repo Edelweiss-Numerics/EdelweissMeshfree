@@ -62,11 +62,14 @@ jobs:
           BRANCH="${{ github.head_ref || github.ref_name }}"
           git clone --branch "$BRANCH" https://github.com/MAteRialMOdelingToolbox/Marmot.git 2>/dev/null \
             || git clone https://github.com/MAteRialMOdelingToolbox/Marmot.git
-          git clone "https://github.com/BOKU-CMP-MEC-MAT/MarmotMeshfreeCore.git" ./Marmot/modules/core/MarmotMeshfreeCore
-          git clone "https://github.com/BOKU-CMP-MEC-MAT/DisplacementParticle.git" ./Marmot/modules/particles/DisplacementParticle \
+          git clone --branch "$BRANCH" "https://github.com/BOKU-CMP-MEC-MAT/MarmotMeshfreeCore.git" ./Marmot/modules/core/MarmotMeshfreeCore 2>/dev/null \
+            || git clone "https://github.com/BOKU-CMP-MEC-MAT/MarmotMeshfreeCore.git" ./Marmot/modules/core/MarmotMeshfreeCore
+          git clone --branch "$BRANCH" "https://github.com/BOKU-CMP-MEC-MAT/DisplacementParticle.git" ./Marmot/modules/particles/DisplacementParticle 2>/dev/null \
+            || git clone "https://github.com/BOKU-CMP-MEC-MAT/DisplacementParticle.git" ./Marmot/modules/particles/DisplacementParticle 2>/dev/null \
             && echo "DisplacementParticle module installed." \
             || echo "DisplacementParticle not available, skipping."
-          git clone "https://github.com/BOKU-CMP-MEC-MAT/DisplacementMaterialPoint.git" ./Marmot/modules/materialpoints/DisplacementMaterialPoint \
+          git clone --branch "$BRANCH" "https://github.com/BOKU-CMP-MEC-MAT/DisplacementMaterialPoint.git" ./Marmot/modules/materialpoints/DisplacementMaterialPoint 2>/dev/null \
+            || git clone "https://github.com/BOKU-CMP-MEC-MAT/DisplacementMaterialPoint.git" ./Marmot/modules/materialpoints/DisplacementMaterialPoint 2>/dev/null \
             && echo "DisplacementMaterialPoint module installed." \
             || echo "DisplacementMaterialPoint not available, skipping."
           mkdir ./Marmot/build
