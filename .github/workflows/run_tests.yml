@@ -36,10 +36,10 @@ jobs:
 
           if git ls-remote --exit-code --heads https://github.com/Edelweiss-Numerics/EdelweissFE.git "$BRANCH" > /dev/null 2>&1; then
             echo "Cloning EdelweissFE branch: $BRANCH"
-            git clone --depth 1 --branch "$BRANCH" https://github.com/Edelweiss-Numerics/EdelweissFE.git
+            git clone  --branch "$BRANCH" https://github.com/Edelweiss-Numerics/EdelweissFE.git
           else
             echo "::warning title=EdelweissFE Branch Fallback::Branch '$BRANCH' not found. Falling back to default branch."
-            git clone --depth 1 https://github.com/Edelweiss-Numerics/EdelweissFE.git
+            git clone  https://github.com/Edelweiss-Numerics/EdelweissFE.git
           fi
 
           mamba install --file EdelweissFE/conda_requirements.txt
