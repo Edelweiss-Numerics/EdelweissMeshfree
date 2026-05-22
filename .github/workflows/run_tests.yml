@@ -42,7 +42,7 @@ jobs:
             git clone --depth 1 https://github.com/Edelweiss-Numerics/EdelweissFE.git
           fi
 
-          mamba install --file EdelweissFE/requirements.txt
+          mamba install --file EdelweissFE/conda_requirements.txt
 
       - name: Install Eigen
         shell: bash -l {0}
