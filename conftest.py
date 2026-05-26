@@ -65,8 +65,8 @@ def assert_gold():
     """
 
     def _assert_gold(res, gold, rtol=1e-5, atol=1e-8):
-        res = np.asarray(res)
-        gold = np.asarray(gold)
+        res = np.asarray(res).flatten()
+        gold = np.asarray(gold).flatten()
         abs_err = np.abs(res - gold)
         with np.errstate(divide="ignore", invalid="ignore"):
             rel_err = np.where(np.abs(gold) > 0, abs_err / np.abs(gold), abs_err)
