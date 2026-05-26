@@ -54,7 +54,6 @@ from edelweissmeshfree.outputmanagers.ensight import (
     OutputManager as EnsightOutputManager,
 )
 
-
 def run_sim():
     dimension = 2
 
@@ -195,7 +194,6 @@ def run_sim():
 
         return mpmModel
 
-
 @pytest.fixture(autouse=True)
 def change_test_dir(request, monkeypatch):
     """No matter where pytest is ran, we set the working dir
@@ -203,16 +201,14 @@ def change_test_dir(request, monkeypatch):
 
     monkeypatch.chdir(request.fspath.dirname)
 
-
-def test_sim():
+def test_sim(assert_gold):
     mpmModel = run_sim()
 
     res = mpmModel.nodeFields["displacement"]["dU"]
 
     gold = np.loadtxt("gold.csv")
 
-    assert np.isclose(res, gold).all()
-
+    assert_gold(res, gold)
 
 if __name__ == "__main__":
     mpmModel = run_sim()
