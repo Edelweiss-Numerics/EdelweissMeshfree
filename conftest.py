@@ -31,6 +31,7 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 
+import numpy as np
 import pytest
 
 
@@ -44,3 +45,34 @@ def pytest_runtest_call(item):
     outcome = yield
     if outcome.excinfo is not None and issubclass(outcome.excinfo[0], NotImplementedError):
         pytest.skip(str(outcome.excinfo[1]))
+
+
+@pytest.fixture
+def assert_gold():
+    """Fixture that provides a helper for comparing numerical results against gold files.
+
+    Prints a human-readable summary of absolute error, relative error and the norm of
+    the difference before delegating to ``numpy.testing.assert_allclose``, so that
+    failures include actionable diagnostic information.
+
+    Usage::
+
+        def test_sim(assert_gold):
+            res  = run_sim()
+            gold = np.loadtxt("gold.csv")
+            assert_gold(res, gold)          # default tolerances
+            assert_gold(res, gold, atol=1e-7)  # custom tolerances
+    """
+
+    def _assert_gold(res, gold, rtol=1e-5, atol=1e-8):
+        res = np.asarray(res)
+        gold = np.asarray(gold)
+        abs_err = np.abs(res - gold)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            rel_err = np.where(np.abs(gold) > 0, abs_err / np.abs(gold), abs_err)
+        print(f"  Max absolute error : {abs_err.max():.3e}")
+        print(f"  Max relative error : {rel_err.max():.3e}")
+        print(f"  Norm of difference : {np.linalg.norm(res - gold):.3e}")
+        np.testing.assert_allclose(res, gold, rtol=rtol, atol=atol)
+
+    return _assert_gold

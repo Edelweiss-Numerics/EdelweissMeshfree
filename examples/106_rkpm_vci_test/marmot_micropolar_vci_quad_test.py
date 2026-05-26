@@ -78,7 +78,6 @@ from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
 from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
 from edelweissmeshfree.solvers.nqsmarmotparallel import NQSParallelForMarmot
 
-
 def run_sim():
     dimension = 2
 
@@ -242,14 +241,12 @@ def run_sim():
 
     return theModel
 
-
 @pytest.fixture(autouse=True)
 def change_test_dir(request, monkeypatch):
     """No matter where pytest is ran, we set the working dir
     to this testscript's parent directory"""
 
     monkeypatch.chdir(request.fspath.dirname)
-
 
 def _test_sim():
 
@@ -266,8 +263,7 @@ def _test_sim():
     gold = np.loadtxt("gold.csv")
 
     # assert np.isclose(lastStiffness, gold).all()
-    assert np.isclose(np.linalg.norm(lastStiffness.flatten()), np.linalg.norm(gold.flatten()))
-
+    assert_gold(lastStiffness, gold)
 
 if __name__ == "__main__":
     lastStiffness = run_sim()
