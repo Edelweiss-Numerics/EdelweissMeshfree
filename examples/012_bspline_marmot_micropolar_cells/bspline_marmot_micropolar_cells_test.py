@@ -47,7 +47,6 @@ from edelweissmeshfree.outputmanagers.ensight import (
 from edelweissmeshfree.solvers.nqsmarmotparallel import NQSParallelForMarmot
 from edelweissmeshfree.stepactions.dirichlet import Dirichlet
 
-
 @performancetiming.timeit("simulation")
 def run_sim(bspline_order):
     dimension = 2
@@ -201,7 +200,6 @@ def run_sim(bspline_order):
 
     return mpmModel
 
-
 @pytest.fixture(autouse=True)
 def change_test_dir(request, monkeypatch):
     """No matter where pytest is ran, we set the working dir
@@ -209,8 +207,7 @@ def change_test_dir(request, monkeypatch):
 
     monkeypatch.chdir(request.fspath.dirname)
 
-
-def test_sim_order1():
+def test_sim_order1(assert_gold):
     try:
         mpmModel = run_sim(1)
     except ValueError as e:
@@ -220,12 +217,9 @@ def test_sim_order1():
     res = np.array([mp.getResultArray("displacement") for mp in mpmModel.materialPoints.values()])
     gold = np.loadtxt("gold_order_1.csv")
 
-    print(res - gold)
+    assert_gold(res, gold)
 
-    assert np.isclose(res, gold).all()
-
-
-def test_sim_order2():
+def test_sim_order2(assert_gold):
     try:
         mpmModel = run_sim(2)
     except ValueError as e:
@@ -235,12 +229,9 @@ def test_sim_order2():
     res = np.array([mp.getResultArray("displacement") for mp in mpmModel.materialPoints.values()])
     gold = np.loadtxt("gold_order_2.csv")
 
-    print(res - gold)
+    assert_gold(res, gold)
 
-    assert np.isclose(res, gold).all()
-
-
-def test_sim_order3():
+def test_sim_order3(assert_gold):
     try:
         mpmModel = run_sim(3)
     except ValueError as e:
@@ -250,10 +241,7 @@ def test_sim_order3():
     res = np.array([mp.getResultArray("displacement") for mp in mpmModel.materialPoints.values()])
     gold = np.loadtxt("gold_order_3.csv")
 
-    print(res - gold)
-
-    assert np.isclose(res, gold).all()
-
+    assert_gold(res, gold)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

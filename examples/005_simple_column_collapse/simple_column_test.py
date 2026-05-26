@@ -57,7 +57,6 @@ from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
 from edelweissmeshfree.stepactions.bodyload import BodyLoad
 from edelweissmeshfree.stepactions.dirichlet import Dirichlet
 
-
 def run_sim():
     dimension = 2
 
@@ -209,7 +208,6 @@ def run_sim():
 
     return mpmModel
 
-
 @pytest.fixture(autouse=True)
 def change_test_dir(request, monkeypatch):
     """No matter where pytest is ran, we set the working dir
@@ -217,8 +215,7 @@ def change_test_dir(request, monkeypatch):
 
     monkeypatch.chdir(request.fspath.dirname)
 
-
-def test_sim():
+def test_sim(assert_gold):
     try:
         mpmModel = run_sim()
     except NotImplementedError as e:
@@ -228,10 +225,7 @@ def test_sim():
     res = np.array([mp.getResultArray("displacement") for mp in mpmModel.materialPoints.values()])
     gold = np.loadtxt("gold.csv")
 
-    print(res - gold)
-
-    assert np.isclose(res, gold).all()
-
+    assert_gold(res, gold)
 
 if __name__ == "__main__":
     mpmModel = run_sim()

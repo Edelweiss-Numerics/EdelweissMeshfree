@@ -43,7 +43,6 @@ from edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager import 
     KDBinOrganizedParticleManager,
 )
 
-
 def run_sim():
     dimension = 2
 
@@ -326,7 +325,6 @@ def run_sim():
 
     return np.array([Z1, Z2, Z3, Z4]).ravel()
 
-
 @pytest.fixture(autouse=True)
 def change_test_dir(request, monkeypatch):
     """No matter where pytest is ran, we set the working dir
@@ -334,8 +332,7 @@ def change_test_dir(request, monkeypatch):
 
     monkeypatch.chdir(request.fspath.dirname)
 
-
-def test_sim():
+def test_sim(assert_gold):
 
     # disable plots and suppress warnings
     import matplotlib
@@ -349,8 +346,7 @@ def test_sim():
 
     gold = np.loadtxt("gold.csv")
 
-    assert np.isclose(shapeFunctionValues, gold).all()
-
+    assert_gold(shapeFunctionValues, gold)
 
 if __name__ == "__main__":
     shapeFunctionValues = run_sim()

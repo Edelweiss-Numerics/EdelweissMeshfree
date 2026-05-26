@@ -83,7 +83,6 @@ from edelweissmeshfree.stepactions.particledistributedload import (
 )
 from edelweissmeshfree.stepactions.particleindirectcontrol import IndirectControl
 
-
 def run_sim(particleSize, supportRadius, continuityOrder, completenessOrder):
     dimension = 2
 
@@ -324,7 +323,6 @@ def run_sim(particleSize, supportRadius, continuityOrder, completenessOrder):
 
     return theModel, fieldOutputController
 
-
 @pytest.fixture(autouse=True)
 def change_test_dir(request, monkeypatch):
     """No matter where pytest is ran, we set the working dir
@@ -332,8 +330,7 @@ def change_test_dir(request, monkeypatch):
 
     monkeypatch.chdir(request.fspath.dirname)
 
-
-def test_sim():
+def test_sim(assert_gold):
 
     # disable plots and suppress warnings
     import matplotlib
@@ -349,8 +346,7 @@ def test_sim():
 
     gold = np.loadtxt("gold.csv")
 
-    assert np.isclose(np.linalg.norm(res.flatten()), np.linalg.norm(gold.flatten()))
-
+    assert_gold(res, gold)
 
 if __name__ == "__main__":
 
