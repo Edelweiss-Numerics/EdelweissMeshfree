@@ -238,7 +238,7 @@ class PythonMaterialPoint(MaterialPointBase):
         materialProperties
             Array [E, nu] for linear elastic.
         """
-        if materialName.lower() == "linearelastic":
+        if materialName.lower().replace(" ", "") == "linearelastic":
             E = materialProperties[0]
             nu = materialProperties[1]
             self._C = _compute_plane_strain_tangent(E, nu)
