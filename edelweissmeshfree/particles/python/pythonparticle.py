@@ -559,7 +559,7 @@ class PythonParticle(BaseParticle):
     ):
         """Compute the boundary integral contribution for VCI.
 
-        Computes: R_AiC += N_A * P_C * n_i * |dGamma|
+        Computes: R_AiC += N_A * P_C(x_p) * n_i * |dGamma|
 
         For point particles, the boundary surface vector already encodes normal * area.
 
@@ -575,18 +575,19 @@ class PythonParticle(BaseParticle):
         nVCI = self.vci_getNumberOfConstraints()
         N, _ = self._computeShapeFunctionsAndGradients()
 
-        # P(0) for the particle itself (since it's a point particle at x_particle)
-        P0 = _build_polynomial_basis_2d(0.0, 0.0, self._approximation.completenessOrder)
+        # Polynomial basis evaluated at the particle's actual coordinates
+        xp = self._centerCoordinates
+        P = _build_polynomial_basis_2d(xp[0], xp[1], self._approximation.completenessOrder)
 
         for A in range(self._nAssignedKernelFunctions):
             for i in range(self._nDim):
                 for C in range(nVCI):
-                    R_AiC[A, i, C] += N[A] * P0[C] * boundarySurfaceVector[i]
+                    R_AiC[A, i, C] += N[A] * P[C] * boundarySurfaceVector[i]
 
     def vci_compute_TestGradient_P_Integral(self, R_AiC: np.ndarray):
         """Compute the volume integral of test function gradient times polynomial basis.
 
-        Computes: R_AiC += dN_A/dx_i * P_C * V
+        Computes: R_AiC += dN_A/dx_i * P_C(x_p) * V
 
         Parameters
         ----------
@@ -598,17 +599,18 @@ class PythonParticle(BaseParticle):
             self._centerCoordinates, self._assignedKernelFunctions
         )
 
-        P0 = _build_polynomial_basis_2d(0.0, 0.0, self._approximation.completenessOrder)
+        xp = self._centerCoordinates
+        P = _build_polynomial_basis_2d(xp[0], xp[1], self._approximation.completenessOrder)
 
         for A in range(self._nAssignedKernelFunctions):
             for i in range(self._nDim):
                 for C in range(nVCI):
-                    R_AiC[A, i, C] += dNdx[A, i] * P0[C] * self._volume
+                    R_AiC[A, i, C] += dNdx[A, i] * P[C] * self._volume
 
     def vci_compute_Test_PGradient_Integral(self, R_AiC: np.ndarray):
         """Compute the volume integral of test function times polynomial gradient.
 
-        Computes: R_AiC += N_A * dP_C/dx_i * V
+        Computes: R_AiC += N_A * dP_C/dx_i(x_p) * V
 
         Parameters
         ----------
@@ -624,8 +626,9 @@ class PythonParticle(BaseParticle):
 
         N, _ = self._computeShapeFunctionsAndGradients()
 
-        # dP/dx at x=0 (the particle is the evaluation point)
-        dPdx, dPdy = _build_polynomial_basis_gradient_2d(0.0, 0.0, order)
+        # dP/dx at the particle's actual coordinates
+        xp = self._centerCoordinates
+        dPdx, dPdy = _build_polynomial_basis_gradient_2d(xp[0], xp[1], order)
 
         for A in range(self._nAssignedKernelFunctions):
             for C in range(nVCI):
@@ -635,7 +638,7 @@ class PythonParticle(BaseParticle):
     def vci_compute_MMatrix(self, M_ACD: np.ndarray):
         """Compute the M-matrix for VCI.
 
-        Computes: M_ACD += N_A * P_C * P_D * V
+        Computes: M_ACD += N_A * P_C(x_p) * P_D(x_p) * V
 
         Parameters
         ----------
@@ -645,12 +648,13 @@ class PythonParticle(BaseParticle):
         nVCI = self.vci_getNumberOfConstraints()
         N, _ = self._computeShapeFunctionsAndGradients()
 
-        P0 = _build_polynomial_basis_2d(0.0, 0.0, self._approximation.completenessOrder)
+        xp = self._centerCoordinates
+        P = _build_polynomial_basis_2d(xp[0], xp[1], self._approximation.completenessOrder)
 
         for A in range(self._nAssignedKernelFunctions):
             for C in range(nVCI):
                 for D in range(nVCI):
-                    M_ACD[A, C, D] += N[A] * P0[C] * P0[D] * self._volume
+                    M_ACD[A, C, D] += N[A] * P[C] * P[D] * self._volume
 
     def vci_assignTestFunctionCorrectionTerms(self, eta_AjC: np.ndarray):
         """Assign the VCI correction terms.

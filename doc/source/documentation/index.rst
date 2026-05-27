@@ -5,11 +5,12 @@ Documentation
    :maxdepth: 2
 
    models
+   meshfree/index
    cells
    cellelements
-   material_points
+   mpm/material_points
    solvers
-   material_point_managers
+   mpm/material_point_managers
    model_generators
    step_actions
    constraints
