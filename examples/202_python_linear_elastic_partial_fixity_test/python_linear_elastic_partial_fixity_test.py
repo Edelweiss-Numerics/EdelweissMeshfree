@@ -179,7 +179,8 @@ def change_test_dir(request, monkeypatch):
 def test_sim(assert_gold):
     """Partial fixity: u=0 at left, v=0 at bottom, u=-10 at right."""
     mpmModel = run_sim()
-    res = np.array([mp.getResultArray("displacement") for mp in mpmModel.materialPoints.values()])
+    ordered_mps = [mp for _, mp in sorted(mpmModel.materialPoints.items())]
+    res = np.array([mp.getResultArray("displacement") for mp in ordered_mps])
     assert_gold(res, np.loadtxt("gold.csv"))
 
 
@@ -190,6 +191,7 @@ if __name__ == "__main__":
 
     mpmModel = run_sim()
     if args.create_gold:
-        gold = np.array([mp.getResultArray("displacement") for mp in mpmModel.materialPoints.values()])
+        ordered_mps = [mp for _, mp in sorted(mpmModel.materialPoints.items())]
+        gold = np.array([mp.getResultArray("displacement") for mp in ordered_mps])
         np.savetxt("gold.csv", gold)
         print("Wrote gold.csv")
