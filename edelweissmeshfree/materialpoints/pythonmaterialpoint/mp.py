@@ -204,9 +204,9 @@ class PythonMaterialPoint(MaterialPointBase):
         if result == "displacement":
             return self._displacement
         elif result == "stress":
-            return self._stress
+            return self._stress_temp
         elif result == "strain":
-            return self._strain
+            return self._strain_temp
         else:
             raise ValueError(f"Unknown result '{result}' requested from PythonMaterialPoint.")
 

@@ -33,7 +33,7 @@
 """
 Test for the pure Python cell and material point implementation with linear elastic behavior.
 
-Uniaxial compression: left fully fixed, right displaced by -10 in x.
+Partial fixity: u=0 at left, v=0 at bottom, u=-10 at right.
 Domain [0, 200] x [0, 100] with 4x2 cells and 8x4 material points using:
 - PythonCell (bilinear Quad4) as the grid cell provider
 - PythonMaterialPoint with linear elastic plane strain material
@@ -65,7 +65,7 @@ from edelweissmeshfree.stepactions.dirichlet import Dirichlet
 
 
 def run_sim():
-    """Left fully fixed, right displaced by -10 in x."""
+    """Only u=0 at left, only v=0 at bottom, u=-10 at right."""
 
     dimension = 2
 
@@ -125,8 +125,9 @@ def run_sim():
     ensightOutput.initializeJob()
 
     dirichlets = [
-        Dirichlet("left", mpmModel.nodeSets["rectangular_grid_left"], "displacement", {0: 0.0, 1: 0.0}, mpmModel, journal),
-        Dirichlet("right", mpmModel.nodeSets["rectangular_grid_right"], "displacement", {0: -10.0, 1: 0.0}, mpmModel, journal),
+        Dirichlet("left", mpmModel.nodeSets["rectangular_grid_left"], "displacement", {0: 0.0}, mpmModel, journal),
+        Dirichlet("bottom", mpmModel.nodeSets["rectangular_grid_bottom"], "displacement", {1: 0.0}, mpmModel, journal),
+        Dirichlet("right", mpmModel.nodeSets["rectangular_grid_right"], "displacement", {0: -10.0}, mpmModel, journal),
     ]
 
     adaptiveTimeStepper = AdaptiveTimeStepper(0.0, 1.0, 0.1, 0.1, 1e-3, 1000, journal)
@@ -176,7 +177,7 @@ def change_test_dir(request, monkeypatch):
 
 
 def test_sim(assert_gold):
-    """Uniaxial compression: left fixed, right displaced by -10 in x."""
+    """Partial fixity: u=0 at left, v=0 at bottom, u=-10 at right."""
     mpmModel = run_sim()
     res = np.array([mp.getResultArray("displacement") for mp in mpmModel.materialPoints.values()])
     assert_gold(res, np.loadtxt("gold.csv"))
