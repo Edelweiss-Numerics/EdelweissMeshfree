@@ -545,7 +545,7 @@ class PythonParticle(BaseParticle):
         For completeness order 1: nVCIConstraints = nDim + 1 (constant + linear terms)
         For completeness order 2: nVCIConstraints = (nDim+1)*(nDim+2)/2
         """
-        order = self._approximation._completenessOrder
+        order = self._approximation.completenessOrder
         if order == 0:
             return 1
         elif order == 1:
@@ -576,7 +576,7 @@ class PythonParticle(BaseParticle):
         N, _ = self._computeShapeFunctionsAndGradients()
 
         # P(0) for the particle itself (since it's a point particle at x_particle)
-        P0 = _build_polynomial_basis_2d(0.0, 0.0, self._approximation._completenessOrder)
+        P0 = _build_polynomial_basis_2d(0.0, 0.0, self._approximation.completenessOrder)
 
         for A in range(self._nAssignedKernelFunctions):
             for i in range(self._nDim):
@@ -598,7 +598,7 @@ class PythonParticle(BaseParticle):
             self._centerCoordinates, self._assignedKernelFunctions
         )
 
-        P0 = _build_polynomial_basis_2d(0.0, 0.0, self._approximation._completenessOrder)
+        P0 = _build_polynomial_basis_2d(0.0, 0.0, self._approximation.completenessOrder)
 
         for A in range(self._nAssignedKernelFunctions):
             for i in range(self._nDim):
@@ -616,7 +616,7 @@ class PythonParticle(BaseParticle):
             The integral array of shape (nKernels, nDim, nVCIConstraints).
         """
         nVCI = self.vci_getNumberOfConstraints()
-        order = self._approximation._completenessOrder
+        order = self._approximation.completenessOrder
 
         if order == 0:
             # dP/dx = 0 for order 0 (only constant)
@@ -645,7 +645,7 @@ class PythonParticle(BaseParticle):
         nVCI = self.vci_getNumberOfConstraints()
         N, _ = self._computeShapeFunctionsAndGradients()
 
-        P0 = _build_polynomial_basis_2d(0.0, 0.0, self._approximation._completenessOrder)
+        P0 = _build_polynomial_basis_2d(0.0, 0.0, self._approximation.completenessOrder)
 
         for A in range(self._nAssignedKernelFunctions):
             for C in range(nVCI):

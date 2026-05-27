@@ -150,6 +150,11 @@ class PythonRKPMApproximation(BaseMeshfreeApproximation):
         self._dimension = dimension
         self._completenessOrder = completenessOrder
 
+    @property
+    def completenessOrder(self) -> int:
+        """The polynomial completeness order."""
+        return self._completenessOrder
+
     def computeShapeFunctionValues(self, coordinates: np.ndarray, kernelfunctions: list) -> np.ndarray:
         """Compute the RKPM shape function values at the given coordinates.
 
