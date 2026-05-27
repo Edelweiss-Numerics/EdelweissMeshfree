@@ -33,14 +33,17 @@
 """
 Test for the pure Python cell and material point implementation with linear elastic behavior.
 
-This test performs a uniaxial compression of a 2D rectangular domain using:
+This test performs simulations on a 2D rectangular domain [0, 200] x [0, 100] with 4x2 cells
+and 8x4 material points using:
 - PythonCell (bilinear Quad4) as the grid cell provider
 - PythonMaterialPoint with linear elastic plane strain material
-- NonlinearQuasistaticSolver for solving
+- NonlinearQuasistaticSolver for solving (10 equal time increments)
 
-The domain is [0, 200] x [0, 100] with 4x2 cells and 8x4 material points.
-Left boundary is fixed; right boundary is displaced by -10 in x.
-For linear elasticity, only one Newton iteration is needed.
+Four scenarios are tested, each with different Dirichlet boundary conditions:
+1. Uniaxial compression: left fixed, right displaced by -10 in x
+2. Vertical compression: bottom fixed, top displaced by -5 in y
+3. Partial fixity: u=0 at left, v=0 at bottom, u=-10 at right
+4. Shear: bottom fully fixed, top displaced by +10 in x
 """
 
 import argparse
@@ -67,8 +70,15 @@ from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
 from edelweissmeshfree.stepactions.dirichlet import Dirichlet
 
 
-def run_sim():
-    """Run an MPM simulation with pure Python cells and material points using the nonlinear solver."""
+def run_sim(dirichlet_specs):
+    """Run an MPM simulation with pure Python cells and material points using the nonlinear solver.
+
+    Parameters
+    ----------
+    dirichlet_specs : list of (str, str, dict)
+        Each entry is (name, node_set_key, values_dict) passed to Dirichlet.
+        *values_dict* maps dof component index to prescribed value.
+    """
 
     dimension = 2
 
@@ -127,33 +137,20 @@ def run_sim():
     ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["displacement"], create="perNode")
     ensightOutput.initializeJob()
 
-    dirichletLeft = Dirichlet(
-        "left",
-        mpmModel.nodeSets["rectangular_grid_left"],
-        "displacement",
-        {0: 0.0, 1: 0.0},
-        mpmModel,
-        journal,
-    )
+    dirichlets = [
+        Dirichlet(name, mpmModel.nodeSets[node_set_key], "displacement", values, mpmModel, journal)
+        for name, node_set_key, values in dirichlet_specs
+    ]
 
-    dirichletRight = Dirichlet(
-        "right",
-        mpmModel.nodeSets["rectangular_grid_right"],
-        "displacement",
-        {0: -10.0, 1: 0.0},
-        mpmModel,
-        journal,
-    )
-
-    adaptiveTimeStepper = AdaptiveTimeStepper(0.0, 1.0, 1.0, 1.0, 1e-3, 1000, journal)
+    adaptiveTimeStepper = AdaptiveTimeStepper(0.0, 1.0, 0.1, 0.1, 1e-3, 1000, journal)
 
     nonlinearSolver = NonlinearQuasistaticSolver(journal)
 
-    iterationOptions = dict()
-
-    iterationOptions["max. iterations"] = 5
-    iterationOptions["critical iterations"] = 3
-    iterationOptions["allowed residual growths"] = 3
+    iterationOptions = {
+        "max. iterations": 5,
+        "critical iterations": 3,
+        "allowed residual growths": 3,
+    }
 
     linearSolver = pardisoSolve
 
@@ -164,7 +161,7 @@ def run_sim():
             mpmModel,
             fieldOutputController,
             mpmManagers=[mpmManager],
-            dirichlets=[dirichletLeft, dirichletRight],
+            dirichlets=dirichlets,
             outputManagers=[ensightOutput],
             userIterationOptions=iterationOptions,
         )
@@ -183,6 +180,47 @@ def run_sim():
     return mpmModel
 
 
+def run_sim_uniaxial():
+    """Left fully fixed, right displaced by -10 in x."""
+    return run_sim(
+        [
+            ("left", "rectangular_grid_left", {0: 0.0, 1: 0.0}),
+            ("right", "rectangular_grid_right", {0: -10.0, 1: 0.0}),
+        ]
+    )
+
+
+def run_sim_compression_y():
+    """Bottom fully fixed, top displaced by -5 in y."""
+    return run_sim(
+        [
+            ("bottom", "rectangular_grid_bottom", {0: 0.0, 1: 0.0}),
+            ("top", "rectangular_grid_top", {0: 0.0, 1: -5.0}),
+        ]
+    )
+
+
+def run_sim_partial_fixity():
+    """Only u=0 at left, only v=0 at bottom, u=-10 at right."""
+    return run_sim(
+        [
+            ("left", "rectangular_grid_left", {0: 0.0}),
+            ("bottom", "rectangular_grid_bottom", {1: 0.0}),
+            ("right", "rectangular_grid_right", {0: -10.0}),
+        ]
+    )
+
+
+def run_sim_shear():
+    """Bottom fully fixed, top displaced by +10 in x (shear loading)."""
+    return run_sim(
+        [
+            ("bottom", "rectangular_grid_bottom", {0: 0.0, 1: 0.0}),
+            ("top", "rectangular_grid_top", {0: 10.0, 1: 0.0}),
+        ]
+    )
+
+
 @pytest.fixture(autouse=True)
 def change_test_dir(request, monkeypatch):
     """No matter where pytest is ran, we set the working dir
@@ -192,22 +230,57 @@ def change_test_dir(request, monkeypatch):
 
 
 def test_sim(assert_gold):
-    """Test the pure Python cell + material point implementation against gold values."""
-    mpmModel = run_sim()
-
+    """Uniaxial compression: left fixed, right displaced by -10 in x."""
+    mpmModel = run_sim_uniaxial()
     res = np.array([mp.getResultArray("displacement") for mp in mpmModel.materialPoints.values()])
-    gold = np.loadtxt("gold.csv")
+    assert_gold(res, np.loadtxt("gold.csv"))
 
-    assert_gold(res, gold)
 
+def test_sim_compression_y(assert_gold):
+    """Vertical compression: bottom fixed, top displaced by -5 in y."""
+    mpmModel = run_sim_compression_y()
+    res = np.array([mp.getResultArray("displacement") for mp in mpmModel.materialPoints.values()])
+    assert_gold(res, np.loadtxt("gold_compression_y.csv"))
+
+
+def test_sim_partial_fixity(assert_gold):
+    """Partial fixity: u=0 at left, v=0 at bottom, u=-10 at right."""
+    mpmModel = run_sim_partial_fixity()
+    res = np.array([mp.getResultArray("displacement") for mp in mpmModel.materialPoints.values()])
+    assert_gold(res, np.loadtxt("gold_partial_fixity.csv"))
+
+
+def test_sim_shear(assert_gold):
+    """Shear loading: bottom fully fixed, top displaced by +10 in x."""
+    mpmModel = run_sim_shear()
+    res = np.array([mp.getResultArray("displacement") for mp in mpmModel.materialPoints.values()])
+    assert_gold(res, np.loadtxt("gold_shear.csv"))
+
+
+_SCENARIOS = {
+    "uniaxial": (run_sim_uniaxial, "gold.csv"),
+    "compression_y": (run_sim_compression_y, "gold_compression_y.csv"),
+    "partial_fixity": (run_sim_partial_fixity, "gold_partial_fixity.csv"),
+    "shear": (run_sim_shear, "gold_shear.csv"),
+}
 
 if __name__ == "__main__":
-    mpmModel = run_sim()
-
     parser = argparse.ArgumentParser()
-    parser.add_argument("--create-gold", dest="create_gold", action="store_true", help="create the gold file.")
+    parser.add_argument("--create-gold", dest="create_gold", action="store_true", help="create the gold file(s).")
+    parser.add_argument(
+        "--scenario",
+        choices=list(_SCENARIOS.keys()),
+        default=None,
+        help="which scenario to run (default: all)",
+    )
     args = parser.parse_args()
 
-    if args.create_gold:
-        gold = np.array([mp.getResultArray("displacement") for mp in mpmModel.materialPoints.values()])
-        np.savetxt("gold.csv", gold)
+    scenarios = [args.scenario] if args.scenario else list(_SCENARIOS.keys())
+
+    for name in scenarios:
+        run_fn, gold_file = _SCENARIOS[name]
+        mpmModel = run_fn()
+        if args.create_gold:
+            gold = np.array([mp.getResultArray("displacement") for mp in mpmModel.materialPoints.values()])
+            np.savetxt(gold_file, gold)
+            print(f"Wrote {gold_file}")
