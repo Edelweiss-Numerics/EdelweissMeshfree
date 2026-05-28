@@ -34,6 +34,8 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 
+"""Abstract base class for arc-length controllers in MPM step actions."""
+
 from abc import abstractmethod
 
 from edelweissfe.numerics.dofmanager import DofVector
@@ -44,6 +46,8 @@ from edelweissmeshfree.numerics.dofmanager import DofManager
 
 
 class ArcLengthControllerBase(StepActionBase):
+    """Abstract interface for arc-length controllers used by MPM step actions."""
+
     @abstractmethod
     def computeDDLambda(
         self, dU: DofVector, ddU_0: DofVector, ddU_f: DofVector, timeStep: TimeStep, dofManager: DofManager

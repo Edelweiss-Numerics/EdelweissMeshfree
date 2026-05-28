@@ -1,3 +1,5 @@
+"""Lagrangian multiplier constraint for enforcing equal-value conditions between particles."""
+
 import numpy as np
 from edelweissfe.config.phenomena import getFieldSize
 from edelweissfe.timesteppers.timestep import TimeStep
@@ -45,6 +47,23 @@ class ParticleLagrangianEqualValueConstraint(MPMConstraintBase):
         field: str,
         model,
     ):
+        """Initialize the object.
+
+        Parameters
+        ----------
+        name
+            The unique name of the object.
+        masterParticle
+            The value of ``masterParticle``.
+        components
+            The value of ``components``.
+        slaveParticle
+            The value of ``slaveParticle``.
+        field
+            The field associated with the object.
+        model
+            The model associated with the object.
+        """
         self._name = name
         self._field = field
         self._fieldSize = getFieldSize(self._field, model.domainSize)
@@ -65,14 +84,17 @@ class ParticleLagrangianEqualValueConstraint(MPMConstraintBase):
 
     @property
     def name(self) -> str:
+        """The name of this constraint."""
         return self._name
 
     @property
     def nodes(self) -> list:
+        """The nodes involved in this constraint."""
         return self._nodes.keys()
 
     @property
     def fieldsOnNodes(self) -> list:
+        """The fields required on the constrained nodes."""
         return [
             [
                 self._field,
@@ -81,23 +103,40 @@ class ParticleLagrangianEqualValueConstraint(MPMConstraintBase):
 
     @property
     def nDof(self) -> int:
+        """The number of degrees of freedom of this constraint."""
         return len(self._nodes) * self._fieldSize + self._nLagrangianMultipliers
 
     @property
     def scalarVariables(
         self,
     ) -> list:
+        """The scalar variables associated with this constraint."""
         return self._lagrangianMultipliers
 
     def getNumberOfAdditionalNeededScalarVariables(
         self,
     ) -> int:
+        """Return the number of additional scalar variables required by this constraint."""
         return self._nLagrangianMultipliers
 
     def assignAdditionalScalarVariables(self, scalarVariables: list[ScalarVariable]):
+        """Assign the additional scalar variables required by this constraint.
+
+        Parameters
+        ----------
+        scalarVariables
+            The scalar variables assigned to the constraint.
+        """
         self._lagrangianMultipliers = scalarVariables
 
     def updateConnectivity(self, model):
+        """Update the nodal connectivity used by this constraint.
+
+        Parameters
+        ----------
+        model
+            The model providing the current connectivity information.
+        """
         nodes = {
             n: i
             for i, n in enumerate(
@@ -114,7 +153,7 @@ class ParticleLagrangianEqualValueConstraint(MPMConstraintBase):
         return hasChanged
 
     def applyConstraint(self, dU_: np.ndarray, PExt: np.ndarray, V: np.ndarray, timeStep: TimeStep):
-
+        """Apply this constraint contribution to the current system vectors and matrices."""
         dU_U = dU_[: -self._nLagrangianMultipliers]
         dU_L = dU_[-self._nLagrangianMultipliers :]
         PExt_U = PExt[: -self._nLagrangianMultipliers]

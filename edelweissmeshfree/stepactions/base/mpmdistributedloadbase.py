@@ -34,6 +34,8 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 
+"""Abstract base class for distributed load step actions in MPM simulations."""
+
 from abc import abstractmethod
 
 import numpy as np
@@ -45,6 +47,8 @@ from edelweissmeshfree.sets.materialpointset import MaterialPointSet
 
 
 class MPMDistributedLoadBase(StepActionBase):
+    """Abstract interface for distributed loads evaluated on MPM material points."""
+
     @property
     @abstractmethod
     def mpSet(self) -> MaterialPointSet:

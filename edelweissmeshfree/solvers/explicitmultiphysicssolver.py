@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+"""Explicit multiphysics solver for MPM simulations."""
+
 import concurrent.futures
 from typing import Iterable
 
@@ -44,6 +46,13 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
     }
 
     def __init__(self, journal: Journal):
+        """Initialize the explicit multiphysics solver.
+
+        Parameters
+        ----------
+        journal
+            The journal used for solver messages.
+        """
         super().__init__(journal)
 
     @performancetiming.timeit("solve step")

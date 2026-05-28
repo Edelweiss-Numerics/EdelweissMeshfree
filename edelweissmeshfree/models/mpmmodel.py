@@ -34,6 +34,8 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 
+"""MPM model data container extending the EdelweissFE FE model."""
+
 import copy
 
 import h5py
@@ -67,6 +69,13 @@ class MPMModel(FEModel):
     identification = "MPMModel"
 
     def __init__(self, dimension: int):
+        """Initialize the MPM model container.
+
+        Parameters
+        ----------
+        dimension
+            The spatial dimension of the model.
+        """
         self.cells = {}  #: The collection of Cells in the present model.
         self.cellSets = {}  #: The collection of CellSets in the present model.
         self.materialPoints = {}  #: The collection of MaterialPoints in the present model.
@@ -226,7 +235,7 @@ class MPMModel(FEModel):
         return super().advanceToTime(time)
 
     def goToPreviousTimeStep(self):
-
+        """Restore the model state stored for the previous time step."""
         for p in self.particles.values():
             p.revertToPreviousState()
 

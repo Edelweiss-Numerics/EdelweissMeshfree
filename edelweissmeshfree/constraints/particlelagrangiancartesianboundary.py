@@ -1,3 +1,5 @@
+"""Lagrangian multiplier constraint for enforcing Cartesian boundary conditions on particles."""
+
 from collections.abc import Iterable
 
 import numpy as np
@@ -54,6 +56,29 @@ class ParticleLagrangianContactCartesianBoundaryConstraint(MPMConstraintBase):
         vertexID: int = None,
         velocity: float = 0.0,
     ):
+        """Initialize the object.
+
+        Parameters
+        ----------
+        name
+            The unique name of the object.
+        particle
+            The particle associated with the constraint.
+        component
+            The value of ``component``.
+        boundaryPosition
+            The value of ``boundaryPosition``.
+        model
+            The model associated with the object.
+        location
+            The value of ``location``.
+        faceID
+            The value of ``faceID``.
+        vertexID
+            The value of ``vertexID``.
+        velocity
+            The value of ``velocity``.
+        """
         self._name = name
         self._field = "displacement"
         self._fieldSize = getFieldSize(self._field, model.domainSize)
@@ -96,14 +121,17 @@ class ParticleLagrangianContactCartesianBoundaryConstraint(MPMConstraintBase):
 
     @property
     def name(self) -> str:
+        """The name of this constraint."""
         return self._name
 
     @property
     def nodes(self) -> list:
+        """The nodes involved in this constraint."""
         return self._nodes.keys()
 
     @property
     def fieldsOnNodes(self) -> list:
+        """The fields required on the constrained nodes."""
         return [
             [
                 self._field,
@@ -112,23 +140,40 @@ class ParticleLagrangianContactCartesianBoundaryConstraint(MPMConstraintBase):
 
     @property
     def nDof(self) -> int:
+        """The number of degrees of freedom of this constraint."""
         return len(self._nodes) * self._fieldSize + self._nLagrangianMultipliers
 
     @property
     def scalarVariables(
         self,
     ) -> list:
+        """The scalar variables associated with this constraint."""
         return self._lagrangianMultipliers
 
     def getNumberOfAdditionalNeededScalarVariables(
         self,
     ) -> int:
+        """Return the number of additional scalar variables required by this constraint."""
         return self._nLagrangianMultipliers
 
     def assignAdditionalScalarVariables(self, scalarVariables: list[ScalarVariable]):
+        """Assign the additional scalar variables required by this constraint.
+
+        Parameters
+        ----------
+        scalarVariables
+            The scalar variables assigned to the constraint.
+        """
         self._lagrangianMultipliers = scalarVariables
 
     def updateConnectivity(self, model):
+        """Update the nodal connectivity used by this constraint.
+
+        Parameters
+        ----------
+        model
+            The model providing the current connectivity information.
+        """
         nodes = {n: i for i, n in enumerate(set(kf.node for kf in self._particle.kernelFunctions))}
 
         hasChanged = False
@@ -142,7 +187,7 @@ class ParticleLagrangianContactCartesianBoundaryConstraint(MPMConstraintBase):
         return hasChanged
 
     def applyConstraint(self, dU_: np.ndarray, PExt: np.ndarray, V: np.ndarray, timeStep: TimeStep):
-
+        """Apply this constraint contribution to the current system vectors and matrices."""
         dU_U = dU_[: -self._nLagrangianMultipliers]
         dU_L = dU_[-self._nLagrangianMultipliers :]
         PExt_U = PExt[: -self._nLagrangianMultipliers]

@@ -32,6 +32,8 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 
+"""KD-tree bin-organized particle manager for efficient particle-to-node connectivity."""
+
 import concurrent.futures
 import itertools
 from typing import Any, List, Set, Tuple, Union
@@ -56,6 +58,15 @@ class _FastKDBinOrganizer:
     """
 
     def __init__(self, kernelFunctions: List[Any], dimension: int) -> None:
+        """Initialize the object.
+
+        Parameters
+        ----------
+        kernelFunctions
+            The value of ``kernelFunctions``.
+        dimension
+            The spatial dimension.
+        """
         self._dimension = dimension
 
         # --- 1. Vectorized Bounding Box Extraction ---
@@ -124,6 +135,7 @@ class _FastKDBinOrganizer:
                     bins[bin_idx].append(k_idx)
 
     def getCandidateIndices(self, query_min: NDArray[np.float64], query_max: NDArray[np.float64]) -> Set[int]:
+        """Return candidate kernel-function indices overlapping the query bounding box."""
         if not self._bins:
             return set()
 
@@ -170,6 +182,8 @@ class _FastKDBinOrganizer:
 
 
 class KDBinOrganizedParticleManager(BaseParticleManager):
+    """Particle manager that uses binned KD-tree searches to update particle connectivity efficiently."""
+
     def __init__(
         self,
         particleKernelDomain: ParticleKernelDomain,
@@ -178,7 +192,21 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
         bondParticlesToKernelFunctions: bool = False,
         randomlyShiftPartliceShapeFunctions: Union[bool, float] = False,
     ):
+        """Initialize the object.
 
+        Parameters
+        ----------
+        particleKernelDomain
+            The value of ``particleKernelDomain``.
+        dimension
+            The spatial dimension.
+        journal
+            The journal used for logging.
+        bondParticlesToKernelFunctions
+            The value of ``bondParticlesToKernelFunctions``.
+        randomlyShiftPartliceShapeFunctions
+            The value of ``randomlyShiftPartliceShapeFunctions``.
+        """
         self._meshfreeKernelFunctions = particleKernelDomain.meshfreeKernelFunctions
         self._particles = particleKernelDomain.particles
         self._dimension = dimension
@@ -208,9 +236,11 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
         self.signalizeKernelFunctionUpdate()
 
     def signalizeKernelFunctionUpdate(self) -> None:
+        """Update the search structure after kernel functions have moved."""
         self._theBins = _FastKDBinOrganizer(list(self._meshfreeKernelFunctions), self._dimension)
 
     def updateConnectivity(self) -> bool:
+        """Update the connectivity managed by this object."""
         hasChanged = False
 
         if self._bondParticlesToKernelFunctions:
@@ -319,9 +349,11 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
         return hasChanged
 
     def getCoveredDomain(self) -> Tuple[NDArray[np.float64], NDArray[np.float64]]:
+        """Return the domain covered by the managed particles or kernel functions."""
         return self._theBins._boundingBoxMin, self._theBins._boundingBoxMax
 
     def __str__(self) -> str:
+        """Return a human-readable summary of this object."""
         return (
             f"KDBinOrganizedParticleManager with {len(self._particles)} particles "
             f"and {len(self._meshfreeKernelFunctions)} shape functions "
@@ -329,6 +361,7 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
         )
 
     def visualize(self) -> None:
+        """Visualize the current manager state."""
         if self._dimension != 2:
             raise ValueError("Visualization only supported for 2D.")
 

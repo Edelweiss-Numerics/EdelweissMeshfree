@@ -20,4 +20,4 @@ class MarmotMeshfreeApproximationWrapper:
 
     def __init__(self, *args, **kwargs):
         """This is a stub — raises :exc:`NotImplementedError` in this environment."""
-        raise NotImplementedError('marmotmeshfreeapproximation not available in this environment')
+        raise NotImplementedError("marmotmeshfreeapproximation not available in this environment")

@@ -46,7 +46,10 @@ from edelweissmeshfree.materialpoints.base.mp import MaterialPointBase
 
 
 class Cell(CellBase):
+    """A minimal concrete implementation of CellBase for use in unit tests."""
+
     def __init__(self, cellType: str, cellNumber: int, nodes: list[Node]):
+        """Initialize the test cell."""
         self._cellType = cellType
         self._cellNumber = cellNumber
         self._assignedMaterialPoints = list()
@@ -61,18 +64,22 @@ class Cell(CellBase):
 
     @property
     def cellNumber(self) -> int:
+        """Return the cell number."""
         return self._cellNumber
 
     @property
     def nNodes(self) -> int:
+        """Return the number of nodes."""
         return 4
 
     @property
     def nDof(self) -> int:
+        """Return the number of degrees of freedom."""
         return 4 * 2
 
     @property
     def fields(self) -> list[list[str]]:
+        """Return the nodal fields."""
         return [
             [
                 "displacement",
@@ -81,17 +88,21 @@ class Cell(CellBase):
 
     @property
     def dofIndicesPermutation(self) -> np.ndarray:
+        """Return the local-to-global dof permutation."""
         return np.arange(0, 8, dtype=int)
 
     @property
     def ensightType(self) -> str:
+        """Return the EnSight cell type."""
         return "quad4"
 
     @property
     def assignedMaterialPoints(self) -> list:
+        """Return the assigned material points."""
         return self._assignedMaterialPoints
 
     def assignMaterialPoints(self, materialPoints):
+        """Assign the material points to the cell."""
         self.materialPoints = materialPoints
 
     def interpolateSolutionContributionToMaterialPoints(
@@ -99,6 +110,7 @@ class Cell(CellBase):
         materialPoints: list[MaterialPointBase],
         dU: np.ndarray,
     ):
+        """Delegate interpolation of the solution contribution to the material points."""
         pass
 
     def computeMaterialPointKernels(
@@ -110,6 +122,7 @@ class Cell(CellBase):
         timeTotal: float,
         dTime: float,
     ):
+        """Compute material point kernel contributions for the test cell."""
         pass
 
     def computeBodyLoad(
@@ -121,6 +134,7 @@ class Cell(CellBase):
         timeTotal: float,
         dTime: float,
     ):
+        """Compute the body-load contribution for the test cell."""
         pass
 
     def computeDistributedLoad(
@@ -134,15 +148,19 @@ class Cell(CellBase):
         timeTotal: float,
         dTime: float,
     ):
+        """Compute the distributed-load contribution for the test cell."""
         pass
 
     def getCoordinatesAtCenter(self) -> np.ndarray:
+        """Return the coordinates at the cell center."""
         pass
 
     def getBoundingBox(self) -> tuple[np.ndarray, np.ndarray]:
+        """Return the cell bounding box."""
         return (np.array([self.x_min, self.y_min]), np.array([self.x_max, self.y_max]))
 
     def isCoordinateInCell(self, coordinate: np.ndarray) -> bool:
+        """Return whether the coordinate lies inside the cell."""
         x, y = coordinate
 
         if x >= self.x_min and x <= self.x_max:
@@ -152,4 +170,5 @@ class Cell(CellBase):
         return False
 
     def getInterpolationVector(self, coordinate) -> np.ndarray:
+        """Return the interpolation vector at the given coordinate."""
         raise Exception("not implemented!")

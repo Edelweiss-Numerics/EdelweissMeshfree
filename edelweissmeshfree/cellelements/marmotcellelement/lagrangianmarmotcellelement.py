@@ -18,4 +18,4 @@ class LagrangianMarmotCellElementWrapper(MarmotCellElementWrapper):
 
     def __init__(self, *args, **kwargs):
         """This is a stub — raises :exc:`NotImplementedError` in this environment."""
-        raise NotImplementedError('lagrangianmarmotcellelement not available in this environment')
+        raise NotImplementedError("lagrangianmarmotcellelement not available in this environment")

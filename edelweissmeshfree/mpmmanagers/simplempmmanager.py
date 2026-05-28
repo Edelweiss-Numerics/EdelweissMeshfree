@@ -34,6 +34,8 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 
+"""Simple MPM manager for assigning material points to cells without spatial indexing."""
+
 from collections import defaultdict
 
 from edelweissmeshfree.cells.base.cell import CellBase
@@ -52,6 +54,15 @@ class SimpleMaterialPointManager:
     """
 
     def __init__(self, materialPointCells: list[CellBase], materialPoints: list[MaterialPointBase]):
+        """Initialize the simple material point manager.
+
+        Parameters
+        ----------
+        materialPointCells
+            The cells that may contain the managed material points.
+        materialPoints
+            The material points whose connectivity should be tracked.
+        """
         self._cells = materialPointCells
         self._mps = materialPoints
 
@@ -73,6 +84,7 @@ class SimpleMaterialPointManager:
     def updateConnectivity(
         self,
     ):
+        """Update the cell assignments of all managed material points by direct cell searches."""
         self._activeCells = dict()
 
         _mpAttachedCells = defaultdict(list)
@@ -106,4 +118,5 @@ class SimpleMaterialPointManager:
     def getActiveCells(
         self,
     ):
+        """Return the cells that currently contain at least one managed material point."""
         return self._activeCells.keys()

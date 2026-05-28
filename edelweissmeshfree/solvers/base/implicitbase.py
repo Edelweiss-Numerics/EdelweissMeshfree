@@ -1,3 +1,5 @@
+"""Base class for nonlinear implicit solvers in MPM simulations."""
+
 import concurrent.futures
 from abc import abstractmethod
 from typing import Iterable
@@ -30,6 +32,7 @@ from edelweissmeshfree.stepactions.particledistributedload import (
 
 
 class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
+    """Base implementation of nonlinear implicit solver operations for MPM analyses."""
 
     @abstractmethod
     def _newtonSolve(
@@ -53,6 +56,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         model: MPMModel,
         newtonCache: tuple = None,
     ) -> tuple[DofVector, DofVector, dict, tuple]:
+        """Solve a nonlinear increment with a Newton iteration scheme."""
         pass
 
     @performancetiming.timeit("compute body loads")
@@ -1034,6 +1038,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
 
     @performancetiming.timeit("instancing csr generator")
     def _makeCachedCOOToCSRGenerator(self, K_VIJ):
+        """Create a cached converter from COO triplets to CSR format."""
         return CSRGenerator(K_VIJ)
 
     @performancetiming.timeit("creation newton cache")

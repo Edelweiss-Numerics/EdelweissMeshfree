@@ -99,6 +99,21 @@ class PythonMaterialPoint(MaterialPointBase):
     shape = "point"
 
     def __init__(self, formulation: str, number: int, coordinates: np.ndarray, volume: float, material):
+        """Initialize the Python material point.
+
+        Parameters
+        ----------
+        formulation
+            The formulation identifier for the material point.
+        number
+            The unique material point number.
+        coordinates
+            The initial coordinates of the material point.
+        volume
+            The initial material point volume.
+        material
+            The material definition used to initialize the constitutive response.
+        """
         self._number = number
         self._coordinates = np.asarray(coordinates).flatten()
         self._volume = volume
@@ -126,26 +141,39 @@ class PythonMaterialPoint(MaterialPointBase):
 
     @property
     def number(self) -> int:
+        """The unique number of this material point."""
         return self._number
 
     @property
     def assignedCells(self) -> list:
+        """The cells currently assigned to this material point."""
         return self._assignedCells
 
     def assignCells(self, cells):
+        """Assign grid cells to this material point.
+
+        Parameters
+        ----------
+        cells
+            The cells to assign to this material point.
+        """
         self._assignedCells = cells
 
     @property
     def ensightType(self) -> str:
+        """The EnSight geometry type of this material point."""
         return self.shape
 
     def getVertexCoordinates(self) -> np.ndarray:
+        """Return the vertex coordinates of this material point (current position)."""
         return (self._coordinates + self._displacement).reshape(1, -1)
 
     def getCenterCoordinates(self) -> np.ndarray:
+        """Return the center coordinates of this material point (current position)."""
         return self._coordinates + self._displacement
 
     def getVolume(self) -> float:
+        """Return the current volume of this material point."""
         return self._volume
 
     def interpolateFieldsFromCell(self, dU: np.ndarray, dStrain: np.ndarray):

@@ -62,6 +62,21 @@ class MaterialPointBase(ABC):
 
     @abstractmethod
     def __init__(self, formulation: str, number: int, coordinates: np.ndarray, volume: float, material):
+        """Initialize the material point base interface.
+
+        Parameters
+        ----------
+        formulation
+            The material point formulation identifier.
+        number
+            The unique material point number.
+        coordinates
+            The initial material point coordinates.
+        volume
+            The initial material point volume.
+        material
+            The material definition assigned to the material point.
+        """
         pass
 
     @property

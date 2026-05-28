@@ -34,6 +34,8 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 
+"""Indirect (arc-length) control step action applied to particles in MPM simulations."""
+
 from collections.abc import Callable
 
 import numpy as np
@@ -51,6 +53,8 @@ from edelweissmeshfree.stepactions.base.arclengthcontrollerbase import (
 
 
 class IndirectControl(ArcLengthControllerBase):
+    """Arc-length control step action operating on particles."""
+
     identification = "IndirectControl"
 
     """This class represent an ArcLengthControllerBase compatible
@@ -87,6 +91,27 @@ class IndirectControl(ArcLengthControllerBase):
         journal: Journal,
         f_t: Callable[[float], float] = None,
     ):
+        """Initialize the particle indirect control step action.
+
+        Parameters
+        ----------
+        name
+            The name of the step action.
+        model
+            The model on which the control acts.
+        particles
+            The particles used for the control equation.
+        L
+            The target arc-length quantity.
+        cMatrix
+            The weighting matrix used in the control equation.
+        field
+            The field controlled by the step action.
+        journal
+            The journal used for logging.
+        f_t
+            Optional time function scaling the control.
+        """
         self._name = name
         self._journal = journal
         self._L = L
@@ -150,4 +175,5 @@ class IndirectControl(ArcLengthControllerBase):
         return ddLambda
 
     def applyAtStepEnd(self, model):
+        """Finalize the particle indirect control state at the end of the step."""
         self._currentL0 = self._L

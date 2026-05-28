@@ -34,15 +34,20 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 
+"""Minimal concrete MaterialPoint implementation for unit testing."""
+
 import numpy as np
 
 from edelweissmeshfree.materialpoints.base.mp import MaterialPointBase
 
 
 class MaterialPoint(MaterialPointBase):
+    """A minimal concrete implementation of MaterialPointBase for use in unit tests."""
+
     shape = "point"
 
     def __init__(self, formulation: str, number: int, coordinates: np.ndarray, volume: float, material):
+        """Initialize the test material point."""
         self._number = number
         self._coordinates = coordinates
         self._volume = volume
@@ -52,6 +57,7 @@ class MaterialPoint(MaterialPointBase):
 
     @property
     def number(self) -> int:
+        """Return the material point number."""
         return self._number
 
     @property
@@ -65,21 +71,25 @@ class MaterialPoint(MaterialPointBase):
 
     @property
     def ensightType(self) -> str:
+        """Return the EnSight geometry type."""
         return self.shape
 
     def getVertexCoordinates(
         self,
     ) -> np.ndarray:
+        """Return the material point vertex coordinates."""
         return np.reshape(self._coordinates + self._displacement, (1, 2))
 
     def getCenterCoordinates(
         self,
     ) -> np.ndarray:
+        """Return the material point center coordinates."""
         return self._coordinates + self._displacement
 
     def getVolume(
         self,
     ) -> float:
+        """Return the material point volume."""
         return self._volume
 
     # def computeMaterialResponse(self, timeStep: float, timeTotal: float, dT: float):
@@ -88,41 +98,52 @@ class MaterialPoint(MaterialPointBase):
     def acceptStateAndPosition(
         self,
     ):
+        """Accept the current state and position."""
         pass
 
     def resetToLastValidStateAndPosition(
         self,
     ):
+        """Reset the material point to the last accepted state and position."""
         pass
 
     def getResultArray(self, result: str, getPersistentView: bool = True) -> np.ndarray:
+        """Return the requested result array."""
         if result == "displacement":
             return self._displacement
 
     def setProperties(self, propertyName: str, elementProperties: np.ndarray):
+        """Set material point properties."""
         pass
 
     def initializeMaterialPoint(
         self,
     ):
+        """Initialize the material point."""
         pass
 
     def setMaterial(self, materialName: str, materialProperties: np.ndarray):
+        """Assign the material definition."""
         pass
 
     def setInitialCondition(self, stateType: str, values: np.ndarray):
+        """Set an initial condition on the material point."""
         pass
 
     def addDisplacement(self, dU: np.ndarray):
+        """Add a displacement increment to the material point."""
         self._displacement += dU
 
     def initializeYourself(
         self,
     ):
+        """Initialize the internal material point state."""
         pass
 
     def prepareTimestep(self, timeTotal: float, dT: float):
+        """Prepare the material point for a new time step."""
         pass
 
     def computeYourself(self, timeTotal: float, dT: float):
+        """Compute the material point response for the current time step."""
         pass

@@ -69,6 +69,21 @@ class CellElementBase(CellBase):
     def __init__(
         self, cellElType: str, cellElNumber: int, nodes: list[Node], quadratureType: str, quadratureOrder: int
     ):
+        """Initialize the cell element base interface.
+
+        Parameters
+        ----------
+        cellElType
+            The identifier of the cell element formulation.
+        cellElNumber
+            The unique number of the cell element.
+        nodes
+            The nodes connected to the cell element.
+        quadratureType
+            The quadrature rule family used for material point placement.
+        quadratureOrder
+            The order of the quadrature rule.
+        """
         pass
 
     @property

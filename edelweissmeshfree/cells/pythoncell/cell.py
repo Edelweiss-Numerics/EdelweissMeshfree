@@ -167,6 +167,17 @@ class PythonCell(CellBase):
     """
 
     def __init__(self, cellType: str, cellNumber: int, nodes: list[Node]):
+        """Initialize the Python cell.
+
+        Parameters
+        ----------
+        cellType
+            The identifier of the cell formulation.
+        cellNumber
+            The unique number of the cell.
+        nodes
+            The nodes attached to the cell.
+        """
         self._cellType = cellType
         self._cellNumber = cellNumber
         self._assignedMaterialPoints = []
@@ -179,33 +190,47 @@ class PythonCell(CellBase):
 
     @property
     def cellNumber(self) -> int:
+        """The unique number of this cell."""
         return self._cellNumber
 
     @property
     def nNodes(self) -> int:
+        """The number of nodes of this cell."""
         return 4
 
     @property
     def nDof(self) -> int:
+        """The number of degrees of freedom of this cell."""
         return 8
 
     @property
     def fields(self) -> list[list[str]]:
+        """The fields defined on the nodes of this cell."""
         return [["displacement"]] * 4
 
     @property
     def dofIndicesPermutation(self) -> np.ndarray:
+        """The permutation mapping local cell dofs to node-major ordering."""
         return np.arange(8, dtype=int)
 
     @property
     def ensightType(self) -> str:
+        """The EnSight geometry type of this cell."""
         return "quad4"
 
     @property
     def assignedMaterialPoints(self) -> list:
+        """The material points currently assigned to this cell."""
         return self._assignedMaterialPoints
 
     def assignMaterialPoints(self, materialPoints: list):
+        """Assign material points to this cell.
+
+        Parameters
+        ----------
+        materialPoints
+            The list of material points to assign.
+        """
         self._assignedMaterialPoints = materialPoints
 
     def _get_B_matrix(self, dNdx):
@@ -344,9 +369,17 @@ class PythonCell(CellBase):
             P[2 * i + 1] -= N[i] * load[1] * volume
 
     def getCoordinatesAtCenter(self) -> np.ndarray:
+        """Return the coordinates at the centroid of this cell."""
         return np.mean(self._node_coords, axis=0)
 
     def isCoordinateInCell(self, coordinate: np.ndarray) -> bool:
+        """Return True if the given coordinate lies inside the cell bounding box.
+
+        Parameters
+        ----------
+        coordinate
+            The spatial coordinate to test.
+        """
         x, y = coordinate[0], coordinate[1]
         if x >= self._bb_min[0] and x <= self._bb_max[0]:
             if y >= self._bb_min[1] and y <= self._bb_max[1]:
@@ -354,9 +387,22 @@ class PythonCell(CellBase):
         return False
 
     def getBoundingBox(self) -> tuple[np.ndarray, np.ndarray]:
+        """Return the axis-aligned bounding box of this cell as (min, max) coordinate arrays."""
         return (self._bb_min.copy(), self._bb_max.copy())
 
     def getInterpolationVector(self, coordinate: np.ndarray) -> np.ndarray:
+        """Return the bilinear shape function values at the given coordinate.
+
+        Parameters
+        ----------
+        coordinate
+            The spatial coordinate at which to evaluate the shape functions.
+
+        Returns
+        -------
+        np.ndarray
+            Shape function values at the requested coordinate (4,).
+        """
         xi, eta = _global_to_parametric(coordinate, self._node_coords)
         N = 0.25 * np.array(
             [

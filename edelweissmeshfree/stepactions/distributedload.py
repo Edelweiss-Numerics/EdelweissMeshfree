@@ -33,6 +33,8 @@
 #  The full text of the license can be found in the file LICENSE.md at
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
+"""Distributed load step action applied point-wise to material points."""
+
 from collections.abc import Callable
 
 import numpy as np
@@ -63,6 +65,25 @@ class MaterialPointPointWiseDistributedLoad(MPMDistributedLoadBase):
         loadVector: np.ndarray,
         f_t: Callable[[float], float] = None,
     ):
+        """Initialize the point-wise material point distributed load.
+
+        Parameters
+        ----------
+        name
+            The name of the step action.
+        model
+            The model on which the load acts.
+        journal
+            The journal used for logging.
+        materialPoints
+            The material points receiving the distributed load.
+        distributedLoadType
+            The type of distributed load to apply.
+        loadVector
+            The load vector applied to each material point.
+        f_t
+            Optional time function scaling the applied load.
+        """
         self.name = name
 
         self._loadVector = loadVector
@@ -83,13 +104,16 @@ class MaterialPointPointWiseDistributedLoad(MPMDistributedLoadBase):
 
     @property
     def mpSet(self) -> MaterialPointSet:
+        """The material point set affected by this distributed load."""
         return self._materialPoints
 
     @property
     def loadType(self) -> str:
+        """The type of distributed load applied by this step action."""
         return self._loadType
 
     def applyAtStepEnd(self, model, stepMagnitude=None):
+        """Finalize the distributed load state at the end of the step."""
         if not self._idle:
             if stepMagnitude is None:
                 # standard case
@@ -102,6 +126,7 @@ class MaterialPointPointWiseDistributedLoad(MPMDistributedLoadBase):
             self._idle = True
 
     def getCurrentMaterialPointLoad(self, materialPoint, timeStep: TimeStep) -> tuple[int, np.ndarray]:
+        """Return the current distributed load acting on a material point."""
         if self._idle:
             t = 1.0
         else:

@@ -34,6 +34,8 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 
+"""Quadratic predictor for extrapolating solution fields in MPM time stepping."""
+
 from edelweissfe.journal.journal import Journal
 from edelweissfe.numerics.dofmanager import DofVector
 from edelweissfe.timesteppers.timestep import TimeStep
@@ -46,6 +48,15 @@ class QuadraticPredictor(BasePredictor):
     """A quadratic extrapolator which uses the last two solution increments to predict the next solution."""
 
     def __init__(self, journal: Journal = None, arcLength: bool = False):
+        """Initialize the quadratic predictor.
+
+        Parameters
+        ----------
+        journal
+            The journal used for predictor messages.
+        arcLength
+            Whether arc-length scaling of the load parameter should be predicted.
+        """
         self._dU_n = None
         self._dU_n_minus_1 = None
         self._deltaT_n = None
@@ -59,6 +70,7 @@ class QuadraticPredictor(BasePredictor):
     def resetHistory(
         self,
     ):
+        """Reset the stored increment history used for quadratic extrapolation."""
         self._dU_n = None
         self._dU_n_minus_1 = None
         self._deltaT_n = None
@@ -68,7 +80,18 @@ class QuadraticPredictor(BasePredictor):
             self._dLambda_n_minus_1 = None
 
     def getPrediction(self, timeStep: TimeStep):
+        """Compute a quadratic prediction for the next increment.
 
+        Parameters
+        ----------
+        timeStep
+            The time step for which the prediction is requested.
+
+        Returns
+        -------
+        DofVector or tuple[DofVector, float] or None
+            The predicted solution increment, optionally with the arc-length increment, or ``None`` when insufficient history is available.
+        """
         if self._dU_n is None:
             if self._arcLength:
                 return None, None
@@ -114,6 +137,17 @@ class QuadraticPredictor(BasePredictor):
             return dU
 
     def updateHistory(self, dU: DofVector, timeStep: TimeStep, dLambda: float = None):
+        """Store the latest converged increments for subsequent predictions.
+
+        Parameters
+        ----------
+        dU
+            The converged solution increment.
+        timeStep
+            The time step associated with the increment.
+        dLambda
+            The converged arc-length increment when arc-length control is enabled.
+        """
         self._dU_n_minus_1 = self._dU_n
         self._deltaT_n_minus_1 = self._deltaT_n
 

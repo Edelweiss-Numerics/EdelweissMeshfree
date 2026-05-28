@@ -33,6 +33,8 @@
 #  The full text of the license can be found in the file LICENSE.md at
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
+"""Field output management for MPM and particle-based simulations."""
+
 from typing import Callable
 
 import numpy as np
@@ -86,6 +88,31 @@ class MaterialPointFieldOutput(_FieldOutputBase):
         fExport_x=Callable,
         reshape_to_dimensions: int = None,
     ):
+        """Initialize a material point field output definition.
+
+        Parameters
+        ----------
+        name
+            The unique name of the field output.
+        mpSet
+            The material point set associated with the output.
+        resultName
+            The name of the requested material point result.
+        model
+            The model that provides the field data.
+        journal
+            The journal used for logging.
+        saveHistory
+            Whether the output history should be stored.
+        f_x
+            Optional transformation applied to the raw result values.
+        export
+            Whether the field output should be exported.
+        fExport_x
+            Optional transformation applied before export.
+        reshape_to_dimensions
+            Optional target shape for the collected result values.
+        """
         self.associatedSet = mpSet
         self.resultName = resultName
 
@@ -149,6 +176,31 @@ class ParticleFieldOutput(_FieldOutputBase):
         fExport_x=Callable[[np.ndarray], np.ndarray],
         reshape_to_dimensions: int = None,
     ):
+        """Initialize a particle field output definition.
+
+        Parameters
+        ----------
+        name
+            The unique name of the field output.
+        pSet
+            The particle set associated with the output.
+        resultName
+            The name of the requested particle result.
+        model
+            The model that provides the field data.
+        journal
+            The journal used for logging.
+        saveHistory
+            Whether the output history should be stored.
+        f_x
+            Optional transformation applied to the raw result values.
+        export
+            Whether the field output should be exported.
+        fExport_x
+            Optional transformation applied before export.
+        reshape_to_dimensions
+            Optional target shape for the collected result values.
+        """
         self.associatedSet = pSet
         self.resultName = resultName
 
@@ -177,6 +229,15 @@ class MPMFieldOutputController(FieldOutputController):
     """
 
     def __init__(self, *args, **kwargs):
+        """Initialize the MPM field output controller.
+
+        Parameters
+        ----------
+        *args
+            Positional arguments forwarded to the base field output controller.
+        **kwargs
+            Keyword arguments forwarded to the base field output controller.
+        """
         super().__init__(*args, **kwargs)
 
     def addPerMaterialPointFieldOutput(
@@ -240,6 +301,27 @@ class MPMFieldOutputController(FieldOutputController):
         fExport_x=None,
         reshape_to_dimensions=None,
     ):
+        """Add a per-particle field output definition to the controller.
+
+        Parameters
+        ----------
+        name
+            The unique name of the field output.
+        particleSet
+            The particle set associated with the output.
+        result
+            The name of the requested particle result.
+        saveHistory
+            Whether the output history should be stored.
+        f_x
+            Optional transformation applied to the raw result values.
+        export
+            Whether the field output should be exported.
+        fExport_x
+            Optional transformation applied before export.
+        reshape_to_dimensions
+            Optional target shape for the collected result values.
+        """
         return self.addPerMaterialPointFieldOutput(
             name, particleSet, result, saveHistory, f_x, export, fExport_x, reshape_to_dimensions
         )

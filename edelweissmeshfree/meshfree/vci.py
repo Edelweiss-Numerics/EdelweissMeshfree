@@ -55,10 +55,22 @@ from edelweissmeshfree.particles.base.baseparticle import BaseParticle
 
 
 class BoundaryParticleDefinition:
+    """Definition of boundary particles used to assemble VCI correction constraints."""
 
     def __init__(
         self, particles: list[BaseParticle], boundarySurfaceVector: np.ndarray, particleBoundaryFaceID: int = -1
     ):
+        """Initialize the boundary particle definition.
+
+        Parameters
+        ----------
+        particles
+            The particles located on the boundary segment.
+        boundarySurfaceVector
+            The vector describing the boundary surface orientation.
+        particleBoundaryFaceID
+            The face identifier used for the boundary particles.
+        """
         self.particles = particles
         self.boundarySurfaceVector = boundarySurfaceVector
         self.boundaryID = particleBoundaryFaceID
@@ -86,6 +98,17 @@ class VariationallyConsistentIntegrationManager:
         particleBoundaryDefinitions: list[BoundaryParticleDefinition],
     ):
         # TODO: replace with ParticleKernelDomain
+        """Initialize the VCI manager.
+
+        Parameters
+        ----------
+        particles
+            The particles for which VCI corrections are computed.
+        meshfreeKernelFunctions
+            The meshfree kernel functions associated with the particles.
+        particleBoundaryDefinitions
+            The boundary particle definitions used to enforce boundary consistency.
+        """
         self._particles = particles
         self._kernelFunctions = meshfreeKernelFunctions
         self._particleBoundaryDefinitions = particleBoundaryDefinitions
@@ -99,6 +122,7 @@ class VariationallyConsistentIntegrationManager:
     def computeVCICorrections(self):
 
         # each kernel function has its place in the global vector (similar to a dof vector)
+        """Compute the variationally consistent integration corrections for the managed particles."""
         global_testFunction_indices = {kf: i for i, kf in enumerate(self._kernelFunctions)}
 
         nTestFunctions = len(global_testFunction_indices)
@@ -212,4 +236,5 @@ class VariationallyConsistentIntegrationManager:
 
     @property
     def meshfreeKernelFunctions(self) -> list[BaseMeshfreeKernelFunction]:
+        """The meshfree kernel functions managed by this VCI object."""
         return self._kernelFunctions

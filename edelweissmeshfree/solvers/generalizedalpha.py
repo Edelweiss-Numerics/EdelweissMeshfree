@@ -26,6 +26,8 @@
 #  the top level directory of EdelweissMPM.
 #  ---------------------------------------------------------------------
 
+"""Generalized-alpha nonlinear dynamic solver for MPM simulations."""
+
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 import scipy
@@ -111,6 +113,13 @@ class NonlinearDynamicSolver(NonlinearImplicitSolverBase):
     }
 
     def __init__(self, journal: Journal):
+        """Initialize the generalized-alpha solver.
+
+        Parameters
+        ----------
+        journal
+            The journal used for solver messages.
+        """
         self.solverOptions = self.validGeneralizedAlphaOptions.copy()
         super().__init__(journal)
 
@@ -854,7 +863,15 @@ class NonlinearDynamicSolver(NonlinearImplicitSolverBase):
         return dU, V_np, A_np, PInt, iterationHistory, newtonCache
 
     def addVectorToCSRDiagonal(self, csr: scipy.sparse.csr_matrix, vec: DofVector):
+        """Add a vector to the diagonal of a CSR matrix.
 
+        Parameters
+        ----------
+        csr
+            The CSR matrix whose diagonal is modified.
+        vec
+            The vector added to the matrix diagonal.
+        """
         indices_ = csr.indices
         indptr_ = csr.indptr
         data_ = csr.data

@@ -26,6 +26,8 @@
 #  the top level directory of EdelweissMPM.
 #  ---------------------------------------------------------------------
 
+"""Smart MPM manager with spatial indexing for efficient material point-to-cell assignment."""
+
 from collections import defaultdict
 
 from edelweissmeshfree.cells.base.cell import CellBase
@@ -56,6 +58,19 @@ class SmartMaterialPointManager(MPMManagerBase):
         dimension: int,
         options: dict = {"KDTreeLevels": 1},
     ):
+        """Initialize the smart material point manager.
+
+        Parameters
+        ----------
+        materialPointCells
+            The cells that may contain the managed material points.
+        materialPoints
+            The material points whose connectivity should be tracked.
+        dimension
+            The spatial dimension of the search structure.
+        options
+            Additional manager options controlling the search behavior.
+        """
         self._cells = materialPointCells
         self._mps = materialPoints
         self._options = options
@@ -70,6 +85,7 @@ class SmartMaterialPointManager(MPMManagerBase):
     def updateConnectivity(
         self,
     ):
+        """Update the cell assignments of all managed material points using spatial indexing."""
         activeCells = defaultdict(list)
 
         hasChanged = False
@@ -97,4 +113,5 @@ class SmartMaterialPointManager(MPMManagerBase):
     def getActiveCells(
         self,
     ):
+        """Return the cells that currently contain at least one managed material point."""
         return self._activeCells.keys()

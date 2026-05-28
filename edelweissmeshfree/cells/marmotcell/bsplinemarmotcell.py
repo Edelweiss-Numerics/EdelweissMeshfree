@@ -18,4 +18,4 @@ class BSplineMarmotCellWrapper(MarmotCellWrapper):
 
     def __init__(self, *args, **kwargs):
         """This is a stub — raises :exc:`NotImplementedError` in this environment."""
-        raise NotImplementedError('bsplinemarmotcell not available in this environment')
+        raise NotImplementedError("bsplinemarmotcell not available in this environment")

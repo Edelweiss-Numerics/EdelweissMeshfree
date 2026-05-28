@@ -27,6 +27,8 @@
 #  ---------------------------------------------------------------------
 
 
+"""Dirichlet boundary condition step action for MPM simulations."""
+
 from collections.abc import Callable
 
 import numpy as np
@@ -36,6 +38,7 @@ from edelweissfe.timesteppers.timestep import TimeStep
 
 
 class Dirichlet(DirichletBase):
+    """Step action that prescribes nodal Dirichlet boundary conditions in an MPM analysis."""
 
     def __init__(self, name, nSet, field, values, model, journal, f_t: Callable[[float], float] = None):
         """
@@ -76,12 +79,15 @@ class Dirichlet(DirichletBase):
 
     @property
     def components(self) -> np.ndarray:
+        """The constrained field components of this Dirichlet condition."""
         return self._components
 
     def applyAtStepEnd(self, model):
+        """Finalize the Dirichlet condition at the end of the step."""
         self.active = False
 
     def updateStepAction(self, values, f_t: Callable[[float], float] = None):
+        """Update the prescribed values defining this Dirichlet condition."""
         self.active = True
 
         self._components = np.array([i for i in values.keys()])
@@ -94,6 +100,7 @@ class Dirichlet(DirichletBase):
             self._amplitude = lambda x: x
 
     def getDelta(self, timeStep: TimeStep, nodes):
+        """Return the incremental prescribed values for the provided nodes and time step."""
         if self.active:
             delta = np.tile(self._delta, len(nodes))
 

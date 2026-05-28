@@ -33,6 +33,8 @@
 #  The full text of the license can be found in the file LICENSE.md at
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
+"""Parallel nonlinear quasi-static solver using Marmot for MPM simulations."""
+
 import os
 from multiprocessing import cpu_count
 
@@ -68,6 +70,13 @@ class NQSParallelForMarmot(NonlinearQuasistaticSolver):
     identification = "NQSParallelForMarmot"
 
     def __init__(self, journal: Journal):
+        """Initialize the parallel Marmot quasi-static solver.
+
+        Parameters
+        ----------
+        journal
+            The journal used for solver messages.
+        """
         self.numThreads = cpu_count()
 
         if "OMP_NUM_THREADS" in os.environ:
@@ -77,6 +86,7 @@ class NQSParallelForMarmot(NonlinearQuasistaticSolver):
 
     @performancetiming.timeit("computation material points")
     def _computeMaterialPoints(self, materialPoints_, time: float, dT: float):
+        """Compute the constitutive response of the managed material points in parallel."""
         return computeMarmotMaterialPointsInParallel(materialPoints_, time, dT, self.numThreads)
 
     @performancetiming.timeit("computation active cells")
@@ -91,6 +101,7 @@ class NQSParallelForMarmot(NonlinearQuasistaticSolver):
         dT: float,
         theDofManager: DofManager,
     ):
+        """Assemble the active cell contributions in parallel."""
         return computeMarmotCellsInParallel(
             activeCells_,
             dU,
@@ -115,6 +126,7 @@ class NQSParallelForMarmot(NonlinearQuasistaticSolver):
         dT: float,
         theDofManager: DofManager,
     ):
+        """Assemble the particle contributions in parallel."""
         return computeMarmotParticlesInParallel(
             particles_,
             dU,

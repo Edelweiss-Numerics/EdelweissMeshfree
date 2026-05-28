@@ -59,13 +59,24 @@ class ParticleKernelDomain:
     """
 
     def __init__(self, particles: list[BaseParticle], meshfreeKernelFunctions: list[BaseMeshfreeKernelFunction]):
+        """Initialize the particle kernel domain.
+
+        Parameters
+        ----------
+        particles
+            The particles associated with the kernel domain.
+        meshfreeKernelFunctions
+            The meshfree kernel functions associated with the particles.
+        """
         self._particles = particles
         self._kernelFunctions = meshfreeKernelFunctions
 
     @property
     def particles(self) -> list[BaseParticle]:
+        """The particles in this kernel domain."""
         return self._particles
 
     @property
     def meshfreeKernelFunctions(self) -> list[BaseMeshfreeKernelFunction]:
+        """The meshfree kernel functions in this kernel domain."""
         return self._kernelFunctions

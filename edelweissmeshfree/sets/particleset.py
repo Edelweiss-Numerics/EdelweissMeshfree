@@ -61,6 +61,15 @@ class ParticleSet(ImmutableOrderedSet):
         label: str,
         particles: list[BaseParticle],
     ):
+        """Initialize the particle set.
+
+        Parameters
+        ----------
+        label
+            The unique label.
+        particles
+            The list of particles.
+        """
         self.allowedObjectTypes = [BaseParticle, MarmotParticleWrapper]
 
         super().__init__(label, particles)

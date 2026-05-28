@@ -33,6 +33,8 @@
 #  The full text of the license can be found in the file LICENSE.md at
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
+"""Distributed load step action applied to particles in MPM simulations."""
+
 import numpy as np
 from edelweissfe.journal.journal import Journal
 from edelweissfe.surfaces.entitybasedsurface import EntityBasedSurface
@@ -77,6 +79,25 @@ class ParticleDistributedLoad:
         loadVector: np.ndarray,
         **kwargs,
     ):
+        """Initialize the particle distributed load step action.
+
+        Parameters
+        ----------
+        name
+            The name of the step action.
+        model
+            The model on which the load acts.
+        journal
+            The journal used for logging.
+        particleSurface
+            The particle surface receiving the distributed load.
+        distributedLoadType
+            The type of distributed load to apply.
+        loadVector
+            The load vector applied on the particle surface.
+        **kwargs
+            Additional options controlling the load definition.
+        """
         self.name = name
 
         self._loadVector = loadVector
@@ -94,13 +115,16 @@ class ParticleDistributedLoad:
 
     @property
     def particles(self) -> ParticleSet:
+        """The particles affected by this distributed load."""
         return self._particles
 
     @property
     def loadType(self) -> str:
+        """The type of distributed load applied by this step action."""
         return self._loadType
 
     def applyAtStepEnd(self, model, stepMagnitude=None):
+        """Finalize the distributed load state at the end of the step."""
         if not self._idle:
             if stepMagnitude is None:
                 self._loadAtStepStart += self._delta * self._amplitude(1.0)

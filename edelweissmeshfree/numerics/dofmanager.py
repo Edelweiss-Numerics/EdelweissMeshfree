@@ -35,6 +35,8 @@
 #  ---------------------------------------------------------------------
 
 
+"""Degree-of-freedom manager for MPM simulations."""
+
 import numpy as np
 from edelweissfe.fields.nodefield import NodeField
 from edelweissfe.numerics.dofmanager import DofManager
@@ -82,7 +84,33 @@ class MPMDofManager(DofManager):
         initializeAccumulatedNodalFluxesFieldwise: bool = True,
         determiningIndexToHostObjectMappping: bool = True,
     ):
+        """Initialize the MPM degree-of-freedom manager.
 
+        Parameters
+        ----------
+        nodeFields
+            The node fields participating in the system.
+        scalarVariables
+            The scalar variables to include in the system.
+        elements
+            The finite elements contributing to the system.
+        constraints
+            The constraints contributing additional degrees of freedom.
+        nodeSets
+            The node sets that should be tracked by the manager.
+        cells
+            The active MPM cells.
+        cellElements
+            The active MPM cell elements.
+        particles
+            The active particles.
+        initializeVIJPattern
+            Whether to initialize the VIJ sparsity pattern.
+        initializeAccumulatedNodalFluxesFieldwise
+            Whether to initialize accumulated nodal flux storage field-wise.
+        determiningIndexToHostObjectMappping
+            Whether to build the index-to-host-object mapping.
+        """
         super().__init__(
             nodeFields,
             scalarVariables,

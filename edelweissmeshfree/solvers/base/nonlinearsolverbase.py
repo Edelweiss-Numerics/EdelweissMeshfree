@@ -34,6 +34,8 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 
+"""Base class for nonlinear solvers with restart history management."""
+
 from abc import abstractmethod
 from collections import deque
 
@@ -66,24 +68,37 @@ from edelweissmeshfree.stepactions.particledistributedload import (
 
 
 class RestartHistoryManager(deque):
+    """Helper for storing and rotating restart files during nonlinear solves."""
 
     def __init__(self, restartBaseName, maxsize):
+        """Initialize the restart history manager.
+
+        Parameters
+        ----------
+        restartBaseName
+            The base name used for generated restart files.
+        maxsize
+            The maximum number of restart files to keep.
+        """
         super().__init__(maxlen=maxsize)
         self._restartBaseName = restartBaseName
         self._maxsize = maxsize
         self._currentCount = 0
 
     def append(self, item):
+        """Append a restart entry to the managed history."""
         super().append(item)
         self._currentCount = (self._currentCount + 1) % self._maxsize
 
     def pop(self):
+        """Remove and return the oldest restart entry from the history."""
         self._currentCount = self._currentCount - 1 if self._currentCount > 0 else self._maxsize - 1
         return super().pop()
 
     def getNextRestartFileName(
         self,
     ):
+        """Return the file name to use for the next restart snapshot."""
         theFileName = "{:}_{:}.h5".format(self._restartBaseName, self._currentCount)
         return theFileName
 
@@ -99,6 +114,13 @@ class BaseNonlinearSolver:
     """
 
     def __init__(self, journal: Journal):
+        """Initialize the nonlinear solver base class.
+
+        Parameters
+        ----------
+        journal
+            The journal used for solver messages.
+        """
         self.journal = journal
 
     @abstractmethod
@@ -119,6 +141,7 @@ class BaseNonlinearSolver:
         userIterationOptions: dict = {},
         vciManagers: list = [],
     ) -> tuple[bool, MPMModel]:
+        """Solve a complete nonlinear analysis step."""
         pass
 
     @performancetiming.timeit("dirichlet on R")
@@ -208,6 +231,7 @@ class BaseNonlinearSolver:
             action.applyAtIncrementStart(model, timeStep)
 
     def _findDirichletIndices(self, theDofManager, dirichlet, reducedNodeSet):
+        """Locate the constrained degree-of-freedom indices for a Dirichlet condition."""
         fieldIndices = theDofManager.idcsOfFieldsOnNodeSetsInDofVector[dirichlet.field][reducedNodeSet]
 
         return fieldIndices.reshape((-1, dirichlet.fieldSize))[:, dirichlet.components].flatten()
@@ -336,6 +360,7 @@ class BaseNonlinearSolver:
 
     @performancetiming.timeit("instancing dof manager")
     def _createDofManager(self, *args, **kwargs):
+        """Create the degree-of-freedom manager used by the solver."""
         return MPMDofManager(*args, **kwargs)
 
     @performancetiming.timeit("update connectivity")
@@ -355,6 +380,7 @@ class BaseNonlinearSolver:
 
     @performancetiming.timeit("postprocessing & output")
     def _finalizeIncrementOutput(self, fieldOutputController, outputmanagers):
+        """Finalize field and output manager data for the converged increment."""
         fieldOutputController.finalizeIncrement()
         for man in outputmanagers:
             man.finalizeIncrement()
@@ -437,7 +463,7 @@ class BaseNonlinearSolver:
     def _updateModelConnectivity(
         self, materialPoints, particles, constraints, model, timeStep, mpmManagers, particleManagers
     ):
-
+        """Update all model connectivity structures required for the current increment."""
         connectivityHasChanged = False
 
         if materialPoints:
@@ -464,7 +490,7 @@ class BaseNonlinearSolver:
         return connectivityHasChanged
 
     def _getActiveCellsFromManagers(self, mpmManagers):
-
+        """Return the active cells reported by the managed MPM connectivity managers."""
         activeCells = set()
         for man in mpmManagers:
             activeCells |= man.getActiveCells()

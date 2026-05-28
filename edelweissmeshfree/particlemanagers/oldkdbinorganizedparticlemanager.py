@@ -35,6 +35,8 @@
 #  ---------------------------------------------------------------------
 
 
+"""Legacy KD-tree bin-organized particle manager (superseded by kdbinorganizedparticlemanager)."""
+
 import numpy as np
 from edelweissfe.journal.journal import Journal
 
@@ -59,6 +61,17 @@ class _KDBinOrganizer:
     """
 
     def __init__(self, kernelFunctions, dimension, randomlyShiftPartliceShapeFunctions: bool | float = False):
+        """Initialize the object.
+
+        Parameters
+        ----------
+        kernelFunctions
+            The value of ``kernelFunctions``.
+        dimension
+            The spatial dimension.
+        randomlyShiftPartliceShapeFunctions
+            The value of ``randomlyShiftPartliceShapeFunctions``.
+        """
         self._dimension = dimension
         self._kernelFunctions = kernelFunctions
 
@@ -142,6 +155,7 @@ class _KDBinOrganizer:
         return thebin
 
     def __str__(self):
+        """Return a human-readable summary of this object."""
         return f"KDBin with {len(self._kernelFunctions)} shape functions in {self._nBins} bins of size {self._binSize} in a bounding box from {self._boundingBoxMin} to {self._boundingBoxMax}."
 
 
@@ -175,7 +189,21 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
         bondParticlesToKernelFunctions: bool = False,
         randomlyShiftPartliceShapeFunctions: bool | float = False,
     ):
+        """Initialize the object.
 
+        Parameters
+        ----------
+        particleKernelDomain
+            The value of ``particleKernelDomain``.
+        dimension
+            The spatial dimension.
+        journal
+            The journal used for logging.
+        bondParticlesToKernelFunctions
+            The value of ``bondParticlesToKernelFunctions``.
+        randomlyShiftPartliceShapeFunctions
+            The value of ``randomlyShiftPartliceShapeFunctions``.
+        """
         self._meshfreeKernelFunctions = particleKernelDomain.meshfreeKernelFunctions
         self._particles = particleKernelDomain.particles
         self._dimension = dimension
@@ -199,11 +227,13 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
     def signalizeKernelFunctionUpdate(
         self,
     ):
+        """Update the search structure after kernel functions have moved."""
         self._theBins = _KDBinOrganizer(self._meshfreeKernelFunctions, self._dimension)
 
     def updateConnectivity(
         self,
     ):
+        """Update the connectivity managed by this object."""
         hasChanged = False
 
         if self._bondParticlesToKernelFunctions:
@@ -260,9 +290,11 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
     def getCoveredDomain(
         self,
     ):
+        """Return the domain covered by the managed particles or kernel functions."""
         return self._theBins._boundingBoxMin, self._theBins._boundingBoxMax
 
     def __str__(self):
+        """Return a human-readable summary of this object."""
         return f"KDBinOrganizedParticleManager with {len(self._particles)} particles and {len(self._meshfreeKernelFunctions)} shape functions in {self._dimension} dimensions. Covered domain: {self.getCoveredDomain()}."
 
     def visualize(self):

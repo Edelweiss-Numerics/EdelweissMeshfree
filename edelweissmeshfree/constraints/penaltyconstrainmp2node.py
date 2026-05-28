@@ -1,3 +1,5 @@
+"""Penalty constraint for coupling a material point degree of freedom to a node."""
+
 import numpy as np
 from edelweissfe.config.phenomena import getFieldSize
 from edelweissfe.points.node import Node
@@ -41,6 +43,25 @@ class PenaltyConstrainMP2Node(MPMConstraintBase):
         prescribedComponents: list[int],
         penaltyParameter: float,
     ):
+        """Initialize the object.
+
+        Parameters
+        ----------
+        name
+            The unique name of the object.
+        model
+            The model associated with the object.
+        slaveMP
+            The value of ``slaveMP``.
+        masterNode
+            The value of ``masterNode``.
+        field
+            The field associated with the object.
+        prescribedComponents
+            The value of ``prescribedComponents``.
+        penaltyParameter
+            The value of ``penaltyParameter``.
+        """
         self._name = name
         self._model = model
         self._slaveMP = slaveMP
@@ -53,14 +74,17 @@ class PenaltyConstrainMP2Node(MPMConstraintBase):
 
     @property
     def name(self) -> str:
+        """The name of this constraint."""
         return self._name
 
     @property
     def nodes(self) -> list:
+        """The nodes involved in this constraint."""
         return list(self._slaveNodes.keys()) + [self._masterNode]
 
     @property
     def fieldsOnNodes(self) -> list:
+        """The fields required on the constrained nodes."""
         return [
             [
                 self._field,
@@ -69,20 +93,30 @@ class PenaltyConstrainMP2Node(MPMConstraintBase):
 
     @property
     def nDof(self) -> int:
+        """The number of degrees of freedom of this constraint."""
         return len(self.nodes) * self._fieldSize
 
     @property
     def scalarVariables(
         self,
     ) -> list:
+        """The scalar variables associated with this constraint."""
         return []
 
     def getNumberOfAdditionalNeededScalarVariables(
         self,
     ) -> int:
+        """Return the number of additional scalar variables required by this constraint."""
         return 0
 
     def assignAdditionalScalarVariables(self, scalarVariables: list[ScalarVariable]):
+        """Assign the additional scalar variables required by this constraint.
+
+        Parameters
+        ----------
+        scalarVariables
+            The scalar variables assigned to the constraint.
+        """
         pass
 
     def updateConnectivity(self, model: MPMModel):

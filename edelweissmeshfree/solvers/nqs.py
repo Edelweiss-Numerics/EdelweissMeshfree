@@ -33,6 +33,8 @@
 #  The full text of the license can be found in the file LICENSE.md at
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
+"""Nonlinear quasi-static solver for MPM simulations."""
+
 import gc
 from collections.abc import Callable
 
@@ -110,6 +112,13 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
     }
 
     def __init__(self, journal: Journal):
+        """Initialize the nonlinear quasi-static solver.
+
+        Parameters
+        ----------
+        journal
+            The journal used for solver messages.
+        """
         super().__init__(journal)
 
     @performancetiming.timeit("solve step")

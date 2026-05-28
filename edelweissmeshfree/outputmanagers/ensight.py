@@ -34,6 +34,8 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 
+"""EnSight Gold format output manager for MPM simulation results."""
+
 from edelweissfe.outputmanagers.ensight import EnsightUnstructuredPart
 from edelweissfe.outputmanagers.ensight import OutputManager as EnsightOutputManager
 from edelweissfe.points.node import Node
@@ -128,6 +130,8 @@ def createUnstructuredPartFromParticleSet(pPartName, particles: list, partID: in
 
 
 class OutputManager(EnsightOutputManager):
+    """EnSight output manager for exporting MPM model geometry and field results."""
+
     identification = "Ensight Export"
 
     """The output manager for the Ensight export.
@@ -156,6 +160,23 @@ class OutputManager(EnsightOutputManager):
     """
 
     def __init__(self, name, model, fieldOutputController, journal, plotter, **kwargs):
+        """Initialize the EnSight output manager.
+
+        Parameters
+        ----------
+        name
+            The unique name of the output manager.
+        model
+            The MPM model whose results are exported.
+        fieldOutputController
+            The field output controller providing result definitions.
+        journal
+            The journal used for logging.
+        plotter
+            The EnSight plotter backend.
+        **kwargs
+            Additional options controlling exported part creation.
+        """
         self._exportCellSetParts = kwargs.get("exportCellSetParts", True)
         self._exportCellElementSetParts = kwargs.get("exportCellElementSetParts", True)
         self._exportMPSetParts = kwargs.get("exportMPSetParts", True)
@@ -168,6 +189,13 @@ class OutputManager(EnsightOutputManager):
         return super().__init__(name, model, fieldOutputController, journal, plotter, **kwargs)
 
     def _createGeometryParts(self, firstPartID: int):
+        """Create EnSight geometry parts for the configured MPM sets.
+
+        Parameters
+        ----------
+        firstPartID
+            The first part identifier available for new EnSight parts.
+        """
         feModelParts = super()._createGeometryParts(firstPartID)
 
         partCounter = len(feModelParts) + 1
@@ -207,7 +235,15 @@ class OutputManager(EnsightOutputManager):
         return feModelParts
 
     def _getTargetPartForFieldOutput(self, fieldOutput, **kwargs):
+        """Return the EnSight part receiving the given field output.
 
+        Parameters
+        ----------
+        fieldOutput
+            The field output whose target part should be determined.
+        **kwargs
+            Additional arguments forwarded to the base implementation.
+        """
         theSetName = fieldOutput.associatedSet.name
 
         if isinstance(fieldOutput.associatedSet, MaterialPointSet):

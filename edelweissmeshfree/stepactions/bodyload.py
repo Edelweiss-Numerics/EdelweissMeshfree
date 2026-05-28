@@ -33,6 +33,8 @@
 #  The full text of the license can be found in the file LICENSE.md at
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
+"""Body load step action for applying volumetric body forces in MPM simulations."""
+
 import numpy as np
 from edelweissfe.timesteppers.timestep import TimeStep
 
@@ -41,6 +43,8 @@ from edelweissmeshfree.stepactions.base.mpmbodyloadbase import MPMBodyLoadBase
 
 
 class BodyLoad(MPMBodyLoadBase):
+    """Step action that applies a body-load vector to a set of MPM cells."""
+
     def __init__(self, name, model, journal, cells, bodyLoadType: str, loadVector, **kwargs):
         """
         This is a classical body load for MPM models.
@@ -84,13 +88,16 @@ class BodyLoad(MPMBodyLoadBase):
 
     @property
     def cellSet(self) -> CellSet:
+        """The cell set affected by this body load."""
         return self._cells
 
     @property
     def loadType(self) -> str:
+        """The type of body load applied by this step action."""
         return self._loadType
 
     def applyAtStepEnd(self, model, stepMagnitude=None):
+        """Finalize the body load state at the end of the step."""
         if not self._idle:
             if stepMagnitude is None:
                 # standard case
@@ -103,6 +110,7 @@ class BodyLoad(MPMBodyLoadBase):
             self._idle = True
 
     def getCurrentLoad(self, timeStep: TimeStep):
+        """Return the current body-load vector for the given time step."""
         if self._idle:
             t = 1.0
         else:

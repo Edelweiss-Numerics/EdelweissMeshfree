@@ -34,6 +34,8 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 
+"""Grid node implementation for the MPM background mesh."""
+
 import numpy as np
 
 
@@ -54,6 +56,15 @@ class GridNode:
         label: int,
         coordinates: np.ndarray,
     ):
+        """Initialize the grid node.
+
+        Parameters
+        ----------
+        label
+            The unique node label.
+        coordinates
+            The coordinates of the node in the background grid.
+        """
         self.label = label
         self.coordinates = coordinates
         self.fields = dict()
