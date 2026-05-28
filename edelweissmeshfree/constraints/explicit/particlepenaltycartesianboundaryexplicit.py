@@ -76,25 +76,25 @@ class ParticlePenaltyCartesianBoundaryConstraintExplicit(MPMConstraintBase):
         particle
             The particle associated with the constraint.
         component
-            The value of ``component``.
+            The index of the field component to constrain at the boundary.
         boundaryPosition
-            The value of ``boundaryPosition``.
+            The coordinate value at which the Cartesian boundary is located.
         model
             The model associated with the object.
         location
-            The value of ``location``.
+            Identifier for the boundary location (e.g., 'left', 'right', 'bottom', 'top').
         faceIDs
-            The value of ``faceIDs``.
+            IDs of element faces lying on the boundary.
         vertexIDs
-            The value of ``vertexIDs``.
+            IDs of element vertices lying on the boundary.
         velocity
-            The value of ``velocity``.
+            Prescribed velocity of the rigid body contacting the particles.
         penaltyParameter
-            The value of ``penaltyParameter``.
+            The penalty stiffness used to enforce the constraint.
         doProximityCheck
-            The value of ``doProximityCheck``.
+            Whether to activate the constraint only for particles within a proximity distance.
         proximityFactor
-            The value of ``proximityFactor``.
+            Factor multiplied by the particle support radius to define the proximity distance.
         """
         self._name = name
         self._field = "displacement"

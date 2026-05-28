@@ -52,15 +52,15 @@ class PenaltyConstrainMP2Node(MPMConstraintBase):
         model
             The model associated with the object.
         slaveMP
-            The value of ``slaveMP``.
+            The material point whose degrees of freedom are coupled to the master node.
         masterNode
-            The value of ``masterNode``.
+            The grid node to which the material point is coupled.
         field
             The field associated with the object.
         prescribedComponents
-            The value of ``prescribedComponents``.
+            The list of field component indices to constrain.
         penaltyParameter
-            The value of ``penaltyParameter``.
+            The penalty stiffness used to enforce the constraint.
         """
         self._name = name
         self._model = model

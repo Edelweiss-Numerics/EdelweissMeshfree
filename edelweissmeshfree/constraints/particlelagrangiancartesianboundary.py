@@ -65,19 +65,19 @@ class ParticleLagrangianContactCartesianBoundaryConstraint(MPMConstraintBase):
         particle
             The particle associated with the constraint.
         component
-            The value of ``component``.
+            The index of the field component to constrain at the boundary.
         boundaryPosition
-            The value of ``boundaryPosition``.
+            The coordinate value at which the Cartesian boundary is located.
         model
             The model associated with the object.
         location
-            The value of ``location``.
+            Identifier for the boundary location (e.g., 'left', 'right', 'bottom', 'top').
         faceID
-            The value of ``faceID``.
+            ID of the element face lying on the boundary.
         vertexID
-            The value of ``vertexID``.
+            ID of the element vertex lying on the boundary.
         velocity
-            The value of ``velocity``.
+            Prescribed velocity of the rigid body contacting the particles.
         """
         self._name = name
         self._field = "displacement"

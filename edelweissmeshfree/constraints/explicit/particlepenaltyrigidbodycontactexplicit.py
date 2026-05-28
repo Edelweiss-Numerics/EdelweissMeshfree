@@ -64,23 +64,23 @@ class ParticlePenaltyContactImplicitSurfaceConstraintExplicit(MPMConstraintBase)
         particle
             The particle associated with the constraint.
         implicit_function
-            The value of ``implicit_function``.
+            The implicit surface function f(x) defining the contact boundary (f(x) <= 0 inside).
         gradient_function
-            The value of ``gradient_function``.
+            The gradient of the implicit surface function.
         model
             The model associated with the object.
         location
-            The value of ``location``.
+            Identifier for the boundary location (e.g., 'left', 'right', 'bottom', 'top').
         faceIDs
-            The value of ``faceIDs``.
+            IDs of element faces lying on the boundary.
         vertexIDs
-            The value of ``vertexIDs``.
+            IDs of element vertices lying on the boundary.
         penaltyParameter
-            The value of ``penaltyParameter``.
+            The penalty stiffness used to enforce the constraint.
         doProximityCheck
-            The value of ``doProximityCheck``.
+            Whether to activate the constraint only for particles within a proximity distance.
         proximityFactor
-            The value of ``proximityFactor``.
+            Factor multiplied by the particle support radius to define the proximity distance.
         """
         self._name = name
         self._field = "displacement"

@@ -50,15 +50,15 @@ class PenaltyWeakDirichlet(MPMConstraintBase):
         model
             The model associated with the object.
         constrainedMaterialPoints
-            The value of ``constrainedMaterialPoints``.
+            The list of material points subject to this constraint.
         field
             The field associated with the object.
         prescribedStepDelta
-            The value of ``prescribedStepDelta``.
+            Mapping of field component index to prescribed incremental value per load step.
         penaltyParameter
-            The value of ``penaltyParameter``.
+            The penalty stiffness used to enforce the constraint.
         **kwargs
-            The value of ``**kwargs``.
+            Optional keyword arguments (e.g., ``f_t`` amplitude function).
         """
         self._name = name
         self._model = model

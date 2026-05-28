@@ -48,13 +48,13 @@ class ParticlePenaltyEqualValue(MPMConstraintBase):
         model
             The model associated with the object.
         constrainedParticles
-            The value of ``constrainedParticles``.
+            The list of particles subject to this constraint.
         field
             The field associated with the object.
         prescribedComponents
-            The value of ``prescribedComponents``.
+            The list of field component indices to constrain.
         penaltyParameter
-            The value of ``penaltyParameter``.
+            The penalty stiffness used to enforce the constraint.
         """
         self._name = name
         self._model = model

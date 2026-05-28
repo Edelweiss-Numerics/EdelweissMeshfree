@@ -23,13 +23,7 @@ class MaterialPointResultCollector:
         self.resultsTable = np.empty([len(materialPoints), n_size])
 
     def update(self):
-        """Update the cached result table from the current material point states.
-
-        Parameters
-        ----------
-        None
-            This method does not take additional parameters.
-        """
+        """Update the cached result table from the current material point states."""
         for i, mp in enumerate(self._materialPoints):
             self.resultsTable[i, :] = mp.getResultArray(self._result, getPersistentView=True)
 

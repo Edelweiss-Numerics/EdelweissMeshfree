@@ -53,19 +53,19 @@ class ParticleLagrangianWeakDirichlet(MPMConstraintBase):
         name
             The unique name of the object.
         constrainedParticle
-            The value of ``constrainedParticle``.
+            The particle to which this constraint is applied.
         field
             The field associated with the object.
         prescribedStepDelta
-            The value of ``prescribedStepDelta``.
+            Mapping of field component index to prescribed incremental value per load step.
         model
             The model associated with the object.
         location
-            The value of ``location``.
+            Identifier for the boundary location (e.g., 'left', 'right', 'bottom', 'top').
         faceID
-            The value of ``faceID``.
+            ID of the element face lying on the boundary.
         vertexID
-            The value of ``vertexID``.
+            ID of the element vertex lying on the boundary.
         """
         self._name = name
         self._constrainedParticle = constrainedParticle

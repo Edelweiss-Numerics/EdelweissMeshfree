@@ -54,11 +54,11 @@ class ParticleLagrangianEqualValueConstraint(MPMConstraintBase):
         name
             The unique name of the object.
         masterParticle
-            The value of ``masterParticle``.
+            The particle acting as the master in the coupling.
         components
-            The value of ``components``.
+            The list of field component indices to equalize between the particles.
         slaveParticle
-            The value of ``slaveParticle``.
+            The particle acting as the slave in the coupling.
         field
             The field associated with the object.
         model

@@ -48,13 +48,13 @@ class PenaltyEqualValue(MPMConstraintBase):
         model
             The model associated with the object.
         constrainedMaterialPoints
-            The value of ``constrainedMaterialPoints``.
+            The list of material points subject to this constraint.
         field
             The field associated with the object.
         prescribedComponent
-            The value of ``prescribedComponent``.
+            The index of the field component to prescrain.
         penaltyParameter
-            The value of ``penaltyParameter``.
+            The penalty stiffness used to enforce the constraint.
         """
         self._name = name
         self._model = model

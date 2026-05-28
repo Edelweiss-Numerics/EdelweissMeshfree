@@ -54,17 +54,17 @@ class ParticlePenaltyWeakDirichlet(MPMConstraintBase):
         model
             The model associated with the object.
         constrainedParticles
-            The value of ``constrainedParticles``.
+            The list of particles subject to this constraint.
         field
             The field associated with the object.
         prescribedStepDelta
-            The value of ``prescribedStepDelta``.
+            Mapping of field component index to prescribed incremental value per load step.
         penaltyParameter
-            The value of ``penaltyParameter``.
+            The penalty stiffness used to enforce the constraint.
         constrain
-            The value of ``constrain``.
+            A callable or specification defining the constrained components.
         **kwargs
-            The value of ``**kwargs``.
+            Optional keyword arguments (e.g., ``f_t`` amplitude function).
         """
         self._name = name
         self._model = model
