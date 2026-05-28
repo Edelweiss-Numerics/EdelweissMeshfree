@@ -34,6 +34,8 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 
+"""Generator for creating a structured B-spline cell grid in a box domain."""
+
 import numpy as np
 from edelweissfe.journal.journal import Journal
 from edelweissfe.points.node import Node

@@ -34,6 +34,8 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 
+"""Generator for creating a structured rectangular B-spline grid of cells."""
+
 import numpy as np
 from edelweissfe.points.node import Node
 from edelweissfe.sets.nodeset import NodeSet

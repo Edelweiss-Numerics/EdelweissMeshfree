@@ -34,6 +34,8 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 
+"""Generator for creating circular domains of material points."""
+
 import numpy as np
 from edelweissfe.journal.journal import Journal
 

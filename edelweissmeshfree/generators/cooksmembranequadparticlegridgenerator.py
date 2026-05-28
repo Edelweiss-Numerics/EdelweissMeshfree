@@ -34,6 +34,8 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 
+"""Generator for creating a Cook's membrane-shaped grid of quad particles."""
+
 import typing
 
 import numpy as np

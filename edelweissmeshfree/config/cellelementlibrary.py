@@ -35,6 +35,8 @@
 #  ---------------------------------------------------------------------
 
 
+"""Registry and factory for loading cell element provider classes."""
+
 def getCellElementClass(provider: str) -> type:
     """Get the class type of the requested CellElement provider.
 

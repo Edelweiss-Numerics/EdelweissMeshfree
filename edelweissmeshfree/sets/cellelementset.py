@@ -34,6 +34,8 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 
+"""Container for a named set of MPM cell elements."""
+
 from edelweissfe.utils.meshtools import extractNodesFromElementSet
 
 from edelweissmeshfree.cellelements.base.cellelement import CellElementBase
@@ -64,16 +66,33 @@ class CellElementSet(list[CellElementBase]):
         name: str,
         cellElements: list,
     ):
+        """Create a new CellElementSet.
+
+        Parameters
+        ----------
+        name
+            The unique label for this cell element set.
+        cellElements
+            The list of cell elements contained in this set.
+        """
         self.name = name
         super().__init__(cellElements)
         self._nodes = None
 
     def __hash__(self):
+        """Return a hash based on the set name."""
         return hash(self.name)
 
     def extractNodeSet(
         self,
     ):
+        """Extract and cache the unique set of nodes from all cell elements in this set.
+
+        Returns
+        -------
+        list
+            The list of unique nodes belonging to all cell elements in this set.
+        """
         if not self._nodes:
             self._nodes = extractNodesFromElementSet(self)
         return self._nodes

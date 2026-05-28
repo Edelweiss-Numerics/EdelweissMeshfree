@@ -34,6 +34,8 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 
+"""Generator utility for finding the material point closest to a given coordinate."""
+
 import numpy as np
 from edelweissfe.journal.journal import Journal
 

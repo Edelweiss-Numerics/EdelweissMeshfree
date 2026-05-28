@@ -34,6 +34,8 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 
+"""Generator for creating a structured box grid of material points."""
+
 import numpy as np
 from edelweissfe.journal.journal import Journal
 

@@ -34,6 +34,8 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 
+"""Generator for parsing Abaqus ``.inp`` files and creating MPM particles and kernel functions."""
+
 import typing
 
 import numpy as np

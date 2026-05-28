@@ -35,6 +35,8 @@
 #  ---------------------------------------------------------------------
 
 
+"""Generator for creating MPM particles from an Exodus mesh file."""
+
 import netCDF4
 import numpy as np
 from edelweissfe.journal.journal import Journal

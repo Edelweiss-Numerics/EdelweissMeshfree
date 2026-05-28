@@ -34,6 +34,8 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 
+"""Generator for creating kernel functions whose support matches the particle distribution."""
+
 import typing
 
 from edelweissfe.journal.journal import Journal

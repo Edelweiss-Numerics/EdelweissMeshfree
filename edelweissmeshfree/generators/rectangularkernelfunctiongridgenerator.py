@@ -34,6 +34,8 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 
+"""Generator for creating a structured rectangular grid of kernel functions."""
+
 import typing
 
 import numpy as np

@@ -35,6 +35,8 @@
 #  ---------------------------------------------------------------------
 
 
+"""Nonlinear quasi-static solver with arc-length control for MPM simulations."""
+
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 from edelweissfe.constraints.base.constraintbase import ConstraintBase

@@ -34,6 +34,8 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 
+"""Container for a named, immutable ordered set of MPM particles."""
+
 from edelweissfe.sets.orderedset import ImmutableOrderedSet
 
 from edelweissmeshfree.particles.base.baseparticle import BaseParticle

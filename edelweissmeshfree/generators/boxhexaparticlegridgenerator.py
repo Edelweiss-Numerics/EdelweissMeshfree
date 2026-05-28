@@ -34,6 +34,8 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 
+"""Generator for creating a structured box hexahedral particle grid."""
+
 import typing
 
 import numpy as np

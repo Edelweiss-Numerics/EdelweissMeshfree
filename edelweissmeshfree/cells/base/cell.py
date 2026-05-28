@@ -52,6 +52,25 @@ from edelweissmeshfree.materialpoints.base.mp import MaterialPointBase
 
 
 class CellBase(ABC):
+    """Abstract base class for all MPM grid cells.
+
+    MPM cells in EdelweissMeshfree should be derived from this class in order
+    to follow the general interface.  Cells are responsible for computing the
+    residual and stiffness contributions on the background grid.
+
+    The internal and external load vector layout is node-major, field-minor:
+
+    .. code-block:: console
+
+        [ node 1 - dofs field 1,
+          node 1 - dofs field 2,
+          ...,
+          node 1 - dofs field n,
+          node 2 - dofs field 1,
+          ...,
+          node N - dofs field n].
+    """
+
     @abstractmethod
     def __init__(self, cellType: str, cellNumber: int, nodes: list[Node]):
         """MPM cells in EdelweissMPM should be derived from this

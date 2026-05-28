@@ -35,6 +35,9 @@
 #  ---------------------------------------------------------------------
 
 
+"""Container for a named set of MPM material points."""
+
+
 class MaterialPointSet(set):
     """A basic node set.
     It has a label, and a list containing the unique nodes.
@@ -52,8 +55,18 @@ class MaterialPointSet(set):
         name: str,
         mps: list,
     ):
+        """Create a new MaterialPointSet.
+
+        Parameters
+        ----------
+        name
+            The unique label for this material point set.
+        mps
+            The list of material points contained in this set.
+        """
         self.name = name
         super().__init__(mps)
 
     def __hash__(self):
+        """Return a hash based on the set name."""
         return hash(self.name)
