@@ -52,7 +52,7 @@ class PenaltyEqualValue(MPMConstraintBase):
         field
             The field associated with the object.
         prescribedComponent
-            The index of the field component to prescrain.
+            The index of the field component to constrain.
         penaltyParameter
             The penalty stiffness used to enforce the constraint.
         """
