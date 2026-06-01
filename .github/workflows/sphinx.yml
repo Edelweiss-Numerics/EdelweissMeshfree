@@ -25,8 +25,8 @@ jobs:
       - name: Install conda packages
         shell: bash -l {0}
         run: |
-          git clone https://github.com/EdelweissFE/EdelweissFE.git
-          mamba install --file EdelweissFE/requirements.txt
+          git clone https://github.com/Edelweiss-Numerics/EdelweissFE.git
+          mamba install --file EdelweissFE/conda_requirements.txt
 
       - name: Install Eigen
         shell: bash -l {0}
