@@ -1,6 +1,18 @@
 name: Run tests
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      edelweissfe_branch:
+        description: "Branch to use for EdelweissFE (leave empty to auto-detect)"
+        required: false
+        default: ""
+      marmot_branch:
+        description: "Branch to use for Marmot and all Marmot modules (leave empty to auto-detect)"
+        required: false
+        default: ""
 
 jobs:
   build:
@@ -20,13 +32,27 @@ jobs:
       - name: Install conda packages
         shell: bash -l {0}
         run: |
-          git clone https://github.com/EdelweissFE/EdelweissFE.git
-          mamba install --file EdelweissFE/requirements.txt
+          BRANCH="${{ inputs.edelweissfe_branch || github.head_ref || github.ref_name }}"
+
+          if git ls-remote --exit-code --heads https://github.com/Edelweiss-Numerics/EdelweissFE.git "$BRANCH" > /dev/null 2>&1; then
+            echo "Cloning EdelweissFE branch: $BRANCH"
+            git clone  --branch "$BRANCH" https://github.com/Edelweiss-Numerics/EdelweissFE.git
+          else
+            echo "::warning title=EdelweissFE Branch Fallback::Branch '$BRANCH' not found. Falling back to default branch."
+            git clone  https://github.com/Edelweiss-Numerics/EdelweissFE.git
+          fi
+
+          mamba install --file EdelweissFE/conda_requirements.txt
+
+          cd EdelweissFE
+          git checkout cddbe0c937a9587c83812af9b521409342867573
+
+          pip install matplotlib
 
       - name: Install Eigen
         shell: bash -l {0}
         run: |
-          git clone --branch 3.4.0 https://gitlab.com/libeigen/eigen.git
+          git clone --depth 1 --branch 3.4.0 https://gitlab.com/libeigen/eigen.git
           cd eigen
           mkdir build
           cd build
@@ -37,7 +63,7 @@ jobs:
       - name: Install Autodiff
         shell: bash -l {0}
         run: |
-          git clone --branch v1.1.0 https://github.com/autodiff/autodiff.git
+          git clone --depth 1 --branch v1.1.0 https://github.com/autodiff/autodiff.git
           cd autodiff
           mkdir build
           cd build
@@ -48,7 +74,7 @@ jobs:
       - name: Install Fastor
         shell: bash -l {0}
         run: |
-          git clone https://github.com/romeric/Fastor.git
+          git clone --depth 1 https://github.com/romeric/Fastor.git
           cd Fastor
           cmake -DBUILD_TESTING=OFF -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX .
           make install
@@ -57,11 +83,45 @@ jobs:
       - name: Install Marmot
         shell: bash -l {0}
         run: |
-          git clone "https://github.com/MAteRialMOdelingToolbox/Marmot.git"
-          git clone "https://github.com/BOKU-CMP-MEC-MAT/MarmotMeshfreeCore.git" ./Marmot/modules/core/MarmotMeshfreeCore
+          BRANCH="${{ inputs.marmot_branch || github.head_ref || github.ref_name }}"
+
+          # Helper function for mandatory modules
+          clone_mandatory() {
+            local url=$1
+            local dir=$2
+            if git ls-remote --exit-code --heads "$url" "$BRANCH" > /dev/null 2>&1; then
+              git clone --depth 1 --branch "$BRANCH" "$url" "$dir"
+            else
+              echo "::warning title=Marmot Branch Fallback::Branch '$BRANCH' not found in $url. Falling back to default branch."
+              git clone --depth 1 "$url" "$dir"
+            fi
+          }
+
+          # Helper function for optional modules
+          clone_optional() {
+            local url=$1
+            local dir=$2
+            if git ls-remote --exit-code --heads "$url" "$BRANCH" > /dev/null 2>&1; then
+              git clone --depth 1 --branch "$BRANCH" "$url" "$dir"
+            elif git ls-remote "$url" > /dev/null 2>&1; then
+              echo "::warning title=Marmot Optional Module Fallback::Branch '$BRANCH' not found in $url. Falling back to default branch."
+              git clone --depth 1 "$url" "$dir"
+            else
+              echo "Repository $url not available, skipping."
+            fi
+          }
+
+          # Clone Repositories
+          clone_mandatory "https://github.com/MAteRialMOdelingToolbox/Marmot.git" "Marmot"
+          clone_mandatory "https://github.com/BOKU-CMP-MEC-MAT/MarmotMeshfreeCore.git" "Marmot/modules/core/MarmotMeshfreeCore"
+
+          clone_optional "https://github.com/BOKU-CMP-MEC-MAT/DisplacementParticle.git" "Marmot/modules/particles/DisplacementParticle"
+          clone_optional "https://github.com/BOKU-CMP-MEC-MAT/DisplacementMaterialPoint.git" "Marmot/modules/materialpoints/DisplacementMaterialPoint"
+
+          # Build Marmot
           mkdir ./Marmot/build
           cd ./Marmot/build
-          cmake -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX  ..
+          cmake -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX ..
           make install
           cd ../..
 
@@ -69,16 +129,15 @@ jobs:
         shell: bash -l {0}
         run: |
           cd EdelweissFE
-          pip install .
+          pip install -e .
           cd ..
 
       - name: Build EdelweissMeshfree
         shell: bash -l {0}
         run: |
-          pip install .
+          pip install -e .
 
       - name: Run tests
         shell: bash -l {0}
         run: |
           pytest .
-

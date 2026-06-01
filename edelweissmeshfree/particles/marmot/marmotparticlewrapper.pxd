@@ -52,11 +52,6 @@ from edelweissmeshfree.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunct
 )
 
 
-cdef extern from "Marmot/Marmot.h" namespace "MarmotLibrary" nogil:
-    cdef cppclass MarmotMaterialFactory:
-        @staticmethod
-        int getMaterialCodeFromName(const string& materialName) except +ValueError
-
 cdef extern from "Marmot/MarmotUtils.h":
     cdef struct StateView:
         double *stateLocation
@@ -70,7 +65,6 @@ cdef extern from "Marmot/MarmotParticleLibrary.h" namespace "MarmotLibrary" nogi
                                const double* particleCoordinates,
                                int sizeParticleCoordinates,
                                double volume,
-                               # MarmotMaterialPoint& mp,
                                const string& materialName,
                                const double* materialProperties,
                                int sizeMaterialProperties,
@@ -126,6 +120,14 @@ cdef extern from "Marmot/MarmotParticle.h" namespace "Marmot::Meshfree":
 
         void computeLumpedMomentum ( double* mLumped)
 
+        void computeDistributedLoadExplicit(        int type,
+                                            int surfaceID,
+                                            const double* load,
+                                            double* Pc,
+                                            double timeNewTotal,
+                                            double dT) except +
+
+
         const unordered_map[string, int]& getSupportedBodyLoadTypes()
 
         const unordered_map[string, int]& getSupportedDistributedLoadTypes()
@@ -177,16 +179,9 @@ cdef extern from "Marmot/MarmotParticle.h" namespace "Marmot::Meshfree":
 
 cdef class MarmotParticleWrapper:
 
-    # cdef MarmotMaterialPointWrapper _mp
     cdef MarmotParticle* _marmotParticle
-    # cdef MarmotMaterialPoint* _marmotMaterialPoint
+
     cdef MarmotMeshfreeApproximation* _marmotMeshfreeApproximation
-
-    # cpdef void computePhysicsKernels(self, double[::1] dUc, double[::1] Rhs, double[::1] AMatrix, double timeNew, double dTime, ) nogil
-
-    # cpdef void computePhysicsKernelsExplicit(self, double[::1] dUc, double[::1] Rhs, double timeNew, double dTime, ) nogil
-
-    # void computeLumpedInertia(self, double [::1] mLumped ) nogil
 
     cdef np.ndarray materialProperties
     cdef double[::1] materialPropertiesView

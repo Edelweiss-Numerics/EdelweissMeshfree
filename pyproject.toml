@@ -19,3 +19,6 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["."]
+
+[tool.pytest.ini_options]
+addopts = "-v --tb=short"

@@ -8,6 +8,7 @@ Unlike elements, they are not subject to external loads.
 from abc import ABC, abstractmethod
 
 import numpy as np
+from edelweissfe.numerics.vijentitybase import VIJEntityBase
 from edelweissfe.points.node import Node
 from edelweissfe.timesteppers.timestep import TimeStep
 from edelweissfe.variables.scalarvariable import ScalarVariable
@@ -15,7 +16,7 @@ from edelweissfe.variables.scalarvariable import ScalarVariable
 from edelweissmeshfree.models.mpmmodel import MPMModel
 
 
-class MPMConstraintBase(ABC):
+class MPMConstraintBase(ABC, VIJEntityBase):
     """The MPMConstraintBase class is an abstract base class for all constraints.
     If you want to implement a new constraint, you have to inherit from this class."""
 

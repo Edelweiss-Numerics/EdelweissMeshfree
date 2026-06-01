@@ -1,3 +1,4 @@
+# cython: freethreading_compatible = True
 #Initalize  -*- coding: utf-8 -*-
 #  ---------------------------------------------------------------------
 #
@@ -258,6 +259,17 @@ cdef class MarmotParticleWrapper:
 
         self._marmotParticle.computeDistributedLoad( self._supportedDistributedLoads[loadType.upper()], surfaceID, &load[0], &Pc[0], &Kc[0], timeNew, dTime)
 
+    def computeDistributedLoadExplicit(self,
+                               str loadType,
+                               int surfaceID,
+                               double[::1] load,
+                               double[::1] Pc,
+                               double timeNew,
+                               double dTime):
+
+        self._marmotParticle.computeDistributedLoadExplicit( self._supportedDistributedLoads[loadType.upper()], surfaceID, &load[0], &Pc[0], timeNew, dTime)
+
+
     def getInterpolationVector(self, double[::1] coordinates) -> np.ndarray:
         cdef np.ndarray N = np.zeros(len(self._nodes))
         cdef double[::1] Nview_ = N
@@ -348,8 +360,6 @@ cdef class MarmotParticleWrapper:
 
         self._marmotParticle.setInitialCondition(stateType.encode('utf-8'), &_value[0])
         self.acceptStateAndPosition()
-        #pass
-
 
     def vci_getNumberOfConstraints(self, ):
         return self._marmotParticle.vci_getNumberOfConstraints()
@@ -376,5 +386,18 @@ cdef class MarmotParticleWrapper:
         np.asarray(self._stateVars)[:] = data[:]
         self._initializeStateVarsTemp()
 
+    def getVIJContributionSize(self) -> int:
+        """Return the number of entries this entity contributes to the VIJ (COO) system matrix."""
+        return self.nDof**2
+
+    def initializeVIJContribution(self, idcs: np.ndarray, I_: np.ndarray, J_: np.ndarray, offset: int) -> None:
+        """Initialize the I and J arrays for the VIJ (COO) system matrix assembly. """
+
+        n = len(idcs)
+        VIJLocations = np.tile(idcs, (n, 1))
+        I_[offset : offset + n**2] = VIJLocations.flatten()
+        J_[offset : offset + n**2] = VIJLocations.flatten("F")
+
     def __dealloc__(self):
         del self._marmotParticle
+

@@ -41,11 +41,6 @@ from libcpp.vector cimport vector
 import numpy as np
 
 
-cdef extern from "Marmot/Marmot.h" namespace "MarmotLibrary" nogil:
-    cdef cppclass MarmotMaterialFactory:
-        @staticmethod
-        int getMaterialCodeFromName(const string& materialName) except +ValueError
-
 cdef extern from "Marmot/MarmotUtils.h":
     cdef struct StateView:
         double *stateLocation
@@ -56,7 +51,7 @@ cdef extern from "Marmot/MarmotElementProperty.h":
         pass
 
     cdef cppclass MarmotMaterialSection(MarmotElementProperty) nogil:
-        MarmotMaterialSection(int materialCode, const double* materialProperties, int nMaterialProperties)
+        MarmotMaterialSection(const string materialName, const double* materialProperties, int nMaterialProperties)
 
 cdef extern from "Marmot/MarmotMPMLibrary.h" namespace "MarmotLibrary" nogil:
 

@@ -333,7 +333,7 @@ def change_test_dir(request, monkeypatch):
     monkeypatch.chdir(request.fspath.dirname)
 
 
-def test_sim():
+def test_sim(assert_gold):
 
     # disable plots and suppress warnings
     import matplotlib
@@ -349,7 +349,7 @@ def test_sim():
 
     gold = np.loadtxt("gold.csv")
 
-    assert np.isclose(np.linalg.norm(res.flatten()), np.linalg.norm(gold.flatten()))
+    assert_gold(res, gold)
 
 
 if __name__ == "__main__":

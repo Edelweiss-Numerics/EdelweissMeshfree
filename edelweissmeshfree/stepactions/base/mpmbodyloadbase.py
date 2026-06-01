@@ -35,7 +35,6 @@
 #  ---------------------------------------------------------------------
 """Body loads are loads that act on the entire body of the model."""
 
-
 from abc import abstractmethod
 
 import numpy as np
