@@ -24,3 +24,15 @@
  * Integration of the [Marmot](https://github.com/MAteRialMOdelingToolbox/Marmot/) library, providing cells, material points, particles and constitutive model formulations
 
 **Note:** The current public version of **EdelweissMeshfree** depends on the infrastructure of Marmot cells, material points, and particles; these components are required to run simulations.
+
+## Simple setup
+
+```bash
+python -m pip install .
+```
+
+## Run tests
+
+```bash
+python -m pytest .
+```
