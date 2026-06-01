@@ -1,4 +1,3 @@
-# cython: freethreading_compatible = True
 #Initalize  -*- coding: utf-8 -*-
 #  ---------------------------------------------------------------------
 #

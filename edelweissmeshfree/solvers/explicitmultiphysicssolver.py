@@ -235,7 +235,7 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
             self.journal.errorMessage("Step Failed", self.identification)
             return False, model
 
-        self._applyStepActionsAtStepEnd(model, dirichlets + bodyLoads + distributedLoads)
+        self._applyStepActionsAtStepEnd(model, dirichlets + bodyLoads + distributedLoads + particleDistributedLoads)
         fieldOutputController.finalizeStep()
         for man in outputManagers:
             man.finalizeStep()
@@ -540,8 +540,8 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
         PExt: DofVector,
         timeStep: TimeStep,
     ) -> DofVector:
-        """Loop over all body forces loads acting on elements, and evaluate them.
-        Assembles into the global external load vector and the system matrix.
+        """Loop over all distributed loads acting on particle surfaces and evaluate them.
+        Assembles into the global external load vector.
 
         Parameters
         ----------
@@ -555,7 +555,7 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
         Returns
         -------
         DofVector
-            The augmented load vector and system matrix.
+            The augmented load vector.
         """
 
         for distributedLoad in distributedLoads:
