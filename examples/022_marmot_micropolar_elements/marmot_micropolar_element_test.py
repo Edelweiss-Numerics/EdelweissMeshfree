@@ -177,7 +177,7 @@ def change_test_dir(request, monkeypatch):
     monkeypatch.chdir(request.fspath.dirname)
 
 
-def test_sim():
+def test_sim(assert_gold):
     try:
         mpmModel, fieldOutputController = run_sim()
     except ValueError as e:
@@ -187,9 +187,7 @@ def test_sim():
     res = fieldOutputController.fieldOutputs["U"].getLastResult()
     gold = np.loadtxt("gold.csv")
 
-    print(res - gold)
-
-    assert np.isclose(res, gold).all()
+    assert_gold(res, gold)
 
 
 if __name__ == "__main__":

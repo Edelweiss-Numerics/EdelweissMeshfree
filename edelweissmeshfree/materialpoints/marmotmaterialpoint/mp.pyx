@@ -187,8 +187,7 @@ cdef class MarmotMaterialPointWrapper:
         try:
             self._marmotMaterialPoint.assignMaterial(
                     MarmotMaterialSection(
-                            MarmotMaterialFactory.getMaterialCodeFromName(
-                                    materialName.upper().encode('UTF-8')),
+                            materialName.upper().encode('UTF-8'),
                             &self._materialProperties[0],
                             self._materialProperties.shape[0] ) )
         except IndexError:

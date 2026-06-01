@@ -266,7 +266,7 @@ def _test_sim():
     gold = np.loadtxt("gold.csv")
 
     # assert np.isclose(lastStiffness, gold).all()
-    assert np.isclose(np.linalg.norm(lastStiffness.flatten()), np.linalg.norm(gold.flatten()))
+    assert_gold(lastStiffness, gold)  # noqa F821
 
 
 if __name__ == "__main__":

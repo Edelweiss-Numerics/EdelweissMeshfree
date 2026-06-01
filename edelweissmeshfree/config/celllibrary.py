@@ -79,4 +79,9 @@ def getCellClass(provider: str) -> type:
 
         return BSplineMarmotCellWrapper
 
+    if provider.lower() == "pythoncell":
+        from edelweissmeshfree.cells.pythoncell.cell import PythonCell
+
+        return PythonCell
+
     raise ValueError(f"Unknown cell provider: {provider}")

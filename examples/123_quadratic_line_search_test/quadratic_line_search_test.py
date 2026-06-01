@@ -114,7 +114,7 @@ def run_sim(no_limit=False):
     # set 2 digits after comma:
     np.set_printoptions(precision=2)
     # and let's print all the array:
-    np.set_printoptions(threshold=np.inf)
+    np.set_printoptions(threshold=None)
 
     theJournal = Journal()
 
@@ -165,7 +165,7 @@ def run_sim(no_limit=False):
 
     def ThePlateFactory(number, vertexCoordinates, volume):
         return MarmotParticleWrapper(
-            "DisplacementSQCNI_RxNSNI/PlaneStrain/Quad",
+            "Displacement/R-SNNIxNSNI/PlaneStrain/Quad",
             number,
             vertexCoordinates,
             volume,
@@ -175,7 +175,7 @@ def run_sim(no_limit=False):
 
     def TheProjectileFactory(number, vertexCoordinates, volume):
         return MarmotParticleWrapper(
-            "DisplacementSQCNI_RxNSNI/PlaneStrain/Quad",
+            "Displacement/R-SNNIxNSNI/PlaneStrain/Quad",
             number,
             vertexCoordinates,
             volume,
@@ -329,7 +329,15 @@ def run_sim(no_limit=False):
 
     incSize = 5e-2
     adaptiveTimeStepper = AdaptiveTimeStepper(
-        0.0, 1.0, incSize, incSize, incSize / 1e8, 10 if not no_limit else 10000, theJournal, increaseFactor=1.5
+        0.0,
+        1.0,
+        incSize,
+        incSize,
+        incSize / 1e8,
+        10 if not no_limit else 10000,
+        theJournal,
+        increaseFactor=1.5,
+        makeZeroIncrementFirst=False,
     )
 
     nonlinearSolver = NonlinearQuasistaticSolver(theJournal)
@@ -392,7 +400,7 @@ def change_test_dir(request, monkeypatch):
     monkeypatch.chdir(request.fspath.dirname)
 
 
-def test_sim():
+def test_sim(assert_gold):
 
     # disable plots and suppress warnings
     import matplotlib
@@ -408,7 +416,7 @@ def test_sim():
 
     gold = np.loadtxt("gold.csv")
 
-    assert np.isclose(np.copy(res.flatten() - gold.flatten()), 0.0, rtol=1e-12).all()
+    assert_gold(res, gold, atol=1e-12)
 
 
 if __name__ == "__main__":

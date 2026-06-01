@@ -204,14 +204,14 @@ def change_test_dir(request, monkeypatch):
     monkeypatch.chdir(request.fspath.dirname)
 
 
-def test_sim():
+def test_sim(assert_gold):
     mpmModel = run_sim()
 
     res = mpmModel.nodeFields["displacement"]["dU"]
 
     gold = np.loadtxt("gold.csv")
 
-    assert np.isclose(res, gold).all()
+    assert_gold(res, gold)
 
 
 if __name__ == "__main__":

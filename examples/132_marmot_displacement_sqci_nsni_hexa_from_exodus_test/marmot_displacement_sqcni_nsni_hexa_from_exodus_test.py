@@ -86,7 +86,7 @@ def run_sim():
 
     def TheParticleFactory(number, vertexCoordinates):
         return MarmotParticleWrapper(
-            "DisplacementSQCNIxNSNI/3D/Hexa",
+            "Displacement/SQCNIxNSNI/3D/Hexa",
             number,
             vertexCoordinates,
             0.0,
@@ -283,7 +283,7 @@ def change_test_dir(request, monkeypatch):
     monkeypatch.chdir(request.fspath.dirname)
 
 
-def test_sim():
+def test_sim(assert_gold):
 
     # disable plots and suppress warnings
     import matplotlib
@@ -299,7 +299,7 @@ def test_sim():
 
     gold = np.loadtxt("gold.csv")
 
-    assert np.isclose(np.copy(res.flatten() - gold.flatten()), 0.0, rtol=1e-7).all()
+    assert_gold(res, gold, atol=1e-7)
 
 
 if __name__ == "__main__":

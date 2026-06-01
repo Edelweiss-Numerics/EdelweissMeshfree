@@ -218,7 +218,7 @@ def change_test_dir(request, monkeypatch):
     monkeypatch.chdir(request.fspath.dirname)
 
 
-def test_sim():
+def test_sim(assert_gold):
     try:
         mpmModel = run_sim()
     except NotImplementedError as e:
@@ -228,9 +228,7 @@ def test_sim():
     res = np.array([mp.getResultArray("displacement") for mp in mpmModel.materialPoints.values()])
     gold = np.loadtxt("gold.csv")
 
-    print(res - gold)
-
-    assert np.isclose(res, gold).all()
+    assert_gold(res, gold)
 
 
 if __name__ == "__main__":

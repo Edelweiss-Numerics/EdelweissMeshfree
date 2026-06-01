@@ -71,3 +71,10 @@ def getMaterialPointClass(provider: str) -> type:
         )
 
         return MarmotMaterialPointWrapper
+
+    if provider.lower() == "python":
+        from edelweissmeshfree.materialpoints.pythonmaterialpoint.mp import (
+            PythonMaterialPoint,
+        )
+
+        return PythonMaterialPoint

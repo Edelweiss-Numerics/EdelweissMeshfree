@@ -25,6 +25,9 @@ from edelweissmeshfree.solvers.base.nonlinearsolverbase import (
     BaseNonlinearSolver,
     RestartHistoryManager,
 )
+from edelweissmeshfree.stepactions.particledistributedload import (
+    ParticleDistributedLoad,
+)
 
 
 class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
@@ -144,11 +147,13 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
 
                     theDofManager = self._instanceDofManager(model, activeConstraints, particles)
 
-                    (M, dU_np, P_Int, P_Ext, v_np_one_half, momentum) = self.getDiscretization(
+                    M, dU_np, P_Int, P_Ext, v_np_one_half, momentum = self.getDiscretization(
                         theDofManager, model, mpmManagers, constraints
                     )
                     self.updateSystem(particles, timeStep.totalTime, dT, dU_np)
-                    self.computeSystem(particles, activeConstraints, P_Int, P_Ext, M, momentum, timeStep)
+                    self.computeSystem(
+                        particles, activeConstraints, particleDistributedLoads, P_Int, P_Ext, M, momentum, timeStep
+                    )
                     M_inv = np.reciprocal(M)
                     v_np_one_half[:] = momentum * M_inv
 
@@ -197,7 +202,7 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
                     else:
                         theDofManager = self._instanceDofManager(model, activeConstraints, particles)
 
-                    (M, dU_np, P_Int, P_Ext, _, momentum) = self.getDiscretization(
+                    M, dU_np, P_Int, P_Ext, _, momentum = self.getDiscretization(
                         theDofManager, model, mpmManagers, constraints
                     )
                 #    +-------------------------------+
@@ -208,7 +213,9 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
                 # V
 
                 P_Int[:] = P_Ext[:] = M[:] = momentum[:] = 0.0
-                self.computeSystem(particles, activeConstraints, P_Int, P_Ext, M, momentum, timeStep)
+                self.computeSystem(
+                    particles, activeConstraints, particleDistributedLoads, P_Int, P_Ext, M, momentum, timeStep
+                )
                 # prevent division close to zero:
                 M[M < 1e-12] = 1e-12
                 M_inv = np.reciprocal(M)
@@ -385,6 +392,7 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
         self,
         particles: list,
         constraints: list,
+        particleDistributedLoads: list[ParticleDistributedLoad],
         P_Int: DofVector,
         P_Ext: DofVector,
         M: DofVector,
@@ -399,6 +407,8 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
             The list of particles to be evaluated.
         constraints
             The list of constraints to be applied.
+        particleDistributedLoads
+            The list of particle distributed loads to be applied.
         P_Int
             The global internal flux vector.
         P_Ext
@@ -418,8 +428,7 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
             Mv,
         )
 
-        # self._computeParticleDistributedLoads(particleDistributedLoads, P_Ext_n, None, timeStep)
-
+        self._computeParticleDistributedLoads(particleDistributedLoads, P_Ext, timeStep)
         self._computeConstraints(constraints, P_Ext, timeStep)
 
         return P_Int, P_Ext, M, Mv
@@ -507,7 +516,7 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
             The updated DOF manager instance.
         """
 
-        (activeNodesPersistent, _, reducedNodeFields, reducedNodeSets) = self._assembleActiveDomain(list(), model)
+        activeNodesPersistent, _, reducedNodeFields, reducedNodeSets = self._assembleActiveDomain(list(), model)
 
         theDofManager = self._createDofManager(
             reducedNodeFields.values(),
@@ -523,3 +532,45 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
         )
 
         return theDofManager
+
+    @performancetiming.timeit("compute distributed loads")
+    def _computeParticleDistributedLoads(
+        self,
+        distributedLoads: list[ParticleDistributedLoad],
+        PExt: DofVector,
+        timeStep: TimeStep,
+    ) -> DofVector:
+        """Loop over all body forces loads acting on elements, and evaluate them.
+        Assembles into the global external load vector and the system matrix.
+
+        Parameters
+        ----------
+        distributedLoads
+            The list of distributed loads.
+        PExt
+            The external load vector to be augmented.
+        timeStep
+            The current time increment.
+
+        Returns
+        -------
+        DofVector
+            The augmented load vector and system matrix.
+        """
+
+        for distributedLoad in distributedLoads:
+
+            for p, surfaceID, loadVector in distributedLoad.getCurrentParticleLoads(timeStep):
+                Pc = np.zeros(p.nDof)
+                p.computeDistributedLoadExplicit(
+                    distributedLoad.loadType,
+                    surfaceID,
+                    loadVector,
+                    Pc,
+                    timeStep.totalTime,
+                    timeStep.timeIncrement,
+                )
+
+                PExt[p] += Pc
+
+        return PExt
