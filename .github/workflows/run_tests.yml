@@ -44,9 +44,6 @@ jobs:
 
           mamba install --file EdelweissFE/conda_requirements.txt
 
-          cd EdelweissFE
-          git checkout cddbe0c937a9587c83812af9b521409342867573
-
           pip install matplotlib
 
       - name: Install Eigen
