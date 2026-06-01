@@ -50,6 +50,7 @@ from edelweissmeshfree.outputmanagers.ensight import (
 from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
 from edelweissmeshfree.stepactions.dirichlet import Dirichlet
 
+
 @performancetiming.timeit("simulation")
 def run_sim():
     dimension = 2
@@ -242,12 +243,14 @@ def run_sim():
 
     return mpmModel
 
+
 @pytest.fixture(autouse=True)
 def change_test_dir(request, monkeypatch):
     """No matter where pytest is ran, we set the working dir
     to this testscript's parent directory"""
 
     monkeypatch.chdir(request.fspath.dirname)
+
 
 def test_sim(assert_gold):
     try:
@@ -260,6 +263,7 @@ def test_sim(assert_gold):
     gold = np.loadtxt("gold.csv")
 
     assert_gold(res, gold)
+
 
 if __name__ == "__main__":
     mpmModel = run_sim()

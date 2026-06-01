@@ -222,11 +222,9 @@ class PythonMaterialPoint(MaterialPointBase):
 
     def setProperties(self, propertyName: str, elementProperties: np.ndarray):
         """Assign element-level properties (unused for this implementation)."""
-        pass
 
     def initializeYourself(self):
         """Initialize the material point."""
-        pass
 
     def setMaterial(self, materialName: str, materialProperties: np.ndarray):
         """Assign a material and material properties.

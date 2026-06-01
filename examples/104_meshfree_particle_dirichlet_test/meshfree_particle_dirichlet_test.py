@@ -39,6 +39,7 @@ import argparse
 import numpy as np
 import pytest
 
+
 def run_sim():
     dimension = 2
 
@@ -205,12 +206,14 @@ def run_sim():
     ensightOutput.finalizeJob()
     return Kc
 
+
 @pytest.fixture(autouse=True)
 def change_test_dir(request, monkeypatch):
     """No matter where pytest is ran, we set the working dir
     to this testscript's parent directory"""
 
     monkeypatch.chdir(request.fspath.dirname)
+
 
 def test_sim(assert_gold):
 
@@ -227,6 +230,7 @@ def test_sim(assert_gold):
     gold = np.loadtxt("gold.csv")
 
     assert_gold(np.linalg.norm(lastStiffness), np.linalg.norm(gold))
+
 
 if __name__ == "__main__":
     lastStiffness = run_sim()

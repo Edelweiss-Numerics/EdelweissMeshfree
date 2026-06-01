@@ -125,8 +125,12 @@ def run_sim():
     ensightOutput.initializeJob()
 
     dirichlets = [
-        Dirichlet("left", mpmModel.nodeSets["rectangular_grid_left"], "displacement", {0: 0.0, 1: 0.0}, mpmModel, journal),
-        Dirichlet("right", mpmModel.nodeSets["rectangular_grid_right"], "displacement", {0: -10.0, 1: 0.0}, mpmModel, journal),
+        Dirichlet(
+            "left", mpmModel.nodeSets["rectangular_grid_left"], "displacement", {0: 0.0, 1: 0.0}, mpmModel, journal
+        ),
+        Dirichlet(
+            "right", mpmModel.nodeSets["rectangular_grid_right"], "displacement", {0: -10.0, 1: 0.0}, mpmModel, journal
+        ),
     ]
 
     adaptiveTimeStepper = AdaptiveTimeStepper(0.0, 1.0, 0.1, 0.1, 1e-3, 1000, journal)

@@ -54,6 +54,7 @@ from edelweissmeshfree.solvers.nqsmarmotparallel import NQSParallelForMarmot
 from edelweissmeshfree.stepactions.bodyload import BodyLoad
 from edelweissmeshfree.stepactions.dirichlet import Dirichlet
 
+
 def run_sim(logFile=None, order: int = 2):
     dimension = 3
 
@@ -225,12 +226,14 @@ def run_sim(logFile=None, order: int = 2):
 
     return mpmModel
 
+
 @pytest.fixture(autouse=True)
 def change_test_dir(request, monkeypatch):
     """No matter where pytest is ran, we set the working dir
     to this testscript's parent directory"""
 
     monkeypatch.chdir(request.fspath.dirname)
+
 
 def test_sim_order1(assert_gold):
     try:
@@ -244,6 +247,7 @@ def test_sim_order1(assert_gold):
 
     assert_gold(res, gold)
 
+
 def test_sim_order2(assert_gold):
     try:
         mpmModel = run_sim(None, 2)
@@ -256,6 +260,7 @@ def test_sim_order2(assert_gold):
 
     assert_gold(res, gold)
 
+
 def test_sim_order3(assert_gold):
     try:
         mpmModel = run_sim(None, 3)
@@ -267,6 +272,7 @@ def test_sim_order3(assert_gold):
     gold = np.loadtxt("gold_order_3.csv")
 
     assert_gold(res, gold)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

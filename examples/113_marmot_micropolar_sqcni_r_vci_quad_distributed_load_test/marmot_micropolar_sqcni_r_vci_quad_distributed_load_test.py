@@ -77,6 +77,7 @@ from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
 #     generateRectangularParticleGrid,
 # )
 
+
 def run_sim():
     dimension = 2
 
@@ -255,12 +256,14 @@ def run_sim():
 
     return theModel, fieldOutputController
 
+
 @pytest.fixture(autouse=True)
 def change_test_dir(request, monkeypatch):
     """No matter where pytest is ran, we set the working dir
     to this testscript's parent directory"""
 
     monkeypatch.chdir(request.fspath.dirname)
+
 
 def test_sim(assert_gold):
 
@@ -279,6 +282,7 @@ def test_sim(assert_gold):
     gold = np.loadtxt("gold.csv")
 
     assert_gold(res, gold, rtol=1e-12)
+
 
 if __name__ == "__main__":
     theModel, fieldOutputController = run_sim()
