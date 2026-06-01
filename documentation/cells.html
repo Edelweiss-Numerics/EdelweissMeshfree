@@ -1,0 +1,1070 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cells &mdash; EdelweissMeshfree v25.08 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=1d735308" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=83aae4bb"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Cellelements" href="cellelements.html" />
+    <link rel="prev" title="Models" href="models.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            EdelweissMeshfree
+              <img src="../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="models.html">Models</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Cells</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase"><code class="docutils literal notranslate"><span class="pre">CellBase</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase.assignMaterialPoints"><code class="docutils literal notranslate"><span class="pre">CellBase.assignMaterialPoints()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase.computeBodyLoad"><code class="docutils literal notranslate"><span class="pre">CellBase.computeBodyLoad()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase.computeDistributedLoad"><code class="docutils literal notranslate"><span class="pre">CellBase.computeDistributedLoad()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase.computeMaterialPointKernels"><code class="docutils literal notranslate"><span class="pre">CellBase.computeMaterialPointKernels()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase.getBoundingBox"><code class="docutils literal notranslate"><span class="pre">CellBase.getBoundingBox()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase.getCoordinatesAtCenter"><code class="docutils literal notranslate"><span class="pre">CellBase.getCoordinatesAtCenter()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase.getInterpolationVector"><code class="docutils literal notranslate"><span class="pre">CellBase.getInterpolationVector()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase.interpolateSolutionContributionToMaterialPoints"><code class="docutils literal notranslate"><span class="pre">CellBase.interpolateSolutionContributionToMaterialPoints()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase.isCoordinateInCell"><code class="docutils literal notranslate"><span class="pre">CellBase.isCoordinateInCell()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase.assignedMaterialPoints"><code class="docutils literal notranslate"><span class="pre">CellBase.assignedMaterialPoints</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase.cellNumber"><code class="docutils literal notranslate"><span class="pre">CellBase.cellNumber</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase.dofIndicesPermutation"><code class="docutils literal notranslate"><span class="pre">CellBase.dofIndicesPermutation</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase.ensightType"><code class="docutils literal notranslate"><span class="pre">CellBase.ensightType</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase.fields"><code class="docutils literal notranslate"><span class="pre">CellBase.fields</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase.nDof"><code class="docutils literal notranslate"><span class="pre">CellBase.nDof</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase.nNodes"><code class="docutils literal notranslate"><span class="pre">CellBase.nNodes</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-edelweissmeshfree.cells.marmotcell.marmotcell"><code class="docutils literal notranslate"><span class="pre">MarmotCell</span></code> class</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper"><code class="docutils literal notranslate"><span class="pre">MarmotCellWrapper</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-edelweissmeshfree.cells.marmotcell.lagrangianmarmotcell"><code class="docutils literal notranslate"><span class="pre">LagrangianMarmotCell</span></code> class</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.cells.marmotcell.lagrangianmarmotcell.LagrangianMarmotCellWrapper"><code class="docutils literal notranslate"><span class="pre">LagrangianMarmotCellWrapper</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-edelweissmeshfree.cells.marmotcell.bsplinemarmotcell"><code class="docutils literal notranslate"><span class="pre">BSplineMarmotCell</span></code> class</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.cells.marmotcell.bsplinemarmotcell.BSplineMarmotCellWrapper"><code class="docutils literal notranslate"><span class="pre">BSplineMarmotCellWrapper</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-edelweissmeshfree.cells.pythoncell.cell"><code class="docutils literal notranslate"><span class="pre">PythonCell</span></code> class</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell"><code class="docutils literal notranslate"><span class="pre">PythonCell</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.cells.pythoncell.cell._compute_shape_functions_and_gradients"><code class="docutils literal notranslate"><span class="pre">_compute_shape_functions_and_gradients()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.cells.pythoncell.cell._global_to_parametric"><code class="docutils literal notranslate"><span class="pre">_global_to_parametric()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#theory-quad4-interpolation-and-cell-kernels">Theory (Quad4 interpolation and cell kernels)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="cellelements.html">Cellelements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="solvers.html">Solvers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="model_generators.html">Model generators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="step_actions.html">Step actions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="constraints.html">Constraints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="numeric_tools.html">Numerical tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="output_managers.html">Output managers</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">EdelweissMeshfree</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Documentation</a></li>
+      <li class="breadcrumb-item active">Cells</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/documentation/cells.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-edelweissmeshfree.cells.base.cell">
+<span id="cells"></span><h1>Cells<a class="headerlink" href="#module-edelweissmeshfree.cells.base.cell" title="Link to this heading"></a></h1>
+<p>Cells represent the basic building blocks of the MPM grid. They are used to
+compute the material point kernels and to interpolate the field solutions back
+to the material points. Cells are used to compute the residual and stiffness
+matrices for the global system of equations.</p>
+<p>Implementing your own cells can be done easily by subclassing from
+the abstract base class <a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase" title="edelweissmeshfree.cells.base.cell.CellBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">CellBase</span></code></a>.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.base.cell.CellBase">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.cells.base.cell.</span></span><span class="sig-name descname"><span class="pre">CellBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cellType</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cellNumber</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/cells/base/cell.html#CellBase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.cells.base.cell.CellBase" title="Link to this definition"></a></dt>
+<dd><p>MPM cells in EdelweissMPM should be derived from this
+base class in order to follow the general interface.</p>
+<p>EdelweissMPM expects the layout of the internal and external load vectors, P, PExt, (and the stiffness)
+to be of the form</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">[ node 1 - dofs field 1,</span>
+<span class="go">  node 1 - dofs field 2,</span>
+<span class="go">  node 1 - ... ,</span>
+<span class="go">  node 1 - dofs field n,</span>
+<span class="go">  node 2 - dofs field 1,</span>
+<span class="go">  ... ,</span>
+<span class="go">  node N - dofs field n].</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cellType</strong> (<em>str</em>) – A string identifying the requested element formulation.</p></li>
+<li><p><strong>cellNumber</strong> (<em>int</em>) – A unique integer label used for all kinds of purposes.</p></li>
+<li><p><strong>nodes</strong> (<em>list</em><em>[</em><em>Node</em><em>]</em>) – The list of Nodes assigned to this cell.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Attributes<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase.assignedMaterialPoints" title="edelweissmeshfree.cells.base.cell.CellBase.assignedMaterialPoints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">assignedMaterialPoints</span></code></a></dt><dd><p>The shape of the element in Ensight Gold notation.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase.cellNumber" title="edelweissmeshfree.cells.base.cell.CellBase.cellNumber"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cellNumber</span></code></a></dt><dd><p>The unique number of this cell</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase.dofIndicesPermutation" title="edelweissmeshfree.cells.base.cell.CellBase.dofIndicesPermutation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dofIndicesPermutation</span></code></a></dt><dd><p>The permutation pattern for the residual vector and the stiffness matrix to aggregate all entries in order to resemble the defined fields nodewise.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase.ensightType" title="edelweissmeshfree.cells.base.cell.CellBase.ensightType"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ensightType</span></code></a></dt><dd><p>The shape of the element in Ensight Gold notation.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase.fields" title="edelweissmeshfree.cells.base.cell.CellBase.fields"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fields</span></code></a></dt><dd><p>The list of fields per grid nodes.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase.nDof" title="edelweissmeshfree.cells.base.cell.CellBase.nDof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nDof</span></code></a></dt><dd><p>The total number of degrees of freedom this cell has</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase.nNodes" title="edelweissmeshfree.cells.base.cell.CellBase.nNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nNodes</span></code></a></dt><dd><p>The list of nodes this cell holds</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase.assignMaterialPoints" title="edelweissmeshfree.cells.base.cell.CellBase.assignMaterialPoints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">assignMaterialPoints</span></code></a>(materialPoints)</p></td>
+<td><p>Assign a list of material points which are currently residing within the cell.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase.computeBodyLoad" title="edelweissmeshfree.cells.base.cell.CellBase.computeBodyLoad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeBodyLoad</span></code></a>(loadType, load, P, K, ...)</p></td>
+<td><p>Compute bulk loads (body loads) for given time based for all assigned MaterialPoints.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase.computeDistributedLoad" title="edelweissmeshfree.cells.base.cell.CellBase.computeDistributedLoad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeDistributedLoad</span></code></a>(loadType, surfaceID, ...)</p></td>
+<td><p>Compute distributed (surface) a for given time based for a specific assigned material point.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase.computeMaterialPointKernels" title="edelweissmeshfree.cells.base.cell.CellBase.computeMaterialPointKernels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeMaterialPointKernels</span></code></a>(dU, P, K, ...)</p></td>
+<td><p>Evaluate the kernel residual and stiffness for given time based for all assigned MaterialPoints.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase.getBoundingBox" title="edelweissmeshfree.cells.base.cell.CellBase.getBoundingBox"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getBoundingBox</span></code></a>()</p></td>
+<td><p>Get the bounding box min.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase.getCoordinatesAtCenter" title="edelweissmeshfree.cells.base.cell.CellBase.getCoordinatesAtCenter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getCoordinatesAtCenter</span></code></a>()</p></td>
+<td><p>Compute the underlying MarmotElement centroid coordinates.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase.getInterpolationVector" title="edelweissmeshfree.cells.base.cell.CellBase.getInterpolationVector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getInterpolationVector</span></code></a>(coordinate)</p></td>
+<td><p>Get the interpolation vector for a given global coordinate.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVIJContributionSize</span></code>()</p></td>
+<td><p>Return the number of entries this entity contributes to the VIJ (COO) system matrix.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">initializeVIJContribution</span></code>(idcs, I_, J_, offset)</p></td>
+<td><p>Fill the global <code class="docutils literal notranslate"><span class="pre">I</span></code> and <code class="docutils literal notranslate"><span class="pre">J</span></code> index arrays for this constraint's VIJ contribution.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase.interpolateSolutionContributionToMaterialPoints" title="edelweissmeshfree.cells.base.cell.CellBase.interpolateSolutionContributionToMaterialPoints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">interpolateSolutionContributionToMaterialPoints</span></code></a>(dU)</p></td>
+<td><p>Interpolate field solutions to the assigned MaterialPoints.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase.isCoordinateInCell" title="edelweissmeshfree.cells.base.cell.CellBase.isCoordinateInCell"><code class="xref py py-obj docutils literal notranslate"><span class="pre">isCoordinateInCell</span></code></a>(coordinate)</p></td>
+<td><p>Check if a given coordinate is located within this cell.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.base.cell.CellBase.assignMaterialPoints">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">assignMaterialPoints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">materialPoints</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/cells/base/cell.html#CellBase.assignMaterialPoints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.cells.base.cell.CellBase.assignMaterialPoints" title="Link to this definition"></a></dt>
+<dd><p>Assign a list of material points which are currently residing within the cell.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>materialPoints</strong> (<em>list</em><em>[</em><a class="reference internal" href="mpm/material_points.html#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase" title="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase"><em>MaterialPointBase</em></a><em>]</em>) – The list of material points to be assigned.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.base.cell.CellBase.computeBodyLoad">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">computeBodyLoad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loadType</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">load</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">P</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">K</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeTotal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dTime</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/cells/base/cell.html#CellBase.computeBodyLoad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.cells.base.cell.CellBase.computeBodyLoad" title="Link to this definition"></a></dt>
+<dd><p>Compute bulk loads (body loads) for given time based for all assigned MaterialPoints.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>loadType</strong> (<em>str</em>) – The type of load to be computed (e.g., ‘bodyforce’)</p></li>
+<li><p><strong>load</strong> (<em>ndarray</em>) – The float (vector) describing the load.</p></li>
+<li><p><strong>P</strong> (<em>ndarray</em>) – The external load vector to be defined.</p></li>
+<li><p><strong>K</strong> (<em>ndarray</em>) – The stiffness matrix to be defined.</p></li>
+<li><p><strong>timeTotal</strong> (<em>float</em>) – The current total time.</p></li>
+<li><p><strong>dTime</strong> (<em>float</em>) – The time increment.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.base.cell.CellBase.computeDistributedLoad">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">computeDistributedLoad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loadType</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surfaceID</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">materialPoint</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">load</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">P</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">K</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeTotal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dTime</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/cells/base/cell.html#CellBase.computeDistributedLoad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.cells.base.cell.CellBase.computeDistributedLoad" title="Link to this definition"></a></dt>
+<dd><p>Compute distributed (surface) a for given time based for a specific assigned material point.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>loadType</strong> (<em>str</em>) – The type of load to be computed (e.g., ‘pressure’)</p></li>
+<li><p><strong>surfaceID</strong> (<em>int</em>) – The ID describing the surface of the material point.</p></li>
+<li><p><strong>materialPoint</strong> (<a class="reference internal" href="mpm/material_points.html#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase" title="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase"><em>MaterialPointBase</em></a>) – The specific (already assigned) mateiral point for computing the surface load.</p></li>
+<li><p><strong>load</strong> (<em>ndarray</em>) – The float (vector) describing the load.</p></li>
+<li><p><strong>P</strong> (<em>ndarray</em>) – The external load vector to be defined.</p></li>
+<li><p><strong>K</strong> (<em>ndarray</em>) – The stiffness matrix to be defined.</p></li>
+<li><p><strong>timeTotal</strong> (<em>float</em>) – The current total time.</p></li>
+<li><p><strong>dTime</strong> (<em>float</em>) – The time increment.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.base.cell.CellBase.computeMaterialPointKernels">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">computeMaterialPointKernels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">P</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">K</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeTotal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dTime</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/cells/base/cell.html#CellBase.computeMaterialPointKernels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.cells.base.cell.CellBase.computeMaterialPointKernels" title="Link to this definition"></a></dt>
+<dd><p>Evaluate the kernel residual and stiffness for given time based for all assigned MaterialPoints.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dU</strong> (<em>ndarray</em>) – The current solution increment.</p></li>
+<li><p><strong>P</strong> (<em>ndarray</em>) – The external load vector to be defined.</p></li>
+<li><p><strong>K</strong> (<em>ndarray</em>) – The stiffness matrix to be defined.</p></li>
+<li><p><strong>timeTotal</strong> (<em>float</em>) – The current total time.</p></li>
+<li><p><strong>dTime</strong> (<em>float</em>) – The time increment.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.base.cell.CellBase.getBoundingBox">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">getBoundingBox</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/cells/base/cell.html#CellBase.getBoundingBox"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.cells.base.cell.CellBase.getBoundingBox" title="Link to this definition"></a></dt>
+<dd><p>Get the bounding box min. and max. of a cell</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The tuple containing the min. and max. coordinates of the bounding box.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.base.cell.CellBase.getCoordinatesAtCenter">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">getCoordinatesAtCenter</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/cells/base/cell.html#CellBase.getCoordinatesAtCenter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.cells.base.cell.CellBase.getCoordinatesAtCenter" title="Link to this definition"></a></dt>
+<dd><p>Compute the underlying MarmotElement centroid coordinates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The cells’s central coordinates.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.base.cell.CellBase.getInterpolationVector">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">getInterpolationVector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coordinate</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/cells/base/cell.html#CellBase.getInterpolationVector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.cells.base.cell.CellBase.getInterpolationVector" title="Link to this definition"></a></dt>
+<dd><p>Get the interpolation vector for a given global coordinate.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The interpolation vector for all nodes.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>coordinate</strong> (<em>ndarray</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.base.cell.CellBase.interpolateSolutionContributionToMaterialPoints">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">interpolateSolutionContributionToMaterialPoints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dU</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/cells/base/cell.html#CellBase.interpolateSolutionContributionToMaterialPoints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.cells.base.cell.CellBase.interpolateSolutionContributionToMaterialPoints" title="Link to this definition"></a></dt>
+<dd><p>Interpolate field solutions to the assigned MaterialPoints.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dU</strong> (<em>ndarray</em>) – The current solution vector contribution increment for all fields.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.base.cell.CellBase.isCoordinateInCell">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">isCoordinateInCell</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coordinate</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/cells/base/cell.html#CellBase.isCoordinateInCell"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.cells.base.cell.CellBase.isCoordinateInCell" title="Link to this definition"></a></dt>
+<dd><p>Check if a given coordinate is located within this cell.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The truth value if this coordinate is located in the cell.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>coordinate</strong> (<em>ndarray</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.base.cell.CellBase.assignedMaterialPoints">
+<em class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">assignedMaterialPoints</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="mpm/material_points.html#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase" title="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase"><span class="pre">MaterialPointBase</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#edelweissmeshfree.cells.base.cell.CellBase.assignedMaterialPoints" title="Link to this definition"></a></dt>
+<dd><p>The shape of the element in Ensight Gold notation.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.base.cell.CellBase.cellNumber">
+<em class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">cellNumber</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#edelweissmeshfree.cells.base.cell.CellBase.cellNumber" title="Link to this definition"></a></dt>
+<dd><p>The unique number of this cell</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.base.cell.CellBase.dofIndicesPermutation">
+<em class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dofIndicesPermutation</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span></em><a class="headerlink" href="#edelweissmeshfree.cells.base.cell.CellBase.dofIndicesPermutation" title="Link to this definition"></a></dt>
+<dd><p>The permutation pattern for the residual vector and the stiffness matrix to
+aggregate all entries in order to resemble the defined fields nodewise.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.base.cell.CellBase.ensightType">
+<em class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ensightType</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#edelweissmeshfree.cells.base.cell.CellBase.ensightType" title="Link to this definition"></a></dt>
+<dd><p>The shape of the element in Ensight Gold notation.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.base.cell.CellBase.fields">
+<em class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fields</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#edelweissmeshfree.cells.base.cell.CellBase.fields" title="Link to this definition"></a></dt>
+<dd><p>The list of fields per grid nodes.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.base.cell.CellBase.nDof">
+<em class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nDof</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#edelweissmeshfree.cells.base.cell.CellBase.nDof" title="Link to this definition"></a></dt>
+<dd><p>The total number of degrees of freedom this cell has</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.base.cell.CellBase.nNodes">
+<em class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nNodes</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#edelweissmeshfree.cells.base.cell.CellBase.nNodes" title="Link to this definition"></a></dt>
+<dd><p>The list of nodes this cell holds</p>
+</dd></dl>
+
+</dd></dl>
+
+<section id="module-edelweissmeshfree.cells.marmotcell.marmotcell">
+<span id="marmotcell-class"></span><h2><code class="docutils literal notranslate"><span class="pre">MarmotCell</span></code> class<a class="headerlink" href="#module-edelweissmeshfree.cells.marmotcell.marmotcell" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.cells.marmotcell.marmotcell.</span></span><span class="sig-name descname"><span class="pre">MarmotCellWrapper</span></span><a class="headerlink" href="#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper" title="Link to this definition"></a></dt>
+<dd><p>This cell as a wrapper for MarmotCells.
+It is an abstract class and cannot be used directly.
+Rather, it is used as a base class for the specific cell types, such as LagrangianMarmotCell and BSplineMarmotCell.</p>
+<p>For the documentation of MarmotCells, please refer to <a class="reference external" href="https://github.com/MAteRialMOdelingToolbox/Marmot/">Marmot</a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cellType</strong> – The Marmot element which should be represented, e.g., CPE4.</p></li>
+<li><p><strong>cellNumber</strong> – The (unique) number of this cell.</p></li>
+<li><p><strong>nodes</strong> – The list of nodes for this Cell.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Attributes<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>assignedMaterialPoints</strong></dt><dd></dd>
+<dt><strong>cellNumber</strong></dt><dd></dd>
+<dt><strong>cellType</strong></dt><dd></dd>
+<dt><strong>dofIndicesPermutation</strong></dt><dd></dd>
+<dt><strong>ensightType</strong></dt><dd></dd>
+<dt><strong>fields</strong></dt><dd></dd>
+<dt><strong>nDof</strong></dt><dd></dd>
+<dt><strong>nNodes</strong></dt><dd></dd>
+<dt><strong>nodes</strong></dt><dd></dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.computeMaterialPointKernels" title="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.computeMaterialPointKernels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeMaterialPointKernels</span></code></a>(dUc, Pc, Kc, ...)</p></td>
+<td><p>Evaluate residual and stiffness for given time, field, and field increment.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.getVIJContributionSize" title="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.getVIJContributionSize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVIJContributionSize</span></code></a>()</p></td>
+<td><p>Return the number of entries this entity contributes to the VIJ (COO) system matrix.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.initializeVIJContribution" title="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.initializeVIJContribution"><code class="xref py py-obj docutils literal notranslate"><span class="pre">initializeVIJContribution</span></code></a>(idcs, I_, J_, offset)</p></td>
+<td><p>Initialize the I and J arrays for the VIJ (COO) system matrix assembly.</p></td>
+</tr>
+</tbody>
+</table>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><strong>assignMaterialPoints</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>computeBodyLoad</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>computeConsistentInertia</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>computeDistributedLoad</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>computeLumpedInertia</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>getBoundingBox</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>getInterpolationVector</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>interpolateFieldsToMaterialPoints</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>isCoordinateInCell</strong></p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.computeMaterialPointKernels">
+<span class="sig-name descname"><span class="pre">computeMaterialPointKernels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dUc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Pc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Kc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeNew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dTime</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.computeMaterialPointKernels" title="Link to this definition"></a></dt>
+<dd><p>Evaluate residual and stiffness for given time, field, and field increment.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.getVIJContributionSize">
+<span class="sig-name descname"><span class="pre">getVIJContributionSize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.getVIJContributionSize" title="Link to this definition"></a></dt>
+<dd><p>Return the number of entries this entity contributes to the VIJ (COO) system matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.initializeVIJContribution">
+<span class="sig-name descname"><span class="pre">initializeVIJContribution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">I_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">J_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.initializeVIJContribution" title="Link to this definition"></a></dt>
+<dd><p>Initialize the I and J arrays for the VIJ (COO) system matrix assembly.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>idcs</strong> (<em>ndarray</em>)</p></li>
+<li><p><strong>I_</strong> (<em>ndarray</em>)</p></li>
+<li><p><strong>J_</strong> (<em>ndarray</em>)</p></li>
+<li><p><strong>offset</strong> (<em>int</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-edelweissmeshfree.cells.marmotcell.lagrangianmarmotcell">
+<span id="lagrangianmarmotcell-class"></span><h2><code class="docutils literal notranslate"><span class="pre">LagrangianMarmotCell</span></code> class<a class="headerlink" href="#module-edelweissmeshfree.cells.marmotcell.lagrangianmarmotcell" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.marmotcell.lagrangianmarmotcell.LagrangianMarmotCellWrapper">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.cells.marmotcell.lagrangianmarmotcell.</span></span><span class="sig-name descname"><span class="pre">LagrangianMarmotCellWrapper</span></span><a class="headerlink" href="#edelweissmeshfree.cells.marmotcell.lagrangianmarmotcell.LagrangianMarmotCellWrapper" title="Link to this definition"></a></dt>
+<dd><p>This class is a wrapper for Lagrangian Marmot cells. It is responsible for creating the Marmot cell and
+for managing the material points associated with the cell.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cellType</strong> – The type of the cell, e.g., CPE4.</p></li>
+<li><p><strong>cellNumber</strong> – The number of the cell.</p></li>
+<li><p><strong>nodes</strong> – The nodes of the cell.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Attributes<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>assignedMaterialPoints</strong></dt><dd></dd>
+<dt><strong>cellNumber</strong></dt><dd></dd>
+<dt><strong>cellType</strong></dt><dd></dd>
+<dt><strong>dofIndicesPermutation</strong></dt><dd></dd>
+<dt><strong>ensightType</strong></dt><dd></dd>
+<dt><strong>fields</strong></dt><dd></dd>
+<dt><strong>nDof</strong></dt><dd></dd>
+<dt><strong>nNodes</strong></dt><dd></dd>
+<dt><strong>nodes</strong></dt><dd></dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeMaterialPointKernels</span></code>(dUc, Pc, Kc, ...)</p></td>
+<td><p>Evaluate residual and stiffness for given time, field, and field increment.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVIJContributionSize</span></code>()</p></td>
+<td><p>Return the number of entries this entity contributes to the VIJ (COO) system matrix.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">initializeVIJContribution</span></code>(idcs, I_, J_, offset)</p></td>
+<td><p>Initialize the I and J arrays for the VIJ (COO) system matrix assembly.</p></td>
+</tr>
+</tbody>
+</table>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><strong>assignMaterialPoints</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>computeBodyLoad</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>computeConsistentInertia</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>computeDistributedLoad</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>computeLumpedInertia</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>getBoundingBox</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>getInterpolationVector</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>interpolateFieldsToMaterialPoints</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>isCoordinateInCell</strong></p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</section>
+<section id="module-edelweissmeshfree.cells.marmotcell.bsplinemarmotcell">
+<span id="bsplinemarmotcell-class"></span><h2><code class="docutils literal notranslate"><span class="pre">BSplineMarmotCell</span></code> class<a class="headerlink" href="#module-edelweissmeshfree.cells.marmotcell.bsplinemarmotcell" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.marmotcell.bsplinemarmotcell.BSplineMarmotCellWrapper">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.cells.marmotcell.bsplinemarmotcell.</span></span><span class="sig-name descname"><span class="pre">BSplineMarmotCellWrapper</span></span><a class="headerlink" href="#edelweissmeshfree.cells.marmotcell.bsplinemarmotcell.BSplineMarmotCellWrapper" title="Link to this definition"></a></dt>
+<dd><p>This class is a wrapper for the MarmotCell class. It is used
+to create a BSpline-MarmotCell object from a set of nodes and knot vectors.
+The MarmotCell object is then used to evaluate the shape functions
+and their derivatives at a given point.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>assignedMaterialPoints</strong></dt><dd></dd>
+<dt><strong>cellNumber</strong></dt><dd></dd>
+<dt><strong>cellType</strong></dt><dd></dd>
+<dt><strong>dofIndicesPermutation</strong></dt><dd></dd>
+<dt><strong>ensightType</strong></dt><dd></dd>
+<dt><strong>fields</strong></dt><dd></dd>
+<dt><strong>nDof</strong></dt><dd></dd>
+<dt><strong>nNodes</strong></dt><dd></dd>
+<dt><strong>nodes</strong></dt><dd></dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeMaterialPointKernels</span></code>(dUc, Pc, Kc, ...)</p></td>
+<td><p>Evaluate residual and stiffness for given time, field, and field increment.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVIJContributionSize</span></code>()</p></td>
+<td><p>Return the number of entries this entity contributes to the VIJ (COO) system matrix.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">initializeVIJContribution</span></code>(idcs, I_, J_, offset)</p></td>
+<td><p>Initialize the I and J arrays for the VIJ (COO) system matrix assembly.</p></td>
+</tr>
+</tbody>
+</table>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><strong>assignMaterialPoints</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>computeBodyLoad</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>computeConsistentInertia</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>computeDistributedLoad</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>computeLumpedInertia</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>getBoundingBox</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>getInterpolationVector</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>interpolateFieldsToMaterialPoints</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>isCoordinateInCell</strong></p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</section>
+<section id="module-edelweissmeshfree.cells.pythoncell.cell">
+<span id="pythoncell-class"></span><h2><code class="docutils literal notranslate"><span class="pre">PythonCell</span></code> class<a class="headerlink" href="#module-edelweissmeshfree.cells.pythoncell.cell" title="Link to this heading"></a></h2>
+<p>A pure Python implementation of a bilinear Quad4 cell for 2D displacement problems.</p>
+<p>This cell uses standard bilinear shape functions on a quadrilateral to interpolate
+displacements from grid nodes to material points, and to assemble residual vectors
+and stiffness matrices from material point contributions.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.pythoncell.cell.PythonCell">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.cells.pythoncell.cell.</span></span><span class="sig-name descname"><span class="pre">PythonCell</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cellType</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cellNumber</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/cells/pythoncell/cell.html#PythonCell"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell" title="Link to this definition"></a></dt>
+<dd><p>MPM cells in EdelweissMPM should be derived from this
+base class in order to follow the general interface.</p>
+<p>EdelweissMPM expects the layout of the internal and external load vectors, P, PExt, (and the stiffness)
+to be of the form</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">[ node 1 - dofs field 1,</span>
+<span class="go">  node 1 - dofs field 2,</span>
+<span class="go">  node 1 - ... ,</span>
+<span class="go">  node 1 - dofs field n,</span>
+<span class="go">  node 2 - dofs field 1,</span>
+<span class="go">  ... ,</span>
+<span class="go">  node N - dofs field n].</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cellType</strong> (<em>str</em>) – A string identifying the requested element formulation.</p></li>
+<li><p><strong>cellNumber</strong> (<em>int</em>) – A unique integer label used for all kinds of purposes.</p></li>
+<li><p><strong>nodes</strong> (<em>list</em><em>[</em><em>Node</em><em>]</em>) – The list of Nodes assigned to this cell.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Attributes<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><a class="reference internal" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell.assignedMaterialPoints" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.assignedMaterialPoints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">assignedMaterialPoints</span></code></a></dt><dd><p>The shape of the element in Ensight Gold notation.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell.cellNumber" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.cellNumber"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cellNumber</span></code></a></dt><dd><p>The unique number of this cell</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dofIndicesPermutation</span></code></a></dt><dd><p>The permutation pattern for the residual vector and the stiffness matrix to aggregate all entries in order to resemble the defined fields nodewise.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell.ensightType" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.ensightType"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ensightType</span></code></a></dt><dd><p>The shape of the element in Ensight Gold notation.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell.fields" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.fields"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fields</span></code></a></dt><dd><p>The list of fields per grid nodes.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell.nDof" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.nDof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nDof</span></code></a></dt><dd><p>The total number of degrees of freedom this cell has</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nNodes</span></code></a></dt><dd><p>The list of nodes this cell holds</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell.assignMaterialPoints" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.assignMaterialPoints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">assignMaterialPoints</span></code></a>(materialPoints)</p></td>
+<td><p>Assign a list of material points which are currently residing within the cell.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell.computeBodyLoad" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.computeBodyLoad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeBodyLoad</span></code></a>(loadType, load, P, K, ...)</p></td>
+<td><p>Compute body load contribution (e.g., gravity).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell.computeDistributedLoad" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.computeDistributedLoad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeDistributedLoad</span></code></a>(loadType, surfaceID, ...)</p></td>
+<td><p>Compute distributed (surface) load for a specific material point.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell.computeMaterialPointKernels" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.computeMaterialPointKernels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeMaterialPointKernels</span></code></a>(dU, P, K, ...)</p></td>
+<td><p>Compute residual and stiffness contributions from all assigned material points.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell.getBoundingBox" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.getBoundingBox"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getBoundingBox</span></code></a>()</p></td>
+<td><p>Get the bounding box min.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell.getCoordinatesAtCenter" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.getCoordinatesAtCenter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getCoordinatesAtCenter</span></code></a>()</p></td>
+<td><p>Compute the underlying MarmotElement centroid coordinates.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell.getInterpolationVector" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.getInterpolationVector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getInterpolationVector</span></code></a>(coordinate)</p></td>
+<td><p>Get the interpolation vector for a given global coordinate.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVIJContributionSize</span></code>()</p></td>
+<td><p>Return the number of entries this entity contributes to the VIJ (COO) system matrix.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">initializeVIJContribution</span></code>(idcs, I_, J_, offset)</p></td>
+<td><p>Fill the global <code class="docutils literal notranslate"><span class="pre">I</span></code> and <code class="docutils literal notranslate"><span class="pre">J</span></code> index arrays for this constraint's VIJ contribution.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell.interpolateFieldsToMaterialPoints" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.interpolateFieldsToMaterialPoints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">interpolateFieldsToMaterialPoints</span></code></a>(dU)</p></td>
+<td><p>Interpolate nodal displacement increments to material points.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell.interpolateSolutionContributionToMaterialPoints" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.interpolateSolutionContributionToMaterialPoints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">interpolateSolutionContributionToMaterialPoints</span></code></a>(dU)</p></td>
+<td><p>Alias for interpolateFieldsToMaterialPoints (base class interface).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell.isCoordinateInCell" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.isCoordinateInCell"><code class="xref py py-obj docutils literal notranslate"><span class="pre">isCoordinateInCell</span></code></a>(coordinate)</p></td>
+<td><p>Check if a given coordinate is located within this cell.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.pythoncell.cell.PythonCell._get_B_matrix">
+<span class="sig-name descname"><span class="pre">_get_B_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dNdx</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/cells/pythoncell/cell.html#PythonCell._get_B_matrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell._get_B_matrix" title="Link to this definition"></a></dt>
+<dd><p>Compute the strain-displacement matrix B for plane strain/stress.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dNdx</strong> – Shape function gradients (4, 2).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>(4, 8) strain-displacement matrix for Voigt notation [eps_xx, eps_yy, eps_zz, gamma_xy].</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>B</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.pythoncell.cell.PythonCell.assignMaterialPoints">
+<span class="sig-name descname"><span class="pre">assignMaterialPoints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">materialPoints</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/cells/pythoncell/cell.html#PythonCell.assignMaterialPoints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell.assignMaterialPoints" title="Link to this definition"></a></dt>
+<dd><p>Assign a list of material points which are currently residing within the cell.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>materialPoints</strong> (<em>list</em>) – The list of material points to be assigned.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.pythoncell.cell.PythonCell.computeBodyLoad">
+<span class="sig-name descname"><span class="pre">computeBodyLoad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loadType</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">load</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">P</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">K</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeTotal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dTime</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/cells/pythoncell/cell.html#PythonCell.computeBodyLoad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell.computeBodyLoad" title="Link to this definition"></a></dt>
+<dd><p>Compute body load contribution (e.g., gravity).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>loadType</strong> (<em>str</em>)</p></li>
+<li><p><strong>load</strong> (<em>ndarray</em>)</p></li>
+<li><p><strong>P</strong> (<em>ndarray</em>)</p></li>
+<li><p><strong>K</strong> (<em>ndarray</em>)</p></li>
+<li><p><strong>timeTotal</strong> (<em>float</em>)</p></li>
+<li><p><strong>dTime</strong> (<em>float</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.pythoncell.cell.PythonCell.computeDistributedLoad">
+<span class="sig-name descname"><span class="pre">computeDistributedLoad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loadType</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surfaceID</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">materialPoint</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">load</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">P</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">K</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeTotal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dTime</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/cells/pythoncell/cell.html#PythonCell.computeDistributedLoad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell.computeDistributedLoad" title="Link to this definition"></a></dt>
+<dd><p>Compute distributed (surface) load for a specific material point.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>loadType</strong> (<em>str</em>)</p></li>
+<li><p><strong>surfaceID</strong> (<em>int</em>)</p></li>
+<li><p><strong>materialPoint</strong> (<a class="reference internal" href="mpm/material_points.html#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase" title="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase"><em>MaterialPointBase</em></a>)</p></li>
+<li><p><strong>load</strong> (<em>ndarray</em>)</p></li>
+<li><p><strong>P</strong> (<em>ndarray</em>)</p></li>
+<li><p><strong>K</strong> (<em>ndarray</em>)</p></li>
+<li><p><strong>timeTotal</strong> (<em>float</em>)</p></li>
+<li><p><strong>dTime</strong> (<em>float</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.pythoncell.cell.PythonCell.computeMaterialPointKernels">
+<span class="sig-name descname"><span class="pre">computeMaterialPointKernels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">P</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">K</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeTotal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dTime</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/cells/pythoncell/cell.html#PythonCell.computeMaterialPointKernels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell.computeMaterialPointKernels" title="Link to this definition"></a></dt>
+<dd><p>Compute residual and stiffness contributions from all assigned material points.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dU</strong> (<em>ndarray</em>) – The current solution increment (8,).</p></li>
+<li><p><strong>P</strong> (<em>ndarray</em>) – The internal load vector to be filled (8,).</p></li>
+<li><p><strong>K</strong> (<em>ndarray</em>) – The stiffness matrix to be filled (64,) in row-major order.</p></li>
+<li><p><strong>timeTotal</strong> (<em>float</em>) – The current total time.</p></li>
+<li><p><strong>dTime</strong> (<em>float</em>) – The time increment.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.pythoncell.cell.PythonCell.getBoundingBox">
+<span class="sig-name descname"><span class="pre">getBoundingBox</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/cells/pythoncell/cell.html#PythonCell.getBoundingBox"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell.getBoundingBox" title="Link to this definition"></a></dt>
+<dd><p>Get the bounding box min. and max. of a cell</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The tuple containing the min. and max. coordinates of the bounding box.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.pythoncell.cell.PythonCell.getCoordinatesAtCenter">
+<span class="sig-name descname"><span class="pre">getCoordinatesAtCenter</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/cells/pythoncell/cell.html#PythonCell.getCoordinatesAtCenter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell.getCoordinatesAtCenter" title="Link to this definition"></a></dt>
+<dd><p>Compute the underlying MarmotElement centroid coordinates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The cells’s central coordinates.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.pythoncell.cell.PythonCell.getInterpolationVector">
+<span class="sig-name descname"><span class="pre">getInterpolationVector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coordinate</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/cells/pythoncell/cell.html#PythonCell.getInterpolationVector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell.getInterpolationVector" title="Link to this definition"></a></dt>
+<dd><p>Get the interpolation vector for a given global coordinate.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The interpolation vector for all nodes.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>coordinate</strong> (<em>ndarray</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.pythoncell.cell.PythonCell.interpolateFieldsToMaterialPoints">
+<span class="sig-name descname"><span class="pre">interpolateFieldsToMaterialPoints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dU</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/cells/pythoncell/cell.html#PythonCell.interpolateFieldsToMaterialPoints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell.interpolateFieldsToMaterialPoints" title="Link to this definition"></a></dt>
+<dd><p>Interpolate nodal displacement increments to material points.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dU</strong> (<em>ndarray</em>) – The nodal displacement increment vector (8,) = [u1x, u1y, u2x, u2y, u3x, u3y, u4x, u4y].</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.pythoncell.cell.PythonCell.interpolateSolutionContributionToMaterialPoints">
+<span class="sig-name descname"><span class="pre">interpolateSolutionContributionToMaterialPoints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dU</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/cells/pythoncell/cell.html#PythonCell.interpolateSolutionContributionToMaterialPoints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell.interpolateSolutionContributionToMaterialPoints" title="Link to this definition"></a></dt>
+<dd><p>Alias for interpolateFieldsToMaterialPoints (base class interface).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dU</strong> (<em>ndarray</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.pythoncell.cell.PythonCell.isCoordinateInCell">
+<span class="sig-name descname"><span class="pre">isCoordinateInCell</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coordinate</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/cells/pythoncell/cell.html#PythonCell.isCoordinateInCell"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell.isCoordinateInCell" title="Link to this definition"></a></dt>
+<dd><p>Check if a given coordinate is located within this cell.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The truth value if this coordinate is located in the cell.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>coordinate</strong> (<em>ndarray</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.pythoncell.cell.PythonCell.assignedMaterialPoints">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">assignedMaterialPoints</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell.assignedMaterialPoints" title="Link to this definition"></a></dt>
+<dd><p>The shape of the element in Ensight Gold notation.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.pythoncell.cell.PythonCell.cellNumber">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">cellNumber</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell.cellNumber" title="Link to this definition"></a></dt>
+<dd><p>The unique number of this cell</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dofIndicesPermutation</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span></em><a class="headerlink" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation" title="Link to this definition"></a></dt>
+<dd><p>The permutation pattern for the residual vector and the stiffness matrix to
+aggregate all entries in order to resemble the defined fields nodewise.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.pythoncell.cell.PythonCell.ensightType">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ensightType</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell.ensightType" title="Link to this definition"></a></dt>
+<dd><p>The shape of the element in Ensight Gold notation.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.pythoncell.cell.PythonCell.fields">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fields</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell.fields" title="Link to this definition"></a></dt>
+<dd><p>The list of fields per grid nodes.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.pythoncell.cell.PythonCell.nDof">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nDof</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell.nDof" title="Link to this definition"></a></dt>
+<dd><p>The total number of degrees of freedom this cell has</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nNodes</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes" title="Link to this definition"></a></dt>
+<dd><p>The list of nodes this cell holds</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.pythoncell.cell._compute_shape_functions_and_gradients">
+<span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.cells.pythoncell.cell.</span></span><span class="sig-name descname"><span class="pre">_compute_shape_functions_and_gradients</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_coords</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/cells/pythoncell/cell.html#_compute_shape_functions_and_gradients"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.cells.pythoncell.cell._compute_shape_functions_and_gradients" title="Link to this definition"></a></dt>
+<dd><p>Compute shape functions and their spatial gradients at a given parametric point.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>xi</strong> – Parametric coordinate xi in [-1, 1].</p></li>
+<li><p><strong>eta</strong> – Parametric coordinate eta in [-1, 1].</p></li>
+<li><p><strong>node_coords</strong> – (4, 2) array of node coordinates.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>N</em> – Shape function values (4,).</p></li>
+<li><p><em>dNdx</em> – Shape function gradients w.r.t. physical coordinates (4, 2).</p></li>
+<li><p><em>detJ</em> – Determinant of the Jacobian.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.pythoncell.cell._global_to_parametric">
+<span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.cells.pythoncell.cell.</span></span><span class="sig-name descname"><span class="pre">_global_to_parametric</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coordinate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_coords</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/cells/pythoncell/cell.html#_global_to_parametric"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.cells.pythoncell.cell._global_to_parametric" title="Link to this definition"></a></dt>
+<dd><p>Map a global coordinate to parametric coordinates using Newton iteration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>coordinate</strong> – Global (x, y) coordinate.</p></li>
+<li><p><strong>node_coords</strong> – (4, 2) array of node coordinates.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Parametric coordinates.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>xi, eta</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="theory-quad4-interpolation-and-cell-kernels">
+<h2>Theory (Quad4 interpolation and cell kernels)<a class="headerlink" href="#theory-quad4-interpolation-and-cell-kernels" title="Link to this heading"></a></h2>
+<p>The Python cell implementation uses a bilinear Quad4 interpolation in the parent space
+<span class="math notranslate nohighlight">\((\xi,\eta)\in[-1,1]^2\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[N_1 = \frac{1}{4}(1-\xi)(1-\eta),\quad
+N_2 = \frac{1}{4}(1+\xi)(1-\eta),\quad
+N_3 = \frac{1}{4}(1+\xi)(1+\eta),\quad
+N_4 = \frac{1}{4}(1-\xi)(1+\eta).\]</div>
+<p>With nodal displacement vector
+<span class="math notranslate nohighlight">\(\mathbf{u}_n=[u_{1x},u_{1y},u_{2x},u_{2y},u_{3x},u_{3y},u_{4x},u_{4y}]^\mathsf{T}\)</span>,
+the material point displacement increment is interpolated as:</p>
+<div class="math notranslate nohighlight">
+\[\Delta\mathbf{u}_{mp} = \sum_{a=1}^{4} N_a\,\Delta\mathbf{u}_a.\]</div>
+<p>The strain increment follows from the standard strain-displacement matrix:</p>
+<div class="math notranslate nohighlight">
+\[\Delta\boldsymbol{\varepsilon}_{mp} = \mathbf{B}\,\Delta\mathbf{u}_n,\]</div>
+<p>where <span class="math notranslate nohighlight">\(\mathbf{B}\)</span> is assembled from the spatial gradients
+<span class="math notranslate nohighlight">\(\nabla N_a\)</span> (obtained using the Jacobian mapping from parent to physical space).</p>
+<p>Cell residual and tangent contributions are assembled from material point stress
+<span class="math notranslate nohighlight">\(\boldsymbol{\sigma}\)</span> and consistent tangent <span class="math notranslate nohighlight">\(\mathbf{C}\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\mathbf{P}_{int} \mathrel{+}= \mathbf{B}^\mathsf{T}\boldsymbol{\sigma}\,V_{mp},
+\qquad
+\mathbf{K} \mathrel{+}= \mathbf{B}^\mathsf{T}\mathbf{C}\mathbf{B}\,V_{mp}.\]</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="models.html" class="btn btn-neutral float-left" title="Models" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="cellelements.html" class="btn btn-neutral float-right" title="Cellelements" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Matthias Neuner.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

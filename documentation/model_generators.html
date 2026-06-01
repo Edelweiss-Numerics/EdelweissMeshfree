@@ -1,0 +1,402 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Model generators &mdash; EdelweissMeshfree v25.08 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=1d735308" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=83aae4bb"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Step actions" href="step_actions.html" />
+    <link rel="prev" title="Solvers" href="solvers.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            EdelweissMeshfree
+              <img src="../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="models.html">Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cells.html">Cells</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cellelements.html">Cellelements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="solvers.html">Solvers</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Model generators</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-edelweissmeshfree.generators.rectangulargridgenerator">2D generators</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.generators.rectangulargridgenerator.generateModelData"><code class="docutils literal notranslate"><span class="pre">generateModelData()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.generators.rectangularbsplinegridgenerator.generateModelData"><code class="docutils literal notranslate"><span class="pre">generateModelData()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.generators.rectangularmpgenerator.generateModelData"><code class="docutils literal notranslate"><span class="pre">generateModelData()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.generators.rectangularcellelementgridgenerator.generateModelData"><code class="docutils literal notranslate"><span class="pre">generateModelData()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-edelweissmeshfree.generators.boxgridgenerator">3D generators</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.generators.boxgridgenerator.generateModelData"><code class="docutils literal notranslate"><span class="pre">generateModelData()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.generators.boxbsplinegridgenerator.generateModelData"><code class="docutils literal notranslate"><span class="pre">generateModelData()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.generators.boxmpgenerator.generateModelData"><code class="docutils literal notranslate"><span class="pre">generateModelData()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-edelweissmeshfree.generators.findclosestmp">utitilty generators</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.generators.findclosestmp.generateModelData"><code class="docutils literal notranslate"><span class="pre">generateModelData()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="step_actions.html">Step actions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="constraints.html">Constraints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="numeric_tools.html">Numerical tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="output_managers.html">Output managers</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">EdelweissMeshfree</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Documentation</a></li>
+      <li class="breadcrumb-item active">Model generators</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/documentation/model_generators.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="model-generators">
+<h1>Model generators<a class="headerlink" href="#model-generators" title="Link to this heading"></a></h1>
+<p>Model generators are used to create and extend the model. They are used to
+create the mesh, the material points, the cells, the elements, and sets.</p>
+<section id="module-edelweissmeshfree.generators.rectangulargridgenerator">
+<span id="d-generators"></span><h2>2D generators<a class="headerlink" href="#module-edelweissmeshfree.generators.rectangulargridgenerator" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="edelweissmeshfree.generators.rectangulargridgenerator.generateModelData">
+<span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.generators.rectangulargridgenerator.</span></span><span class="sig-name descname"><span class="pre">generateModelData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">journal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name='rectangular_grid'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x0=0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y0=0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h=1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">l=1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nX=10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nY=10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">firstCellNumber=1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">firstNodeNumber=1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cellProvider=&lt;class</span> <span class="pre">'str'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cellType=&lt;class</span> <span class="pre">'str'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodesPerCell=4</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/generators/rectangulargridgenerator.html#generateModelData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.generators.rectangulargridgenerator.generateModelData" title="Link to this definition"></a></dt>
+<dd><p>Generate a structured grid of nodes and cells.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<em>FEModel</em>) – The model to which the grid should be added.</p></li>
+<li><p><strong>journal</strong> (<em>Journal</em>) – The journal instance for logging purposes.</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – The name of the grid.</p></li>
+<li><p><strong>x0</strong> (<em>float</em>) – The x-coordinate of the origin.</p></li>
+<li><p><strong>y0</strong> (<em>float</em>) – The y-coordinate of the origin.</p></li>
+<li><p><strong>h</strong> (<em>float</em>) – The height of the grid.</p></li>
+<li><p><strong>l</strong> (<em>float</em>) – The length of the grid.</p></li>
+<li><p><strong>nX</strong> (<em>int</em>) – The number of elements along the x-axis.</p></li>
+<li><p><strong>nY</strong> (<em>int</em>) – The number of elements along the y-axis.</p></li>
+<li><p><strong>cellProvider</strong> (<em>str</em>) – The name of the cell provider class.</p></li>
+<li><p><strong>cellType</strong> (<em>str</em>) – The type of the cell.</p></li>
+<li><p><strong>firstNodeNumber</strong> (<em>int</em>) – The first node number.</p></li>
+<li><p><strong>nodesPerCell</strong> (<em>int</em>) – The number of nodes per cell.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<span class="target" id="module-edelweissmeshfree.generators.rectangularbsplinegridgenerator"></span><dl class="py function">
+<dt class="sig sig-object py" id="edelweissmeshfree.generators.rectangularbsplinegridgenerator.generateModelData">
+<span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.generators.rectangularbsplinegridgenerator.</span></span><span class="sig-name descname"><span class="pre">generateModelData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">journal</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/generators/rectangularbsplinegridgenerator.html#generateModelData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.generators.rectangularbsplinegridgenerator.generateModelData" title="Link to this definition"></a></dt>
+<dd><p>A mesh generator, for rectangular geometries and structured quad meshes:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">    &lt;-----l-----&gt;</span>
+<span class="go">     nX elements</span>
+<span class="go">     __ __ __ __</span>
+<span class="go">    |__|__|__|__|  A</span>
+<span class="go">    |__|__|__|__|  |</span>
+<span class="go">    |__|__|__|__|  | h</span>
+<span class="go">    |__|__|__|__|  | nY elements</span>
+<span class="go">  | |__|__|__|__|  |</span>
+<span class="go">  | |__|__|__|__|  V</span>
+<span class="go">x0|_____</span>
+<span class="go">  y0</span>
+</pre></div>
+</div>
+<p>nSets, elSets, surface : ‘name’_top, _bottom, _left, _right, …
+are automatically generated</p>
+<p>Datalines:</p>
+</dd></dl>
+
+<span class="target" id="module-edelweissmeshfree.generators.rectangularmpgenerator"></span><dl class="py function">
+<dt class="sig sig-object py" id="edelweissmeshfree.generators.rectangularmpgenerator.generateModelData">
+<span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.generators.rectangularmpgenerator.</span></span><span class="sig-name descname"><span class="pre">generateModelData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">journal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'rectangular_grid'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">l</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nX</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nY</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">firstMPNumber</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mpProvider</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mpType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thickness</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">material</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/generators/rectangularmpgenerator.html#generateModelData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.generators.rectangularmpgenerator.generateModelData" title="Link to this definition"></a></dt>
+<dd><p>Generate a structured rectangular grid of material points.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel"><em>MPMModel</em></a>) – The model instance.</p></li>
+<li><p><strong>journal</strong> (<em>Journal</em>) – The Journal instance for logging purposes.</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – The name of the mesh.</p></li>
+<li><p><strong>x0</strong> (<em>float</em>) – The origin at x axis.</p></li>
+<li><p><strong>y0</strong> (<em>float</em>) – The origin at y axis.</p></li>
+<li><p><strong>h</strong> (<em>float</em>) – The height of the body.</p></li>
+<li><p><strong>l</strong> (<em>float</em>) – The length of the body.</p></li>
+<li><p><strong>nX</strong> (<em>int</em>) – The number of material points along x.</p></li>
+<li><p><strong>nY</strong> (<em>int</em>) – The number of material points along y.</p></li>
+<li><p><strong>firstMPNumber</strong> (<em>int</em>) – The first material point number.</p></li>
+<li><p><strong>mpProvider</strong> (<em>str</em>) – The providing class for the MaterialPoint.</p></li>
+<li><p><strong>mpType</strong> (<em>str</em>) – The type of MaterialPoint.</p></li>
+<li><p><strong>thickness</strong> (<em>float</em>) – The thickness of the material point.</p></li>
+<li><p><strong>material</strong> (<em>str</em>) – The material of the material point.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The updated model.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel">MPMModel</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<span class="target" id="module-edelweissmeshfree.generators.circlempgenerator"></span><p id="module-edelweissmeshfree.generators.rectangularcellelementgridgenerator">A mesh generator, for rectangular geometries and structured quad meshes:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">    &lt;-----l-----&gt;</span>
+<span class="go">     nX elements</span>
+<span class="go">     __ __ __ __</span>
+<span class="go">    |__|__|__|__|  A</span>
+<span class="go">    |__|__|__|__|  |</span>
+<span class="go">    |__|__|__|__|  | h</span>
+<span class="go">    |__|__|__|__|  | nY elements</span>
+<span class="go">  | |__|__|__|__|  |</span>
+<span class="go">  | |__|__|__|__|  V</span>
+<span class="go">x0|_____</span>
+<span class="go">  y0</span>
+</pre></div>
+</div>
+<p>nSets, elSets, surface : ‘name’_top, _bottom, _left, _right, …
+are automatically generated</p>
+<p>Datalines:</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="edelweissmeshfree.generators.rectangularcellelementgridgenerator.generateModelData">
+<span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.generators.rectangularcellelementgridgenerator.</span></span><span class="sig-name descname"><span class="pre">generateModelData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">journal</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/generators/rectangularcellelementgridgenerator.html#generateModelData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.generators.rectangularcellelementgridgenerator.generateModelData" title="Link to this definition"></a></dt>
+<dd><p>Generate a structured grid of nodes and cells.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<em>FEModel</em>) – The model to which the grid should be added.</p></li>
+<li><p><strong>journal</strong> (<em>Journal</em>) – The journal instance for logging purposes.</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – The name of the grid.</p></li>
+<li><p><strong>x0</strong> (<em>float</em>) – The x-coordinate of the origin.</p></li>
+<li><p><strong>y0</strong> (<em>float</em>) – The y-coordinate of the origin.</p></li>
+<li><p><strong>h</strong> (<em>float</em>) – The height of the grid.</p></li>
+<li><p><strong>l</strong> (<em>float</em>) – The length of the grid.</p></li>
+<li><p><strong>nX</strong> (<em>int</em>) – The number of elements along the x-axis.</p></li>
+<li><p><strong>nY</strong> (<em>int</em>) – The number of elements along the y-axis.</p></li>
+<li><p><strong>firstNodeNumber</strong> (<em>int</em>) – The first node number.</p></li>
+<li><p><strong>nodesPerCell</strong> (<em>int</em>) – The number of nodes per cell.</p></li>
+<li><p><strong>mpType</strong> (<em>str</em>) – The type of the material point.</p></li>
+<li><p><strong>mpClass</strong> (<em>str</em>) – The name of the material point class.</p></li>
+<li><p><strong>thickness</strong> (<em>float</em>) – The thickness of the material point.</p></li>
+<li><p><strong>mpNumberStart</strong> (<em>int</em>) – The first material point number.</p></li>
+<li><p><strong>cellelementProvider</strong> (<em>str</em>) – The name of the cell element provider class.</p></li>
+<li><p><strong>cellelementType</strong> (<em>str</em>) – The type of the cell element.</p></li>
+<li><p><strong>material</strong> (<em>dict</em>) – The material definition.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-edelweissmeshfree.generators.boxgridgenerator">
+<span id="id1"></span><h2>3D generators<a class="headerlink" href="#module-edelweissmeshfree.generators.boxgridgenerator" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="edelweissmeshfree.generators.boxgridgenerator.generateModelData">
+<span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.generators.boxgridgenerator.</span></span><span class="sig-name descname"><span class="pre">generateModelData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">journal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'box_grid'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">l</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nX</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nY</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nZ</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">firstNodeNumber</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cellClass</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cellType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodesPerCell</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/generators/boxgridgenerator.html#generateModelData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.generators.boxgridgenerator.generateModelData" title="Link to this definition"></a></dt>
+<dd><p>Generate a structured box grid of material points.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel"><em>MPMModel</em></a>) – The model instance.</p></li>
+<li><p><strong>journal</strong> (<em>Journal</em>) – The Journal instance for logging purposes.</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – The name of the mesh.</p></li>
+<li><p><strong>x0</strong> (<em>float</em>) – The origin at x axis.</p></li>
+<li><p><strong>y0</strong> (<em>float</em>) – The origin at y axis.</p></li>
+<li><p><strong>z0</strong> (<em>float</em>) – The origin at z axis.</p></li>
+<li><p><strong>h</strong> (<em>float</em>) – The height of the body.</p></li>
+<li><p><strong>l</strong> (<em>float</em>) – The length of the body.</p></li>
+<li><p><strong>d</strong> (<em>float</em>) – The depth of the body.</p></li>
+<li><p><strong>nX</strong> (<em>int</em>) – The number of material points along x.</p></li>
+<li><p><strong>nY</strong> (<em>int</em>) – The number of material points along y.</p></li>
+<li><p><strong>nZ</strong> (<em>int</em>) – The number of material points along z.</p></li>
+<li><p><strong>firstNodeNumber</strong> (<em>int</em>) – The first node number.</p></li>
+<li><p><strong>cellClass</strong> (<em>str</em>) – The providing class for the Cell.</p></li>
+<li><p><strong>cellType</strong> (<em>str</em>) – The type of Cell.</p></li>
+<li><p><strong>nodesPerCell</strong> (<em>int</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The updated model.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel">MPMModel</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<span class="target" id="module-edelweissmeshfree.generators.boxbsplinegridgenerator"></span><dl class="py function">
+<dt class="sig sig-object py" id="edelweissmeshfree.generators.boxbsplinegridgenerator.generateModelData">
+<span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.generators.boxbsplinegridgenerator.</span></span><span class="sig-name descname"><span class="pre">generateModelData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">journal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'boxgrid'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">l</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nX</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nY</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nZ</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">firstNodeNumber</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cellProvider</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cellType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/generators/boxbsplinegridgenerator.html#generateModelData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.generators.boxbsplinegridgenerator.generateModelData" title="Link to this definition"></a></dt>
+<dd><p>Generates a B-Spline grid of cells in a box.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel"><em>MPMModel</em></a>) – The model to which the grid will be added.</p></li>
+<li><p><strong>journal</strong> (<em>Journal</em>) – The journal instance for logging purposes.</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – The name of the grid.</p></li>
+<li><p><strong>x0</strong> (<em>float</em>) – The origin at x axis.</p></li>
+<li><p><strong>y0</strong> (<em>float</em>) – The origin at y axis.</p></li>
+<li><p><strong>z0</strong> (<em>float</em>) – The origin at z axis.</p></li>
+<li><p><strong>l</strong> (<em>float</em>) – The length of the box.</p></li>
+<li><p><strong>h</strong> (<em>float</em>) – The height of the box.</p></li>
+<li><p><strong>d</strong> (<em>float</em>) – The depth of the box.</p></li>
+<li><p><strong>nX</strong> (<em>int</em>) – The number of cells in x direction.</p></li>
+<li><p><strong>nY</strong> (<em>int</em>) – The number of cells in y direction.</p></li>
+<li><p><strong>nZ</strong> (<em>int</em>) – The number of cells in z direction.</p></li>
+<li><p><strong>order</strong> (<em>int</em>) – The order of the B-Spline basis functions.</p></li>
+<li><p><strong>firstNodeNumber</strong> (<em>int</em>) – The first node number.</p></li>
+<li><p><strong>cellProvider</strong> (<em>type</em>) – The providing class for the Cell.</p></li>
+<li><p><strong>cellType</strong> (<em>str</em>) – The type of Cell.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The model with the added grid.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel">MPMModel</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<span class="target" id="module-edelweissmeshfree.generators.boxmpgenerator"></span><dl class="py function">
+<dt class="sig sig-object py" id="edelweissmeshfree.generators.boxmpgenerator.generateModelData">
+<span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.generators.boxmpgenerator.</span></span><span class="sig-name descname"><span class="pre">generateModelData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">journal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'box_grid'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">l</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nX</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nY</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nZ</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">firstMaterialPointNumber</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mpProvider</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mpType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">material</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/generators/boxmpgenerator.html#generateModelData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.generators.boxmpgenerator.generateModelData" title="Link to this definition"></a></dt>
+<dd><p>Generate a structured box grid of material points.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel"><em>MPMModel</em></a>) – The model instance.</p></li>
+<li><p><strong>journal</strong> (<em>Journal</em>) – The Journal instance for logging purposes.</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – The name of the mesh.</p></li>
+<li><p><strong>x0</strong> (<em>float</em>) – The origin at x axis.</p></li>
+<li><p><strong>y0</strong> (<em>float</em>) – The origin at y axis.</p></li>
+<li><p><strong>z0</strong> (<em>float</em>) – The origin at z axis.</p></li>
+<li><p><strong>h</strong> (<em>float</em>) – The height of the body.</p></li>
+<li><p><strong>l</strong> (<em>float</em>) – The length of the body.</p></li>
+<li><p><strong>nX</strong> (<em>int</em>) – The number of material points along x.</p></li>
+<li><p><strong>nY</strong> (<em>int</em>) – The number of material points along y.</p></li>
+<li><p><strong>nZ</strong> (<em>int</em>) – The number of material points along z.</p></li>
+<li><p><strong>firstMaterialPointNumber</strong> (<em>int</em>) – The first material point number.</p></li>
+<li><p><strong>mpProvider</strong> (<em>str</em>) – The providing class for the MaterialPoint.</p></li>
+<li><p><strong>mpType</strong> (<em>str</em>) – The type of MaterialPoint.</p></li>
+<li><p><strong>material</strong> (<em>str</em>) – The material of the material point.</p></li>
+<li><p><strong>d</strong> (<em>float</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The updated model.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel">MPMModel</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<span class="target" id="module-edelweissmeshfree.generators.cylindermpgenerator"></span></section>
+<section id="module-edelweissmeshfree.generators.findclosestmp">
+<span id="utitilty-generators"></span><h2>utitilty generators<a class="headerlink" href="#module-edelweissmeshfree.generators.findclosestmp" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="edelweissmeshfree.generators.findclosestmp.generateModelData">
+<span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.generators.findclosestmp.</span></span><span class="sig-name descname"><span class="pre">generateModelData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mpmModel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">journal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coordinates</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storeIn</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/generators/findclosestmp.html#generateModelData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.generators.findclosestmp.generateModelData" title="Link to this definition"></a></dt>
+<dd><p>Find the mateiral point closest to a given coordinate and store it in a material point set in the model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mpmModel</strong> (<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel"><em>MPMModel</em></a>) – The model instance.</p></li>
+<li><p><strong>journal</strong> (<em>Journal</em>) – The Journal instance for logging purposes.</p></li>
+<li><p><strong>coordinates</strong> (<em>ndarray</em>) – The coordinates for which the closest material point should be found.</p></li>
+<li><p><strong>storeIn</strong> (<em>str</em>) – The name of the material point set, in which the found material point is stored.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The updated model.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel">MPMModel</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="solvers.html" class="btn btn-neutral float-left" title="Solvers" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="step_actions.html" class="btn btn-neutral float-right" title="Step actions" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Matthias Neuner.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,552 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Models &mdash; EdelweissMeshfree v25.08 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=1d735308" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=83aae4bb"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Cells" href="cells.html" />
+    <link rel="prev" title="Documentation" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            EdelweissMeshfree
+              <img src="../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Documentation</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-edelweissmeshfree.models.mpmmodel"><code class="docutils literal notranslate"><span class="pre">MPMModel</span></code> class</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel"><code class="docutils literal notranslate"><span class="pre">MPMModel</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="cells.html">Cells</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cellelements.html">Cellelements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="solvers.html">Solvers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="model_generators.html">Model generators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="step_actions.html">Step actions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="constraints.html">Constraints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="numeric_tools.html">Numerical tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="output_managers.html">Output managers</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">EdelweissMeshfree</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Documentation</a></li>
+      <li class="breadcrumb-item active">Models</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/documentation/models.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="models">
+<h1>Models<a class="headerlink" href="#models" title="Link to this heading"></a></h1>
+<p>Model are the core of the MPM simulation. They hold information about the
+domain (cells, material points), the materials, the sets, etc.</p>
+<section id="module-edelweissmeshfree.models.mpmmodel">
+<span id="mpmmodel-class"></span><h2><code class="docutils literal notranslate"><span class="pre">MPMModel</span></code> class<a class="headerlink" href="#module-edelweissmeshfree.models.mpmmodel" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.models.mpmmodel.</span></span><span class="sig-name descname"><span class="pre">MPMModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dimension</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmmodel.html#MPMModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel" title="Link to this definition"></a></dt>
+<dd><p>This is is a standard mpm model tree.
+It takes care of the correct number of variables,
+for nodes and scalar degrees of freedom, and it manages the fields.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dimension</strong> (<em>int</em>) – The dimension of the model.</p>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.advanceToTime" title="edelweissmeshfree.models.mpmmodel.MPMModel.advanceToTime"><code class="xref py py-obj docutils literal notranslate"><span class="pre">advanceToTime</span></code></a>(time)</p></td>
+<td><p>Accept the current state of the model and sub instances, and set the new time.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.getActiveSubModel" title="edelweissmeshfree.models.mpmmodel.MPMModel.getActiveSubModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getActiveSubModel</span></code></a>()</p></td>
+<td><p>For many applications only a part of the model is active.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.makePrettyTableSummary" title="edelweissmeshfree.models.mpmmodel.MPMModel.makePrettyTableSummary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">makePrettyTableSummary</span></code></a>()</p></td>
+<td><p>Create a pretty table with a summary of the model properties.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.prepareYourself" title="edelweissmeshfree.models.mpmmodel.MPMModel.prepareYourself"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prepareYourself</span></code></a>(journal)</p></td>
+<td><p>Prepare the model for a simulation.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.readRestart" title="edelweissmeshfree.models.mpmmodel.MPMModel.readRestart"><code class="xref py py-obj docutils literal notranslate"><span class="pre">readRestart</span></code></a>(restartFile)</p></td>
+<td><p>Read the state of the model from a restart file.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.writeRestart" title="edelweissmeshfree.models.mpmmodel.MPMModel.writeRestart"><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeRestart</span></code></a>(restartFile)</p></td>
+<td><p>Write the current state of the model to a restart file.</p></td>
+</tr>
+</tbody>
+</table>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><strong>goToPreviousTimeStep</strong></p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel._createAndAssignScalarVariableForConstraints">
+<span class="sig-name descname"><span class="pre">_createAndAssignScalarVariableForConstraints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">journal</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel._createAndAssignScalarVariableForConstraints" title="Link to this definition"></a></dt>
+<dd><p>Create ScalarVariables for constraints.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>journal</strong> (<em>Journal</em>) – The journal intance.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel._createNodeFieldsFromNodes">
+<span class="sig-name descname"><span class="pre">_createNodeFieldsFromNodes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeSets</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmmodel.html#MPMModel._createNodeFieldsFromNodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel._createNodeFieldsFromNodes" title="Link to this definition"></a></dt>
+<dd><p>Bundle nodal FieldVariables together in contiguous NodeFields.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nodes</strong> (<em>list</em>) – The list of Nodes from which the NodeFields should be created.</p></li>
+<li><p><strong>nodeSets</strong> (<em>list</em>) – The list of NodeSets, which should be considered in the index map of the NodeFields.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The dictionary containing the NodeField instances for every active field.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict[str,NodeField]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel._linkFieldVariableObjects">
+<span class="sig-name descname"><span class="pre">_linkFieldVariableObjects</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodes</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel._linkFieldVariableObjects" title="Link to this definition"></a></dt>
+<dd><p>Link NodeFields to individual FieldVariable objects.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>nodes</strong> – Nodes to be linked</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel._populateNodeFieldVariablesFromCellElements">
+<span class="sig-name descname"><span class="pre">_populateNodeFieldVariablesFromCellElements</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmmodel.html#MPMModel._populateNodeFieldVariablesFromCellElements"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel._populateNodeFieldVariablesFromCellElements" title="Link to this definition"></a></dt>
+<dd><p>Creates FieldVariables on Nodes depending on the all
+MaterialPointCells .</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel._populateNodeFieldVariablesFromCells">
+<span class="sig-name descname"><span class="pre">_populateNodeFieldVariablesFromCells</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmmodel.html#MPMModel._populateNodeFieldVariablesFromCells"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel._populateNodeFieldVariablesFromCells" title="Link to this definition"></a></dt>
+<dd><p>Creates FieldVariables on Nodes depending on the all
+MaterialPointCells .</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel._populateNodeFieldVariablesFromConstraints">
+<span class="sig-name descname"><span class="pre">_populateNodeFieldVariablesFromConstraints</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel._populateNodeFieldVariablesFromConstraints" title="Link to this definition"></a></dt>
+<dd><p>Creates FieldVariables on Nodes depending on the all
+constraints.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel._populateNodeFieldVariablesFromElements">
+<span class="sig-name descname"><span class="pre">_populateNodeFieldVariablesFromElements</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel._populateNodeFieldVariablesFromElements" title="Link to this definition"></a></dt>
+<dd><p>Creates FieldVariables on Nodes depending on the all
+elements.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel._populateNodeFieldVariablesFromParticleKernelDomains">
+<span class="sig-name descname"><span class="pre">_populateNodeFieldVariablesFromParticleKernelDomains</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmmodel.html#MPMModel._populateNodeFieldVariablesFromParticleKernelDomains"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel._populateNodeFieldVariablesFromParticleKernelDomains" title="Link to this definition"></a></dt>
+<dd><p>Creates FieldVariables on Nodes depending on the all defined particle-kernel interactions.
+For particles and kernels, the situation is a bit more complicated compared to elements or cells:
+Unlike for elements or cells, there is no direct connection between a particle and a node.
+Hence, the fields on the nodes are not necessarily known at the beginning of simulation.</p>
+<p>For this reason, we force the user to tell us which particles (which have fields) are interacting with which kernelfunctions during the simulation.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel._prepareElements">
+<span class="sig-name descname"><span class="pre">_prepareElements</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">journal</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel._prepareElements" title="Link to this definition"></a></dt>
+<dd><p>Prepare elements for a simulation.
+In detail, sections are assigned.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>journal</strong> (<em>Journal</em>) – The journal instance.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel._prepareMaterialPoints">
+<span class="sig-name descname"><span class="pre">_prepareMaterialPoints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">journal</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmmodel.html#MPMModel._prepareMaterialPoints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel._prepareMaterialPoints" title="Link to this definition"></a></dt>
+<dd><p>Prepare elements for a simulation.
+In detail, sections are assigned.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>journal</strong> (<em>Journal</em>) – The journal instance.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel._prepareParticles">
+<span class="sig-name descname"><span class="pre">_prepareParticles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">journal</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmmodel.html#MPMModel._prepareParticles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel._prepareParticles" title="Link to this definition"></a></dt>
+<dd><p>Prepare elements for a simulation.
+In detail, sections are assigned.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>journal</strong> (<em>Journal</em>) – The journal instance.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel._prepareVariablesAndFields">
+<span class="sig-name descname"><span class="pre">_prepareVariablesAndFields</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">journal</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmmodel.html#MPMModel._prepareVariablesAndFields"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel._prepareVariablesAndFields" title="Link to this definition"></a></dt>
+<dd><p>Prepare all variables and fields for a simulation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>journal</strong> – The journal instance.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel._requestAdditionalScalarVariable">
+<span class="sig-name descname"><span class="pre">_requestAdditionalScalarVariable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel._requestAdditionalScalarVariable" title="Link to this definition"></a></dt>
+<dd><p>Create a new scalar variables</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name</strong> (<em>str</em>) – The name of the variable.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The instance of the variable.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ScalarVariable</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.advanceToTime">
+<span class="sig-name descname"><span class="pre">advanceToTime</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmmodel.html#MPMModel.advanceToTime"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.advanceToTime" title="Link to this definition"></a></dt>
+<dd><p>Accept the current state of the model and sub instances, and
+set the new time.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>time</strong> (<em>float</em>) – The new time.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.getActiveSubModel">
+<span class="sig-name descname"><span class="pre">getActiveSubModel</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmmodel.html#MPMModel.getActiveSubModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.getActiveSubModel" title="Link to this definition"></a></dt>
+<dd><p>For many applications only a part of the model is active.
+For instance, in MPM simulations only cells occupied by material points are active.
+In order to create a numerical model, we need to know which part of the model is active, and which is not.
+This function returns the active sub model, based on the current state of the model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The active sub model.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel">MPMModel</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.makePrettyTableSummary">
+<span class="sig-name descname"><span class="pre">makePrettyTableSummary</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmmodel.html#MPMModel.makePrettyTableSummary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.makePrettyTableSummary" title="Link to this definition"></a></dt>
+<dd><p>Create a pretty table with a summary of the model properties.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.prepareYourself">
+<span class="sig-name descname"><span class="pre">prepareYourself</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">journal</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmmodel.html#MPMModel.prepareYourself"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.prepareYourself" title="Link to this definition"></a></dt>
+<dd><p>Prepare the model for a simulation.
+Creates the variables, bundles the fields,
+and initializes elements.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>journal</strong> (<em>Journal</em>) – The journal instance.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.readRestart">
+<span class="sig-name descname"><span class="pre">readRestart</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">restartFile</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmmodel.html#MPMModel.readRestart"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.readRestart" title="Link to this definition"></a></dt>
+<dd><p>Read the state of the model from a restart file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fileName</strong> – The name of the restart file.</p></li>
+<li><p><strong>restartFile</strong> (<em>File</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.writeRestart">
+<span class="sig-name descname"><span class="pre">writeRestart</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">restartFile</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmmodel.html#MPMModel.writeRestart"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.writeRestart" title="Link to this definition"></a></dt>
+<dd><p>Write the current state of the model to a restart file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fileName</strong> – The name of the restart file.</p></li>
+<li><p><strong>restartFile</strong> (<em>File</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.additionalParameters">
+<span class="sig-name descname"><span class="pre">additionalParameters</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.additionalParameters" title="Link to this definition"></a></dt>
+<dd><p>Additional information.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.analyticalFields">
+<span class="sig-name descname"><span class="pre">analyticalFields</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.analyticalFields" title="Link to this definition"></a></dt>
+<dd><p>AnalyticalFields in the model.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.cellElementSets">
+<span class="sig-name descname"><span class="pre">cellElementSets</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.cellElementSets" title="Link to this definition"></a></dt>
+<dd><p>The collection of CellElementSets in the present model.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.cellElements">
+<span class="sig-name descname"><span class="pre">cellElements</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.cellElements" title="Link to this definition"></a></dt>
+<dd><p>The collection of CellElements in the present model.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.cellSets">
+<span class="sig-name descname"><span class="pre">cellSets</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.cellSets" title="Link to this definition"></a></dt>
+<dd><p>The collection of CellSets in the present model.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.cells">
+<span class="sig-name descname"><span class="pre">cells</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.cells" title="Link to this definition"></a></dt>
+<dd><p>The collection of Cells in the present model.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.constraintSets">
+<span class="sig-name descname"><span class="pre">constraintSets</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.constraintSets" title="Link to this definition"></a></dt>
+<dd><p>ConstraintsSets in the model.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.constraints">
+<span class="sig-name descname"><span class="pre">constraints</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.constraints" title="Link to this definition"></a></dt>
+<dd><p>Constraints in the model.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.domainSize">
+<span class="sig-name descname"><span class="pre">domainSize</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.domainSize" title="Link to this definition"></a></dt>
+<dd><p>Spatial dimension of the model</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.elementSets">
+<span class="sig-name descname"><span class="pre">elementSets</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.elementSets" title="Link to this definition"></a></dt>
+<dd><p>ElementSets in the model.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.elements">
+<span class="sig-name descname"><span class="pre">elements</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.elements" title="Link to this definition"></a></dt>
+<dd><p>Elements in the model.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.materialPointSets">
+<span class="sig-name descname"><span class="pre">materialPointSets</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.materialPointSets" title="Link to this definition"></a></dt>
+<dd><p>The collection of MaterialPointSets in the present model.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.materialPoints">
+<span class="sig-name descname"><span class="pre">materialPoints</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.materialPoints" title="Link to this definition"></a></dt>
+<dd><p>The collection of MaterialPoints in the present model.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.materials">
+<span class="sig-name descname"><span class="pre">materials</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.materials" title="Link to this definition"></a></dt>
+<dd><p>Materials in the model.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.meshfreeKernelFunctions">
+<span class="sig-name descname"><span class="pre">meshfreeKernelFunctions</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.meshfreeKernelFunctions" title="Link to this definition"></a></dt>
+<dd><p>The collection of MeshfreeKernelFunctions in the present model.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.nodeFields">
+<span class="sig-name descname"><span class="pre">nodeFields</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.nodeFields" title="Link to this definition"></a></dt>
+<dd><p>NodeFields in the model.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.nodeSets">
+<span class="sig-name descname"><span class="pre">nodeSets</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.nodeSets" title="Link to this definition"></a></dt>
+<dd><p>NodeSets in the model.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.nodes">
+<span class="sig-name descname"><span class="pre">nodes</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.nodes" title="Link to this definition"></a></dt>
+<dd><p>Nodes in the model.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.particleKernelDomains">
+<span class="sig-name descname"><span class="pre">particleKernelDomains</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.particleKernelDomains" title="Link to this definition"></a></dt>
+<dd><p>The collection of ParticleKernelDomains in the present model.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.particleSets">
+<span class="sig-name descname"><span class="pre">particleSets</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.particleSets" title="Link to this definition"></a></dt>
+<dd><p>The collection of ParticleSets in the present model.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.particles">
+<span class="sig-name descname"><span class="pre">particles</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.particles" title="Link to this definition"></a></dt>
+<dd><p>The collection of Particles in the present model.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.scalarVariables">
+<span class="sig-name descname"><span class="pre">scalarVariables</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.scalarVariables" title="Link to this definition"></a></dt>
+<dd><p>ScalarVariables in the model.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.sections">
+<span class="sig-name descname"><span class="pre">sections</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.sections" title="Link to this definition"></a></dt>
+<dd><p>Sections in the model.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.surfaces">
+<span class="sig-name descname"><span class="pre">surfaces</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.surfaces" title="Link to this definition"></a></dt>
+<dd><p>Surface definitions in the model.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.time">
+<span class="sig-name descname"><span class="pre">time</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.time" title="Link to this definition"></a></dt>
+<dd><p>Current time of the model.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.vertexSets">
+<span class="sig-name descname"><span class="pre">vertexSets</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.vertexSets" title="Link to this definition"></a></dt>
+<dd><p>The collection of VertexSets for per particle in the present model.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="cells.html" class="btn btn-neutral float-right" title="Cells" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Matthias Neuner.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

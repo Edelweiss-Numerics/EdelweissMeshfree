@@ -1,0 +1,838 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Step actions &mdash; EdelweissMeshfree v25.08 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=1d735308" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=83aae4bb"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Constraints" href="constraints.html" />
+    <link rel="prev" title="Model generators" href="model_generators.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            EdelweissMeshfree
+              <img src="../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="models.html">Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cells.html">Cells</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cellelements.html">Cellelements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="solvers.html">Solvers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="model_generators.html">Model generators</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Step actions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#body-loads">Body loads</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#module-edelweissmeshfree.stepactions.base.mpmbodyloadbase"><code class="docutils literal notranslate"><span class="pre">MPMBodyLoadBase</span></code> class</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-edelweissmeshfree.stepactions.bodyload"><code class="docutils literal notranslate"><span class="pre">BodyLoad</span></code> class</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#neumann-boundary-conditions">Neumann boundary conditions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#module-edelweissmeshfree.stepactions.base.mpmdistributedloadbase"><code class="docutils literal notranslate"><span class="pre">MPMDistributedLoadBase</span></code> class</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-edelweissmeshfree.stepactions.distributedload"><code class="docutils literal notranslate"><span class="pre">DistributedLoad</span></code> class</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#dirichlet-boundary-conditions">Dirichlet boundary conditions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#module-edelweissmeshfree.stepactions.dirichlet"><code class="docutils literal notranslate"><span class="pre">Dirichlet</span></code> class</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#arclength-control">Arclength control</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#module-edelweissmeshfree.stepactions.base.arclengthcontrollerbase"><code class="docutils literal notranslate"><span class="pre">ArclengthControllerBase</span></code> class</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-edelweissmeshfree.stepactions.indirectcontrol"><code class="docutils literal notranslate"><span class="pre">Indirect</span> <span class="pre">control</span></code> class</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="constraints.html">Constraints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="numeric_tools.html">Numerical tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="output_managers.html">Output managers</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">EdelweissMeshfree</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Documentation</a></li>
+      <li class="breadcrumb-item active">Step actions</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/documentation/step_actions.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="step-actions">
+<h1>Step actions<a class="headerlink" href="#step-actions" title="Link to this heading"></a></h1>
+<p>Step actions represent the actions that can be performed during a simulation step,
+such as the enforcement of boundary conditions, the application of external forces.</p>
+<section id="body-loads">
+<h2>Body loads<a class="headerlink" href="#body-loads" title="Link to this heading"></a></h2>
+<section id="module-edelweissmeshfree.stepactions.base.mpmbodyloadbase">
+<span id="mpmbodyloadbase-class"></span><h3><code class="docutils literal notranslate"><span class="pre">MPMBodyLoadBase</span></code> class<a class="headerlink" href="#module-edelweissmeshfree.stepactions.base.mpmbodyloadbase" title="Link to this heading"></a></h3>
+<p>Body loads are loads that act on the entire body of the model.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.stepactions.base.mpmbodyloadbase.MPMBodyLoadBase">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.stepactions.base.mpmbodyloadbase.</span></span><span class="sig-name descname"><span class="pre">MPMBodyLoadBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">definition</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jobInfo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fieldOutputController</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dofmanager</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">journal</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/base/mpmbodyloadbase.html#MPMBodyLoadBase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.base.mpmbodyloadbase.MPMBodyLoadBase" title="Link to this definition"></a></dt>
+<dd><p>Base class for body loads.</p>
+<p>If you want to implement a new body load, you should derive from this class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><a class="reference internal" href="#edelweissmeshfree.stepactions.base.mpmbodyloadbase.MPMBodyLoadBase.cellSet" title="edelweissmeshfree.stepactions.base.mpmbodyloadbase.MPMBodyLoadBase.cellSet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cellSet</span></code></a></dt><dd><p>The cells this load is acting on.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.stepactions.base.mpmbodyloadbase.MPMBodyLoadBase.loadType" title="edelweissmeshfree.stepactions.base.mpmbodyloadbase.MPMBodyLoadBase.loadType"><code class="xref py py-obj docutils literal notranslate"><span class="pre">loadType</span></code></a></dt><dd><p>Return the type of load (e.g., bodyforce, …</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>)</p></li>
+<li><p><strong>definition</strong> (<em>dict</em>)</p></li>
+<li><p><strong>jobInfo</strong> (<em>dict</em>)</p></li>
+<li><p><strong>model</strong> (<em>FEModel</em>)</p></li>
+<li><p><strong>fieldOutputController</strong> (<em>FieldOutputController</em>)</p></li>
+<li><p><strong>journal</strong> (<em>Journal</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtIncrementStart</span></code>(model, timeStep)</p></td>
+<td><p>Is called when a step increment starts.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtStepEnd</span></code>(model)</p></td>
+<td><p>Is called when a step successfully finished.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtStepStart</span></code>(model)</p></td>
+<td><p>Is called when a step starts.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.stepactions.base.mpmbodyloadbase.MPMBodyLoadBase.getCurrentLoad" title="edelweissmeshfree.stepactions.base.mpmbodyloadbase.MPMBodyLoadBase.getCurrentLoad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getCurrentLoad</span></code></a>(timeStep)</p></td>
+<td><p>Return the current magnitude for this body load.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateStepAction</span></code>(definition, jobInfo, model, ...)</p></td>
+<td><p>Is called when an updated definition is present for a new step.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.stepactions.base.mpmbodyloadbase.MPMBodyLoadBase.getCurrentLoad">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">getCurrentLoad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/base/mpmbodyloadbase.html#MPMBodyLoadBase.getCurrentLoad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.base.mpmbodyloadbase.MPMBodyLoadBase.getCurrentLoad" title="Link to this definition"></a></dt>
+<dd><p>Return the current magnitude for this body load.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>timeStep</strong> (<em>TimeStep</em>) – The current time step.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The magnitude.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.stepactions.base.mpmbodyloadbase.MPMBodyLoadBase.cellSet">
+<em class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">cellSet</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">CellSet</span></em><a class="headerlink" href="#edelweissmeshfree.stepactions.base.mpmbodyloadbase.MPMBodyLoadBase.cellSet" title="Link to this definition"></a></dt>
+<dd><p>The cells this load is acting on.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The list of cells.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>CellSet</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.stepactions.base.mpmbodyloadbase.MPMBodyLoadBase.loadType">
+<em class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">loadType</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#edelweissmeshfree.stepactions.base.mpmbodyloadbase.MPMBodyLoadBase.loadType" title="Link to this definition"></a></dt>
+<dd><p>Return the type of load (e.g., bodyforce, … )</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The load type.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-edelweissmeshfree.stepactions.bodyload">
+<span id="bodyload-class"></span><h3><code class="docutils literal notranslate"><span class="pre">BodyLoad</span></code> class<a class="headerlink" href="#module-edelweissmeshfree.stepactions.bodyload" title="Link to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.stepactions.bodyload.BodyLoad">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.stepactions.bodyload.</span></span><span class="sig-name descname"><span class="pre">BodyLoad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">journal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cells</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bodyLoadType</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loadVector</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/bodyload.html#BodyLoad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.bodyload.BodyLoad" title="Link to this definition"></a></dt>
+<dd><p>This is a classical body load for MPM models.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – Name of the distributed load.</p></li>
+<li><p><strong>model</strong> (<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel"><em>MPMModel</em></a>) – The MPM model tree.</p></li>
+<li><p><strong>journal</strong> (<em>Journal</em>) – The journal to write messages to.</p></li>
+<li><p><strong>cells</strong> (<em>CellSet</em>) – The cells to apply the distributed load to.</p></li>
+<li><p><strong>bodyLoadType</strong> (<em>str</em>) – The type of the body load, e.g., “gravity”.</p></li>
+<li><p><strong>loadVector</strong> (<em>np.ndarray</em>) – The load vector to apply to the particles.</p></li>
+<li><p><strong>**kwargs</strong> – <p>Additional keyword arguments. The following are supported:
+- f_t : Callable[[float], float]</p>
+<blockquote>
+<div><p>The amplitude function of the distributed load.</p>
+</div></blockquote>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Attributes<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><a class="reference internal" href="#edelweissmeshfree.stepactions.bodyload.BodyLoad.cellSet" title="edelweissmeshfree.stepactions.bodyload.BodyLoad.cellSet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cellSet</span></code></a></dt><dd><p>The cells this load is acting on.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.stepactions.bodyload.BodyLoad.loadType" title="edelweissmeshfree.stepactions.bodyload.BodyLoad.loadType"><code class="xref py py-obj docutils literal notranslate"><span class="pre">loadType</span></code></a></dt><dd><p>Return the type of load (e.g., bodyforce, …</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtIncrementStart</span></code>(model, timeStep)</p></td>
+<td><p>Is called when a step increment starts.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.stepactions.bodyload.BodyLoad.applyAtStepEnd" title="edelweissmeshfree.stepactions.bodyload.BodyLoad.applyAtStepEnd"><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtStepEnd</span></code></a>(model[, stepMagnitude])</p></td>
+<td><p>Is called when a step successfully finished.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtStepStart</span></code>(model)</p></td>
+<td><p>Is called when a step starts.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.stepactions.bodyload.BodyLoad.getCurrentLoad" title="edelweissmeshfree.stepactions.bodyload.BodyLoad.getCurrentLoad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getCurrentLoad</span></code></a>(timeStep)</p></td>
+<td><p>Return the current magnitude for this body load.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateStepAction</span></code>(definition, jobInfo, model, ...)</p></td>
+<td><p>Is called when an updated definition is present for a new step.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.stepactions.bodyload.BodyLoad.applyAtStepEnd">
+<span class="sig-name descname"><span class="pre">applyAtStepEnd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepMagnitude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/bodyload.html#BodyLoad.applyAtStepEnd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.bodyload.BodyLoad.applyAtStepEnd" title="Link to this definition"></a></dt>
+<dd><p>Is called when a step successfully finished.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>U</strong> – The current solution vector.</p></li>
+<li><p><strong>P</strong> – The current reaction force vector.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.stepactions.bodyload.BodyLoad.getCurrentLoad">
+<span class="sig-name descname"><span class="pre">getCurrentLoad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/bodyload.html#BodyLoad.getCurrentLoad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.bodyload.BodyLoad.getCurrentLoad" title="Link to this definition"></a></dt>
+<dd><p>Return the current magnitude for this body load.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>timeStep</strong> (<em>TimeStep</em>) – The current time step.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The magnitude.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.stepactions.bodyload.BodyLoad.cellSet">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">cellSet</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">CellSet</span></em><a class="headerlink" href="#edelweissmeshfree.stepactions.bodyload.BodyLoad.cellSet" title="Link to this definition"></a></dt>
+<dd><p>The cells this load is acting on.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The list of cells.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>CellSet</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.stepactions.bodyload.BodyLoad.loadType">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">loadType</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#edelweissmeshfree.stepactions.bodyload.BodyLoad.loadType" title="Link to this definition"></a></dt>
+<dd><p>Return the type of load (e.g., bodyforce, … )</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The load type.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+<section id="neumann-boundary-conditions">
+<h2>Neumann boundary conditions<a class="headerlink" href="#neumann-boundary-conditions" title="Link to this heading"></a></h2>
+<section id="module-edelweissmeshfree.stepactions.base.mpmdistributedloadbase">
+<span id="mpmdistributedloadbase-class"></span><h3><code class="docutils literal notranslate"><span class="pre">MPMDistributedLoadBase</span></code> class<a class="headerlink" href="#module-edelweissmeshfree.stepactions.base.mpmdistributedloadbase" title="Link to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.stepactions.base.mpmdistributedloadbase.MPMDistributedLoadBase">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.stepactions.base.mpmdistributedloadbase.</span></span><span class="sig-name descname"><span class="pre">MPMDistributedLoadBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">definition</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jobInfo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fieldOutputController</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dofmanager</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">journal</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/base/mpmdistributedloadbase.html#MPMDistributedLoadBase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.base.mpmdistributedloadbase.MPMDistributedLoadBase" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Attributes<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><a class="reference internal" href="#edelweissmeshfree.stepactions.base.mpmdistributedloadbase.MPMDistributedLoadBase.loadType" title="edelweissmeshfree.stepactions.base.mpmdistributedloadbase.MPMDistributedLoadBase.loadType"><code class="xref py py-obj docutils literal notranslate"><span class="pre">loadType</span></code></a></dt><dd><p>Return the type of load (e.g., pressure, …</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.stepactions.base.mpmdistributedloadbase.MPMDistributedLoadBase.mpSet" title="edelweissmeshfree.stepactions.base.mpmdistributedloadbase.MPMDistributedLoadBase.mpSet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mpSet</span></code></a></dt><dd><p>The material points this load is acting on.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>)</p></li>
+<li><p><strong>definition</strong> (<em>dict</em>)</p></li>
+<li><p><strong>jobInfo</strong> (<em>dict</em>)</p></li>
+<li><p><strong>model</strong> (<em>FEModel</em>)</p></li>
+<li><p><strong>fieldOutputController</strong> (<em>FieldOutputController</em>)</p></li>
+<li><p><strong>journal</strong> (<em>Journal</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtIncrementStart</span></code>(model, timeStep)</p></td>
+<td><p>Is called when a step increment starts.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtStepEnd</span></code>(model)</p></td>
+<td><p>Is called when a step successfully finished.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtStepStart</span></code>(model)</p></td>
+<td><p>Is called when a step starts.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.stepactions.base.mpmdistributedloadbase.MPMDistributedLoadBase.getCurrentMaterialPointLoad" title="edelweissmeshfree.stepactions.base.mpmdistributedloadbase.MPMDistributedLoadBase.getCurrentMaterialPointLoad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getCurrentMaterialPointLoad</span></code></a>(materialPoint, ...)</p></td>
+<td><p>Return the current load vector for a given material point.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateStepAction</span></code>(definition, jobInfo, model, ...)</p></td>
+<td><p>Is called when an updated definition is present for a new step.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.stepactions.base.mpmdistributedloadbase.MPMDistributedLoadBase.getCurrentMaterialPointLoad">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">getCurrentMaterialPointLoad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">materialPoint</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/base/mpmdistributedloadbase.html#MPMDistributedLoadBase.getCurrentMaterialPointLoad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.base.mpmdistributedloadbase.MPMDistributedLoadBase.getCurrentMaterialPointLoad" title="Link to this definition"></a></dt>
+<dd><p>Return the current load vector for a given material point.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>materialPoint</strong> (<a class="reference internal" href="mpm/material_points.html#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase" title="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase"><em>MaterialPointBase</em></a>) – The material point for which the load definition is requrested.</p></li>
+<li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The current time step.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>The tuple consisting of:</dt><dd><ul class="simple">
+<li><p>the surface ID.</p></li>
+<li><p>the load vector.</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[int, np.ndarray]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.stepactions.base.mpmdistributedloadbase.MPMDistributedLoadBase.loadType">
+<em class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">loadType</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#edelweissmeshfree.stepactions.base.mpmdistributedloadbase.MPMDistributedLoadBase.loadType" title="Link to this definition"></a></dt>
+<dd><p>Return the type of load (e.g., pressure, … )</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The load type.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.stepactions.base.mpmdistributedloadbase.MPMDistributedLoadBase.mpSet">
+<em class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">mpSet</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">MaterialPointSet</span></em><a class="headerlink" href="#edelweissmeshfree.stepactions.base.mpmdistributedloadbase.MPMDistributedLoadBase.mpSet" title="Link to this definition"></a></dt>
+<dd><p>The material points this load is acting on.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The list of cells.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>MaterialPointSet</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-edelweissmeshfree.stepactions.distributedload">
+<span id="distributedload-class"></span><h3><code class="docutils literal notranslate"><span class="pre">DistributedLoad</span></code> class<a class="headerlink" href="#module-edelweissmeshfree.stepactions.distributedload" title="Link to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.stepactions.distributedload.MaterialPointPointWiseDistributedLoad">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.stepactions.distributedload.</span></span><span class="sig-name descname"><span class="pre">MaterialPointPointWiseDistributedLoad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">journal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">materialPoints</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distributedLoadType</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loadVector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_t</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/distributedload.html#MaterialPointPointWiseDistributedLoad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.distributedload.MaterialPointPointWiseDistributedLoad" title="Link to this definition"></a></dt>
+<dd><p>This is a simple distributed load for material points which consist of a single vertex.
+Accordingly, the load vector already includes the surface vector defintion.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><a class="reference internal" href="#edelweissmeshfree.stepactions.distributedload.MaterialPointPointWiseDistributedLoad.loadType" title="edelweissmeshfree.stepactions.distributedload.MaterialPointPointWiseDistributedLoad.loadType"><code class="xref py py-obj docutils literal notranslate"><span class="pre">loadType</span></code></a></dt><dd><p>Return the type of load (e.g., pressure, …</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.stepactions.distributedload.MaterialPointPointWiseDistributedLoad.mpSet" title="edelweissmeshfree.stepactions.distributedload.MaterialPointPointWiseDistributedLoad.mpSet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mpSet</span></code></a></dt><dd><p>The material points this load is acting on.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>)</p></li>
+<li><p><strong>model</strong> (<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel"><em>MPMModel</em></a>)</p></li>
+<li><p><strong>journal</strong> (<em>Journal</em>)</p></li>
+<li><p><strong>materialPoints</strong> (<em>MaterialPointSet</em>)</p></li>
+<li><p><strong>distributedLoadType</strong> (<em>str</em>)</p></li>
+<li><p><strong>loadVector</strong> (<em>ndarray</em>)</p></li>
+<li><p><strong>f_t</strong> (<em>Callable</em><em>[</em><em>[</em><em>float</em><em>]</em><em>, </em><em>float</em><em>]</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtIncrementStart</span></code>(model, timeStep)</p></td>
+<td><p>Is called when a step increment starts.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.stepactions.distributedload.MaterialPointPointWiseDistributedLoad.applyAtStepEnd" title="edelweissmeshfree.stepactions.distributedload.MaterialPointPointWiseDistributedLoad.applyAtStepEnd"><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtStepEnd</span></code></a>(model[, stepMagnitude])</p></td>
+<td><p>Is called when a step successfully finished.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtStepStart</span></code>(model)</p></td>
+<td><p>Is called when a step starts.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.stepactions.distributedload.MaterialPointPointWiseDistributedLoad.getCurrentMaterialPointLoad" title="edelweissmeshfree.stepactions.distributedload.MaterialPointPointWiseDistributedLoad.getCurrentMaterialPointLoad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getCurrentMaterialPointLoad</span></code></a>(materialPoint, ...)</p></td>
+<td><p>Return the current load vector for a given material point.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateStepAction</span></code>(definition, jobInfo, model, ...)</p></td>
+<td><p>Is called when an updated definition is present for a new step.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.stepactions.distributedload.MaterialPointPointWiseDistributedLoad.applyAtStepEnd">
+<span class="sig-name descname"><span class="pre">applyAtStepEnd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepMagnitude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/distributedload.html#MaterialPointPointWiseDistributedLoad.applyAtStepEnd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.distributedload.MaterialPointPointWiseDistributedLoad.applyAtStepEnd" title="Link to this definition"></a></dt>
+<dd><p>Is called when a step successfully finished.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>U</strong> – The current solution vector.</p></li>
+<li><p><strong>P</strong> – The current reaction force vector.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.stepactions.distributedload.MaterialPointPointWiseDistributedLoad.getCurrentMaterialPointLoad">
+<span class="sig-name descname"><span class="pre">getCurrentMaterialPointLoad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">materialPoint</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/distributedload.html#MaterialPointPointWiseDistributedLoad.getCurrentMaterialPointLoad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.distributedload.MaterialPointPointWiseDistributedLoad.getCurrentMaterialPointLoad" title="Link to this definition"></a></dt>
+<dd><p>Return the current load vector for a given material point.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>materialPoint</strong> – The material point for which the load definition is requrested.</p></li>
+<li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The current time step.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>The tuple consisting of:</dt><dd><ul class="simple">
+<li><p>the surface ID.</p></li>
+<li><p>the load vector.</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[int, np.ndarray]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.stepactions.distributedload.MaterialPointPointWiseDistributedLoad.loadType">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">loadType</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#edelweissmeshfree.stepactions.distributedload.MaterialPointPointWiseDistributedLoad.loadType" title="Link to this definition"></a></dt>
+<dd><p>Return the type of load (e.g., pressure, … )</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The load type.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.stepactions.distributedload.MaterialPointPointWiseDistributedLoad.mpSet">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">mpSet</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">MaterialPointSet</span></em><a class="headerlink" href="#edelweissmeshfree.stepactions.distributedload.MaterialPointPointWiseDistributedLoad.mpSet" title="Link to this definition"></a></dt>
+<dd><p>The material points this load is acting on.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The list of cells.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>MaterialPointSet</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+<section id="dirichlet-boundary-conditions">
+<h2>Dirichlet boundary conditions<a class="headerlink" href="#dirichlet-boundary-conditions" title="Link to this heading"></a></h2>
+<section id="module-edelweissmeshfree.stepactions.dirichlet">
+<span id="dirichlet-class"></span><h3><code class="docutils literal notranslate"><span class="pre">Dirichlet</span></code> class<a class="headerlink" href="#module-edelweissmeshfree.stepactions.dirichlet" title="Link to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.stepactions.dirichlet.Dirichlet">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.stepactions.dirichlet.</span></span><span class="sig-name descname"><span class="pre">Dirichlet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nSet</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">journal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_t</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/dirichlet.html#Dirichlet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.dirichlet.Dirichlet" title="Link to this definition"></a></dt>
+<dd><p>This is a classical dirichlet boundary condition for MPM models.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – Name of the distributed load.</p></li>
+<li><p><strong>nSet</strong> (<em>NodeSet</em>) – The node set to apply the BC to.</p></li>
+<li><p><strong>field</strong> (<em>str</em>) – The field to apply the BC to.</p></li>
+<li><p><strong>model</strong> (<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel"><em>MPMModel</em></a>) – The MPM model tree.</p></li>
+<li><p><strong>journal</strong> (<em>Journal</em>) – The journal to write messages to.</p></li>
+<li><p><strong>cells</strong> (<em>CellSet</em>) – The cells to apply the distributed load to.</p></li>
+<li><p><strong>bodyLoadType</strong> (<em>str</em>) – The type of the body load, e.g., “gravity”.</p></li>
+<li><p><strong>loadVector</strong> (<em>np.ndarray</em>) – The load vector to apply to the particles.</p></li>
+<li><p><strong>f_t</strong> (<em>Callable</em><em>[</em><em>[</em><em>float</em><em>]</em><em>, </em><em>float</em><em>]</em>) – The amplitude function of the distributed load.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Attributes<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>components</strong></dt><dd></dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtIncrementStart</span></code>(model, timeStep)</p></td>
+<td><p>Is called when a step increment starts.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.stepactions.dirichlet.Dirichlet.applyAtStepEnd" title="edelweissmeshfree.stepactions.dirichlet.Dirichlet.applyAtStepEnd"><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtStepEnd</span></code></a>(model)</p></td>
+<td><p>Is called when a step successfully finished.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtStepStart</span></code>(model)</p></td>
+<td><p>Is called when a step starts.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.stepactions.dirichlet.Dirichlet.updateStepAction" title="edelweissmeshfree.stepactions.dirichlet.Dirichlet.updateStepAction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateStepAction</span></code></a>(values[, f_t])</p></td>
+<td><p>Is called when an updated definition is present for a new step.</p></td>
+</tr>
+</tbody>
+</table>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><strong>getDelta</strong></p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.stepactions.dirichlet.Dirichlet.applyAtStepEnd">
+<span class="sig-name descname"><span class="pre">applyAtStepEnd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/dirichlet.html#Dirichlet.applyAtStepEnd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.dirichlet.Dirichlet.applyAtStepEnd" title="Link to this definition"></a></dt>
+<dd><p>Is called when a step successfully finished.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>U</strong> – The current solution vector.</p></li>
+<li><p><strong>P</strong> – The current reaction force vector.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.stepactions.dirichlet.Dirichlet.updateStepAction">
+<span class="sig-name descname"><span class="pre">updateStepAction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_t</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/dirichlet.html#Dirichlet.updateStepAction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.dirichlet.Dirichlet.updateStepAction" title="Link to this definition"></a></dt>
+<dd><p>Is called when an updated definition is present for a new step.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – The name of this step action.</p></li>
+<li><p><strong>definition</strong> – A dictionary containing the options for this step action.</p></li>
+<li><p><strong>jobInfo</strong> – A dictionary containing the information about the job.</p></li>
+<li><p><strong>model</strong> – A dictionary containing the model tree.</p></li>
+<li><p><strong>fieldOutputController</strong> – The fieldput controlling object.</p></li>
+<li><p><strong>journal</strong> – The journal object for logging.</p></li>
+<li><p><strong>f_t</strong> (<em>Callable</em><em>[</em><em>[</em><em>float</em><em>]</em><em>, </em><em>float</em><em>]</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+<section id="arclength-control">
+<h2>Arclength control<a class="headerlink" href="#arclength-control" title="Link to this heading"></a></h2>
+<section id="module-edelweissmeshfree.stepactions.base.arclengthcontrollerbase">
+<span id="arclengthcontrollerbase-class"></span><h3><code class="docutils literal notranslate"><span class="pre">ArclengthControllerBase</span></code> class<a class="headerlink" href="#module-edelweissmeshfree.stepactions.base.arclengthcontrollerbase" title="Link to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.stepactions.base.arclengthcontrollerbase.ArcLengthControllerBase">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.stepactions.base.arclengthcontrollerbase.</span></span><span class="sig-name descname"><span class="pre">ArcLengthControllerBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">definition</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jobInfo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fieldOutputController</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dofmanager</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">journal</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/base/arclengthcontrollerbase.html#ArcLengthControllerBase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.base.arclengthcontrollerbase.ArcLengthControllerBase" title="Link to this definition"></a></dt>
+<dd><p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtIncrementStart</span></code>(model, timeStep)</p></td>
+<td><p>Is called when a step increment starts.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtStepEnd</span></code>(model)</p></td>
+<td><p>Is called when a step successfully finished.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtStepStart</span></code>(model)</p></td>
+<td><p>Is called when a step starts.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.stepactions.base.arclengthcontrollerbase.ArcLengthControllerBase.computeDDLambda" title="edelweissmeshfree.stepactions.base.arclengthcontrollerbase.ArcLengthControllerBase.computeDDLambda"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeDDLambda</span></code></a>(dU, ddU_0, ddU_f, timeStep, ...)</p></td>
+<td><p>This method is response for compute the correction to dLamba, i.e., the increment of the arc length parameter.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateStepAction</span></code>(definition, jobInfo, model, ...)</p></td>
+<td><p>Is called when an updated definition is present for a new step.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>)</p></li>
+<li><p><strong>definition</strong> (<em>dict</em>)</p></li>
+<li><p><strong>jobInfo</strong> (<em>dict</em>)</p></li>
+<li><p><strong>model</strong> (<em>FEModel</em>)</p></li>
+<li><p><strong>fieldOutputController</strong> (<em>FieldOutputController</em>)</p></li>
+<li><p><strong>journal</strong> (<em>Journal</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.stepactions.base.arclengthcontrollerbase.ArcLengthControllerBase.computeDDLambda">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">computeDDLambda</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ddU_0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ddU_f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dofManager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/base/arclengthcontrollerbase.html#ArcLengthControllerBase.computeDDLambda"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.base.arclengthcontrollerbase.ArcLengthControllerBase.computeDDLambda" title="Link to this definition"></a></dt>
+<dd><p>This method is response for compute the correction to dLamba, i.e., the increment of the arc length parameter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dU</strong> (<em>DofVector</em>) – The current increment of the solution.</p></li>
+<li><p><strong>ddU_0</strong> (<em>DofVector</em>) – The current dead increment of the solution.</p></li>
+<li><p><strong>ddU_f</strong> (<em>DofVector</em>) – The current reference increment of the solution.</p></li>
+<li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The current time increment.</p></li>
+<li><p><strong>dofManager</strong> (<em>DofManager</em>) – The DofManager instance.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The correction ddLambda to dLambda.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-edelweissmeshfree.stepactions.indirectcontrol">
+<span id="indirect-control-class"></span><h3><code class="docutils literal notranslate"><span class="pre">Indirect</span> <span class="pre">control</span></code> class<a class="headerlink" href="#module-edelweissmeshfree.stepactions.indirectcontrol" title="Link to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.stepactions.indirectcontrol.IndirectControl">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.stepactions.indirectcontrol.</span></span><span class="sig-name descname"><span class="pre">IndirectControl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">materialPoints</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">L</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cMatrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">journal</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/indirectcontrol.html#IndirectControl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.indirectcontrol.IndirectControl" title="Link to this definition"></a></dt>
+<dd><p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtIncrementStart</span></code>(model, timeStep)</p></td>
+<td><p>Is called when a step increment starts.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.applyAtStepEnd" title="edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.applyAtStepEnd"><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtStepEnd</span></code></a>(model)</p></td>
+<td><p>Is called when a step successfully finished.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtStepStart</span></code>(model)</p></td>
+<td><p>Is called when a step starts.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.computeDDLambda" title="edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.computeDDLambda"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeDDLambda</span></code></a>(dU, ddU_0, ddU_f, timeStep, ...)</p></td>
+<td><p>This method is called by an arc length solver for computing the correction to the arc length parameter.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateStepAction</span></code>(definition, jobInfo, model, ...)</p></td>
+<td><p>Is called when an updated definition is present for a new step.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>)</p></li>
+<li><p><strong>model</strong> (<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel"><em>MPMModel</em></a>)</p></li>
+<li><p><strong>materialPoints</strong> (<em>list</em><em>[</em><a class="reference internal" href="mpm/material_points.html#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase" title="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase"><em>MaterialPointBase</em></a><em>]</em>)</p></li>
+<li><p><strong>L</strong> (<em>float</em>)</p></li>
+<li><p><strong>cMatrix</strong> (<em>ndarray</em>)</p></li>
+<li><p><strong>field</strong> (<em>str</em>)</p></li>
+<li><p><strong>journal</strong> (<em>Journal</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.applyAtStepEnd">
+<span class="sig-name descname"><span class="pre">applyAtStepEnd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/indirectcontrol.html#IndirectControl.applyAtStepEnd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.applyAtStepEnd" title="Link to this definition"></a></dt>
+<dd><p>Is called when a step successfully finished.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>U</strong> – The current solution vector.</p></li>
+<li><p><strong>P</strong> – The current reaction force vector.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.computeDDLambda">
+<span class="sig-name descname"><span class="pre">computeDDLambda</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ddU_0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ddU_f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dofManager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/indirectcontrol.html#IndirectControl.computeDDLambda"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.computeDDLambda" title="Link to this definition"></a></dt>
+<dd><p>This method is called by an arc length solver for computing the
+correction to the arc length parameter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dU</strong> (<em>DofVector</em>) – The current solution increment.</p></li>
+<li><p><strong>ddU_0</strong> (<em>DofVector</em>) – The dead (unconditional) correction to the solution.</p></li>
+<li><p><strong>ddU_f</strong> (<em>DofVector</em>) – The controllable correction to the solution resulting from the reference load.</p></li>
+<li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The current time increment.</p></li>
+<li><p><strong>dofManager</strong> (<em>DofManager</em>) – The DofManager instance.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The computed correction to the arc length parameter.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.identification">
+<span class="sig-name descname"><span class="pre">identification</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'IndirectControl'</span></em><a class="headerlink" href="#edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.identification" title="Link to this definition"></a></dt>
+<dd><p>This class represent an ArcLengthControllerBase compatible
+module for indirect (displacement) controlled simulations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – The name for printing purposes.</p></li>
+<li><p><strong>model</strong> – The model tree instance.</p></li>
+<li><p><strong>materialPoints</strong> – The list of material points considered in the arc length computation</p></li>
+<li><p><strong>L</strong> – The target arc length.</p></li>
+<li><p><strong>cMatrix</strong> – The c-vector in matrix form: rows=material points, columns=c vector for this material point.</p></li>
+<li><p><strong>field</strong> – The field for which the arc length parameter is computed.</p></li>
+<li><p><strong>journal</strong> – The journal instance for logging purposes.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="model_generators.html" class="btn btn-neutral float-left" title="Model generators" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="constraints.html" class="btn btn-neutral float-right" title="Constraints" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Matthias Neuner.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

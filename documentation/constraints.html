@@ -1,0 +1,921 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Constraints &mdash; EdelweissMeshfree v25.08 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=1d735308" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=83aae4bb"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Numerical tools" href="numeric_tools.html" />
+    <link rel="prev" title="Step actions" href="step_actions.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            EdelweissMeshfree
+              <img src="../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="models.html">Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cells.html">Cells</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cellelements.html">Cellelements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="solvers.html">Solvers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="model_generators.html">Model generators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="step_actions.html">Step actions</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Constraints</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase"><code class="docutils literal notranslate"><span class="pre">MPMConstraintBase</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.applyConstraint"><code class="docutils literal notranslate"><span class="pre">MPMConstraintBase.applyConstraint()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.assignAdditionalScalarVariables"><code class="docutils literal notranslate"><span class="pre">MPMConstraintBase.assignAdditionalScalarVariables()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.getNumberOfAdditionalNeededScalarVariables"><code class="docutils literal notranslate"><span class="pre">MPMConstraintBase.getNumberOfAdditionalNeededScalarVariables()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.updateConnectivity"><code class="docutils literal notranslate"><span class="pre">MPMConstraintBase.updateConnectivity()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.active"><code class="docutils literal notranslate"><span class="pre">MPMConstraintBase.active</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.fieldsOnNodes"><code class="docutils literal notranslate"><span class="pre">MPMConstraintBase.fieldsOnNodes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.nDof"><code class="docutils literal notranslate"><span class="pre">MPMConstraintBase.nDof</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.name"><code class="docutils literal notranslate"><span class="pre">MPMConstraintBase.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.nodes"><code class="docutils literal notranslate"><span class="pre">MPMConstraintBase.nodes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.scalarVariables"><code class="docutils literal notranslate"><span class="pre">MPMConstraintBase.scalarVariables</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-edelweissmeshfree.constraints.penaltyequalvalue"><code class="docutils literal notranslate"><span class="pre">PenaltyEqualValue</span></code> constraint class</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue"><code class="docutils literal notranslate"><span class="pre">PenaltyEqualValue</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-edelweissmeshfree.constraints.penaltyconstrainmp2node"><code class="docutils literal notranslate"><span class="pre">PenaltyConstrainMP2Node</span></code> constraint class</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node"><code class="docutils literal notranslate"><span class="pre">PenaltyConstrainMP2Node</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-edelweissmeshfree.constraints.penaltyweakdirichlet"><code class="docutils literal notranslate"><span class="pre">PenaltyWeakDirichlet</span></code> constraint class</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet"><code class="docutils literal notranslate"><span class="pre">PenaltyWeakDirichlet</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="numeric_tools.html">Numerical tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="output_managers.html">Output managers</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">EdelweissMeshfree</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Documentation</a></li>
+      <li class="breadcrumb-item active">Constraints</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/documentation/constraints.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-edelweissmeshfree.constraints.base.mpmconstraintbase">
+<span id="constraints"></span><h1>Constraints<a class="headerlink" href="#module-edelweissmeshfree.constraints.base.mpmconstraintbase" title="Link to this heading"></a></h1>
+<p>Constraints are used to enforce certain conditions on the system. They are used to enforce boundary conditions, contact conditions, etc.
+Technically, constraints are implemented as a set of kernels, which are applied to the system matrix and the external load vector.
+In this regard, constraints are similar to elements, but they mey also use additional scalar variables to enforce the conditions.
+Unlike elements, they are not subject to external loads.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.constraints.base.mpmconstraintbase.</span></span><span class="sig-name descname"><span class="pre">MPMConstraintBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nDof</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/base/mpmconstraintbase.html#MPMConstraintBase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase" title="Link to this definition"></a></dt>
+<dd><p>Initialize the VIJEntityBase.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.active" title="edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.active"><code class="xref py py-obj docutils literal notranslate"><span class="pre">active</span></code></a></dt><dd><p>Whether this constraint is active or not.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.fieldsOnNodes" title="edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.fieldsOnNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code></a></dt><dd><p>The fields on the nodes this constraint is acting on.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.nDof" title="edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.nDof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nDof</span></code></a></dt><dd><p>The total number of degrees of freedom this constraint is associated with.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.name" title="edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></a></dt><dd><p>The name of this constraint.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.nodes" title="edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.nodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes</span></code></a></dt><dd><p>The nodes this constraint is acting on.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.scalarVariables" title="edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.scalarVariables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scalarVariables</span></code></a></dt><dd><p>The list of assigned ScalarVariable.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>nDof</strong> (<em>int</em>)</p>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.applyConstraint" title="edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.applyConstraint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyConstraint</span></code></a>(dU, PExt, V, timeStep)</p></td>
+<td><p>Apply the constraint, i.e., compute the 'kernels'.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.assignAdditionalScalarVariables" title="edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.assignAdditionalScalarVariables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">assignAdditionalScalarVariables</span></code></a>(scalarVariables)</p></td>
+<td><p>This is the list of constraint specific scalar variables which are assigned to this constraint.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.getNumberOfAdditionalNeededScalarVariables" title="edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.getNumberOfAdditionalNeededScalarVariables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getNumberOfAdditionalNeededScalarVariables</span></code></a>()</p></td>
+<td><p>Tell the framework how many scalar variables (e.g., Lagrangian multipliers) this constraint needs.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVIJContributionSize</span></code>()</p></td>
+<td><p>Return the number of entries this entity contributes to the VIJ (COO) system matrix.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">initializeVIJContribution</span></code>(idcs, I_, J_, offset)</p></td>
+<td><p>Fill the global <code class="docutils literal notranslate"><span class="pre">I</span></code> and <code class="docutils literal notranslate"><span class="pre">J</span></code> index arrays for this constraint's VIJ contribution.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.updateConnectivity" title="edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.updateConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code></a>(model)</p></td>
+<td><p>This method is called before each new timeStep, after material point connectivity was updated, but before the global equation system is created.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.applyConstraint">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">applyConstraint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">PExt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">V</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/base/mpmconstraintbase.html#MPMConstraintBase.applyConstraint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.applyConstraint" title="Link to this definition"></a></dt>
+<dd><p>Apply the constraint, i.e., compute the ‘kernels’. Add the contributions to the external load vector and the system matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dU</strong> (<em>ndarray</em>) – The current increment since the last time the constraint was applied.</p></li>
+<li><p><strong>PExt</strong> (<em>ndarray</em>) – The external load vector.</p></li>
+<li><p><strong>V</strong> (<em>ndarray</em>) – The system (stiffness) matrix.</p></li>
+<li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The current step and total time.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.assignAdditionalScalarVariables">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">assignAdditionalScalarVariables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scalarVariables</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/base/mpmconstraintbase.html#MPMConstraintBase.assignAdditionalScalarVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.assignAdditionalScalarVariables" title="Link to this definition"></a></dt>
+<dd><p>This is the list of constraint specific scalar variables which are assigned to this constraint.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>scalarVariables</strong> (<em>list</em><em>[</em><em>ScalarVariable</em><em>]</em>) – The list of ScalarVariable to be assigned.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.getNumberOfAdditionalNeededScalarVariables">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">getNumberOfAdditionalNeededScalarVariables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/base/mpmconstraintbase.html#MPMConstraintBase.getNumberOfAdditionalNeededScalarVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.getNumberOfAdditionalNeededScalarVariables" title="Link to this definition"></a></dt>
+<dd><p>Tell the framework how many scalar variables (e.g., Lagrangian multipliers)
+this constraint needs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The number of requested ScalarVariable</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.updateConnectivity">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">updateConnectivity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/base/mpmconstraintbase.html#MPMConstraintBase.updateConnectivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.updateConnectivity" title="Link to this definition"></a></dt>
+<dd><p>This method is called before each new timeStep, after material point connectivity was updated, but before the global equation system is created.
+If the contribution to the global system changes, True is returned.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>model</strong> (<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel"><em>MPMModel</em></a>) – The current model.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The truth value if the connectivity has changed.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.active">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">active</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.active" title="Link to this definition"></a></dt>
+<dd><p>Whether this constraint is active or not.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The truth value.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.fieldsOnNodes">
+<em class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fieldsOnNodes</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.fieldsOnNodes" title="Link to this definition"></a></dt>
+<dd><p>The fields on the nodes this constraint is acting on.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The node-wise list of fields.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list[list[str]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.nDof">
+<em class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nDof</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.nDof" title="Link to this definition"></a></dt>
+<dd><p>The total number of degrees of freedom this constraint is associated with.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The total number of degrees of freedom.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.name">
+<em class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.name" title="Link to this definition"></a></dt>
+<dd><p>The name of this constraint.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The name.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.nodes">
+<em class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nodes</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">Node</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.nodes" title="Link to this definition"></a></dt>
+<dd><p>The nodes this constraint is acting on.
+Duplicates are _allowed_.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The list of nodes.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list[Node]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.scalarVariables">
+<em class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">scalarVariables</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">ScalarVariable</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.scalarVariables" title="Link to this definition"></a></dt>
+<dd><p>The list of assigned ScalarVariable.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The list of scalar variables.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list[ScalarVariable]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<section id="module-edelweissmeshfree.constraints.penaltyequalvalue">
+<span id="penaltyequalvalue-constraint-class"></span><h2><code class="docutils literal notranslate"><span class="pre">PenaltyEqualValue</span></code> constraint class<a class="headerlink" href="#module-edelweissmeshfree.constraints.penaltyequalvalue" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.constraints.penaltyequalvalue.</span></span><span class="sig-name descname"><span class="pre">PenaltyEqualValue</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constrainedMaterialPoints</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prescribedComponent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">penaltyParameter</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/penaltyequalvalue.html#PenaltyEqualValue"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue" title="Link to this definition"></a></dt>
+<dd><p>Initialize the VIJEntityBase.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">active</span></code></dt><dd><p>Whether this constraint is active or not.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.fieldsOnNodes" title="edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.fieldsOnNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code></a></dt><dd><p>The fields on the nodes this constraint is acting on.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.nDof" title="edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.nDof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nDof</span></code></a></dt><dd><p>The total number of degrees of freedom this constraint is associated with.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.name" title="edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></a></dt><dd><p>The name of this constraint.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.nodes" title="edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.nodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes</span></code></a></dt><dd><p>The nodes this constraint is acting on.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.scalarVariables" title="edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.scalarVariables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scalarVariables</span></code></a></dt><dd><p>The list of assigned ScalarVariable.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>)</p></li>
+<li><p><strong>model</strong> (<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel"><em>MPMModel</em></a>)</p></li>
+<li><p><strong>constrainedMaterialPoints</strong> (<em>list</em><em>[</em><a class="reference internal" href="mpm/material_points.html#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase" title="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase"><em>MaterialPointBase</em></a><em>]</em>)</p></li>
+<li><p><strong>field</strong> (<em>str</em>)</p></li>
+<li><p><strong>prescribedComponent</strong> (<em>int</em>)</p></li>
+<li><p><strong>penaltyParameter</strong> (<em>float</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.applyConstraint" title="edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.applyConstraint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyConstraint</span></code></a>(dU, PExt, V, timeStep)</p></td>
+<td><p>Apply the constraint, i.e., compute the 'kernels'.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.assignAdditionalScalarVariables" title="edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.assignAdditionalScalarVariables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">assignAdditionalScalarVariables</span></code></a>(scalarVariables)</p></td>
+<td><p>This is the list of constraint specific scalar variables which are assigned to this constraint.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.getNumberOfAdditionalNeededScalarVariables" title="edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.getNumberOfAdditionalNeededScalarVariables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getNumberOfAdditionalNeededScalarVariables</span></code></a>()</p></td>
+<td><p>Tell the framework how many scalar variables (e.g., Lagrangian multipliers) this constraint needs.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVIJContributionSize</span></code>()</p></td>
+<td><p>Return the number of entries this entity contributes to the VIJ (COO) system matrix.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">initializeVIJContribution</span></code>(idcs, I_, J_, offset)</p></td>
+<td><p>Fill the global <code class="docutils literal notranslate"><span class="pre">I</span></code> and <code class="docutils literal notranslate"><span class="pre">J</span></code> index arrays for this constraint's VIJ contribution.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.updateConnectivity" title="edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.updateConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code></a>(model)</p></td>
+<td><p>This method is called before each new timeStep, after material point connectivity was updated, but before the global equation system is created.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.applyConstraint">
+<span class="sig-name descname"><span class="pre">applyConstraint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">PExt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">V</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/penaltyequalvalue.html#PenaltyEqualValue.applyConstraint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.applyConstraint" title="Link to this definition"></a></dt>
+<dd><p>Apply the constraint, i.e., compute the ‘kernels’. Add the contributions to the external load vector and the system matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dU</strong> (<em>ndarray</em>) – The current increment since the last time the constraint was applied.</p></li>
+<li><p><strong>PExt</strong> (<em>ndarray</em>) – The external load vector.</p></li>
+<li><p><strong>V</strong> (<em>ndarray</em>) – The system (stiffness) matrix.</p></li>
+<li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The current step and total time.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.assignAdditionalScalarVariables">
+<span class="sig-name descname"><span class="pre">assignAdditionalScalarVariables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scalarVariables</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/penaltyequalvalue.html#PenaltyEqualValue.assignAdditionalScalarVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.assignAdditionalScalarVariables" title="Link to this definition"></a></dt>
+<dd><p>This is the list of constraint specific scalar variables which are assigned to this constraint.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>scalarVariables</strong> (<em>list</em><em>[</em><em>ScalarVariable</em><em>]</em>) – The list of ScalarVariable to be assigned.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.getNumberOfAdditionalNeededScalarVariables">
+<span class="sig-name descname"><span class="pre">getNumberOfAdditionalNeededScalarVariables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/penaltyequalvalue.html#PenaltyEqualValue.getNumberOfAdditionalNeededScalarVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.getNumberOfAdditionalNeededScalarVariables" title="Link to this definition"></a></dt>
+<dd><p>Tell the framework how many scalar variables (e.g., Lagrangian multipliers)
+this constraint needs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The number of requested ScalarVariable</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.updateConnectivity">
+<span class="sig-name descname"><span class="pre">updateConnectivity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/penaltyequalvalue.html#PenaltyEqualValue.updateConnectivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.updateConnectivity" title="Link to this definition"></a></dt>
+<dd><p>This method is called before each new timeStep, after material point connectivity was updated, but before the global equation system is created.
+If the contribution to the global system changes, True is returned.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>model</strong> – The current model.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The truth value if the connectivity has changed.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.fieldsOnNodes">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fieldsOnNodes</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.fieldsOnNodes" title="Link to this definition"></a></dt>
+<dd><p>The fields on the nodes this constraint is acting on.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The node-wise list of fields.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list[list[str]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.nDof">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nDof</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.nDof" title="Link to this definition"></a></dt>
+<dd><p>The total number of degrees of freedom this constraint is associated with.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The total number of degrees of freedom.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.name">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.name" title="Link to this definition"></a></dt>
+<dd><p>The name of this constraint.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The name.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.nodes">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nodes</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.nodes" title="Link to this definition"></a></dt>
+<dd><p>The nodes this constraint is acting on.
+Duplicates are _allowed_.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The list of nodes.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list[Node]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.scalarVariables">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">scalarVariables</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.scalarVariables" title="Link to this definition"></a></dt>
+<dd><p>The list of assigned ScalarVariable.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The list of scalar variables.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list[ScalarVariable]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-edelweissmeshfree.constraints.penaltyconstrainmp2node">
+<span id="penaltyconstrainmp2node-constraint-class"></span><h2><code class="docutils literal notranslate"><span class="pre">PenaltyConstrainMP2Node</span></code> constraint class<a class="headerlink" href="#module-edelweissmeshfree.constraints.penaltyconstrainmp2node" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.constraints.penaltyconstrainmp2node.</span></span><span class="sig-name descname"><span class="pre">PenaltyConstrainMP2Node</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slaveMP</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">masterNode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prescribedComponents</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">penaltyParameter</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/penaltyconstrainmp2node.html#PenaltyConstrainMP2Node"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node" title="Link to this definition"></a></dt>
+<dd><p>Initialize the VIJEntityBase.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">active</span></code></dt><dd><p>Whether this constraint is active or not.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.fieldsOnNodes" title="edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.fieldsOnNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code></a></dt><dd><p>The fields on the nodes this constraint is acting on.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.nDof" title="edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.nDof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nDof</span></code></a></dt><dd><p>The total number of degrees of freedom this constraint is associated with.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.name" title="edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></a></dt><dd><p>The name of this constraint.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.nodes" title="edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.nodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes</span></code></a></dt><dd><p>The nodes this constraint is acting on.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.scalarVariables" title="edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.scalarVariables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scalarVariables</span></code></a></dt><dd><p>The list of assigned ScalarVariable.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>)</p></li>
+<li><p><strong>model</strong> (<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel"><em>MPMModel</em></a>)</p></li>
+<li><p><strong>slaveMP</strong> (<a class="reference internal" href="mpm/material_points.html#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase" title="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase"><em>MaterialPointBase</em></a>)</p></li>
+<li><p><strong>masterNode</strong> (<em>Node</em>)</p></li>
+<li><p><strong>field</strong> (<em>str</em>)</p></li>
+<li><p><strong>prescribedComponents</strong> (<em>list</em><em>[</em><em>int</em><em>]</em>)</p></li>
+<li><p><strong>penaltyParameter</strong> (<em>float</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.applyConstraint" title="edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.applyConstraint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyConstraint</span></code></a>(dU, PExt, V, timeStep)</p></td>
+<td><p>Apply the penalty constraint to the residual and stiffness matrix.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.assignAdditionalScalarVariables" title="edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.assignAdditionalScalarVariables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">assignAdditionalScalarVariables</span></code></a>(scalarVariables)</p></td>
+<td><p>This is the list of constraint specific scalar variables which are assigned to this constraint.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.getNumberOfAdditionalNeededScalarVariables" title="edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.getNumberOfAdditionalNeededScalarVariables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getNumberOfAdditionalNeededScalarVariables</span></code></a>()</p></td>
+<td><p>Tell the framework how many scalar variables (e.g., Lagrangian multipliers) this constraint needs.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVIJContributionSize</span></code>()</p></td>
+<td><p>Return the number of entries this entity contributes to the VIJ (COO) system matrix.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">initializeVIJContribution</span></code>(idcs, I_, J_, offset)</p></td>
+<td><p>Fill the global <code class="docutils literal notranslate"><span class="pre">I</span></code> and <code class="docutils literal notranslate"><span class="pre">J</span></code> index arrays for this constraint's VIJ contribution.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.updateConnectivity" title="edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.updateConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code></a>(model)</p></td>
+<td><p>Update the connectivity of the constraint.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.applyConstraint">
+<span class="sig-name descname"><span class="pre">applyConstraint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">PExt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">V</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/penaltyconstrainmp2node.html#PenaltyConstrainMP2Node.applyConstraint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.applyConstraint" title="Link to this definition"></a></dt>
+<dd><p>Apply the penalty constraint to the residual and stiffness matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dU</strong> (<em>ndarray</em>) – The displacement vector.</p></li>
+<li><p><strong>PExt</strong> (<em>ndarray</em>) – The external force vector.</p></li>
+<li><p><strong>V</strong> (<em>ndarray</em>) – The stiffness matrix.</p></li>
+<li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The time step.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.assignAdditionalScalarVariables">
+<span class="sig-name descname"><span class="pre">assignAdditionalScalarVariables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scalarVariables</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/penaltyconstrainmp2node.html#PenaltyConstrainMP2Node.assignAdditionalScalarVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.assignAdditionalScalarVariables" title="Link to this definition"></a></dt>
+<dd><p>This is the list of constraint specific scalar variables which are assigned to this constraint.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>scalarVariables</strong> (<em>list</em><em>[</em><em>ScalarVariable</em><em>]</em>) – The list of ScalarVariable to be assigned.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.getNumberOfAdditionalNeededScalarVariables">
+<span class="sig-name descname"><span class="pre">getNumberOfAdditionalNeededScalarVariables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/penaltyconstrainmp2node.html#PenaltyConstrainMP2Node.getNumberOfAdditionalNeededScalarVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.getNumberOfAdditionalNeededScalarVariables" title="Link to this definition"></a></dt>
+<dd><p>Tell the framework how many scalar variables (e.g., Lagrangian multipliers)
+this constraint needs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The number of requested ScalarVariable</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.updateConnectivity">
+<span class="sig-name descname"><span class="pre">updateConnectivity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/penaltyconstrainmp2node.html#PenaltyConstrainMP2Node.updateConnectivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.updateConnectivity" title="Link to this definition"></a></dt>
+<dd><p>Update the connectivity of the constraint.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>model</strong> (<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel"><em>MPMModel</em></a>) – The full MPMModel instance.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if the connectivity has changed, False otherwise.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.fieldsOnNodes">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fieldsOnNodes</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.fieldsOnNodes" title="Link to this definition"></a></dt>
+<dd><p>The fields on the nodes this constraint is acting on.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The node-wise list of fields.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list[list[str]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.nDof">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nDof</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.nDof" title="Link to this definition"></a></dt>
+<dd><p>The total number of degrees of freedom this constraint is associated with.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The total number of degrees of freedom.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.name">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.name" title="Link to this definition"></a></dt>
+<dd><p>The name of this constraint.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The name.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.nodes">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nodes</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.nodes" title="Link to this definition"></a></dt>
+<dd><p>The nodes this constraint is acting on.
+Duplicates are _allowed_.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The list of nodes.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list[Node]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.scalarVariables">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">scalarVariables</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.scalarVariables" title="Link to this definition"></a></dt>
+<dd><p>The list of assigned ScalarVariable.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The list of scalar variables.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list[ScalarVariable]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-edelweissmeshfree.constraints.penaltyweakdirichlet">
+<span id="penaltyweakdirichlet-constraint-class"></span><h2><code class="docutils literal notranslate"><span class="pre">PenaltyWeakDirichlet</span></code> constraint class<a class="headerlink" href="#module-edelweissmeshfree.constraints.penaltyweakdirichlet" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.constraints.penaltyweakdirichlet.</span></span><span class="sig-name descname"><span class="pre">PenaltyWeakDirichlet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constrainedMaterialPoints</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prescribedStepDelta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">penaltyParameter</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/penaltyweakdirichlet.html#PenaltyWeakDirichlet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet" title="Link to this definition"></a></dt>
+<dd><p>Initialize the VIJEntityBase.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">active</span></code></dt><dd><p>Whether this constraint is active or not.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.fieldsOnNodes" title="edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.fieldsOnNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code></a></dt><dd><p>The fields on the nodes this constraint is acting on.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.nDof" title="edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.nDof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nDof</span></code></a></dt><dd><p>The total number of degrees of freedom this constraint is associated with.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.name" title="edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></a></dt><dd><p>The name of this constraint.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.nodes" title="edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.nodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes</span></code></a></dt><dd><p>The nodes this constraint is acting on.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.scalarVariables" title="edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.scalarVariables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scalarVariables</span></code></a></dt><dd><p>The list of assigned ScalarVariable.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>)</p></li>
+<li><p><strong>model</strong> (<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel"><em>MPMModel</em></a>)</p></li>
+<li><p><strong>constrainedMaterialPoints</strong> (<em>list</em><em>[</em><a class="reference internal" href="mpm/material_points.html#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase" title="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase"><em>MaterialPointBase</em></a><em>]</em>)</p></li>
+<li><p><strong>field</strong> (<em>str</em>)</p></li>
+<li><p><strong>prescribedStepDelta</strong> (<em>dict</em>)</p></li>
+<li><p><strong>penaltyParameter</strong> (<em>float</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.applyConstraint" title="edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.applyConstraint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyConstraint</span></code></a>(dU, PExt, V, timeStep)</p></td>
+<td><p>Apply the constraint, i.e., compute the 'kernels'.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.assignAdditionalScalarVariables" title="edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.assignAdditionalScalarVariables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">assignAdditionalScalarVariables</span></code></a>(scalarVariables)</p></td>
+<td><p>This is the list of constraint specific scalar variables which are assigned to this constraint.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.getNumberOfAdditionalNeededScalarVariables" title="edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.getNumberOfAdditionalNeededScalarVariables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getNumberOfAdditionalNeededScalarVariables</span></code></a>()</p></td>
+<td><p>Tell the framework how many scalar variables (e.g., Lagrangian multipliers) this constraint needs.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVIJContributionSize</span></code>()</p></td>
+<td><p>Return the number of entries this entity contributes to the VIJ (COO) system matrix.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">initializeVIJContribution</span></code>(idcs, I_, J_, offset)</p></td>
+<td><p>Fill the global <code class="docutils literal notranslate"><span class="pre">I</span></code> and <code class="docutils literal notranslate"><span class="pre">J</span></code> index arrays for this constraint's VIJ contribution.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.updateConnectivity" title="edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.updateConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code></a>(model)</p></td>
+<td><p>This method is called before each new timeStep, after material point connectivity was updated, but before the global equation system is created.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.applyConstraint">
+<span class="sig-name descname"><span class="pre">applyConstraint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">PExt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">V</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/penaltyweakdirichlet.html#PenaltyWeakDirichlet.applyConstraint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.applyConstraint" title="Link to this definition"></a></dt>
+<dd><p>Apply the constraint, i.e., compute the ‘kernels’. Add the contributions to the external load vector and the system matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dU</strong> (<em>ndarray</em>) – The current increment since the last time the constraint was applied.</p></li>
+<li><p><strong>PExt</strong> (<em>ndarray</em>) – The external load vector.</p></li>
+<li><p><strong>V</strong> (<em>ndarray</em>) – The system (stiffness) matrix.</p></li>
+<li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The current step and total time.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.assignAdditionalScalarVariables">
+<span class="sig-name descname"><span class="pre">assignAdditionalScalarVariables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scalarVariables</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/penaltyweakdirichlet.html#PenaltyWeakDirichlet.assignAdditionalScalarVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.assignAdditionalScalarVariables" title="Link to this definition"></a></dt>
+<dd><p>This is the list of constraint specific scalar variables which are assigned to this constraint.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>scalarVariables</strong> (<em>list</em><em>[</em><em>ScalarVariable</em><em>]</em>) – The list of ScalarVariable to be assigned.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.getNumberOfAdditionalNeededScalarVariables">
+<span class="sig-name descname"><span class="pre">getNumberOfAdditionalNeededScalarVariables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/penaltyweakdirichlet.html#PenaltyWeakDirichlet.getNumberOfAdditionalNeededScalarVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.getNumberOfAdditionalNeededScalarVariables" title="Link to this definition"></a></dt>
+<dd><p>Tell the framework how many scalar variables (e.g., Lagrangian multipliers)
+this constraint needs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The number of requested ScalarVariable</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.updateConnectivity">
+<span class="sig-name descname"><span class="pre">updateConnectivity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/penaltyweakdirichlet.html#PenaltyWeakDirichlet.updateConnectivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.updateConnectivity" title="Link to this definition"></a></dt>
+<dd><p>This method is called before each new timeStep, after material point connectivity was updated, but before the global equation system is created.
+If the contribution to the global system changes, True is returned.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>model</strong> – The current model.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The truth value if the connectivity has changed.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.fieldsOnNodes">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fieldsOnNodes</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.fieldsOnNodes" title="Link to this definition"></a></dt>
+<dd><p>The fields on the nodes this constraint is acting on.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The node-wise list of fields.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list[list[str]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.nDof">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nDof</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.nDof" title="Link to this definition"></a></dt>
+<dd><p>The total number of degrees of freedom this constraint is associated with.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The total number of degrees of freedom.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.name">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.name" title="Link to this definition"></a></dt>
+<dd><p>The name of this constraint.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The name.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.nodes">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nodes</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.nodes" title="Link to this definition"></a></dt>
+<dd><p>The nodes this constraint is acting on.
+Duplicates are _allowed_.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The list of nodes.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list[Node]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.scalarVariables">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">scalarVariables</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.scalarVariables" title="Link to this definition"></a></dt>
+<dd><p>The list of assigned ScalarVariable.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The list of scalar variables.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list[ScalarVariable]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="step_actions.html" class="btn btn-neutral float-left" title="Step actions" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="numeric_tools.html" class="btn btn-neutral float-right" title="Numerical tools" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Matthias Neuner.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

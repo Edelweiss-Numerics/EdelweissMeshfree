@@ -1,0 +1,513 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>edelweissmeshfree.cells.pythoncell.cell &mdash; EdelweissMeshfree v25.08 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/custom.css?v=1d735308" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=83aae4bb"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            EdelweissMeshfree
+              <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation/index.html">Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">EdelweissMeshfree</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">edelweissmeshfree.cells.pythoncell.cell</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for edelweissmeshfree.cells.pythoncell.cell</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1">#  ---------------------------------------------------------------------</span>
+<span class="c1">#</span>
+<span class="c1">#  _____    _      _              _</span>
+<span class="c1"># | ____|__| | ___| |_      _____(_)___ ___</span>
+<span class="c1"># |  _| / _` |/ _ \ \ \ /\ / / _ \ / __/ __|</span>
+<span class="c1"># | |__| (_| |  __/ |\ V  V /  __/ \__ \__ \</span>
+<span class="c1"># |_____\__,_|\___|_| \_/\_/_\___|_|___/___/</span>
+<span class="c1"># |  \/  | ___  ___| |__  / _|_ __ ___  ___</span>
+<span class="c1"># | |\/| |/ _ \/ __| &#39;_ \| |_| &#39;__/ _ \/ _ \</span>
+<span class="c1"># | |  | |  __/\__ \ | | |  _| | |  __/  __/</span>
+<span class="c1"># |_|  |_|\___||___/_| |_|_| |_|  \___|\___|</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1">#  Unit of Strength of Materials and Structural Analysis</span>
+<span class="c1">#  University of Innsbruck,</span>
+<span class="c1">#</span>
+<span class="c1">#  Research Group for Computational Mechanics of Materials</span>
+<span class="c1">#  Institute of Structural Engineering, BOKU University, Vienna</span>
+<span class="c1">#</span>
+<span class="c1">#  2023 - today</span>
+<span class="c1">#</span>
+<span class="c1">#  This file is part of EdelweissMeshfree.</span>
+<span class="c1">#</span>
+<span class="c1">#  This library is free software; you can redistribute it and/or</span>
+<span class="c1">#  modify it under the terms of the GNU Lesser General Public</span>
+<span class="c1">#  License as published by the Free Software Foundation; either</span>
+<span class="c1">#  version 2.1 of the License, or (at your option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1">#  The full text of the license can be found in the file LICENSE.md at</span>
+<span class="c1">#  the top level directory of EdelweissMeshfree.</span>
+<span class="c1">#  ---------------------------------------------------------------------</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">A pure Python implementation of a bilinear Quad4 cell for 2D displacement problems.</span>
+
+<span class="sd">This cell uses standard bilinear shape functions on a quadrilateral to interpolate</span>
+<span class="sd">displacements from grid nodes to material points, and to assemble residual vectors</span>
+<span class="sd">and stiffness matrices from material point contributions.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.points.node</span><span class="w"> </span><span class="kn">import</span> <span class="n">Node</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.cells.base.cell</span><span class="w"> </span><span class="kn">import</span> <span class="n">CellBase</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.materialpoints.base.mp</span><span class="w"> </span><span class="kn">import</span> <span class="n">MaterialPointBase</span>
+
+
+<div class="viewcode-block" id="_compute_shape_functions_and_gradients">
+<a class="viewcode-back" href="../../../../documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell._compute_shape_functions_and_gradients">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">_compute_shape_functions_and_gradients</span><span class="p">(</span><span class="n">xi</span><span class="p">,</span> <span class="n">eta</span><span class="p">,</span> <span class="n">node_coords</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute shape functions and their spatial gradients at a given parametric point.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    xi</span>
+<span class="sd">        Parametric coordinate xi in [-1, 1].</span>
+<span class="sd">    eta</span>
+<span class="sd">        Parametric coordinate eta in [-1, 1].</span>
+<span class="sd">    node_coords</span>
+<span class="sd">        (4, 2) array of node coordinates.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    N</span>
+<span class="sd">        Shape function values (4,).</span>
+<span class="sd">    dNdx</span>
+<span class="sd">        Shape function gradients w.r.t. physical coordinates (4, 2).</span>
+<span class="sd">    detJ</span>
+<span class="sd">        Determinant of the Jacobian.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Bilinear shape functions in parametric space</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="mf">0.25</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">xi</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">eta</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">xi</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">eta</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">xi</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">eta</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">xi</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">eta</span><span class="p">),</span>
+        <span class="p">]</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Derivatives w.r.t. parametric coordinates</span>
+    <span class="n">dNdxi</span> <span class="o">=</span> <span class="mf">0.25</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="p">[</span><span class="o">-</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">eta</span><span class="p">),</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">eta</span><span class="p">),</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">eta</span><span class="p">),</span> <span class="o">-</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">eta</span><span class="p">)],</span>
+            <span class="p">[</span><span class="o">-</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">xi</span><span class="p">),</span> <span class="o">-</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">xi</span><span class="p">),</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">xi</span><span class="p">),</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">xi</span><span class="p">)],</span>
+        <span class="p">]</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Jacobian: J = dNdxi @ node_coords -&gt; (2, 2)</span>
+    <span class="n">J</span> <span class="o">=</span> <span class="n">dNdxi</span> <span class="o">@</span> <span class="n">node_coords</span>
+
+    <span class="n">detJ</span> <span class="o">=</span> <span class="n">J</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">J</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">J</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">J</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># Inverse Jacobian</span>
+    <span class="n">invJ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">J</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="n">J</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]],</span> <span class="p">[</span><span class="o">-</span><span class="n">J</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">J</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]])</span> <span class="o">/</span> <span class="n">detJ</span>
+
+    <span class="c1"># Derivatives w.r.t. physical coordinates</span>
+    <span class="n">dNdx</span> <span class="o">=</span> <span class="n">invJ</span> <span class="o">@</span> <span class="n">dNdxi</span>  <span class="c1"># (2, 4)</span>
+
+    <span class="k">return</span> <span class="n">N</span><span class="p">,</span> <span class="n">dNdx</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">detJ</span>  <span class="c1"># dNdx returned as (4, 2)</span></div>
+
+
+
+<div class="viewcode-block" id="_global_to_parametric">
+<a class="viewcode-back" href="../../../../documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell._global_to_parametric">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">_global_to_parametric</span><span class="p">(</span><span class="n">coordinate</span><span class="p">,</span> <span class="n">node_coords</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Map a global coordinate to parametric coordinates using Newton iteration.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    coordinate</span>
+<span class="sd">        Global (x, y) coordinate.</span>
+<span class="sd">    node_coords</span>
+<span class="sd">        (4, 2) array of node coordinates.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    xi, eta</span>
+<span class="sd">        Parametric coordinates.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">xi</span><span class="p">,</span> <span class="n">eta</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span>
+
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">20</span><span class="p">):</span>
+        <span class="n">N</span> <span class="o">=</span> <span class="mf">0.25</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">xi</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">eta</span><span class="p">),</span>
+                <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">xi</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">eta</span><span class="p">),</span>
+                <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">xi</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">eta</span><span class="p">),</span>
+                <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">xi</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">eta</span><span class="p">),</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="n">x_current</span> <span class="o">=</span> <span class="n">N</span> <span class="o">@</span> <span class="n">node_coords</span>
+        <span class="n">residual</span> <span class="o">=</span> <span class="n">coordinate</span> <span class="o">-</span> <span class="n">x_current</span>
+
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">residual</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-12</span><span class="p">:</span>
+            <span class="k">break</span>
+
+        <span class="n">dNdxi</span> <span class="o">=</span> <span class="mf">0.25</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="p">[</span><span class="o">-</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">eta</span><span class="p">),</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">eta</span><span class="p">),</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">eta</span><span class="p">),</span> <span class="o">-</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">eta</span><span class="p">)],</span>
+                <span class="p">[</span><span class="o">-</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">xi</span><span class="p">),</span> <span class="o">-</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">xi</span><span class="p">),</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">xi</span><span class="p">),</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">xi</span><span class="p">)],</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="n">J</span> <span class="o">=</span> <span class="n">dNdxi</span> <span class="o">@</span> <span class="n">node_coords</span>
+        <span class="n">detJ</span> <span class="o">=</span> <span class="n">J</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">J</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">J</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">J</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">invJ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">J</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="n">J</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]],</span> <span class="p">[</span><span class="o">-</span><span class="n">J</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">J</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]])</span> <span class="o">/</span> <span class="n">detJ</span>
+
+        <span class="n">dxi</span> <span class="o">=</span> <span class="n">invJ</span> <span class="o">@</span> <span class="n">residual</span>
+        <span class="n">xi</span> <span class="o">+=</span> <span class="n">dxi</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">eta</span> <span class="o">+=</span> <span class="n">dxi</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">xi</span><span class="p">,</span> <span class="n">eta</span></div>
+
+
+
+<div class="viewcode-block" id="PythonCell">
+<a class="viewcode-back" href="../../../../documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PythonCell</span><span class="p">(</span><span class="n">CellBase</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A pure Python bilinear Quad4 cell for 2D displacement problems.</span>
+
+<span class="sd">    This cell computes shape functions and their gradients to:</span>
+<span class="sd">    - Interpolate displacement increments from nodes to material points</span>
+<span class="sd">    - Assemble internal force vectors and stiffness matrices from material point stress/tangent</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cellType</span>
+<span class="sd">        A string identifying the cell formulation (unused for this implementation).</span>
+<span class="sd">    cellNumber</span>
+<span class="sd">        A unique integer label.</span>
+<span class="sd">    nodes</span>
+<span class="sd">        The list of 4 Nodes assigned to this cell.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cellType</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">cellNumber</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">nodes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Node</span><span class="p">]):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cellType</span> <span class="o">=</span> <span class="n">cellType</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cellNumber</span> <span class="o">=</span> <span class="n">cellNumber</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_assignedMaterialPoints</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span> <span class="o">=</span> <span class="n">nodes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_node_coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">n</span><span class="o">.</span><span class="n">coordinates</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bb_min</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_node_coords</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bb_max</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_node_coords</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cellNumber</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cellNumber</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">nNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">4</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">nDof</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">8</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fields</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+        <span class="k">return</span> <span class="p">[[</span><span class="s2">&quot;displacement&quot;</span><span class="p">]]</span> <span class="o">*</span> <span class="mi">4</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">dofIndicesPermutation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ensightType</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;quad4&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">assignedMaterialPoints</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_assignedMaterialPoints</span>
+
+<div class="viewcode-block" id="PythonCell.assignMaterialPoints">
+<a class="viewcode-back" href="../../../../documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.assignMaterialPoints">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">assignMaterialPoints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">materialPoints</span><span class="p">:</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_assignedMaterialPoints</span> <span class="o">=</span> <span class="n">materialPoints</span></div>
+
+
+<div class="viewcode-block" id="PythonCell._get_B_matrix">
+<a class="viewcode-back" href="../../../../documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell._get_B_matrix">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_B_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dNdx</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the strain-displacement matrix B for plane strain/stress.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dNdx</span>
+<span class="sd">            Shape function gradients (4, 2).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        B</span>
+<span class="sd">            (4, 8) strain-displacement matrix for Voigt notation [eps_xx, eps_yy, eps_zz, gamma_xy].</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">B</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+            <span class="n">B</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">dNdx</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>  <span class="c1"># eps_xx</span>
+            <span class="n">B</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">dNdx</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>  <span class="c1"># eps_yy</span>
+            <span class="c1"># B[2, :] = 0  # eps_zz (plane strain)</span>
+            <span class="n">B</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">dNdx</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>  <span class="c1"># gamma_xy</span>
+            <span class="n">B</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">dNdx</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>  <span class="c1"># gamma_xy</span>
+        <span class="k">return</span> <span class="n">B</span></div>
+
+
+<div class="viewcode-block" id="PythonCell.interpolateFieldsToMaterialPoints">
+<a class="viewcode-back" href="../../../../documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.interpolateFieldsToMaterialPoints">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">interpolateFieldsToMaterialPoints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dU</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Interpolate nodal displacement increments to material points.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dU</span>
+<span class="sd">            The nodal displacement increment vector (8,) = [u1x, u1y, u2x, u2y, u3x, u3y, u4x, u4y].</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">mp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_assignedMaterialPoints</span><span class="p">:</span>
+            <span class="n">mp_coords</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">getCenterCoordinates</span><span class="p">()</span>
+            <span class="n">xi</span><span class="p">,</span> <span class="n">eta</span> <span class="o">=</span> <span class="n">_global_to_parametric</span><span class="p">(</span><span class="n">mp_coords</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node_coords</span><span class="p">)</span>
+            <span class="n">N</span><span class="p">,</span> <span class="n">dNdx</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">_compute_shape_functions_and_gradients</span><span class="p">(</span><span class="n">xi</span><span class="p">,</span> <span class="n">eta</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node_coords</span><span class="p">)</span>
+
+            <span class="c1"># Interpolate displacement increment</span>
+            <span class="n">dU_mp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+                <span class="n">dU_mp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="n">N</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">dU</span><span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="n">i</span><span class="p">]</span>
+                <span class="n">dU_mp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="n">N</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">dU</span><span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+
+            <span class="c1"># Compute strain increment from B * dU</span>
+            <span class="n">B</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_B_matrix</span><span class="p">(</span><span class="n">dNdx</span><span class="p">)</span>
+            <span class="n">dStrain</span> <span class="o">=</span> <span class="n">B</span> <span class="o">@</span> <span class="n">dU</span>
+
+            <span class="n">mp</span><span class="o">.</span><span class="n">interpolateFieldsFromCell</span><span class="p">(</span><span class="n">dU_mp</span><span class="p">,</span> <span class="n">dStrain</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PythonCell.interpolateSolutionContributionToMaterialPoints">
+<a class="viewcode-back" href="../../../../documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.interpolateSolutionContributionToMaterialPoints">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">interpolateSolutionContributionToMaterialPoints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dU</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Alias for interpolateFieldsToMaterialPoints (base class interface).&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interpolateFieldsToMaterialPoints</span><span class="p">(</span><span class="n">dU</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PythonCell.computeMaterialPointKernels">
+<a class="viewcode-back" href="../../../../documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.computeMaterialPointKernels">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">computeMaterialPointKernels</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">dU</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">P</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">K</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">timeTotal</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">dTime</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute residual and stiffness contributions from all assigned material points.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dU</span>
+<span class="sd">            The current solution increment (8,).</span>
+<span class="sd">        P</span>
+<span class="sd">            The internal load vector to be filled (8,).</span>
+<span class="sd">        K</span>
+<span class="sd">            The stiffness matrix to be filled (64,) in row-major order.</span>
+<span class="sd">        timeTotal</span>
+<span class="sd">            The current total time.</span>
+<span class="sd">        dTime</span>
+<span class="sd">            The time increment.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">K_mat</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">mp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_assignedMaterialPoints</span><span class="p">:</span>
+            <span class="n">mp_coords</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">getCenterCoordinates</span><span class="p">()</span>
+            <span class="n">xi</span><span class="p">,</span> <span class="n">eta</span> <span class="o">=</span> <span class="n">_global_to_parametric</span><span class="p">(</span><span class="n">mp_coords</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node_coords</span><span class="p">)</span>
+            <span class="n">N</span><span class="p">,</span> <span class="n">dNdx</span><span class="p">,</span> <span class="n">detJ</span> <span class="o">=</span> <span class="n">_compute_shape_functions_and_gradients</span><span class="p">(</span><span class="n">xi</span><span class="p">,</span> <span class="n">eta</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node_coords</span><span class="p">)</span>
+
+            <span class="n">B</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_B_matrix</span><span class="p">(</span><span class="n">dNdx</span><span class="p">)</span>
+            <span class="n">volume</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">getVolume</span><span class="p">()</span>
+
+            <span class="c1"># Get stress from material point (Voigt: [s_xx, s_yy, s_zz, s_xy])</span>
+            <span class="n">stress</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">getResultArray</span><span class="p">(</span><span class="s2">&quot;stress&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Internal force: P += B^T * sigma * volume</span>
+            <span class="n">P</span> <span class="o">+=</span> <span class="n">B</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">stress</span> <span class="o">*</span> <span class="n">volume</span>
+
+            <span class="c1"># Stiffness: K += B^T * C * B * volume</span>
+            <span class="n">C</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">getAlgorithmicTangent</span><span class="p">()</span>
+            <span class="n">K_mat</span> <span class="o">+=</span> <span class="n">B</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">C</span> <span class="o">@</span> <span class="n">B</span> <span class="o">*</span> <span class="n">volume</span></div>
+
+
+<div class="viewcode-block" id="PythonCell.computeBodyLoad">
+<a class="viewcode-back" href="../../../../documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.computeBodyLoad">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">computeBodyLoad</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">loadType</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">load</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">P</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">K</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">timeTotal</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">dTime</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute body load contribution (e.g., gravity).&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">mp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_assignedMaterialPoints</span><span class="p">:</span>
+            <span class="n">mp_coords</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">getCenterCoordinates</span><span class="p">()</span>
+            <span class="n">xi</span><span class="p">,</span> <span class="n">eta</span> <span class="o">=</span> <span class="n">_global_to_parametric</span><span class="p">(</span><span class="n">mp_coords</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node_coords</span><span class="p">)</span>
+            <span class="n">N</span><span class="p">,</span> <span class="n">dNdx</span><span class="p">,</span> <span class="n">detJ</span> <span class="o">=</span> <span class="n">_compute_shape_functions_and_gradients</span><span class="p">(</span><span class="n">xi</span><span class="p">,</span> <span class="n">eta</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node_coords</span><span class="p">)</span>
+            <span class="n">volume</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">getVolume</span><span class="p">()</span>
+
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+                <span class="n">P</span><span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="n">i</span><span class="p">]</span> <span class="o">-=</span> <span class="n">N</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">load</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">volume</span>
+                <span class="n">P</span><span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-=</span> <span class="n">N</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">load</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">volume</span></div>
+
+
+<div class="viewcode-block" id="PythonCell.computeDistributedLoad">
+<a class="viewcode-back" href="../../../../documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.computeDistributedLoad">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">computeDistributedLoad</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">loadType</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">surfaceID</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">materialPoint</span><span class="p">:</span> <span class="n">MaterialPointBase</span><span class="p">,</span>
+        <span class="n">load</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">P</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">K</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">timeTotal</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">dTime</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute distributed (surface) load for a specific material point.&quot;&quot;&quot;</span>
+        <span class="n">mp_coords</span> <span class="o">=</span> <span class="n">materialPoint</span><span class="o">.</span><span class="n">getCenterCoordinates</span><span class="p">()</span>
+        <span class="n">xi</span><span class="p">,</span> <span class="n">eta</span> <span class="o">=</span> <span class="n">_global_to_parametric</span><span class="p">(</span><span class="n">mp_coords</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node_coords</span><span class="p">)</span>
+        <span class="n">N</span><span class="p">,</span> <span class="n">dNdx</span><span class="p">,</span> <span class="n">detJ</span> <span class="o">=</span> <span class="n">_compute_shape_functions_and_gradients</span><span class="p">(</span><span class="n">xi</span><span class="p">,</span> <span class="n">eta</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node_coords</span><span class="p">)</span>
+        <span class="n">volume</span> <span class="o">=</span> <span class="n">materialPoint</span><span class="o">.</span><span class="n">getVolume</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+            <span class="n">P</span><span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="n">i</span><span class="p">]</span> <span class="o">-=</span> <span class="n">N</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">load</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">volume</span>
+            <span class="n">P</span><span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-=</span> <span class="n">N</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">load</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">volume</span></div>
+
+
+<div class="viewcode-block" id="PythonCell.getCoordinatesAtCenter">
+<a class="viewcode-back" href="../../../../documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.getCoordinatesAtCenter">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getCoordinatesAtCenter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_node_coords</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PythonCell.isCoordinateInCell">
+<a class="viewcode-back" href="../../../../documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.isCoordinateInCell">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">isCoordinateInCell</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coordinate</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">coordinate</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">coordinate</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">x</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bb_min</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">and</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bb_max</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">y</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bb_min</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">and</span> <span class="n">y</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bb_max</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="PythonCell.getBoundingBox">
+<a class="viewcode-back" href="../../../../documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.getBoundingBox">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getBoundingBox</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_bb_min</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bb_max</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="PythonCell.getInterpolationVector">
+<a class="viewcode-back" href="../../../../documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.getInterpolationVector">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getInterpolationVector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coordinate</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="n">xi</span><span class="p">,</span> <span class="n">eta</span> <span class="o">=</span> <span class="n">_global_to_parametric</span><span class="p">(</span><span class="n">coordinate</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node_coords</span><span class="p">)</span>
+        <span class="n">N</span> <span class="o">=</span> <span class="mf">0.25</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">xi</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">eta</span><span class="p">),</span>
+                <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">xi</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">eta</span><span class="p">),</span>
+                <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">xi</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">eta</span><span class="p">),</span>
+                <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">xi</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">eta</span><span class="p">),</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">N</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Matthias Neuner.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

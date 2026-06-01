@@ -1,0 +1,276 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Material Point Managers &mdash; EdelweissMeshfree v25.08 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=1d735308" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=83aae4bb"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            EdelweissMeshfree
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">EdelweissMeshfree</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Material Point Managers</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/documentation/mpm/material_point_managers.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-edelweissmeshfree.mpmmanagers.base.mpmmanagerbase">
+<span id="material-point-managers"></span><h1>Material Point Managers<a class="headerlink" href="#module-edelweissmeshfree.mpmmanagers.base.mpmmanagerbase" title="Link to this heading"></a></h1>
+<p>Material Point Managers are responsible for the connectivity between material points and cells.
+They track the material points and cells and update the connectivity between them.
+Furthermore, they provide the active cells, which are the cells that contain material points.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.mpmmanagers.base.mpmmanagerbase.MPMManagerBase">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.mpmmanagers.base.mpmmanagerbase.</span></span><span class="sig-name descname"><span class="pre">MPMManagerBase</span></span><a class="reference internal" href="../../_modules/edelweissmeshfree/mpmmanagers/base/mpmmanagerbase.html#MPMManagerBase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.mpmmanagers.base.mpmmanagerbase.MPMManagerBase" title="Link to this definition"></a></dt>
+<dd><p>The MPMManagerBase class is an abstract base class for all material point managers.
+If you want to implement a new material point manager, you have to inherit from this class.</p>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.mpmmanagers.base.mpmmanagerbase.MPMManagerBase.getActiveCells" title="edelweissmeshfree.mpmmanagers.base.mpmmanagerbase.MPMManagerBase.getActiveCells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getActiveCells</span></code></a>()</p></td>
+<td><p>Returns the set of active cells, which have been determined during the last connectivity update.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.mpmmanagers.base.mpmmanagerbase.MPMManagerBase.updateConnectivity" title="edelweissmeshfree.mpmmanagers.base.mpmmanagerbase.MPMManagerBase.updateConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code></a>()</p></td>
+<td><p>Update the connectivity between observed cells and material points.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.mpmmanagers.base.mpmmanagerbase.MPMManagerBase.getActiveCells">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">getActiveCells</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/mpmmanagers/base/mpmmanagerbase.html#MPMManagerBase.getActiveCells"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.mpmmanagers.base.mpmmanagerbase.MPMManagerBase.getActiveCells" title="Link to this definition"></a></dt>
+<dd><p>Returns the set of active cells, which have been determined during the last connectivity update.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The set of active cells.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>CellSet</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.mpmmanagers.base.mpmmanagerbase.MPMManagerBase.updateConnectivity">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">updateConnectivity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/mpmmanagers/base/mpmmanagerbase.html#MPMManagerBase.updateConnectivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.mpmmanagers.base.mpmmanagerbase.MPMManagerBase.updateConnectivity" title="Link to this definition"></a></dt>
+<dd><p>Update the connectivity between observed cells and material points.
+Returns the truth value of a change during the last connectivity update.</p>
+<dl class="simple">
+<dt>This method will:</dt><dd><ul class="simple">
+<li><p>assign all observed material points the cells in which they currently reside.</p></li>
+<li><p>assign all active cells the material points which are residing in the cell.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The truth value of change.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<section id="module-edelweissmeshfree.mpmmanagers.simplempmmanager">
+<span id="simple-material-point-manager"></span><h2>Simple Material Point Manager<a class="headerlink" href="#module-edelweissmeshfree.mpmmanagers.simplempmmanager" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.mpmmanagers.simplempmmanager.SimpleMaterialPointManager">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.mpmmanagers.simplempmmanager.</span></span><span class="sig-name descname"><span class="pre">SimpleMaterialPointManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">materialPointCells</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">materialPoints</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/mpmmanagers/simplempmmanager.html#SimpleMaterialPointManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.mpmmanagers.simplempmmanager.SimpleMaterialPointManager" title="Link to this definition"></a></dt>
+<dd><p>A very simplistic manager for material points and cells.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>materialPointCells</strong> (<em>list</em><em>[</em><a class="reference internal" href="../cells.html#edelweissmeshfree.cells.base.cell.CellBase" title="edelweissmeshfree.cells.base.cell.CellBase"><em>CellBase</em></a><em>]</em>) – The list of cells.</p></li>
+<li><p><strong>materialPoints</strong> (<em>list</em><em>[</em><a class="reference internal" href="material_points.html#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase" title="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase"><em>MaterialPointBase</em></a><em>]</em>) – The list of material points.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><strong>getActiveCells</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>updateConnectivity</strong></p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.mpmmanagers.simplempmmanager.SimpleMaterialPointManager._checkIfMPPartiallyInCell">
+<span class="sig-name descname"><span class="pre">_checkIfMPPartiallyInCell</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cell</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/mpmmanagers/simplempmmanager.html#SimpleMaterialPointManager._checkIfMPPartiallyInCell"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.mpmmanagers.simplempmmanager.SimpleMaterialPointManager._checkIfMPPartiallyInCell" title="Link to this definition"></a></dt>
+<dd><p>Check if at least one vertex of a MaterialPoint is within a given cell.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The truth value if this MaterialPoint is located in the cell.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mp</strong> (<a class="reference internal" href="material_points.html#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase" title="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase"><em>MaterialPointBase</em></a>)</p></li>
+<li><p><strong>cell</strong> (<a class="reference internal" href="../cells.html#edelweissmeshfree.cells.base.cell.CellBase" title="edelweissmeshfree.cells.base.cell.CellBase"><em>CellBase</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-edelweissmeshfree.mpmmanagers.smartmpmmanager">
+<span id="smart-material-point-manager"></span><h2>Smart Material Point Manager<a class="headerlink" href="#module-edelweissmeshfree.mpmmanagers.smartmpmmanager" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.mpmmanagers.smartmpmmanager.SmartMaterialPointManager">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.mpmmanagers.smartmpmmanager.</span></span><span class="sig-name descname"><span class="pre">SmartMaterialPointManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">materialPointCells</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">materialPoints</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dimension</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{'KDTreeLevels':</span> <span class="pre">1}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/mpmmanagers/smartmpmmanager.html#SmartMaterialPointManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.mpmmanagers.smartmpmmanager.SmartMaterialPointManager" title="Link to this definition"></a></dt>
+<dd><p>A smart manager for material points and cells making use of a KDTree for loacation points in cells.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>materialPointCells</strong> (<em>list</em><em>[</em><a class="reference internal" href="../cells.html#edelweissmeshfree.cells.base.cell.CellBase" title="edelweissmeshfree.cells.base.cell.CellBase"><em>CellBase</em></a><em>]</em>) – The list of cells.</p></li>
+<li><p><strong>materialPoints</strong> (<em>list</em><em>[</em><a class="reference internal" href="material_points.html#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase" title="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase"><em>MaterialPointBase</em></a><em>]</em>) – The list of material points.</p></li>
+<li><p><strong>dimension</strong> (<em>int</em>) – The dimension of the problem.</p></li>
+<li><p><strong>options</strong> (<em>dict</em>) – A dictionary containing options.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.mpmmanagers.smartmpmmanager.SmartMaterialPointManager.getActiveCells" title="edelweissmeshfree.mpmmanagers.smartmpmmanager.SmartMaterialPointManager.getActiveCells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getActiveCells</span></code></a>()</p></td>
+<td><p>Returns the set of active cells, which have been determined during the last connectivity update.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.mpmmanagers.smartmpmmanager.SmartMaterialPointManager.updateConnectivity" title="edelweissmeshfree.mpmmanagers.smartmpmmanager.SmartMaterialPointManager.updateConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code></a>()</p></td>
+<td><p>Update the connectivity between observed cells and material points.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.mpmmanagers.smartmpmmanager.SmartMaterialPointManager.getActiveCells">
+<span class="sig-name descname"><span class="pre">getActiveCells</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/mpmmanagers/smartmpmmanager.html#SmartMaterialPointManager.getActiveCells"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.mpmmanagers.smartmpmmanager.SmartMaterialPointManager.getActiveCells" title="Link to this definition"></a></dt>
+<dd><p>Returns the set of active cells, which have been determined during the last connectivity update.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The set of active cells.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>CellSet</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.mpmmanagers.smartmpmmanager.SmartMaterialPointManager.updateConnectivity">
+<span class="sig-name descname"><span class="pre">updateConnectivity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/mpmmanagers/smartmpmmanager.html#SmartMaterialPointManager.updateConnectivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.mpmmanagers.smartmpmmanager.SmartMaterialPointManager.updateConnectivity" title="Link to this definition"></a></dt>
+<dd><p>Update the connectivity between observed cells and material points.
+Returns the truth value of a change during the last connectivity update.</p>
+<dl class="simple">
+<dt>This method will:</dt><dd><ul class="simple">
+<li><p>assign all observed material points the cells in which they currently reside.</p></li>
+<li><p>assign all active cells the material points which are residing in the cell.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The truth value of change.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Matthias Neuner.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

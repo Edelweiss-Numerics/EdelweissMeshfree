@@ -1,0 +1,370 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>edelweissmeshfree.numerics.dofmanager &mdash; EdelweissMeshfree v25.08 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css?v=1d735308" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=83aae4bb"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            EdelweissMeshfree
+              <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation/index.html">Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">EdelweissMeshfree</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">edelweissmeshfree.numerics.dofmanager</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for edelweissmeshfree.numerics.dofmanager</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1">#  ---------------------------------------------------------------------</span>
+<span class="c1">#</span>
+<span class="c1">#  _____    _      _              _</span>
+<span class="c1"># | ____|__| | ___| |_      _____(_)___ ___</span>
+<span class="c1"># |  _| / _` |/ _ \ \ \ /\ / / _ \ / __/ __|</span>
+<span class="c1"># | |__| (_| |  __/ |\ V  V /  __/ \__ \__ \</span>
+<span class="c1"># |_____\__,_|\___|_| \_/\_/_\___|_|___/___/</span>
+<span class="c1"># |  \/  | ___  ___| |__  / _|_ __ ___  ___</span>
+<span class="c1"># | |\/| |/ _ \/ __| &#39;_ \| |_| &#39;__/ _ \/ _ \</span>
+<span class="c1"># | |  | |  __/\__ \ | | |  _| | |  __/  __/</span>
+<span class="c1"># |_|  |_|\___||___/_| |_|_| |_|  \___|\___|</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1">#  Unit of Strength of Materials and Structural Analysis</span>
+<span class="c1">#  University of Innsbruck,</span>
+<span class="c1">#</span>
+<span class="c1">#  Research Group for Computational Mechanics of Materials</span>
+<span class="c1">#  Institute of Structural Engineering, BOKU University, Vienna</span>
+<span class="c1">#</span>
+<span class="c1">#  2023 - today</span>
+<span class="c1">#</span>
+<span class="c1">#  Matthias Neuner |  matthias.neuner@boku.ac.at</span>
+<span class="c1">#  Thomas Mader    |  thomas.mader@bokut.ac.at</span>
+<span class="c1">#</span>
+<span class="c1">#  This file is part of EdelweissMeshfree.</span>
+<span class="c1">#</span>
+<span class="c1">#  This library is free software; you can redistribute it and/or</span>
+<span class="c1">#  modify it under the terms of the GNU Lesser General Public</span>
+<span class="c1">#  License as published by the Free Software Foundation; either</span>
+<span class="c1">#  version 2.1 of the License, or (at your option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1">#  The full text of the license can be found in the file LICENSE.md at</span>
+<span class="c1">#  the top level directory of EdelweissMeshfree.</span>
+<span class="c1">#  ---------------------------------------------------------------------</span>
+
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.fields.nodefield</span><span class="w"> </span><span class="kn">import</span> <span class="n">NodeField</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.numerics.dofmanager</span><span class="w"> </span><span class="kn">import</span> <span class="n">DofManager</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.variables.scalarvariable</span><span class="w"> </span><span class="kn">import</span> <span class="n">ScalarVariable</span>
+
+
+<div class="viewcode-block" id="MPMDofManager">
+<a class="viewcode-back" href="../../../documentation/numeric_tools.html#edelweissmeshfree.numerics.dofmanager.MPMDofManager">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MPMDofManager</span><span class="p">(</span><span class="n">DofManager</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A DofManager class for the Material Point Method.</span>
+<span class="sd">    Derived from DofManager, it is used to manage the degrees of freedom of the model</span>
+<span class="sd">    and to provide the necessary information for the assembly of the global system matrix.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    nodeFields : list</span>
+<span class="sd">        A list of node fields.</span>
+<span class="sd">    scalarVariables : list</span>
+<span class="sd">        A list of scalar variables.</span>
+<span class="sd">    elements : list</span>
+<span class="sd">        A list of elements.</span>
+<span class="sd">    constraints : list</span>
+<span class="sd">        A list of constraints.</span>
+<span class="sd">    nodeSets : list</span>
+<span class="sd">        A list of node sets.</span>
+<span class="sd">    cells : list</span>
+<span class="sd">        A list of cells.</span>
+<span class="sd">    cellElements : list</span>
+<span class="sd">        A list of cell elements.</span>
+<span class="sd">    particles : list</span>
+<span class="sd">        The list of particles (RKPM).</span>
+<span class="sd">    initializeVIJPattern : bool</span>
+<span class="sd">        A flag indicating whether the VIJ pattern should be initialized.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">nodeFields</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">NodeField</span><span class="p">],</span>
+        <span class="n">scalarVariables</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ScalarVariable</span><span class="p">]</span> <span class="o">=</span> <span class="p">[],</span>
+        <span class="n">elements</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[],</span>
+        <span class="n">constraints</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[],</span>
+        <span class="n">nodeSets</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[],</span>
+        <span class="n">cells</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[],</span>
+        <span class="n">cellElements</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[],</span>
+        <span class="n">particles</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[],</span>
+        <span class="n">initializeVIJPattern</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">initializeAccumulatedNodalFluxesFieldwise</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">determiningIndexToHostObjectMappping</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">):</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">nodeFields</span><span class="p">,</span>
+            <span class="n">scalarVariables</span><span class="p">,</span>
+            <span class="n">elements</span><span class="p">,</span>
+            <span class="n">constraints</span><span class="p">,</span>
+            <span class="n">nodeSets</span><span class="p">,</span>
+            <span class="n">initializeVIJPattern</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">initializeAccumulatedNodalFluxesFieldwise</span><span class="o">=</span><span class="n">initializeAccumulatedNodalFluxesFieldwise</span><span class="p">,</span>
+            <span class="n">determiningIndexToHostObjectMappping</span><span class="o">=</span><span class="n">determiningIndexToHostObjectMappping</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">accumulatedCellNDof</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_accumulatedCellVIJSize</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_nAccumulatedNodalFluxesFieldwiseFromCells</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">largestNumberOfCellNDof</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gatherCellsInformation</span><span class="p">(</span><span class="n">cells</span><span class="p">)</span>
+
+        <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">accumulatedCellElementNDof</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_accumulatedCellElementVIJSize</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_nAccumulatedNodalFluxesFieldwiseFromCellElements</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">largestNumberOfCellElementNDof</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gatherCellsInformation</span><span class="p">(</span><span class="n">cellElements</span><span class="p">)</span>
+
+        <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">accumulatedParticleNDof</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_accumulatedParticleVIJSize</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_nAccumulatedNodalFluxesFieldwiseFromParticles</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">largestNumberOfParticleNDof</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gatherCellsInformation</span><span class="p">(</span><span class="n">particles</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfCellsInDofVector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locateCellsInDofVector</span><span class="p">(</span><span class="n">cells</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfCellElementsInDofVector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locateCellsInDofVector</span><span class="p">(</span><span class="n">cellElements</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfParticlesInDofVector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locateParticlesInDofVector</span><span class="p">(</span><span class="n">particles</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">initializeAccumulatedNodalFluxesFieldwise</span><span class="p">:</span>
+
+            <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nAccumulatedNodalFluxesFieldwise</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">nAccumulatedNodalFluxesFieldwise</span><span class="p">[</span><span class="n">field</span><span class="p">]</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nAccumulatedNodalFluxesFieldwiseFromCells</span><span class="p">[</span><span class="n">field</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">nAccumulatedNodalFluxesFieldwise</span><span class="p">[</span><span class="n">field</span><span class="p">]</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nAccumulatedNodalFluxesFieldwiseFromCellElements</span><span class="p">[</span>
+                    <span class="n">field</span>
+                <span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">nAccumulatedNodalFluxesFieldwise</span><span class="p">[</span><span class="n">field</span><span class="p">]</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nAccumulatedNodalFluxesFieldwiseFromParticles</span><span class="p">[</span>
+                    <span class="n">field</span>
+                <span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfHigherOrderEntitiesInDofVector</span> <span class="o">|=</span> <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfCellsInDofVector</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfHigherOrderEntitiesInDofVector</span> <span class="o">|=</span> <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfCellElementsInDofVector</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfHigherOrderEntitiesInDofVector</span> <span class="o">|=</span> <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfParticlesInDofVector</span>
+
+        <span class="k">if</span> <span class="n">initializeVIJPattern</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sizeVIJ</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_accumulatedElementVIJSize</span>
+                <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_accumulatedConstraintVIJSize</span>
+                <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_accumulatedCellVIJSize</span>
+                <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_accumulatedCellElementVIJSize</span>
+                <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_accumulatedParticleVIJSize</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">I</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">J</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfHigherOrderEntitiesInVIJ</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initializeVIJPattern</span><span class="p">()</span>
+
+<div class="viewcode-block" id="MPMDofManager._gatherCellsInformation">
+<a class="viewcode-back" href="../../../documentation/numeric_tools.html#edelweissmeshfree.numerics.dofmanager.MPMDofManager._gatherCellsInformation">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_gatherCellsInformation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entities</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generates some auxiliary information,</span>
+<span class="sd">        which may be required by some modules of EdelweissFE.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        entities</span>
+<span class="sd">           The list of entities, for which the information is gathered.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple[int,int]</span>
+<span class="sd">            The tuple of</span>
+<span class="sd">                - number of accumulated elemental degrees of freedom.</span>
+<span class="sd">                - number of accumulated system matrix sizes.</span>
+<span class="sd">                - the number of  acummulated fluxes Σ_entities Σ_nodes ( nDof (field) ) for Abaqus-like convergence tests.</span>
+<span class="sd">                - largest occuring number of dofs on any element.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gatherElementsInformation</span><span class="p">(</span><span class="n">entities</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MPMDofManager._locateCellsInDofVector">
+<a class="viewcode-back" href="../../../documentation/numeric_tools.html#edelweissmeshfree.numerics.dofmanager.MPMDofManager._locateCellsInDofVector">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_locateCellsInDofVector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cells</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a dictionary containing the location (indices) of each cell</span>
+<span class="sd">        within the DofVector structure.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            A dictionary containing the location mapping.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">idcsOfCellsInDofVector</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">cl</span> <span class="ow">in</span> <span class="n">cells</span><span class="p">:</span>
+            <span class="n">destList</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfFieldVariablesInDofVector</span><span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="n">nodeField</span><span class="p">]]</span>
+                    <span class="k">for</span> <span class="n">iNode</span><span class="p">,</span> <span class="n">node</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cl</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span>  <span class="c1"># for each node of the cell ..</span>
+                    <span class="k">for</span> <span class="n">nodeField</span> <span class="ow">in</span> <span class="n">cl</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="n">iNode</span><span class="p">]</span>  <span class="c1"># for each field of this node</span>
+                <span class="p">]</span>
+            <span class="p">)</span>  <span class="c1"># the index in the global system</span>
+
+            <span class="k">if</span> <span class="n">cl</span><span class="o">.</span><span class="n">dofIndicesPermutation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">idcsOfCellsInDofVector</span><span class="p">[</span><span class="n">cl</span><span class="p">]</span> <span class="o">=</span> <span class="n">destList</span><span class="p">[</span><span class="n">cl</span><span class="o">.</span><span class="n">dofIndicesPermutation</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">idcsOfCellsInDofVector</span><span class="p">[</span><span class="n">cl</span><span class="p">]</span> <span class="o">=</span> <span class="n">destList</span>
+
+        <span class="k">return</span> <span class="n">idcsOfCellsInDofVector</span></div>
+
+
+<div class="viewcode-block" id="MPMDofManager._locateParticlesInDofVector">
+<a class="viewcode-back" href="../../../documentation/numeric_tools.html#edelweissmeshfree.numerics.dofmanager.MPMDofManager._locateParticlesInDofVector">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_locateParticlesInDofVector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">particles</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a dictionary containing the location (indices) of each particle</span>
+<span class="sd">        within the DofVector structure.</span>
+
+<span class="sd">        In contrast to elements, cells and cell elements, particles have an identical set of fields</span>
+<span class="sd">        on each attached node.</span>
+<span class="sd">        Furthermore, due to the varying number attached nodes, no permutation is allowed.</span>
+<span class="sd">        For particles generally a node-wise layout is assumed.</span>
+
+<span class="sd">        For instance: [node_1_displacement, node_1_temperature, node_2_displacement, node_2_temperature, ...]</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            A dictionary containing the location mapping.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locateNodeCouplingEntitiesInDofVector</span><span class="p">(</span><span class="n">particles</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MPMDofManager.updateParticles">
+<a class="viewcode-back" href="../../../documentation/numeric_tools.html#edelweissmeshfree.numerics.dofmanager.MPMDofManager.updateParticles">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">updateParticles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">particles</span><span class="p">:</span> <span class="nb">list</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Updates the connectivity mapping for particles without rebuilding</span>
+<span class="sd">        the entire DofManager structure.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        particles : list</span>
+<span class="sd">            The list of particles to update.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">particles</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="n">particles</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">particles</span><span class="p">)</span>  <span class="c1"># Ensure we have a list for iteration</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfParticlesInDofVector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locateParticlesInDofVector</span><span class="p">(</span><span class="n">particles</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfHigherOrderEntitiesInDofVector</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">idcsOfParticlesInDofVector</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MPMDofManager.updateConstraints">
+<a class="viewcode-back" href="../../../documentation/numeric_tools.html#edelweissmeshfree.numerics.dofmanager.MPMDofManager.updateConstraints">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">updateConstraints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">constraints</span><span class="p">:</span> <span class="nb">list</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Updates the connectivity mapping for constraints in a serial loop.</span>
+<span class="sd">        Reuses global index maps to avoid re-instancing the manager.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        constraints : list</span>
+<span class="sd">            The list of constraints to be considered.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">constraints</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="n">constraints</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">constraints</span><span class="p">)</span>  <span class="c1"># Ensure we have a list for iteration</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfConstraintsInDofVector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locateConstraintsInDofVector</span><span class="p">(</span><span class="n">constraints</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfHigherOrderEntitiesInDofVector</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">idcsOfConstraintsInDofVector</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Matthias Neuner.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
