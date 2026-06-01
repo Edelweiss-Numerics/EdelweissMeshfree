@@ -47,11 +47,12 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 from edelweissfe.points.node import Node
+from edelweissfe.numerics.vijentitybase import VIJEntityBase
 
 from edelweissmeshfree.materialpoints.base.mp import MaterialPointBase
 
 
-class CellBase(ABC):
+class CellBase(ABC, VIJEntityBase):
     @abstractmethod
     def __init__(self, cellType: str, cellNumber: int, nodes: list[Node]):
         """MPM cells in EdelweissMPM should be derived from this

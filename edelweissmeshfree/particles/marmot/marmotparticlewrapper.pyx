@@ -386,5 +386,18 @@ cdef class MarmotParticleWrapper:
         np.asarray(self._stateVars)[:] = data[:]
         self._initializeStateVarsTemp()
 
+    def getVIJContributionSize(self) -> int:
+        """Return the number of entries this entity contributes to the VIJ (COO) system matrix."""
+        return self.nDof**2
+
+    def initializeVIJContribution(self, idcs: np.ndarray, I_: np.ndarray, J_: np.ndarray, offset: int) -> None:
+        """Initialize the I and J arrays for the VIJ (COO) system matrix assembly. """
+
+        n = len(idcs)
+        VIJLocations = np.tile(idcs, (n, 1))
+        I_[offset : offset + n**2] = VIJLocations.flatten()
+        J_[offset : offset + n**2] = VIJLocations.flatten("F")
+
     def __dealloc__(self):
         del self._marmotParticle
+
