@@ -416,6 +416,7 @@ def test_sim(assert_gold):
 
     gold = np.loadtxt("gold.csv")
 
+    # CI drift observed up to ~2.869e-09 abs and ~2.544e-05 rel for this case.
     assert_gold(res, gold, rtol=3e-5, atol=5e-9)
 
 
