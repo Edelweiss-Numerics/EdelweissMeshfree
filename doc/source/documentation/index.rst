@@ -4,13 +4,20 @@ Documentation
 .. toctree::
    :maxdepth: 2
 
+   organization
    models
    cells
    cellelements
-   material_points
+   mpm/material_points
    solvers
-   material_point_managers
+   mpm/material_point_managers
    model_generators
+   particles
+   particle_managers
+   points_and_fields
+   field_output
+   meshfree
+   sets
    step_actions
    constraints
    numeric_tools
