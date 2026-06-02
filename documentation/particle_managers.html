@@ -1,0 +1,423 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Particle managers &mdash; EdelweissMeshfree v25.08 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=1d735308" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=83aae4bb"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Points and fields" href="points_and_fields.html" />
+    <link rel="prev" title="Particles" href="particles.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            EdelweissMeshfree
+              <img src="../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="organization.html">Code organization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html">Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cells.html">Cells</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cellelements.html">Cellelements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpm/material_points.html">Material Points</a></li>
+<li class="toctree-l2"><a class="reference internal" href="solvers.html">Solvers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpm/material_point_managers.html">Material Point Managers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="model_generators.html">Model generators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="particles.html">Particles</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Particle managers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager"><code class="docutils literal notranslate"><span class="pre">BaseParticleManager</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager.signalizeKernelFunctionUpdate"><code class="docutils literal notranslate"><span class="pre">BaseParticleManager.signalizeKernelFunctionUpdate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager.updateConnectivity"><code class="docutils literal notranslate"><span class="pre">BaseParticleManager.updateConnectivity()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager"><code class="docutils literal notranslate"><span class="pre">KDBinOrganizedParticleManager</span></code> class</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager"><code class="docutils literal notranslate"><span class="pre">KDBinOrganizedParticleManager</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._FastKDBinOrganizer"><code class="docutils literal notranslate"><span class="pre">_FastKDBinOrganizer</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager">Legacy implementation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager.KDBinOrganizedParticleManager"><code class="docutils literal notranslate"><span class="pre">KDBinOrganizedParticleManager</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager._KDBinOrganizer"><code class="docutils literal notranslate"><span class="pre">_KDBinOrganizer</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="points_and_fields.html">Points and fields</a></li>
+<li class="toctree-l2"><a class="reference internal" href="field_output.html">Field output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshfree.html">Meshfree utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sets.html">Sets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="step_actions.html">Step actions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="constraints.html">Constraints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="numeric_tools.html">Numerical tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="output_managers.html">Output managers</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">EdelweissMeshfree</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Documentation</a></li>
+      <li class="breadcrumb-item active">Particle managers</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/documentation/particle_managers.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-edelweissmeshfree.particlemanagers.base.baseparticlemanager">
+<span id="particle-managers"></span><h1>Particle managers<a class="headerlink" href="#module-edelweissmeshfree.particlemanagers.base.baseparticlemanager" title="Link to this heading"></a></h1>
+<p>Particle managers are responsible for the connectivity between particles and shape functions.
+They track the particles and shape functions and update the connectivity between them.</p>
+<p>Compared to the MPM, several subtle differences exist between the particle managers:
+- Each particle vertice may be reside in multiple shape functions, whereas a material point vertex can be in only one cell.
+- For nodally integrated ((semi-)Lagrangian) shape functions, no inactive cells exist, whereas for the material point method, inactive cells exist.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.particlemanagers.base.baseparticlemanager.</span></span><span class="sig-name descname"><span class="pre">BaseParticleManager</span></span><a class="reference internal" href="../_modules/edelweissmeshfree/particlemanagers/base/baseparticlemanager.html#BaseParticleManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager" title="Link to this definition"></a></dt>
+<dd><p>The BaseParticleManager class is an abstract base class for all particle managers.
+If you want to implement a new particle manager, you have to inherit from this class.</p>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager.signalizeKernelFunctionUpdate" title="edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager.signalizeKernelFunctionUpdate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">signalizeKernelFunctionUpdate</span></code></a>()</p></td>
+<td><p>For semi-Lagrangian methods, the kernel function locations may change.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager.updateConnectivity" title="edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager.updateConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code></a>()</p></td>
+<td><p>Update the connectivity between observed shape functions and particles.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager.signalizeKernelFunctionUpdate">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">signalizeKernelFunctionUpdate</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particlemanagers/base/baseparticlemanager.html#BaseParticleManager.signalizeKernelFunctionUpdate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager.signalizeKernelFunctionUpdate" title="Link to this definition"></a></dt>
+<dd><p>For semi-Lagrangian methods, the kernel function locations may change.
+This method is to signalize such a to the material point manager, so that it can account for the changed supports.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager.updateConnectivity">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">updateConnectivity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particlemanagers/base/baseparticlemanager.html#BaseParticleManager.updateConnectivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager.updateConnectivity" title="Link to this definition"></a></dt>
+<dd><p>Update the connectivity between observed shape functions and particles.
+Returns the truth value of a change during the last connectivity update.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The truth value of change.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<section id="module-edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager">
+<span id="kdbinorganizedparticlemanager-class"></span><h2><code class="docutils literal notranslate"><span class="pre">KDBinOrganizedParticleManager</span></code> class<a class="headerlink" href="#module-edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.</span></span><span class="sig-name descname"><span class="pre">KDBinOrganizedParticleManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">particleKernelDomain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dimension</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">journal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bondParticlesToKernelFunctions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">randomlyShiftPartliceShapeFunctions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particlemanagers/kdbinorganizedparticlemanager.html#KDBinOrganizedParticleManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager" title="Link to this definition"></a></dt>
+<dd><p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager.signalizeKernelFunctionUpdate" title="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager.signalizeKernelFunctionUpdate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">signalizeKernelFunctionUpdate</span></code></a>()</p></td>
+<td><p>For semi-Lagrangian methods, the kernel function locations may change.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager.updateConnectivity" title="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager.updateConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code></a>()</p></td>
+<td><p>Update the connectivity between observed shape functions and particles.</p></td>
+</tr>
+</tbody>
+</table>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><strong>getCoveredDomain</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>visualize</strong></p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>particleKernelDomain</strong> (<a class="reference internal" href="meshfree.html#edelweissmeshfree.meshfree.particlekerneldomain.ParticleKernelDomain" title="edelweissmeshfree.meshfree.particlekerneldomain.ParticleKernelDomain"><em>ParticleKernelDomain</em></a>)</p></li>
+<li><p><strong>dimension</strong> (<em>int</em>)</p></li>
+<li><p><strong>journal</strong> (<em>Journal</em>)</p></li>
+<li><p><strong>bondParticlesToKernelFunctions</strong> (<em>bool</em>)</p></li>
+<li><p><strong>randomlyShiftPartliceShapeFunctions</strong> (<em>bool</em><em> | </em><em>float</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager.signalizeKernelFunctionUpdate">
+<span class="sig-name descname"><span class="pre">signalizeKernelFunctionUpdate</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particlemanagers/kdbinorganizedparticlemanager.html#KDBinOrganizedParticleManager.signalizeKernelFunctionUpdate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager.signalizeKernelFunctionUpdate" title="Link to this definition"></a></dt>
+<dd><p>For semi-Lagrangian methods, the kernel function locations may change.
+This method is to signalize such a to the material point manager, so that it can account for the changed supports.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager.updateConnectivity">
+<span class="sig-name descname"><span class="pre">updateConnectivity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particlemanagers/kdbinorganizedparticlemanager.html#KDBinOrganizedParticleManager.updateConnectivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager.updateConnectivity" title="Link to this definition"></a></dt>
+<dd><p>Update the connectivity between observed shape functions and particles.
+Returns the truth value of a change during the last connectivity update.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The truth value of change.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._FastKDBinOrganizer">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.</span></span><span class="sig-name descname"><span class="pre">_FastKDBinOrganizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernelFunctions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dimension</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particlemanagers/kdbinorganizedparticlemanager.html#_FastKDBinOrganizer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._FastKDBinOrganizer" title="Link to this definition"></a></dt>
+<dd><p>Optimized Bin Organizer using pure NumPy vectorization and integer indexing.</p>
+<p class="rubric">Methods</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><strong>getCandidateIndices</strong></p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kernelFunctions</strong> (<em>List</em><em>[</em><em>Any</em><em>]</em>)</p></li>
+<li><p><strong>dimension</strong> (<em>int</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager">
+<span id="legacy-implementation"></span><h2>Legacy implementation<a class="headerlink" href="#module-edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager.KDBinOrganizedParticleManager">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager.</span></span><span class="sig-name descname"><span class="pre">KDBinOrganizedParticleManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">particleKernelDomain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dimension</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">journal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bondParticlesToKernelFunctions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">randomlyShiftPartliceShapeFunctions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particlemanagers/oldkdbinorganizedparticlemanager.html#KDBinOrganizedParticleManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager.KDBinOrganizedParticleManager" title="Link to this definition"></a></dt>
+<dd><p>A k-dimensional bin organized manager for particles and meshfree shape functions  for locating points in supports.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>meshfreeKernelFunctions</strong> – The list of shape functions.</p></li>
+<li><p><strong>particles</strong> – The list of particles.</p></li>
+<li><p><strong>dimension</strong> (<em>int</em>) – The dimension of the problem.</p></li>
+<li><p><strong>journal</strong> (<em>Journal</em>) – The journal for logging messages.</p></li>
+<li><p><strong>bondParticlesToKernelFunctions</strong> (<em>bool</em>) – Whether to bond the particles to the kernel functions (one particle per kernel function).
+If True, the kernel functions are moved to the particle center coordinates at each update.</p></li>
+<li><p><strong>randomlyShiftPartliceShapeFunctions</strong> (<em>bool</em><em> | </em><em>float</em>) – Whether to randomly shift the shape functions a bit to avoid alignment artifacts.
+If a float value is given, this value is used as the maximum shift factor in each direction, which is scaled with the approximate particle size:
+randdisp = (np.random.rand(self._dimension) - 0.5) * np.sqrt(particle.getVolumeUndeformed()) * randomlyShiftPartliceShapeFunctions * particleSize</p></li>
+<li><p><strong>particleKernelDomain</strong> (<a class="reference internal" href="meshfree.html#edelweissmeshfree.meshfree.particlekerneldomain.ParticleKernelDomain" title="edelweissmeshfree.meshfree.particlekerneldomain.ParticleKernelDomain"><em>ParticleKernelDomain</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager.KDBinOrganizedParticleManager.signalizeKernelFunctionUpdate" title="edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager.KDBinOrganizedParticleManager.signalizeKernelFunctionUpdate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">signalizeKernelFunctionUpdate</span></code></a>()</p></td>
+<td><p>For semi-Lagrangian methods, the kernel function locations may change.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager.KDBinOrganizedParticleManager.updateConnectivity" title="edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager.KDBinOrganizedParticleManager.updateConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code></a>()</p></td>
+<td><p>Update the connectivity between observed shape functions and particles.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager.KDBinOrganizedParticleManager.visualize" title="edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager.KDBinOrganizedParticleManager.visualize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">visualize</span></code></a>()</p></td>
+<td><p>For 2D only: Visualize the number of kernel functions in the bins.</p></td>
+</tr>
+</tbody>
+</table>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><strong>getCoveredDomain</strong></p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager.KDBinOrganizedParticleManager.signalizeKernelFunctionUpdate">
+<span class="sig-name descname"><span class="pre">signalizeKernelFunctionUpdate</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particlemanagers/oldkdbinorganizedparticlemanager.html#KDBinOrganizedParticleManager.signalizeKernelFunctionUpdate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager.KDBinOrganizedParticleManager.signalizeKernelFunctionUpdate" title="Link to this definition"></a></dt>
+<dd><p>For semi-Lagrangian methods, the kernel function locations may change.
+This method is to signalize such a to the material point manager, so that it can account for the changed supports.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager.KDBinOrganizedParticleManager.updateConnectivity">
+<span class="sig-name descname"><span class="pre">updateConnectivity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particlemanagers/oldkdbinorganizedparticlemanager.html#KDBinOrganizedParticleManager.updateConnectivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager.KDBinOrganizedParticleManager.updateConnectivity" title="Link to this definition"></a></dt>
+<dd><p>Update the connectivity between observed shape functions and particles.
+Returns the truth value of a change during the last connectivity update.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The truth value of change.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager.KDBinOrganizedParticleManager.visualize">
+<span class="sig-name descname"><span class="pre">visualize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particlemanagers/oldkdbinorganizedparticlemanager.html#KDBinOrganizedParticleManager.visualize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager.KDBinOrganizedParticleManager.visualize" title="Link to this definition"></a></dt>
+<dd><p>For 2D only: Visualize the number of kernel functions in the bins.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager._KDBinOrganizer">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager.</span></span><span class="sig-name descname"><span class="pre">_KDBinOrganizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernelFunctions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dimension</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">randomlyShiftPartliceShapeFunctions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particlemanagers/oldkdbinorganizedparticlemanager.html#_KDBinOrganizer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager._KDBinOrganizer" title="Link to this definition"></a></dt>
+<dd><p>A class to manage the kernel functions in cartesian bins in multiple dimension for fast access.</p>
+<p>We store the bounding box of each kerne lfunction (support) in the respective (partially-)covereing bins.
+This way, we can quickly find for given coordinates (of particles) the shape function candidates of which the support might cover the coordinates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kernelFunctions</strong> – The list of shape functions.</p></li>
+<li><p><strong>dimension</strong> – The dimension of the problem.</p></li>
+<li><p><strong>randomlyShiftPartliceShapeFunctions</strong> (<em>bool</em><em> | </em><em>float</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager._KDBinOrganizer.getKernelFunctionCandidates" title="edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager._KDBinOrganizer.getKernelFunctionCandidates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getKernelFunctionCandidates</span></code></a>(coordinate)</p></td>
+<td><p>Get the shape function candidates for a given coordinate.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager._KDBinOrganizer._getBinIndices">
+<span class="sig-name descname"><span class="pre">_getBinIndices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coordinate</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particlemanagers/oldkdbinorganizedparticlemanager.html#_KDBinOrganizer._getBinIndices"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager._KDBinOrganizer._getBinIndices" title="Link to this definition"></a></dt>
+<dd><p>Get the cartesian bin indices for a given coordinate.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>coordinate</strong> (<em>ndarray</em>) – The coordinate for which the indices should be computed.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The list of indices.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager._KDBinOrganizer.getKernelFunctionCandidates">
+<span class="sig-name descname"><span class="pre">getKernelFunctionCandidates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coordinate</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particlemanagers/oldkdbinorganizedparticlemanager.html#_KDBinOrganizer.getKernelFunctionCandidates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager._KDBinOrganizer.getKernelFunctionCandidates" title="Link to this definition"></a></dt>
+<dd><p>Get the shape function candidates for a given coordinate.</p>
+<p>Candidates are shape functions that might cover the given coordinate.
+It is guaranteed that all candidates are returned, but not that all returned shape functions might cover the coordinate,
+since this is only a fast pre-selection based on the bounding box of the shape functions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>coordinate</strong> (<em>ndarray</em>) – The coordinate for which the shape function candidates should be determined.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The list of shape function candidates.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="particles.html" class="btn btn-neutral float-left" title="Particles" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="points_and_fields.html" class="btn btn-neutral float-right" title="Points and fields" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Matthias Neuner.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

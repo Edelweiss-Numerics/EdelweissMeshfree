@@ -1,0 +1,379 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meshfree utilities &mdash; EdelweissMeshfree v25.08 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=1d735308" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=83aae4bb"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Sets" href="sets.html" />
+    <link rel="prev" title="Field output" href="field_output.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            EdelweissMeshfree
+              <img src="../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="organization.html">Code organization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html">Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cells.html">Cells</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cellelements.html">Cellelements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpm/material_points.html">Material Points</a></li>
+<li class="toctree-l2"><a class="reference internal" href="solvers.html">Solvers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpm/material_point_managers.html">Material Point Managers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="model_generators.html">Model generators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="particles.html">Particles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="particle_managers.html">Particle managers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="points_and_fields.html">Points and fields</a></li>
+<li class="toctree-l2"><a class="reference internal" href="field_output.html">Field output</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Meshfree utilities</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-edelweissmeshfree.meshfree.approximations.base.basemeshfreeapproximation">Approximation base</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.meshfree.approximations.base.basemeshfreeapproximation.BaseMeshfreeApproximation"><code class="docutils literal notranslate"><span class="pre">BaseMeshfreeApproximation</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction">Kernel function base</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction"><code class="docutils literal notranslate"><span class="pre">BaseMeshfreeKernelFunction</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-edelweissmeshfree.meshfree.approximations.marmot.marmotmeshfreeapproximation">Marmot wrappers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-edelweissmeshfree.meshfree.particlekerneldomain">Integration helpers</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.meshfree.particlekerneldomain.ParticleKernelDomain"><code class="docutils literal notranslate"><span class="pre">ParticleKernelDomain</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.meshfree.vci.VariationallyConsistentIntegrationManager"><code class="docutils literal notranslate"><span class="pre">VariationallyConsistentIntegrationManager</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="sets.html">Sets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="step_actions.html">Step actions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="constraints.html">Constraints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="numeric_tools.html">Numerical tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="output_managers.html">Output managers</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">EdelweissMeshfree</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Documentation</a></li>
+      <li class="breadcrumb-item active">Meshfree utilities</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/documentation/meshfree.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="meshfree-utilities">
+<h1>Meshfree utilities<a class="headerlink" href="#meshfree-utilities" title="Link to this heading"></a></h1>
+<section id="module-edelweissmeshfree.meshfree.approximations.base.basemeshfreeapproximation">
+<span id="approximation-base"></span><h2>Approximation base<a class="headerlink" href="#module-edelweissmeshfree.meshfree.approximations.base.basemeshfreeapproximation" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.meshfree.approximations.base.basemeshfreeapproximation.BaseMeshfreeApproximation">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.meshfree.approximations.base.basemeshfreeapproximation.</span></span><span class="sig-name descname"><span class="pre">BaseMeshfreeApproximation</span></span><a class="reference internal" href="../_modules/edelweissmeshfree/meshfree/approximations/base/basemeshfreeapproximation.html#BaseMeshfreeApproximation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.meshfree.approximations.base.basemeshfreeapproximation.BaseMeshfreeApproximation" title="Link to this definition"></a></dt>
+<dd><p>Base class for meshfree approximations.</p>
+<p>In meshfree methods (MLS, RKPM), based on a finite number of kernel (RKPM) or weight (MLS) functions, an approximations can be computed at any point in the domain. This class provides the interface for the computation of such approximations.</p>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.meshfree.approximations.base.basemeshfreeapproximation.BaseMeshfreeApproximation.computeShapeFunctionValues" title="edelweissmeshfree.meshfree.approximations.base.basemeshfreeapproximation.BaseMeshfreeApproximation.computeShapeFunctionValues"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeShapeFunctionValues</span></code></a>(coordinates, ...)</p></td>
+<td><p>Compute the shape function values at the given coordinates.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.meshfree.approximations.base.basemeshfreeapproximation.BaseMeshfreeApproximation.computeShapeFunctionValues">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">computeShapeFunctionValues</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coordinates</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernelfunctions</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/meshfree/approximations/base/basemeshfreeapproximation.html#BaseMeshfreeApproximation.computeShapeFunctionValues"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.meshfree.approximations.base.basemeshfreeapproximation.BaseMeshfreeApproximation.computeShapeFunctionValues" title="Link to this definition"></a></dt>
+<dd><p>Compute the shape function values at the given coordinates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>coordinates</strong> (<em>np.ndarray</em>) – The coordinates at which the shape functions should be evaluated.</p></li>
+<li><p><strong>kernelfunctions</strong> (<em>list</em><em>[</em><em>BaseKernelFunction</em><em>]</em>) – The kernel functions that should be used to compute the shape functions.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The shape function values at the given coordinates.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction">
+<span id="kernel-function-base"></span><h2>Kernel function base<a class="headerlink" href="#module-edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction" title="Link to this heading"></a></h2>
+<p>Meshfree kernelfunctions are one of the core ingredients in meshfree methods.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.</span></span><span class="sig-name descname"><span class="pre">BaseMeshfreeKernelFunction</span></span><a class="reference internal" href="../_modules/edelweissmeshfree/meshfree/kernelfunctions/base/basemeshfreekernelfunction.html#BaseMeshfreeKernelFunction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction" title="Link to this definition"></a></dt>
+<dd><p>Base class for meshfree kernel functions.
+Shape functions are used to interpolate field solutions from the nodes to arbitrary points in the domain.
+Furthermore, they are the link between the material points and the nodes in meshfree methods.</p>
+<p>Each kernel function should be derived from this base class in order to follow the general interface.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><a class="reference internal" href="#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.center" title="edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.center"><code class="xref py py-obj docutils literal notranslate"><span class="pre">center</span></code></a></dt><dd><p>Get the center of the kernel function.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.node" title="edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.node"><code class="xref py py-obj docutils literal notranslate"><span class="pre">node</span></code></a></dt><dd><p>Get the node of the kernel function.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.updateCenter" title="edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.updateCenter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateCenter</span></code></a></dt><dd><p>Set the center of the kernel function.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.getCurrentBoundingBox" title="edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.getCurrentBoundingBox"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getCurrentBoundingBox</span></code></a>()</p></td>
+<td><p>Get the bounding box of the kernel function.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.isAnyCoordinateInSupport" title="edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.isAnyCoordinateInSupport"><code class="xref py py-obj docutils literal notranslate"><span class="pre">isAnyCoordinateInSupport</span></code></a>(coords)</p></td>
+<td><p>Check if any of the given coordinates are in the support of the kernel function.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.isCoordinateInCurrentSupport" title="edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.isCoordinateInCurrentSupport"><code class="xref py py-obj docutils literal notranslate"><span class="pre">isCoordinateInCurrentSupport</span></code></a>(coords)</p></td>
+<td><p>Check if the given coordinates are in the support of the kernel function.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.getCurrentBoundingBox">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">getCurrentBoundingBox</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/meshfree/kernelfunctions/base/basemeshfreekernelfunction.html#BaseMeshfreeKernelFunction.getCurrentBoundingBox"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.getCurrentBoundingBox" title="Link to this definition"></a></dt>
+<dd><p>Get the bounding box of the kernel function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The bounding box of the kernel function.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple[np.ndarray, np.ndarray]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.isAnyCoordinateInSupport">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">isAnyCoordinateInSupport</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/meshfree/kernelfunctions/base/basemeshfreekernelfunction.html#BaseMeshfreeKernelFunction.isAnyCoordinateInSupport"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.isAnyCoordinateInSupport" title="Link to this definition"></a></dt>
+<dd><p>Check if any of the given coordinates are in the support of the kernel function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>coords</strong> (<em>ndarray</em>) – The coordinates to check.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if any of the coordinates are in the support of the kernel function, False otherwise.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.isCoordinateInCurrentSupport">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">isCoordinateInCurrentSupport</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/meshfree/kernelfunctions/base/basemeshfreekernelfunction.html#BaseMeshfreeKernelFunction.isCoordinateInCurrentSupport"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.isCoordinateInCurrentSupport" title="Link to this definition"></a></dt>
+<dd><p>Check if the given coordinates are in the support of the kernel function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>coords</strong> (<em>ndarray</em>) – The coordinates to check.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if the coordinates are in the support of the kernel function, False otherwise.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.center">
+<em class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">center</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span></em><a class="headerlink" href="#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.center" title="Link to this definition"></a></dt>
+<dd><p>Get the center of the kernel function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The center of the kernel function.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.node">
+<em class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">node</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Node</span></em><a class="headerlink" href="#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.node" title="Link to this definition"></a></dt>
+<dd><p>Get the node of the kernel function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The node of the kernel function.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Node</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.updateCenter">
+<em class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">updateCenter</span></span><a class="headerlink" href="#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.updateCenter" title="Link to this definition"></a></dt>
+<dd><p>Set the center of the kernel function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>center</strong> – The center of the kernel function.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-edelweissmeshfree.meshfree.approximations.marmot.marmotmeshfreeapproximation">
+<span id="marmot-wrappers"></span><h2>Marmot wrappers<a class="headerlink" href="#module-edelweissmeshfree.meshfree.approximations.marmot.marmotmeshfreeapproximation" title="Link to this heading"></a></h2>
+<span class="target" id="module-edelweissmeshfree.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunction"></span></section>
+<section id="module-edelweissmeshfree.meshfree.particlekerneldomain">
+<span id="integration-helpers"></span><h2>Integration helpers<a class="headerlink" href="#module-edelweissmeshfree.meshfree.particlekerneldomain" title="Link to this heading"></a></h2>
+<p>Particle-Kernel-Domains describe the potential interaction between a set of particles and a set of kernel kernel functions.
+In meshfree methods, particles may convect through the spatial domain, and in general they may interact with different kernel functions at different times.
+For certain simulations, not all particles should interact with all kernel functions.</p>
+<p>Hence, we designate possible interactions between particles and kernel functions by the ParticleKernelDomain class.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.meshfree.particlekerneldomain.ParticleKernelDomain">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.meshfree.particlekerneldomain.</span></span><span class="sig-name descname"><span class="pre">ParticleKernelDomain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">particles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meshfreeKernelFunctions</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/meshfree/particlekerneldomain.html#ParticleKernelDomain"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.meshfree.particlekerneldomain.ParticleKernelDomain" title="Link to this definition"></a></dt>
+<dd><p>A class to describe the potential interaction between a set of particles and a set of kernel kernel functions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>particles</strong> (<em>list</em><em>[</em><a class="reference internal" href="particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle"><em>BaseParticle</em></a><em>]</em>) – The list of particles.</p></li>
+<li><p><strong>kernelFunctions</strong> – The list of kernel functions.</p></li>
+<li><p><strong>meshfreeKernelFunctions</strong> (<em>list</em><em>[</em><a class="reference internal" href="#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction" title="edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction"><em>BaseMeshfreeKernelFunction</em></a><em>]</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Attributes<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>meshfreeKernelFunctions</strong></dt><dd></dd>
+<dt><strong>particles</strong></dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<p id="module-edelweissmeshfree.meshfree.vci">Variationally Consistent Integration is a concept by Chen, Hillman and Ruter (2013) to ensure Galerkin exactness of meshfree methods
+by employing a Petrov-Galerkin formulation.</p>
+<p>It requires the computation of a set of correction terms, depending on the desired order of Galerkin exactness.</p>
+<p>The implementation, albeit trivial in concept, does not readily fit into the existing workflow of nonlinear simulations:
+Before computing the weak form, the correction terms need to be computed, and the weak form needs to be adjusted accordingly.
+The correction cannot be computed locally (i.e., for each particle during the weak form computation), as it requires
+global volume and boundary integrals.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.meshfree.vci.VariationallyConsistentIntegrationManager">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.meshfree.vci.</span></span><span class="sig-name descname"><span class="pre">VariationallyConsistentIntegrationManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">particles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meshfreeKernelFunctions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">particleBoundaryDefinitions</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/meshfree/vci.html#VariationallyConsistentIntegrationManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.meshfree.vci.VariationallyConsistentIntegrationManager" title="Link to this definition"></a></dt>
+<dd><p>A class to describe the potential interaction between a set of particles and a set of kernel kernel functions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>particles</strong> (<em>list</em><em>[</em><a class="reference internal" href="particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle"><em>BaseParticle</em></a><em>]</em>) – The list of particles.</p></li>
+<li><p><strong>kernelFunctions</strong> – The list of kernel functions.</p></li>
+<li><p><strong>particleBoundaryDefinitions</strong> (<em>list</em><em>[</em><em>BoundaryParticleDefinition</em><em>]</em>) – The list of particle boundary definitions used for the boundary integrals.</p></li>
+<li><p><strong>nDim</strong> – The number of dimensions of the problem (e.g., 2D or 3D).</p></li>
+<li><p><strong>meshfreeKernelFunctions</strong> (<em>list</em><em>[</em><a class="reference internal" href="#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction" title="edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction"><em>BaseMeshfreeKernelFunction</em></a><em>]</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Attributes<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>meshfreeKernelFunctions</strong></dt><dd></dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><strong>computeVCICorrections</strong></p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="field_output.html" class="btn btn-neutral float-left" title="Field output" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="sets.html" class="btn btn-neutral float-right" title="Sets" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Matthias Neuner.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

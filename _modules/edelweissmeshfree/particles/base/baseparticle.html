@@ -1,0 +1,710 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>edelweissmeshfree.particles.base.baseparticle &mdash; EdelweissMeshfree v25.08 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/custom.css?v=1d735308" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=83aae4bb"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            EdelweissMeshfree
+              <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation/index.html">Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">EdelweissMeshfree</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">edelweissmeshfree.particles.base.baseparticle</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for edelweissmeshfree.particles.base.baseparticle</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1">#  ---------------------------------------------------------------------</span>
+<span class="c1">#</span>
+<span class="c1">#  _____    _      _              _</span>
+<span class="c1"># | ____|__| | ___| |_      _____(_)___ ___</span>
+<span class="c1"># |  _| / _` |/ _ \ \ \ /\ / / _ \ / __/ __|</span>
+<span class="c1"># | |__| (_| |  __/ |\ V  V /  __/ \__ \__ \</span>
+<span class="c1"># |_____\__,_|\___|_| \_/\_/_\___|_|___/___/</span>
+<span class="c1"># |  \/  | ___  ___| |__  / _|_ __ ___  ___</span>
+<span class="c1"># | |\/| |/ _ \/ __| &#39;_ \| |_| &#39;__/ _ \/ _ \</span>
+<span class="c1"># | |  | |  __/\__ \ | | |  _| | |  __/  __/</span>
+<span class="c1"># |_|  |_|\___||___/_| |_|_| |_|  \___|\___|</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1">#  Unit of Strength of Materials and Structural Analysis</span>
+<span class="c1">#  University of Innsbruck,</span>
+<span class="c1">#</span>
+<span class="c1">#  Research Group for Computational Mechanics of Materials</span>
+<span class="c1">#  Institute of Structural Engineering, BOKU University, Vienna</span>
+<span class="c1">#</span>
+<span class="c1">#  2023 - today</span>
+<span class="c1">#</span>
+<span class="c1">#  Matthias Neuner |  matthias.neuner@boku.ac.at</span>
+<span class="c1">#  Thomas Mader    |  thomas.mader@bokut.ac.at</span>
+<span class="c1">#</span>
+<span class="c1">#  This file is part of EdelweissMeshfree.</span>
+<span class="c1">#</span>
+<span class="c1">#  This library is free software; you can redistribute it and/or</span>
+<span class="c1">#  modify it under the terms of the GNU Lesser General Public</span>
+<span class="c1">#  License as published by the Free Software Foundation; either</span>
+<span class="c1">#  version 2.1 of the License, or (at your option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1">#  The full text of the license can be found in the file LICENSE.md at</span>
+<span class="c1">#  the top level directory of EdelweissMeshfree.</span>
+<span class="c1">#  ---------------------------------------------------------------------</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Together with meshfree kernel functions (:class:`~BaseMeshfreeKernelFunction`), particles represent the basic building blocks of a particle based method. They</span>
+<span class="sd">are used for computing the quadrature.</span>
+
+<span class="sd">Implementing your own particles can be done easily by subclassing from</span>
+<span class="sd">the abstract base class :class:`~BaseParticle`.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">abstractmethod</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.nodecouplingentity.base.nodecouplingentity</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BaseNodeCouplingEntity</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BaseMeshfreeKernelFunction</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="BaseParticle">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BaseParticle</span><span class="p">(</span><span class="n">BaseNodeCouplingEntity</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The BaseParticle class is an abstract base class for all particles.</span>
+
+<span class="sd">    If you want to implement a new particle, you have to inherit from this class.</span>
+
+<span class="sd">    Particles communicate with field variables (:class:`~FieldVariable`) through meshfree kernel functions (:class:`~BaseMeshfreeKernelFunction`),</span>
+<span class="sd">    which are attached to nodes.</span>
+<span class="sd">    During a simulation, particles are used to compute the quadrature of the weak form of the governing equations.</span>
+<span class="sd">    Accordingly, like elements and cells, they are responsible for computing the residual and stiffness matrix.</span>
+
+<span class="sd">    Naturally, and in contrast to elements, cells and cell elements, particles have an identical set of fields on each attached node.</span>
+<span class="sd">    Furthermore, due to the varying number attached nodes, no permutation is allowed.</span>
+<span class="sd">    For particles generally a node-wise layout is assumed.</span>
+
+<span class="sd">    For instance: [node_1_displacement, node_1_temperature, node_2_displacement, node_2_temperature, ...]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">dimension</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Defines the dimension of the particle, e.g., 1, 2 or 3.&quot;&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">baseFields</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Defines which fields are attached to the particle.&quot;&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">propertyNames</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Defines which properties are valid for the particle.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="BaseParticle.setProperty">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.setProperty">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setProperty</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">propertyName</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">propertyValue</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set a single property of the particle.</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        propertyName</span>
+<span class="sd">            The name of the property to be set.</span>
+<span class="sd">        propertyValue</span>
+<span class="sd">            The value of the property to be set.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="BaseParticle.setProperties">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.setProperties">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">properties</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set all properties of the particle.</span>
+<span class="sd">        The order of the properties is defined by the order of the</span>
+<span class="sd">        :attr:`propertyNames` property.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        properties</span>
+<span class="sd">            The properties to be set.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">kernelFunctions</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">BaseMeshfreeKernelFunction</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The kernel functions assigned to the particle.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="BaseParticle.getBoundingBox">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getBoundingBox">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getBoundingBox</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the bounding box of the particle.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            All coordinates for all bounding vertices.&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="BaseParticle.getVertexCoordinates">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getVertexCoordinates">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getVertexCoordinates</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The vertices defining the shape of the particle.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            All coordinates for all bounding vertices.&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="BaseParticle.getFaceCoordinates">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getFaceCoordinates">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getFaceCoordinates</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">faceID</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The vertices defining the shape of the particle.</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        faceID</span>
+<span class="sd">            The ID of the face to be returned.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            All coordinates for all bounding vertices.&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="BaseParticle.getEvaluationCoordinates">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getEvaluationCoordinates">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getEvaluationCoordinates</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the evaluation coordinates of the particle.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            All coordinates for all bounding vertices.&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="BaseParticle.getCenterCoordinates">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getCenterCoordinates">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getCenterCoordinates</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the center coordinates of the particle.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            The center coordinates.&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="BaseParticle.getVolumeUndeformed">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getVolumeUndeformed">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getVolumeUndeformed</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the undeformed volume of the particle.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            The undeformed volume.&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="BaseParticle.acceptStateAndPosition">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.acceptStateAndPosition">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">acceptStateAndPosition</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Accept the computed state (in nonlinear iteration schemes) and the position.&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="BaseParticle.getResultArray">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getResultArray">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getResultArray</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">getPersistentView</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">qp</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the array of a result, possibly as a persistent view which is continiously</span>
+<span class="sd">        updated by a MaterialPoint.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        result</span>
+<span class="sd">            The name of the result.</span>
+<span class="sd">        getPersistentView</span>
+<span class="sd">            If true, the returned array should be continiously updated by the element.</span>
+<span class="sd">        qp</span>
+<span class="sd">            The quadrature point index. This is only relevant for higher order particles.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            The result.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="BaseParticle.initializeYourself">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.initializeYourself">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">initializeYourself</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initalize the particle to be ready for computing.&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="BaseParticle.prepareYourself">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.prepareYourself">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">prepareYourself</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeTotal</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">dTime</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Prepare the particle to be ready for computing.&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="BaseParticle.setInitialCondition">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.setInitialCondition">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setInitialCondition</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stateType</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">values</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Assign initial conditions.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        stateType</span>
+<span class="sd">            The type of initial state.</span>
+<span class="sd">        values</span>
+<span class="sd">            The numpy array describing the initial state.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="BaseParticle.computePhysicsKernels">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computePhysicsKernels">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">computePhysicsKernels</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">dU</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">P</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">K</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">timeTotal</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">dTime</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluate the kernel residual and stiffness for given time based for all assigned MaterialPoints.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dU</span>
+<span class="sd">            The current solution increment.</span>
+<span class="sd">        P</span>
+<span class="sd">            The external load vector to be defined.</span>
+<span class="sd">        K</span>
+<span class="sd">            The stiffness matrix to be defined.</span>
+<span class="sd">        timeTotal</span>
+<span class="sd">            The current total time.</span>
+<span class="sd">        dTime</span>
+<span class="sd">            The time increment.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="BaseParticle.computeBodyLoad">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeBodyLoad">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">computeBodyLoad</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">loadType</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">load</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">P</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">K</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">timeTotal</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">dTime</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute bulk loads (body loads) for given time based for all assigned MaterialPoints.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        loadType</span>
+<span class="sd">            The type of load to be computed (e.g., &#39;bodyforce&#39;)</span>
+<span class="sd">        load</span>
+<span class="sd">            The float (vector) describing the load.</span>
+<span class="sd">        P</span>
+<span class="sd">            The external load vector to be defined.</span>
+<span class="sd">        K</span>
+<span class="sd">            The stiffness matrix to be defined.</span>
+<span class="sd">        timeTotal</span>
+<span class="sd">            The current total time.</span>
+<span class="sd">        dTime</span>
+<span class="sd">            The time increment.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="BaseParticle.computeDistributedLoad">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeDistributedLoad">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">computeDistributedLoad</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">loadType</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">surfaceID</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">load</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">P</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">K</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">timeTotal</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">dTime</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute distributed (surface) a for given time based for a specific assigned material point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        loadType</span>
+<span class="sd">            The type of load to be computed (e.g., &#39;pressure&#39;)</span>
+<span class="sd">        surfaceID</span>
+<span class="sd">            The ID describing the surface of the material point.</span>
+<span class="sd">        load</span>
+<span class="sd">            The float (vector) describing the load.</span>
+<span class="sd">        P</span>
+<span class="sd">            The external load vector to be defined.</span>
+<span class="sd">        K</span>
+<span class="sd">            The stiffness matrix to be defined.</span>
+<span class="sd">        timeTotal</span>
+<span class="sd">            The current total time.</span>
+<span class="sd">        dTime</span>
+<span class="sd">            The time increment.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="BaseParticle.computePhysicsKernelsExplicit">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computePhysicsKernelsExplicit">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">computePhysicsKernelsExplicit</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">dU</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">P</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">timeTotal</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">dTime</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluate the kernel residual and stiffness for given time based for all assigned MaterialPoints.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dU</span>
+<span class="sd">            The current solution increment.</span>
+<span class="sd">        P</span>
+<span class="sd">            The external load vector to be defined.</span>
+<span class="sd">        timeTotal</span>
+<span class="sd">            The current total time.</span>
+<span class="sd">        dTime</span>
+<span class="sd">            The time increment.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="BaseParticle.computeBodyLoadExplicit">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeBodyLoadExplicit">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">computeBodyLoadExplicit</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">loadType</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">load</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">P</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">timeTotal</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">dTime</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute bulk loads (body loads) for given time based for all assigned MaterialPoints.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        loadType</span>
+<span class="sd">            The type of load to be computed (e.g., &#39;bodyforce&#39;)</span>
+<span class="sd">        load</span>
+<span class="sd">            The float (vector) describing the load.</span>
+<span class="sd">        P</span>
+<span class="sd">            The external load vector to be defined.</span>
+<span class="sd">        timeTotal</span>
+<span class="sd">            The current total time.</span>
+<span class="sd">        dTime</span>
+<span class="sd">            The time increment.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="BaseParticle.computeDistributedLoadExplicit">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeDistributedLoadExplicit">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">computeDistributedLoadExplicit</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">loadType</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">surfaceID</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">load</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">P</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">timeTotal</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">dTime</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute distributed (surface) a for given time based for a specific assigned material point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        loadType</span>
+<span class="sd">            The type of load to be computed (e.g., &#39;pressure&#39;)</span>
+<span class="sd">        surfaceID</span>
+<span class="sd">            The ID describing the surface of the material point.</span>
+<span class="sd">        load</span>
+<span class="sd">            The float (vector) describing the load.</span>
+<span class="sd">        P</span>
+<span class="sd">            The external load vector to be defined.</span>
+<span class="sd">        timeTotal</span>
+<span class="sd">            The current total time.</span>
+<span class="sd">        dTime</span>
+<span class="sd">            The time increment.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="BaseParticle.computeLumpedInertia">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedInertia">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">computeLumpedInertia</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">M</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the lumped mass matrix for explicit time integration.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        M</span>
+<span class="sd">            The mass matrix to be defined.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="BaseParticle.assignMeshfreeKernelFunctions">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.assignMeshfreeKernelFunctions">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">assignMeshfreeKernelFunctions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kernelFunctions</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">BaseMeshfreeKernelFunction</span><span class="p">]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Assign the meshfree kernel functions to the particle.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        shapeFunctions</span>
+<span class="sd">            The meshfree shape functions.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="BaseParticle.getInterpolationVector">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getInterpolationVector">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getInterpolationVector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coordinate</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the interpolation vector for a given global coordinate.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            The interpolation vector for all nodes.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="BaseParticle.vci_getNumberOfConstraints">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.vci_getNumberOfConstraints">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">vci_getNumberOfConstraints</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the number of constraints if a variationally consistent integration is used.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        int</span>
+<span class="sd">            The number of VCI constraints.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="BaseParticle.vci_compute_Test_P_BoundaryIntegral">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.vci_compute_Test_P_BoundaryIntegral">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">vci_compute_Test_P_BoundaryIntegral</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">R_AiC</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">boundarySurfaceVector</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">boundaryFaceID</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the boundary integral for the test function.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        R_AiC</span>
+<span class="sd">            The integral.</span>
+<span class="sd">        boundarySurfaceVector</span>
+<span class="sd">            The surface vector defining the area and orientation of the boundary.</span>
+<span class="sd">            For higher order (non point) particles, the surface vector might be omitted and computed internally from the boundary face ID.</span>
+<span class="sd">        boundaryFaceID</span>
+<span class="sd">            The ID of the boundary face (for point shaped particles, this one is ignored).</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="BaseParticle.vci_compute_TestGradient_P_Integral">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.vci_compute_TestGradient_P_Integral">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">vci_compute_TestGradient_P_Integral</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">R_AiC</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the volume integral for the test function gradient.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        R_AiC</span>
+<span class="sd">            The integral.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="BaseParticle.vci_compute_Test_PGradient_Integral">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.vci_compute_Test_PGradient_Integral">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">vci_compute_Test_PGradient_Integral</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">R_AiC</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the volume integral for the test function gradient.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        R_AiC</span>
+<span class="sd">            The integral.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="BaseParticle.vci_compute_MMatrix">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.vci_compute_MMatrix">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">vci_compute_MMatrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">M_ACD</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the symmetric M-matrix.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        M_ACD</span>
+<span class="sd">            The M-matrix</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="BaseParticle.vci_assignTestFunctionCorrectionTerms">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.vci_assignTestFunctionCorrectionTerms">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">vci_assignTestFunctionCorrectionTerms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">eta_AjC</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Assign the shape function correction terms in</span>
+<span class="sd">        for of a 3D numpy array.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        corrections</span>
+<span class="sd">            The correction terms.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="BaseParticle.getRestartData">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getRestartData">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getRestartData</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the restart data in  form of a numpy array.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            The restart data.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="BaseParticle.readRestartData">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.readRestartData">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">readRestartData</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">restartData</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the restart data.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        restartData</span>
+<span class="sd">            The restart data.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Matthias Neuner.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

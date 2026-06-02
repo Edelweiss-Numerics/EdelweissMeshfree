@@ -19,7 +19,9 @@
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
-    <link rel="search" title="Search" href="../../search.html" /> 
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Model generators" href="../model_generators.html" />
+    <link rel="prev" title="Solvers" href="../solvers.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -42,8 +44,43 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <ul>
-<li class="toctree-l1"><a class="reference internal" href="../index.html">Documentation</a></li>
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../organization.html">Code organization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../models.html">Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cells.html">Cells</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cellelements.html">Cellelements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="material_points.html">Material Points</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../solvers.html">Solvers</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Material Point Managers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#edelweissmeshfree.mpmmanagers.base.mpmmanagerbase.MPMManagerBase"><code class="docutils literal notranslate"><span class="pre">MPMManagerBase</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.mpmmanagers.base.mpmmanagerbase.MPMManagerBase.getActiveCells"><code class="docutils literal notranslate"><span class="pre">MPMManagerBase.getActiveCells()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.mpmmanagers.base.mpmmanagerbase.MPMManagerBase.updateConnectivity"><code class="docutils literal notranslate"><span class="pre">MPMManagerBase.updateConnectivity()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-edelweissmeshfree.mpmmanagers.simplempmmanager">Simple Material Point Manager</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.mpmmanagers.simplempmmanager.SimpleMaterialPointManager"><code class="docutils literal notranslate"><span class="pre">SimpleMaterialPointManager</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-edelweissmeshfree.mpmmanagers.smartmpmmanager">Smart Material Point Manager</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.mpmmanagers.smartmpmmanager.SmartMaterialPointManager"><code class="docutils literal notranslate"><span class="pre">SmartMaterialPointManager</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../model_generators.html">Model generators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../particles.html">Particles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../particle_managers.html">Particle managers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../points_and_fields.html">Points and fields</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../field_output.html">Field output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../meshfree.html">Meshfree utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../sets.html">Sets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../step_actions.html">Step actions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../constraints.html">Constraints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../numeric_tools.html">Numerical tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../output_managers.html">Output managers</a></li>
+</ul>
+</li>
 </ul>
 
         </div>
@@ -60,6 +97,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Documentation</a></li>
       <li class="breadcrumb-item active">Material Point Managers</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../../_sources/documentation/mpm/material_point_managers.rst.txt" rel="nofollow"> View page source</a>
@@ -100,7 +138,7 @@ If you want to implement a new material point manager, you have to inherit from 
 <dd class="field-odd"><p>The set of active cells.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>CellSet</p>
+<dd class="field-even"><p><a class="reference internal" href="../sets.html#edelweissmeshfree.sets.cellset.CellSet" title="edelweissmeshfree.sets.cellset.CellSet">CellSet</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -213,7 +251,7 @@ Returns the truth value of a change during the last connectivity update.</p>
 <dd class="field-odd"><p>The set of active cells.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>CellSet</p>
+<dd class="field-even"><p><a class="reference internal" href="../sets.html#edelweissmeshfree.sets.cellset.CellSet" title="edelweissmeshfree.sets.cellset.CellSet">CellSet</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -248,7 +286,10 @@ Returns the truth value of a change during the last connectivity update.</p>
 
            </div>
           </div>
-          <footer>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../solvers.html" class="btn btn-neutral float-left" title="Solvers" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../model_generators.html" class="btn btn-neutral float-right" title="Model generators" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
 
   <hr/>
 

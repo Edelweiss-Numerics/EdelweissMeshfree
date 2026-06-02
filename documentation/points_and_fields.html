@@ -1,0 +1,225 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Points and fields &mdash; EdelweissMeshfree v25.08 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=1d735308" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=83aae4bb"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Field output" href="field_output.html" />
+    <link rel="prev" title="Particle managers" href="particle_managers.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            EdelweissMeshfree
+              <img src="../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="organization.html">Code organization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html">Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cells.html">Cells</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cellelements.html">Cellelements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpm/material_points.html">Material Points</a></li>
+<li class="toctree-l2"><a class="reference internal" href="solvers.html">Solvers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpm/material_point_managers.html">Material Point Managers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="model_generators.html">Model generators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="particles.html">Particles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="particle_managers.html">Particle managers</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Points and fields</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-edelweissmeshfree.points.gridnode">Points</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.points.gridnode.GridNode"><code class="docutils literal notranslate"><span class="pre">GridNode</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-edelweissmeshfree.fields.nodefield">Fields</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.fields.nodefield.MPMNodeField"><code class="docutils literal notranslate"><span class="pre">MPMNodeField</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.fields.nodefield.MPMNodeFieldSubset"><code class="docutils literal notranslate"><span class="pre">MPMNodeFieldSubset</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="field_output.html">Field output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshfree.html">Meshfree utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sets.html">Sets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="step_actions.html">Step actions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="constraints.html">Constraints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="numeric_tools.html">Numerical tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="output_managers.html">Output managers</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">EdelweissMeshfree</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Documentation</a></li>
+      <li class="breadcrumb-item active">Points and fields</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/documentation/points_and_fields.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="points-and-fields">
+<h1>Points and fields<a class="headerlink" href="#points-and-fields" title="Link to this heading"></a></h1>
+<section id="module-edelweissmeshfree.points.gridnode">
+<span id="points"></span><h2>Points<a class="headerlink" href="#module-edelweissmeshfree.points.gridnode" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.points.gridnode.GridNode">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.points.gridnode.</span></span><span class="sig-name descname"><span class="pre">GridNode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coordinates</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/points/gridnode.html#GridNode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.points.gridnode.GridNode" title="Link to this definition"></a></dt>
+<dd><p>A basic gridnode.
+It has a label, a spatial position, and may be associated with an arbitrary number of fields.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>label</strong> (<em>int</em>) – The unique label for this node.</p></li>
+<li><p><strong>coordinates</strong> (<em>ndarray</em>) – The coordinates of this node.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-edelweissmeshfree.fields.nodefield">
+<span id="fields"></span><h2>Fields<a class="headerlink" href="#module-edelweissmeshfree.fields.nodefield" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.fields.nodefield.MPMNodeField">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.fields.nodefield.</span></span><span class="sig-name descname"><span class="pre">MPMNodeField</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/fields/nodefield.html#MPMNodeField"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.fields.nodefield.MPMNodeField" title="Link to this definition"></a></dt>
+<dd><p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">addEntriesFromOther</span></code>(other[, fieldValueEntries])</p></td>
+<td><p>Add values from another NodeField.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">copyEntriesFromOther</span></code>(other[, fieldValueEntries])</p></td>
+<td><p>Copy values from another NodeField.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">createFieldValueEntry</span></code>(name)</p></td>
+<td><p>Add an empty entry with given name for the field, e.g, 'U' or 'P' for flux or effort entries.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">subset</span></code>(subset)</p></td>
+<td><p>Get a view on a subset of the field.</p></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.fields.nodefield.MPMNodeFieldSubset">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.fields.nodefield.</span></span><span class="sig-name descname"><span class="pre">MPMNodeFieldSubset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/fields/nodefield.html#MPMNodeFieldSubset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.fields.nodefield.MPMNodeFieldSubset" title="Link to this definition"></a></dt>
+<dd><p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">addEntriesFromOther</span></code>(other[, fieldValueEntries])</p></td>
+<td><p>Add values from another NodeField.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">copyEntriesFromOther</span></code>(other[, fieldValueEntries])</p></td>
+<td><p>Copy values from another NodeField.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">createFieldValueEntry</span></code>(name)</p></td>
+<td><p>Add an empty entry with given name for the field, e.g, 'U' or 'P' for flux or effort entries.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">subset</span></code>(subset)</p></td>
+<td><p>Get a view on a subset of the field.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.fields.nodefield.MPMNodeFieldSubset._getSubsetNodes">
+<span class="sig-name descname"><span class="pre">_getSubsetNodes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subset</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/fields/nodefield.html#MPMNodeFieldSubset._getSubsetNodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.fields.nodefield.MPMNodeFieldSubset._getSubsetNodes" title="Link to this definition"></a></dt>
+<dd><p>Get the nodes associated with a subset.
+Only nodes with the active field are considered.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>subset</strong> – The subset, e.g., a single Node, a NodeSet or ElementSet.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The list of subset nodes.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[Node]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="particle_managers.html" class="btn btn-neutral float-left" title="Particle managers" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="field_output.html" class="btn btn-neutral float-right" title="Field output" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Matthias Neuner.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

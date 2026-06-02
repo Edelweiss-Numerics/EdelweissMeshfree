@@ -81,6 +81,7 @@
  | <a href="#F"><strong>F</strong></a>
  | <a href="#G"><strong>G</strong></a>
  | <a href="#I"><strong>I</strong></a>
+ | <a href="#K"><strong>K</strong></a>
  | <a href="#L"><strong>L</strong></a>
  | <a href="#M"><strong>M</strong></a>
  | <a href="#N"><strong>N</strong></a>
@@ -110,6 +111,8 @@
 </li>
       <li><a href="documentation/numeric_tools.html#edelweissmeshfree.numerics.dofmanager.MPMDofManager._determineIndexToNodeMap">_determineIndexToNodeMap() (edelweissmeshfree.numerics.dofmanager.MPMDofManager method)</a>
 </li>
+      <li><a href="documentation/particle_managers.html#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._FastKDBinOrganizer">_FastKDBinOrganizer (class in edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager)</a>
+</li>
       <li><a href="documentation/numeric_tools.html#edelweissmeshfree.numerics.dofmanager.MPMDofManager._gatherCellsInformation">_gatherCellsInformation() (edelweissmeshfree.numerics.dofmanager.MPMDofManager method)</a>
 </li>
       <li><a href="documentation/numeric_tools.html#edelweissmeshfree.numerics.dofmanager.MPMDofManager._gatherConstraintsInformation">_gatherConstraintsInformation() (edelweissmeshfree.numerics.dofmanager.MPMDofManager method)</a>
@@ -118,18 +121,24 @@
 </li>
       <li><a href="documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell._get_B_matrix">_get_B_matrix() (edelweissmeshfree.cells.pythoncell.cell.PythonCell method)</a>
 </li>
+      <li><a href="documentation/particle_managers.html#edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager._KDBinOrganizer._getBinIndices">_getBinIndices() (edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager._KDBinOrganizer method)</a>
+</li>
+      <li><a href="documentation/points_and_fields.html#edelweissmeshfree.fields.nodefield.MPMNodeFieldSubset._getSubsetNodes">_getSubsetNodes() (edelweissmeshfree.fields.nodefield.MPMNodeFieldSubset method)</a>
+</li>
       <li><a href="documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell._global_to_parametric">_global_to_parametric() (in module edelweissmeshfree.cells.pythoncell.cell)</a>
 </li>
       <li><a href="documentation/numeric_tools.html#edelweissmeshfree.numerics.dofmanager.MPMDofManager._initializeVIJPattern">_initializeVIJPattern() (edelweissmeshfree.numerics.dofmanager.MPMDofManager method)</a>
 </li>
+      <li><a href="documentation/particle_managers.html#edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager._KDBinOrganizer">_KDBinOrganizer (class in edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager)</a>
+</li>
       <li><a href="documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel._linkFieldVariableObjects">_linkFieldVariableObjects() (edelweissmeshfree.models.mpmmodel.MPMModel method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="documentation/numeric_tools.html#edelweissmeshfree.numerics.dofmanager.MPMDofManager._locate_serial_internal">_locate_serial_internal() (edelweissmeshfree.numerics.dofmanager.MPMDofManager method)</a>
 </li>
       <li><a href="documentation/numeric_tools.html#edelweissmeshfree.numerics.dofmanager.MPMDofManager._locateCellsInDofVector">_locateCellsInDofVector() (edelweissmeshfree.numerics.dofmanager.MPMDofManager method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="documentation/numeric_tools.html#edelweissmeshfree.numerics.dofmanager.MPMDofManager._locateConstraintsInDofVector">_locateConstraintsInDofVector() (edelweissmeshfree.numerics.dofmanager.MPMDofManager method)</a>
 </li>
       <li><a href="documentation/numeric_tools.html#edelweissmeshfree.numerics.dofmanager.MPMDofManager._locateFieldsOnNodeSetsInDofVector">_locateFieldsOnNodeSetsInDofVector() (edelweissmeshfree.numerics.dofmanager.MPMDofManager method)</a>
@@ -177,6 +186,8 @@
       <ul>
         <li><a href="documentation/mpm/material_points.html#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.acceptStateAndPosition">(edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint method)</a>
 </li>
+        <li><a href="documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.acceptStateAndPosition">(edelweissmeshfree.particles.base.baseparticle.BaseParticle method)</a>
+</li>
       </ul></li>
       <li><a href="documentation/numeric_tools.html#edelweissmeshfree.numerics.dofmanager.MPMDofManager.accumulatedConstraintNDof">accumulatedConstraintNDof (edelweissmeshfree.numerics.dofmanager.MPMDofManager attribute)</a>
 </li>
@@ -185,6 +196,8 @@
       <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.active">active (edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase property)</a>
 </li>
       <li><a href="documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.additionalParameters">additionalParameters (edelweissmeshfree.models.mpmmodel.MPMModel attribute)</a>
+</li>
+      <li><a href="documentation/field_output.html#edelweissmeshfree.fieldoutput.fieldoutput.MPMFieldOutputController.addPerMaterialPointFieldOutput">addPerMaterialPointFieldOutput() (edelweissmeshfree.fieldoutput.fieldoutput.MPMFieldOutputController method)</a>
 </li>
       <li><a href="documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.advanceToTime">advanceToTime() (edelweissmeshfree.models.mpmmodel.MPMModel method)</a>
 </li>
@@ -248,16 +261,28 @@
         <li><a href="documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.assignMaterialPoints">(edelweissmeshfree.cells.pythoncell.cell.PythonCell method)</a>
 </li>
       </ul></li>
+      <li><a href="documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.assignMeshfreeKernelFunctions">assignMeshfreeKernelFunctions() (edelweissmeshfree.particles.base.baseparticle.BaseParticle method)</a>
+</li>
   </ul></td>
 </tr></table>
 
 <h2 id="B">B</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="documentation/step_actions.html#edelweissmeshfree.stepactions.bodyload.BodyLoad">BodyLoad (class in edelweissmeshfree.stepactions.bodyload)</a>
+      <li><a href="documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.baseFields">baseFields (edelweissmeshfree.particles.base.baseparticle.BaseParticle property)</a>
+</li>
+      <li><a href="documentation/meshfree.html#edelweissmeshfree.meshfree.approximations.base.basemeshfreeapproximation.BaseMeshfreeApproximation">BaseMeshfreeApproximation (class in edelweissmeshfree.meshfree.approximations.base.basemeshfreeapproximation)</a>
+</li>
+      <li><a href="documentation/meshfree.html#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction">BaseMeshfreeKernelFunction (class in edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle">BaseParticle (class in edelweissmeshfree.particles.base.baseparticle)</a>
+</li>
+      <li><a href="documentation/particle_managers.html#edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager">BaseParticleManager (class in edelweissmeshfree.particlemanagers.base.baseparticlemanager)</a>
+</li>
+      <li><a href="documentation/step_actions.html#edelweissmeshfree.stepactions.bodyload.BodyLoad">BodyLoad (class in edelweissmeshfree.stepactions.bodyload)</a>
+</li>
       <li><a href="documentation/cells.html#edelweissmeshfree.cells.marmotcell.bsplinemarmotcell.BSplineMarmotCellWrapper">BSplineMarmotCellWrapper (class in edelweissmeshfree.cells.marmotcell.bsplinemarmotcell)</a>
 </li>
   </ul></td>
@@ -272,6 +297,8 @@
 </li>
       <li><a href="documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.cellElements">cellElements (edelweissmeshfree.models.mpmmodel.MPMModel attribute)</a>
 </li>
+      <li><a href="documentation/sets.html#edelweissmeshfree.sets.cellelementset.CellElementSet">CellElementSet (class in edelweissmeshfree.sets.cellelementset)</a>
+</li>
       <li><a href="documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.cellElementSets">cellElementSets (edelweissmeshfree.models.mpmmodel.MPMModel attribute)</a>
 </li>
       <li><a href="documentation/cells.html#edelweissmeshfree.cells.base.cell.CellBase.cellNumber">cellNumber (edelweissmeshfree.cells.base.cell.CellBase property)</a>
@@ -282,6 +309,8 @@
       </ul></li>
       <li><a href="documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.cells">cells (edelweissmeshfree.models.mpmmodel.MPMModel attribute)</a>
 </li>
+      <li><a href="documentation/sets.html#edelweissmeshfree.sets.cellset.CellSet">CellSet (class in edelweissmeshfree.sets.cellset)</a>
+</li>
       <li><a href="documentation/step_actions.html#edelweissmeshfree.stepactions.base.mpmbodyloadbase.MPMBodyLoadBase.cellSet">cellSet (edelweissmeshfree.stepactions.base.mpmbodyloadbase.MPMBodyLoadBase property)</a>
 
       <ul>
@@ -290,14 +319,18 @@
       </ul></li>
       <li><a href="documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.cellSets">cellSets (edelweissmeshfree.models.mpmmodel.MPMModel attribute)</a>
 </li>
+      <li><a href="documentation/meshfree.html#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.center">center (edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction property)</a>
+</li>
       <li><a href="documentation/cells.html#edelweissmeshfree.cells.base.cell.CellBase.computeBodyLoad">computeBodyLoad() (edelweissmeshfree.cells.base.cell.CellBase method)</a>
 
       <ul>
         <li><a href="documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.computeBodyLoad">(edelweissmeshfree.cells.pythoncell.cell.PythonCell method)</a>
 </li>
+        <li><a href="documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeBodyLoad">(edelweissmeshfree.particles.base.baseparticle.BaseParticle method)</a>
+</li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeBodyLoadExplicit">computeBodyLoadExplicit() (edelweissmeshfree.particles.base.baseparticle.BaseParticle method)</a>
+</li>
       <li><a href="documentation/step_actions.html#edelweissmeshfree.stepactions.base.arclengthcontrollerbase.ArcLengthControllerBase.computeDDLambda">computeDDLambda() (edelweissmeshfree.stepactions.base.arclengthcontrollerbase.ArcLengthControllerBase method)</a>
 
       <ul>
@@ -309,7 +342,21 @@
       <ul>
         <li><a href="documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.computeDistributedLoad">(edelweissmeshfree.cells.pythoncell.cell.PythonCell method)</a>
 </li>
+        <li><a href="documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeDistributedLoad">(edelweissmeshfree.particles.base.baseparticle.BaseParticle method)</a>
+</li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeDistributedLoadExplicit">computeDistributedLoadExplicit() (edelweissmeshfree.particles.base.baseparticle.BaseParticle method)</a>
+</li>
+      <li><a href="documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedInertia">computeLumpedInertia() (edelweissmeshfree.particles.base.baseparticle.BaseParticle method)</a>
+
+      <ul>
+        <li><a href="documentation/particles.html#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeLumpedInertia">(edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper method)</a>
+</li>
+      </ul></li>
+      <li><a href="documentation/particles.html#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeLumpedMomentum">computeLumpedMomentum() (edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper method)</a>
+</li>
       <li><a href="documentation/cells.html#edelweissmeshfree.cells.base.cell.CellBase.computeMaterialPointKernels">computeMaterialPointKernels() (edelweissmeshfree.cells.base.cell.CellBase method)</a>
 
       <ul>
@@ -318,6 +365,20 @@
         <li><a href="documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.computeMaterialPointKernels">(edelweissmeshfree.cells.pythoncell.cell.PythonCell method)</a>
 </li>
       </ul></li>
+      <li><a href="documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computePhysicsKernels">computePhysicsKernels() (edelweissmeshfree.particles.base.baseparticle.BaseParticle method)</a>
+
+      <ul>
+        <li><a href="documentation/particles.html#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computePhysicsKernels">(edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper method)</a>
+</li>
+      </ul></li>
+      <li><a href="documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computePhysicsKernelsExplicit">computePhysicsKernelsExplicit() (edelweissmeshfree.particles.base.baseparticle.BaseParticle method)</a>
+
+      <ul>
+        <li><a href="documentation/particles.html#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computePhysicsKernelsExplicit">(edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper method)</a>
+</li>
+      </ul></li>
+      <li><a href="documentation/meshfree.html#edelweissmeshfree.meshfree.approximations.base.basemeshfreeapproximation.BaseMeshfreeApproximation.computeShapeFunctionValues">computeShapeFunctionValues() (edelweissmeshfree.meshfree.approximations.base.basemeshfreeapproximation.BaseMeshfreeApproximation method)</a>
+</li>
       <li><a href="documentation/mpm/material_points.html#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.computeYourself">computeYourself() (edelweissmeshfree.materialpoints.base.mp.MaterialPointBase method)</a>
 
       <ul>
@@ -338,16 +399,18 @@
 <h2 id="D">D</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.dimension">dimension (edelweissmeshfree.particles.base.baseparticle.BaseParticle property)</a>
+</li>
       <li><a href="documentation/step_actions.html#edelweissmeshfree.stepactions.dirichlet.Dirichlet">Dirichlet (class in edelweissmeshfree.stepactions.dirichlet)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="documentation/cells.html#edelweissmeshfree.cells.base.cell.CellBase.dofIndicesPermutation">dofIndicesPermutation (edelweissmeshfree.cells.base.cell.CellBase property)</a>
 
       <ul>
         <li><a href="documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation">(edelweissmeshfree.cells.pythoncell.cell.PythonCell property)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.domainSize">domainSize (edelweissmeshfree.models.mpmmodel.MPMModel attribute)</a>
 </li>
   </ul></td>
@@ -441,6 +504,27 @@
 </li>
       </ul></li>
       <li>
+    edelweissmeshfree.fieldoutput.fieldoutput
+
+      <ul>
+        <li><a href="documentation/field_output.html#module-edelweissmeshfree.fieldoutput.fieldoutput">module</a>
+</li>
+      </ul></li>
+      <li>
+    edelweissmeshfree.fieldoutput.mpresultcollector
+
+      <ul>
+        <li><a href="documentation/field_output.html#module-edelweissmeshfree.fieldoutput.mpresultcollector">module</a>
+</li>
+      </ul></li>
+      <li>
+    edelweissmeshfree.fields.nodefield
+
+      <ul>
+        <li><a href="documentation/points_and_fields.html#module-edelweissmeshfree.fields.nodefield">module</a>
+</li>
+      </ul></li>
+      <li>
     edelweissmeshfree.generators.boxbsplinegridgenerator
 
       <ul>
@@ -496,8 +580,6 @@
         <li><a href="documentation/model_generators.html#module-edelweissmeshfree.generators.rectangularcellelementgridgenerator">module</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     edelweissmeshfree.generators.rectangulargridgenerator
 
@@ -534,6 +616,50 @@
 </li>
       </ul></li>
       <li>
+    edelweissmeshfree.meshfree.approximations.base.basemeshfreeapproximation
+
+      <ul>
+        <li><a href="documentation/meshfree.html#module-edelweissmeshfree.meshfree.approximations.base.basemeshfreeapproximation">module</a>
+</li>
+      </ul></li>
+      <li>
+    edelweissmeshfree.meshfree.approximations.marmot.marmotmeshfreeapproximation
+
+      <ul>
+        <li><a href="documentation/meshfree.html#module-edelweissmeshfree.meshfree.approximations.marmot.marmotmeshfreeapproximation">module</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li>
+    edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction
+
+      <ul>
+        <li><a href="documentation/meshfree.html#module-edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction">module</a>
+</li>
+      </ul></li>
+      <li>
+    edelweissmeshfree.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunction
+
+      <ul>
+        <li><a href="documentation/meshfree.html#module-edelweissmeshfree.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunction">module</a>
+</li>
+      </ul></li>
+      <li>
+    edelweissmeshfree.meshfree.particlekerneldomain
+
+      <ul>
+        <li><a href="documentation/meshfree.html#module-edelweissmeshfree.meshfree.particlekerneldomain">module</a>
+</li>
+      </ul></li>
+      <li>
+    edelweissmeshfree.meshfree.vci
+
+      <ul>
+        <li><a href="documentation/meshfree.html#module-edelweissmeshfree.meshfree.vci">module</a>
+</li>
+      </ul></li>
+      <li>
     edelweissmeshfree.models.mpmmodel
 
       <ul>
@@ -566,6 +692,76 @@
 
       <ul>
         <li><a href="documentation/numeric_tools.html#module-edelweissmeshfree.numerics.dofmanager">module</a>
+</li>
+      </ul></li>
+      <li>
+    edelweissmeshfree.particlemanagers.base.baseparticlemanager
+
+      <ul>
+        <li><a href="documentation/particle_managers.html#module-edelweissmeshfree.particlemanagers.base.baseparticlemanager">module</a>
+</li>
+      </ul></li>
+      <li>
+    edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager
+
+      <ul>
+        <li><a href="documentation/particle_managers.html#module-edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager">module</a>
+</li>
+      </ul></li>
+      <li>
+    edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager
+
+      <ul>
+        <li><a href="documentation/particle_managers.html#module-edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager">module</a>
+</li>
+      </ul></li>
+      <li>
+    edelweissmeshfree.particles.base.baseparticle
+
+      <ul>
+        <li><a href="documentation/particles.html#module-edelweissmeshfree.particles.base.baseparticle">module</a>
+</li>
+      </ul></li>
+      <li>
+    edelweissmeshfree.particles.marmot.marmotparticlewrapper
+
+      <ul>
+        <li><a href="documentation/particles.html#module-edelweissmeshfree.particles.marmot.marmotparticlewrapper">module</a>
+</li>
+      </ul></li>
+      <li>
+    edelweissmeshfree.points.gridnode
+
+      <ul>
+        <li><a href="documentation/points_and_fields.html#module-edelweissmeshfree.points.gridnode">module</a>
+</li>
+      </ul></li>
+      <li>
+    edelweissmeshfree.sets.cellelementset
+
+      <ul>
+        <li><a href="documentation/sets.html#module-edelweissmeshfree.sets.cellelementset">module</a>
+</li>
+      </ul></li>
+      <li>
+    edelweissmeshfree.sets.cellset
+
+      <ul>
+        <li><a href="documentation/sets.html#module-edelweissmeshfree.sets.cellset">module</a>
+</li>
+      </ul></li>
+      <li>
+    edelweissmeshfree.sets.materialpointset
+
+      <ul>
+        <li><a href="documentation/sets.html#module-edelweissmeshfree.sets.materialpointset">module</a>
+</li>
+      </ul></li>
+      <li>
+    edelweissmeshfree.sets.particleset
+
+      <ul>
+        <li><a href="documentation/sets.html#module-edelweissmeshfree.sets.particleset">module</a>
 </li>
       </ul></li>
       <li>
@@ -696,11 +892,17 @@
       <ul>
         <li><a href="documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.getBoundingBox">(edelweissmeshfree.cells.pythoncell.cell.PythonCell method)</a>
 </li>
+        <li><a href="documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getBoundingBox">(edelweissmeshfree.particles.base.baseparticle.BaseParticle method)</a>
+</li>
       </ul></li>
       <li><a href="documentation/mpm/material_points.html#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getCenterCoordinates">getCenterCoordinates() (edelweissmeshfree.materialpoints.base.mp.MaterialPointBase method)</a>
 
       <ul>
         <li><a href="documentation/mpm/material_points.html#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.getCenterCoordinates">(edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint method)</a>
+</li>
+        <li><a href="documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getCenterCoordinates">(edelweissmeshfree.particles.base.baseparticle.BaseParticle method)</a>
+</li>
+        <li><a href="documentation/particles.html#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getCenterCoordinates">(edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper method)</a>
 </li>
       </ul></li>
       <li><a href="documentation/cells.html#edelweissmeshfree.cells.base.cell.CellBase.getCoordinatesAtCenter">getCoordinatesAtCenter() (edelweissmeshfree.cells.base.cell.CellBase method)</a>
@@ -709,6 +911,8 @@
         <li><a href="documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.getCoordinatesAtCenter">(edelweissmeshfree.cells.pythoncell.cell.PythonCell method)</a>
 </li>
       </ul></li>
+      <li><a href="documentation/meshfree.html#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.getCurrentBoundingBox">getCurrentBoundingBox() (edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction method)</a>
+</li>
       <li><a href="documentation/step_actions.html#edelweissmeshfree.stepactions.base.mpmbodyloadbase.MPMBodyLoadBase.getCurrentLoad">getCurrentLoad() (edelweissmeshfree.stepactions.base.mpmbodyloadbase.MPMBodyLoadBase method)</a>
 
       <ul>
@@ -721,14 +925,26 @@
         <li><a href="documentation/step_actions.html#edelweissmeshfree.stepactions.distributedload.MaterialPointPointWiseDistributedLoad.getCurrentMaterialPointLoad">(edelweissmeshfree.stepactions.distributedload.MaterialPointPointWiseDistributedLoad method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getEvaluationCoordinates">getEvaluationCoordinates() (edelweissmeshfree.particles.base.baseparticle.BaseParticle method)</a>
+</li>
+      <li><a href="documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getFaceCoordinates">getFaceCoordinates() (edelweissmeshfree.particles.base.baseparticle.BaseParticle method)</a>
+
+      <ul>
+        <li><a href="documentation/particles.html#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getFaceCoordinates">(edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper method)</a>
+</li>
+      </ul></li>
       <li><a href="documentation/cells.html#edelweissmeshfree.cells.base.cell.CellBase.getInterpolationVector">getInterpolationVector() (edelweissmeshfree.cells.base.cell.CellBase method)</a>
 
       <ul>
         <li><a href="documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.getInterpolationVector">(edelweissmeshfree.cells.pythoncell.cell.PythonCell method)</a>
 </li>
+        <li><a href="documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getInterpolationVector">(edelweissmeshfree.particles.base.baseparticle.BaseParticle method)</a>
+</li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="documentation/particle_managers.html#edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager._KDBinOrganizer.getKernelFunctionCandidates">getKernelFunctionCandidates() (edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager._KDBinOrganizer method)</a>
+</li>
       <li><a href="documentation/numeric_tools.html#edelweissmeshfree.numerics.dofmanager.MPMDofManager.getNodeForIndexInDofVector">getNodeForIndexInDofVector() (edelweissmeshfree.numerics.dofmanager.MPMDofManager method)</a>
 </li>
       <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.getNumberOfAdditionalNeededScalarVariables">getNumberOfAdditionalNeededScalarVariables() (edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase method)</a>
@@ -759,10 +975,16 @@
         <li><a href="documentation/cellelements.html#edelweissmeshfree.cellelements.marmotcellelement.marmotcellelement.MarmotCellElementWrapper.getRequestedMaterialPointVolumes">(edelweissmeshfree.cellelements.marmotcellelement.marmotcellelement.MarmotCellElementWrapper method)</a>
 </li>
       </ul></li>
+      <li><a href="documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getRestartData">getRestartData() (edelweissmeshfree.particles.base.baseparticle.BaseParticle method)</a>
+</li>
       <li><a href="documentation/mpm/material_points.html#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getResultArray">getResultArray() (edelweissmeshfree.materialpoints.base.mp.MaterialPointBase method)</a>
 
       <ul>
         <li><a href="documentation/mpm/material_points.html#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.getResultArray">(edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint method)</a>
+</li>
+        <li><a href="documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getResultArray">(edelweissmeshfree.particles.base.baseparticle.BaseParticle method)</a>
+</li>
+        <li><a href="documentation/particles.html#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getResultArray">(edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper method)</a>
 </li>
       </ul></li>
       <li><a href="documentation/mpm/material_points.html#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getVertexCoordinates">getVertexCoordinates() (edelweissmeshfree.materialpoints.base.mp.MaterialPointBase method)</a>
@@ -770,15 +992,31 @@
       <ul>
         <li><a href="documentation/mpm/material_points.html#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.getVertexCoordinates">(edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint method)</a>
 </li>
+        <li><a href="documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getVertexCoordinates">(edelweissmeshfree.particles.base.baseparticle.BaseParticle method)</a>
+</li>
+        <li><a href="documentation/particles.html#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getVertexCoordinates">(edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper method)</a>
+</li>
       </ul></li>
       <li><a href="documentation/cells.html#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.getVIJContributionSize">getVIJContributionSize() (edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper method)</a>
+
+      <ul>
+        <li><a href="documentation/particles.html#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getVIJContributionSize">(edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper method)</a>
 </li>
+      </ul></li>
       <li><a href="documentation/mpm/material_points.html#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getVolume">getVolume() (edelweissmeshfree.materialpoints.base.mp.MaterialPointBase method)</a>
 
       <ul>
         <li><a href="documentation/mpm/material_points.html#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.getVolume">(edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint method)</a>
 </li>
       </ul></li>
+      <li><a href="documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getVolumeUndeformed">getVolumeUndeformed() (edelweissmeshfree.particles.base.baseparticle.BaseParticle method)</a>
+
+      <ul>
+        <li><a href="documentation/particles.html#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getVolumeUndeformed">(edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper method)</a>
+</li>
+      </ul></li>
+      <li><a href="documentation/points_and_fields.html#edelweissmeshfree.points.gridnode.GridNode">GridNode (class in edelweissmeshfree.points.gridnode)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -803,16 +1041,22 @@
 </li>
       <li><a href="documentation/numeric_tools.html#edelweissmeshfree.numerics.dofmanager.MPMDofManager.indexToHostObjectMapping">indexToHostObjectMapping (edelweissmeshfree.numerics.dofmanager.MPMDofManager attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="documentation/step_actions.html#edelweissmeshfree.stepactions.indirectcontrol.IndirectControl">IndirectControl (class in edelweissmeshfree.stepactions.indirectcontrol)</a>
 </li>
       <li><a href="documentation/cells.html#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.initializeVIJContribution">initializeVIJContribution() (edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper method)</a>
+
+      <ul>
+        <li><a href="documentation/particles.html#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.initializeVIJContribution">(edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper method)</a>
 </li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="documentation/mpm/material_points.html#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.initializeYourself">initializeYourself() (edelweissmeshfree.materialpoints.base.mp.MaterialPointBase method)</a>
 
       <ul>
         <li><a href="documentation/mpm/material_points.html#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.initializeYourself">(edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint method)</a>
+</li>
+        <li><a href="documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.initializeYourself">(edelweissmeshfree.particles.base.baseparticle.BaseParticle method)</a>
 </li>
       </ul></li>
       <li><a href="documentation/mpm/material_points.html#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.interpolateFieldsFromCell">interpolateFieldsFromCell() (edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint method)</a>
@@ -825,12 +1069,32 @@
         <li><a href="documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.interpolateSolutionContributionToMaterialPoints">(edelweissmeshfree.cells.pythoncell.cell.PythonCell method)</a>
 </li>
       </ul></li>
+      <li><a href="documentation/meshfree.html#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.isAnyCoordinateInSupport">isAnyCoordinateInSupport() (edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction method)</a>
+</li>
       <li><a href="documentation/cells.html#edelweissmeshfree.cells.base.cell.CellBase.isCoordinateInCell">isCoordinateInCell() (edelweissmeshfree.cells.base.cell.CellBase method)</a>
 
       <ul>
         <li><a href="documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.isCoordinateInCell">(edelweissmeshfree.cells.pythoncell.cell.PythonCell method)</a>
 </li>
       </ul></li>
+      <li><a href="documentation/meshfree.html#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.isCoordinateInCurrentSupport">isCoordinateInCurrentSupport() (edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="K">K</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="documentation/particle_managers.html#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager">KDBinOrganizedParticleManager (class in edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager)</a>
+
+      <ul>
+        <li><a href="documentation/particle_managers.html#edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager.KDBinOrganizedParticleManager">(class in edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.kernelFunctions">kernelFunctions (edelweissmeshfree.particles.base.baseparticle.BaseParticle property)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -869,11 +1133,17 @@
 </li>
       <li><a href="documentation/cells.html#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper">MarmotCellWrapper (class in edelweissmeshfree.cells.marmotcell.marmotcell)</a>
 </li>
+      <li><a href="documentation/particles.html#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper">MarmotParticleWrapper (class in edelweissmeshfree.particles.marmot.marmotparticlewrapper)</a>
+</li>
       <li><a href="documentation/mpm/material_points.html#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase">MaterialPointBase (class in edelweissmeshfree.materialpoints.base.mp)</a>
+</li>
+      <li><a href="documentation/field_output.html#edelweissmeshfree.fieldoutput.fieldoutput.MaterialPointFieldOutput">MaterialPointFieldOutput (class in edelweissmeshfree.fieldoutput.fieldoutput)</a>
 </li>
       <li><a href="documentation/step_actions.html#edelweissmeshfree.stepactions.distributedload.MaterialPointPointWiseDistributedLoad">MaterialPointPointWiseDistributedLoad (class in edelweissmeshfree.stepactions.distributedload)</a>
 </li>
       <li><a href="documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.materialPoints">materialPoints (edelweissmeshfree.models.mpmmodel.MPMModel attribute)</a>
+</li>
+      <li><a href="documentation/sets.html#edelweissmeshfree.sets.materialpointset.MaterialPointSet">MaterialPointSet (class in edelweissmeshfree.sets.materialpointset)</a>
 </li>
       <li><a href="documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.materialPointSets">materialPointSets (edelweissmeshfree.models.mpmmodel.MPMModel attribute)</a>
 </li>
@@ -909,6 +1179,12 @@
 </li>
         <li><a href="documentation/constraints.html#module-edelweissmeshfree.constraints.penaltyweakdirichlet">edelweissmeshfree.constraints.penaltyweakdirichlet</a>
 </li>
+        <li><a href="documentation/field_output.html#module-edelweissmeshfree.fieldoutput.fieldoutput">edelweissmeshfree.fieldoutput.fieldoutput</a>
+</li>
+        <li><a href="documentation/field_output.html#module-edelweissmeshfree.fieldoutput.mpresultcollector">edelweissmeshfree.fieldoutput.mpresultcollector</a>
+</li>
+        <li><a href="documentation/points_and_fields.html#module-edelweissmeshfree.fields.nodefield">edelweissmeshfree.fields.nodefield</a>
+</li>
         <li><a href="documentation/model_generators.html#module-edelweissmeshfree.generators.boxbsplinegridgenerator">edelweissmeshfree.generators.boxbsplinegridgenerator</a>
 </li>
         <li><a href="documentation/model_generators.html#module-edelweissmeshfree.generators.boxgridgenerator">edelweissmeshfree.generators.boxgridgenerator</a>
@@ -935,6 +1211,18 @@
 </li>
         <li><a href="documentation/mpm/material_points.html#module-edelweissmeshfree.materialpoints.pythonmaterialpoint.mp">edelweissmeshfree.materialpoints.pythonmaterialpoint.mp</a>
 </li>
+        <li><a href="documentation/meshfree.html#module-edelweissmeshfree.meshfree.approximations.base.basemeshfreeapproximation">edelweissmeshfree.meshfree.approximations.base.basemeshfreeapproximation</a>
+</li>
+        <li><a href="documentation/meshfree.html#module-edelweissmeshfree.meshfree.approximations.marmot.marmotmeshfreeapproximation">edelweissmeshfree.meshfree.approximations.marmot.marmotmeshfreeapproximation</a>
+</li>
+        <li><a href="documentation/meshfree.html#module-edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction">edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction</a>
+</li>
+        <li><a href="documentation/meshfree.html#module-edelweissmeshfree.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunction">edelweissmeshfree.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunction</a>
+</li>
+        <li><a href="documentation/meshfree.html#module-edelweissmeshfree.meshfree.particlekerneldomain">edelweissmeshfree.meshfree.particlekerneldomain</a>
+</li>
+        <li><a href="documentation/meshfree.html#module-edelweissmeshfree.meshfree.vci">edelweissmeshfree.meshfree.vci</a>
+</li>
         <li><a href="documentation/models.html#module-edelweissmeshfree.models.mpmmodel">edelweissmeshfree.models.mpmmodel</a>
 </li>
         <li><a href="documentation/mpm/material_point_managers.html#module-edelweissmeshfree.mpmmanagers.base.mpmmanagerbase">edelweissmeshfree.mpmmanagers.base.mpmmanagerbase</a>
@@ -944,6 +1232,26 @@
         <li><a href="documentation/mpm/material_point_managers.html#module-edelweissmeshfree.mpmmanagers.smartmpmmanager">edelweissmeshfree.mpmmanagers.smartmpmmanager</a>
 </li>
         <li><a href="documentation/numeric_tools.html#module-edelweissmeshfree.numerics.dofmanager">edelweissmeshfree.numerics.dofmanager</a>
+</li>
+        <li><a href="documentation/particle_managers.html#module-edelweissmeshfree.particlemanagers.base.baseparticlemanager">edelweissmeshfree.particlemanagers.base.baseparticlemanager</a>
+</li>
+        <li><a href="documentation/particle_managers.html#module-edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager">edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager</a>
+</li>
+        <li><a href="documentation/particle_managers.html#module-edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager">edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager</a>
+</li>
+        <li><a href="documentation/particles.html#module-edelweissmeshfree.particles.base.baseparticle">edelweissmeshfree.particles.base.baseparticle</a>
+</li>
+        <li><a href="documentation/particles.html#module-edelweissmeshfree.particles.marmot.marmotparticlewrapper">edelweissmeshfree.particles.marmot.marmotparticlewrapper</a>
+</li>
+        <li><a href="documentation/points_and_fields.html#module-edelweissmeshfree.points.gridnode">edelweissmeshfree.points.gridnode</a>
+</li>
+        <li><a href="documentation/sets.html#module-edelweissmeshfree.sets.cellelementset">edelweissmeshfree.sets.cellelementset</a>
+</li>
+        <li><a href="documentation/sets.html#module-edelweissmeshfree.sets.cellset">edelweissmeshfree.sets.cellset</a>
+</li>
+        <li><a href="documentation/sets.html#module-edelweissmeshfree.sets.materialpointset">edelweissmeshfree.sets.materialpointset</a>
+</li>
+        <li><a href="documentation/sets.html#module-edelweissmeshfree.sets.particleset">edelweissmeshfree.sets.particleset</a>
 </li>
         <li><a href="documentation/step_actions.html#module-edelweissmeshfree.stepactions.base.arclengthcontrollerbase">edelweissmeshfree.stepactions.base.arclengthcontrollerbase</a>
 </li>
@@ -970,9 +1278,15 @@
 </li>
       <li><a href="documentation/numeric_tools.html#edelweissmeshfree.numerics.dofmanager.MPMDofManager">MPMDofManager (class in edelweissmeshfree.numerics.dofmanager)</a>
 </li>
+      <li><a href="documentation/field_output.html#edelweissmeshfree.fieldoutput.fieldoutput.MPMFieldOutputController">MPMFieldOutputController (class in edelweissmeshfree.fieldoutput.fieldoutput)</a>
+</li>
       <li><a href="documentation/mpm/material_point_managers.html#edelweissmeshfree.mpmmanagers.base.mpmmanagerbase.MPMManagerBase">MPMManagerBase (class in edelweissmeshfree.mpmmanagers.base.mpmmanagerbase)</a>
 </li>
       <li><a href="documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel">MPMModel (class in edelweissmeshfree.models.mpmmodel)</a>
+</li>
+      <li><a href="documentation/points_and_fields.html#edelweissmeshfree.fields.nodefield.MPMNodeField">MPMNodeField (class in edelweissmeshfree.fields.nodefield)</a>
+</li>
+      <li><a href="documentation/points_and_fields.html#edelweissmeshfree.fields.nodefield.MPMNodeFieldSubset">MPMNodeFieldSubset (class in edelweissmeshfree.fields.nodefield)</a>
 </li>
       <li><a href="documentation/step_actions.html#edelweissmeshfree.stepactions.base.mpmdistributedloadbase.MPMDistributedLoadBase.mpSet">mpSet (edelweissmeshfree.stepactions.base.mpmdistributedloadbase.MPMDistributedLoadBase property)</a>
 
@@ -1012,16 +1326,18 @@
         <li><a href="documentation/numeric_tools.html#edelweissmeshfree.numerics.dofmanager.MPMDofManager.nDof">(edelweissmeshfree.numerics.dofmanager.MPMDofManager attribute)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="documentation/cellelements.html#edelweissmeshfree.cellelements.base.cellelement.CellElementBase.nMaterialPoints">nMaterialPoints (edelweissmeshfree.cellelements.base.cellelement.CellElementBase property)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="documentation/cells.html#edelweissmeshfree.cells.base.cell.CellBase.nNodes">nNodes (edelweissmeshfree.cells.base.cell.CellBase property)</a>
 
       <ul>
         <li><a href="documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes">(edelweissmeshfree.cells.pythoncell.cell.PythonCell property)</a>
 </li>
       </ul></li>
+      <li><a href="documentation/meshfree.html#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.node">node (edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction property)</a>
+</li>
       <li><a href="documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.nodeFields">nodeFields (edelweissmeshfree.models.mpmmodel.MPMModel attribute)</a>
 </li>
       <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.nodes">nodes (edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase property)</a>
@@ -1050,9 +1366,15 @@
 <h2 id="P">P</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="documentation/field_output.html#edelweissmeshfree.fieldoutput.fieldoutput.ParticleFieldOutput">ParticleFieldOutput (class in edelweissmeshfree.fieldoutput.fieldoutput)</a>
+</li>
+      <li><a href="documentation/meshfree.html#edelweissmeshfree.meshfree.particlekerneldomain.ParticleKernelDomain">ParticleKernelDomain (class in edelweissmeshfree.meshfree.particlekerneldomain)</a>
+</li>
       <li><a href="documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.particleKernelDomains">particleKernelDomains (edelweissmeshfree.models.mpmmodel.MPMModel attribute)</a>
 </li>
       <li><a href="documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.particles">particles (edelweissmeshfree.models.mpmmodel.MPMModel attribute)</a>
+</li>
+      <li><a href="documentation/sets.html#edelweissmeshfree.sets.particleset.ParticleSet">ParticleSet (class in edelweissmeshfree.sets.particleset)</a>
 </li>
       <li><a href="documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.particleSets">particleSets (edelweissmeshfree.models.mpmmodel.MPMModel attribute)</a>
 </li>
@@ -1075,6 +1397,14 @@
       <ul>
         <li><a href="documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.prepareYourself">(edelweissmeshfree.models.mpmmodel.MPMModel method)</a>
 </li>
+        <li><a href="documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.prepareYourself">(edelweissmeshfree.particles.base.baseparticle.BaseParticle method)</a>
+</li>
+      </ul></li>
+      <li><a href="documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.propertyNames">propertyNames (edelweissmeshfree.particles.base.baseparticle.BaseParticle property)</a>
+
+      <ul>
+        <li><a href="documentation/particles.html#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.propertyNames">(edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper attribute)</a>
+</li>
       </ul></li>
       <li><a href="documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell">PythonCell (class in edelweissmeshfree.cells.pythoncell.cell)</a>
 </li>
@@ -1090,6 +1420,8 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.readRestartData">readRestartData() (edelweissmeshfree.particles.base.baseparticle.BaseParticle method)</a>
+</li>
       <li><a href="documentation/mpm/material_points.html#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.resetToLastValidStateAndPosition">resetToLastValidStateAndPosition() (edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint method)</a>
 </li>
   </ul></td>
@@ -1117,19 +1449,41 @@
       <ul>
         <li><a href="documentation/mpm/material_points.html#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.setInitialCondition">(edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint method)</a>
 </li>
+        <li><a href="documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.setInitialCondition">(edelweissmeshfree.particles.base.baseparticle.BaseParticle method)</a>
+</li>
+        <li><a href="documentation/particles.html#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setInitialCondition">(edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper method)</a>
+</li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="documentation/mpm/material_points.html#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.setMaterial">setMaterial() (edelweissmeshfree.materialpoints.base.mp.MaterialPointBase method)</a>
 
       <ul>
         <li><a href="documentation/mpm/material_points.html#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.setMaterial">(edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="documentation/mpm/material_points.html#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.setProperties">setProperties() (edelweissmeshfree.materialpoints.base.mp.MaterialPointBase method)</a>
 
       <ul>
         <li><a href="documentation/mpm/material_points.html#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.setProperties">(edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint method)</a>
+</li>
+        <li><a href="documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.setProperties">(edelweissmeshfree.particles.base.baseparticle.BaseParticle method)</a>
+</li>
+        <li><a href="documentation/particles.html#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setProperties">(edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper method)</a>
+</li>
+      </ul></li>
+      <li><a href="documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.setProperty">setProperty() (edelweissmeshfree.particles.base.baseparticle.BaseParticle method)</a>
+
+      <ul>
+        <li><a href="documentation/particles.html#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setProperty">(edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper method)</a>
+</li>
+      </ul></li>
+      <li><a href="documentation/particle_managers.html#edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager.signalizeKernelFunctionUpdate">signalizeKernelFunctionUpdate() (edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager method)</a>
+
+      <ul>
+        <li><a href="documentation/particle_managers.html#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager.signalizeKernelFunctionUpdate">(edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager method)</a>
+</li>
+        <li><a href="documentation/particle_managers.html#edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager.KDBinOrganizedParticleManager.signalizeKernelFunctionUpdate">(edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager.KDBinOrganizedParticleManager method)</a>
 </li>
       </ul></li>
       <li><a href="documentation/mpm/material_point_managers.html#edelweissmeshfree.mpmmanagers.simplempmmanager.SimpleMaterialPointManager">SimpleMaterialPointManager (class in edelweissmeshfree.mpmmanagers.simplempmmanager)</a>
@@ -1152,6 +1506,8 @@
 <h2 id="U">U</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="documentation/meshfree.html#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.updateCenter">updateCenter (edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction property)</a>
+</li>
       <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.updateConnectivity">updateConnectivity() (edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase method)</a>
 
       <ul>
@@ -1165,6 +1521,12 @@
 </li>
         <li><a href="documentation/mpm/material_point_managers.html#edelweissmeshfree.mpmmanagers.smartmpmmanager.SmartMaterialPointManager.updateConnectivity">(edelweissmeshfree.mpmmanagers.smartmpmmanager.SmartMaterialPointManager method)</a>
 </li>
+        <li><a href="documentation/particle_managers.html#edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager.updateConnectivity">(edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager method)</a>
+</li>
+        <li><a href="documentation/particle_managers.html#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager.updateConnectivity">(edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager method)</a>
+</li>
+        <li><a href="documentation/particle_managers.html#edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager.KDBinOrganizedParticleManager.updateConnectivity">(edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager.KDBinOrganizedParticleManager method)</a>
+</li>
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -1172,6 +1534,14 @@
 </li>
       <li><a href="documentation/numeric_tools.html#edelweissmeshfree.numerics.dofmanager.MPMDofManager.updateParticles">updateParticles() (edelweissmeshfree.numerics.dofmanager.MPMDofManager method)</a>
 </li>
+      <li><a href="documentation/particles.html#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.updatePhysicsExplicit">updatePhysicsExplicit() (edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper method)</a>
+</li>
+      <li><a href="documentation/field_output.html#edelweissmeshfree.fieldoutput.fieldoutput.MaterialPointFieldOutput.updateResults">updateResults() (edelweissmeshfree.fieldoutput.fieldoutput.MaterialPointFieldOutput method)</a>
+
+      <ul>
+        <li><a href="documentation/field_output.html#edelweissmeshfree.fieldoutput.fieldoutput.ParticleFieldOutput.updateResults">(edelweissmeshfree.fieldoutput.fieldoutput.ParticleFieldOutput method)</a>
+</li>
+      </ul></li>
       <li><a href="documentation/step_actions.html#edelweissmeshfree.stepactions.dirichlet.Dirichlet.updateStepAction">updateStepAction() (edelweissmeshfree.stepactions.dirichlet.Dirichlet method)</a>
 </li>
   </ul></td>
@@ -1180,7 +1550,25 @@
 <h2 id="V">V</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="documentation/meshfree.html#edelweissmeshfree.meshfree.vci.VariationallyConsistentIntegrationManager">VariationallyConsistentIntegrationManager (class in edelweissmeshfree.meshfree.vci)</a>
+</li>
+      <li><a href="documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.vci_assignTestFunctionCorrectionTerms">vci_assignTestFunctionCorrectionTerms() (edelweissmeshfree.particles.base.baseparticle.BaseParticle method)</a>
+</li>
+      <li><a href="documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.vci_compute_MMatrix">vci_compute_MMatrix() (edelweissmeshfree.particles.base.baseparticle.BaseParticle method)</a>
+</li>
+      <li><a href="documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.vci_compute_Test_P_BoundaryIntegral">vci_compute_Test_P_BoundaryIntegral() (edelweissmeshfree.particles.base.baseparticle.BaseParticle method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.vci_compute_Test_PGradient_Integral">vci_compute_Test_PGradient_Integral() (edelweissmeshfree.particles.base.baseparticle.BaseParticle method)</a>
+</li>
+      <li><a href="documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.vci_compute_TestGradient_P_Integral">vci_compute_TestGradient_P_Integral() (edelweissmeshfree.particles.base.baseparticle.BaseParticle method)</a>
+</li>
+      <li><a href="documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.vci_getNumberOfConstraints">vci_getNumberOfConstraints() (edelweissmeshfree.particles.base.baseparticle.BaseParticle method)</a>
+</li>
       <li><a href="documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.vertexSets">vertexSets (edelweissmeshfree.models.mpmmodel.MPMModel attribute)</a>
+</li>
+      <li><a href="documentation/particle_managers.html#edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager.KDBinOrganizedParticleManager.visualize">visualize() (edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager.KDBinOrganizedParticleManager method)</a>
 </li>
   </ul></td>
 </tr></table>

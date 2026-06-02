@@ -1,0 +1,363 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Field output &mdash; EdelweissMeshfree v25.08 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=1d735308" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=83aae4bb"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Meshfree utilities" href="meshfree.html" />
+    <link rel="prev" title="Points and fields" href="points_and_fields.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            EdelweissMeshfree
+              <img src="../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="organization.html">Code organization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html">Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cells.html">Cells</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cellelements.html">Cellelements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpm/material_points.html">Material Points</a></li>
+<li class="toctree-l2"><a class="reference internal" href="solvers.html">Solvers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpm/material_point_managers.html">Material Point Managers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="model_generators.html">Model generators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="particles.html">Particles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="particle_managers.html">Particle managers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="points_and_fields.html">Points and fields</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Field output</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#edelweissmeshfree.fieldoutput.fieldoutput.MPMFieldOutputController"><code class="docutils literal notranslate"><span class="pre">MPMFieldOutputController</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.fieldoutput.fieldoutput.MPMFieldOutputController.addPerMaterialPointFieldOutput"><code class="docutils literal notranslate"><span class="pre">MPMFieldOutputController.addPerMaterialPointFieldOutput()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#edelweissmeshfree.fieldoutput.fieldoutput.MaterialPointFieldOutput"><code class="docutils literal notranslate"><span class="pre">MaterialPointFieldOutput</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.fieldoutput.fieldoutput.MaterialPointFieldOutput.updateResults"><code class="docutils literal notranslate"><span class="pre">MaterialPointFieldOutput.updateResults()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#edelweissmeshfree.fieldoutput.fieldoutput.ParticleFieldOutput"><code class="docutils literal notranslate"><span class="pre">ParticleFieldOutput</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.fieldoutput.fieldoutput.ParticleFieldOutput.updateResults"><code class="docutils literal notranslate"><span class="pre">ParticleFieldOutput.updateResults()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="meshfree.html">Meshfree utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sets.html">Sets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="step_actions.html">Step actions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="constraints.html">Constraints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="numeric_tools.html">Numerical tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="output_managers.html">Output managers</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">EdelweissMeshfree</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Documentation</a></li>
+      <li class="breadcrumb-item active">Field output</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/documentation/field_output.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-edelweissmeshfree.fieldoutput.fieldoutput">
+<span id="field-output"></span><h1>Field output<a class="headerlink" href="#module-edelweissmeshfree.fieldoutput.fieldoutput" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.fieldoutput.fieldoutput.MPMFieldOutputController">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.fieldoutput.fieldoutput.</span></span><span class="sig-name descname"><span class="pre">MPMFieldOutputController</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/fieldoutput/fieldoutput.html#MPMFieldOutputController"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.fieldoutput.fieldoutput.MPMFieldOutputController" title="Link to this definition"></a></dt>
+<dd><p>The central module for managing field outputs, which can be used by output managers.</p>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">addExpressionFieldOutput</span></code>(associatedSet, ...)</p></td>
+<td><p>Add a new FieldOutput entry to be computed during the simulation</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">addPerElementFieldOutput</span></code>(name, elSet[, ...])</p></td>
+<td><p>Add a new FieldOutput entry to be computed during the simulation</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.fieldoutput.fieldoutput.MPMFieldOutputController.addPerMaterialPointFieldOutput" title="edelweissmeshfree.fieldoutput.fieldoutput.MPMFieldOutputController.addPerMaterialPointFieldOutput"><code class="xref py py-obj docutils literal notranslate"><span class="pre">addPerMaterialPointFieldOutput</span></code></a>(name, ...[, ...])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">addPerNodeFieldOutput</span></code>(name, nodeField[, ...])</p></td>
+<td><p>Add a new FieldOutput entry to be computed during the simulation</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">finalizeIncrement</span></code>()</p></td>
+<td><p>Finalize all field outputs at the end of an increment.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">finalizeJob</span></code>()</p></td>
+<td><p>Finalize all field outputs at the end of a job.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">finalizeStep</span></code>()</p></td>
+<td><p>Finalize all field outputs at the end of a step.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">initializeStep</span></code>(step)</p></td>
+<td><p>Initalize an step.</p></td>
+</tr>
+</tbody>
+</table>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><strong>addPerParticleFieldOutput</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>initializeJob</strong></p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.fieldoutput.fieldoutput.MPMFieldOutputController.addPerMaterialPointFieldOutput">
+<span class="sig-name descname"><span class="pre">addPerMaterialPointFieldOutput</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">materialPointSet</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">result</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">saveHistory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">export</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fExport_x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reshape_to_dimensions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/fieldoutput/fieldoutput.html#MPMFieldOutputController.addPerMaterialPointFieldOutput"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.fieldoutput.fieldoutput.MPMFieldOutputController.addPerMaterialPointFieldOutput" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – The name of this FieldOutput.</p></li>
+<li><p><strong>nodeField</strong> – The :class:<a href="#id1"><span class="problematic" id="id2">`</span></a>NodeField, on which this FieldOutput should operate.</p></li>
+<li><p><strong>resultName</strong> – The name of the result entry in the :class:<a href="#id3"><span class="problematic" id="id4">`</span></a>NodeField</p></li>
+<li><p><strong>saveHistory</strong> (<em>bool</em>) – If the history of the results should be saved.</p></li>
+<li><p><strong>f_x</strong> – The function to apply to the results.</p></li>
+<li><p><strong>export</strong> (<em>str</em>) – Whether to export the results.</p></li>
+<li><p><strong>fExport_x</strong> – The function to apply to the exported results.</p></li>
+<li><p><strong>reshape_to_dimensions</strong> (<em>int</em>) – If the result should be reshaped to certain dimensions (e.g. for tensor results).</p></li>
+<li><p><strong>materialPointSet</strong> (<a class="reference internal" href="sets.html#edelweissmeshfree.sets.materialpointset.MaterialPointSet" title="edelweissmeshfree.sets.materialpointset.MaterialPointSet"><em>MaterialPointSet</em></a>)</p></li>
+<li><p><strong>result</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.fieldoutput.fieldoutput.MaterialPointFieldOutput">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.fieldoutput.fieldoutput.</span></span><span class="sig-name descname"><span class="pre">MaterialPointFieldOutput</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mpSet</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resultName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">journal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">saveHistory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">typing.Callable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">export</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fExport_x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">typing.Callable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reshape_to_dimensions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/fieldoutput/fieldoutput.html#MaterialPointFieldOutput"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.fieldoutput.fieldoutput.MaterialPointFieldOutput" title="Link to this definition"></a></dt>
+<dd><p>A FieldOutput for material points.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – The name of this FieldOutput.</p></li>
+<li><p><strong>mpSet</strong> (<a class="reference internal" href="sets.html#edelweissmeshfree.sets.materialpointset.MaterialPointSet" title="edelweissmeshfree.sets.materialpointset.MaterialPointSet"><em>MaterialPointSet</em></a>) – The :class:<a href="#id5"><span class="problematic" id="id6">`</span></a>MaterialPointSet on which this FieldOutput operates.</p></li>
+<li><p><strong>resultName</strong> (<em>str</em>) – The name of the result entry in the :class:<a href="#id7"><span class="problematic" id="id8">`</span></a>ElementBase.</p></li>
+<li><p><strong>model</strong> (<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel"><em>MPMModel</em></a>) – The :class:<a href="#id9"><span class="problematic" id="id10">`</span></a>MPMModel tree instance.</p></li>
+<li><p><strong>journal</strong> (<em>Journal</em>) – The :class:<a href="#id11"><span class="problematic" id="id12">`</span></a>Journal instance for logging.</p></li>
+<li><p><strong>saveHistory</strong> (<em>bool</em>) – If the history of the results should be saved.</p></li>
+<li><p><strong>f_x</strong> – The function to apply to the results.</p></li>
+<li><p><strong>export</strong> (<em>str</em>) – Whether to export the results.</p></li>
+<li><p><strong>fExport_x</strong> – The function to apply to the exported results.</p></li>
+<li><p><strong>reshape_to_dimensions</strong> (<em>int</em>) – If the result should be reshaped to certain dimensions (e.g. for tensor results).</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">finalizeIncrement</span></code>()</p></td>
+<td><p>Finalize an increment, i.e. store the current results.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getLastResult</span></code>()</p></td>
+<td><p>Get the last result, no matter if the history is stored or not.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getResultHistory</span></code>()</p></td>
+<td><p>Get the history.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getTimeHistory</span></code>()</p></td>
+<td><p>Get the time history.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">initializeJob</span></code>()</p></td>
+<td><p>Initalize everything.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setResults</span></code>(values)</p></td>
+<td><p>Modifies a result at it's origin, if possible.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.fieldoutput.fieldoutput.MaterialPointFieldOutput.updateResults" title="edelweissmeshfree.fieldoutput.fieldoutput.MaterialPointFieldOutput.updateResults"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateResults</span></code></a>(model)</p></td>
+<td><p>Update the field output.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeLastResult</span></code>()</p></td>
+<td><p>Update file output.</p></td>
+</tr>
+</tbody>
+</table>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><strong>finalizeJob</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>finalizeStep</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>initializeStep</strong></p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.fieldoutput.fieldoutput.MaterialPointFieldOutput.updateResults">
+<span class="sig-name descname"><span class="pre">updateResults</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/fieldoutput/fieldoutput.html#MaterialPointFieldOutput.updateResults"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.fieldoutput.fieldoutput.MaterialPointFieldOutput.updateResults" title="Link to this definition"></a></dt>
+<dd><p>Update the field output.
+Will use the current solution and reaction vector if result is a nodal result.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>model</strong> (<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel"><em>MPMModel</em></a>) – The model tree.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.fieldoutput.fieldoutput.ParticleFieldOutput">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.fieldoutput.fieldoutput.</span></span><span class="sig-name descname"><span class="pre">ParticleFieldOutput</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pSet</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resultName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">journal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">saveHistory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">typing.Callable[[numpy.ndarray],</span> <span class="pre">numpy.ndarray]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">export</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fExport_x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">typing.Callable[[numpy.ndarray],</span> <span class="pre">numpy.ndarray]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reshape_to_dimensions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/fieldoutput/fieldoutput.html#ParticleFieldOutput"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.fieldoutput.fieldoutput.ParticleFieldOutput" title="Link to this definition"></a></dt>
+<dd><p>A FieldOutput for material points.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – The name of this FieldOutput.</p></li>
+<li><p><strong>pSet</strong> (<a class="reference internal" href="sets.html#edelweissmeshfree.sets.particleset.ParticleSet" title="edelweissmeshfree.sets.particleset.ParticleSet"><em>ParticleSet</em></a>) – The :class:<a href="#id13"><span class="problematic" id="id14">`</span></a>ParticleSet on which this FieldOutput operates.</p></li>
+<li><p><strong>resultName</strong> (<em>str</em>) – The name of the result entry in the :class:<a href="#id15"><span class="problematic" id="id16">`</span></a>ElementBase.</p></li>
+<li><p><strong>model</strong> (<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel"><em>MPMModel</em></a>) – The :class:<a href="#id17"><span class="problematic" id="id18">`</span></a>MPMModel tree instance.</p></li>
+<li><p><strong>journal</strong> (<em>Journal</em>) – The :class:<a href="#id19"><span class="problematic" id="id20">`</span></a>Journal instance for logging.</p></li>
+<li><p><strong>saveHistory</strong> (<em>bool</em>) – If the history of the results should be saved.</p></li>
+<li><p><strong>f_x</strong> – The function to apply to the results.</p></li>
+<li><p><strong>export</strong> (<em>str</em>) – Whether to export the results.</p></li>
+<li><p><strong>fExport_x</strong> – The function to apply to the exported results.</p></li>
+<li><p><strong>reshape_to_dimensions</strong> (<em>int</em>) – If the result should be reshaped to certain dimensions (e.g. for tensor results).</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">finalizeIncrement</span></code>()</p></td>
+<td><p>Finalize an increment, i.e. store the current results.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getLastResult</span></code>()</p></td>
+<td><p>Get the last result, no matter if the history is stored or not.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getResultHistory</span></code>()</p></td>
+<td><p>Get the history.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getTimeHistory</span></code>()</p></td>
+<td><p>Get the time history.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">initializeJob</span></code>()</p></td>
+<td><p>Initalize everything.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setResults</span></code>(values)</p></td>
+<td><p>Modifies a result at it's origin, if possible.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.fieldoutput.fieldoutput.ParticleFieldOutput.updateResults" title="edelweissmeshfree.fieldoutput.fieldoutput.ParticleFieldOutput.updateResults"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateResults</span></code></a>(model)</p></td>
+<td><p>Update the field output.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeLastResult</span></code>()</p></td>
+<td><p>Update file output.</p></td>
+</tr>
+</tbody>
+</table>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><strong>finalizeJob</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>finalizeStep</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>initializeStep</strong></p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.fieldoutput.fieldoutput.ParticleFieldOutput.updateResults">
+<span class="sig-name descname"><span class="pre">updateResults</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/fieldoutput/fieldoutput.html#ParticleFieldOutput.updateResults"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.fieldoutput.fieldoutput.ParticleFieldOutput.updateResults" title="Link to this definition"></a></dt>
+<dd><p>Update the field output.
+Will use the current solution and reaction vector if result is a nodal result.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>model</strong> (<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel"><em>MPMModel</em></a>) – The model tree.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-edelweissmeshfree.fieldoutput.mpresultcollector"></span></section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="points_and_fields.html" class="btn btn-neutral float-left" title="Points and fields" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="meshfree.html" class="btn btn-neutral float-right" title="Meshfree utilities" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Matthias Neuner.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

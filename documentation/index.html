@@ -20,7 +20,7 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Models" href="models.html" />
+    <link rel="next" title="Code organization" href="organization.html" />
     <link rel="prev" title="Welcome to EdelweissMeshfree" href="../index.html" /> 
 </head>
 
@@ -46,11 +46,20 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="organization.html">Code organization</a></li>
 <li class="toctree-l2"><a class="reference internal" href="models.html">Models</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cells.html">Cells</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cellelements.html">Cellelements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpm/material_points.html">Material Points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="solvers.html">Solvers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpm/material_point_managers.html">Material Point Managers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="model_generators.html">Model generators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="particles.html">Particles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="particle_managers.html">Particle managers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="points_and_fields.html">Points and fields</a></li>
+<li class="toctree-l2"><a class="reference internal" href="field_output.html">Field output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshfree.html">Meshfree utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sets.html">Sets</a></li>
 <li class="toctree-l2"><a class="reference internal" href="step_actions.html">Step actions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="constraints.html">Constraints</a></li>
 <li class="toctree-l2"><a class="reference internal" href="numeric_tools.html">Numerical tools</a></li>
@@ -87,6 +96,7 @@
 <h1>Documentation<a class="headerlink" href="#documentation" title="Link to this heading"></a></h1>
 <div class="toctree-wrapper compound">
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="organization.html">Code organization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="models.html">Models</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="models.html#module-edelweissmeshfree.models.mpmmodel"><code class="docutils literal notranslate"><span class="pre">MPMModel</span></code> class</a></li>
 </ul>
@@ -106,16 +116,65 @@
 <li class="toctree-l2"><a class="reference internal" href="cellelements.html#module-edelweissmeshfree.cellelements.marmotcellelement.lagrangianmarmotcellelement"><code class="docutils literal notranslate"><span class="pre">LagrangianMarmotCellElement</span></code> class</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="mpm/material_points.html">Material Points</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="mpm/material_points.html#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase"><code class="docutils literal notranslate"><span class="pre">MaterialPointBase</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpm/material_points.html#module-edelweissmeshfree.materialpoints.marmotmaterialpoint.mp"><code class="docutils literal notranslate"><span class="pre">MarmotMaterialPoint</span></code> class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpm/material_points.html#module-edelweissmeshfree.materialpoints.pythonmaterialpoint.mp"><code class="docutils literal notranslate"><span class="pre">PythonMaterialPoint</span></code> class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpm/material_points.html#theory-small-strain-linear-elasticity-in-plane-strain">Theory (small-strain linear elasticity in plane strain)</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="solvers.html">Solvers</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="solvers.html#nonlinearquasistaticsolver-class"><code class="docutils literal notranslate"><span class="pre">NonlinearQuasistaticSolver</span></code> class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="solvers.html#nqsparallelformarmot-class"><code class="docutils literal notranslate"><span class="pre">NQSParallelForMarmot</span></code> class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="solvers.html#nonlinearquasistaticmarmotparallelarclengthsolver-class"><code class="docutils literal notranslate"><span class="pre">NonlinearQuasistaticMarmotParallelArcLengthSolver</span></code> class</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="mpm/material_point_managers.html">Material Point Managers</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="mpm/material_point_managers.html#edelweissmeshfree.mpmmanagers.base.mpmmanagerbase.MPMManagerBase"><code class="docutils literal notranslate"><span class="pre">MPMManagerBase</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpm/material_point_managers.html#module-edelweissmeshfree.mpmmanagers.simplempmmanager">Simple Material Point Manager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpm/material_point_managers.html#module-edelweissmeshfree.mpmmanagers.smartmpmmanager">Smart Material Point Manager</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="model_generators.html">Model generators</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="model_generators.html#module-edelweissmeshfree.generators.rectangulargridgenerator">2D generators</a></li>
 <li class="toctree-l2"><a class="reference internal" href="model_generators.html#module-edelweissmeshfree.generators.boxgridgenerator">3D generators</a></li>
 <li class="toctree-l2"><a class="reference internal" href="model_generators.html#module-edelweissmeshfree.generators.findclosestmp">utitilty generators</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="particles.html">Particles</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="particles.html#module-edelweissmeshfree.particles.base.baseparticle"><code class="docutils literal notranslate"><span class="pre">BaseParticle</span></code> class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="particles.html#module-edelweissmeshfree.particles.marmot.marmotparticlewrapper"><code class="docutils literal notranslate"><span class="pre">MarmotParticleWrapper</span></code> class</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="particle_managers.html">Particle managers</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="particle_managers.html#edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager"><code class="docutils literal notranslate"><span class="pre">BaseParticleManager</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="particle_managers.html#module-edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager"><code class="docutils literal notranslate"><span class="pre">KDBinOrganizedParticleManager</span></code> class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="particle_managers.html#module-edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager">Legacy implementation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="points_and_fields.html">Points and fields</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="points_and_fields.html#module-edelweissmeshfree.points.gridnode">Points</a></li>
+<li class="toctree-l2"><a class="reference internal" href="points_and_fields.html#module-edelweissmeshfree.fields.nodefield">Fields</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="field_output.html">Field output</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="field_output.html#edelweissmeshfree.fieldoutput.fieldoutput.MPMFieldOutputController"><code class="docutils literal notranslate"><span class="pre">MPMFieldOutputController</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="field_output.html#edelweissmeshfree.fieldoutput.fieldoutput.MaterialPointFieldOutput"><code class="docutils literal notranslate"><span class="pre">MaterialPointFieldOutput</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="field_output.html#edelweissmeshfree.fieldoutput.fieldoutput.ParticleFieldOutput"><code class="docutils literal notranslate"><span class="pre">ParticleFieldOutput</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="meshfree.html">Meshfree utilities</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="meshfree.html#module-edelweissmeshfree.meshfree.approximations.base.basemeshfreeapproximation">Approximation base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshfree.html#module-edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction">Kernel function base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshfree.html#module-edelweissmeshfree.meshfree.approximations.marmot.marmotmeshfreeapproximation">Marmot wrappers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshfree.html#module-edelweissmeshfree.meshfree.particlekerneldomain">Integration helpers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="sets.html">Sets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="sets.html#edelweissmeshfree.sets.cellset.CellSet"><code class="docutils literal notranslate"><span class="pre">CellSet</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="sets.html#edelweissmeshfree.sets.cellelementset.CellElementSet"><code class="docutils literal notranslate"><span class="pre">CellElementSet</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="sets.html#edelweissmeshfree.sets.materialpointset.MaterialPointSet"><code class="docutils literal notranslate"><span class="pre">MaterialPointSet</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="sets.html#edelweissmeshfree.sets.particleset.ParticleSet"><code class="docutils literal notranslate"><span class="pre">ParticleSet</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="step_actions.html">Step actions</a><ul>
@@ -146,7 +205,7 @@
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="../index.html" class="btn btn-neutral float-left" title="Welcome to EdelweissMeshfree" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="models.html" class="btn btn-neutral float-right" title="Models" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="organization.html" class="btn btn-neutral float-right" title="Code organization" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

@@ -1,0 +1,995 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Particles &mdash; EdelweissMeshfree v25.08 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=1d735308" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=83aae4bb"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Particle managers" href="particle_managers.html" />
+    <link rel="prev" title="Model generators" href="model_generators.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            EdelweissMeshfree
+              <img src="../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="organization.html">Code organization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html">Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cells.html">Cells</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cellelements.html">Cellelements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpm/material_points.html">Material Points</a></li>
+<li class="toctree-l2"><a class="reference internal" href="solvers.html">Solvers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpm/material_point_managers.html">Material Point Managers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="model_generators.html">Model generators</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Particles</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-edelweissmeshfree.particles.base.baseparticle"><code class="docutils literal notranslate"><span class="pre">BaseParticle</span></code> class</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle"><code class="docutils literal notranslate"><span class="pre">BaseParticle</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-edelweissmeshfree.particles.marmot.marmotparticlewrapper"><code class="docutils literal notranslate"><span class="pre">MarmotParticleWrapper</span></code> class</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper"><code class="docutils literal notranslate"><span class="pre">MarmotParticleWrapper</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="particle_managers.html">Particle managers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="points_and_fields.html">Points and fields</a></li>
+<li class="toctree-l2"><a class="reference internal" href="field_output.html">Field output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshfree.html">Meshfree utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sets.html">Sets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="step_actions.html">Step actions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="constraints.html">Constraints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="numeric_tools.html">Numerical tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="output_managers.html">Output managers</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">EdelweissMeshfree</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Documentation</a></li>
+      <li class="breadcrumb-item active">Particles</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/documentation/particles.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="particles">
+<h1>Particles<a class="headerlink" href="#particles" title="Link to this heading"></a></h1>
+<section id="module-edelweissmeshfree.particles.base.baseparticle">
+<span id="baseparticle-class"></span><h2><code class="docutils literal notranslate"><span class="pre">BaseParticle</span></code> class<a class="headerlink" href="#module-edelweissmeshfree.particles.base.baseparticle" title="Link to this heading"></a></h2>
+<p>Together with meshfree kernel functions (<code class="xref py py-class docutils literal notranslate"><span class="pre">BaseMeshfreeKernelFunction</span></code>), particles represent the basic building blocks of a particle based method. They
+are used for computing the quadrature.</p>
+<p>Implementing your own particles can be done easily by subclassing from
+the abstract base class <a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseParticle</span></code></a>.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.particles.base.baseparticle.</span></span><span class="sig-name descname"><span class="pre">BaseParticle</span></span><a class="reference internal" href="../_modules/edelweissmeshfree/particles/base/baseparticle.html#BaseParticle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle" title="Link to this definition"></a></dt>
+<dd><p>The BaseParticle class is an abstract base class for all particles.</p>
+<p>If you want to implement a new particle, you have to inherit from this class.</p>
+<p>Particles communicate with field variables (<code class="xref py py-class docutils literal notranslate"><span class="pre">FieldVariable</span></code>) through meshfree kernel functions (<code class="xref py py-class docutils literal notranslate"><span class="pre">BaseMeshfreeKernelFunction</span></code>),
+which are attached to nodes.
+During a simulation, particles are used to compute the quadrature of the weak form of the governing equations.
+Accordingly, like elements and cells, they are responsible for computing the residual and stiffness matrix.</p>
+<p>Naturally, and in contrast to elements, cells and cell elements, particles have an identical set of fields on each attached node.
+Furthermore, due to the varying number attached nodes, no permutation is allowed.
+For particles generally a node-wise layout is assumed.</p>
+<p>For instance: [node_1_displacement, node_1_temperature, node_2_displacement, node_2_temperature, …]</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.baseFields" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.baseFields"><code class="xref py py-obj docutils literal notranslate"><span class="pre">baseFields</span></code></a></dt><dd><p>Defines which fields are attached to the particle.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.dimension" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.dimension"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dimension</span></code></a></dt><dd><p>Defines the dimension of the particle, e.g., 1, 2 or 3.</p>
+</dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">dofIndicesPermutation</span></code></dt><dd><p>If the provides computes residual vectors and stiffness matrices not nodewise, but e.g., fieldwise, this permutation pattern is used to aggregate all entries in order to resemble the defined fields nodewise.</p>
+</dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">ensightType</span></code></dt><dd><p>The shape of the element in Ensight Gold notation.</p>
+</dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">fields</span></code></dt><dd><p>The list of fields per node which this entity couples.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.kernelFunctions" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.kernelFunctions"><code class="xref py py-obj docutils literal notranslate"><span class="pre">kernelFunctions</span></code></a></dt><dd><p>The kernel functions assigned to the particle.</p>
+</dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">nDof</span></code></dt><dd><p>The total number of degrees of freedom this entity has.</p>
+</dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">nNodes</span></code></dt><dd><p>The number of nodes this entity couples.</p>
+</dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes</span></code></dt><dd><p>The list of nodes this currently entity holds.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.propertyNames" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.propertyNames"><code class="xref py py-obj docutils literal notranslate"><span class="pre">propertyNames</span></code></a></dt><dd><p>Defines which properties are valid for the particle.</p>
+</dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">visualizationNodes</span></code></dt><dd><p>The nodes for visualization.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.acceptStateAndPosition" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.acceptStateAndPosition"><code class="xref py py-obj docutils literal notranslate"><span class="pre">acceptStateAndPosition</span></code></a>()</p></td>
+<td><p>Accept the computed state (in nonlinear iteration schemes) and the position.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.assignMeshfreeKernelFunctions" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.assignMeshfreeKernelFunctions"><code class="xref py py-obj docutils literal notranslate"><span class="pre">assignMeshfreeKernelFunctions</span></code></a>(kernelFunctions)</p></td>
+<td><p>Assign the meshfree kernel functions to the particle.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeBodyLoad" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeBodyLoad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeBodyLoad</span></code></a>(loadType, load, P, K, ...)</p></td>
+<td><p>Compute bulk loads (body loads) for given time based for all assigned MaterialPoints.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeBodyLoadExplicit" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeBodyLoadExplicit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeBodyLoadExplicit</span></code></a>(loadType, load, P, ...)</p></td>
+<td><p>Compute bulk loads (body loads) for given time based for all assigned MaterialPoints.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeDistributedLoad" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeDistributedLoad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeDistributedLoad</span></code></a>(loadType, surfaceID, ...)</p></td>
+<td><p>Compute distributed (surface) a for given time based for a specific assigned material point.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeDistributedLoadExplicit" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeDistributedLoadExplicit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeDistributedLoadExplicit</span></code></a>(loadType, ...)</p></td>
+<td><p>Compute distributed (surface) a for given time based for a specific assigned material point.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedInertia" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedInertia"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeLumpedInertia</span></code></a>(M)</p></td>
+<td><p>Compute the lumped mass matrix for explicit time integration.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computePhysicsKernels" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.computePhysicsKernels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computePhysicsKernels</span></code></a>(dU, P, K, timeTotal, dTime)</p></td>
+<td><p>Evaluate the kernel residual and stiffness for given time based for all assigned MaterialPoints.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computePhysicsKernelsExplicit" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.computePhysicsKernelsExplicit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computePhysicsKernelsExplicit</span></code></a>(dU, P, ...)</p></td>
+<td><p>Evaluate the kernel residual and stiffness for given time based for all assigned MaterialPoints.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getBoundingBox" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.getBoundingBox"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getBoundingBox</span></code></a>()</p></td>
+<td><p>Get the bounding box of the particle.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getCenterCoordinates" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.getCenterCoordinates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getCenterCoordinates</span></code></a>()</p></td>
+<td><p>Get the center coordinates of the particle.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getEvaluationCoordinates" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.getEvaluationCoordinates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getEvaluationCoordinates</span></code></a>()</p></td>
+<td><p>Get the evaluation coordinates of the particle.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getFaceCoordinates" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.getFaceCoordinates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getFaceCoordinates</span></code></a>(faceID)</p></td>
+<td><p>The vertices defining the shape of the particle.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getInterpolationVector" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.getInterpolationVector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getInterpolationVector</span></code></a>(coordinate)</p></td>
+<td><p>Get the interpolation vector for a given global coordinate.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getRestartData" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.getRestartData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getRestartData</span></code></a>()</p></td>
+<td><p>Get the restart data in  form of a numpy array.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getResultArray" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.getResultArray"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getResultArray</span></code></a>(result[, getPersistentView, qp])</p></td>
+<td><p>Get the array of a result, possibly as a persistent view which is continiously updated by a MaterialPoint.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getVertexCoordinates" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.getVertexCoordinates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVertexCoordinates</span></code></a>()</p></td>
+<td><p>The vertices defining the shape of the particle.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getVolumeUndeformed" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.getVolumeUndeformed"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVolumeUndeformed</span></code></a>()</p></td>
+<td><p>Get the undeformed volume of the particle.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.initializeYourself" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.initializeYourself"><code class="xref py py-obj docutils literal notranslate"><span class="pre">initializeYourself</span></code></a>()</p></td>
+<td><p>Initalize the particle to be ready for computing.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.prepareYourself" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.prepareYourself"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prepareYourself</span></code></a>(timeTotal, dTime)</p></td>
+<td><p>Prepare the particle to be ready for computing.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.readRestartData" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.readRestartData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">readRestartData</span></code></a>(restartData)</p></td>
+<td><p>Set the restart data.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.setInitialCondition" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.setInitialCondition"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setInitialCondition</span></code></a>(stateType, values)</p></td>
+<td><p>Assign initial conditions.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.setProperties" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.setProperties"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setProperties</span></code></a>(properties)</p></td>
+<td><p>Set all properties of the particle.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.setProperty" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.setProperty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setProperty</span></code></a>(propertyName, propertyValue)</p></td>
+<td><p>Set a single property of the particle.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.vci_assignTestFunctionCorrectionTerms" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.vci_assignTestFunctionCorrectionTerms"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vci_assignTestFunctionCorrectionTerms</span></code></a>(eta_AjC)</p></td>
+<td><p>Assign the shape function correction terms in for of a 3D numpy array.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.vci_compute_MMatrix" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.vci_compute_MMatrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vci_compute_MMatrix</span></code></a>(M_ACD)</p></td>
+<td><p>Compute the symmetric M-matrix.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.vci_compute_TestGradient_P_Integral" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.vci_compute_TestGradient_P_Integral"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vci_compute_TestGradient_P_Integral</span></code></a>(R_AiC)</p></td>
+<td><p>Compute the volume integral for the test function gradient.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.vci_compute_Test_PGradient_Integral" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.vci_compute_Test_PGradient_Integral"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vci_compute_Test_PGradient_Integral</span></code></a>(R_AiC)</p></td>
+<td><p>Compute the volume integral for the test function gradient.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.vci_compute_Test_P_BoundaryIntegral" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.vci_compute_Test_P_BoundaryIntegral"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vci_compute_Test_P_BoundaryIntegral</span></code></a>(R_AiC, ...)</p></td>
+<td><p>Compute the boundary integral for the test function.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.vci_getNumberOfConstraints" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.vci_getNumberOfConstraints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vci_getNumberOfConstraints</span></code></a>()</p></td>
+<td><p>Get the number of constraints if a variationally consistent integration is used.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.acceptStateAndPosition">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">acceptStateAndPosition</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particles/base/baseparticle.html#BaseParticle.acceptStateAndPosition"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.acceptStateAndPosition" title="Link to this definition"></a></dt>
+<dd><p>Accept the computed state (in nonlinear iteration schemes) and the position.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.assignMeshfreeKernelFunctions">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">assignMeshfreeKernelFunctions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernelFunctions</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particles/base/baseparticle.html#BaseParticle.assignMeshfreeKernelFunctions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.assignMeshfreeKernelFunctions" title="Link to this definition"></a></dt>
+<dd><p>Assign the meshfree kernel functions to the particle.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>shapeFunctions</strong> – The meshfree shape functions.</p></li>
+<li><p><strong>kernelFunctions</strong> (<em>list</em><em>[</em><a class="reference internal" href="meshfree.html#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction" title="edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction"><em>BaseMeshfreeKernelFunction</em></a><em>]</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeBodyLoad">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">computeBodyLoad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loadType</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">load</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">P</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">K</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeTotal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dTime</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particles/base/baseparticle.html#BaseParticle.computeBodyLoad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeBodyLoad" title="Link to this definition"></a></dt>
+<dd><p>Compute bulk loads (body loads) for given time based for all assigned MaterialPoints.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>loadType</strong> (<em>str</em>) – The type of load to be computed (e.g., ‘bodyforce’)</p></li>
+<li><p><strong>load</strong> (<em>ndarray</em>) – The float (vector) describing the load.</p></li>
+<li><p><strong>P</strong> (<em>ndarray</em>) – The external load vector to be defined.</p></li>
+<li><p><strong>K</strong> (<em>ndarray</em>) – The stiffness matrix to be defined.</p></li>
+<li><p><strong>timeTotal</strong> (<em>float</em>) – The current total time.</p></li>
+<li><p><strong>dTime</strong> (<em>float</em>) – The time increment.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeBodyLoadExplicit">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">computeBodyLoadExplicit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loadType</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">load</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">P</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeTotal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dTime</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particles/base/baseparticle.html#BaseParticle.computeBodyLoadExplicit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeBodyLoadExplicit" title="Link to this definition"></a></dt>
+<dd><p>Compute bulk loads (body loads) for given time based for all assigned MaterialPoints.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>loadType</strong> (<em>str</em>) – The type of load to be computed (e.g., ‘bodyforce’)</p></li>
+<li><p><strong>load</strong> (<em>ndarray</em>) – The float (vector) describing the load.</p></li>
+<li><p><strong>P</strong> (<em>ndarray</em>) – The external load vector to be defined.</p></li>
+<li><p><strong>timeTotal</strong> (<em>float</em>) – The current total time.</p></li>
+<li><p><strong>dTime</strong> (<em>float</em>) – The time increment.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeDistributedLoad">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">computeDistributedLoad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loadType</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surfaceID</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">load</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">P</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">K</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeTotal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dTime</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particles/base/baseparticle.html#BaseParticle.computeDistributedLoad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeDistributedLoad" title="Link to this definition"></a></dt>
+<dd><p>Compute distributed (surface) a for given time based for a specific assigned material point.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>loadType</strong> (<em>str</em>) – The type of load to be computed (e.g., ‘pressure’)</p></li>
+<li><p><strong>surfaceID</strong> (<em>int</em>) – The ID describing the surface of the material point.</p></li>
+<li><p><strong>load</strong> (<em>ndarray</em>) – The float (vector) describing the load.</p></li>
+<li><p><strong>P</strong> (<em>ndarray</em>) – The external load vector to be defined.</p></li>
+<li><p><strong>K</strong> (<em>ndarray</em>) – The stiffness matrix to be defined.</p></li>
+<li><p><strong>timeTotal</strong> (<em>float</em>) – The current total time.</p></li>
+<li><p><strong>dTime</strong> (<em>float</em>) – The time increment.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeDistributedLoadExplicit">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">computeDistributedLoadExplicit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loadType</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surfaceID</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">load</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">P</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeTotal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dTime</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particles/base/baseparticle.html#BaseParticle.computeDistributedLoadExplicit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeDistributedLoadExplicit" title="Link to this definition"></a></dt>
+<dd><p>Compute distributed (surface) a for given time based for a specific assigned material point.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>loadType</strong> (<em>str</em>) – The type of load to be computed (e.g., ‘pressure’)</p></li>
+<li><p><strong>surfaceID</strong> (<em>int</em>) – The ID describing the surface of the material point.</p></li>
+<li><p><strong>load</strong> (<em>ndarray</em>) – The float (vector) describing the load.</p></li>
+<li><p><strong>P</strong> (<em>ndarray</em>) – The external load vector to be defined.</p></li>
+<li><p><strong>timeTotal</strong> (<em>float</em>) – The current total time.</p></li>
+<li><p><strong>dTime</strong> (<em>float</em>) – The time increment.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedInertia">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">computeLumpedInertia</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particles/base/baseparticle.html#BaseParticle.computeLumpedInertia"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedInertia" title="Link to this definition"></a></dt>
+<dd><p>Compute the lumped mass matrix for explicit time integration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>M</strong> (<em>ndarray</em>) – The mass matrix to be defined.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.computePhysicsKernels">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">computePhysicsKernels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">P</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">K</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeTotal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dTime</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particles/base/baseparticle.html#BaseParticle.computePhysicsKernels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computePhysicsKernels" title="Link to this definition"></a></dt>
+<dd><p>Evaluate the kernel residual and stiffness for given time based for all assigned MaterialPoints.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dU</strong> (<em>ndarray</em>) – The current solution increment.</p></li>
+<li><p><strong>P</strong> (<em>ndarray</em>) – The external load vector to be defined.</p></li>
+<li><p><strong>K</strong> (<em>ndarray</em>) – The stiffness matrix to be defined.</p></li>
+<li><p><strong>timeTotal</strong> (<em>float</em>) – The current total time.</p></li>
+<li><p><strong>dTime</strong> (<em>float</em>) – The time increment.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.computePhysicsKernelsExplicit">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">computePhysicsKernelsExplicit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">P</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeTotal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dTime</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particles/base/baseparticle.html#BaseParticle.computePhysicsKernelsExplicit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computePhysicsKernelsExplicit" title="Link to this definition"></a></dt>
+<dd><p>Evaluate the kernel residual and stiffness for given time based for all assigned MaterialPoints.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dU</strong> (<em>ndarray</em>) – The current solution increment.</p></li>
+<li><p><strong>P</strong> (<em>ndarray</em>) – The external load vector to be defined.</p></li>
+<li><p><strong>timeTotal</strong> (<em>float</em>) – The current total time.</p></li>
+<li><p><strong>dTime</strong> (<em>float</em>) – The time increment.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.getBoundingBox">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">getBoundingBox</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particles/base/baseparticle.html#BaseParticle.getBoundingBox"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getBoundingBox" title="Link to this definition"></a></dt>
+<dd><p>Get the bounding box of the particle.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>All coordinates for all bounding vertices.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.getCenterCoordinates">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">getCenterCoordinates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particles/base/baseparticle.html#BaseParticle.getCenterCoordinates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getCenterCoordinates" title="Link to this definition"></a></dt>
+<dd><p>Get the center coordinates of the particle.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The center coordinates.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.getEvaluationCoordinates">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">getEvaluationCoordinates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particles/base/baseparticle.html#BaseParticle.getEvaluationCoordinates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getEvaluationCoordinates" title="Link to this definition"></a></dt>
+<dd><p>Get the evaluation coordinates of the particle.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>All coordinates for all bounding vertices.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.getFaceCoordinates">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">getFaceCoordinates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">faceID</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particles/base/baseparticle.html#BaseParticle.getFaceCoordinates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getFaceCoordinates" title="Link to this definition"></a></dt>
+<dd><p>The vertices defining the shape of the particle.
+:param faceID: The ID of the face to be returned.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>All coordinates for all bounding vertices.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>faceID</strong> (<em>int</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.getInterpolationVector">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">getInterpolationVector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coordinate</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particles/base/baseparticle.html#BaseParticle.getInterpolationVector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getInterpolationVector" title="Link to this definition"></a></dt>
+<dd><p>Get the interpolation vector for a given global coordinate.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The interpolation vector for all nodes.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>coordinate</strong> (<em>ndarray</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.getRestartData">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">getRestartData</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particles/base/baseparticle.html#BaseParticle.getRestartData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getRestartData" title="Link to this definition"></a></dt>
+<dd><p>Get the restart data in  form of a numpy array.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The restart data.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.getResultArray">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">getResultArray</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">getPersistentView</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particles/base/baseparticle.html#BaseParticle.getResultArray"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getResultArray" title="Link to this definition"></a></dt>
+<dd><p>Get the array of a result, possibly as a persistent view which is continiously
+updated by a MaterialPoint.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>result</strong> (<em>str</em>) – The name of the result.</p></li>
+<li><p><strong>getPersistentView</strong> (<em>bool</em>) – If true, the returned array should be continiously updated by the element.</p></li>
+<li><p><strong>qp</strong> (<em>int</em>) – The quadrature point index. This is only relevant for higher order particles.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The result.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.getVertexCoordinates">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">getVertexCoordinates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particles/base/baseparticle.html#BaseParticle.getVertexCoordinates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getVertexCoordinates" title="Link to this definition"></a></dt>
+<dd><p>The vertices defining the shape of the particle.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>All coordinates for all bounding vertices.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.getVolumeUndeformed">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">getVolumeUndeformed</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particles/base/baseparticle.html#BaseParticle.getVolumeUndeformed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getVolumeUndeformed" title="Link to this definition"></a></dt>
+<dd><p>Get the undeformed volume of the particle.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The undeformed volume.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.initializeYourself">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">initializeYourself</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particles/base/baseparticle.html#BaseParticle.initializeYourself"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.initializeYourself" title="Link to this definition"></a></dt>
+<dd><p>Initalize the particle to be ready for computing.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.prepareYourself">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">prepareYourself</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeTotal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dTime</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particles/base/baseparticle.html#BaseParticle.prepareYourself"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.prepareYourself" title="Link to this definition"></a></dt>
+<dd><p>Prepare the particle to be ready for computing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>timeTotal</strong> (<em>float</em>)</p></li>
+<li><p><strong>dTime</strong> (<em>float</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.readRestartData">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">readRestartData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">restartData</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particles/base/baseparticle.html#BaseParticle.readRestartData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.readRestartData" title="Link to this definition"></a></dt>
+<dd><p>Set the restart data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>restartData</strong> (<em>ndarray</em>) – The restart data.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.setInitialCondition">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">setInitialCondition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stateType</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particles/base/baseparticle.html#BaseParticle.setInitialCondition"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.setInitialCondition" title="Link to this definition"></a></dt>
+<dd><p>Assign initial conditions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>stateType</strong> (<em>str</em>) – The type of initial state.</p></li>
+<li><p><strong>values</strong> (<em>ndarray</em>) – The numpy array describing the initial state.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.setProperties">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">setProperties</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">properties</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particles/base/baseparticle.html#BaseParticle.setProperties"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.setProperties" title="Link to this definition"></a></dt>
+<dd><p>Set all properties of the particle.
+The order of the properties is defined by the order of the
+<a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.propertyNames" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.propertyNames"><code class="xref py py-attr docutils literal notranslate"><span class="pre">propertyNames</span></code></a> property.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>properties</strong> (<em>ndarray</em>) – The properties to be set.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.setProperty">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">setProperty</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">propertyName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">propertyValue</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particles/base/baseparticle.html#BaseParticle.setProperty"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.setProperty" title="Link to this definition"></a></dt>
+<dd><p>Set a single property of the particle.
+:param propertyName: The name of the property to be set.
+:param propertyValue: The value of the property to be set.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>propertyName</strong> (<em>str</em>)</p></li>
+<li><p><strong>propertyValue</strong> (<em>ndarray</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.vci_assignTestFunctionCorrectionTerms">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">vci_assignTestFunctionCorrectionTerms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">eta_AjC</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particles/base/baseparticle.html#BaseParticle.vci_assignTestFunctionCorrectionTerms"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.vci_assignTestFunctionCorrectionTerms" title="Link to this definition"></a></dt>
+<dd><p>Assign the shape function correction terms in
+for of a 3D numpy array.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>corrections</strong> – The correction terms.</p></li>
+<li><p><strong>eta_AjC</strong> (<em>ndarray</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.vci_compute_MMatrix">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">vci_compute_MMatrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M_ACD</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particles/base/baseparticle.html#BaseParticle.vci_compute_MMatrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.vci_compute_MMatrix" title="Link to this definition"></a></dt>
+<dd><p>Compute the symmetric M-matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>M_ACD</strong> (<em>ndarray</em>) – The M-matrix</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.vci_compute_TestGradient_P_Integral">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">vci_compute_TestGradient_P_Integral</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">R_AiC</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particles/base/baseparticle.html#BaseParticle.vci_compute_TestGradient_P_Integral"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.vci_compute_TestGradient_P_Integral" title="Link to this definition"></a></dt>
+<dd><p>Compute the volume integral for the test function gradient.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>R_AiC</strong> (<em>ndarray</em>) – The integral.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.vci_compute_Test_PGradient_Integral">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">vci_compute_Test_PGradient_Integral</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">R_AiC</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particles/base/baseparticle.html#BaseParticle.vci_compute_Test_PGradient_Integral"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.vci_compute_Test_PGradient_Integral" title="Link to this definition"></a></dt>
+<dd><p>Compute the volume integral for the test function gradient.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>R_AiC</strong> (<em>ndarray</em>) – The integral.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.vci_compute_Test_P_BoundaryIntegral">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">vci_compute_Test_P_BoundaryIntegral</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">R_AiC</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundarySurfaceVector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundaryFaceID</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particles/base/baseparticle.html#BaseParticle.vci_compute_Test_P_BoundaryIntegral"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.vci_compute_Test_P_BoundaryIntegral" title="Link to this definition"></a></dt>
+<dd><p>Compute the boundary integral for the test function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>R_AiC</strong> (<em>ndarray</em>) – The integral.</p></li>
+<li><p><strong>boundarySurfaceVector</strong> (<em>ndarray</em>) – The surface vector defining the area and orientation of the boundary.
+For higher order (non point) particles, the surface vector might be omitted and computed internally from the boundary face ID.</p></li>
+<li><p><strong>boundaryFaceID</strong> (<em>int</em>) – The ID of the boundary face (for point shaped particles, this one is ignored).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.vci_getNumberOfConstraints">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">vci_getNumberOfConstraints</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particles/base/baseparticle.html#BaseParticle.vci_getNumberOfConstraints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.vci_getNumberOfConstraints" title="Link to this definition"></a></dt>
+<dd><p>Get the number of constraints if a variationally consistent integration is used.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The number of VCI constraints.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.baseFields">
+<em class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">baseFields</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.baseFields" title="Link to this definition"></a></dt>
+<dd><p>Defines which fields are attached to the particle.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.dimension">
+<em class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dimension</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.dimension" title="Link to this definition"></a></dt>
+<dd><p>Defines the dimension of the particle, e.g., 1, 2 or 3.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.kernelFunctions">
+<em class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">kernelFunctions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="meshfree.html#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction" title="edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction"><span class="pre">BaseMeshfreeKernelFunction</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.kernelFunctions" title="Link to this definition"></a></dt>
+<dd><p>The kernel functions assigned to the particle.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.propertyNames">
+<em class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">propertyNames</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.propertyNames" title="Link to this definition"></a></dt>
+<dd><p>Defines which properties are valid for the particle.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-edelweissmeshfree.particles.marmot.marmotparticlewrapper">
+<span id="marmotparticlewrapper-class"></span><h2><code class="docutils literal notranslate"><span class="pre">MarmotParticleWrapper</span></code> class<a class="headerlink" href="#module-edelweissmeshfree.particles.marmot.marmotparticlewrapper" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.particles.marmot.marmotparticlewrapper.</span></span><span class="sig-name descname"><span class="pre">MarmotParticleWrapper</span></span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper" title="Link to this definition"></a></dt>
+<dd><p>This class as a wrapper for MarmotParticles.</p>
+<p>For the documentation of MarmotParticles, please refer to <a class="reference external" href="https://github.com/MAteRialMOdelingToolbox/Marmot/">Marmot</a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>baseFields</strong></dt><dd></dd>
+<dt><strong>dimension</strong></dt><dd></dd>
+<dt><strong>dofIndicesPermutation</strong></dt><dd></dd>
+<dt><strong>ensightType</strong></dt><dd></dd>
+<dt><strong>fields</strong></dt><dd></dd>
+<dt><strong>kernelFunctions</strong></dt><dd></dd>
+<dt><strong>nDof</strong></dt><dd></dd>
+<dt><strong>nodes</strong></dt><dd></dd>
+<dt><strong>number</strong></dt><dd></dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.propertyNames" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.propertyNames"><code class="xref py py-obj docutils literal notranslate"><span class="pre">propertyNames</span></code></a></dt><dd><p>Get the list of valid properties for this particle.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeLumpedInertia" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeLumpedInertia"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeLumpedInertia</span></code></a>(mLumped)</p></td>
+<td><p>Compute the lumped mass matrix for the particle.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeLumpedMomentum" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeLumpedMomentum"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeLumpedMomentum</span></code></a>(mLumped)</p></td>
+<td><p>Compute the lumped mass matrix for the particle.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computePhysicsKernels" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computePhysicsKernels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computePhysicsKernels</span></code></a>(dUc, Pc, Kc, timeNew, ...)</p></td>
+<td><p>Evaluate residual and stiffness for given time, field, and field increment.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computePhysicsKernelsExplicit" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computePhysicsKernelsExplicit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computePhysicsKernelsExplicit</span></code></a>(Pc)</p></td>
+<td><p>Evaluate residual for given time, field, and field increment.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getCenterCoordinates" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getCenterCoordinates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getCenterCoordinates</span></code></a>()</p></td>
+<td><p>Get the underlying MarmotParticle center coordinates.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getFaceCoordinates" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getFaceCoordinates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getFaceCoordinates</span></code></a>(faceID)</p></td>
+<td><p>Get the underlying coordinates of a given face of the MarmotParticle.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getResultArray" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getResultArray"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getResultArray</span></code></a>(result[, getPersistentView, qp])</p></td>
+<td><p>Get the array of a result, possibly as a persistent view which is continiously updated by the underlying MarmotParticle.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getVIJContributionSize" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getVIJContributionSize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVIJContributionSize</span></code></a>()</p></td>
+<td><p>Return the number of entries this entity contributes to the VIJ (COO) system matrix.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getVertexCoordinates" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getVertexCoordinates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVertexCoordinates</span></code></a>()</p></td>
+<td><p>Get the underlying MarmotParticle vertex coordinates.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getVolumeUndeformed" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getVolumeUndeformed"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVolumeUndeformed</span></code></a>()</p></td>
+<td><p>Get the underlying MarmotParticle undeformed volume.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.initializeVIJContribution" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.initializeVIJContribution"><code class="xref py py-obj docutils literal notranslate"><span class="pre">initializeVIJContribution</span></code></a>(idcs, I_, J_, offset)</p></td>
+<td><p>Initialize the I and J arrays for the VIJ (COO) system matrix assembly.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setInitialCondition" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setInitialCondition"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setInitialCondition</span></code></a>(stateType, value)</p></td>
+<td><p>Set initial condition of the particle.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setProperties" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setProperties"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setProperties</span></code></a>(properties)</p></td>
+<td><p>Set a list of properties of the particle.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setProperty" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setProperty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setProperty</span></code></a>(propertyName, value)</p></td>
+<td><p>Set a property of the particle.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.updatePhysicsExplicit" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.updatePhysicsExplicit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updatePhysicsExplicit</span></code></a>(dUc, timeNew, dTime)</p></td>
+<td><p>Evaluate residual for given time, field, and field increment.</p></td>
+</tr>
+</tbody>
+</table>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><strong>acceptStateAndPosition</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>assignKernelFunctions</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>computeBodyLoad</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>computeDistributedLoad</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>computeDistributedLoadExplicit</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>getEvaluationCoordinates</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>getInterpolationVector</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>getRestartData</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>initializeYourself</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>prepareYourself</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>readRestartData</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>vci_assignTestFunctionCorrectionTerms</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>vci_compute_MMatrix</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>vci_compute_TestGradient_P_Integral</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>vci_compute_Test_PGradient_Integral</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>vci_compute_Test_P_BoundaryIntegral</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>vci_getNumberOfConstraints</strong></p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeLumpedInertia">
+<span class="sig-name descname"><span class="pre">computeLumpedInertia</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mLumped</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeLumpedInertia" title="Link to this definition"></a></dt>
+<dd><p>Compute the lumped mass matrix for the particle.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeLumpedMomentum">
+<span class="sig-name descname"><span class="pre">computeLumpedMomentum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mLumped</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeLumpedMomentum" title="Link to this definition"></a></dt>
+<dd><p>Compute the lumped mass matrix for the particle.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computePhysicsKernels">
+<span class="sig-name descname"><span class="pre">computePhysicsKernels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dUc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Pc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Kc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeNew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dTime</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computePhysicsKernels" title="Link to this definition"></a></dt>
+<dd><p>Evaluate residual and stiffness for given time, field, and field increment.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computePhysicsKernelsExplicit">
+<span class="sig-name descname"><span class="pre">computePhysicsKernelsExplicit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Pc</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computePhysicsKernelsExplicit" title="Link to this definition"></a></dt>
+<dd><p>Evaluate residual for given time, field, and field increment.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getCenterCoordinates">
+<span class="sig-name descname"><span class="pre">getCenterCoordinates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getCenterCoordinates" title="Link to this definition"></a></dt>
+<dd><p>Get the underlying MarmotParticle center coordinates.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getFaceCoordinates">
+<span class="sig-name descname"><span class="pre">getFaceCoordinates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">faceID</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getFaceCoordinates" title="Link to this definition"></a></dt>
+<dd><p>Get the underlying coordinates of a given face of the MarmotParticle.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getResultArray">
+<span class="sig-name descname"><span class="pre">getResultArray</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">getPersistentView</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getResultArray" title="Link to this definition"></a></dt>
+<dd><p>Get the array of a result, possibly as a persistent view which is continiously
+updated by the underlying MarmotParticle.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>result</strong> (<em>str</em>)</p></li>
+<li><p><strong>getPersistentView</strong> (<em>bool</em>)</p></li>
+<li><p><strong>qp</strong> (<em>int</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getVIJContributionSize">
+<span class="sig-name descname"><span class="pre">getVIJContributionSize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getVIJContributionSize" title="Link to this definition"></a></dt>
+<dd><p>Return the number of entries this entity contributes to the VIJ (COO) system matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getVertexCoordinates">
+<span class="sig-name descname"><span class="pre">getVertexCoordinates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getVertexCoordinates" title="Link to this definition"></a></dt>
+<dd><p>Get the underlying MarmotParticle vertex coordinates.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getVolumeUndeformed">
+<span class="sig-name descname"><span class="pre">getVolumeUndeformed</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getVolumeUndeformed" title="Link to this definition"></a></dt>
+<dd><p>Get the underlying MarmotParticle undeformed volume.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.initializeVIJContribution">
+<span class="sig-name descname"><span class="pre">initializeVIJContribution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">I_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">J_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.initializeVIJContribution" title="Link to this definition"></a></dt>
+<dd><p>Initialize the I and J arrays for the VIJ (COO) system matrix assembly.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>idcs</strong> (<em>ndarray</em>)</p></li>
+<li><p><strong>I_</strong> (<em>ndarray</em>)</p></li>
+<li><p><strong>J_</strong> (<em>ndarray</em>)</p></li>
+<li><p><strong>offset</strong> (<em>int</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setInitialCondition">
+<span class="sig-name descname"><span class="pre">setInitialCondition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stateType</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setInitialCondition" title="Link to this definition"></a></dt>
+<dd><p>Set initial condition of the particle.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setProperties">
+<span class="sig-name descname"><span class="pre">setProperties</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">properties</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setProperties" title="Link to this definition"></a></dt>
+<dd><p>Set a list of properties of the particle.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setProperty">
+<span class="sig-name descname"><span class="pre">setProperty</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">propertyName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setProperty" title="Link to this definition"></a></dt>
+<dd><p>Set a property of the particle.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.updatePhysicsExplicit">
+<span class="sig-name descname"><span class="pre">updatePhysicsExplicit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dUc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeNew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dTime</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.updatePhysicsExplicit" title="Link to this definition"></a></dt>
+<dd><p>Evaluate residual for given time, field, and field increment.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.propertyNames">
+<span class="sig-name descname"><span class="pre">propertyNames</span></span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.propertyNames" title="Link to this definition"></a></dt>
+<dd><p>Get the list of valid properties for this particle.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="model_generators.html" class="btn btn-neutral float-left" title="Model generators" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="particle_managers.html" class="btn btn-neutral float-right" title="Particle managers" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Matthias Neuner.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
