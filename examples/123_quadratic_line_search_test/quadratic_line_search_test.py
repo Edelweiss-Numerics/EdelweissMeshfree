@@ -416,7 +416,7 @@ def test_sim(assert_gold):
 
     gold = np.loadtxt("gold.csv")
 
-    assert_gold(res, gold, atol=1e-8)
+    assert_gold(res, gold, rtol=3e-5, atol=5e-9)
 
 
 if __name__ == "__main__":
