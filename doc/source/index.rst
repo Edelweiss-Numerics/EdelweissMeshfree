@@ -21,6 +21,9 @@ EdelweissMeshfree aims to be...
    :maxdepth: 2
    :hidden:
 
+   introduction
+   gallery
+   references
    documentation/index
 
 Execute a simulation
