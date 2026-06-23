@@ -22,3 +22,4 @@ Documentation
    constraints
    numeric_tools
    output_managers
+   configuration
