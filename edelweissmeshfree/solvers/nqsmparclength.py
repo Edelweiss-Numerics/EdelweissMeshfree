@@ -275,14 +275,20 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
         #     newtonCache = self._createArcLengthNewtonCache(theDofManager)
         K_VIJ, csrGenerator, dU, Rhs_, F, PInt, PExt, PExt_0, PExt_f, K_VIJ_0, K_VIJ_f = newtonCache
 
-        dU[:] = dUGuess if dUGuess is not None else 0.0
+        if isinstance(dUGuess, tuple):
+            dU_temp, dLambda_temp = dUGuess
+            dU[:] = dU_temp if dU_temp is not None else 0.0
+            dLambda = dLambda_temp if dLambda_temp is not None else 0.0
+        else:
+            dU[:] = dUGuess if dUGuess is not None else 0.0
+            dLambda = dLambdaGuess if dLambdaGuess is not None else 0.0
+
         Rhs_0 = Rhs_[:, 0]
         Rhs_f = Rhs_[:, 1]
 
         ddU = None
 
         Lambda = model.additionalParameters["arc length parameter"]
-        dLambda = dLambdaGuess if dLambdaGuess is not None else 0.0
         ddLambda = 0.0
 
         referenceTimeStep = TimeStep(timeStep.number, 1.0, 1.0, 0.0, 0.0, 0.0)
@@ -408,7 +414,11 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
 
             iterationCounter += 1
 
-        iterationHistory = {"iterations": iterationCounter, "incrementResidualHistory": incrementResidualHistory}
+        iterationHistory = {
+            "iterations": iterationCounter,
+            "incrementResidualHistory": incrementResidualHistory,
+            "dLambda": dLambda,
+        }
 
         model.additionalParameters["arc length parameter"] = Lambda + dLambda
 
@@ -451,3 +461,7 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
         newtonCache = (K_VIJ, csrGenerator, dU, Rhs_, F, PInt, PExt, PExt_0, PExt_f, K_VIJ_0, K_VIJ_f)
 
         return newtonCache
+
+    def _updatePredictorHistory(self, predictor, dU, timeStep, iterationHistory):
+        dLambda = iterationHistory.get("dLambda", None) if iterationHistory is not None else None
+        predictor.updateHistory(dU, timeStep, dLambda=dLambda)

@@ -383,7 +383,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                     U += dU
 
                     if predictor:
-                        predictor.updateHistory(dU, timeStep)
+                        self._updatePredictorHistory(predictor, dU, timeStep, iterationHistory)
 
                     for field in reducedNodeFields.values():
                         theDofManager.writeDofVectorToNodeField(dU, field, "dU")
@@ -420,6 +420,9 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
         fieldOutputController.finalizeStep()
         for man in outputManagers:
             man.finalizeStep()
+
+    def _updatePredictorHistory(self, predictor, dU, timeStep, iterationHistory):
+        predictor.updateHistory(dU, timeStep)
 
     @performancetiming.timeit("newton iteration")
     def _newtonSolve(
