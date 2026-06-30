@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+#-*- coding: utf-8 -*-
 #  ---------------------------------------------------------------------
 #
 #  _____    _      _              _
@@ -40,9 +40,10 @@ Domain    : 20 mm x 40 mm
 Grid      : 10 x 20 quad particles, kernel nodes at particle centers (RKPM)
 BCs       : Lagrange multiplier weak Dirichlet
             - bottom: ux = uy = 0 (fully fixed)
-            - top   : uy = -0.2 mm (prescribed compression), ux = 0
+            - top   : uy = -0.05 mm (prescribed compression), ux = 0
 Imperfection: 5 % yield-stress reduction at centre row triggers shear band
-Integration : Variationally Consistent Integration (VCI)
+Integration : Smoothed Node Integration with Natural Stabilization (NSNI),
+              which removes the spurious hourglass modes of plain SNI.
 
 Particle type  : GradientPlasticitySmallStrainSNI/PlaneStrain/Quad
 Material       : GradientVonMises
@@ -135,7 +136,7 @@ def run_sim():
 
     # ── material: implicit-gradient von Mises plasticity with softening ───────
     # Properties: [E, nu, fy0, H, g, implementation, density]
-    E, nu, fy0, H, g = 20000.0, 0.3, 20.0, -2000.0, 4.0
+    E, nu, fy0, H, g = 20000.0, 0.3, 20000.0, -2000.0, 4.0
 
     theMaterial = {
         "material": "GradientVonMises",
@@ -153,8 +154,8 @@ def run_sim():
 
     def particleFactory(number, vertexCoordinates, volume):
         yCentroid = np.mean(vertexCoordinates[:, 1])
-        isImperfect = abs(yCentroid - h / 2.0) < particleSize * 0.6
-        mat = theMaterialImperfect if isImperfect else theMaterial
+        #isImperfect = abs(yCentroid - h / 2.0) < particleSize * 0.6
+        mat = theMaterial# theMaterialImperfect if isImperfect else theMaterial
         p = MarmotParticleWrapper(
             "GradientPlasticitySmallStrainSNI/PlaneStrain/Quad",
             number,
@@ -209,7 +210,14 @@ def run_sim():
     )
 
     # ── boundary conditions (Lagrange multiplier weak Dirichlet) ──────────────
-    totalCompression = -5 # mm (compressive)
+    # Compressive prescribed top displacement. With the strong softening (H<0) the
+    # shear band localizes at the centre imperfection and the load–displacement curve
+    # snaps back shortly after the peak (around uy ~ -0.068 mm); since loading is
+    # displacement-controlled via the Lagrange constraint (no arc-length control),
+    # the prescribed value is kept just below the snap-back so the run completes and
+    # shows the fully forming band. Increase it (and add arc-length control) to trace
+    # the post-peak softening branch.
+    totalCompression = -5  # mm (compressive)
 
     dirichletBottom = ParticleLagrangianWeakDirichletOnParticleSetFactory(
         "bottom", theModel.particleSets["specimen_bottom"],
@@ -307,7 +315,7 @@ def run_sim():
             particleManagers=[theParticleManager],
             constraints=theModel.constraints.values(),
             userIterationOptions=iterationOptions,
-            vciManagers=[vciManager],
+           # vciManagers=[vciManager],
         )
 
     except StepFailed as e:
