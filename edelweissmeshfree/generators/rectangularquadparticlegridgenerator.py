@@ -91,7 +91,10 @@ def generateRectangularQuadParticleGrid(
     currentParticleNumber = firstParticleNumber
     particles = []
 
-    # pVolume = l * h / (nX * nY) * thickness
+    # Volume (area x thickness) of a single particle cell. Must be non-zero: the particle
+    # physics kernels integrate residual and stiffness as (...) * V0, so V0 == 0 would make
+    # every particle contribute nothing to the global system.
+    pVolume = l * h / (nX * nY) * thickness
 
     # check if particle numbers are already used
     for pN in range(firstParticleNumber, firstParticleNumber + nX * nY):
@@ -101,7 +104,7 @@ def generateRectangularQuadParticleGrid(
     for x in range(nX):
         for y in range(nY):
             particleVertices = np.asarray([nG[x, y], nG[x + 1, y], nG[x + 1, y + 1], nG[x, y + 1]])
-            particle = particleFactoryCallback(currentParticleNumber, particleVertices, 0.0)
+            particle = particleFactoryCallback(currentParticleNumber, particleVertices, pVolume)
             model.particles[currentParticleNumber] = particle
             particles.append(particle)
             currentParticleNumber += 1
