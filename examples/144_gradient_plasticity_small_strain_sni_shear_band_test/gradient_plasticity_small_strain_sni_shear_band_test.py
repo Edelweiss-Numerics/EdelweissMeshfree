@@ -191,6 +191,7 @@ def run_sim():
     # so a finer mesh localizes more sharply and Newton diverges earlier in the post-peak.
     # To resolve on a mesh of spacing h, raise g so that l_c ~ 2*h, i.e. g ~ |H|*(2h)^2.
     # nu = 0.49 is near-incompressible: expect volumetric locking with linear RKPM + SNI.
+    #E, nu, fy0, H, g, imp = 11920, 0.3, 100, -400, 3600, 1
     E, nu, fy0, H, g, imp = 11920, 0.49, 100, -400, 3600, 1
     #E, nu, fy0, H, g = 20000.0, 0.3, 200.0, -2000.0, 4.0
 
@@ -274,7 +275,7 @@ def run_sim():
     # the prescribed value is kept just below the snap-back so the run completes and
     # shows the fully forming band. Increase it (and add arc-length control) to trace
     # the post-peak softening branch.
-    totalCompression = -2.0  # mm (~2× yield displacement; captures shear band post-peak)
+    totalCompression = -5.0  # mm (~2× yield displacement; captures shear band post-peak)
 
     dirichletBottom = ParticleLagrangianWeakDirichletOnParticleSetFactory(
         "bottom", theModel.particleSets["specimen_bottom"],
@@ -404,13 +405,18 @@ def run_sim():
                 matplotlib.use("Agg")
                 import matplotlib.pyplot as plt
 
-                u_arr = np.array(reactionMonitor.u_history)
-                F_arr = np.array(reactionMonitor.F_history)
+                # Compressive shortening on x (u_y <= 0 -> -u_y >= 0); RAW signed reaction on y.
+                # Do NOT take abs() of the reaction: if it dips toward/below zero (softening,
+                # snap-back, or numerical noise) that must show as a real dip, not be folded
+                # into a spurious upward "kink".
+                u_arr = -np.array(reactionMonitor.u_history)   # compressive shortening [mm], >= 0
+                F_arr = np.array(reactionMonitor.F_history)     # summed top reaction [N], signed
 
                 fig, ax = plt.subplots(figsize=(7, 5))
-                ax.plot(np.abs(u_arr), np.abs(F_arr), "b-o", markersize=3, linewidth=1.2)
-                ax.set_xlabel("|u$_y$| (mm)   [prescribed top compression]")
-                ax.set_ylabel("|F$_y$| (N)   [summed Lagrange-multiplier reaction]")
+                ax.plot(u_arr, F_arr, "b-o", markersize=3, linewidth=1.2)
+                ax.axhline(0.0, color="0.6", linewidth=0.8)
+                ax.set_xlabel(r"compressive shortening  $-u_y$  (mm)")
+                ax.set_ylabel(r"reaction  $F_y$  (N)   [summed top Lagrange multipliers]")
                 ax.set_title("Load–Displacement Curve — Example 144")
                 ax.grid(True, linestyle="--", alpha=0.5)
                 fig.tight_layout()
