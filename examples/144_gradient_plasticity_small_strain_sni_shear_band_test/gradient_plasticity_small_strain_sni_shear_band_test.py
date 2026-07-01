@@ -36,19 +36,26 @@
 2D plane-strain compression test using GradientPlasticitySmallStrainSNI particles
 with the implicit gradient-enhanced von Mises plasticity material (GradientVonMises).
 
-Domain    : 20 mm x 40 mm
-Grid      : 10 x 20 quad particles, kernel nodes at particle centers (RKPM)
+Domain    : 60 mm x 120 mm
+Grid      : 15 x 30 quad particles (particleSize = 4 mm), kernel nodes at particle centers (RKPM)
 BCs       : Lagrange multiplier weak Dirichlet
-            - bottom: ux = uy = 0 (fully fixed)
-            - top   : uy = -0.05 mm (prescribed compression), ux = 0
-Imperfection: 5 % yield-stress reduction at centre row triggers shear band
+            - bottom edge : roller (uy = 0)
+            - bottom-left : pin (ux = uy = 0)
+            - top edge    : prescribed compression uy = totalCompression
+Imperfection: 5 % yield-stress reduction in a 2x2-particle block at the bottom-left corner
+              to seed the shear band.
 Integration : Smoothed Node Integration with Natural Stabilization (NSNI),
               which removes the spurious hourglass modes of plain SNI.
+
+Output     : Ensight fields + a load-displacement curve (load_displacement.png) built from the
+             summed top-boundary Lagrange-multiplier reaction vs the prescribed top displacement.
 
 Particle type  : GradientPlasticitySmallStrainSNI/PlaneStrain/Quad
 Material       : GradientVonMises
 Solver         : NonlinearQuasistaticSolver (implicit)
 """
+
+import os
 
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
@@ -88,6 +95,47 @@ from edelweissmeshfree.particles.marmot.marmotparticlewrapper import MarmotParti
 from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
 
 
+_EXAMPLE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+class _ReactionMonitor:
+    """Minimal output-manager hook that accumulates (prescribed top u_y, total F_y reaction)
+    after each converged increment.  Implements the interface expected by
+    NonlinearSolverBase._finalizeIncrementOutput and nqs.py (finalizeIncrement /
+    finalizeFailedIncrement / finalizeStep), without touching any solver internals.
+
+    The Lagrange multiplier IS the reaction force; each constraint's ``reactionForce[1]``
+    holds the y-component increment of lambda for the last converged Newton state.
+    Accumulating these over time steps yields the total vertical reaction.
+    """
+
+    def __init__(self, model, top_constraints: dict, total_compression: float):
+        self._model = model
+        self._top_constraints = top_constraints   # dict name -> ParticleLagrangianWeakDirichlet
+        self._total_compression = total_compression
+        self.u_history = []   # prescribed top u_y  [mm], negative = compression
+        self.F_history = []   # accumulated total reaction F_y  [model force units]
+        self._F_accum = 0.0
+
+    def initializeJob(self):
+        pass
+
+    def finalizeIncrement(self):
+        # model.time is set by model.advanceToTime() before this is called
+        t = self._model.time
+        u = self._total_compression * t   # prescribed top displacement at this step
+        dF = sum(c.reactionForce[1] for c in self._top_constraints.values())
+        self._F_accum += dF
+        self.u_history.append(u)
+        self.F_history.append(self._F_accum)
+
+    def finalizeFailedIncrement(self):
+        pass   # discard: no accumulation on failed increments
+
+    def finalizeStep(self):
+        pass
+
+
 def run_sim():
     dimension = 2
 
@@ -99,10 +147,10 @@ def run_sim():
     # ── geometry ─────────────────────────────────────────────────────────────
     x0 = 0.0
     y0 = 0.0
-    l  = 20.0   # width  [mm]
-    h  = 40.0   # height [mm]
-    nX = 10     # particles in x
-    nY = 20     # particles in y
+    l  = 60.#20.0   # width  [mm]
+    h  = 120.#40.0   # height [mm]
+    nX = 15     # particles in x
+    nY = 30     # particles in y
 
     particleSize = l / nX   # 2.0 mm (assumed square particles)
 
@@ -136,26 +184,35 @@ def run_sim():
 
     # ── material: implicit-gradient von Mises plasticity with softening ───────
     # Properties: [E, nu, fy0, H, g, implementation, density]
-    E, nu, fy0, H, g = 20000.0, 0.3, 20000.0, -2000.0, 4.0
+    #   implementation: 0 = standard return map, 1 = Fischer-Burmeister NCP (used here)
+    # Regularization length of the softening band: l_c = sqrt(g / |H|) = sqrt(3600/400) = 3 mm.
+    # NOTE (mesh objectivity): l_c must span >~2-3 particle spacings to make the post-peak band
+    # mesh-independent and Newton-robust. With particleSize = 4 mm, l_c = 3 mm is UNDER-resolved,
+    # so a finer mesh localizes more sharply and Newton diverges earlier in the post-peak.
+    # To resolve on a mesh of spacing h, raise g so that l_c ~ 2*h, i.e. g ~ |H|*(2h)^2.
+    # nu = 0.49 is near-incompressible: expect volumetric locking with linear RKPM + SNI.
+    E, nu, fy0, H, g, imp = 11920, 0.49, 100, -400, 3600, 1
+    #E, nu, fy0, H, g = 20000.0, 0.3, 200.0, -2000.0, 4.0
 
     theMaterial = {
         "material": "GradientVonMises",
-        "properties": np.array([E, nu, fy0, H, g, 0.0, 0.0]),
+        "properties": np.array([E, nu, fy0, H, g, imp, 0.0]),
     }
 
     # 5 % yield-stress reduction at centre row to trigger shear band
     theMaterialImperfect = {
         "material": "GradientVonMises",
-        "properties": np.array([E, nu, fy0 * 0.95, H, g, 0.0, 0.0]),
+        "properties": np.array([E, nu, fy0 * 0.95, H, g, imp, 0.0]),
     }
 
     # ── particle properties: [VCI order, Newmark-β β, Newmark-β γ] ────────────
     particleProperties = np.array([1.0, 0.25, 0.5])
 
     def particleFactory(number, vertexCoordinates, volume):
+        xCentroid = np.mean(vertexCoordinates[:, 0])
         yCentroid = np.mean(vertexCoordinates[:, 1])
-        #isImperfect = abs(yCentroid - h / 2.0) < particleSize * 0.6
-        mat = theMaterial# theMaterialImperfect if isImperfect else theMaterial
+        isImperfect = xCentroid < particleSize * 2 and yCentroid < particleSize * 2
+        mat = theMaterialImperfect if isImperfect else theMaterial
         p = MarmotParticleWrapper(
             "GradientPlasticitySmallStrainSNI/PlaneStrain/Quad",
             number,
@@ -217,11 +274,17 @@ def run_sim():
     # the prescribed value is kept just below the snap-back so the run completes and
     # shows the fully forming band. Increase it (and add arc-length control) to trace
     # the post-peak softening branch.
-    totalCompression = -5  # mm (compressive)
+    totalCompression = -2.0  # mm (~2× yield displacement; captures shear band post-peak)
 
     dirichletBottom = ParticleLagrangianWeakDirichletOnParticleSetFactory(
         "bottom", theModel.particleSets["specimen_bottom"],
+        "displacement", {1: 0.0}, theModel, location="center"
+        #"displacement", {0: 0.0, 1: 0.0}, theModel, location="center"
+    )
+    dirichletBottomLeft = ParticleLagrangianWeakDirichletOnParticleSetFactory(
+        "bottom", theModel.particleSets["specimen_leftBottom"],
         "displacement", {0: 0.0, 1: 0.0}, theModel, location="center"
+        #"displacement", {0: 0.0, 1: 0.0}, theModel, location="center"
     )
     dirichletTop = ParticleLagrangianWeakDirichletOnParticleSetFactory(
         "top", theModel.particleSets["specimen_top"],
@@ -229,7 +292,11 @@ def run_sim():
     )
 
     theModel.constraints.update(dirichletBottom)
+    theModel.constraints.update(dirichletBottomLeft)
     theModel.constraints.update(dirichletTop)
+
+    # Reaction monitor: accumulates (u_y, F_y) at each converged increment.
+    reactionMonitor = _ReactionMonitor(theModel, dirichletTop, totalCompression)
 
     theModel.prepareYourself(theJournal)
     theJournal.printPrettyTable(theModel.makePrettyTableSummary(), "summary")
@@ -267,7 +334,7 @@ def run_sim():
 
     # ── Ensight output (overwrite=True → no timestamp in filename) ─────────────
     ensightOutput = EnsightOutputManager(
-        "ensight",
+        "ensight_alex_finer",
         theModel,
         fieldOutputController,
         theJournal,
@@ -292,7 +359,7 @@ def run_sim():
     ensightOutput.initializeJob()
 
     # ── time stepping & solver ────────────────────────────────────────────────
-    incSize = 0.1
+    incSize = 0.01
     adaptiveTimeStepper = AdaptiveTimeStepper(
         0.0, 1.0, incSize, incSize, incSize / 1e4, 100, theJournal, increaseFactor=1.2
     )
@@ -311,7 +378,7 @@ def run_sim():
             pardisoSolve,
             theModel,
             fieldOutputController,
-            outputManagers=[ensightOutput],
+            outputManagers=[ensightOutput, reactionMonitor],
             particleManagers=[theParticleManager],
             constraints=theModel.constraints.values(),
             userIterationOptions=iterationOptions,
@@ -329,6 +396,38 @@ def run_sim():
         prettytable = performancetiming.makePrettyTable()
         prettytable.min_table_width = theJournal.linewidth
         theJournal.printPrettyTable(prettytable, "Summary")
+
+        # ── load–displacement curve ───────────────────────────────────────────
+        if len(reactionMonitor.u_history) >= 1:
+            try:
+                import matplotlib
+                matplotlib.use("Agg")
+                import matplotlib.pyplot as plt
+
+                u_arr = np.array(reactionMonitor.u_history)
+                F_arr = np.array(reactionMonitor.F_history)
+
+                fig, ax = plt.subplots(figsize=(7, 5))
+                ax.plot(np.abs(u_arr), np.abs(F_arr), "b-o", markersize=3, linewidth=1.2)
+                ax.set_xlabel("|u$_y$| (mm)   [prescribed top compression]")
+                ax.set_ylabel("|F$_y$| (N)   [summed Lagrange-multiplier reaction]")
+                ax.set_title("Load–Displacement Curve — Example 144")
+                ax.grid(True, linestyle="--", alpha=0.5)
+                fig.tight_layout()
+
+                png_path = os.path.join(_EXAMPLE_DIR, "load_displacement.png")
+                fig.savefig(png_path, dpi=150)
+                plt.close(fig)
+                theJournal.message(
+                    f"Load–displacement curve saved to {png_path}  "
+                    f"({len(u_arr)} points)",
+                    "run_sim",
+                )
+            except ImportError:
+                theJournal.message(
+                    "matplotlib not available — skipping load–displacement plot.",
+                    "run_sim",
+                )
 
     return theModel, fieldOutputController
 
