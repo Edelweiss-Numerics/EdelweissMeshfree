@@ -87,8 +87,19 @@ def run_sim(
     nX=12,
     nY=12,
     uYTip=5.0,
+    constraintStride=1,
     outputName=None,
 ):
+    """constraintStride: clamp only every n-th particle of the left edge.
+
+    Clamping BOTH displacement components at EVERY particle center of a nearly
+    incompressible edge over-constrains the local volumetric response and produces an
+    alternating (checkerboard) pressure in the boundary column, with sign-alternating
+    constraint reactions. This is independent of the constraint formulation (Lagrange
+    multipliers and penalty give the identical pattern). Coarsening the constraint
+    spacing (stride 2) restores compatibility between the constraint space and the
+    displacement space and removes the oscillation, at the cost of a loosely clamped
+    edge between the constraint points."""
     dimension = 2
 
     np.set_printoptions(linewidth=200, precision=4)
@@ -129,7 +140,7 @@ def run_sim(
 
     # nearly incompressible elasticity: K/G = 500 (nu ~ 0.499)
     K = 40000.0
-    G = 80.0
+    G = 10.0
     theMaterial = {
         "material": "FiniteStrainJ2Plasticity",
         # K, G, fy, fyInf, eta, H, implementationType, density
@@ -178,7 +189,7 @@ def run_sim(
 
     dirichletLeft = ParticleLagrangianWeakDirichletOnParticleSetFactory(
         "left",
-        theModel.particleSets["cooks_membrane_left"],
+        list(theModel.particleSets["cooks_membrane_left"])[::constraintStride],
         "displacement",
         {0: 0, 1: 0},
         theModel,
@@ -336,6 +347,7 @@ if __name__ == "__main__":
     parser.add_argument("--nX", type=int, default=12)
     parser.add_argument("--nY", type=int, default=12)
     parser.add_argument("--uYTip", type=float, default=5.0)
+    parser.add_argument("--constraintStride", type=int, default=1, help="clamp every n-th left-edge particle (2 removes the boundary pressure checkerboard)")
     args = parser.parse_args()
 
     theModel, fieldOutputController = run_sim(
@@ -344,6 +356,7 @@ if __name__ == "__main__":
         nX=args.nX,
         nY=args.nY,
         uYTip=args.uYTip,
+        constraintStride=args.constraintStride,
     )
 
     res = fieldOutputController.fieldOutputs["displacement"].getLastResult()
