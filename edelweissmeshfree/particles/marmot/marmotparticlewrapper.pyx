@@ -206,6 +206,14 @@ cdef class MarmotParticleWrapper:
         self._marmotParticle.computePhysicsKernels(&dUc[0], &Pc[0], &Kc[0], timeNew, dTime)
 
 
+    def assignTotalNodalSolution(self, double[::1] Qc):
+        """Assign the current total nodal solution (same dof layout as dU in
+        computePhysicsKernels). Particles may use it, e.g., for total-field
+        stabilization terms; by default it is ignored."""
+
+        self._marmotParticle.assignTotalNodalSolution(&Qc[0], len(Qc))
+
+
 
     def updatePhysicsExplicit(self,
                                      double[::1] dUc,
