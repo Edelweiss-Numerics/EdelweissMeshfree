@@ -95,6 +95,9 @@ cdef extern from "Marmot/MarmotParticle.h" namespace "Marmot::Meshfree":
                                             double timeNewTotal,
                                             double dT) except +
 
+        void assignTotalNodalSolution( const double* qTotal,
+                                            int nDof) except +
+
         void computeBodyLoad(               int type,
                                             const double* load,
                                             double* Pc,

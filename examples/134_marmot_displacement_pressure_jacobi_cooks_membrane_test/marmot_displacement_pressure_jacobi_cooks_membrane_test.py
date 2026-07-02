@@ -54,6 +54,9 @@ from edelweissfe.utils.exceptions import StepFailed
 from edelweissmeshfree.constraints.particlelagrangianweakdirichlet import (
     ParticleLagrangianWeakDirichletOnParticleSetFactory,
 )
+from edelweissmeshfree.constraints.particlemortarweakdirichlet import (
+    ParticleMortarWeakDirichletOnParticleSetFactory,
+)
 from edelweissmeshfree.fieldoutput.fieldoutput import MPMFieldOutputController
 from edelweissmeshfree.generators.cooksmembranekernelfunctiongridgenerator import (
     generateCooksMembraneKernelFunctionGrid,
@@ -87,19 +90,24 @@ def run_sim(
     nX=12,
     nY=12,
     uYTip=5.0,
+    constraintType="mortar",
+    multiplierOrder=6,
     constraintStride=1,
     outputName=None,
 ):
-    """constraintStride: clamp only every n-th particle of the left edge.
+    """constraintType: 'mortar' (default) or 'lagrange' (point collocation).
 
-    Clamping BOTH displacement components at EVERY particle center of a nearly
-    incompressible edge over-constrains the local volumetric response and produces an
-    alternating (checkerboard) pressure in the boundary column, with sign-alternating
-    constraint reactions. This is independent of the constraint formulation (Lagrange
-    multipliers and penalty give the identical pattern). Coarsening the constraint
-    spacing (stride 2) restores compatibility between the constraint space and the
-    displacement space and removes the oscillation, at the cost of a loosely clamped
-    edge between the constraint points."""
+    Point collocation of BOTH displacement components at every particle center of a
+    nearly incompressible edge produces alternating point reactions and, with them, a
+    pressure checkerboard along the boundary column. This is independent of the
+    constraint formulation (Lagrange multipliers and penalty give the identical
+    pattern) and cannot be removed by the VMS stabilization (it is a forced response,
+    not a spurious mode). The mortar constraint enforces the boundary condition in the
+    integrated sense with a smooth, low-order polynomial multiplier field: the boundary
+    traction is smooth by construction and the pressure field stays clean.
+
+    constraintStride: with constraintType='lagrange', clamp only every n-th particle
+    (a crude approximation of the mortar idea)."""
     dimension = 2
 
     np.set_printoptions(linewidth=200, precision=4)
@@ -187,21 +195,41 @@ def run_sim(
 
     theModel.particleKernelDomains["my_all_with_all"] = theParticleKernelDomain
 
-    dirichletLeft = ParticleLagrangianWeakDirichletOnParticleSetFactory(
-        "left",
-        list(theModel.particleSets["cooks_membrane_left"])[::constraintStride],
-        "displacement",
-        {0: 0, 1: 0},
-        theModel,
-    )
-
-    dirichletRight = ParticleLagrangianWeakDirichletOnParticleSetFactory(
-        "right",
-        theModel.particleSets["cooks_membrane_right"],
-        "displacement",
-        {1: uYTip},
-        theModel,
-    )
+    if constraintType == "mortar":
+        multiplierOrder = min(multiplierOrder, nY - 1)
+        dirichletLeft = ParticleMortarWeakDirichletOnParticleSetFactory(
+            "left",
+            theModel.particleSets["cooks_membrane_left"],
+            "displacement",
+            {0: 0, 1: 0},
+            theModel,
+            multiplierOrder=multiplierOrder,
+        )
+        dirichletRight = ParticleMortarWeakDirichletOnParticleSetFactory(
+            "right",
+            theModel.particleSets["cooks_membrane_right"],
+            "displacement",
+            {1: uYTip},
+            theModel,
+            multiplierOrder=multiplierOrder,
+        )
+    elif constraintType == "lagrange":
+        dirichletLeft = ParticleLagrangianWeakDirichletOnParticleSetFactory(
+            "left",
+            list(theModel.particleSets["cooks_membrane_left"])[::constraintStride],
+            "displacement",
+            {0: 0, 1: 0},
+            theModel,
+        )
+        dirichletRight = ParticleLagrangianWeakDirichletOnParticleSetFactory(
+            "right",
+            theModel.particleSets["cooks_membrane_right"],
+            "displacement",
+            {1: uYTip},
+            theModel,
+        )
+    else:
+        raise ValueError(f"unknown constraintType {constraintType}")
 
     theModel.constraints.update(dirichletLeft)
     theModel.constraints.update(dirichletRight)
@@ -347,7 +375,9 @@ if __name__ == "__main__":
     parser.add_argument("--nX", type=int, default=12)
     parser.add_argument("--nY", type=int, default=12)
     parser.add_argument("--uYTip", type=float, default=5.0)
-    parser.add_argument("--constraintStride", type=int, default=1, help="clamp every n-th left-edge particle (2 removes the boundary pressure checkerboard)")
+    parser.add_argument("--constraintType", choices=["mortar", "lagrange"], default="mortar")
+    parser.add_argument("--multiplierOrder", type=int, default=6, help="polynomial order of the mortar multiplier field")
+    parser.add_argument("--constraintStride", type=int, default=1, help="with 'lagrange': clamp every n-th left-edge particle")
     args = parser.parse_args()
 
     theModel, fieldOutputController = run_sim(
@@ -356,6 +386,8 @@ if __name__ == "__main__":
         nX=args.nX,
         nY=args.nY,
         uYTip=args.uYTip,
+        constraintType=args.constraintType,
+        multiplierOrder=args.multiplierOrder,
         constraintStride=args.constraintStride,
     )
 
