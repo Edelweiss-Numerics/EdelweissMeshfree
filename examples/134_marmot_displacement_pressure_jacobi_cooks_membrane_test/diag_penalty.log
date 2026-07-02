@@ -1,0 +1,303 @@
+   Activating fields on Nodes from Particles                                               MPMModel 
+   Activating fields on nodes from Elements and Constraints                                MPMModel 
+   Bundling fields on nodes to NodeFields                                                  MPMModel 
+   Assembling ScalarVariables                                                              MPMModel 
+ +-----------------------------------------------------------+------------------+    MPM-NQS-Solver 
+ | Solver option                                             | value            |    MPM-NQS-Solver 
+ +-----------------------------------------------------------+------------------+    MPM-NQS-Solver 
+ | max. iterations                                           | 15               |    MPM-NQS-Solver 
+ | critical iterations                                       | 5                |    MPM-NQS-Solver 
+ | allowed residual growths                                  | 10               |    MPM-NQS-Solver 
+ | iterations for alt. tolerances                            | 5                |    MPM-NQS-Solver 
+ | zero increment threshhold                                 | 1e-13            |    MPM-NQS-Solver 
+ | zero flux threshhold                                      | 1e-09            |    MPM-NQS-Solver 
+ | default relative flux residual tolerance                  | 0.0001           |    MPM-NQS-Solver 
+ | default relative flux residual tolerance alt.             | 0.001            |    MPM-NQS-Solver 
+ | default relative field correction tolerance               | 0.001            |    MPM-NQS-Solver 
+ | default absolute flux residual tolerance                  | 1e-14            |    MPM-NQS-Solver 
+ | default absolute field correction tolerance               | 1e-14            |    MPM-NQS-Solver 
+ | spec. relative flux residual tolerances                   | {}               |    MPM-NQS-Solver 
+ | spec. relative flux residual tolerances alt.              | {}               |    MPM-NQS-Solver 
+ | spec. relative field correction tolerances                | {}               |    MPM-NQS-Solver 
+ | spec. absolute flux residual tolerances                   | {}               |    MPM-NQS-Solver 
+ | spec. absolute field correction tolerances                | {}               |    MPM-NQS-Solver 
+ | failed increment cutback factor                           | 0.25             |    MPM-NQS-Solver 
+ | fall back to quasi Newton after allowed residual growths  | False            |    MPM-NQS-Solver 
+ | line search                                               | False            |    MPM-NQS-Solver 
+ | line search after n iterations                            | 5                |    MPM-NQS-Solver 
+ | line search every n iterations                            | 2                |    MPM-NQS-Solver 
+ | line search alphas                                        | [0.8, 1.0, 1.2]  |    MPM-NQS-Solver 
+ +-----------------------------------------------------------+------------------+    MPM-NQS-Solver 
++--------------------------------------------------------------------------------------------------+
+   increment 0: 0.000000, 0.000000; time   0.000000 to   0.000000                    MPM-NQS-Solver 
+   updating particle kernel connectivity                                             MPM-NQS-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   active domain has changed, (re)initializing equation system & clearing cache      MPM-NQS-Solver 
+   resulting equation system has a size of 576                                       MPM-NQS-Solver 
+           displacement               pressure                  jacobi               MPM-NQS-Solver 
+      ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞         MPM-NQS-Solver 
+      0.00e+00    0.00e+00✓    0.00e+00    0.00e+00✓    0.00e+00    0.00e+00✓        MPM-NQS-Solver 
+      0.00e+00✓   0.00e+00✓    0.00e+00✓   0.00e+00✓    0.00e+00✓   0.00e+00✓        MPM-NQS-Solver 
+   Converged in 1 iteration(s)                                                       MPM-NQS-Solver 
++--------------------------------------------------------------------------------------------------+
+   increment 1: 0.050000, 0.050000; time   0.000000 to   0.050000                    MPM-NQS-Solver 
+   updating particle kernel connectivity                                             MPM-NQS-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+           displacement               pressure                  jacobi               MPM-NQS-Solver 
+      ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞         MPM-NQS-Solver 
+      3.13e+06    0.00e+00✓    0.00e+00    0.00e+00✓    0.00e+00    0.00e+00✓        MPM-NQS-Solver 
+      1.12e-03    2.74e-01     7.32e-04    2.67e+01     1.40e-06    6.69e-04         MPM-NQS-Solver 
+      2.34e-07✓   2.38e-03     4.77e-08    6.31e-01     3.20e-10✓   1.58e-05         MPM-NQS-Solver 
+      3.03e-10✓   3.06e-06✓    2.33e-14✓   9.87e-04✓    3.85e-10✓   2.47e-08✓        MPM-NQS-Solver 
+   Converged in 3 iteration(s)                                                       MPM-NQS-Solver 
++--------------------------------------------------------------------------------------------------+
+   increment 2: 0.050000, 0.100000; time   0.050000 to   0.100000                    MPM-NQS-Solver 
+   updating particle kernel connectivity                                             MPM-NQS-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   active domain has changed, (re)initializing equation system & clearing cache      MPM-NQS-Solver 
+   resulting equation system has a size of 576                                       MPM-NQS-Solver 
+           displacement               pressure                  jacobi               MPM-NQS-Solver 
+      ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞         MPM-NQS-Solver 
+      3.13e+06    0.00e+00✓    1.17e-05    0.00e+00✓    3.85e-10    0.00e+00✓        MPM-NQS-Solver 
+      1.07e-03    2.99e-01     7.46e-04    3.99e+01     1.74e-06    9.97e-04         MPM-NQS-Solver 
+      2.91e-07✓   2.04e-03     4.75e-08    7.49e-01     2.88e-10✓   1.87e-05         MPM-NQS-Solver 
+      2.41e-10✓   4.65e-06✓    2.70e-14✓   1.81e-03✓    4.04e-10✓   4.53e-08✓        MPM-NQS-Solver 
+   Converged in 3 iteration(s)                                                       MPM-NQS-Solver 
++--------------------------------------------------------------------------------------------------+
+   increment 3: 0.050000, 0.150000; time   0.100000 to   0.150000                    MPM-NQS-Solver 
+   updating particle kernel connectivity                                             MPM-NQS-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   active domain has changed, (re)initializing equation system & clearing cache      MPM-NQS-Solver 
+   resulting equation system has a size of 576                                       MPM-NQS-Solver 
+           displacement               pressure                  jacobi               MPM-NQS-Solver 
+      ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞         MPM-NQS-Solver 
+      3.14e+06    0.00e+00✓    1.69e-05    0.00e+00✓    4.04e-10    0.00e+00✓        MPM-NQS-Solver 
+      1.06e-03    3.23e-01     7.54e-04    4.68e+01     1.67e-06    1.17e-03         MPM-NQS-Solver 
+      3.23e-07✓   1.96e-03     4.65e-08    7.18e-01     2.91e-10✓   1.80e-05         MPM-NQS-Solver 
+      1.05e-10✓   5.58e-06✓    4.44e-14✓   2.15e-03✓    2.65e-10✓   5.38e-08✓        MPM-NQS-Solver 
+   Converged in 3 iteration(s)                                                       MPM-NQS-Solver 
++--------------------------------------------------------------------------------------------------+
+   increment 4: 0.050000, 0.200000; time   0.150000 to   0.200000                    MPM-NQS-Solver 
+   updating particle kernel connectivity                                             MPM-NQS-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   active domain has changed, (re)initializing equation system & clearing cache      MPM-NQS-Solver 
+   resulting equation system has a size of 576                                       MPM-NQS-Solver 
+           displacement               pressure                  jacobi               MPM-NQS-Solver 
+      ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞         MPM-NQS-Solver 
+      3.14e+06    0.00e+00✓    1.82e-05    0.00e+00✓    2.65e-10    0.00e+00✓        MPM-NQS-Solver 
+      1.05e-03    3.38e-01     7.61e-04    4.57e+01     1.53e-06    1.14e-03         MPM-NQS-Solver 
+      3.57e-07✓   2.12e-03     4.48e-08    7.85e-01     3.26e-10✓   1.96e-05         MPM-NQS-Solver 
+      3.52e-10✓   6.90e-06✓    7.79e-14✓   2.20e-03✓    4.08e-10✓   5.50e-08✓        MPM-NQS-Solver 
+   Converged in 3 iteration(s)                                                       MPM-NQS-Solver 
++--------------------------------------------------------------------------------------------------+
+   increment 5: 0.050000, 0.250000; time   0.200000 to   0.250000                    MPM-NQS-Solver 
+   updating particle kernel connectivity                                             MPM-NQS-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   active domain has changed, (re)initializing equation system & clearing cache      MPM-NQS-Solver 
+   resulting equation system has a size of 576                                       MPM-NQS-Solver 
+           displacement               pressure                  jacobi               MPM-NQS-Solver 
+      ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞         MPM-NQS-Solver 
+      3.14e+06    0.00e+00✓    2.17e-05    0.00e+00✓    4.08e-10    0.00e+00✓        MPM-NQS-Solver 
+      1.04e-03    3.42e-01     7.67e-04    5.11e+01     1.38e-06    1.28e-03         MPM-NQS-Solver 
+      3.90e-07✓   2.27e-03     4.31e-08    8.31e-01     3.05e-10✓   2.08e-05         MPM-NQS-Solver 
+      1.46e-10✓   8.00e-06✓    1.20e-13✓   2.16e-03✓    2.68e-10✓   5.41e-08✓        MPM-NQS-Solver 
+   Converged in 3 iteration(s)                                                       MPM-NQS-Solver 
++--------------------------------------------------------------------------------------------------+
+   increment 6: 0.050000, 0.300000; time   0.250000 to   0.300000                    MPM-NQS-Solver 
+   updating particle kernel connectivity                                             MPM-NQS-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   active domain has changed, (re)initializing equation system & clearing cache      MPM-NQS-Solver 
+   resulting equation system has a size of 576                                       MPM-NQS-Solver 
+           displacement               pressure                  jacobi               MPM-NQS-Solver 
+      ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞         MPM-NQS-Solver 
+      3.14e+06    0.00e+00✓    2.57e-05    0.00e+00✓    2.68e-10    0.00e+00✓        MPM-NQS-Solver 
+      1.03e-03    3.33e-01     7.73e-04    5.38e+01     1.26e-06    1.34e-03         MPM-NQS-Solver 
+      4.13e-07✓   2.46e-03     4.16e-08    8.42e-01     2.47e-10✓   2.11e-05         MPM-NQS-Solver 
+      3.25e-10✓   8.65e-06✓    1.59e-13✓   1.99e-03✓    2.22e-10✓   4.98e-08✓        MPM-NQS-Solver 
+   Converged in 3 iteration(s)                                                       MPM-NQS-Solver 
++--------------------------------------------------------------------------------------------------+
+   increment 7: 0.050000, 0.350000; time   0.300000 to   0.350000                    MPM-NQS-Solver 
+   updating particle kernel connectivity                                             MPM-NQS-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   active domain has changed, (re)initializing equation system & clearing cache      MPM-NQS-Solver 
+   resulting equation system has a size of 576                                       MPM-NQS-Solver 
+           displacement               pressure                  jacobi               MPM-NQS-Solver 
+      ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞         MPM-NQS-Solver 
+      3.14e+06    0.00e+00✓    3.00e-05    0.00e+00✓    2.23e-10    0.00e+00✓        MPM-NQS-Solver 
+      1.02e-03    3.12e-01     7.79e-04    5.91e+01     1.16e-06    1.48e-03         MPM-NQS-Solver 
+      4.14e-07✓   2.69e-03     4.02e-08    8.14e-01     2.72e-10✓   2.04e-05         MPM-NQS-Solver 
+      2.98e-10✓   9.82e-06✓    1.79e-13✓   1.81e-03✓    2.36e-10✓   4.54e-08✓        MPM-NQS-Solver 
+   Converged in 3 iteration(s)                                                       MPM-NQS-Solver 
++--------------------------------------------------------------------------------------------------+
+   increment 8: 0.050000, 0.400000; time   0.350000 to   0.400000                    MPM-NQS-Solver 
+   updating particle kernel connectivity                                             MPM-NQS-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   active domain has changed, (re)initializing equation system & clearing cache      MPM-NQS-Solver 
+   resulting equation system has a size of 576                                       MPM-NQS-Solver 
+           displacement               pressure                  jacobi               MPM-NQS-Solver 
+      ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞         MPM-NQS-Solver 
+      3.14e+06    0.00e+00✓    3.44e-05    0.00e+00✓    2.36e-10    0.00e+00✓        MPM-NQS-Solver 
+      1.01e-03    3.03e-01     7.85e-04    5.78e+01     1.09e-06    1.45e-03         MPM-NQS-Solver 
+      3.94e-07✓   2.88e-03     3.87e-08    7.03e-01     2.47e-10✓   1.76e-05         MPM-NQS-Solver 
+      3.20e-10✓   1.09e-05✓    1.56e-13✓   1.58e-03✓    1.63e-10✓   3.95e-08✓        MPM-NQS-Solver 
+   Converged in 3 iteration(s)                                                       MPM-NQS-Solver 
++--------------------------------------------------------------------------------------------------+
+   increment 9: 0.050000, 0.450000; time   0.400000 to   0.450000                    MPM-NQS-Solver 
+   updating particle kernel connectivity                                             MPM-NQS-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   active domain has changed, (re)initializing equation system & clearing cache      MPM-NQS-Solver 
+   resulting equation system has a size of 576                                       MPM-NQS-Solver 
+           displacement               pressure                  jacobi               MPM-NQS-Solver 
+      ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞         MPM-NQS-Solver 
+      3.14e+06    0.00e+00✓    3.87e-05    0.00e+00✓    1.63e-10    0.00e+00✓        MPM-NQS-Solver 
+      1.00e-03    3.15e-01     7.93e-04    5.37e+01     1.04e-06    1.34e-03         MPM-NQS-Solver 
+      3.64e-07✓   2.91e-03     3.74e-08    7.74e-01     1.91e-10✓   1.94e-05         MPM-NQS-Solver 
+      1.60e-10✓   1.18e-05✓    1.25e-13✓   1.29e-03✓    1.88e-10✓   3.23e-08✓        MPM-NQS-Solver 
+   Converged in 3 iteration(s)                                                       MPM-NQS-Solver 
++--------------------------------------------------------------------------------------------------+
+   increment 10: 0.050000, 0.500000; time   0.450000 to   0.500000                   MPM-NQS-Solver 
+   updating particle kernel connectivity                                             MPM-NQS-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   active domain has changed, (re)initializing equation system & clearing cache      MPM-NQS-Solver 
+   resulting equation system has a size of 576                                       MPM-NQS-Solver 
+           displacement               pressure                  jacobi               MPM-NQS-Solver 
+      ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞         MPM-NQS-Solver 
+      3.14e+06    0.00e+00✓    4.24e-05    0.00e+00✓    1.89e-10    0.00e+00✓        MPM-NQS-Solver 
+      9.90e-04    3.61e-01     8.09e-04    5.08e+01     9.99e-07    1.27e-03         MPM-NQS-Solver 
+      4.07e-07✓   2.92e-03     3.62e-08    8.49e-01     2.75e-10✓   2.12e-05         MPM-NQS-Solver 
+      2.76e-10✓   1.25e-05✓    1.01e-13✓   1.11e-03✓    3.06e-10✓   2.77e-08✓        MPM-NQS-Solver 
+   Converged in 3 iteration(s)                                                       MPM-NQS-Solver 
++--------------------------------------------------------------------------------------------------+
+   increment 11: 0.050000, 0.550000; time   0.500000 to   0.550000                   MPM-NQS-Solver 
+   updating particle kernel connectivity                                             MPM-NQS-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   active domain has changed, (re)initializing equation system & clearing cache      MPM-NQS-Solver 
+   resulting equation system has a size of 576                                       MPM-NQS-Solver 
+           displacement               pressure                  jacobi               MPM-NQS-Solver 
+      ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞         MPM-NQS-Solver 
+      3.14e+06    0.00e+00✓    4.56e-05    0.00e+00✓    3.06e-10    0.00e+00✓        MPM-NQS-Solver 
+      9.80e-04    4.02e-01     8.24e-04    6.04e+01     9.89e-07    1.51e-03         MPM-NQS-Solver 
+      4.52e-07✓   3.04e-03     3.52e-08    1.05e+00     2.09e-10✓   2.61e-05         MPM-NQS-Solver 
+      4.21e-10✓   1.25e-05✓    1.18e-13✓   1.23e-03✓    2.48e-10✓   3.08e-08✓        MPM-NQS-Solver 
+   Converged in 3 iteration(s)                                                       MPM-NQS-Solver 
++--------------------------------------------------------------------------------------------------+
+   increment 12: 0.050000, 0.600000; time   0.550000 to   0.600000                   MPM-NQS-Solver 
+   updating particle kernel connectivity                                             MPM-NQS-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   active domain has changed, (re)initializing equation system & clearing cache      MPM-NQS-Solver 
+   resulting equation system has a size of 576                                       MPM-NQS-Solver 
+           displacement               pressure                  jacobi               MPM-NQS-Solver 
+      ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞         MPM-NQS-Solver 
+      3.15e+06    0.00e+00✓    4.83e-05    0.00e+00✓    2.48e-10    0.00e+00✓        MPM-NQS-Solver 
+      9.87e-04    4.27e-01     8.39e-04    7.38e+01     1.04e-06    1.85e-03         MPM-NQS-Solver 
+      4.87e-07✓   3.20e-03     3.44e-08    1.16e+00     3.33e-10✓   2.89e-05         MPM-NQS-Solver 
+      1.88e-10✓   1.27e-05✓    2.09e-13✓   1.47e-03✓    3.92e-10✓   3.67e-08✓        MPM-NQS-Solver 
+   Converged in 3 iteration(s)                                                       MPM-NQS-Solver 
++--------------------------------------------------------------------------------------------------+
+   increment 13: 0.050000, 0.650000; time   0.600000 to   0.650000                   MPM-NQS-Solver 
+   updating particle kernel connectivity                                             MPM-NQS-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   active domain has changed, (re)initializing equation system & clearing cache      MPM-NQS-Solver 
+   resulting equation system has a size of 576                                       MPM-NQS-Solver 
+           displacement               pressure                  jacobi               MPM-NQS-Solver 
+      ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞         MPM-NQS-Solver 
+      3.15e+06    0.00e+00✓    5.06e-05    0.00e+00✓    3.92e-10    0.00e+00✓        MPM-NQS-Solver 
+      9.95e-04    4.51e-01     8.54e-04    9.01e+01     1.15e-06    2.25e-03         MPM-NQS-Solver 
+      5.13e-07✓   3.36e-03     3.37e-08    1.25e+00     1.92e-10✓   3.13e-05         MPM-NQS-Solver 
+      3.30e-10✓   1.24e-05✓    4.04e-13✓   1.62e-03✓    3.53e-10✓   4.05e-08✓        MPM-NQS-Solver 
+   Converged in 3 iteration(s)                                                       MPM-NQS-Solver 
++--------------------------------------------------------------------------------------------------+
+   increment 14: 0.050000, 0.700000; time   0.650000 to   0.700000                   MPM-NQS-Solver 
+   updating particle kernel connectivity                                             MPM-NQS-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   active domain has changed, (re)initializing equation system & clearing cache      MPM-NQS-Solver 
+   resulting equation system has a size of 576                                       MPM-NQS-Solver 
+           displacement               pressure                  jacobi               MPM-NQS-Solver 
+      ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞         MPM-NQS-Solver 
+      3.15e+06    0.00e+00✓    5.24e-05    0.00e+00✓    3.53e-10    0.00e+00✓        MPM-NQS-Solver 
+      9.99e-04    4.89e-01     8.71e-04    1.07e+02     1.29e-06    2.68e-03         MPM-NQS-Solver 
+      5.51e-07✓   3.69e-03     3.30e-08    1.36e+00     2.54e-10✓   3.40e-05         MPM-NQS-Solver 
+      4.33e-10✓   1.17e-05✓    7.51e-13✓   1.74e-03✓    1.68e-10✓   4.36e-08✓        MPM-NQS-Solver 
+   Converged in 3 iteration(s)                                                       MPM-NQS-Solver 
++--------------------------------------------------------------------------------------------------+
+   increment 15: 0.050000, 0.750000; time   0.700000 to   0.750000                   MPM-NQS-Solver 
+   updating particle kernel connectivity                                             MPM-NQS-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   active domain has changed, (re)initializing equation system & clearing cache      MPM-NQS-Solver 
+   resulting equation system has a size of 576                                       MPM-NQS-Solver 
+           displacement               pressure                  jacobi               MPM-NQS-Solver 
+      ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞         MPM-NQS-Solver 
+      3.15e+06    0.00e+00✓    5.38e-05    0.00e+00✓    1.68e-10    0.00e+00✓        MPM-NQS-Solver 
+      1.00e-03    5.18e-01     8.91e-04    1.20e+02     1.41e-06    2.99e-03         MPM-NQS-Solver 
+      5.78e-07✓   3.88e-03     3.21e-08    1.35e+00     2.87e-10✓   3.38e-05         MPM-NQS-Solver 
+      2.51e-10✓   1.21e-05✓    1.24e-12✓   1.94e-03✓    2.92e-10✓   4.85e-08✓        MPM-NQS-Solver 
+   Converged in 3 iteration(s)                                                       MPM-NQS-Solver 
++--------------------------------------------------------------------------------------------------+
+   increment 16: 0.050000, 0.800000; time   0.750000 to   0.800000                   MPM-NQS-Solver 
+   updating particle kernel connectivity                                             MPM-NQS-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   active domain has changed, (re)initializing equation system & clearing cache      MPM-NQS-Solver 
+   resulting equation system has a size of 576                                       MPM-NQS-Solver 
+           displacement               pressure                  jacobi               MPM-NQS-Solver 
+      ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞         MPM-NQS-Solver 
+      3.15e+06    0.00e+00✓    5.46e-05    0.00e+00✓    2.92e-10    0.00e+00✓        MPM-NQS-Solver 
+      1.00e-03    5.35e-01     9.16e-04    1.29e+02     1.49e-06    3.23e-03         MPM-NQS-Solver 
+      5.96e-07✓   3.89e-03     3.15e-08    1.28e+00     3.36e-10✓   3.19e-05         MPM-NQS-Solver 
+      3.57e-10✓   1.32e-05✓    1.85e-12✓   2.21e-03✓    2.49e-10✓   5.53e-08✓        MPM-NQS-Solver 
+   Converged in 3 iteration(s)                                                       MPM-NQS-Solver 
++--------------------------------------------------------------------------------------------------+
+   increment 17: 0.050000, 0.850000; time   0.800000 to   0.850000                   MPM-NQS-Solver 
+   updating particle kernel connectivity                                             MPM-NQS-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   active domain has changed, (re)initializing equation system & clearing cache      MPM-NQS-Solver 
+   resulting equation system has a size of 576                                       MPM-NQS-Solver 
+           displacement               pressure                  jacobi               MPM-NQS-Solver 
+      ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞         MPM-NQS-Solver 
+      3.16e+06    0.00e+00✓    5.47e-05    0.00e+00✓    2.49e-10    0.00e+00✓        MPM-NQS-Solver 
+      1.01e-03    5.39e-01     9.47e-04    1.49e+02     1.56e-06    3.72e-03         MPM-NQS-Solver 
+      6.30e-07✓   3.87e-03     3.16e-08    1.27e+00     2.60e-10✓   3.16e-05         MPM-NQS-Solver 
+      4.74e-10✓   1.37e-05✓    2.56e-12✓   2.51e-03✓    2.72e-10✓   6.29e-08✓        MPM-NQS-Solver 
+   Converged in 3 iteration(s)                                                       MPM-NQS-Solver 
++--------------------------------------------------------------------------------------------------+
+   increment 18: 0.050000, 0.900000; time   0.850000 to   0.900000                   MPM-NQS-Solver 
+   updating particle kernel connectivity                                             MPM-NQS-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   active domain has changed, (re)initializing equation system & clearing cache      MPM-NQS-Solver 
+   resulting equation system has a size of 576                                       MPM-NQS-Solver 
+           displacement               pressure                  jacobi               MPM-NQS-Solver 
+      ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞         MPM-NQS-Solver 
+      3.16e+06    0.00e+00✓    5.90e-05    0.00e+00✓    2.72e-10    0.00e+00✓        MPM-NQS-Solver 
+      1.01e-03    5.28e-01     9.84e-04    1.62e+02     1.67e-06    4.06e-03         MPM-NQS-Solver 
+      6.58e-07✓   3.87e-03     3.26e-08    1.19e+00     2.59e-10✓   2.98e-05         MPM-NQS-Solver 
+      5.64e-10✓   1.34e-05✓    1.45e-12✓   2.90e-03✓    2.97e-10✓   7.24e-08✓        MPM-NQS-Solver 
+   Converged in 3 iteration(s)                                                       MPM-NQS-Solver 
++--------------------------------------------------------------------------------------------------+
+   increment 19: 0.050000, 0.950000; time   0.900000 to   0.950000                   MPM-NQS-Solver 
+   updating particle kernel connectivity                                             MPM-NQS-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   active domain has changed, (re)initializing equation system & clearing cache      MPM-NQS-Solver 
+   resulting equation system has a size of 576                                       MPM-NQS-Solver 
+           displacement               pressure                  jacobi               MPM-NQS-Solver 
+      ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞         MPM-NQS-Solver 
+      3.16e+06    0.00e+00✓    7.11e-05    0.00e+00✓    2.97e-10    0.00e+00✓        MPM-NQS-Solver 
+      1.02e-03    5.12e-01     1.03e-03    1.67e+02     1.84e-06    4.18e-03         MPM-NQS-Solver 
+      6.70e-07✓   3.83e-03     3.35e-08    1.26e+00     2.21e-10✓   3.15e-05         MPM-NQS-Solver 
+      6.09e-10✓   1.34e-05✓    1.92e-12✓   3.05e-03✓    3.27e-10✓   7.62e-08✓        MPM-NQS-Solver 
+   Converged in 3 iteration(s)                                                       MPM-NQS-Solver 
++--------------------------------------------------------------------------------------------------+
+   increment 20: 0.050000, 1.000000; time   0.950000 to   1.000000                   MPM-NQS-Solver 
+   updating particle kernel connectivity                                             MPM-NQS-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   active domain has changed, (re)initializing equation system & clearing cache      MPM-NQS-Solver 
+   resulting equation system has a size of 576                                       MPM-NQS-Solver 
+           displacement               pressure                  jacobi               MPM-NQS-Solver 
+      ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞         MPM-NQS-Solver 
+      3.16e+06    0.00e+00✓    8.11e-05    0.00e+00✓    3.27e-10    0.00e+00✓        MPM-NQS-Solver 
+      1.03e-03    5.06e-01     1.07e-03    1.66e+02     2.12e-06    4.15e-03         MPM-NQS-Solver 
+      6.80e-07✓   3.62e-03     3.47e-08    1.30e+00     2.36e-10✓   3.23e-05         MPM-NQS-Solver 
+      5.81e-10✓   1.35e-05✓    2.44e-12✓   2.98e-03✓    2.45e-10✓   7.44e-08✓        MPM-NQS-Solver 
+   Converged in 3 iteration(s)                                                       MPM-NQS-Solver 
+Traceback (most recent call last):
+  File "/tmp/claude-1000/-home-tom-CMP-MEC-MAT-EdelweissMeshfree/3678244f-4f2d-47ac-8fb7-1cb958793e07/scratchpad/penalty_test.py", line 55, in <module>
+    uu = u.reshape(nX, nY, 2)
+ValueError: cannot reshape array of size 432 into shape (12,12,2)
