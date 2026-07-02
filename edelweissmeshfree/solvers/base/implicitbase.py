@@ -856,6 +856,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         time: float,
         dT: float,
         theDofManager: DofManager,
+        Un: DofVector = None,
     ):
         """Evaluate all particles.
 
@@ -899,6 +900,9 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             PP = scatter_P[particle]
             dUP = dU[particle]
             KP = K_VIJ[particle]
+
+            if Un is not None and hasattr(particle, "assignTotalNodalSolution"):
+                particle.assignTotalNodalSolution(np.ascontiguousarray(Un[particle] + dUP))
 
             particle.computePhysicsKernels(dUP, PP, KP, time, dT)
 
