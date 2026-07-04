@@ -87,6 +87,7 @@ from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
 def run_sim(
     particleType="DisplacementPressureJacobiSQCNIxNSNI/PlaneStrain/Quad",
     vmsAlpha=0.1,
+    vmsMode=0,
     nX=12,
     nY=12,
     uYTip=5.0,
@@ -95,7 +96,10 @@ def run_sim(
     constraintStride=1,
     outputName=None,
 ):
-    """constraintType: 'mortar' (default) or 'lagrange' (point collocation).
+    """vmsMode: 0 = pressure-only VMS stabilization (grad(p) part of the strong-form
+    momentum residual only), 1 = full VMS (grad(p) + div(S_dev) - rho0*a).
+
+    constraintType: 'mortar' (default) or 'lagrange' (point collocation).
 
     Point collocation of BOTH displacement components at every particle center of a
     nearly incompressible edge produces alternating point reactions and, with them, a
@@ -124,7 +128,7 @@ def run_sim(
     supportRadius = 2.2 * length / nX
 
     if outputName is None:
-        outputName = f"cooks_upj_{particleType.split('/')[0]}_alpha{vmsAlpha}"
+        outputName = f"cooks_upj_{particleType.split('/')[0]}_alpha{vmsAlpha}_mode{vmsMode}"
 
     def theMeshfreeKernelFunctionFactory(node):
         return MarmotMeshfreeKernelFunctionWrapper(
@@ -182,6 +186,7 @@ def run_sim(
         particle.setProperty("newmark-beta beta", 0.0)
         particle.setProperty("newmark-beta gamma", 0.0)
         particle.setProperty("vms alpha", vmsAlpha)
+        particle.setProperty("vms mode", float(vmsMode))
 
     theParticleKernelDomain = ParticleKernelDomain(
         list(theModel.particles.values()), list(theModel.meshfreeKernelFunctions.values())
@@ -372,6 +377,8 @@ if __name__ == "__main__":
     parser.add_argument("--create-gold", dest="create_gold", action="store_true", help="create the gold file.")
     parser.add_argument("--particleType", "-p", dest="particleType", default="DisplacementPressureJacobiSQCNIxNSNI/PlaneStrain/Quad")
     parser.add_argument("--vmsAlpha", "-a", dest="vmsAlpha", type=float, default=0.1)
+    parser.add_argument("--vmsMode", "-m", dest="vmsMode", type=int, choices=[0, 1], default=0,
+                        help="0: pressure-only VMS, 1: full VMS (grad p + div S_dev - rho0 a)")
     parser.add_argument("--nX", type=int, default=12)
     parser.add_argument("--nY", type=int, default=12)
     parser.add_argument("--uYTip", type=float, default=5.0)
@@ -383,6 +390,7 @@ if __name__ == "__main__":
     theModel, fieldOutputController = run_sim(
         particleType=args.particleType,
         vmsAlpha=args.vmsAlpha,
+        vmsMode=args.vmsMode,
         nX=args.nX,
         nY=args.nY,
         uYTip=args.uYTip,
