@@ -94,10 +94,18 @@ def run_sim(
     constraintType="mortar",
     multiplierOrder=6,
     constraintStride=1,
+    cwfCorrection=False,
     outputName=None,
 ):
     """vmsMode: 0 = pressure-only VMS stabilization (grad(p) part of the strong-form
     momentum residual only), 1 = full VMS (grad(p) + div(S_dev) - rho0*a).
+
+    cwfCorrection: add the consistent-weak-form boundary traction term
+    int_Gamma T.(S_dev + p I) DeltaF^-T (N dA) on the fully constrained left edge
+    (distributed load type 'cwfcorrection'). The weak Dirichlet enforcement
+    otherwise imposes the traction-free natural condition between the constrained
+    points, whose residual excites the pressure boundary layer in the first
+    particle columns.
 
     constraintType: 'mortar' (default) or 'lagrange' (point collocation).
 
@@ -128,7 +136,9 @@ def run_sim(
     supportRadius = 2.2 * length / nX
 
     if outputName is None:
-        outputName = f"cooks_upj_{particleType.split('/')[0]}_alpha{vmsAlpha}_mode{vmsMode}"
+        outputName = f"cooks_upj_{particleType.split('/')[0]}_alpha{vmsAlpha}_mode{vmsMode}" + (
+            "_cwf" if cwfCorrection else ""
+        )
 
     def theMeshfreeKernelFunctionFactory(node):
         return MarmotMeshfreeKernelFunctionWrapper(
@@ -239,6 +249,32 @@ def run_sim(
     theModel.constraints.update(dirichletLeft)
     theModel.constraints.update(dirichletRight)
 
+    particleDistributedLoads = []
+    if cwfCorrection:
+        from edelweissfe.surfaces.entitybasedsurface import EntityBasedSurface
+
+        from edelweissmeshfree.stepactions.particledistributedload import (
+            ParticleDistributedLoad,
+        )
+
+        # face 4 = left edge of the quad particles; both displacement components are
+        # constrained there, so the full traction correction is consistent
+        surfaceCWF = EntityBasedSurface(
+            name="surfaceCWFLeft",
+            faceToEntities={4: list(theModel.particleSets["cooks_membrane_left"])},
+        )
+        particleDistributedLoads.append(
+            ParticleDistributedLoad(
+                name="cwf_dirichlet_left",
+                model=theModel,
+                journal=theJournal,
+                particleSurface=surfaceCWF,
+                distributedLoadType="cwfcorrection",
+                loadVector=np.array([0.0]),
+                f_t=lambda t: 1.0,
+            )
+        )
+
     theModel.prepareYourself(theJournal)
     theJournal.printPrettyTable(theModel.makePrettyTableSummary(), "summary")
 
@@ -329,6 +365,7 @@ def run_sim(
             particleManagers=[theParticleManager],
             constraints=theModel.constraints.values(),
             userIterationOptions=iterationOptions,
+            particleDistributedLoads=particleDistributedLoads,
         )
 
     except StepFailed as e:
@@ -385,6 +422,8 @@ if __name__ == "__main__":
     parser.add_argument("--constraintType", choices=["mortar", "lagrange"], default="mortar")
     parser.add_argument("--multiplierOrder", type=int, default=6, help="polynomial order of the mortar multiplier field")
     parser.add_argument("--constraintStride", type=int, default=1, help="with 'lagrange': clamp every n-th left-edge particle")
+    parser.add_argument("--cwf", dest="cwf", action="store_true",
+                        help="consistent-weak-form traction correction on the clamped left edge")
     args = parser.parse_args()
 
     theModel, fieldOutputController = run_sim(
@@ -397,6 +436,7 @@ if __name__ == "__main__":
         constraintType=args.constraintType,
         multiplierOrder=args.multiplierOrder,
         constraintStride=args.constraintStride,
+        cwfCorrection=args.cwf,
     )
 
     res = fieldOutputController.fieldOutputs["displacement"].getLastResult()

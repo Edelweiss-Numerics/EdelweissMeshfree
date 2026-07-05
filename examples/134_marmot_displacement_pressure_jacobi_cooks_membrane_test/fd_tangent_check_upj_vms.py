@@ -86,6 +86,11 @@ def build_model(vmsMode):
     model.particleKernelDomains["all"] = domain
     model.prepareYourself(journal)
     manager.updateConnectivity()
+    # the C++ particles hold only a REFERENCE to the approximation wrapper: keep the
+    # Python object alive beyond this function (else boundary routines that dispatch on
+    # _meshfreeApproximation segfault -- physics kernels don't touch it, so the tangent
+    # checks would still pass)
+    model._keepalive = approximation
     return model
 
 
