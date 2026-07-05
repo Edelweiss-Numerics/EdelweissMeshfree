@@ -94,18 +94,35 @@ def run_sim(
     constraintType="mortar",
     multiplierOrder=6,
     constraintStride=1,
-    cwfCorrection=False,
+    cwfCorrection="off",
     outputName=None,
 ):
     """vmsMode: 0 = pressure-only VMS stabilization (grad(p) part of the strong-form
     momentum residual only), 1 = full VMS (grad(p) + div(S_dev) - rho0*a).
 
     cwfCorrection: add the consistent-weak-form boundary traction term
-    int_Gamma T.(S_dev + p I) DeltaF^-T (N dA) on the fully constrained left edge
-    (distributed load type 'cwfcorrection'). The weak Dirichlet enforcement
-    otherwise imposes the traction-free natural condition between the constrained
-    points, whose residual excites the pressure boundary layer in the first
-    particle columns.
+    int_Gamma T.(S_dev + p I) DeltaF^-T (N dA) (distributed load type
+    'cwfcorrection'; the load vector is the per-component Dirichlet mask). The
+    weak Dirichlet enforcement otherwise imposes the traction-free natural
+    condition between the constrained points, whose residual excites the
+    pressure boundary layer in the first particle columns.
+    - 'off'  : no correction (default)
+    - 'left' : fully clamped left edge, mask (1, 1)
+    - 'both' : additionally the driven right edge with mask (0, 1) (only u_y
+               constrained there)
+
+    CAUTION -- the correction is the CONSISTENCY term of a Nitsche-type
+    formulation WITHOUT the accompanying penalty/stabilization term, so it is
+    only conditionally beneficial and conditionally stable (measured, 12x12,
+    alpha=0.1, absolute column oscillation):
+    - uYTip=30, 'left': columns 1-3 improve strongly (5.3 -> 2.8, 2.7 -> 1.0),
+      the edge column itself carries the (physical) corner reaction. Use it.
+    - uYTip=30, 'both': the heavily loaded driven edge destabilizes the
+      saddle point -- the run FAILS at t ~ 0.9.
+    - uYTip=5 (any): net WORSE -- the traction feeds the discrete corner
+      stress back as an edge load; with little inconsistency error to fix,
+      the edge-column oscillation triples.
+    A robust always-on variant needs the Nitsche penalty term (future work).
 
     constraintType: 'mortar' (default) or 'lagrange' (point collocation).
 
@@ -137,7 +154,7 @@ def run_sim(
 
     if outputName is None:
         outputName = f"cooks_upj_{particleType.split('/')[0]}_alpha{vmsAlpha}_mode{vmsMode}" + (
-            "_cwf" if cwfCorrection else ""
+            f"_cwf-{cwfCorrection}" if cwfCorrection != "off" else ""
         )
 
     def theMeshfreeKernelFunctionFactory(node):
@@ -250,30 +267,36 @@ def run_sim(
     theModel.constraints.update(dirichletRight)
 
     particleDistributedLoads = []
-    if cwfCorrection:
+    if cwfCorrection != "off":
         from edelweissfe.surfaces.entitybasedsurface import EntityBasedSurface
 
         from edelweissmeshfree.stepactions.particledistributedload import (
             ParticleDistributedLoad,
         )
 
-        # face 4 = left edge of the quad particles; both displacement components are
-        # constrained there, so the full traction correction is consistent
-        surfaceCWF = EntityBasedSurface(
-            name="surfaceCWFLeft",
-            faceToEntities={4: list(theModel.particleSets["cooks_membrane_left"])},
-        )
-        particleDistributedLoads.append(
-            ParticleDistributedLoad(
-                name="cwf_dirichlet_left",
-                model=theModel,
-                journal=theJournal,
-                particleSurface=surfaceCWF,
-                distributedLoadType="cwfcorrection",
-                loadVector=np.array([0.0]),
-                f_t=lambda t: 1.0,
+        # the load vector is the per-component Dirichlet mask (1 = component constrained on
+        # this edge -> apply its traction component, 0 = free -> keep the traction-free
+        # natural condition). Left edge (face 4): fully clamped -> (1, 1). Right edge
+        # (face 2): only u_y prescribed -> (0, 1).
+        cwfEdges = [("cwf_dirichlet_left", 4, "cooks_membrane_left", (1.0, 1.0))]
+        if cwfCorrection == "both":
+            cwfEdges.append(("cwf_dirichlet_right", 2, "cooks_membrane_right", (0.0, 1.0)))
+        for name, faceID, particleSet, mask in cwfEdges:
+            surface = EntityBasedSurface(
+                name=f"surface_{name}",
+                faceToEntities={faceID: list(theModel.particleSets[particleSet])},
             )
-        )
+            particleDistributedLoads.append(
+                ParticleDistributedLoad(
+                    name=name,
+                    model=theModel,
+                    journal=theJournal,
+                    particleSurface=surface,
+                    distributedLoadType="cwfcorrection",
+                    loadVector=np.array(mask),
+                    f_t=lambda t: 1.0,
+                )
+            )
 
     theModel.prepareYourself(theJournal)
     theJournal.printPrettyTable(theModel.makePrettyTableSummary(), "summary")
@@ -422,8 +445,8 @@ if __name__ == "__main__":
     parser.add_argument("--constraintType", choices=["mortar", "lagrange"], default="mortar")
     parser.add_argument("--multiplierOrder", type=int, default=6, help="polynomial order of the mortar multiplier field")
     parser.add_argument("--constraintStride", type=int, default=1, help="with 'lagrange': clamp every n-th left-edge particle")
-    parser.add_argument("--cwf", dest="cwf", action="store_true",
-                        help="consistent-weak-form traction correction on the clamped left edge")
+    parser.add_argument("--cwf", dest="cwf", choices=["off", "left", "both"], default="off",
+                        help="consistent-weak-form traction correction on the Dirichlet edges (see run_sim docstring)")
     args = parser.parse_args()
 
     theModel, fieldOutputController = run_sim(
