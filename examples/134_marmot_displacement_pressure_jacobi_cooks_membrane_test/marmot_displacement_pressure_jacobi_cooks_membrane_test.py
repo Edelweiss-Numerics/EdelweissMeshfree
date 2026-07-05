@@ -341,6 +341,17 @@ def run_sim(
         saveHistory=True,
         export=f"RF_{outputName}",
     )
+    # driving-edge reaction: with the CWF correction active on the LEFT edge, the left
+    # mortar multiplier only carries the difference to the stress traction (the physical
+    # reaction is multiplier + CWF traction integral); the right-edge multiplier is then
+    # the meaningful total driving force for load-displacement curves
+    fieldOutputController.addExpressionFieldOutput(
+        None,
+        lambda: sum(c.reactionForce for c in dirichletRight.values()),
+        "reaction force right",
+        saveHistory=True,
+        export=f"RFright_{outputName}",
+    )
     fieldOutputController.addPerParticleFieldOutput(
         "U_Right",
         theModel.particleSets["cooks_membrane_rightTop"],
