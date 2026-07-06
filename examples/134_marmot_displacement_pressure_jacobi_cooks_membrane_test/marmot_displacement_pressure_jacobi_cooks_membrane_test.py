@@ -95,6 +95,7 @@ def run_sim(
     multiplierOrder=6,
     constraintStride=1,
     cwfCorrection="off",
+    vci=False,
     outputName=None,
 ):
     """vmsMode: 0 = pressure-only VMS stabilization (grad(p) part of the strong-form
@@ -123,6 +124,25 @@ def run_sim(
       stress back as an edge load; with little inconsistency error to fix,
       the edge-column oscillation triples.
     A robust always-on variant needs the Nitsche penalty term (future work).
+
+    vci: first-order variationally consistent integration (particle property
+    'VCI order' = 1 plus a VariationallyConsistentIntegrationManager over the
+    four boundary edges). Works with both the SQCNIxNSNI and the SQCNIxSDI
+    particle. Measured (12x12, alpha=0.1, mode 0, checkerboard metrics
+    cb_lap / cb_alt and RMS vertical p-oscillation of columns 0/1):
+    - uYTip=30, NSNI: 15.3% / 1.73% -> 13.7% / 1.34%, columns 2.32/2.66 ->
+      1.37/2.29 -- clear improvement, same solve cost.
+    - uYTip=30, SDI: 10.1% / 0.55% -> 8.2% / 0.16%, columns 1.42/1.84 ->
+      1.29/1.51, and the streaky bands near the driven edge shrink. SDI+VCI
+      is the cleanest of the four variants.
+    - uYTip=5: differences are small (fields are already clean at this load).
+
+    The SQCNIxSDI particle integrates with per-subdomain material points
+    (4 subdomains) instead of the NSNI second-derivative term; it runs
+    slightly softer initially and stiffer at large deformation than NSNI
+    (left-edge reaction ~110 vs ~100 at 30 mm). It needs the absolute jacobi
+    flux tolerance below (the jacobi residual reaches its roundoff floor
+    ~1e-10 for K = 4e4).
 
     constraintType: 'mortar' (default) or 'lagrange' (point collocation).
 
@@ -155,7 +175,7 @@ def run_sim(
     if outputName is None:
         outputName = f"cooks_upj_{particleType.split('/')[0]}_alpha{vmsAlpha}_mode{vmsMode}" + (
             f"_cwf-{cwfCorrection}" if cwfCorrection != "off" else ""
-        )
+        ) + ("_vci" if vci else "")
 
     def theMeshfreeKernelFunctionFactory(node):
         return MarmotMeshfreeKernelFunctionWrapper(
@@ -214,6 +234,9 @@ def run_sim(
         particle.setProperty("newmark-beta gamma", 0.0)
         particle.setProperty("vms alpha", vmsAlpha)
         particle.setProperty("vms mode", float(vmsMode))
+        if vci:
+            # first-order VCI to match the completeness order 1 of the RKPM approximation
+            particle.setProperty("VCI order", 1.0)
 
     theParticleKernelDomain = ParticleKernelDomain(
         list(theModel.particles.values()), list(theModel.meshfreeKernelFunctions.values())
@@ -265,6 +288,27 @@ def run_sim(
 
     theModel.constraints.update(dirichletLeft)
     theModel.constraints.update(dirichletRight)
+
+    vciManagers = []
+    if vci:
+        from edelweissmeshfree.meshfree.vci import (
+            BoundaryParticleDefinition,
+            VariationallyConsistentIntegrationManager,
+        )
+
+        theBoundary = [
+            BoundaryParticleDefinition(theModel.particleSets["cooks_membrane_left"], np.empty(2), 4),
+            BoundaryParticleDefinition(theModel.particleSets["cooks_membrane_right"], np.empty(2), 2),
+            BoundaryParticleDefinition(theModel.particleSets["cooks_membrane_bottom"], np.empty(2), 1),
+            BoundaryParticleDefinition(theModel.particleSets["cooks_membrane_top"], np.empty(2), 3),
+        ]
+        vciManagers.append(
+            VariationallyConsistentIntegrationManager(
+                list(theModel.particles.values()),
+                list(theModel.meshfreeKernelFunctions.values()),
+                theBoundary,
+            )
+        )
 
     particleDistributedLoads = []
     if cwfCorrection != "off":
@@ -386,6 +430,10 @@ def run_sim(
     iterationOptions["max. iterations"] = 15
     iterationOptions["critical iterations"] = 5
     iterationOptions["allowed residual growths"] = 10
+    # the jacobi flux r_J = T (kP - p) V0 is a difference of O(K) quantities: its roundoff
+    # floor is ~1e-10 for K = 4e4, and the relative check compares against the CURRENT
+    # (vanishing) flux magnitude -- give it an honest absolute tolerance
+    iterationOptions["spec. absolute flux residual tolerances"] = {"jacobi": 1e-9}
 
     linearSolver = pardisoSolve
 
@@ -400,6 +448,7 @@ def run_sim(
             constraints=theModel.constraints.values(),
             userIterationOptions=iterationOptions,
             particleDistributedLoads=particleDistributedLoads,
+            vciManagers=vciManagers,
         )
 
     except StepFailed as e:
@@ -458,6 +507,10 @@ if __name__ == "__main__":
     parser.add_argument("--constraintStride", type=int, default=1, help="with 'lagrange': clamp every n-th left-edge particle")
     parser.add_argument("--cwf", dest="cwf", choices=["off", "left", "both"], default="off",
                         help="consistent-weak-form traction correction on the Dirichlet edges (see run_sim docstring)")
+    parser.add_argument("--vci", dest="vci", action="store_true",
+                        help="first-order variationally consistent integration (test gradient correction)")
+    parser.add_argument("--outputName", dest="outputName", default=None,
+                        help="basename for the RF/U exports and the ensight directory")
     args = parser.parse_args()
 
     theModel, fieldOutputController = run_sim(
@@ -471,6 +524,8 @@ if __name__ == "__main__":
         multiplierOrder=args.multiplierOrder,
         constraintStride=args.constraintStride,
         cwfCorrection=args.cwf,
+        vci=args.vci,
+        outputName=args.outputName,
     )
 
     res = fieldOutputController.fieldOutputs["displacement"].getLastResult()
