@@ -96,6 +96,8 @@ def run_sim(
     constraintStride=1,
     cwfCorrection="off",
     vci=False,
+    vciOrder=1,
+    completenessOrder=1,
     outputName=None,
 ):
     """vmsMode: 0 = pressure-only VMS stabilization (grad(p) part of the strong-form
@@ -137,6 +139,29 @@ def run_sim(
       is the cleanest of the four variants.
     - uYTip=5: differences are small (fields are already clean at this load).
 
+    vciOrder: order of the VCI constraint basis. The basis is KERNEL-CENTERED
+    (shifted monomials, see the particle vci_* overrides) -- with global
+    monomials the order-2 M matrices are numerically degenerate (cond ~1e10,
+    NaN in the first increment). Measured at uYTip=20 (all variants complete):
+    - NSNI + order 2: WORSE than order 1 (cb_lap 12.6% -> 16.2%, column 0
+      0.74 -> 2.73). The NSNI volume integrals use a single center evaluation
+      point; the quadratic correction over-fits it.
+    - SDI + order 2: the BEST variant overall (cb_lap 11.5% -> 9.3%, columns
+      0/1 0.84/0.75 -> 0.45/0.53, right-edge streaks halved vs order 1) --
+      the 4 subdomain evaluation points support the quadratic constraints.
+    - LIMIT: order 2 destabilizes at extreme distortion (both particles NaN
+      at tip ~22.6 mm; with completenessOrder=2 even earlier). The truncated
+      pseudo-inverse guard in vci.py bounds but does not remove this.
+
+    cwfCorrection with the SQCNIxSDI particle: implemented per attached
+    subcell (each with its own material-point stress). SDI + CWF-left runs to
+    30 mm and clears the boundary layer (columns 1-3), but the edge column
+    carries the corner reaction (col 0: 1.42 -> 3.8) and the interior is
+    slightly noisier than SDI + VCI. SDI + VCI + CWF together FAIL at
+    t ~ 0.52 (u ~ 15.6 mm) -- do not combine them; NSNI + VCI + CWF-left is
+    stable to 30 mm and gives the lowest boundary-layer oscillation of the
+    NSNI variants (columns 1-3: 1.12/1.13/0.71).
+
     The SQCNIxSDI particle integrates with per-subdomain material points
     (4 subdomains) instead of the NSNI second-derivative term; it runs
     slightly softer initially and stiffer at large deformation than NSNI
@@ -170,12 +195,15 @@ def run_sim(
     heightLeft = 44
     heightRight = 16
     length = 48
-    supportRadius = 2.2 * length / nX
+    # quadratic completeness needs a larger support (more nodes than monomials everywhere)
+    supportRadius = (2.2 if completenessOrder == 1 else 3.2) * length / nX
 
     if outputName is None:
         outputName = f"cooks_upj_{particleType.split('/')[0]}_alpha{vmsAlpha}_mode{vmsMode}" + (
             f"_cwf-{cwfCorrection}" if cwfCorrection != "off" else ""
-        ) + ("_vci" if vci else "")
+        ) + (f"_vci{vciOrder}" if vci else "") + (
+            f"_compl{completenessOrder}" if completenessOrder != 1 else ""
+        )
 
     def theMeshfreeKernelFunctionFactory(node):
         return MarmotMeshfreeKernelFunctionWrapper(
@@ -195,7 +223,7 @@ def run_sim(
         nY=nY,
     )
 
-    theApproximation = MarmotMeshfreeApproximationWrapper("ReproducingKernel", dimension, completenessOrder=1)
+    theApproximation = MarmotMeshfreeApproximationWrapper("ReproducingKernel", dimension, completenessOrder=completenessOrder)
 
     # nearly incompressible elasticity: K/G = 500 (nu ~ 0.499)
     K = 40000.0
@@ -235,8 +263,8 @@ def run_sim(
         particle.setProperty("vms alpha", vmsAlpha)
         particle.setProperty("vms mode", float(vmsMode))
         if vci:
-            # first-order VCI to match the completeness order 1 of the RKPM approximation
-            particle.setProperty("VCI order", 1.0)
+            # default order 1 matches the completeness order 1 of the RKPM approximation
+            particle.setProperty("VCI order", float(vciOrder))
 
     theParticleKernelDomain = ParticleKernelDomain(
         list(theModel.particles.values()), list(theModel.meshfreeKernelFunctions.values())
@@ -508,7 +536,12 @@ if __name__ == "__main__":
     parser.add_argument("--cwf", dest="cwf", choices=["off", "left", "both"], default="off",
                         help="consistent-weak-form traction correction on the Dirichlet edges (see run_sim docstring)")
     parser.add_argument("--vci", dest="vci", action="store_true",
-                        help="first-order variationally consistent integration (test gradient correction)")
+                        help="variationally consistent integration (test gradient correction)")
+    parser.add_argument("--vciOrder", dest="vciOrder", type=int, default=1,
+                        help="polynomial order of the VCI constraints (default 1)")
+    parser.add_argument("--completenessOrder", dest="completenessOrder", type=int, default=1,
+                        help="completeness order of the RKPM approximation (default 1); "
+                             "must be >= vciOrder for the VCI constraints to be satisfiable")
     parser.add_argument("--outputName", dest="outputName", default=None,
                         help="basename for the RF/U exports and the ensight directory")
     args = parser.parse_args()
@@ -525,6 +558,8 @@ if __name__ == "__main__":
         constraintStride=args.constraintStride,
         cwfCorrection=args.cwf,
         vci=args.vci,
+        vciOrder=args.vciOrder,
+        completenessOrder=args.completenessOrder,
         outputName=args.outputName,
     )
 
