@@ -14,3 +14,11 @@
 *rename*
 docs/
 __pycache__
+
+# Simulation outputs and temp files
+*.h5
+*.log
+*.gif
+*RF.csv
+*U.csv
+*.jou
