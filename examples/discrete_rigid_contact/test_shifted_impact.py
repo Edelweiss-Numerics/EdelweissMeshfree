@@ -46,8 +46,8 @@ import numpy as np
 from edelweissfe.journal.journal import Journal
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 
-from edelweissmeshfree.constraints.explicit.discreterigidbodypenaltycontactexplicit import (
-    DiscreteRigidBodyPenaltyContactExplicitFactory,
+from edelweissmeshfree.constraints.explicit.frictionaldiscreterigidbodypenaltycontactexplicit import (
+    FrictionalDiscreteRigidBodyPenaltyContactExplicitFactory,
 )
 from edelweissmeshfree.fieldoutput.fieldoutput import MPMFieldOutputController
 from edelweissmeshfree.generators.kernelmatchingtoparticlegenerator import (
@@ -195,12 +195,14 @@ def run_quasistatic_sim():
     )
 
     # Contact
-    DiscreteRigidBodyPenaltyContactExplicitFactory(
+    FrictionalDiscreteRigidBodyPenaltyContactExplicitFactory(
         name="rigid_impact",
         particleCollection=theModel.particleSets["mesh_particles_all"],
         model=theModel,
         rigidBody=rigid_body,
         penaltyParameter=PENALTY,
+        frictionCoefficient=0.3,
+        viscousRegularization=1e5,
     )
 
     theModel.prepareYourself(theJournal)

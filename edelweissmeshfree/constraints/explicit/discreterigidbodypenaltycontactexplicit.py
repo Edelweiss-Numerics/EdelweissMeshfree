@@ -224,6 +224,8 @@ class DiscreteRigidBodyPenaltyContactExplicit(MPMConstraintBase):
 
         forces = self._penaltyParameter * g[:, np.newaxis] * pen_normals
 
+        forces = self._addFrictionForces(forces, pen_coords, pen_normals, pen_indices, g, particle_mapping)
+
         # 6. Apply to RP
         rp_offset = self._node_to_offset[self.rigidBodyRPNode]
         if self._domainSize == 3:
@@ -257,6 +259,9 @@ class DiscreteRigidBodyPenaltyContactExplicit(MPMConstraintBase):
                     PExt[offset + d] += N[j] * force_vector[d]
 
         self.reactionForce = np.sum(self._penaltyParameter * g)
+
+    def _addFrictionForces(self, forces, pen_coords, pen_normals, pen_indices, g, particle_mapping):
+        return forces
 
 
 def DiscreteRigidBodyPenaltyContactExplicitFactory(

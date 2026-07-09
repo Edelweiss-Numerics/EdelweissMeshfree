@@ -141,7 +141,7 @@ class ParticlePenaltyContactImplicitSurfaceConstraint(MPMConstraintBase):
 
         dU = dU_
 
-        for constrained_point in self._constrained_points:
+        for pt_idx, constrained_point in enumerate(self._constrained_points):
 
             # 1. Geometry at t_n
             current_dist = self._implicit_function(constrained_point)
@@ -184,6 +184,23 @@ class ParticlePenaltyContactImplicitSurfaceConstraint(MPMConstraintBase):
             K_UU += K_update
 
             self.reactionForce += self._penaltyParameter * g
+
+            self._applyAdditionalForces(
+                pt_idx, constrained_point, normal, N_vec, deltaU_point, g, PExt, K_UU
+            )
+
+    def _applyAdditionalForces(
+        self,
+        pt_idx: int,
+        constrained_point: np.ndarray,
+        normal: np.ndarray,
+        N_vec: np.ndarray,
+        deltaU_point: np.ndarray,
+        g: float,
+        PExt: np.ndarray,
+        K_UU: np.ndarray,
+    ):
+        pass
 
 
 def ParticlePenaltyContactImplicitSurfaceConstraintFactory(
