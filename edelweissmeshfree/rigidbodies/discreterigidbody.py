@@ -6,6 +6,9 @@ from edelweissfe.utils.inputlanguage import Module
 module = Module("discreterigidbody", "A discrete rigid body entity.")
 module.addRequiredArg("nSet", "The node set containing the surface nodes of the rigid body.", str)
 module.addRequiredArg("referencePoint", "The node set containing the single reference point.", str)
+module.addOptionalArg("mass", "The mass of the rigid body.", float, None)
+module.addOptionalArg("inertia", "The inertia tensor of the rigid body.", list, None)
+module.addOptionalArg("initial_velocity", "The initial velocity vector.", list, None)
 keyword = "discreterigidbody"
 
 
@@ -36,6 +39,22 @@ class DiscreteRigidBody:
         # Precompute initial relative positions of surface nodes w.r.t. the RP
         self.initialRelativePositions = np.array([n.coordinates - self.rpNode.coordinates for n in self.surfaceNodes])
 
+        self.mass = kwargs.get("mass")
+        self.inertia = kwargs.get("inertia")
+        self.initial_velocity = kwargs.get("initial_velocity")
+
+        # Abstract the PointMass element
+        self.point_mass_element = None
+        if self.mass is not None:
+            from edelweissfe.elements.pointmass import PointMass
+
+            # generate a safe dummy elNumber (high number)
+            el_num = max(model.elements.keys()) + 1 if model.elements else 1000000
+            self.point_mass_element = PointMass(
+                el_num, [self.rpNode], model, self.mass, self.inertia, self.initial_velocity
+            )
+            model.elements[el_num] = self.point_mass_element
+
     def _getFieldU(self, fieldName, node):
         """Safely retrieve the accumulated displacement/rotation for a single node.
         Returns a zero vector if the field entry "U" has not been written yet."""
@@ -56,26 +75,25 @@ class DiscreteRigidBody:
         if self.domainSize == 3:
             theta = self._getFieldU("rotation", self.rpNode)
             R = self._getRotationMatrix3D(theta)
-            for i, node in enumerate(self.surfaceNodes):
-                X_rel = self.initialRelativePositions[i]
-                node.coordinates[:] = rp_current + R.dot(X_rel)
-                if has_disp:
-                    idx = disp_field._indicesOfNodesInArray[node]
-                    initial_coord = self.rpNode.coordinates + X_rel
-                    disp_field["U"][idx] = node.coordinates - initial_coord
         else:
             # 2D: rotation is a scalar (rotation around Z)
             rot_u = self._getFieldU("rotation", self.rpNode)
             theta_z = rot_u[0] if len(rot_u) > 0 else 0.0
             c, s = np.cos(theta_z), np.sin(theta_z)
             R = np.array([[c, -s], [s, c]])
-            for i, node in enumerate(self.surfaceNodes):
-                X_rel = self.initialRelativePositions[i]
-                node.coordinates[:] = rp_current + R.dot(X_rel)
-                if has_disp:
-                    idx = disp_field._indicesOfNodesInArray[node]
-                    initial_coord = self.rpNode.coordinates + X_rel
-                    disp_field["U"][idx] = node.coordinates - initial_coord
+
+        # Vectorized coordinate calculation
+        new_coords = rp_current + self.initialRelativePositions.dot(R.T)
+
+        if has_disp:
+            disp_u = disp_field["U"]
+
+        # Assign back to nodes
+        for i, node in enumerate(self.surfaceNodes):
+            node.coordinates[:] = new_coords[i]
+            if has_disp:
+                idx = disp_field._indicesOfNodesInArray[node]
+                disp_u[idx] = new_coords[i] - (self.rpNode.coordinates + self.initialRelativePositions[i])
 
     def _getRotationMatrix3D(self, theta):
         """Construct a 3D rotation matrix from a rotation vector using Rodrigues' formula."""

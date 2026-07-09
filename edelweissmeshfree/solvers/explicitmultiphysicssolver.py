@@ -128,6 +128,20 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
         particles = list(model.particles.values())
         constraints = list(model.constraints.values())
 
+        elements_with_inertia = [
+            el
+            for el in model.elements.values()
+            if hasattr(el, "computeLumpedInertia")
+            and hasattr(el, "nDof")
+            and el.nDof > 0
+            and hasattr(el, "getStructure")
+        ]
+        elements_with_momentum = [
+            el
+            for el in model.elements.values()
+            if hasattr(el, "computeMomentum") and hasattr(el, "nDof") and el.nDof > 0 and hasattr(el, "getStructure")
+        ]
+
         try:
             for timeStep in timeStepper.generateTimeStep():
                 dT = timeStep.timeIncrement
@@ -162,7 +176,8 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
                         M,
                         momentum,
                         timeStep,
-                        list(model.elements.values()),
+                        elements_with_inertia,
+                        elements_with_momentum,
                     )
                     # prevent division close to zero:
                     M[M < 1e-12] = 1e-12
@@ -279,7 +294,8 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
                     M,
                     momentum,
                     timeStep,
-                    list(model.elements.values()),
+                    elements_with_inertia,
+                    elements_with_momentum,
                 )
                 # prevent division close to zero:
                 M[M < 1e-12] = 1e-12
@@ -463,7 +479,8 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
         M: DofVector,
         Mv: DofVector,
         timeStep,
-        elements: list = None,
+        elements_with_inertia: list = None,
+        elements_with_momentum: list = None,
     ):
         """Compute the system vectors."""
 
@@ -475,22 +492,19 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
         )
 
         # Accumulate mass and internal forces from standard FE elements (like PointMass)
-        if elements:
-            for el in elements:
-                if hasattr(el, "computeLumpedInertia") and hasattr(el, "nDof") and el.nDof > 0:
-                    Me = np.zeros(el.nDof)
-                    el.computeLumpedInertia(Me)
-                    # Scatter to nodes
-                    if hasattr(el, "getStructure"):
-                        if el in M.entitiesInDofVector:
-                            M[el] += Me
+        if elements_with_inertia:
+            for el in elements_with_inertia:
+                Me = np.zeros(el.nDof)
+                el.computeLumpedInertia(Me)
+                if el in M.entitiesInDofVector:
+                    M[el] += Me
 
-                if hasattr(el, "computeMomentum") and hasattr(el, "nDof") and el.nDof > 0:
-                    Mv_e = np.zeros(el.nDof)
-                    el.computeMomentum(Mv_e)
-                    if hasattr(el, "getStructure"):
-                        if el in Mv.entitiesInDofVector:
-                            Mv[el] += Mv_e
+        if elements_with_momentum:
+            for el in elements_with_momentum:
+                Mv_e = np.zeros(el.nDof)
+                el.computeMomentum(Mv_e)
+                if el in Mv.entitiesInDofVector:
+                    Mv[el] += Mv_e
 
         self._computeParticleDistributedLoads(particleDistributedLoads, P_Ext, timeStep)
         self._computeConstraints(constraints, P_Ext, timeStep)

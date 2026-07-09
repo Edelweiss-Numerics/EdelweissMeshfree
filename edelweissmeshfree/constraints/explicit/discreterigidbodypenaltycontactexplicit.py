@@ -60,6 +60,14 @@ class DiscreteRigidBodyPenaltyContactExplicit(MPMConstraintBase):
         self._domainSize = model.domainSize
         self._penaltyParameter = penaltyParameter
         self._doProximityCheck = doProximityCheck
+        self.proximityFactor = proximityFactor
+
+        self._aabb_min = None
+        self._aabb_max = None
+        if self._doProximityCheck and hasattr(self.rigidBody, "surfaceNodes") and len(self.rigidBody.surfaceNodes) > 0:
+            initial_coords = np.array([n.coordinates for n in self.rigidBody.surfaceNodes])
+            self._aabb_min = np.min(initial_coords, axis=0) - self.proximityFactor
+            self._aabb_max = np.max(initial_coords, axis=0) + self.proximityFactor
 
         self.isActive = True
 
@@ -150,79 +158,80 @@ class DiscreteRigidBodyPenaltyContactExplicit(MPMConstraintBase):
         if not self.isActive or not self.particles:
             return
 
-        total_reaction = 0.0
-
-        # Vectorized gathering of coordinates
-        coords = np.empty((len(self.particles), self._domainSize))
-        for i, p in enumerate(self.particles):
-            # p.getCenterCoordinates() returns a list with one item (the coord array)
-            # wait, getCenterCoordinates() usually returns a list of coordinates. We assume center.
-            c = p.getCenterCoordinates()
-            if isinstance(c, list):
-                coords[i] = c[0]
-            else:
-                coords[i] = c
-
-        # Determine the rigid body's current translation from the RP node's accumulated
-        # displacement in the model's NodeField. This mirrors the _getFieldU pattern used
-        # by the kinematic tie and is the authoritative source of the RP displacement.
         disp_field = self._model.nodeFields.get("displacement")
         if disp_field is not None and "U" in disp_field:
             translation = disp_field.subset(self.rigidBodyRPNode)["U"][0].copy()
         else:
             translation = np.zeros(self._domainSize)
 
-        # Query in the rigid body's local (reference) frame by shifting coords
-        dists, normals = self.query_engine.query(coords, rigid_body_translation=translation)
+        # 1. Gather all particle coordinates (Vectorized)
+        coords = np.array([p.getCenterCoordinates() for p in self.particles])
+        # Sometimes particles return a list wrapping the array
+        if len(coords.shape) > 2 or (len(coords) > 0 and isinstance(coords[0], list)):
+            coords = np.array([c[0] if isinstance(c, list) else c for c in coords])
 
-        # Apply forces for penetrating particles
-        for i, p in enumerate(self.particles):
-            dist = dists[i]
+        # 2. Broadphase Proximity Check (AABB)
+        active_indices = np.arange(len(self.particles))
+        if self._doProximityCheck and self._aabb_min is not None:
+            aabb_min = self._aabb_min + translation
+            aabb_max = self._aabb_max + translation
 
-            if dist < 0:
-                g = abs(dist)
-                normal = normals[i]
+            in_aabb = np.all((coords >= aabb_min) & (coords <= aabb_max), axis=1)
+            active_indices = np.where(in_aabb)[0]
+            if len(active_indices) == 0:
+                self.reactionForce = 0.0
+                return
+            coords_to_query = coords[active_indices]
+        else:
+            coords_to_query = coords
 
-                # Check normal validity
-                grad_norm = np.linalg.norm(normal)
-                if grad_norm > 1e-14:
-                    normal = normal / grad_norm
-                else:
-                    normal = np.zeros(self._domainSize)
+        # 3. Narrowphase Query (VTK)
+        dists, normals = self.query_engine.query(coords_to_query, rigid_body_translation=translation)
 
-                force_vector = self._penaltyParameter * g * normal
+        # 4. Filter penetrating
+        penetrating_mask = dists < 0
+        if not np.any(penetrating_mask):
+            self.reactionForce = 0.0
+            return
 
-                # Get interpolation vector N mapping particle to grid nodes
-                # Note: getInterpolationVector expects a coordinate.
-                N = p.getInterpolationVector(coords[i]).flatten()
+        pen_indices = active_indices[penetrating_mask]
+        pen_dists = dists[penetrating_mask]
+        pen_normals = normals[penetrating_mask]
+        pen_coords = coords_to_query[penetrating_mask]
 
-                p_nodes = [kf.node for kf in p.kernelFunctions]
+        # 5. Calculate force vectors
+        g = np.abs(pen_dists)
+        grad_norms = np.linalg.norm(pen_normals, axis=1, keepdims=True)
+        valid_mask = grad_norms[:, 0] > 1e-14
+        pen_normals[valid_mask] = pen_normals[valid_mask] / grad_norms[valid_mask]
+        pen_normals[~valid_mask] = 0.0
 
-                # Scatter to local Pc vector
-                for j, node in enumerate(p_nodes):
-                    offset = self._node_to_offset[node]
-                    for d in range(self._domainSize):
-                        PExt[offset + d] += N[j] * force_vector[d]
+        forces = self._penaltyParameter * g[:, np.newaxis] * pen_normals
 
-                # Apply equal and opposite reaction to the Rigid Body Reference Point
-                rp_offset = self._node_to_offset[self.rigidBodyRPNode]
+        # 6. Apply to RP
+        rp_offset = self._node_to_offset[self.rigidBodyRPNode]
+        if self._domainSize == 3:
+            rp_pos = self.rigidBodyRPNode.coordinates + translation
+            r = pen_coords - rp_pos
+            moments = np.cross(r, -forces)
+            for d in range(3):
+                PExt[rp_offset + d] -= np.sum(forces[:, d])
+                PExt[rp_offset + 3 + d] += np.sum(moments[:, d])
+        else:
+            for d in range(self._domainSize):
+                PExt[rp_offset + d] -= np.sum(forces[:, d])
+
+        # 7. Scatter forces to particles (Nodes)
+        # Because each particle has different nodes, this requires a loop over active particles
+        for idx, (p_idx, force_vector, coord) in enumerate(zip(pen_indices, forces, pen_coords)):
+            p = self.particles[p_idx]
+            N = p.getInterpolationVector(coord).flatten()
+            for j, kf in enumerate(p.kernelFunctions):
+                offset = self._node_to_offset[kf.node]
                 for d in range(self._domainSize):
-                    PExt[rp_offset + d] -= force_vector[d]
+                    PExt[offset + d] += N[j] * force_vector[d]
 
-                # Calculate moment if 3D
-                if self._domainSize == 3:
-                    # Current RP position
-                    rp_pos = self.rigidBodyRPNode.coordinates + translation
-                    # Moment arm from RP to contact point (particle center)
-                    r = coords[i] - rp_pos
-                    # Moment = r x (-F)
-                    moment = np.cross(r, -force_vector)
-                    for d in range(3):
-                        PExt[rp_offset + 3 + d] += moment[d]
-
-                total_reaction += self._penaltyParameter * g
-
-        self.reactionForce = total_reaction
+        self.reactionForce = np.sum(self._penaltyParameter * g)
 
 
 def DiscreteRigidBodyPenaltyContactExplicitFactory(

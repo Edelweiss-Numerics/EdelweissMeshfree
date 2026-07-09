@@ -239,33 +239,18 @@ def run_quasistatic_sim():
     rp.fields["displacement"] = FieldVariable(rp, "displacement")
     rp.fields["rotation"] = FieldVariable(rp, "rotation")
 
-    # Add PointMass to RP for true dynamics
-    from edelweissfe.elements.pointmass import PointMass
-
-    rp_mass = 1.56e5
-    rp_inertia = [6.17e6, 6.17e6, 1.93e6]
-    # We want a 10 m/s downward initial velocity
-    initial_vel = [0.0, -10.0, 0.0]
-    rp_element = PointMass(start_label + 999998, [rp], theModel, rp_mass, rp_inertia, initial_vel)
-    theModel.elements[rp_element.elNumber] = rp_element
-    from edelweissfe.sets.elementset import ElementSet
-
-    theModel.elementSets["rigid_rp_element"] = ElementSet("rigid_rp_element", [rp_element])
-
-    if "all" in theModel.nodeSets:
-        all_nodes = list(theModel.nodeSets["all"])
-        all_nodes.extend(rigid_nodes)
-        all_nodes.append(rp)
-        theModel.nodeSets["all"] = NodeSet("all", all_nodes)
-
-    # Dirichlet on RP
-    # We no longer need the Dirichlet driver on the RP for true dynamics.
-    # The PointMass element provides momentum which translates to velocity.
-
     # Discrete Rigid Body
     from edelweissmeshfree.rigidbodies.discreterigidbody import DiscreteRigidBody
 
-    rigid_body = DiscreteRigidBody("rigid_body", theModel, nSet="rigid_surface_nodes", referencePoint="rigid_rp")
+    rigid_body = DiscreteRigidBody(
+        "rigid_body",
+        theModel,
+        nSet="rigid_surface_nodes",
+        referencePoint="rigid_rp",
+        mass=1.56e5,
+        inertia=[6.17e6, 6.17e6, 1.93e6],
+        initial_velocity=[0.0, -10.0, 0.0],
+    )
     theModel.discreteRigidBodies = {"rigid_body": rigid_body}
 
     # Contact
