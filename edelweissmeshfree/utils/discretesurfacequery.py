@@ -49,29 +49,42 @@ class DiscreteSurfaceQuery:
         self.locator.SetDataSet(self.mesh)
         self.locator.BuildLocator()
 
-    def query(self, coords: np.ndarray, rigid_body_translation: np.ndarray = None) -> tuple[np.ndarray, np.ndarray]:
+    def query(
+        self,
+        coords: np.ndarray,
+        translation: np.ndarray = None,
+        rotation_matrix: np.ndarray = None,
+        rotation_center: np.ndarray = None,
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Vectorized query to compute signed distance and closest face normals for an array of points.
-        Uses cached VTK instances to prevent memory leaks.
 
         Parameters
         ----------
         coords : np.ndarray
             Array of shape (N, 3) containing the query coordinates.
-        rigid_body_translation : np.ndarray, optional
-            A translation vector to apply to the rigid body. Internally this inversely translates the query coords.
-
-        Returns
-        -------
-        dists : np.ndarray
-            Array of shape (N,) containing the signed distance (negative = inside/penetration).
-        normals : np.ndarray
-            Array of shape (N, 3) containing the outward normal vectors.
+        translation : np.ndarray, optional
+            A translation vector of the rigid body RP.
+        rotation_matrix : np.ndarray, optional
+            A 3x3 rotation matrix of the rigid body.
+        rotation_center : np.ndarray, optional
+            The center of rotation (initial position of the RP).
         """
-        if rigid_body_translation is not None:
-            local_coords = coords - rigid_body_translation
-        else:
-            local_coords = coords
+        # Inverse transform query coordinates to the local (static mesh) frame
+        local_coords = coords.copy()
+
+        if translation is not None and rotation_center is not None:
+            # RP current position
+            rp_current = rotation_center + translation
+            local_coords -= rp_current
+
+        if rotation_matrix is not None:
+            # R^T * (P - RP_current)
+            local_coords = local_coords.dot(rotation_matrix)
+
+        if rotation_center is not None:
+            # P_local = RP_initial + R^T * (P_global - RP_current)
+            local_coords += rotation_center
 
         n_points = local_coords.shape[0]
         dists = np.empty(n_points, dtype=np.float64)
@@ -91,5 +104,9 @@ class DiscreteSurfaceQuery:
             closest_cells[i] = int(cell_id)
 
         normals = self.mesh_cell_normals[closest_cells]
+
+        # Forward transform normals to global frame
+        if rotation_matrix is not None:
+            normals = normals.dot(rotation_matrix.T)
 
         return dists, normals

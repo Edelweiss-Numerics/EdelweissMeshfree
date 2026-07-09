@@ -63,24 +63,30 @@ class DiscreteRigidBody:
             return np.zeros(getFieldSize(fieldName, self.domainSize))
         return node_field.subset(node)["U"][0].copy()
 
-    def updateKinematics(self, timeStep=None):
-        """Update surface node coordinates and displacement fields based on the current RP state."""
+    def getCurrentKinematics(self):
+        """Returns the current RP displacement, rotation matrix, and initial RP coordinate."""
         u_rp = self._getFieldU("displacement", self.rpNode)
-        # Current RP position (initial + total accumulated displacement)
-        rp_current = self.rpNode.coordinates + u_rp
-
-        disp_field = self.model.nodeFields.get("displacement")
-        has_disp = disp_field is not None and "U" in disp_field
-
+        
         if self.domainSize == 3:
             theta = self._getFieldU("rotation", self.rpNode)
             R = self._getRotationMatrix3D(theta)
         else:
-            # 2D: rotation is a scalar (rotation around Z)
             rot_u = self._getFieldU("rotation", self.rpNode)
             theta_z = rot_u[0] if len(rot_u) > 0 else 0.0
             c, s = np.cos(theta_z), np.sin(theta_z)
             R = np.array([[c, -s], [s, c]])
+            
+        return u_rp, R, self.rpNode.coordinates
+
+    def updateKinematics(self, timeStep=None):
+        """Update surface node coordinates and displacement fields based on the current RP state."""
+        u_rp, R, rp_initial = self.getCurrentKinematics()
+        
+        # Current RP position (initial + total accumulated displacement)
+        rp_current = rp_initial + u_rp
+
+        disp_field = self.model.nodeFields.get("displacement")
+        has_disp = disp_field is not None and "U" in disp_field
 
         # Vectorized coordinate calculation
         new_coords = rp_current + self.initialRelativePositions.dot(R.T)

@@ -158,11 +158,12 @@ class DiscreteRigidBodyPenaltyContactExplicit(MPMConstraintBase):
         if not self.isActive or not self.particles:
             return
 
-        disp_field = self._model.nodeFields.get("displacement")
-        if disp_field is not None and "U" in disp_field:
-            translation = disp_field.subset(self.rigidBodyRPNode)["U"][0].copy()
+        if hasattr(self.rigidBody, "getCurrentKinematics"):
+            translation, rotation_matrix, rp_initial = self.rigidBody.getCurrentKinematics()
         else:
             translation = np.zeros(self._domainSize)
+            rotation_matrix = None
+            rp_initial = None
 
         # 1. Gather all particle coordinates (Vectorized)
         coords = np.array([p.getCenterCoordinates() for p in self.particles])
@@ -186,7 +187,12 @@ class DiscreteRigidBodyPenaltyContactExplicit(MPMConstraintBase):
             coords_to_query = coords
 
         # 3. Narrowphase Query (VTK)
-        dists, normals = self.query_engine.query(coords_to_query, rigid_body_translation=translation)
+        dists, normals = self.query_engine.query(
+            coords_to_query,
+            translation=translation,
+            rotation_matrix=rotation_matrix,
+            rotation_center=rp_initial,
+        )
 
         # 4. Filter penetrating
         penetrating_mask = dists < 0

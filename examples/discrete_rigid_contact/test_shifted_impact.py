@@ -188,8 +188,9 @@ def run_quasistatic_sim():
         model=theModel,
         filename="rigid_body.exo",
         translation=[0.0, -4.9, 5.0],
-        mass=1.56e5,
-        inertia=[6.17e6, 6.17e6, 1.93e6],
+        density=RHO/10,
+        # mass=1.56e4,
+        # inertia=[6.17e5, 6.17e5, 1.93e5],
         initial_velocity=[0.0, -10.0, 0.0],
     )
 
