@@ -125,6 +125,26 @@ class MPMModel(FEModel):
                     if field not in kf.node.fields:
                         kf.node.fields[field] = FieldVariable(kf.node, field)
 
+    def _populateNodeFieldVariablesFromKinematicDrivers(self):
+        """Creates FieldVariables on the RP node of each kinematic driver.
+
+        Kinematic drivers (e.g. RigidBodyKinematicTieExplicit) own a reference-point
+        node whose displacement must be tracked in the DOF vector so that the solver
+        can accumulate its prescribed motion and so that dependent systems (e.g. contact
+        constraints) can read it correctly.
+        """
+        from edelweissfe.variables.fieldvariable import FieldVariable
+        from edelweissfe.config.phenomena import getFieldSize
+
+        for driver in getattr(self, "kinematicDrivers", {}).values():
+            if not hasattr(driver, "rpNode"):
+                continue
+            rpNode = driver.rpNode
+            # Activate the same fields that the kinematic tie drives (displacement + rotation)
+            for field in ("displacement", "rotation"):
+                if getFieldSize(field, self.domainSize) > 0 and field not in rpNode.fields:
+                    rpNode.fields[field] = FieldVariable(rpNode, field)
+
     def _prepareVariablesAndFields(self, journal):
         """Prepare all variables and fields for a simulation.
 
@@ -142,6 +162,9 @@ class MPMModel(FEModel):
         if self.particleKernelDomains:
             journal.message("Activating fields on Nodes from Particles", self.identification)
             self._populateNodeFieldVariablesFromParticleKernelDomains()
+        if getattr(self, "kinematicDrivers", None):
+            journal.message("Activating fields on Nodes from KinematicDrivers", self.identification)
+            self._populateNodeFieldVariablesFromKinematicDrivers()
 
         return super()._prepareVariablesAndFields(journal)
 

@@ -1,0 +1,172 @@
+   Activating fields on Nodes from Particles                                               MPMModel 
+   Activating fields on nodes from Elements and Constraints                                MPMModel 
+   Bundling fields on nodes to NodeFields                                                  MPMModel 
+   Assembling ScalarVariables                                                              MPMModel 
+ +------------------+------------------------------------------------------------+               summary 
+ | model property   |                                                            |               summary 
+ +------------------+------------------------------------------------------------+               summary 
+ | domain dim.      | 2                                                          |               summary 
+ | time             | 0.0                                                        |               summary 
+ | nodes            | 800                                                        |               summary 
+ | elements         | 0                                                          |               summary 
+ | node sets        | ['rectangular_grid_left', 'rectangular_grid_right',        |               summary 
+ |                  | 'rectangular_grid_top', 'rectangular_grid_bottom',         |               summary 
+ |                  | 'rectangular_grid_leftBottom', 'rectangular_grid_leftTop', |               summary 
+ |                  | 'rectangular_grid_rightBottom',                            |               summary 
+ |                  | 'rectangular_grid_rightTop', 'all']                        |               summary 
+ | node fields      | ['displacement', 'micro rotation', 'nonlocal damage']      |               summary 
+ | element sets     | ['all']                                                    |               summary 
+ | sections         | []                                                         |               summary 
+ | surfaces         | ['rectangular_grid_bottom', 'rectangular_grid_top',        |               summary 
+ |                  | 'rectangular_grid_right', 'rectangular_grid_left']         |               summary 
+ | constraints      | 0                                                          |               summary 
+ | constraint sets  | []                                                         |               summary 
+ | materials        | []                                                         |               summary 
+ | analytical       | []                                                         |               summary 
+ | fields           |                                                            |               summary 
+ | scalar vars.     | 0                                                          |               summary 
+ | material points  | 0                                                          |               summary 
+ | cells            | 0                                                          |               summary 
+ | cell elements    | 0                                                          |               summary 
+ | material point   | ['all']                                                    |               summary 
+ | sets             |                                                            |               summary 
+ | cell sets        | ['all']                                                    |               summary 
+ | cell element     | ['all']                                                    |               summary 
+ | sets             |                                                            |               summary 
+ | particles        | 800                                                        |               summary 
+ | particle sets    | ['rectangular_grid_all', 'rectangular_grid_left',          |               summary 
+ |                  | 'rectangular_grid_right', 'rectangular_grid_top',          |               summary 
+ |                  | 'rectangular_grid_bottom', 'rectangular_grid_leftBottom',  |               summary 
+ |                  | 'rectangular_grid_leftTop',                                |               summary 
+ |                  | 'rectangular_grid_rightBottom',                            |               summary 
+ |                  | 'rectangular_grid_rightTop', 'rectangular_grid_boundary',  |               summary 
+ |                  | 'all']                                                     |               summary 
+ | meshfree kernel  | 800                                                        |               summary 
+ | functions        |                                                            |               summary 
+ | particle kernel  | ['my_all_with_all']                                        |               summary 
+ | domains          |                                                            |               summary 
+ +------------------+------------------------------------------------------------+               summary 
+ +---------------------------------------------------------------+-------------------+ MPM-NQS-ArcLength 
+ | Solver option                                                 | value             | MPM-NQS-ArcLength 
+ +---------------------------------------------------------------+-------------------+ MPM-NQS-ArcLength 
+ | max. iterations                                               | 25                | MPM-NQS-ArcLength 
+ | critical iterations                                           | 7                 | MPM-NQS-ArcLength 
+ | allowed residual growths                                      | 10                | MPM-NQS-ArcLength 
+ | iterations for alt. tolerances                                | 5                 | MPM-NQS-ArcLength 
+ | zero increment threshhold                                     | 1e-13             | MPM-NQS-ArcLength 
+ | zero flux threshhold                                          | 1e-09             | MPM-NQS-ArcLength 
+ | default relative flux residual tolerance                      | 0.0001            | MPM-NQS-ArcLength 
+ | default relative flux residual tolerance alt.                 | 0.001             | MPM-NQS-ArcLength 
+ | default relative field correction tolerance                   | 0.001             | MPM-NQS-ArcLength 
+ | default absolute flux residual tolerance                      | 1e-14             | MPM-NQS-ArcLength 
+ | default absolute field correction tolerance                   | 1e-14             | MPM-NQS-ArcLength 
+ | spec. relative flux residual tolerances                       | {}                | MPM-NQS-ArcLength 
+ | spec. relative flux residual tolerances alt.                  | {}                | MPM-NQS-ArcLength 
+ | spec. relative field correction tolerances                    | {}                | MPM-NQS-ArcLength 
+ | spec. absolute flux residual tolerances                       | {}                | MPM-NQS-ArcLength 
+ | spec. absolute field correction tolerances                    | {}                | MPM-NQS-ArcLength 
+ | failed increment cutback factor                               | 0.25              | MPM-NQS-ArcLength 
+ | fall back to quasi Newton after allowed residual growths      | False             | MPM-NQS-ArcLength 
+ | line search                                                   | False             | MPM-NQS-ArcLength 
+ | line search after n iterations                                | 5                 | MPM-NQS-ArcLength 
+ | line search every n iterations                                | 2                 | MPM-NQS-ArcLength 
+ | line search alphas                                            | [0.8, 1.0, 1.2]   | MPM-NQS-ArcLength 
+ +---------------------------------------------------------------+-------------------+ MPM-NQS-ArcLength 
++-------------------------------------------------------------------------------------------------------+
+   increment 0: 0.000000, 0.000000; time   0.000000 to   0.000000                      MPM-NQS-ArcLength 
+   updating particle kernel connectivity                                               MPM-NQS-ArcLength 
+   Updating kernel function positions...                                                 ParticleManager 
+   active domain has changed, (re)initializing equation system & clearing cache        MPM-NQS-ArcLength 
+   resulting equation system has a size of 3200                                        MPM-NQS-ArcLength 
+           displacement            micro rotation           nonlocal damage            MPM-NQS-ArcLength 
+      ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞           MPM-NQS-ArcLength 
+      6.46e+00    0.00e+00✓    0.00e+00    0.00e+00✓    0.00e+00    0.00e+00✓          MPM-NQS-ArcLength 
+      6.35e-04    5.31e-02     3.53e-04    7.91e-02     0.00e+00✓   0.00e+00✓          MPM-NQS-ArcLength 
+      2.75e-10✓   1.55e-05✓    1.97e-10✓   3.23e-05✓    0.00e+00✓   0.00e+00✓          MPM-NQS-ArcLength 
+   Converged in 2 iteration(s)                                                         MPM-NQS-ArcLength 
+   Writing restart file                                                                MPM-NQS-ArcLength 
++-------------------------------------------------------------------------------------------------------+
+   increment 1: 0.500000, 0.500000; time   0.000000 to   0.500000                      MPM-NQS-ArcLength 
+   updating particle kernel connectivity                                               MPM-NQS-ArcLength 
+   Updating kernel function positions...                                                 ParticleManager 
+   active domain has changed, (re)initializing equation system & clearing cache        MPM-NQS-ArcLength 
+   resulting equation system has a size of 3200                                        MPM-NQS-ArcLength 
+           displacement            micro rotation           nonlocal damage            MPM-NQS-ArcLength 
+      ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞           MPM-NQS-ArcLength 
+      5.54e+00    0.00e+00✓    1.43e-07    0.00e+00✓    0.00e+00    0.00e+00✓          MPM-NQS-ArcLength 
+      1.71e+00    1.13e+00     6.14e-01    1.73e+00     0.00e+00✓   0.00e+00✓          MPM-NQS-ArcLength 
+      2.72e-04    1.15e-02     1.56e-04    1.71e-02     0.00e+00✓   0.00e+00✓          MPM-NQS-ArcLength 
+      1.25e-10✓   7.42e-06✓    6.48e-11✓   1.40e-05✓    0.00e+00✓   0.00e+00✓          MPM-NQS-ArcLength 
+   Converged in 3 iteration(s)                                                         MPM-NQS-ArcLength 
+   Writing restart file                                                                MPM-NQS-ArcLength 
++-------------------------------------------------------------------------------------------------------+
+   increment 2: 0.500000, 1.000000; time   0.500000 to   1.000000                      MPM-NQS-ArcLength 
+   updating particle kernel connectivity                                               MPM-NQS-ArcLength 
+   Updating kernel function positions...                                                 ParticleManager 
+   active domain has changed, (re)initializing equation system & clearing cache        MPM-NQS-ArcLength 
+   resulting equation system has a size of 3200                                        MPM-NQS-ArcLength 
+   Only one time step in history, falling back to linear predictor.                   QuadraticPredictor 
+           displacement            micro rotation           nonlocal damage            MPM-NQS-ArcLength 
+      ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞     ||R||∞      ||ddU||∞           MPM-NQS-ArcLength 
+      1.75e+02    0.00e+00✓    4.45e+00    0.00e+00✓    0.00e+00    0.00e+00✓          MPM-NQS-ArcLength 
+      1.08e-02    6.68e-01     3.36e-03    4.50e+00     0.00e+00✓   0.00e+00✓          MPM-NQS-ArcLength 
+      7.73e-10✓   2.04e-04✓    2.00e-09✓   6.36e-04✓    0.00e+00✓   0.00e+00✓          MPM-NQS-ArcLength 
+   Converged in 2 iteration(s)                                                         MPM-NQS-ArcLength 
+   Writing restart file                                                                MPM-NQS-ArcLength 
+ +-----------------------------------------------+------------------------+----------+           Summary 
+ | function                                      | acc. runtime           | calls    |           Summary 
+ +-----------------------------------------------+------------------------+----------+           Summary 
+ | solve step                                    | 6.5962E+01s            | 35       |           Summary 
+ |  step actions                                 |  1.2512E-03s           | 70       |           Summary 
+ |  preparation material points                  |  1.0469E-02s           | 37       |           Summary 
+ |  update connectivity                          |  4.8277E+00s           | 291      |           Summary 
+ |  assembly active domain                       |  9.5845E-02s           | 165      |           Summary 
+ |  instancing dof manager                       |  1.8421E+00s           | 165      |           Summary 
+ |  creation newton cache                        |  2.6397E+00s           | 165      |           Summary 
+ |   instancing csr generator                    |   2.4603E+00s          | 165      |           Summary 
+ |  newton iteration                             |  4.4077E+01s           | 291      |           Summary 
+ |   step actions                                |   4.3893E-04s          | 291      |           Summary 
+ |   preparation material points                 |   6.0725E-03s          | 50       |           Summary 
+ |   interpolation to mps                        |   3.7994E-03s          | 100      |           Summary 
+ |   computation material points                 |   1.8436E-02s          | 50       |           Summary 
+ |   computation active cells                    |   2.1231E-02s          | 50       |           Summary 
+ |   computation elements                        |   3.3998E-04s          | 50       |           Summary 
+ |   computation particles                       |   1.5363E-01s          | 50       |           Summary 
+ |   computation constraints                     |   9.7213E-02s          | 50       |           Summary 
+ |   compute body loads                          |   7.5538E-03s          | 100      |           Summary 
+ |   compute distributed loads                   |   1.0742E-01s          | 200      |           Summary 
+ |   dirichlet on R                              |   3.8857E-03s          | 87       |           Summary 
+ |   conversion VIJ to CSR                       |   1.5369E+00s          | 1162     |           Summary 
+ |   dirichlet on CSR                            |   5.3406E-02s          | 1162     |           Summary 
+ |   linear solve                                |   1.4273E+01s          | 1162     |           Summary 
+ |   evaluation residuals                        |   1.4009E-01s          | 1416     |           Summary 
+ |    computation spatial fluxes                 |    4.3881E-02s         | 1413     |           Summary 
+ |   convergence check                           |   9.8872E-03s          | 1413     |           Summary 
+ |   compute system                              |   2.6220E+01s          | 1403     |           Summary 
+ |    preparation material points                |    5.0669E-02s         | 1403     |           Summary 
+ |    interpolation to mps                       |    7.1511E-02s         | 2806     |           Summary 
+ |    computation material points                |    1.9870E-01s         | 1403     |           Summary 
+ |    computation active cells                   |    9.0297E+00s         | 1403     |           Summary 
+ |    computation elements                       |    1.1868E-02s         | 1403     |           Summary 
+ |    computation cell elements                  |    1.4691E-03s         | 1403     |           Summary 
+ |    computation particles                      |    1.3094E+01s         | 1403     |           Summary 
+ |    computation constraints                    |    2.5289E+00s         | 1403     |           Summary 
+ |    compute body loads                         |    3.7302E-02s         | 1403     |           Summary 
+ |    compute distributed loads                  |    4.2770E-01s         | 2806     |           Summary 
+ |   line search                                 |   6.4983E-01s          | 7        |           Summary 
+ |    compute system                             |    6.4265E-01s         | 28       |           Summary 
+ |     preparation material points               |     6.8426E-05s        | 28       |           Summary 
+ |     interpolation to mps                      |     4.3392E-05s        | 56       |           Summary 
+ |     computation material points               |     1.7166E-05s        | 28       |           Summary 
+ |     computation active cells                  |     2.6464E-05s        | 28       |           Summary 
+ |     computation elements                      |     1.5163E-04s        | 28       |           Summary 
+ |     computation cell elements                 |     1.8597E-05s        | 28       |           Summary 
+ |     computation particles                     |     6.0055E-01s        | 28       |           Summary 
+ |     computation constraints                   |     2.6969E-02s        | 28       |           Summary 
+ |     compute body loads                        |     3.1471E-05s        | 28       |           Summary 
+ |     compute distributed loads                 |     2.4796E-05s        | 56       |           Summary 
+ |  postprocessing & output                      |  1.7298E-01s           | 282      |           Summary 
+ |  preparation particles                        |  5.4917E-02s           | 254      |           Summary 
+ |  writing restart                              |  3.9397E-01s           | 10       |           Summary 
+ | simulation                                    | 4.1814E-03s            | 3        |           Summary 
+ +-----------------------------------------------+------------------------+----------+           Summary 

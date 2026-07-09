@@ -84,9 +84,10 @@ class Dirichlet(DirichletBase):
     def updateStepAction(self, values, f_t: Callable[[float], float] = None):
         self.active = True
 
-        self._components = np.array([i for i in values.keys()])
+        # Component keys are 1-based strings like "1", "2", "3"; convert to 0-based int indices.
+        self._components = np.array([int(k) - 1 for k in values.keys()], dtype=int)
 
-        self._delta = np.array([values for values in values.values()])
+        self._delta = np.array(list(values.values()))
 
         if f_t is not None:
             self._amplitude = f_t

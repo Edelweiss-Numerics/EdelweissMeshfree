@@ -151,9 +151,13 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
                         theDofManager, model, mpmManagers, constraints
                     )
                     self.updateSystem(particles, timeStep.totalTime, dT, dU_np)
+                    for driver in getattr(model, "kinematicDrivers", {}).values():
+                        driver.applyDriver(timeStep)
                     self.computeSystem(
-                        particles, activeConstraints, particleDistributedLoads, P_Int, P_Ext, M, momentum, timeStep
+                        particles, activeConstraints, particleDistributedLoads, P_Int, P_Ext, M, momentum, timeStep, list(model.elements.values())
                     )
+                    # prevent division close to zero:
+                    M[M < 1e-12] = 1e-12
                     M_inv = np.reciprocal(M)
                     v_np_one_half[:] = momentum * M_inv
 
@@ -174,13 +178,59 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
                             dU_np[indices] = v_np_one_half[indices] * dT  # (U_np - U_n) = v_(n+1/2) * dT
                         elif order == 1:  # Forward Euler
                             dU_np[indices] += a_n[indices] * dT
-
                 self._applyStepActionsAtIncrementStart(model, timeStep, dirichlets + bodyLoads)
+
+                if dirichlets:
+                    for dirichlet in dirichlets:
+                        if not hasattr(self, 'reducedNodeSets'):
+                            continue
+                        dirichletNodes = self.reducedNodeSets.get(dirichlet.nSet.name)
+                        if dirichletNodes is None:
+                            continue
+                        
+                        indices = self._findDirichletIndices(theDofManager, dirichlet, dirichletNodes)
+                        try:
+                            delta = dirichlet.getDelta(timeStep, dirichletNodes).flatten()
+                        except TypeError:
+                            delta = dirichlet.getDelta(timeStep).flatten()
+                        
+                        dU_np[indices] = delta
+                        if dT > 0.0:
+                            v_np_one_half[indices] = delta / dT
+
 
                 # the solution increment to t_np is formulated in terms of the old discretization at t_n
                 # so for MPM and RKPM this call connects the old discretization with the shift to the new positions
                 # This is on contrast to FE, which can be exclusively computed in the new configuration using computeSystem(...) only
                 self.updateSystem(particles, timeStep.totalTime, dT, dU_np)
+                
+                # Update nodal variables directly so that constraints and outputs can access their total values
+                field_var_map = theDofManager.idcsOfFieldVariablesInDofVector
+                for field_name in options["field orders"].keys():
+                    node_field = model.nodeFields.get(field_name)
+                    if node_field is None:
+                        continue
+                    if "U" not in node_field:
+                        node_field.createFieldValueEntry("U")
+                        node_field["U"][:] = 0.0
+                    
+                    for i, node in enumerate(node_field.nodes):
+                        fv = node.fields.get(field_name)
+                        if fv is not None and fv in field_var_map:
+                            dof_indices = field_var_map[fv]
+                            node_field["U"][i] += dU_np[dof_indices]
+                            
+                            # Cache the current velocity directly on the node object for standard elements
+                            if field_name == "displacement":
+                                node.current_velocity = v_np_one_half[dof_indices].copy()
+                                node._velocity_initialized = True
+                            elif field_name == "rotation":
+                                node.current_angular_velocity = v_np_one_half[dof_indices].copy()
+                                node._velocity_initialized = True
+                
+                for driver in getattr(model, "kinematicDrivers", {}).values():
+                    driver.applyDriver(timeStep)
+                
                 model.advanceToTime(timeStep.totalTime)
 
                 # A
@@ -214,7 +264,7 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
 
                 P_Int[:] = P_Ext[:] = M[:] = momentum[:] = 0.0
                 self.computeSystem(
-                    particles, activeConstraints, particleDistributedLoads, P_Int, P_Ext, M, momentum, timeStep
+                    particles, activeConstraints, particleDistributedLoads, P_Int, P_Ext, M, momentum, timeStep, list(model.elements.values())
                 )
                 # prevent division close to zero:
                 M[M < 1e-12] = 1e-12
@@ -392,34 +442,15 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
         self,
         particles: list,
         constraints: list,
-        particleDistributedLoads: list[ParticleDistributedLoad],
+        particleDistributedLoads: list,
         P_Int: DofVector,
         P_Ext: DofVector,
         M: DofVector,
         Mv: DofVector,
-        timeStep: TimeStep,
+        timeStep,
+        elements: list = None,
     ):
-        """Compute the system vectors.
-
-        Parameters
-        ----------
-        particles
-            The list of particles to be evaluated.
-        constraints
-            The list of constraints to be applied.
-        particleDistributedLoads
-            The list of particle distributed loads to be applied.
-        P_Int
-            The global internal flux vector.
-        P_Ext
-            The global external flux vector.
-        M
-            The global lumped inertia vector.
-        Mv
-            The global momentum vector.
-        timeStep
-            The current time increment.
-        """
+        """Compute the system vectors."""
 
         self._computeParticlesExplicit(
             particles,
@@ -427,6 +458,24 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
             M,
             Mv,
         )
+        
+        # Accumulate mass and internal forces from standard FE elements (like PointMass)
+        if elements:
+            for el in elements:
+                if hasattr(el, "computeLumpedInertia") and hasattr(el, "nDof") and el.nDof > 0:
+                    Me = np.zeros(el.nDof)
+                    el.computeLumpedInertia(Me)
+                    # Scatter to nodes
+                    if hasattr(el, "getStructure"):
+                        if el in M.entitiesInDofVector:
+                            M[el] += Me
+                
+                if hasattr(el, "computeMomentum") and hasattr(el, "nDof") and el.nDof > 0:
+                    Mv_e = np.zeros(el.nDof)
+                    el.computeMomentum(Mv_e)
+                    if hasattr(el, "getStructure"):
+                        if el in Mv.entitiesInDofVector:
+                            Mv[el] += Mv_e
 
         self._computeParticleDistributedLoads(particleDistributedLoads, P_Ext, timeStep)
         self._computeConstraints(constraints, P_Ext, timeStep)
@@ -474,9 +523,14 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
         """
         for c in constraints:
             if c.active:
-                Pc = np.zeros(c.nDof)
-                c.applyConstraint(Pc, timeStep)
-                P[c] += Pc
+                if c.nDof == 0:
+                    # Kinematic constraints (e.g. RigidBodyKinematicTieExplicit) have nDof=0 and
+                    # directly update coordinates / nodal fields rather than contributing forces.
+                    c.applyConstraint(None, timeStep)
+                else:
+                    Pc = np.zeros(c.nDof)
+                    c.applyConstraint(Pc, timeStep)
+                    P[c] += Pc
 
     @performancetiming.timeit("updating dof structure")
     def _updateDofManager(self, theDofManager, constraints: list, particles: list):
@@ -518,14 +572,17 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
 
         activeNodesPersistent, _, reducedNodeFields, reducedNodeSets = self._assembleActiveDomain(list(), model)
 
+        self.reducedNodeSets = {ns.name: ns for ns in reducedNodeSets.values()}
+
         theDofManager = self._createDofManager(
-            reducedNodeFields.values(),
-            list(),
-            list(),
-            constraints,
-            list(),
-            list(),
-            particles,
+            nodeFields=list(reducedNodeFields.values()),
+            scalarVariables=[],
+            elements=list(model.elements.values()),
+            constraints=constraints,
+            nodeSets=list(reducedNodeSets.values()),
+            cells=[],
+            cellElements=[],
+            particles=particles,
             initializeVIJPattern=False,
             initializeAccumulatedNodalFluxesFieldwise=False,
             determiningIndexToHostObjectMappping=False,

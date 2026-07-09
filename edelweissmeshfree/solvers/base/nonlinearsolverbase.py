@@ -236,7 +236,13 @@ class BaseNonlinearSolver:
 
         activeNodesWithPersistentFieldValues = set(
             n for element in model.elements.values() for n in element.nodes
-        ) | set(n for element in model.cellElements.values() for n in element.nodes)
+        ) | set(n for element in model.cellElements.values() for n in element.nodes) | set(
+            n for constraint in model.constraints.values() if constraint.active for n in constraint.nodes
+        )
+        if hasattr(model, "kinematicDrivers"):
+            for driver in model.kinematicDrivers.values():
+                if hasattr(driver, "rpNode"):
+                    activeNodesWithPersistentFieldValues.add(driver.rpNode)
 
         activeNodesWithVolatileFieldValues = set(n for cell in activeCells for n in cell.nodes)
 

@@ -1,0 +1,14 @@
+reset
+brick x 10 y 10 z 10
+volume 1 size 1
+mesh volume 1
+block 1 volume 1
+export genesis 'particles.exo' overwrite
+
+reset
+cylinder radius 5 height 20
+move Volume 1 y 15
+surface all size 1
+mesh surface all
+block 1 surface all
+export genesis 'rigid_body.exo' overwrite

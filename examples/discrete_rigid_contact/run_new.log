@@ -1,0 +1,1030 @@
+<frozen importlib._bootstrap>:491: RuntimeWarning: The global interpreter lock (GIL) has been enabled to load module 'edelweissfe.elements.marmotelement.element', which has not declared that it can run safely without the GIL. To override this behavior and keep the GIL disabled (at your own risk), run with PYTHON_GIL=0 or -Xgil=0.
+=== Quasi-static mass-scaled contact test ===
+  E=400.0, ν=0.3, ρ(scaled)=100.0
+  Physical wave speed c = 20.0 m/s  (ρ_phys=1)
+  Scaled  wave speed c*= 2.0 m/s
+  Loading velocity      = 33.3 m/s  (167% of physical c)
+  Expected contact time = 0.0600 s
+  dt = 0.001 s  →  300 increments
+
+Loading particles...
+   Reading Exodus mesh (Pure NetCDF) from: particles.exo                                        exo 
+   Created 1000 particles.                                                                      exo 
+   Reading side sets (Direct Map)...                                                            exo 
+Generating kernel matching...
+   Generating kernel functions matching to particles in set 'mesh_particles_all'.  matching_kernels 
+   Characteristic length of particles: min = 1.000000e+00, max = 1.000000e+00.     matching_kernels 
+   Generated 0 kernel functions matching to particles.                             matching_kernels 
+2026-07-09 08:17:38.549 (   0.879s) [    7F0B796BF780]vtkDemandDrivenPipeline:672    ERR| vtkCompositeDataPipeline (0x5637c4717a10): Input port 0 of algorithm vtkAppendFilter (0x5637c4bac440) has 0 connections but is not optional.
+ERROR:root:Input port 0 of algorithm vtkAppendFilter (0x5637c4bac440) has 0 connections but is not optional.
+2026-07-09 08:17:38.550 (   0.879s) [    7F0B796BF780]vtkDemandDrivenPipeline:672    ERR| vtkCompositeDataPipeline (0x5637c4717a10): Input port 0 of algorithm vtkAppendFilter (0x5637c4763840) has 0 connections but is not optional.
+ERROR:root:Input port 0 of algorithm vtkAppendFilter (0x5637c4763840) has 0 connections but is not optional.
+2026-07-09 08:17:38.550 (   0.879s) [    7F0B796BF780]vtkDemandDrivenPipeline:672    ERR| vtkCompositeDataPipeline (0x5637c4717a10): Input port 0 of algorithm vtkAppendFilter (0x5637c475c350) has 0 connections but is not optional.
+ERROR:root:Input port 0 of algorithm vtkAppendFilter (0x5637c475c350) has 0 connections but is not optional.
+2026-07-09 08:17:38.550 (   0.880s) [    7F0B796BF780]vtkDemandDrivenPipeline:672    ERR| vtkCompositeDataPipeline (0x5637c4717a10): Input port 0 of algorithm vtkAppendFilter (0x5637c4767e80) has 0 connections but is not optional.
+ERROR:root:Input port 0 of algorithm vtkAppendFilter (0x5637c4767e80) has 0 connections but is not optional.
+2026-07-09 08:17:38.550 (   0.880s) [    7F0B796BF780]vtkDemandDrivenPipeline:672    ERR| vtkCompositeDataPipeline (0x5637c4717a10): Input port 0 of algorithm vtkAppendFilter (0x5637c476dc70) has 0 connections but is not optional.
+ERROR:root:Input port 0 of algorithm vtkAppendFilter (0x5637c476dc70) has 0 connections but is not optional.
+2026-07-09 08:17:38.550 (   0.880s) [    7F0B796BF780]vtkDemandDrivenPipeline:672    ERR| vtkCompositeDataPipeline (0x5637c4717a10): Input port 0 of algorithm vtkAppendFilter (0x5637c4770720) has 0 connections but is not optional.
+ERROR:root:Input port 0 of algorithm vtkAppendFilter (0x5637c4770720) has 0 connections but is not optional.
+2026-07-09 08:17:38.550 (   0.880s) [    7F0B796BF780]vtkDemandDrivenPipeline:672    ERR| vtkCompositeDataPipeline (0x5637c4717a10): Input port 0 of algorithm vtkAppendFilter (0x5637c47710f0) has 0 connections but is not optional.
+ERROR:root:Input port 0 of algorithm vtkAppendFilter (0x5637c47710f0) has 0 connections but is not optional.
+/home/matthias/constitutive_modeling/next_v2611/EdelweissMeshfree/examples/discrete_rigid_contact/test_shifted_impact.py:169: PyVistaFutureWarning: The default value of `algorithm` for the filter
+`UnstructuredGrid.extract_surface` will change in the future. It currently defaults to
+`'dataset_surface'`, but will change to `None`. Explicitly set the `algorithm` keyword to
+silence this warning.
+  surf = mesh.extract_surface()
+2026-07-09 08:17:38.581 (   0.910s) [    7F0B796BF780]vtkDemandDrivenPipeline:672    ERR| vtkCompositeDataPipeline (0x5637c4717a10): Input port 0 of algorithm vtkAppendFilter (0x5637c47710f0) has 0 connections but is not optional.
+ERROR:root:Input port 0 of algorithm vtkAppendFilter (0x5637c47710f0) has 0 connections but is not optional.
+2026-07-09 08:17:38.581 (   0.911s) [    7F0B796BF780]vtkDemandDrivenPipeline:672    ERR| vtkCompositeDataPipeline (0x5637c4717a10): Input port 0 of algorithm vtkAppendFilter (0x5637c47865a0) has 0 connections but is not optional.
+ERROR:root:Input port 0 of algorithm vtkAppendFilter (0x5637c47865a0) has 0 connections but is not optional.
+2026-07-09 08:17:38.581 (   0.911s) [    7F0B796BF780]vtkDemandDrivenPipeline:672    ERR| vtkCompositeDataPipeline (0x5637c4717a10): Input port 0 of algorithm vtkAppendFilter (0x5637c4766c80) has 0 connections but is not optional.
+ERROR:root:Input port 0 of algorithm vtkAppendFilter (0x5637c4766c80) has 0 connections but is not optional.
+2026-07-09 08:17:38.581 (   0.911s) [    7F0B796BF780]vtkDemandDrivenPipeline:672    ERR| vtkCompositeDataPipeline (0x5637c4717a10): Input port 0 of algorithm vtkAppendFilter (0x5637c475eea0) has 0 connections but is not optional.
+ERROR:root:Input port 0 of algorithm vtkAppendFilter (0x5637c475eea0) has 0 connections but is not optional.
+2026-07-09 08:17:38.581 (   0.911s) [    7F0B796BF780]vtkDemandDrivenPipeline:672    ERR| vtkCompositeDataPipeline (0x5637c4717a10): Input port 0 of algorithm vtkAppendFilter (0x5637c4badf50) has 0 connections but is not optional.
+ERROR:root:Input port 0 of algorithm vtkAppendFilter (0x5637c4badf50) has 0 connections but is not optional.
+2026-07-09 08:17:38.582 (   0.911s) [    7F0B796BF780]vtkDemandDrivenPipeline:672    ERR| vtkCompositeDataPipeline (0x5637c4717a10): Input port 0 of algorithm vtkAppendFilter (0x5637c4baa220) has 0 connections but is not optional.
+ERROR:root:Input port 0 of algorithm vtkAppendFilter (0x5637c4baa220) has 0 connections but is not optional.
+2026-07-09 08:17:38.582 (   0.911s) [    7F0B796BF780]vtkDemandDrivenPipeline:672    ERR| vtkCompositeDataPipeline (0x5637c4717a10): Input port 0 of algorithm vtkAppendFilter (0x5637c46ff060) has 0 connections but is not optional.
+ERROR:root:Input port 0 of algorithm vtkAppendFilter (0x5637c46ff060) has 0 connections but is not optional.
+/home/matthias/constitutive_modeling/next_v2611/EdelweissMeshfree/edelweissmeshfree/utils/discretesurfacequery.py:29: PyVistaFutureWarning: The default value of `algorithm` for the filter
+`UnstructuredGrid.extract_surface` will change in the future. It currently defaults to
+`'dataset_surface'`, but will change to `None`. Explicitly set the `algorithm` keyword to
+silence this warning.
+  self.mesh = self.mesh.extract_surface()
+   Activating fields on Nodes from Particles                                               MPMModel 
+   Activating fields on Nodes from KinematicDrivers                                        MPMModel 
+   Activating fields on nodes from Elements and Constraints                                MPMModel 
+   Bundling fields on nodes to NodeFields                                                  MPMModel 
+   Assembling ScalarVariables                                                              MPMModel 
+ +-----------------------------------------+------------------------------------+           summary 
+ | model property                          |                                    |           summary 
+ +-----------------------------------------+------------------------------------+           summary 
+ | domain dim.                             | 3                                  |           summary 
+ | time                                    | 0.0                                |           summary 
+ | nodes                                   | 1829                               |           summary 
+ | elements                                | 827                                |           summary 
+ | node sets                               | ['matching_kernels_all',           |           summary 
+ |                                         | 'rigid_surface_nodes', 'rigid_rp', |           summary 
+ |                                         | 'all']                             |           summary 
+ | node fields                             | ['displacement', 'rotation']       |           summary 
+ | element sets                            | ['rigid_surface',                  |           summary 
+ |                                         | 'rigid_rp_element', 'all']         |           summary 
+ | sections                                | []                                 |           summary 
+ | surfaces                                | []                                 |           summary 
+ | constraints                             | 3                                  |           summary 
+ | constraint sets                         | ['bottom_fix', 'rigid_impact']     |           summary 
+ | materials                               | []                                 |           summary 
+ | analytical fields                       | []                                 |           summary 
+ | scalar vars.                            | 0                                  |           summary 
+ | material points                         | 0                                  |           summary 
+ | cells                                   | 0                                  |           summary 
+ | cell elements                           | 0                                  |           summary 
+ | material point sets                     | ['all']                            |           summary 
+ | cell sets                               | ['all']                            |           summary 
+ | cell element sets                       | ['all']                            |           summary 
+ | particles                               | 1000                               |           summary 
+ | particle sets                           | ['mesh_particles_all',             |           summary 
+ |                                         | 'mesh_particles_block_block_1',    |           summary 
+ |                                         | 'bottom', 'all']                   |           summary 
+ | meshfree kernel functions               | 1000                               |           summary 
+ | particle kernel domains                 | ['all']                            |           summary 
+ +-----------------------------------------+------------------------------------+           summary 
+DEBUG ELEMENTS:
+Found RP Element! <edelweissfe.elements.pointmass.PointMass object at 0x568c6e42b90>
+ +------------------------------+-----------------------------------------------+Explicit-MP-Solver 
+ |        Solver option         |                     value                     |Explicit-MP-Solver 
+ +------------------------------+-----------------------------------------------+Explicit-MP-Solver 
+ |         field orders         |       {'displacement': 2, 'rotation': 2}      |Explicit-MP-Solver 
+ |        damping factor        |                      0.0                      |Explicit-MP-Solver 
+ |    write restart interval    |                       0                       |Explicit-MP-Solver 
+ +------------------------------+-----------------------------------------------+Explicit-MP-Solver 
+   Step 0: Time 0.000000e+00, dt 0.000000e+00                                    Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 1: Time 1.000000e-03, dt 1.000000e-03                                    Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 2: Time 2.000000e-03, dt 1.000000e-03                                    Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 3: Time 3.000000e-03, dt 1.000000e-03                                    Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 4: Time 4.000000e-03, dt 1.000000e-03                                    Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 5: Time 5.000000e-03, dt 1.000000e-03                                    Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 6: Time 6.000000e-03, dt 1.000000e-03                                    Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 7: Time 7.000000e-03, dt 1.000000e-03                                    Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 8: Time 8.000000e-03, dt 1.000000e-03                                    Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 9: Time 9.000000e-03, dt 1.000000e-03                                    Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 10: Time 1.000000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 11: Time 1.100000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 12: Time 1.200000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 13: Time 1.300000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 14: Time 1.400000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 15: Time 1.500000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 16: Time 1.600000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 17: Time 1.700000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 18: Time 1.800000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 19: Time 1.900000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 20: Time 2.000000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 21: Time 2.100000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 22: Time 2.200000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 23: Time 2.300000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 24: Time 2.400000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 25: Time 2.500000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 26: Time 2.600000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 27: Time 2.700000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 28: Time 2.800000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 29: Time 2.900000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 30: Time 3.000000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 31: Time 3.100000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 32: Time 3.200000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 33: Time 3.300000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 34: Time 3.400000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 35: Time 3.500000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 36: Time 3.600000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 37: Time 3.700000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 38: Time 3.800000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 39: Time 3.900000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 40: Time 4.000000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 41: Time 4.100000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 42: Time 4.200000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 43: Time 4.300000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 44: Time 4.400000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 45: Time 4.500000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 46: Time 4.600000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 47: Time 4.700000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 48: Time 4.800000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 49: Time 4.900000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 50: Time 5.000000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 51: Time 5.100000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 52: Time 5.200000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 53: Time 5.300000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 54: Time 5.400000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 55: Time 5.500000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 56: Time 5.600000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 57: Time 5.700000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 58: Time 5.800000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 59: Time 5.900000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 60: Time 6.000000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 61: Time 6.100000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 62: Time 6.200000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 63: Time 6.300000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 64: Time 6.400000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 65: Time 6.500000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 66: Time 6.600000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 67: Time 6.700000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 68: Time 6.800000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 69: Time 6.900000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 70: Time 7.000000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 71: Time 7.100000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 72: Time 7.200000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 73: Time 7.300000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 74: Time 7.400000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 75: Time 7.500000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 76: Time 7.600000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 77: Time 7.700000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 78: Time 7.800000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 79: Time 7.900000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 80: Time 8.000000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 81: Time 8.100000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 82: Time 8.200000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 83: Time 8.300000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 84: Time 8.400000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 85: Time 8.500000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 86: Time 8.600000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 87: Time 8.700000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 88: Time 8.800000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 89: Time 8.900000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 90: Time 9.000000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 91: Time 9.100000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 92: Time 9.200000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 93: Time 9.300000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 94: Time 9.400000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 95: Time 9.500000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 96: Time 9.600000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 97: Time 9.700000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 98: Time 9.800000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 99: Time 9.900000e-02, dt 1.000000e-03                                   Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 100: Time 1.000000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 101: Time 1.010000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 102: Time 1.020000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 103: Time 1.030000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 104: Time 1.040000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 105: Time 1.050000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 106: Time 1.060000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 107: Time 1.070000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 108: Time 1.080000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 109: Time 1.090000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 110: Time 1.100000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 111: Time 1.110000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 112: Time 1.120000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 113: Time 1.130000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 114: Time 1.140000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 115: Time 1.150000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 116: Time 1.160000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 117: Time 1.170000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 118: Time 1.180000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 119: Time 1.190000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 120: Time 1.200000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 121: Time 1.210000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 122: Time 1.220000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 123: Time 1.230000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 124: Time 1.240000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 125: Time 1.250000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 126: Time 1.260000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 127: Time 1.270000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 128: Time 1.280000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 129: Time 1.290000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 130: Time 1.300000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 131: Time 1.310000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 132: Time 1.320000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 133: Time 1.330000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 134: Time 1.340000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 135: Time 1.350000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 136: Time 1.360000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 137: Time 1.370000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 138: Time 1.380000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 139: Time 1.390000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 140: Time 1.400000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 141: Time 1.410000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 142: Time 1.420000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 143: Time 1.430000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 144: Time 1.440000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 145: Time 1.450000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 146: Time 1.460000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 147: Time 1.470000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 148: Time 1.480000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 149: Time 1.490000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 150: Time 1.500000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 151: Time 1.510000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 152: Time 1.520000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 153: Time 1.530000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 154: Time 1.540000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 155: Time 1.550000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 156: Time 1.560000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 157: Time 1.570000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 158: Time 1.580000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 159: Time 1.590000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 160: Time 1.600000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 161: Time 1.610000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 162: Time 1.620000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 163: Time 1.630000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 164: Time 1.640000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 165: Time 1.650000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 166: Time 1.660000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 167: Time 1.670000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 168: Time 1.680000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 169: Time 1.690000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 170: Time 1.700000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 171: Time 1.710000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 172: Time 1.720000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 173: Time 1.730000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 174: Time 1.740000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 175: Time 1.750000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 176: Time 1.760000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 177: Time 1.770000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 178: Time 1.780000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 179: Time 1.790000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 180: Time 1.800000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 181: Time 1.810000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 182: Time 1.820000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 183: Time 1.830000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 184: Time 1.840000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 185: Time 1.850000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 186: Time 1.860000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 187: Time 1.870000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 188: Time 1.880000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 189: Time 1.890000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 190: Time 1.900000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 191: Time 1.910000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 192: Time 1.920000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 193: Time 1.930000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 194: Time 1.940000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 195: Time 1.950000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 196: Time 1.960000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 197: Time 1.970000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 198: Time 1.980000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 199: Time 1.990000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 200: Time 2.000000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 201: Time 2.010000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 202: Time 2.020000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 203: Time 2.030000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 204: Time 2.040000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 205: Time 2.050000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 206: Time 2.060000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 207: Time 2.070000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 208: Time 2.080000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 209: Time 2.090000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 210: Time 2.100000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 211: Time 2.110000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 212: Time 2.120000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 213: Time 2.130000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 214: Time 2.140000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 215: Time 2.150000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 216: Time 2.160000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 217: Time 2.170000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 218: Time 2.180000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 219: Time 2.190000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 220: Time 2.200000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 221: Time 2.210000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 222: Time 2.220000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 223: Time 2.230000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 224: Time 2.240000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 225: Time 2.250000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 226: Time 2.260000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 227: Time 2.270000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 228: Time 2.280000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 229: Time 2.290000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 230: Time 2.300000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 231: Time 2.310000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 232: Time 2.320000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 233: Time 2.330000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 234: Time 2.340000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 235: Time 2.350000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 236: Time 2.360000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 237: Time 2.370000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 238: Time 2.380000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 239: Time 2.390000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 240: Time 2.400000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 241: Time 2.410000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 242: Time 2.420000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 243: Time 2.430000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 244: Time 2.440000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 245: Time 2.450000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 246: Time 2.460000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 247: Time 2.470000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 248: Time 2.480000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 249: Time 2.490000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 250: Time 2.500000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 251: Time 2.510000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 252: Time 2.520000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 253: Time 2.530000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 254: Time 2.540000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 255: Time 2.550000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 256: Time 2.560000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 257: Time 2.570000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 258: Time 2.580000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 259: Time 2.590000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 260: Time 2.600000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 261: Time 2.610000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 262: Time 2.620000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 263: Time 2.630000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 264: Time 2.640000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 265: Time 2.650000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 266: Time 2.660000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 267: Time 2.670000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 268: Time 2.680000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 269: Time 2.690000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 270: Time 2.700000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 271: Time 2.710000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 272: Time 2.720000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 273: Time 2.730000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 274: Time 2.740000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 275: Time 2.750000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 276: Time 2.760000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 277: Time 2.770000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 278: Time 2.780000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 279: Time 2.790000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 280: Time 2.800000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 281: Time 2.810000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 282: Time 2.820000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 283: Time 2.830000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 284: Time 2.840000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 285: Time 2.850000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 286: Time 2.860000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 287: Time 2.870000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 288: Time 2.880000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 289: Time 2.890000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 290: Time 2.900000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 291: Time 2.910000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 292: Time 2.920000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 293: Time 2.930000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 294: Time 2.940000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 295: Time 2.950000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 296: Time 2.960000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 297: Time 2.970000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 298: Time 2.980000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 299: Time 2.990000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 300: Time 3.000000e-01, dt 1.000000e-03                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+   Step 301: Time 3.000000e-01, dt 1.165734e-15                                  Explicit-MP-Solver 
+   updating particle kernel connectivity                                         Explicit-MP-Solver 
+   Updating kernel function positions...                                            ParticleManager 
+ +--------------------------------------------+----------------------+----------+           Summary 
+ | function                                   | acc. runtime         | calls    |           Summary 
+ +--------------------------------------------+----------------------+----------+           Summary 
+ | solve step                                 | 3.0328E+02s          | 1        |           Summary 
+ |  step actions                              |  4.5919E-04s         | 304      |           Summary 
+ |  preparation particles                     |  3.5734E-01s         | 303      |           Summary 
+ |  update connectivity                       |  2.5149E+02s         | 303      |           Summary 
+ |  instance dof structure                    |  1.3435E-01s         | 1        |           Summary 
+ |   assembly active domain                   |   5.8243E-03s        | 1        |           Summary 
+ |   instancing dof manager                   |   1.2846E-01s        | 1        |           Summary 
+ |  build discretization                      |  1.2249E-02s         | 142      |           Summary 
+ |  update system                             |  4.8400E+00s         | 303      |           Summary 
+ |   computation particles                    |   4.8384E+00s        | 303      |           Summary 
+ |  compute system                            |  1.0612E+01s         | 303      |           Summary 
+ |   computation particles                    |   8.1634E+00s        | 303      |           Summary 
+ |   compute distributed loads                |   4.6468E-04s        | 303      |           Summary 
+ |   computation constraints                  |   2.3892E+00s        | 303      |           Summary 
+ |  postprocessing & output                   |  6.1560E-01s         | 302      |           Summary 
+ |  updating dof structure                    |  1.7921E+01s         | 141      |           Summary 
+ +--------------------------------------------+----------------------+----------+           Summary 
