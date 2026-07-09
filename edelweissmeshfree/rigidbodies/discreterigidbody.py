@@ -101,21 +101,53 @@ class DiscreteRigidBody:
                 idx = disp_field._indicesOfNodesInArray[node]
                 disp_u[idx] = new_coords[i] - (self.rpNode.coordinates + self.initialRelativePositions[i])
 
-    def querySurface(self, coords):
-        """Query the signed distance and outward normals of the surface mesh for the given global coordinates."""
+    def querySurface(self, coords, proximity_factor=None):
+        """
+        Query the signed distance and outward normals of the surface mesh for the given global coordinates.
+        If `proximity_factor` is provided, a broadphase AABB check is performed to skip distant points.
+        Returns arrays of shape (N,) and (N, 3). Distances for points outside the proximity bounding box will be np.inf.
+        """
         if not hasattr(self, "_query_engine"):
             from edelweissmeshfree.utils.discretesurfacequery import DiscreteSurfaceQuery
             if not hasattr(self, "surface_mesh"):
                 raise RuntimeError("DiscreteRigidBody has no surface_mesh to query.")
             self._query_engine = DiscreteSurfaceQuery(mesh=self.surface_mesh)
             
+        n_points = coords.shape[0]
+        
+        # Broadphase AABB Check
+        if proximity_factor is not None:
+            curr_min, curr_max = self.getAABB()
+            aabb_min = curr_min - proximity_factor
+            aabb_max = curr_max + proximity_factor
+            
+            in_aabb = np.all((coords >= aabb_min) & (coords <= aabb_max), axis=1)
+            active_indices = np.where(in_aabb)[0]
+            
+            if len(active_indices) == 0:
+                return np.full(n_points, np.inf), np.zeros((n_points, 3))
+            
+            coords_to_query = coords[active_indices]
+        else:
+            coords_to_query = coords
+            active_indices = np.arange(n_points)
+            
         u_rp, R, rp_initial = self.getCurrentKinematics()
-        return self._query_engine.query(
-            coords,
+        active_dists, active_normals = self._query_engine.query(
+            coords_to_query,
             translation=u_rp,
             rotation_matrix=R,
             rotation_center=rp_initial
         )
+        
+        # Reassemble full arrays
+        dists = np.full(n_points, np.inf)
+        dists[active_indices] = active_dists
+        
+        normals = np.zeros((n_points, 3))
+        normals[active_indices] = active_normals
+        
+        return dists, normals
 
     def getAABB(self):
         """Returns the current Axis-Aligned Bounding Box (min, max) of the surface."""

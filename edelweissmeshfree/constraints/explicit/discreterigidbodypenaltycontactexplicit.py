@@ -156,35 +156,20 @@ class DiscreteRigidBodyPenaltyContactExplicit(MPMConstraintBase):
         if len(coords.shape) > 2 or (len(coords) > 0 and isinstance(coords[0], list)):
             coords = np.array([c[0] if isinstance(c, list) else c for c in coords])
 
-        # 2. Broadphase Proximity Check (AABB)
-        active_indices = np.arange(len(self.particles))
-        if self._doProximityCheck and hasattr(self.rigidBody, "getAABB"):
-            curr_min, curr_max = self.rigidBody.getAABB()
-            aabb_min = curr_min - self.proximityFactor
-            aabb_max = curr_max + self.proximityFactor
+        # 2. Query Rigid Body (Handles Broadphase AABB internally)
+        proximity = self.proximityFactor if self._doProximityCheck else None
+        dists, normals = self.rigidBody.querySurface(coords, proximity_factor=proximity)
 
-            in_aabb = np.all((coords >= aabb_min) & (coords <= aabb_max), axis=1)
-            active_indices = np.where(in_aabb)[0]
-            if len(active_indices) == 0:
-                self.reactionForce = 0.0
-                return
-            coords_to_query = coords[active_indices]
-        else:
-            coords_to_query = coords
-
-        # 3. Narrowphase Query (VTK)
-        dists, normals = self.rigidBody.querySurface(coords_to_query)
-
-        # 4. Filter penetrating
+        # 3. Filter penetrating (dists < 0 evaluates to False for np.inf)
         penetrating_mask = dists < 0
         if not np.any(penetrating_mask):
             self.reactionForce = 0.0
             return
 
-        pen_indices = active_indices[penetrating_mask]
+        pen_indices = np.where(penetrating_mask)[0]
         pen_dists = dists[penetrating_mask]
         pen_normals = normals[penetrating_mask]
-        pen_coords = coords_to_query[penetrating_mask]
+        pen_coords = coords[penetrating_mask]
 
         # 5. Calculate force vectors
         g = np.abs(pen_dists)
