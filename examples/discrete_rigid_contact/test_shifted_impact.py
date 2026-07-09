@@ -257,7 +257,7 @@ def run_quasistatic_sim():
         incSize,
         incSize,
         incSize,
-        2000,
+        4000,
         theJournal,
     )
 

@@ -81,9 +81,17 @@ class _FastKDBinOrganizer:
         self._boundingBoxMax = np.max(self._maxs, axis=0) + 1e-12
 
         avg_size = np.mean(self._maxs - self._mins, axis=0)
+        avg_size = np.maximum(avg_size, 1e-12)
         self._binSize = avg_size / 2.0
 
         self._nBins = np.ceil((self._boundingBoxMax - self._boundingBoxMin) / self._binSize).astype(int)
+
+        # Clamp number of bins to avoid memory explosion when particles fly off
+        MAX_BINS = 250
+        for d in range(self._dimension):
+            if self._nBins[d] > MAX_BINS:
+                self._nBins[d] = MAX_BINS
+                self._binSize[d] = (self._boundingBoxMax[d] - self._boundingBoxMin[d]) / MAX_BINS
 
         self._strides = np.ones(3, dtype=int)
         if dimension >= 2:
