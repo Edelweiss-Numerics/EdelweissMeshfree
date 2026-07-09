@@ -42,41 +42,47 @@ gradient plasticity example 144 (plane-strain compression shear band) in terms o
 type, material, integration and solver, but replaces the rectangular specimen with an
 L-shaped domain so that the plastic localization band initiates at the re-entrant corner.
 
-Geometry (origin bottom-left, plane strain, thickness = 100 mm)::
+Geometry matches Fig. 14 of Winkler et al. [74] (origin bottom-left, plane strain,
+thickness = 100 mm)::
 
-      y=500 +-----+
-            |     |
-            |vert |            cut-out (empty):
-            |leg  |              x in (250, 500]
-      y=250 |     +-----+ <----- re-entrant corner (250, 250)
-            |           |
-            |horizontal |
-            |leg        |
-      y=0   +-----------+
-            x=0  250   500
+      y=500 +-----------------+
+            |                 |   <-- horizontal top beam (full 500 mm wide)
+            |  [E]      [L]    |       [L] = elastic loading block (+1 mm up)
+      y=250 |     +-----------+ <----- re-entrant corner (250, 250)
+            |vert |
+            |leg  |               cut-out (empty):
+      y=100 | [S] |                 x in (250, 500],  y in [0, 250)
+      y=0   +-----+
+            x=0  250   350   500
 
-  * Bounding box   : 500 mm x 500 mm, legs 250 mm wide.
-  * Cut-out        : the top-right 250 x 250 mm square is removed, forming the "L".
-  * Particle grid  : 20 x 20 quad particles over the bounding box (particleSize = 25 mm),
-                     the 10 x 10 block inside the cut-out is deleted -> 300 L-shaped particles.
+  * Bounding box   : 500 mm x 500 mm.
+  * Cut-out        : the BOTTOM-right 250 x 250 mm square is removed, forming the "Γ":
+                     a full-width horizontal beam on top plus a vertical leg on the left.
+  * Particle grid  : 40 x 40 quad particles over the bounding box (particleSize = 12.5 mm),
+                     the block inside the cut-out is deleted -> Γ-shaped particle domain.
                      Kernel nodes sit at the particle centres (RKPM), same carving applied.
 
-BCs (Lagrange multiplier weak Dirichlet):
-  * top surface of vertical leg            : fully clamped, ux = uy = 0  (support)
-    (x < 250, y = 500)
-  * right tip of horizontal arm (x ~ 500,  : prescribed vertical tip displacement, uy = totalPull
-    y in [0, 250])                           (displacement controlled)
-  The L hangs from the clamped top surface and the arm is a cantilever off the leg; displacing
-  its tip bends it and puts the re-entrant corner in tension, where the plastic band localizes.
+Linear-elastic regions (grey boxes in Fig. 14; modelled with the same E, nu but a
+practically infinite yield stress so they never yield):
+  * [S] support block : bottom of the vertical leg, x in [0, 250], y in [0, 100].
+  * [L] loading block : slender block on the top beam, ~100 mm right of the corner,
+                        x in [337.5, 362.5] (~20 mm wide), y in [250, 350] (100 mm tall).
 
-Imperfection: 5 % yield-stress reduction in a 2x2-particle block just inside the
-              re-entrant corner (horizontal arm side) to seed the localization band there.
+BCs (Lagrange multiplier weak Dirichlet):
+  * support block [S]          : fully clamped, ux = uy = 0   (fixed to ground)
+  * loading block [L]          : prescribed vertical displacement, uy = totalPull (upward)
+  The leg base is held; the top beam cantilevers to the right over the cut-out.  Pushing the
+  loading block up bends the cantilever, putting the re-entrant corner in tension where the
+  plastic band localizes and runs up-left (the "expected crack path" of Fig. 14).
+
+Imperfection: 5 % yield-stress reduction in a small particle cluster at the re-entrant
+              corner (top-beam side) to seed the localization band there.
 
 Integration : Smoothed Node Integration with Natural Stabilization (NSNI),
               which removes the spurious hourglass modes of plain SNI.
 
 Output      : Ensight fields + a load-displacement curve (load_displacement.png) built from
-              the summed loaded-tip Lagrange-multiplier reaction vs the prescribed tip displacement.
+              the summed loading-block Lagrange-multiplier reaction vs the prescribed displacement.
 
 Particle type  : GradientPlasticitySmallStrainSNI/PlaneStrain/Quad
 Material       : GradientVonMises
@@ -149,7 +155,7 @@ class _ReactionMonitor:
     def finalizeIncrement(self):
         # model.time is set by model.advanceToTime() before this is called
         t = self._model.time
-        u = self._total_pull * t   # prescribed tip displacement at this step
+        u = self._total_pull * t   # prescribed loading-block displacement at this step
         F = sum(c.reactionForce[1] for c in self._load_constraints.values())
         self.u_history.append(u)
         self.F_history.append(F)
@@ -182,9 +188,9 @@ def run_sim():
     thickness = 100.0           # out-of-plane thickness [mm]
 
     # A particle / kernel node belongs to the cut-out (to be removed) if its centre lies
-    # strictly inside the top-right square  x > legWidth  AND  y > legWidth.
+    # inside the BOTTOM-right square  x > legWidth  AND  y < legWidth  (forms the "Γ").
     def _inCutout(xc, yc):
-        return xc > legWidth and yc > legWidth
+        return xc > legWidth and yc < legWidth
 
     # ── kernel function grid: one node per particle, placed at particle centre ──
     # np.mgrid[a:b:n*1j] creates n points from a to b (inclusive).
@@ -231,27 +237,53 @@ def run_sim():
         "properties": np.array([E, nu, fy0, H, g, imp, 0.0]),
     }
 
-    # 5 % yield-stress reduction in a 2x2 block at the re-entrant corner to trigger the band
+    # 5 % yield-stress reduction in a small cluster at the re-entrant corner to trigger the band
     theMaterialImperfect = {
         "material": "GradientVonMises",
         "properties": np.array([E, nu, fy0 * 0.95, H, g, imp, 0.0]),
     }
 
+    # Linear-elastic regions (grey boxes in Fig. 14: the fixed support block and the loading
+    # block).  Same GradientVonMises material and DOF layout as the bulk — so it stays fully
+    # compatible with the gradient-plasticity particle — but with a practically infinite yield
+    # stress so it never yields and behaves as pure linear elasticity there.
+    fyElastic = 1.0e12
+    theMaterialElastic = {
+        "material": "GradientVonMises",
+        "properties": np.array([E, nu, fyElastic, H, g, imp, 0.0]),
+    }
+
     # ── particle properties: [VCI order, Newmark-β β, Newmark-β γ] ────────────
     particleProperties = np.array([1.0, 0.25, 0.5])
 
-    # Seed the localization at the re-entrant corner (250, 250): a 2x2 particle block
-    # on the horizontal-arm side of the corner, i.e. centres with
-    #   legWidth < xc < legWidth + 2*particleSize  and  legWidth - 2*particleSize < yc < legWidth.
+    # ── region geometry (Fig. 14) ────────────────────────────────────────────
+    loadX = legWidth + 100.0   # loading block centre-line, 100 mm right of the corner
+    loadHalfWidth = 12.5       # slender loading block ~20 mm wide (rounded to ~1 particle)
+    loadTop = legWidth + 100.0 # loading block reaches 100 mm above the corner (y = 350)
+    supportHeight = 100.0      # support block height at the base of the leg
+
+    # [S] fixed support block: bottom of the vertical leg, x in [0, 250], y in [0, 100].
+    def _isSupport(xc, yc):
+        return xc < legWidth and yc < supportHeight
+
+    # [L] elastic loading block: slender column ~100 mm right of the corner, 100 mm tall.
+    def _isLoad(xc, yc):
+        return abs(xc - loadX) < loadHalfWidth and legWidth <= yc < loadTop
+
+    # Seed the localization at the re-entrant corner (250, 250): a small cluster on the
+    # top-beam side (yc > legWidth) within ~2 particle spacings of the corner.
     def _isImperfect(xc, yc):
-        return (legWidth < xc < legWidth + 2.0 * particleSize) and (
-            legWidth - 2.0 * particleSize < yc < legWidth
-        )
+        return yc > legWidth and np.hypot(xc - legWidth, yc - legWidth) < 2.0 * particleSize
 
     def particleFactory(number, vertexCoordinates, volume):
         xCentroid = np.mean(vertexCoordinates[:, 0])
         yCentroid = np.mean(vertexCoordinates[:, 1])
-        mat = theMaterialImperfect if _isImperfect(xCentroid, yCentroid) else theMaterial
+        if _isSupport(xCentroid, yCentroid) or _isLoad(xCentroid, yCentroid):
+            mat = theMaterialElastic
+        elif _isImperfect(xCentroid, yCentroid):
+            mat = theMaterialImperfect
+        else:
+            mat = theMaterial
         p = MarmotParticleWrapper(
             "GradientPlasticitySmallStrainSNI/PlaneStrain/Quad",
             number,
@@ -297,30 +329,26 @@ def run_sim():
         "run_sim",
     )
 
-    # ── boundary particle sets (built by geometry on the carved L) ────────────
-    # Support the TOP surface of the L (top of the vertical leg: y ~ 500, x < legWidth).
-    # The L hangs from this clamp and the horizontal arm is an unsupported cantilever off the
-    # leg: displacing its tip bends it about the leg, putting the re-entrant corner in tension
-    # so the plastic band localizes there — the characteristic Winkler L-panel behaviour.
-    # Only the vertical leg reaches y = 500 (the arm ends at y = 250 and the top-right block is
-    # carved out), so the top row automatically has x < legWidth.
-    topParticles = []    # top surface of vertical leg -> clamped support
-    tipParticles = []    # x ~ 500, arm                 -> prescribed tip displacement
+    # ── boundary particle sets (the two elastic blocks of Fig. 14) ────────────
+    # [S] support block at the base of the leg is clamped to ground; [L] loading block on the
+    # top beam is pushed vertically.  The leg base is held while the top beam cantilevers to
+    # the right over the cut-out, so pushing the loading block up bends the cantilever and puts
+    # the re-entrant corner in tension where the plastic band localizes and runs up-left.
+    supportParticles = []   # [S] -> clamped support
+    loadParticles = []      # [L] -> prescribed vertical displacement
     for p in theModel.particles.values():
         xc, yc = p.getCenterCoordinates()[:2]
-        onTop = yc > h - particleSize and xc < legWidth   # top surface of the vertical leg
-        onRightTip = xc > l - particleSize                 # right-most column (arm only, y < 250)
-        if onTop:
-            topParticles.append(p)
-        elif onRightTip:
-            tipParticles.append(p)
+        if _isSupport(xc, yc):
+            supportParticles.append(p)
+        elif _isLoad(xc, yc):
+            loadParticles.append(p)
 
-    theModel.particleSets["fixed_top"] = ParticleSet("fixed_top", topParticles)
-    theModel.particleSets["load_tip"] = ParticleSet("load_tip", tipParticles)
+    theModel.particleSets["fixed_support"] = ParticleSet("fixed_support", supportParticles)
+    theModel.particleSets["load_block"] = ParticleSet("load_block", loadParticles)
 
     theJournal.message(
-        f"BC sets: {len(topParticles)} clamped top-surface particles, "
-        f"{len(tipParticles)} loaded tip particles.",
+        f"BC sets: {len(supportParticles)} clamped support-block particles, "
+        f"{len(loadParticles)} loaded-block particles.",
         "run_sim",
     )
 
@@ -341,29 +369,29 @@ def run_sim():
     )
 
     # ── boundary conditions (Lagrange multiplier weak Dirichlet) ──────────────
-    # Displacement-controlled upward pull at the tip of the horizontal arm; the clamped
-    # bottom resists translation and rotation, so the arm bends and the re-entrant corner
-    # goes into tension, localizing a plastic band that grows from the corner into the arm.
-    # Displacement-controlled tip pull.  A plastic limit point (localization band going
-    # critical at the re-entrant corner) is reached at ~4 mm tip displacement, after which
-    # the step collapses / snaps back and the run terminates — as in example 144.  The
-    # prescribed total is set just beyond that so the run traces the full pre-limit response.
-    totalPull = -30.0  # mm (downward tip displacement)
+    # Displacement-controlled upward push on the elastic loading block [L]; the clamped
+    # support block [S] holds the leg base, so the top beam cantilevers over the cut-out and
+    # bends, putting the re-entrant corner in tension and localizing a plastic band that grows
+    # from the corner up-left into the beam.  Fig. 14 shows a +1 mm schematic displacement; the
+    # prescribed total is set larger so the adaptive solver traces the full response up to the
+    # plastic limit point (where the step collapses / snaps back and the run terminates, as in
+    # example 144).  ux of the loading block is left free so the beam can bend naturally.
+    totalPull = 30.0  # mm (upward loading-block displacement, +y as in Fig. 14)
 
-    clampTop = ParticleLagrangianWeakDirichletOnParticleSetFactory(
-        "fixed", theModel.particleSets["fixed_top"],
+    clampSupport = ParticleLagrangianWeakDirichletOnParticleSetFactory(
+        "fixed", theModel.particleSets["fixed_support"],
         "displacement", {0: 0.0, 1: 0.0}, theModel, location="center"
     )
-    pullTip = ParticleLagrangianWeakDirichletOnParticleSetFactory(
-        "load", theModel.particleSets["load_tip"],
+    pushLoad = ParticleLagrangianWeakDirichletOnParticleSetFactory(
+        "load", theModel.particleSets["load_block"],
         "displacement", {1: totalPull}, theModel, location="center"
     )
 
-    theModel.constraints.update(clampTop)
-    theModel.constraints.update(pullTip)
+    theModel.constraints.update(clampSupport)
+    theModel.constraints.update(pushLoad)
 
     # Reaction monitor: accumulates (u_y, F_y) at each converged increment.
-    reactionMonitor = _ReactionMonitor(theModel, pullTip, totalPull)
+    reactionMonitor = _ReactionMonitor(theModel, pushLoad, totalPull)
 
     theModel.prepareYourself(theJournal)
     theJournal.printPrettyTable(theModel.makePrettyTableSummary(), "summary")
@@ -400,7 +428,7 @@ def run_sim():
 
     fieldOutputController.addExpressionFieldOutput(
         None,
-        lambda: np.sum([d.reactionForce for d in pullTip.values()], axis=0),
+        lambda: np.sum([d.reactionForce for d in pushLoad.values()], axis=0),
         "reaction force tip",
         export="export_RF_standard",
     )
@@ -486,8 +514,8 @@ def run_sim():
                 fig, ax = plt.subplots(figsize=(7, 5))
                 ax.plot(u_arr, F_arr, "b-o", markersize=3, linewidth=1.2)
                 ax.axhline(0.0, color="0.6", linewidth=0.8)
-                ax.set_xlabel(r"tip displacement  $u_y$  (mm)")
-                ax.set_ylabel(r"applied load  $-F_y$  (N)   [summed tip Lagrange multipliers]")
+                ax.set_xlabel(r"loading-block displacement  $u_y$  (mm)")
+                ax.set_ylabel(r"applied load  $-F_y$  (N)   [summed loading-block Lagrange multipliers]")
                 ax.set_title("Load–Displacement Curve — Winkler L-shaped panel (Example 147)")
                 ax.grid(True, linestyle="--", alpha=0.5)
                 fig.tight_layout()
