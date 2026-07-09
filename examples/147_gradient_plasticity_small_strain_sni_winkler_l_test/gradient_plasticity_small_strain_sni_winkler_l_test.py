@@ -62,11 +62,12 @@ Geometry (origin bottom-left, plane strain, thickness = 100 mm)::
                      Kernel nodes sit at the particle centres (RKPM), same carving applied.
 
 BCs (Lagrange multiplier weak Dirichlet):
-  * vertical-leg base (x < 250, y = 0)     : fully clamped, ux = uy = 0  (support)
-  * right tip of horizontal arm (x ~ 500,  : prescribed upward pull, uy = totalPull
+  * top surface of vertical leg            : fully clamped, ux = uy = 0  (support)
+    (x < 250, y = 500)
+  * right tip of horizontal arm (x ~ 500,  : prescribed vertical tip displacement, uy = totalPull
     y in [0, 250])                           (displacement controlled)
-  The arm is thus a cantilever off the clamped leg; pulling its tip up bends it and puts the
-  re-entrant corner in tension, where the plastic band localizes.
+  The L hangs from the clamped top surface and the arm is a cantilever off the leg; displacing
+  its tip bends it and puts the re-entrant corner in tension, where the plastic band localizes.
 
 Imperfection: 5 % yield-stress reduction in a 2x2-particle block just inside the
               re-entrant corner (horizontal arm side) to seed the localization band there.
@@ -173,8 +174,8 @@ def run_sim():
     y0 = 0.0
     l  = 500.0   # bounding-box width  [mm]
     h  = 500.0   # bounding-box height [mm]
-    nX = 20      # particles in x over the bounding box
-    nY = 20      # particles in y over the bounding box
+    nX = 40      # particles in x over the bounding box
+    nY = 40      # particles in y over the bounding box
 
     legWidth = 250.0            # width of each leg of the "L" [mm]
     particleSize = l / nX       # 25.0 mm (assumed square particles)
@@ -221,7 +222,9 @@ def run_sim():
     #   post-peak response is mesh-objective and Newton-robust on this 25 mm grid.
     # nu = 0.3 (not near-incompressible): avoids the volumetric locking that linear RKPM + SNI
     #   would suffer at nu -> 0.5.
-    E, nu, fy0, H, g, imp = 20000.0, 0.3, 100.0, -400.0, 1.5625e6, 1
+    #E, nu, fy0, H, g, imp = 20000.0, 0.3, 100.0, -400.0, 1.5625e6, 1
+    E, nu, fy0, H, g, imp = 11920, 0.49, 100, -400, 3600, 0
+    #E, nu, fy0, H, g, imp = 11920, 0.49, 100, -400, 3600, 1
 
     theMaterial = {
         "material": "GradientVonMises",
@@ -295,27 +298,28 @@ def run_sim():
     )
 
     # ── boundary particle sets (built by geometry on the carved L) ────────────
-    # Support ONLY the base of the vertical leg (x < legWidth, y ~ 0).  The horizontal arm is
-    # then an unsupported cantilever: pulling its tip up bends it about the leg, putting the
-    # re-entrant corner in tension so the plastic band localizes there — the characteristic
-    # Winkler L-panel behaviour.  Clamping the whole bottom (incl. under the arm) instead
-    # suppresses this bending and creates a spurious concentration under the loaded tip.
-    baseParticles = []   # vertical-leg base -> clamped support
-    tipParticles = []    # x ~ 500, arm      -> upward pull
+    # Support the TOP surface of the L (top of the vertical leg: y ~ 500, x < legWidth).
+    # The L hangs from this clamp and the horizontal arm is an unsupported cantilever off the
+    # leg: displacing its tip bends it about the leg, putting the re-entrant corner in tension
+    # so the plastic band localizes there — the characteristic Winkler L-panel behaviour.
+    # Only the vertical leg reaches y = 500 (the arm ends at y = 250 and the top-right block is
+    # carved out), so the top row automatically has x < legWidth.
+    topParticles = []    # top surface of vertical leg -> clamped support
+    tipParticles = []    # x ~ 500, arm                 -> prescribed tip displacement
     for p in theModel.particles.values():
         xc, yc = p.getCenterCoordinates()[:2]
-        onBase = yc < particleSize and xc < legWidth     # base of the vertical leg
-        onRightTip = xc > l - particleSize                # right-most column (arm only, y < 250)
-        if onBase:
-            baseParticles.append(p)
+        onTop = yc > h - particleSize and xc < legWidth   # top surface of the vertical leg
+        onRightTip = xc > l - particleSize                 # right-most column (arm only, y < 250)
+        if onTop:
+            topParticles.append(p)
         elif onRightTip:
             tipParticles.append(p)
 
-    theModel.particleSets["fixed_base"] = ParticleSet("fixed_base", baseParticles)
+    theModel.particleSets["fixed_top"] = ParticleSet("fixed_top", topParticles)
     theModel.particleSets["load_tip"] = ParticleSet("load_tip", tipParticles)
 
     theJournal.message(
-        f"BC sets: {len(baseParticles)} clamped vertical-leg-base particles, "
+        f"BC sets: {len(topParticles)} clamped top-surface particles, "
         f"{len(tipParticles)} loaded tip particles.",
         "run_sim",
     )
@@ -344,10 +348,10 @@ def run_sim():
     # critical at the re-entrant corner) is reached at ~4 mm tip displacement, after which
     # the step collapses / snaps back and the run terminates — as in example 144.  The
     # prescribed total is set just beyond that so the run traces the full pre-limit response.
-    totalPull = 5.0  # mm (upward tip displacement)
+    totalPull = -30.0  # mm (downward tip displacement)
 
-    clampBase = ParticleLagrangianWeakDirichletOnParticleSetFactory(
-        "fixed", theModel.particleSets["fixed_base"],
+    clampTop = ParticleLagrangianWeakDirichletOnParticleSetFactory(
+        "fixed", theModel.particleSets["fixed_top"],
         "displacement", {0: 0.0, 1: 0.0}, theModel, location="center"
     )
     pullTip = ParticleLagrangianWeakDirichletOnParticleSetFactory(
@@ -355,7 +359,7 @@ def run_sim():
         "displacement", {1: totalPull}, theModel, location="center"
     )
 
-    theModel.constraints.update(clampBase)
+    theModel.constraints.update(clampTop)
     theModel.constraints.update(pullTip)
 
     # Reaction monitor: accumulates (u_y, F_y) at each converged increment.
@@ -398,14 +402,14 @@ def run_sim():
         None,
         lambda: np.sum([d.reactionForce for d in pullTip.values()], axis=0),
         "reaction force tip",
-        export="export_RF",
+        export="export_RF_standard",
     )
 
     fieldOutputController.initializeJob()
 
     # ── Ensight output (overwrite=True → no timestamp in filename) ─────────────
     ensightOutput = EnsightOutputManager(
-        "ensight",
+        "ensight_standard",
         theModel,
         fieldOutputController,
         theJournal,
@@ -432,7 +436,7 @@ def run_sim():
     # ── time stepping & solver ────────────────────────────────────────────────
     incSize = 0.02
     adaptiveTimeStepper = AdaptiveTimeStepper(
-        0.0, 1.0, incSize, incSize, incSize / 1e4, 100, theJournal, increaseFactor=1.2
+        0.0, 1.0, incSize, incSize, incSize / 1e4, 10000, theJournal, increaseFactor=1.2
     )
 
     nonlinearSolver = NonlinearQuasistaticSolver(theJournal)
