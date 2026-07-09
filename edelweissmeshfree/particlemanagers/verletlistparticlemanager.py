@@ -141,26 +141,14 @@ class VerletListParticleManager(KDBinOrganizedParticleManager):
                     else:
                         verlet_map[id(p)] = np.array([], dtype=int)
 
-                # 3. Precise Check (Geometric) using exact non-inflated coordinates
-                valid_indices = []
-
-                # Ensure coordinates are 2D for the Cython signature
-                eval_coords_view = evaluationCoordinates
-                if eval_coords_view.ndim == 1:
-                    # Reshape (dim,) -> (1, dim)
-                    eval_coords_view = eval_coords_view.reshape(1, -1)
-
                 candidates = verlet_map.get(id(p))
                 if candidates is not None and len(candidates) > 0:
                     c_mins = kernel_mins[candidates, :dim]
                     c_maxs = kernel_maxs[candidates, :dim]
                     overlap_mask = np.all((p_max_s >= c_mins) & (p_min_s <= c_maxs), axis=1)
-                    precise_candidates = candidates[overlap_mask]
-                    
-                    for k_idx in precise_candidates:
-                        sf = all_kernels[k_idx]
-                        if sf.isAnyCoordinateInSupport(eval_coords_view):
-                            valid_indices.append(k_idx)
+                    valid_indices = candidates[overlap_mask].tolist()
+                else:
+                    valid_indices = []
 
                 valid_indices.sort(key=lambda idx: kernel_labels[idx])
                 validKernels = [all_kernels[i] for i in valid_indices]
@@ -176,6 +164,9 @@ class VerletListParticleManager(KDBinOrganizedParticleManager):
                 p.assignKernelFunctions(validKernels)
 
             return particlesInChunkHaveChanged
+
+        if not self._needsRebuild:
+            return False
 
         if self._numThreads <= 1:
             if processParticleChunk(self._particles):
