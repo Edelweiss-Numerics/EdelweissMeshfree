@@ -235,37 +235,39 @@ class DiscreteRigidBodyPenaltyContactExplicit(MPMConstraintBase):
 
 
 def DiscreteRigidBodyPenaltyContactExplicitFactory(
-    baseName: str,
-    filename: str,
+    name: str,
     particleCollection: Iterable[BaseParticle],
     model: MPMModel,
     rigidBody,
     penaltyParameter: float = 1e5,
     doProximityCheck: bool = True,
     proximityFactor: float = 2.0,
+    filename: str = None,
     initial_offset: np.ndarray = None,
 ):
     """
     Factory function to create a vectorized Explicit Penalty Contact constraint for a discrete rigid body.
+    Automatically registers the constraint in the model.
 
     Parameters
     ----------
+    name : str
+        Name of the constraint.
+    particleCollection : Iterable[BaseParticle]
+        Particles to check for contact.
+    model : MPMModel
+        The MPM model instance.
     rigidBody : DiscreteRigidBody
-        The discrete rigid body entity. Its RP displacement field is used as the
-        rigid body's current translation when querying the (fixed-frame) surface locators.
-    initial_offset : np.ndarray, optional
-        A translation vector applied to the rigid body mesh before building
-        the VTK locators.  Use this to position the contact surface at its
-        physical initial location (matching the visualization geometry).
+        The discrete rigid body entity.
     """
-    constraints = dict()
-
+    
     # Initialize the high-performance distance query engine
-    query_engine = DiscreteSurfaceQuery(filename, initial_offset=initial_offset)
+    if hasattr(rigidBody, "surface_mesh") and rigidBody.surface_mesh is not None:
+        query_engine = DiscreteSurfaceQuery(mesh=rigidBody.surface_mesh)
+    else:
+        query_engine = DiscreteSurfaceQuery(filename=filename, initial_offset=initial_offset)
 
-    # We create a single constraint for the entire collection to maximize vectorization
-    name = f"{baseName}_collection"
-    constraints[name] = DiscreteRigidBodyPenaltyContactExplicit(
+    constraint = DiscreteRigidBodyPenaltyContactExplicit(
         name=name,
         particles=particleCollection,
         query_engine=query_engine,
@@ -275,5 +277,9 @@ def DiscreteRigidBodyPenaltyContactExplicitFactory(
         doProximityCheck=doProximityCheck,
         proximityFactor=proximityFactor,
     )
-
-    return constraints
+    
+    # Automatically register in the model
+    model.constraints[name] = constraint
+    model.constraintSets[name] = constraint
+    
+    return constraint

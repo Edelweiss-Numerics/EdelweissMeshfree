@@ -106,3 +106,120 @@ class DiscreteRigidBody:
 
         R = np.eye(3) + np.sin(angle) * K + (1 - np.cos(angle)) * np.dot(K, K)
         return R
+
+    @classmethod
+    def from_mesh_file(
+        cls,
+        name: str,
+        model,
+        filename: str,
+        translation: np.ndarray = None,
+        density: float = None,
+        mass: float = None,
+        inertia: list = None,
+        initial_velocity: list = None,
+        rp_coordinate: np.ndarray = None,
+        start_label: int = 1000000,
+    ):
+        """
+        Creates a Discrete Rigid Body directly from a mesh file.
+        Encapsulates node creation, elements generation, and RP kinematics.
+        """
+        import pyvista as pv
+        from edelweissfe.points.node import Node
+        from edelweissfe.sets.nodeset import NodeSet
+        from edelweissfe.variables.fieldvariable import FieldVariable
+        from edelweissfe.elements.discreterigid import DiscreteRigidElement
+        from edelweissfe.sets.elementset import ElementSet
+
+        mesh = pv.read(filename)
+        if isinstance(mesh, pv.MultiBlock):
+            mesh = mesh.combine()
+
+        points = mesh.points.copy()
+        if translation is not None:
+            points += np.array(translation)
+
+        mesh.points = points
+        surf = mesh.extract_surface()
+        surf.compute_normals(cell_normals=True, point_normals=False, inplace=True)
+
+        # Handle density -> mass & inertia
+        if density is not None:
+            volume = surf.volume
+            if volume == 0.0:
+                volume = mesh.volume
+            mass = volume * density
+            # Simple fallback for inertia if none provided
+            if inertia is None:
+                inertia = [mass, mass, mass]
+
+        # Extract faces
+        cells = surf.cells if hasattr(surf, 'cells') else mesh.cells
+        faces = []
+        i = 0
+        while i < len(cells):
+            n = cells[i]
+            faces.append(cells[i + 1 : i + 1 + n])
+            i += 1 + n
+
+        # Generate Node Entities
+        rigid_nodes = []
+        for i, pt in enumerate(points):
+            n = Node(start_label + i, pt.copy())
+            model.nodes[n.label] = n
+            n.fields["displacement"] = FieldVariable(n, "displacement")
+            rigid_nodes.append(n)
+
+        nset_name = f"{name}_surface_nodes"
+        model.nodeSets[nset_name] = NodeSet(nset_name, rigid_nodes)
+
+        # Generate Element Entities
+        rigid_elements = []
+        for i, face in enumerate(faces):
+            if len(face) == 4:
+                el_nodes = [rigid_nodes[face[0]], rigid_nodes[face[1]], rigid_nodes[face[2]], rigid_nodes[face[3]]]
+                el = DiscreteRigidElement(start_label + i, el_nodes, model, "quad4")
+            else:
+                el_nodes = [rigid_nodes[face[0]], rigid_nodes[face[1]], rigid_nodes[face[2]]]
+                el = DiscreteRigidElement(start_label + i, el_nodes, model, "tria3")
+            model.elements[el.elNumber] = el
+            rigid_elements.append(el)
+        
+        eset_name = f"{name}_surface"
+        model.elementSets[eset_name] = ElementSet(eset_name, rigid_elements)
+
+        # Reference Point
+        if rp_coordinate is None:
+            rp_coordinate = surf.center_of_mass()
+
+        rp = Node(start_label + 999999, np.array(rp_coordinate))
+        model.nodes[rp.label] = rp
+        
+        rp_nset_name = f"{name}_rp"
+        model.nodeSets[rp_nset_name] = NodeSet(rp_nset_name, [rp])
+        rp.fields["displacement"] = FieldVariable(rp, "displacement")
+        rp.fields["rotation"] = FieldVariable(rp, "rotation")
+
+        if "all" in model.nodeSets:
+            all_nodes = list(model.nodeSets["all"])
+            all_nodes.extend(rigid_nodes)
+            all_nodes.append(rp)
+            model.nodeSets["all"] = NodeSet("all", all_nodes)
+
+        # Instantiate self
+        instance = cls(
+            name,
+            model,
+            nSet=nset_name,
+            referencePoint=rp_nset_name,
+            mass=mass,
+            inertia=inertia,
+            initial_velocity=initial_velocity
+        )
+        
+        # Store pyvista surface internally so query engine can reuse it without disk reads
+        instance.surface_mesh = surf
+        
+        model.discreteRigidBodies[name] = instance
+        return instance

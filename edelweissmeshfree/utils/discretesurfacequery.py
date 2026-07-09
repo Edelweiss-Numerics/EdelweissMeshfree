@@ -4,27 +4,29 @@ import vtk
 
 
 class DiscreteSurfaceQuery:
-    def __init__(self, filename: str, initial_offset: np.ndarray = None):
+    def __init__(self, filename: str = None, mesh: pv.PolyData = None, initial_offset: np.ndarray = None):
         """
-        Initializes the query engine by loading an Exodus mesh and computing its normals.
+        Initializes the query engine by loading an Exodus mesh or using a provided PyVista mesh.
         Uses static VTK locators and evaluators to avoid memory leaks.
 
         Parameters
         ----------
-        filename : str
+        filename : str, optional
             Path to the Exodus mesh file for the rigid body.
+        mesh : pv.PolyData, optional
+            A direct PyVista mesh object to use. If provided, `filename` is ignored.
         initial_offset : np.ndarray, optional
             A translation vector applied to the mesh points before building
-            the VTK locators.  Use this to position the contact surface at
-            its physical initial location (matching the visualization nodes).
+            the VTK locators.
         """
-        self.mesh = pv.read(filename)
-
-        # If the Exodus file has multiple blocks, pyvista.read might return a MultiBlock.
-        # We need to extract the PolyData surface.
-        if isinstance(self.mesh, pv.MultiBlock):
-            # Combine all blocks into one UnstructuredGrid, then extract surface
-            self.mesh = self.mesh.combine()
+        if mesh is not None:
+            self.mesh = mesh
+        elif filename is not None:
+            self.mesh = pv.read(filename)
+            if isinstance(self.mesh, pv.MultiBlock):
+                self.mesh = self.mesh.combine()
+        else:
+            raise ValueError("Must provide either 'filename' or 'mesh'")
 
         # Extract the outer surface to ensure we have a PolyData object
         self.mesh = self.mesh.extract_surface()

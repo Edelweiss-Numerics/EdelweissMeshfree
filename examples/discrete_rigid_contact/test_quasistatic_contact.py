@@ -179,71 +179,14 @@ def run_quasistatic_sim():
     )
     theModel.constraints.update(dirichletBottom)
     theModel.constraintSets["bottom_fix"] = dirichletBottom
+    from edelweissmeshfree.rigidbodies.discreterigidbody import DiscreteRigidBody
 
-    # ---- Rigid body setup ----
-    import pyvista as pv
-
-    mesh = pv.read("rigid_body.exo")
-    if isinstance(mesh, pv.MultiBlock):
-        mesh = mesh.combine()
-
-    points = mesh.points.copy()
-    points[:, 1] -= 4.9
-    surf = mesh.extract_surface()
-
-    cells = mesh.cells
-    faces = []
-    i = 0
-    while i < len(cells):
-        n = cells[i]
-        faces.append(cells[i + 1 : i + 1 + n])
-        i += 1 + n
-
-    rigid_nodes = []
-    start_label = 1000000
-    for i, pt in enumerate(points):
-        from edelweissfe.points.node import Node
-
-        n = Node(start_label + i, pt.copy())
-        theModel.nodes[n.label] = n
-        rigid_nodes.append(n)
-
-    from edelweissfe.sets.nodeset import NodeSet
-
-    theModel.nodeSets["rigid_surface_nodes"] = NodeSet("rigid_surface_nodes", rigid_nodes)
-
-    from edelweissfe.variables.fieldvariable import FieldVariable
-
-    for n in rigid_nodes:
-        n.fields["displacement"] = FieldVariable(n, "displacement")
-
-    from edelweissfe.elements.discreterigid import DiscreteRigidElement
-    from edelweissfe.sets.elementset import ElementSet
-
-    rigid_elements = []
-    for i, face in enumerate(faces):
-        if len(face) == 4:
-            el_nodes = [rigid_nodes[face[0]], rigid_nodes[face[1]], rigid_nodes[face[2]], rigid_nodes[face[3]]]
-            el = DiscreteRigidElement(start_label + i, el_nodes, theModel, "quad4")
-        else:
-            el_nodes = [rigid_nodes[face[0]], rigid_nodes[face[1]], rigid_nodes[face[2]]]
-            el = DiscreteRigidElement(start_label + i, el_nodes, theModel, "tria3")
-        theModel.elements[el.elNumber] = el
-        rigid_elements.append(el)
-    theModel.elementSets["rigid_surface"] = ElementSet("rigid_surface", rigid_elements)
-
-    # RP
-    rp = Node(start_label + 999999, np.array([0.0, 15.0 - 4.9, 0.0]))
-    theModel.nodes[rp.label] = rp
-    theModel.nodeSets["rigid_rp"] = NodeSet("rigid_rp", [rp])
-    rp.fields["displacement"] = FieldVariable(rp, "displacement")
-    rp.fields["rotation"] = FieldVariable(rp, "rotation")
-
-    if "all" in theModel.nodeSets:
-        all_nodes = list(theModel.nodeSets["all"])
-        all_nodes.extend(rigid_nodes)
-        all_nodes.append(rp)
-        theModel.nodeSets["all"] = NodeSet("all", all_nodes)
+    rigid_body = DiscreteRigidBody.from_mesh_file(
+        name="rigid_body",
+        model=theModel,
+        filename="rigid_body.exo",
+        translation=[0.0, -4.9, 0.0],
+    )
 
     # Dirichlet on RP
     from edelweissmeshfree.stepactions.dirichlet import Dirichlet as DirichletMF
@@ -252,27 +195,17 @@ def run_quasistatic_sim():
         return t
 
     rp_bc = DirichletMF(
-        "rp_bc", theModel.nodeSets["rigid_rp"], "displacement", {"2": DISP_Y}, theModel, theJournal, velocity_amp
+        "rp_bc", theModel.nodeSets["rigid_body_rp"], "displacement", {"2": DISP_Y}, theModel, theJournal, velocity_amp
     )
 
-    # Discrete Rigid Body
-    from edelweissmeshfree.rigidbodies.discreterigidbody import DiscreteRigidBody
-
-    rigid_body = DiscreteRigidBody("rigid_body", theModel, nSet="rigid_surface_nodes", referencePoint="rigid_rp")
-    theModel.discreteRigidBodies = {"rigid_body": rigid_body}
-
     # Contact
-    contact = DiscreteRigidBodyPenaltyContactExplicitFactory(
-        baseName="rigid_impact",
-        filename="rigid_body.exo",
+    DiscreteRigidBodyPenaltyContactExplicitFactory(
+        name="rigid_impact",
         particleCollection=theModel.particleSets["mesh_particles_all"],
         model=theModel,
         rigidBody=rigid_body,
         penaltyParameter=PENALTY,
-        initial_offset=np.array([0.0, -4.9, 0.0]),
     )
-    theModel.constraints.update(contact)
-    theModel.constraintSets["rigid_impact"] = contact
 
     theModel.prepareYourself(theJournal)
     theJournal.printPrettyTable(theModel.makePrettyTableSummary(), "summary")
@@ -293,7 +226,7 @@ def run_quasistatic_sim():
         reshape_to_dimensions=3,
     )
 
-    rigid_surface_field = theModel.nodeFields["displacement"].subset(theModel.elementSets["rigid_surface"])
+    rigid_surface_field = theModel.nodeFields["displacement"].subset(theModel.elementSets["rigid_body_surface"])
     fieldOutputController.addPerNodeFieldOutput("rigid_displacement", rigid_surface_field, "U")
 
     fieldOutputController.initializeJob()
