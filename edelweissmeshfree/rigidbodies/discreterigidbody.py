@@ -48,8 +48,7 @@ class DiscreteRigidBody:
         if self.mass is not None:
             from edelweissfe.elements.pointmass import PointMass
 
-            # generate a safe dummy elNumber (high number)
-            el_num = max(model.elements.keys()) + 1 if model.elements else 1000000
+            el_num = max(model.elements.keys()) + 1 if model.elements else 1
             self.point_mass_element = PointMass(
                 el_num, [self.rpNode], model, self.mass, self.inertia, self.initial_velocity
             )
@@ -241,7 +240,7 @@ class DiscreteRigidBody:
         inertia: list = None,
         initial_velocity: list = None,
         rp_coordinate: np.ndarray = None,
-        start_label: int = 1000000,
+        start_label: int = None,
     ):
         """
         Creates a Discrete Rigid Body directly from a mesh file.
@@ -318,25 +317,29 @@ class DiscreteRigidBody:
 
         # Generate Node Entities
         rigid_nodes = []
+        node_id = start_label if start_label is not None else (max(model.nodes.keys()) + 1 if model.nodes else 1)
         for i, pt in enumerate(points):
-            n = Node(start_label + i, pt.copy())
+            n = Node(node_id, pt.copy())
             model.nodes[n.label] = n
             rigid_nodes.append(n)
+            node_id += 1
 
         nset_name = f"{name}_surface_nodes"
         model.nodeSets[nset_name] = NodeSet(nset_name, rigid_nodes)
 
         # Generate Element Entities
         rigid_elements = []
+        el_id = start_label if start_label is not None else (max(model.elements.keys()) + 1 if model.elements else 1)
         for i, face in enumerate(faces):
             if len(face) == 4:
                 el_nodes = [rigid_nodes[face[0]], rigid_nodes[face[1]], rigid_nodes[face[2]], rigid_nodes[face[3]]]
-                el = DiscreteRigidElement(start_label + i, el_nodes, model, "quad4")
+                el = DiscreteRigidElement(el_id, el_nodes, model, "quad4")
             else:
                 el_nodes = [rigid_nodes[face[0]], rigid_nodes[face[1]], rigid_nodes[face[2]]]
-                el = DiscreteRigidElement(start_label + i, el_nodes, model, "tria3")
+                el = DiscreteRigidElement(el_id, el_nodes, model, "tria3")
             model.elements[el.elNumber] = el
             rigid_elements.append(el)
+            el_id += 1
         
         eset_name = f"{name}_surface"
         model.elementSets[eset_name] = ElementSet(eset_name, rigid_elements)
@@ -345,7 +348,7 @@ class DiscreteRigidBody:
         if rp_coordinate is None:
             rp_coordinate = surf.center_of_mass()
 
-        rp = Node(start_label + 999999, np.array(rp_coordinate))
+        rp = Node(node_id, np.array(rp_coordinate))
         model.nodes[rp.label] = rp
         
         rp_nset_name = f"{name}_rp"
