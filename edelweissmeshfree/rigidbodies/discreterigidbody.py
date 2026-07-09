@@ -306,14 +306,43 @@ class DiscreteRigidBody:
             if inertia is None:
                 inertia = [mass, mass, mass]
 
-        # Extract faces
+        # Extract faces and map to EdelweissFE element types using actual VTK cell types
         cells = surf.cells if hasattr(surf, 'cells') else mesh.cells
         faces = []
+        element_types = []
+        
         i = 0
+        cell_idx = 0
         while i < len(cells):
             n = cells[i]
             faces.append(cells[i + 1 : i + 1 + n])
+            
+            vtk_type = surf.GetCellType(cell_idx)
+            
+            # Map VTK cell types to EdelweissFE element types
+            # 5 = VTK_TRIANGLE, 9 = VTK_QUAD, 7 = VTK_POLYGON
+            if vtk_type == 5:
+                element_types.append("tria3")
+            elif vtk_type == 9:
+                element_types.append("quad4")
+            elif vtk_type == 7:
+                if n == 3:
+                    element_types.append("tria3")
+                elif n == 4:
+                    element_types.append("quad4")
+                else:
+                    raise ValueError(f"Unsupported VTK_POLYGON with {n} nodes for Discrete Rigid Body.")
+            else:
+                # Fallback based on node count for strange/custom VTK cell types
+                if n == 3:
+                    element_types.append("tria3")
+                elif n == 4:
+                    element_types.append("quad4")
+                else:
+                    raise ValueError(f"Unsupported VTK cell type {vtk_type} with {n} nodes.")
+                    
             i += 1 + n
+            cell_idx += 1
 
         # Generate Node Entities
         rigid_nodes = []
@@ -331,12 +360,10 @@ class DiscreteRigidBody:
         rigid_elements = []
         el_id = start_label if start_label is not None else (max(model.elements.keys()) + 1 if model.elements else 1)
         for i, face in enumerate(faces):
-            if len(face) == 4:
-                el_nodes = [rigid_nodes[face[0]], rigid_nodes[face[1]], rigid_nodes[face[2]], rigid_nodes[face[3]]]
-                el = DiscreteRigidElement(el_id, el_nodes, model, "quad4")
-            else:
-                el_nodes = [rigid_nodes[face[0]], rigid_nodes[face[1]], rigid_nodes[face[2]]]
-                el = DiscreteRigidElement(el_id, el_nodes, model, "tria3")
+            el_type = element_types[i]
+            el_nodes = [rigid_nodes[idx] for idx in face]
+            el = DiscreteRigidElement(el_id, el_nodes, model, el_type)
+            
             model.elements[el.elNumber] = el
             rigid_elements.append(el)
             el_id += 1
