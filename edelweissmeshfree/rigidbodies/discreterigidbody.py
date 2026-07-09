@@ -1,4 +1,5 @@
 import numpy as np
+import edelweissfe.utils.performancetiming as performancetiming
 from edelweissfe.config.phenomena import getFieldSize
 from edelweissfe.utils.caseinsensitivedict import CaseInsensitiveDict
 from edelweissfe.utils.inputlanguage import Module
@@ -90,6 +91,7 @@ class DiscreteRigidBody:
             
         return u_rp, R, self.rpNode.coordinates
 
+    @performancetiming.timeit("rigid body update kinematics")
     def updateKinematics(self, timeStep=None):
         """
         Update surface node coordinates and displacement fields based on the current Reference Point state.
@@ -123,6 +125,7 @@ class DiscreteRigidBody:
                 idx = disp_field._indicesOfNodesInArray[node]
                 disp_u[idx] = new_coords[i] - (self.rpNode.coordinates + self.initialRelativePositions[i])
 
+    @performancetiming.timeit("rigid body query surface")
     def querySurface(self, coords, proximity_factor=None):
         """
         Query the signed distance and outward normals of the surface mesh for the given global coordinates.
