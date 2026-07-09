@@ -38,7 +38,7 @@ def animate_case():
         """Read one time step and return (rigid_surface, particles) blocks."""
         reader.set_active_time_value(t_val)
         mesh = reader.read()
-        return mesh["rigid_surface"], mesh["PSET_mesh_particles_all"]
+        return mesh["rigid_body_surface"], mesh["PSET_mesh_particles_all"]
 
     def warp(block, vector_name):
         """Return a new mesh with points shifted by the named point-data vector."""
