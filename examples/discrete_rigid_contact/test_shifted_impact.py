@@ -71,16 +71,16 @@ from edelweissmeshfree.solvers.explicitmultiphysicssolver import (
 # ---------------------------------------------------------------------------
 # Parameters
 # ---------------------------------------------------------------------------
-E = 400.0  # Young's modulus  [Pa-like units]
-NU = 0.3  # Poisson's ratio
-RHO = 100.0  # Mass-scaled density (physical ρ=1, scaled ×100)
+E = 5.0e6  # Young's modulus  [Pa] (Rubber-like: 5 MPa)
+NU = 0.45  # Poisson's ratio (Nearly incompressible)
+RHO = 1000.0 * 10.0  # Mass-scaled density (Rubber physical ρ=1000, scaled ×10)
 PENALTY = 1e7  # Contact penalty stiffness
-DISP_Y = -10.0  # Total prescribed RP displacement (downward)
-STEP_TIME = 0.3  # Total step time  [s]
-DT = 1e-3  # Time increment   [s]
-VELOCITY = abs(DISP_Y) / STEP_TIME  # = 33.3 m/s
+DISP_Y = -6.0  # Total prescribed RP displacement (downward)
+STEP_TIME = 1.0  # Total step time  [s]
+DT = 1e-3  # Time increment   [s] (Stable for c=22 m/s, dx=1.0)
+VELOCITY = abs(DISP_Y) / STEP_TIME  # = 6.0 m/s
 GAP = 0.6  # gap from top particle centroid (Y=4.5) to shifted rigid bottom (Y=5.1)
-T_CONTACT = GAP / 10.0  # = 0.06 s
+T_CONTACT = GAP / VELOCITY
 
 print(f"=== Quasi-static mass-scaled contact test ===")
 print(f"  E={E}, ν={NU}, ρ(scaled)={RHO}")
@@ -191,7 +191,7 @@ def run_quasistatic_sim():
         density=RHO/10,
         # mass=1.56e4,
         # inertia=[6.17e5, 6.17e5, 1.93e5],
-        initial_velocity=[0.0, -10.0, 0.0],
+        initial_velocity=[0.0, -VELOCITY, 0.0],
     )
 
     # Contact
