@@ -7,15 +7,17 @@ class DiscreteSurfaceQuery:
     def __init__(self, filename: str = None, mesh: pv.PolyData = None, initial_offset: np.ndarray = None):
         """
         Initializes the query engine by loading an Exodus mesh or using a provided PyVista mesh.
-        Uses static VTK locators and evaluators to avoid memory leaks.
+        
+        Uses static VTK locators and evaluators to avoid memory leaks during 
+        repeated distance evaluations.
 
         Parameters
         ----------
         filename : str, optional
             Path to the Exodus mesh file for the rigid body.
-        mesh : pv.PolyData, optional
+        mesh : pyvista.PolyData, optional
             A direct PyVista mesh object to use. If provided, `filename` is ignored.
-        initial_offset : np.ndarray, optional
+        initial_offset : numpy.ndarray, optional
             A translation vector applied to the mesh points before building
             the VTK locators.
         """
@@ -61,14 +63,21 @@ class DiscreteSurfaceQuery:
 
         Parameters
         ----------
-        coords : np.ndarray
+        coords : numpy.ndarray
             Array of shape (N, 3) containing the query coordinates.
-        translation : np.ndarray, optional
+        translation : numpy.ndarray, optional
             A translation vector of the rigid body RP.
-        rotation_matrix : np.ndarray, optional
+        rotation_matrix : numpy.ndarray, optional
             A 3x3 rotation matrix of the rigid body.
-        rotation_center : np.ndarray, optional
+        rotation_center : numpy.ndarray, optional
             The center of rotation (initial position of the RP).
+            
+        Returns
+        -------
+        dists : numpy.ndarray
+            Array of shape (N,) containing the signed distance (negative = inside/penetration).
+        normals : numpy.ndarray
+            Array of shape (N, 3) containing the outward normal vectors on the closest faces.
         """
         # Inverse transform query coordinates to the local (static mesh) frame
         local_coords = coords.copy()

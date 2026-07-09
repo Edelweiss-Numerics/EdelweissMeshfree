@@ -22,12 +22,14 @@ class DiscreteRigidBodyPenaltyContactExplicit(MPMConstraintBase):
         The collection of particles to which the constraint is applied.
     model : MPMModel
         The MPM model instance.
-    penaltyParameter : float
+    rigidBody : DiscreteRigidBody
+        The rigid body to interact with.
+    penaltyParameter : float, optional
         The penalty stiffness parameter. Default is 1e5.
-    doProximityCheck : bool
-        If True, only particles within a threshold are considered active. (Current vectorization inherently checks all).
-    proximityFactor : float
-        Multiplier for the proximity distance threshold. Default is 2.0.
+    doProximityCheck : bool, optional
+        If True, a broadphase AABB check is performed to skip distant points.
+    proximityFactor : float, optional
+        Multiplier/padding for the proximity distance threshold. Default is 2.0.
     """
 
     def __init__(
@@ -112,6 +114,16 @@ class DiscreteRigidBodyPenaltyContactExplicit(MPMConstraintBase):
         """
         Updates the constraint connectivity by gathering nodes from all particles in the collection,
         plus the rigid body RP node.
+
+        Parameters
+        ----------
+        model : MPMModel
+            The current simulation model.
+
+        Returns
+        -------
+        hasChanged : bool
+            True if the connectivity has changed since the last update, False otherwise.
         """
         all_nodes = set()
         for p in self.particles:
@@ -145,7 +157,14 @@ class DiscreteRigidBodyPenaltyContactExplicit(MPMConstraintBase):
 
     def applyConstraint(self, PExt: np.ndarray, timeStep: TimeStep):
         """
-        Applies penalty forces to the local constraint force vector.
+        Applies penalty forces to the global external force vector for penetrating particles.
+
+        Parameters
+        ----------
+        PExt : numpy.ndarray
+            The global external force vector. Modified in place.
+        timeStep : TimeStep
+            The current time step information.
         """
         if not self.isActive or not self.particles:
             return
@@ -235,7 +254,22 @@ def DiscreteRigidBodyPenaltyContactExplicitFactory(
     model : MPMModel
         The MPM model instance.
     rigidBody : DiscreteRigidBody
-        The discrete rigid body entity.
+        The discrete rigid body entity to interact with.
+    penaltyParameter : float, optional
+        The penalty stiffness parameter. Default is 1e5.
+    doProximityCheck : bool, optional
+        If True, a broadphase AABB check is performed. Default is True.
+    proximityFactor : float, optional
+        Padding for the proximity AABB. Default is 2.0.
+    filename : str, optional
+        Deprecated file name parameter.
+    initial_offset : numpy.ndarray, optional
+        Deprecated offset parameter.
+
+    Returns
+    -------
+    constraint : DiscreteRigidBodyPenaltyContactExplicit
+        The created constraint instance.
     """
     constraint = DiscreteRigidBodyPenaltyContactExplicit(
         name=name,

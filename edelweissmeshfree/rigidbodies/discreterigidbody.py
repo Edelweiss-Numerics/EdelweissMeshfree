@@ -64,7 +64,18 @@ class DiscreteRigidBody:
         return node_field.subset(node)["U"][0].copy()
 
     def getCurrentKinematics(self):
-        """Returns the current RP displacement, rotation matrix, and initial RP coordinate."""
+        """
+        Returns the current reference point displacement, rotation matrix, and initial coordinates.
+
+        Returns
+        -------
+        u_rp : numpy.ndarray
+            The current accumulated displacement vector of the reference point.
+        R : numpy.ndarray
+            The 3x3 rotation matrix representing the current orientation of the rigid body.
+        rp_initial : numpy.ndarray
+            The initial global coordinates of the reference point.
+        """
         u_rp = self._getFieldU("displacement", self.rpNode)
         
         if self.domainSize == 3:
@@ -79,7 +90,17 @@ class DiscreteRigidBody:
         return u_rp, R, self.rpNode.coordinates
 
     def updateKinematics(self, timeStep=None):
-        """Update surface node coordinates and displacement fields based on the current RP state."""
+        """
+        Update surface node coordinates and displacement fields based on the current Reference Point state.
+
+        This method applies the current accumulated displacement and rotation from the 
+        reference point to all surface nodes belonging to the discrete rigid body.
+
+        Parameters
+        ----------
+        timeStep : TimeStep, optional
+            The current time step information.
+        """
         u_rp, R, rp_initial = self.getCurrentKinematics()
         
         # Current RP position (initial + total accumulated displacement)
@@ -104,8 +125,26 @@ class DiscreteRigidBody:
     def querySurface(self, coords, proximity_factor=None):
         """
         Query the signed distance and outward normals of the surface mesh for the given global coordinates.
-        If `proximity_factor` is provided, a broadphase AABB check is performed to skip distant points.
-        Returns arrays of shape (N,) and (N, 3). Distances for points outside the proximity bounding box will be np.inf.
+        
+        If `proximity_factor` is provided, a broadphase Axis-Aligned Bounding Box (AABB) 
+        check is performed internally to efficiently skip distant points.
+
+        Parameters
+        ----------
+        coords : numpy.ndarray
+            An array of shape (N, 3) containing the global query coordinates.
+        proximity_factor : float, optional
+            A distance padding added to the rigid body's AABB. Points outside 
+            the inflated box are culled from the expensive VTK surface query.
+
+        Returns
+        -------
+        dists : numpy.ndarray
+            Array of shape (N,) containing the signed distances. Negative values 
+            indicate penetration. Distances for points outside the proximity bounding 
+            box will be evaluated as `np.inf`.
+        normals : numpy.ndarray
+            Array of shape (N, 3) containing the outward normal vectors on the surface.
         """
         if not hasattr(self, "_query_engine"):
             from edelweissmeshfree.utils.discretesurfacequery import DiscreteSurfaceQuery
@@ -150,12 +189,34 @@ class DiscreteRigidBody:
         return dists, normals
 
     def getAABB(self):
-        """Returns the current Axis-Aligned Bounding Box (min, max) of the surface."""
+        """
+        Returns the current Axis-Aligned Bounding Box (AABB) of the rigid body surface.
+
+        Returns
+        -------
+        aabb_min : numpy.ndarray
+            The (x, y, z) minimum coordinate bounds of the current surface nodes.
+        aabb_max : numpy.ndarray
+            The (x, y, z) maximum coordinate bounds of the current surface nodes.
+        """
         coords = np.array([n.coordinates for n in self.surfaceNodes])
         return np.min(coords, axis=0), np.max(coords, axis=0)
 
     def _getRotationMatrix3D(self, theta):
-        """Construct a 3D rotation matrix from a rotation vector using Rodrigues' formula."""
+        """
+        Construct a 3D rotation matrix from a rotation vector using Rodrigues' formula.
+
+        Parameters
+        ----------
+        theta : numpy.ndarray
+            A 3D rotation vector where the direction indicates the axis of rotation 
+            and the magnitude indicates the angle in radians.
+
+        Returns
+        -------
+        R : numpy.ndarray
+            A 3x3 rotation matrix.
+        """
         angle = np.linalg.norm(theta)
         if angle < 1e-12:
             return np.eye(3)
@@ -182,7 +243,39 @@ class DiscreteRigidBody:
     ):
         """
         Creates a Discrete Rigid Body directly from a mesh file.
-        Encapsulates node creation, elements generation, and RP kinematics.
+
+        Encapsulates node creation, surface element generation, and reference point 
+        (RP) kinematics setup automatically. Also computes basic mass and inertia 
+        properties based on the mesh volume if a density is supplied.
+
+        Parameters
+        ----------
+        name : str
+            The identifier name for the discrete rigid body.
+        model : MPMModel
+            The current model instance.
+        filename : str
+            The file path to the surface mesh (e.g., STL, OBJ).
+        translation : numpy.ndarray, optional
+            A 3D vector to translate the mesh globally upon initialization.
+        density : float, optional
+            The mass density of the rigid body. Used to compute mass and inertia.
+        mass : float, optional
+            The total mass of the rigid body. Overrides density-based computation.
+        inertia : list, optional
+            The 3D diagonal moments of inertia. Overrides density-based computation.
+        initial_velocity : list, optional
+            The initial velocity vector [vx, vy, vz].
+        rp_coordinate : numpy.ndarray, optional
+            The explicit global coordinates for the Reference Point. If None, it 
+            defaults to the center of mass of the surface mesh.
+        start_label : int, optional
+            The starting index label for newly generated nodes and elements.
+
+        Returns
+        -------
+        instance : DiscreteRigidBody
+            The fully initialized discrete rigid body entity.
         """
         import pyvista as pv
         from edelweissfe.points.node import Node
