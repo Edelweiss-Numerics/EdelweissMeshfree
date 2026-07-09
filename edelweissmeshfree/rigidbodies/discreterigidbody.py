@@ -58,6 +58,8 @@ class DiscreteRigidBody:
     def _getFieldU(self, fieldName, node):
         """Safely retrieve the accumulated displacement/rotation for a single node.
         Returns a zero vector if the field entry "U" has not been written yet."""
+        if fieldName not in node.fields:
+            return np.zeros(getFieldSize(fieldName, self.domainSize))
         node_field = self.model.nodeFields.get(fieldName)
         if node_field is None or "U" not in node_field:
             return np.zeros(getFieldSize(fieldName, self.domainSize))
@@ -280,7 +282,6 @@ class DiscreteRigidBody:
         import pyvista as pv
         from edelweissfe.points.node import Node
         from edelweissfe.sets.nodeset import NodeSet
-        from edelweissfe.variables.fieldvariable import FieldVariable
         from edelweissfe.elements.discreterigid import DiscreteRigidElement
         from edelweissfe.sets.elementset import ElementSet
 
@@ -320,7 +321,6 @@ class DiscreteRigidBody:
         for i, pt in enumerate(points):
             n = Node(start_label + i, pt.copy())
             model.nodes[n.label] = n
-            n.fields["displacement"] = FieldVariable(n, "displacement")
             rigid_nodes.append(n)
 
         nset_name = f"{name}_surface_nodes"
@@ -350,8 +350,6 @@ class DiscreteRigidBody:
         
         rp_nset_name = f"{name}_rp"
         model.nodeSets[rp_nset_name] = NodeSet(rp_nset_name, [rp])
-        rp.fields["displacement"] = FieldVariable(rp, "displacement")
-        rp.fields["rotation"] = FieldVariable(rp, "rotation")
 
         if "all" in model.nodeSets:
             all_nodes = list(model.nodeSets["all"])
