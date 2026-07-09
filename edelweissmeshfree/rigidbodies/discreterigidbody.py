@@ -101,6 +101,27 @@ class DiscreteRigidBody:
                 idx = disp_field._indicesOfNodesInArray[node]
                 disp_u[idx] = new_coords[i] - (self.rpNode.coordinates + self.initialRelativePositions[i])
 
+    def querySurface(self, coords):
+        """Query the signed distance and outward normals of the surface mesh for the given global coordinates."""
+        if not hasattr(self, "_query_engine"):
+            from edelweissmeshfree.utils.discretesurfacequery import DiscreteSurfaceQuery
+            if not hasattr(self, "surface_mesh"):
+                raise RuntimeError("DiscreteRigidBody has no surface_mesh to query.")
+            self._query_engine = DiscreteSurfaceQuery(mesh=self.surface_mesh)
+            
+        u_rp, R, rp_initial = self.getCurrentKinematics()
+        return self._query_engine.query(
+            coords,
+            translation=u_rp,
+            rotation_matrix=R,
+            rotation_center=rp_initial
+        )
+
+    def getAABB(self):
+        """Returns the current Axis-Aligned Bounding Box (min, max) of the surface."""
+        coords = np.array([n.coordinates for n in self.surfaceNodes])
+        return np.min(coords, axis=0), np.max(coords, axis=0)
+
     def _getRotationMatrix3D(self, theta):
         """Construct a 3D rotation matrix from a rotation vector using Rodrigues' formula."""
         angle = np.linalg.norm(theta)

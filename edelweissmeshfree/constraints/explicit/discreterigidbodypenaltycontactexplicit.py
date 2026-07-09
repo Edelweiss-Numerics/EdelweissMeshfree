@@ -20,8 +20,6 @@ class DiscreteRigidBodyPenaltyContactExplicit(MPMConstraintBase):
         Name of the constraint.
     particles : Iterable[BaseParticle]
         The collection of particles to which the constraint is applied.
-    query_engine : DiscreteSurfaceQuery
-        The vectorized query engine for the rigid body mesh.
     model : MPMModel
         The MPM model instance.
     penaltyParameter : float
@@ -36,7 +34,6 @@ class DiscreteRigidBodyPenaltyContactExplicit(MPMConstraintBase):
         self,
         name: str,
         particles: Iterable[BaseParticle],
-        query_engine: DiscreteSurfaceQuery,
         model: MPMModel,
         rigidBody,
         penaltyParameter: float = 1e5,
@@ -51,7 +48,6 @@ class DiscreteRigidBodyPenaltyContactExplicit(MPMConstraintBase):
         self._model = model
 
         self.particles = list(particles)
-        self.query_engine = query_engine
         self.rigidBody = rigidBody
         self.rigidBodyRPNode = rigidBody.rpNode
 
@@ -64,10 +60,6 @@ class DiscreteRigidBodyPenaltyContactExplicit(MPMConstraintBase):
 
         self._aabb_min = None
         self._aabb_max = None
-        if self._doProximityCheck and hasattr(self.rigidBody, "surfaceNodes") and len(self.rigidBody.surfaceNodes) > 0:
-            initial_coords = np.array([n.coordinates for n in self.rigidBody.surfaceNodes])
-            self._aabb_min = np.min(initial_coords, axis=0) - self.proximityFactor
-            self._aabb_max = np.max(initial_coords, axis=0) + self.proximityFactor
 
         self.isActive = True
 
@@ -158,13 +150,6 @@ class DiscreteRigidBodyPenaltyContactExplicit(MPMConstraintBase):
         if not self.isActive or not self.particles:
             return
 
-        if hasattr(self.rigidBody, "getCurrentKinematics"):
-            translation, rotation_matrix, rp_initial = self.rigidBody.getCurrentKinematics()
-        else:
-            translation = np.zeros(self._domainSize)
-            rotation_matrix = None
-            rp_initial = None
-
         # 1. Gather all particle coordinates (Vectorized)
         coords = np.array([p.getCenterCoordinates() for p in self.particles])
         # Sometimes particles return a list wrapping the array
@@ -173,9 +158,10 @@ class DiscreteRigidBodyPenaltyContactExplicit(MPMConstraintBase):
 
         # 2. Broadphase Proximity Check (AABB)
         active_indices = np.arange(len(self.particles))
-        if self._doProximityCheck and self._aabb_min is not None:
-            aabb_min = self._aabb_min + translation
-            aabb_max = self._aabb_max + translation
+        if self._doProximityCheck and hasattr(self.rigidBody, "getAABB"):
+            curr_min, curr_max = self.rigidBody.getAABB()
+            aabb_min = curr_min - self.proximityFactor
+            aabb_max = curr_max + self.proximityFactor
 
             in_aabb = np.all((coords >= aabb_min) & (coords <= aabb_max), axis=1)
             active_indices = np.where(in_aabb)[0]
@@ -187,12 +173,7 @@ class DiscreteRigidBodyPenaltyContactExplicit(MPMConstraintBase):
             coords_to_query = coords
 
         # 3. Narrowphase Query (VTK)
-        dists, normals = self.query_engine.query(
-            coords_to_query,
-            translation=translation,
-            rotation_matrix=rotation_matrix,
-            rotation_center=rp_initial,
-        )
+        dists, normals = self.rigidBody.querySurface(coords_to_query)
 
         # 4. Filter penetrating
         penetrating_mask = dists < 0
@@ -266,17 +247,9 @@ def DiscreteRigidBodyPenaltyContactExplicitFactory(
     rigidBody : DiscreteRigidBody
         The discrete rigid body entity.
     """
-    
-    # Initialize the high-performance distance query engine
-    if hasattr(rigidBody, "surface_mesh") and rigidBody.surface_mesh is not None:
-        query_engine = DiscreteSurfaceQuery(mesh=rigidBody.surface_mesh)
-    else:
-        query_engine = DiscreteSurfaceQuery(filename=filename, initial_offset=initial_offset)
-
     constraint = DiscreteRigidBodyPenaltyContactExplicit(
         name=name,
         particles=particleCollection,
-        query_engine=query_engine,
         model=model,
         rigidBody=rigidBody,
         penaltyParameter=penaltyParameter,
