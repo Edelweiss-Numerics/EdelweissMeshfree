@@ -1,4 +1,3 @@
-import argparse
 import os
 import sys
 
@@ -7,21 +6,12 @@ import pyvista as pv
 
 
 def animate_case():
-    parser = argparse.ArgumentParser(description="Interactive PyVista visualizer for Ensight Gold .case files.")
-    parser.add_argument("case_file", nargs="?", help="Path to the Ensight Gold .case file to visualize.")
-    args = parser.parse_args()
-
-    case_file = args.case_file
-    if not case_file:
-        import glob
-
-        case_files = glob.glob("*.case")
-        if not case_files:
-            print("Error: No .case file specified and none found in the current directory.")
-            print("Usage: python create_animation.py [path_to_case_file.case]")
-            sys.exit(1)
-        case_file = sorted(case_files)[-1]
-        print(f"No case file specified. Auto-detecting latest: {case_file}")
+    if len(sys.argv) < 2:
+        print("Error: No .case file specified.")
+        print("Usage: python create_animation.py <path_to_case_file.case>")
+        sys.exit(1)
+        
+    case_file = sys.argv[1]
 
     if not os.path.exists(case_file):
         print(f"Error: Specified case file '{case_file}' does not exist.")
