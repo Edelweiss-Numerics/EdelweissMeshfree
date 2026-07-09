@@ -148,11 +148,11 @@ def run_quasistatic_sim():
     )
     theModel.particleKernelDomains["all"] = theParticleKernelDomain
 
-    from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
-        KDBinOrganizedParticleManager,
+    from edelweissmeshfree.particlemanagers.verletlistparticlemanager import (
+        VerletListParticleManager,
     )
 
-    theParticleManager = KDBinOrganizedParticleManager(
+    theParticleManager = VerletListParticleManager(
         theParticleKernelDomain,
         3,
         theJournal,
