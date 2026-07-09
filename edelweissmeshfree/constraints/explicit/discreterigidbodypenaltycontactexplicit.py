@@ -1,14 +1,16 @@
 from collections.abc import Iterable
+
 import numpy as np
 from edelweissfe.config.phenomena import getFieldSize
 from edelweissfe.timesteppers.timestep import TimeStep
-from edelweissfe.variables.scalarvariable import ScalarVariable
+
 from edelweissmeshfree.constraints.base.mpmconstraintbase import MPMConstraintBase
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.particles.base.baseparticle import BaseParticle
 from edelweissmeshfree.utils.discretesurfacequery import DiscreteSurfaceQuery
 
-class ParticleCollectionPenaltyContactDiscreteRigidBodyConstraintExplicit(MPMConstraintBase):
+
+class DiscreteRigidBodyPenaltyContactExplicit(MPMConstraintBase):
     """
     Vectorized penalty contact constraint for discrete rigid bodies in EXPLICIT simulations.
 
@@ -36,7 +38,7 @@ class ParticleCollectionPenaltyContactDiscreteRigidBodyConstraintExplicit(MPMCon
         particles: Iterable[BaseParticle],
         query_engine: DiscreteSurfaceQuery,
         model: MPMModel,
-        rigidBodyRPNode,
+        rigidBody,
         penaltyParameter: float = 1e5,
         doProximityCheck: bool = True,
         proximityFactor: float = 2.0,
@@ -50,8 +52,9 @@ class ParticleCollectionPenaltyContactDiscreteRigidBodyConstraintExplicit(MPMCon
 
         self.particles = list(particles)
         self.query_engine = query_engine
-        self.rigidBodyRPNode = rigidBodyRPNode
-        
+        self.rigidBody = rigidBody
+        self.rigidBodyRPNode = rigidBody.rpNode
+
         self.reactionForce = 0.0
 
         self._domainSize = model.domainSize
@@ -83,10 +86,12 @@ class ParticleCollectionPenaltyContactDiscreteRigidBodyConstraintExplicit(MPMCon
         dofs = 0
         for f in self.fieldsOnNodes:
             for field_name in f:
-                dofs += self._fieldSize # displacement is domainSize, rotation is 3 or 1. Let's assume fieldSize applies.
-                # Actually, displacement is _domainSize. rotation in 3D is 3. 
+                dofs += (
+                    self._fieldSize
+                )  # displacement is domainSize, rotation is 3 or 1. Let's assume fieldSize applies.
+                # Actually, displacement is _domainSize. rotation in 3D is 3.
                 if field_name == "rotation" and self._domainSize == 3:
-                    pass # We already added self._fieldSize assuming it's 3.
+                    pass  # We already added self._fieldSize assuming it's 3.
         return dofs
 
     @property
@@ -112,17 +117,17 @@ class ParticleCollectionPenaltyContactDiscreteRigidBodyConstraintExplicit(MPMCon
         for p in self.particles:
             for kf in p.kernelFunctions:
                 all_nodes.add(kf.node)
-        
+
         # Add the RP node to receive reaction forces
         all_nodes.add(self.rigidBodyRPNode)
-        
+
         nodes = list(all_nodes)
         nodes.sort(key=lambda n: n.label)
         hasChanged = nodes != self._nodes
-        
+
         self._nodes = nodes
         self._node_to_idx = {node: i for i, node in enumerate(self._nodes)}
-        
+
         # Build DOF offsets
         self._node_to_offset = {}
         current_offset = 0
@@ -130,8 +135,8 @@ class ParticleCollectionPenaltyContactDiscreteRigidBodyConstraintExplicit(MPMCon
             self._node_to_offset[n] = current_offset
             current_offset += self._fieldSize
             if n is self.rigidBodyRPNode and self._domainSize == 3:
-                current_offset += 3 # For rotation
-                
+                current_offset += 3  # For rotation
+
         # The constraint is always "active" because we evaluate the entire collection in applyConstraint
         # and only apply forces to those actually penetrating.
         self.isActive = True
@@ -177,7 +182,7 @@ class ParticleCollectionPenaltyContactDiscreteRigidBodyConstraintExplicit(MPMCon
             if dist < 0:
                 g = abs(dist)
                 normal = normals[i]
-                
+
                 # Check normal validity
                 grad_norm = np.linalg.norm(normal)
                 if grad_norm > 1e-14:
@@ -190,7 +195,7 @@ class ParticleCollectionPenaltyContactDiscreteRigidBodyConstraintExplicit(MPMCon
                 # Get interpolation vector N mapping particle to grid nodes
                 # Note: getInterpolationVector expects a coordinate.
                 N = p.getInterpolationVector(coords[i]).flatten()
-                
+
                 p_nodes = [kf.node for kf in p.kernelFunctions]
 
                 # Scatter to local Pc vector
@@ -203,7 +208,7 @@ class ParticleCollectionPenaltyContactDiscreteRigidBodyConstraintExplicit(MPMCon
                 rp_offset = self._node_to_offset[self.rigidBodyRPNode]
                 for d in range(self._domainSize):
                     PExt[rp_offset + d] -= force_vector[d]
-                
+
                 # Calculate moment if 3D
                 if self._domainSize == 3:
                     # Current RP position
@@ -220,12 +225,12 @@ class ParticleCollectionPenaltyContactDiscreteRigidBodyConstraintExplicit(MPMCon
         self.reactionForce = total_reaction
 
 
-def ParticleCollectionPenaltyContactDiscreteRigidBodyConstraintExplicitFactory(
+def DiscreteRigidBodyPenaltyContactExplicitFactory(
     baseName: str,
     filename: str,
     particleCollection: Iterable[BaseParticle],
     model: MPMModel,
-    rigidBodyRPNode,
+    rigidBody,
     penaltyParameter: float = 1e5,
     doProximityCheck: bool = True,
     proximityFactor: float = 2.0,
@@ -236,8 +241,8 @@ def ParticleCollectionPenaltyContactDiscreteRigidBodyConstraintExplicitFactory(
 
     Parameters
     ----------
-    rigidBodyRPNode :
-        The reference point node of the rigid body. Its displacement field is used as the
+    rigidBody : DiscreteRigidBody
+        The discrete rigid body entity. Its RP displacement field is used as the
         rigid body's current translation when querying the (fixed-frame) surface locators.
     initial_offset : np.ndarray, optional
         A translation vector applied to the rigid body mesh before building
@@ -245,21 +250,21 @@ def ParticleCollectionPenaltyContactDiscreteRigidBodyConstraintExplicitFactory(
         physical initial location (matching the visualization geometry).
     """
     constraints = dict()
-    
+
     # Initialize the high-performance distance query engine
     query_engine = DiscreteSurfaceQuery(filename, initial_offset=initial_offset)
-    
+
     # We create a single constraint for the entire collection to maximize vectorization
     name = f"{baseName}_collection"
-    constraints[name] = ParticleCollectionPenaltyContactDiscreteRigidBodyConstraintExplicit(
+    constraints[name] = DiscreteRigidBodyPenaltyContactExplicit(
         name=name,
         particles=particleCollection,
         query_engine=query_engine,
         model=model,
-        rigidBodyRPNode=rigidBodyRPNode,
+        rigidBody=rigidBody,
         penaltyParameter=penaltyParameter,
         doProximityCheck=doProximityCheck,
         proximityFactor=proximityFactor,
     )
-    
+
     return constraints

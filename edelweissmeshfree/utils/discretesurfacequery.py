@@ -1,6 +1,7 @@
-import pyvista as pv
 import numpy as np
+import pyvista as pv
 import vtk
+
 
 class DiscreteSurfaceQuery:
     def __init__(self, filename: str, initial_offset: np.ndarray = None):
@@ -18,13 +19,13 @@ class DiscreteSurfaceQuery:
             its physical initial location (matching the visualization nodes).
         """
         self.mesh = pv.read(filename)
-        
+
         # If the Exodus file has multiple blocks, pyvista.read might return a MultiBlock.
         # We need to extract the PolyData surface.
         if isinstance(self.mesh, pv.MultiBlock):
             # Combine all blocks into one UnstructuredGrid, then extract surface
             self.mesh = self.mesh.combine()
-        
+
         # Extract the outer surface to ensure we have a PolyData object
         self.mesh = self.mesh.extract_surface()
 
@@ -32,7 +33,7 @@ class DiscreteSurfaceQuery:
         # physical starting position (consistent with the visualization nodes).
         if initial_offset is not None:
             self.mesh.points = self.mesh.points + np.asarray(initial_offset, dtype=np.float64)
-        
+
         # Ensure outward normals are computed for each cell
         self.mesh.compute_normals(cell_normals=True, point_normals=False, inplace=True)
         self.mesh_cell_normals = np.array(self.mesh.cell_normals)
@@ -82,11 +83,11 @@ class DiscreteSurfaceQuery:
         for i in range(n_points):
             pt = local_coords[i]
             dists[i] = self.implicit_dist.EvaluateFunction(pt)
-            
+
             cell_id = vtk.reference(0)
             self.locator.FindClosestPoint(pt, closest_point, cell_id, sub_id, dist2)
             closest_cells[i] = int(cell_id)
 
         normals = self.mesh_cell_normals[closest_cells]
-        
+
         return dists, normals

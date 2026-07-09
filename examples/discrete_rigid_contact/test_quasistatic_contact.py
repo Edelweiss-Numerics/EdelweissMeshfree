@@ -39,40 +39,48 @@ Expected contact time: t_contact = 5.5 / 6.0 = 0.9167 s.
 After contact the block should deform with negligible oscillation.
 """
 
-import os
 import sys
-import numpy as np
 
-from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
-from edelweissmeshfree.fieldoutput.fieldoutput import MPMFieldOutputController
-from edelweissmeshfree.generators.kernelmatchingtoparticlegenerator import generateKernelMatchingToParticle
-from edelweissmeshfree.generators.particlesfromexodus import generateParticlesFromExodus
-from edelweissmeshfree.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunction import MarmotMeshfreeKernelFunctionWrapper
-from edelweissmeshfree.models.mpmmodel import MPMModel
-from edelweissmeshfree.numerics.predictors.quadraticpredictor import QuadraticPredictor
-from edelweissmeshfree.outputmanagers.ensight import OutputManager as EnsightOutputManager
-from edelweissmeshfree.particles.marmot.marmotparticlewrapper import MarmotParticleWrapper
-from edelweissmeshfree.solvers.explicitmultiphysicssolver import ExplicitMultiphysicsSolver
-from edelweissmeshfree.utils.discretesurfacequery import DiscreteSurfaceQuery
 import edelweissfe.utils.performancetiming as performancetiming
+import numpy as np
 from edelweissfe.journal.journal import Journal
-from edelweissmeshfree.constraints.explicit.particlecollectionpenaltyrigidbodycontactexplicit import (
-    ParticleCollectionPenaltyContactDiscreteRigidBodyConstraintExplicitFactory,
+from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
+
+from edelweissmeshfree.constraints.explicit.discreterigidbodypenaltycontactexplicit import (
+    DiscreteRigidBodyPenaltyContactExplicitFactory,
+)
+from edelweissmeshfree.fieldoutput.fieldoutput import MPMFieldOutputController
+from edelweissmeshfree.generators.kernelmatchingtoparticlegenerator import (
+    generateKernelMatchingToParticle,
+)
+from edelweissmeshfree.generators.particlesfromexodus import generateParticlesFromExodus
+from edelweissmeshfree.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunction import (
+    MarmotMeshfreeKernelFunctionWrapper,
+)
+from edelweissmeshfree.models.mpmmodel import MPMModel
+from edelweissmeshfree.outputmanagers.ensight import (
+    OutputManager as EnsightOutputManager,
+)
+from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
+    MarmotParticleWrapper,
+)
+from edelweissmeshfree.solvers.explicitmultiphysicssolver import (
+    ExplicitMultiphysicsSolver,
 )
 
 # ---------------------------------------------------------------------------
 # Parameters
 # ---------------------------------------------------------------------------
-E            = 400.0       # Young's modulus  [Pa-like units]
-NU           = 0.3         # Poisson's ratio
-RHO          = 100.0       # Mass-scaled density (physical ρ=1, scaled ×100)
-PENALTY      = 1e5         # Contact penalty stiffness
-DISP_Y       = -2.0        # Total prescribed RP displacement (downward)
-STEP_TIME    = 1.0         # Total step time  [s]
-DT           = 5e-3        # Time increment   [s]
-VELOCITY     = abs(DISP_Y) / STEP_TIME          # = 2.0 m/s (10% of physical c)
-GAP          = 0.6         # gap from top particle centroid (Y=4.5) to shifted rigid bottom (Y=5.1)
-T_CONTACT    = GAP / VELOCITY                    # = 0.3 s
+E = 400.0  # Young's modulus  [Pa-like units]
+NU = 0.3  # Poisson's ratio
+RHO = 100.0  # Mass-scaled density (physical ρ=1, scaled ×100)
+PENALTY = 1e5  # Contact penalty stiffness
+DISP_Y = -2.0  # Total prescribed RP displacement (downward)
+STEP_TIME = 1.0  # Total step time  [s]
+DT = 5e-3  # Time increment   [s]
+VELOCITY = abs(DISP_Y) / STEP_TIME  # = 2.0 m/s (10% of physical c)
+GAP = 0.6  # gap from top particle centroid (Y=4.5) to shifted rigid bottom (Y=5.1)
+T_CONTACT = GAP / VELOCITY  # = 0.3 s
 
 print(f"=== Quasi-static mass-scaled contact test ===")
 print(f"  E={E}, ν={NU}, ρ(scaled)={RHO}")
@@ -93,7 +101,10 @@ def run_quasistatic_sim():
         "properties": np.array([E, NU, RHO]),
     }
 
-    from edelweissmeshfree.meshfree.approximations.marmot.marmotmeshfreeapproximation import MarmotMeshfreeApproximationWrapper
+    from edelweissmeshfree.meshfree.approximations.marmot.marmotmeshfreeapproximation import (
+        MarmotMeshfreeApproximationWrapper,
+    )
+
     theApproximation = MarmotMeshfreeApproximationWrapper("ReproducingKernel", 3, completenessOrder=1)
 
     def TheParticleFactory(particleNumber, coordinates):
@@ -108,7 +119,12 @@ def run_quasistatic_sim():
 
     print("Loading particles...")
     theModel = generateParticlesFromExodus(
-        theModel, theJournal, "particles.exo", {"HEX": TheParticleFactory, "HEX8": TheParticleFactory}, "mesh_particles", 1
+        theModel,
+        theJournal,
+        "particles.exo",
+        {"HEX": TheParticleFactory, "HEX8": TheParticleFactory},
+        "mesh_particles",
+        1,
     )
 
     def theMeshfreeKernelFunctionFactory(node, characteristicLength):
@@ -126,12 +142,16 @@ def run_quasistatic_sim():
     )
 
     from edelweissmeshfree.meshfree.particlekerneldomain import ParticleKernelDomain
+
     theParticleKernelDomain = ParticleKernelDomain(
         list(theModel.particles.values()), list(theModel.meshfreeKernelFunctions.values())
     )
     theModel.particleKernelDomains["all"] = theParticleKernelDomain
 
-    from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import KDBinOrganizedParticleManager
+    from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
+        KDBinOrganizedParticleManager,
+    )
+
     theParticleManager = KDBinOrganizedParticleManager(
         theParticleKernelDomain,
         3,
@@ -146,6 +166,7 @@ def run_quasistatic_sim():
     from edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit import (
         ParticleExplicitPenaltyCartesianBoundaryConstraintFactory,
     )
+
     dirichletBottom = ParticleExplicitPenaltyCartesianBoundaryConstraintFactory(
         "bottom_fix",
         boundaryPosition=-5.0,
@@ -161,6 +182,7 @@ def run_quasistatic_sim():
 
     # ---- Rigid body setup ----
     import pyvista as pv
+
     mesh = pv.read("rigid_body.exo")
     if isinstance(mesh, pv.MultiBlock):
         mesh = mesh.combine()
@@ -174,26 +196,30 @@ def run_quasistatic_sim():
     i = 0
     while i < len(cells):
         n = cells[i]
-        faces.append(cells[i+1:i+1+n])
+        faces.append(cells[i + 1 : i + 1 + n])
         i += 1 + n
 
     rigid_nodes = []
     start_label = 1000000
     for i, pt in enumerate(points):
         from edelweissfe.points.node import Node
+
         n = Node(start_label + i, pt.copy())
         theModel.nodes[n.label] = n
         rigid_nodes.append(n)
 
     from edelweissfe.sets.nodeset import NodeSet
+
     theModel.nodeSets["rigid_surface_nodes"] = NodeSet("rigid_surface_nodes", rigid_nodes)
 
     from edelweissfe.variables.fieldvariable import FieldVariable
+
     for n in rigid_nodes:
         n.fields["displacement"] = FieldVariable(n, "displacement")
 
     from edelweissfe.elements.discreterigid import DiscreteRigidElement
     from edelweissfe.sets.elementset import ElementSet
+
     rigid_elements = []
     for i, face in enumerate(faces):
         if len(face) == 4:
@@ -221,23 +247,27 @@ def run_quasistatic_sim():
 
     # Dirichlet on RP
     from edelweissmeshfree.stepactions.dirichlet import Dirichlet as DirichletMF
+
     def velocity_amp(t):
         return t
-    rp_bc = DirichletMF("rp_bc", theModel.nodeSets["rigid_rp"], "displacement", {"2": DISP_Y}, theModel, theJournal, velocity_amp)
 
-    # Kinematic tie
-    from edelweissfe.constraints.rigidbodykinematictieexplicit import RigidBodyKinematicTieExplicit
-    tie = RigidBodyKinematicTieExplicit("rp_tie", theModel, nSet="rigid_surface_nodes", referencePoint="rigid_rp")
-    theModel.kinematicDrivers = {"rp_tie": tie}
+    rp_bc = DirichletMF(
+        "rp_bc", theModel.nodeSets["rigid_rp"], "displacement", {"2": DISP_Y}, theModel, theJournal, velocity_amp
+    )
+
+    # Discrete Rigid Body
+    from edelweissmeshfree.rigidbodies.discreterigidbody import DiscreteRigidBody
+
+    rigid_body = DiscreteRigidBody("rigid_body", theModel, nSet="rigid_surface_nodes", referencePoint="rigid_rp")
+    theModel.discreteRigidBodies = {"rigid_body": rigid_body}
 
     # Contact
-    rp_node = next(iter(theModel.nodeSets["rigid_rp"]))
-    contact = ParticleCollectionPenaltyContactDiscreteRigidBodyConstraintExplicitFactory(
+    contact = DiscreteRigidBodyPenaltyContactExplicitFactory(
         baseName="rigid_impact",
         filename="rigid_body.exo",
         particleCollection=theModel.particleSets["mesh_particles_all"],
         model=theModel,
-        rigidBodyRPNode=rp_node,
+        rigidBody=rigid_body,
         penaltyParameter=PENALTY,
         initial_offset=np.array([0.0, -4.9, 0.0]),
     )
@@ -249,10 +279,19 @@ def run_quasistatic_sim():
 
     # ---- Field output ----
     fieldOutputController = MPMFieldOutputController(theModel, theJournal)
-    fieldOutputController.addPerParticleFieldOutput("displacement", theModel.particleSets["mesh_particles_all"], "displacement")
+    fieldOutputController.addPerParticleFieldOutput(
+        "displacement", theModel.particleSets["mesh_particles_all"], "displacement"
+    )
     fieldOutputController.addPerParticleFieldOutput("velocity", theModel.particleSets["mesh_particles_all"], "velocity")
-    fieldOutputController.addPerParticleFieldOutput("deformation gradient", theModel.particleSets["mesh_particles_all"], "deformation gradient")
-    fieldOutputController.addPerParticleFieldOutput("vertex displacements", theModel.particleSets["mesh_particles_all"], "vertex displacements", reshape_to_dimensions=3)
+    fieldOutputController.addPerParticleFieldOutput(
+        "deformation gradient", theModel.particleSets["mesh_particles_all"], "deformation gradient"
+    )
+    fieldOutputController.addPerParticleFieldOutput(
+        "vertex displacements",
+        theModel.particleSets["mesh_particles_all"],
+        "vertex displacements",
+        reshape_to_dimensions=3,
+    )
 
     rigid_surface_field = theModel.nodeFields["displacement"].subset(theModel.elementSets["rigid_surface"])
     fieldOutputController.addPerNodeFieldOutput("rigid_displacement", rigid_surface_field, "U")
@@ -264,10 +303,18 @@ def run_quasistatic_sim():
         out_folder, theModel, fieldOutputController, theJournal, None, intermediateSaveInterval=1
     )
     ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["displacement"], create="perElement")
-    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["rigid_displacement"], create="perNode")
+    ensightOutput.updateDefinition(
+        fieldOutput=fieldOutputController.fieldOutputs["rigid_displacement"], create="perNode"
+    )
     ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["velocity"], create="perElement")
-    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["deformation gradient"], create="perElement")
-    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["vertex displacements"], name="vertex displacements", create="perNode")
+    ensightOutput.updateDefinition(
+        fieldOutput=fieldOutputController.fieldOutputs["deformation gradient"], create="perElement"
+    )
+    ensightOutput.updateDefinition(
+        fieldOutput=fieldOutputController.fieldOutputs["vertex displacements"],
+        name="vertex displacements",
+        create="perNode",
+    )
     ensightOutput.initializeJob()
 
     solver = ExplicitMultiphysicsSolver(theJournal)
@@ -307,6 +354,7 @@ def run_quasistatic_sim():
 # ── Validation ──────────────────────────────────────────────────────────────
 def validate_results():
     import glob
+
     import pyvista as pv
 
     case_files = sorted(glob.glob("quasistatic_sim_out*.case"))
@@ -349,7 +397,9 @@ def validate_results():
         if max_block > 1e-4 and first_block_deform_t is None:
             first_block_deform_t = t_val
 
-        print(f"  t={t_val:7.4f} [{status}]  rigid_y={np.min(actual_disp_y):+8.4f} (exp {expected_disp:+8.4f}, err {max_err:.2e})  block_max_disp={max_block:.6f}")
+        print(
+            f"  t={t_val:7.4f} [{status}]  rigid_y={np.min(actual_disp_y):+8.4f} (exp {expected_disp:+8.4f}, err {max_err:.2e})  block_max_disp={max_block:.6f}"
+        )
 
         if max_err > 0.1:
             errors.append(f"t={t_val:.4f}: rigid displacement error {max_err:.4f}")
@@ -357,7 +407,9 @@ def validate_results():
     print()
     if first_block_deform_t is not None:
         delay = first_block_deform_t - T_CONTACT
-        print(f"  First block deformation at t = {first_block_deform_t:.4f} s  (Δt from theory = {delay:+.4f} s = {abs(delay)/DT:.1f} increments)")
+        print(
+            f"  First block deformation at t = {first_block_deform_t:.4f} s  (Δt from theory = {delay:+.4f} s = {abs(delay)/DT:.1f} increments)"
+        )
         if abs(delay) < 10 * DT:
             print(f"  ✓  Contact onset matches theoretical prediction within 10 time steps.")
         else:

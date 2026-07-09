@@ -1,35 +1,44 @@
-import os
-import sys
-import numpy as np
-import pytest
-
-from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
-from edelweissmeshfree.fieldoutput.fieldoutput import MPMFieldOutputController
-from edelweissmeshfree.generators.kernelmatchingtoparticlegenerator import generateKernelMatchingToParticle
-from edelweissmeshfree.generators.particlesfromexodus import generateParticlesFromExodus
-from edelweissmeshfree.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunction import MarmotMeshfreeKernelFunctionWrapper
-from edelweissmeshfree.models.mpmmodel import MPMModel
-from edelweissmeshfree.numerics.predictors.quadraticpredictor import QuadraticPredictor
-from edelweissmeshfree.outputmanagers.ensight import OutputManager as EnsightOutputManager
-from edelweissmeshfree.particles.marmot.marmotparticlewrapper import MarmotParticleWrapper
-from edelweissmeshfree.solvers.explicitmultiphysicssolver import ExplicitMultiphysicsSolver
-from edelweissmeshfree.utils.discretesurfacequery import DiscreteSurfaceQuery
 import edelweissfe.utils.performancetiming as performancetiming
+import numpy as np
 from edelweissfe.journal.journal import Journal
-from edelweissmeshfree.constraints.explicit.particlecollectionpenaltyrigidbodycontactexplicit import (
-    ParticleCollectionPenaltyContactDiscreteRigidBodyConstraintExplicitFactory,
+from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
+
+from edelweissmeshfree.constraints.explicit.discreterigidbodypenaltycontactexplicit import (
+    DiscreteRigidBodyPenaltyContactExplicitFactory,
 )
+from edelweissmeshfree.fieldoutput.fieldoutput import MPMFieldOutputController
+from edelweissmeshfree.generators.kernelmatchingtoparticlegenerator import (
+    generateKernelMatchingToParticle,
+)
+from edelweissmeshfree.generators.particlesfromexodus import generateParticlesFromExodus
+from edelweissmeshfree.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunction import (
+    MarmotMeshfreeKernelFunctionWrapper,
+)
+from edelweissmeshfree.models.mpmmodel import MPMModel
+from edelweissmeshfree.outputmanagers.ensight import (
+    OutputManager as EnsightOutputManager,
+)
+from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
+    MarmotParticleWrapper,
+)
+from edelweissmeshfree.solvers.explicitmultiphysicssolver import (
+    ExplicitMultiphysicsSolver,
+)
+
 
 def run_explicit_sim():
     theJournal = Journal()
     theModel = MPMModel(3)
-    
+
     theMaterial = {
         "material": "CompressibleNeoHooke",
-        "properties": np.array([40000.0, 0.3, 1.0]), # E, nu, rho. E increased to make block stiffer
+        "properties": np.array([40000.0, 0.3, 1.0]),  # E, nu, rho. E increased to make block stiffer
     }
 
-    from edelweissmeshfree.meshfree.approximations.marmot.marmotmeshfreeapproximation import MarmotMeshfreeApproximationWrapper
+    from edelweissmeshfree.meshfree.approximations.marmot.marmotmeshfreeapproximation import (
+        MarmotMeshfreeApproximationWrapper,
+    )
+
     theApproximation = MarmotMeshfreeApproximationWrapper("ReproducingKernel", 3, completenessOrder=1)
 
     def TheParticleFactory(particleNumber, coordinates):
@@ -44,7 +53,12 @@ def run_explicit_sim():
 
     print("Loading particles...")
     theModel = generateParticlesFromExodus(
-        theModel, theJournal, "particles.exo", {"HEX": TheParticleFactory, "HEX8": TheParticleFactory}, "mesh_particles", 1
+        theModel,
+        theJournal,
+        "particles.exo",
+        {"HEX": TheParticleFactory, "HEX8": TheParticleFactory},
+        "mesh_particles",
+        1,
     )
 
     def theMeshfreeKernelFunctionFactory(node, characteristicLength):
@@ -60,17 +74,21 @@ def run_explicit_sim():
         theModel.particleSets["mesh_particles_all"],
         supportScalingFactor=2.2,
     )
-    
+
     from edelweissmeshfree.meshfree.particlekerneldomain import ParticleKernelDomain
+
     theParticleKernelDomain = ParticleKernelDomain(
         list(theModel.particles.values()), list(theModel.meshfreeKernelFunctions.values())
     )
     theModel.particleKernelDomains["all"] = theParticleKernelDomain
-    
-    from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import KDBinOrganizedParticleManager
+
+    from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
+        KDBinOrganizedParticleManager,
+    )
+
     theParticleManager = KDBinOrganizedParticleManager(
         theParticleKernelDomain,
-        3, # dimension
+        3,  # dimension
         theJournal,
         bondParticlesToKernelFunctions=True,
     )
@@ -82,69 +100,70 @@ def run_explicit_sim():
     from edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit import (
         ParticleExplicitPenaltyCartesianBoundaryConstraintFactory,
     )
-    
+
     dirichletBottom = ParticleExplicitPenaltyCartesianBoundaryConstraintFactory(
-        "bottom_fix", 
+        "bottom_fix",
         boundaryPosition=-5.0,
-        component=1, # y-axis
-        particleCollection=theModel.particleSets["bottom"], 
-        field="displacement", 
-        model=theModel, 
+        component=1,  # y-axis
+        particleCollection=theModel.particleSets["bottom"],
+        field="displacement",
+        model=theModel,
         location="center",
-        penaltyParameter=1e5
+        penaltyParameter=1e5,
     )
     theModel.constraints.update(dirichletBottom)
     theModel.constraintSets["bottom_fix"] = dirichletBottom
 
-    
     # Add Discrete Rigid Body Contact constraint
-    import os
     import pyvista as pv
-    
+
     # 1. Parse rigid body mesh and create nodes
     mesh = pv.read("rigid_body.exo")
     if isinstance(mesh, pv.MultiBlock):
         mesh = mesh.combine()
-    
+
     # Extract surface for visualization elements
     points = mesh.points.copy()
     points[:, 1] -= 4.9
     surf = mesh.extract_surface()
-    
+
     # surf faces reference surf.points, not mesh.points.
-    # But since we just want to create DiscreteRigidElements, maybe we can just skip creating DiscreteRigidElement entirely! 
+    # But since we just want to create DiscreteRigidElements, maybe we can just skip creating DiscreteRigidElement entirely!
     # Or just use mesh.cells? Let's try mesh.cells if they are triangles/quads.
-    
+
     cells = mesh.cells
     # Just parse cells if they are 3-node or 4-node
     faces = []
     i = 0
     while i < len(cells):
         n = cells[i]
-        faces.append(cells[i+1:i+1+n])
+        faces.append(cells[i + 1 : i + 1 + n])
         i += 1 + n
-    
-    
+
     rigid_nodes = []
     # Nodes in EdelweissFE need a unique label, we start from a high number
     start_label = 1000000
     for i, pt in enumerate(points):
         from edelweissfe.points.node import Node
+
         n = Node(start_label + i, pt.copy())
         theModel.nodes[n.label] = n
         rigid_nodes.append(n)
-        
+
     from edelweissfe.sets.nodeset import NodeSet
+
     theModel.nodeSets["rigid_surface_nodes"] = NodeSet("rigid_surface_nodes", rigid_nodes)
-    
+
     # Add dummy displacement field to rigid nodes so it doesn't crash when exporting
     from edelweissfe.variables.fieldvariable import FieldVariable
+
     for n in rigid_nodes:
         n.fields["displacement"] = FieldVariable(n, "displacement")
-    
+
     # Create DiscreteRigidElements for visualization
     from edelweissfe.elements.discreterigid import DiscreteRigidElement
     from edelweissfe.sets.elementset import ElementSet
+
     rigid_elements = []
     for i, face in enumerate(faces):
         if len(face) == 4:
@@ -156,7 +175,7 @@ def run_explicit_sim():
         theModel.elements[el.elNumber] = el
         rigid_elements.append(el)
     theModel.elementSets["rigid_surface"] = ElementSet("rigid_surface", rigid_elements)
-        
+
     # 2. Reference Point and Kinematics
     # The rigid body mesh spans y=10..20, shifted down by 4.9 to span y=5.1..15.1, centroid at y=10.1.
     # Particles span y=-5..5 (top face at y=5).
@@ -168,36 +187,39 @@ def run_explicit_sim():
     theModel.nodeSets["rigid_rp"] = NodeSet("rigid_rp", [rp])
     rp.fields["displacement"] = FieldVariable(rp, "displacement")
     rp.fields["rotation"] = FieldVariable(rp, "rotation")
-    
+
     # Add rigid body nodes to the global 'all' nodeset so node fields are properly bundled
     if "all" in theModel.nodeSets:
         all_nodes = list(theModel.nodeSets["all"])
         all_nodes.extend(rigid_nodes)
         all_nodes.append(rp)
         theModel.nodeSets["all"] = NodeSet("all", all_nodes)
-    
+
     # RP Kinematic Boundary Condition
     from edelweissmeshfree.stepactions.dirichlet import Dirichlet as DirichletMF
+
     def velocity_amp(t):
         return t
 
     # Total displacement = -7.0 over the step. Cylinder starts at 10, hits block at 5.
     # Impact at t = (5/7) * 0.1s = ~0.071 s.
-    rp_bc = DirichletMF("rp_bc", theModel.nodeSets["rigid_rp"], "displacement", {"2": -6.0}, theModel, theJournal, velocity_amp)
-    
-    # 3. Kinematic Tie Driver
-    from edelweissfe.constraints.rigidbodykinematictieexplicit import RigidBodyKinematicTieExplicit
-    tie = RigidBodyKinematicTieExplicit("rp_tie", theModel, nSet="rigid_surface_nodes", referencePoint="rigid_rp")
-    theModel.kinematicDrivers = {"rp_tie": tie}
-    
+    rp_bc = DirichletMF(
+        "rp_bc", theModel.nodeSets["rigid_rp"], "displacement", {"2": -6.0}, theModel, theJournal, velocity_amp
+    )
+
+    # 3. Discrete Rigid Body
+    from edelweissmeshfree.rigidbodies.discreterigidbody import DiscreteRigidBody
+
+    rigid_body = DiscreteRigidBody("rigid_body", theModel, nSet="rigid_surface_nodes", referencePoint="rigid_rp")
+    theModel.discreteRigidBodies = {"rigid_body": rigid_body}
+
     # 4. Contact Constraint
-    rp_node = next(iter(theModel.nodeSets["rigid_rp"]))
-    contact = ParticleCollectionPenaltyContactDiscreteRigidBodyConstraintExplicitFactory(
+    contact = DiscreteRigidBodyPenaltyContactExplicitFactory(
         baseName="rigid_impact",
         filename="rigid_body.exo",
         particleCollection=theModel.particleSets["mesh_particles_all"],
         model=theModel,
-        rigidBodyRPNode=rp_node,
+        rigidBody=rigid_body,
         penaltyParameter=1e5,
         initial_offset=np.array([0.0, -4.9, 0.0]),
     )
@@ -208,16 +230,25 @@ def run_explicit_sim():
     theJournal.printPrettyTable(theModel.makePrettyTableSummary(), "summary")
 
     fieldOutputController = MPMFieldOutputController(theModel, theJournal)
-    fieldOutputController.addPerParticleFieldOutput("displacement", theModel.particleSets["mesh_particles_all"], "displacement")
+    fieldOutputController.addPerParticleFieldOutput(
+        "displacement", theModel.particleSets["mesh_particles_all"], "displacement"
+    )
     fieldOutputController.addPerParticleFieldOutput("velocity", theModel.particleSets["mesh_particles_all"], "velocity")
-    fieldOutputController.addPerParticleFieldOutput("deformation gradient", theModel.particleSets["mesh_particles_all"], "deformation gradient")
-    fieldOutputController.addPerParticleFieldOutput("vertex displacements", theModel.particleSets["mesh_particles_all"], "vertex displacements", reshape_to_dimensions=3)
-    
+    fieldOutputController.addPerParticleFieldOutput(
+        "deformation gradient", theModel.particleSets["mesh_particles_all"], "deformation gradient"
+    )
+    fieldOutputController.addPerParticleFieldOutput(
+        "vertex displacements",
+        theModel.particleSets["mesh_particles_all"],
+        "vertex displacements",
+        reshape_to_dimensions=3,
+    )
+
     # Add field output for rigid body (via elements)
     # The fields on discrete rigid elements will be captured by Ensight
     rigid_surface_field = theModel.nodeFields["displacement"].subset(theModel.elementSets["rigid_surface"])
     fieldOutputController.addPerNodeFieldOutput("rigid_displacement", rigid_surface_field, "U")
-    
+
     fieldOutputController.initializeJob()
 
     out_folder = "explicit_sim_out"
@@ -225,10 +256,18 @@ def run_explicit_sim():
         out_folder, theModel, fieldOutputController, theJournal, None, intermediateSaveInterval=1
     )
     ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["displacement"], create="perElement")
-    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["rigid_displacement"], create="perNode")
+    ensightOutput.updateDefinition(
+        fieldOutput=fieldOutputController.fieldOutputs["rigid_displacement"], create="perNode"
+    )
     ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["velocity"], create="perElement")
-    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["deformation gradient"], create="perElement")
-    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["vertex displacements"], name="vertex displacements", create="perNode")
+    ensightOutput.updateDefinition(
+        fieldOutput=fieldOutputController.fieldOutputs["deformation gradient"], create="perElement"
+    )
+    ensightOutput.updateDefinition(
+        fieldOutput=fieldOutputController.fieldOutputs["vertex displacements"],
+        name="vertex displacements",
+        create="perNode",
+    )
     ensightOutput.initializeJob()
 
     solver = ExplicitMultiphysicsSolver(theJournal)
@@ -257,7 +296,6 @@ def run_explicit_sim():
             userIterationOptions={"field orders": {"displacement": 2, "rotation": 2}},
         )
 
-
     except Exception as e:
         theJournal.message(f"Step failed: {str(e)}", "error")
         raise
@@ -267,6 +305,7 @@ def run_explicit_sim():
         prettytable = performancetiming.makePrettyTable()
         prettytable.min_table_width = theJournal.linewidth
         theJournal.printPrettyTable(prettytable, "Summary")
+
 
 if __name__ == "__main__":
     run_explicit_sim()

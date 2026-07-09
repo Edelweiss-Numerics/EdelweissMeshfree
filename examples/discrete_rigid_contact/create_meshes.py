@@ -1,5 +1,5 @@
-import sys
 import os
+import sys
 
 # Append Cubit bin directory to sys.path
 cubit_dir = "/home/matthias/Downloads/Coreform-Cubit-2026.6/bin"
@@ -7,6 +7,7 @@ if cubit_dir not in sys.path:
     sys.path.append(cubit_dir)
 
 import cubit
+
 
 def main():
     cubit.init(["cubit", "-nographics", "-nojournal"])
@@ -32,15 +33,16 @@ def main():
     # Cylinder radius is 5. So if we place cylinder at Y=15, its surface is at Y=10.
     # So there is a gap of 5 between them.
     cubit.cmd("move Volume 1 y 15")
-    
+
     # Mesh the surfaces
     cubit.cmd("surface all size 1")
     cubit.cmd("mesh surface all")
-    
+
     # Create block from all surfaces. This creates 2D shell elements in the exodus file.
     cubit.cmd("block 1 surface all")
     cubit.cmd("export genesis 'rigid_body.exo' overwrite")
     print("Exported rigid_body.exo")
+
 
 if __name__ == "__main__":
     main()

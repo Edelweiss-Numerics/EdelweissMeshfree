@@ -1,7 +1,7 @@
+import argparse
 import os
 import sys
-import time
-import argparse
+
 import numpy as np
 import pyvista as pv
 
@@ -14,6 +14,7 @@ def animate_case():
     case_file = args.case_file
     if not case_file:
         import glob
+
         case_files = glob.glob("*.case")
         if not case_files:
             print("Error: No .case file specified and none found in the current directory.")
@@ -52,7 +53,7 @@ def animate_case():
     plotter = pv.Plotter(notebook=False, off_screen=off_screen, window_size=[1024, 768])
 
     rigid0, particles0 = read_step(time_values[0])
-    warped_rigid0    = warp(rigid0,    "rigid_displacement")
+    warped_rigid0 = warp(rigid0, "rigid_displacement")
     warped_particles0 = warp(particles0, "vertex_displacements")
 
     vel_mag0 = np.linalg.norm(particles0.cell_data["velocity"], axis=1)
@@ -119,14 +120,10 @@ def animate_case():
         rigid, particles = read_step(time_val)
 
         # Rigid surface: shift reference points by rigid_displacement (per node)
-        rigid_actor.mapper.dataset.points = (
-            rigid.points + rigid.point_data["rigid_displacement"]
-        )
+        rigid_actor.mapper.dataset.points = rigid.points + rigid.point_data["rigid_displacement"]
 
         # Particle block: shift reference points by vertex_displacements (per node)
-        particle_actor.mapper.dataset.points = (
-            particles.points + particles.point_data["vertex_displacements"]
-        )
+        particle_actor.mapper.dataset.points = particles.points + particles.point_data["vertex_displacements"]
 
         # Update velocity magnitude colour
         vel_mag = np.linalg.norm(particles.cell_data["velocity"], axis=1)

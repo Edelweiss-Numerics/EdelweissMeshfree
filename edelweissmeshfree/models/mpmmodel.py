@@ -78,6 +78,7 @@ class MPMModel(FEModel):
         self.meshfreeKernelFunctions = {}  #: The collection of MeshfreeKernelFunctions in the present model.
         self.particleKernelDomains = {}  #: The collection of ParticleKernelDomains in the present model.
         self.vertexSets = {}  #: The collection of VertexSets for per particle in the present model.
+        self.discreteRigidBodies = {}  #: The collection of DiscreteRigidBodies in the present model.
 
         super().__init__(dimension)
 
@@ -125,22 +126,16 @@ class MPMModel(FEModel):
                     if field not in kf.node.fields:
                         kf.node.fields[field] = FieldVariable(kf.node, field)
 
-    def _populateNodeFieldVariablesFromKinematicDrivers(self):
-        """Creates FieldVariables on the RP node of each kinematic driver.
-
-        Kinematic drivers (e.g. RigidBodyKinematicTieExplicit) own a reference-point
-        node whose displacement must be tracked in the DOF vector so that the solver
-        can accumulate its prescribed motion and so that dependent systems (e.g. contact
-        constraints) can read it correctly.
-        """
-        from edelweissfe.variables.fieldvariable import FieldVariable
+    def _populateNodeFieldVariablesFromDiscreteRigidBodies(self):
+        """Creates FieldVariables on the RP node of each discrete rigid body."""
         from edelweissfe.config.phenomena import getFieldSize
+        from edelweissfe.variables.fieldvariable import FieldVariable
 
-        for driver in getattr(self, "kinematicDrivers", {}).values():
-            if not hasattr(driver, "rpNode"):
+        for body in self.discreteRigidBodies.values():
+            if not hasattr(body, "rpNode"):
                 continue
-            rpNode = driver.rpNode
-            # Activate the same fields that the kinematic tie drives (displacement + rotation)
+            rpNode = body.rpNode
+            # Activate the same fields that the rigid body uses (displacement + rotation)
             for field in ("displacement", "rotation"):
                 if getFieldSize(field, self.domainSize) > 0 and field not in rpNode.fields:
                     rpNode.fields[field] = FieldVariable(rpNode, field)
@@ -162,9 +157,9 @@ class MPMModel(FEModel):
         if self.particleKernelDomains:
             journal.message("Activating fields on Nodes from Particles", self.identification)
             self._populateNodeFieldVariablesFromParticleKernelDomains()
-        if getattr(self, "kinematicDrivers", None):
-            journal.message("Activating fields on Nodes from KinematicDrivers", self.identification)
-            self._populateNodeFieldVariablesFromKinematicDrivers()
+        if self.discreteRigidBodies:
+            journal.message("Activating fields on Nodes from DiscreteRigidBodies", self.identification)
+            self._populateNodeFieldVariablesFromDiscreteRigidBodies()
 
         return super()._prepareVariablesAndFields(journal)
 

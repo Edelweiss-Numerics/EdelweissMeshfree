@@ -1,5 +1,5 @@
-import pyvista as pv
 import numpy as np
+import pyvista as pv
 
 reader = pv.get_reader("explicit_sim_out_2026-07-08-22-24-04.case")
 reader.set_active_time_set(1)

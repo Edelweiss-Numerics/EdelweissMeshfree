@@ -234,10 +234,10 @@ class BaseNonlinearSolver:
         """
         # TODO: This method should be part of Model, in the spirit of 'getReducedModel()' or similar
 
-        activeNodesWithPersistentFieldValues = set(
-            n for element in model.elements.values() for n in element.nodes
-        ) | set(n for element in model.cellElements.values() for n in element.nodes) | set(
-            n for constraint in model.constraints.values() if constraint.active for n in constraint.nodes
+        activeNodesWithPersistentFieldValues = (
+            set(n for element in model.elements.values() for n in element.nodes)
+            | set(n for element in model.cellElements.values() for n in element.nodes)
+            | set(n for constraint in model.constraints.values() if constraint.active for n in constraint.nodes)
         )
         if hasattr(model, "kinematicDrivers"):
             for driver in model.kinematicDrivers.values():
