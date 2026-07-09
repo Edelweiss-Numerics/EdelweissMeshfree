@@ -80,7 +80,7 @@ def animate_case():
 
     # ------------------------------------------------------------------ camera / overlays
     plotter.camera_position = [
-        (18.0, 10.0, 18.0),
+        (35.0, 15.0, 35.0),
         (0.0, 2.5, 0.0),
         (0.0, 1.0, 0.0),
     ]
@@ -102,8 +102,8 @@ def animate_case():
         shadow=True,
     )
 
-    print("Saving animation to crash_animation.gif...")
-    plotter.open_gif("crash_animation.gif")
+    print("Saving animation to crash_animation.mp4...")
+    plotter.open_movie("crash_animation.mp4", framerate=30)
 
     # ------------------------------------------------------------------ animation loop
     for i, time_val in enumerate(time_values):
