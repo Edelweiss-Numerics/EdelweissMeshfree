@@ -38,6 +38,9 @@ class DiscreteRigidBodyPenaltyContactExplicit(MPMConstraintBase):
         particles: Iterable[BaseParticle],
         model: MPMModel,
         rigidBody,
+        location: str = "center",
+        faceIDs: list[int] | int = None,
+        vertexIDs: list[int] | int = None,
         penaltyParameter: float = 1e5,
         doProximityCheck: bool = True,
         proximityFactor: float = 2.0,
@@ -56,6 +59,9 @@ class DiscreteRigidBodyPenaltyContactExplicit(MPMConstraintBase):
         self.reactionForce = 0.0
 
         self._domainSize = model.domainSize
+        self.location = location
+        self.faceIDs = faceIDs
+        self.vertexIDs = vertexIDs
         self._penaltyParameter = penaltyParameter
         self._doProximityCheck = doProximityCheck
         self.proximityFactor = proximityFactor
@@ -169,11 +175,30 @@ class DiscreteRigidBodyPenaltyContactExplicit(MPMConstraintBase):
         if not self.isActive or not self.particles:
             return
 
-        # 1. Gather all particle coordinates (Vectorized)
-        coords = np.array([p.getCenterCoordinates() for p in self.particles])
-        # Sometimes particles return a list wrapping the array
-        if len(coords.shape) > 2 or (len(coords) > 0 and isinstance(coords[0], list)):
-            coords = np.array([c[0] if isinstance(c, list) else c for c in coords])
+        # 1. Gather all query coordinates and map them back to particles
+        coords_list = []
+        particle_mapping = []
+        for i, p in enumerate(self.particles):
+            if self.location == "center":
+                pts = [p.getCenterCoordinates()]
+            elif self.location == "face":
+                ids = [self.faceIDs] if isinstance(self.faceIDs, int) else self.faceIDs
+                pts = [p.getFaceCoordinates(idx) for idx in ids]
+            elif self.location == "vertex":
+                ids = [self.vertexIDs] if isinstance(self.vertexIDs, int) else self.vertexIDs
+                vertices = p.getVertexCoordinates()
+                pts = [vertices[idx] for idx in ids]
+            else:
+                pts = []
+                
+            for pt in pts:
+                # Sometimes particles return a list wrapping the array
+                pt_val = pt[0] if isinstance(pt, list) else pt
+                coords_list.append(pt_val)
+                particle_mapping.append(i)
+
+        coords = np.array(coords_list)
+        particle_mapping = np.array(particle_mapping)
 
         # 2. Query Rigid Body (Handles Broadphase AABB internally)
         proximity = self.proximityFactor if self._doProximityCheck else None
@@ -217,10 +242,14 @@ class DiscreteRigidBodyPenaltyContactExplicit(MPMConstraintBase):
             for d in range(self._domainSize):
                 PExt[rp_offset + d] -= np.sum(forces[:, d])
 
-        # 7. Scatter forces to particles (Nodes)
-        # Because each particle has different nodes, this requires a loop over active particles
-        for idx, (p_idx, force_vector, coord) in enumerate(zip(pen_indices, forces, pen_coords)):
-            p = self.particles[p_idx]
+        # 6. Accumulate forces to the respective particles
+        total_reaction = 0.0
+        for i, pen_idx in enumerate(pen_indices):
+            p = self.particles[particle_mapping[pen_idx]]
+            force_vector = forces[i]
+            coord = pen_coords[i]
+            
+            # Use EdelweissFE shape functions to distribute the force to the particle's nodes
             N = p.getInterpolationVector(coord).flatten()
             for j, kf in enumerate(p.kernelFunctions):
                 offset = self._node_to_offset[kf.node]
@@ -235,6 +264,9 @@ def DiscreteRigidBodyPenaltyContactExplicitFactory(
     particleCollection: Iterable[BaseParticle],
     model: MPMModel,
     rigidBody,
+    location: str = "center",
+    faceIDs: list[int] | int = None,
+    vertexIDs: list[int] | int = None,
     penaltyParameter: float = 1e5,
     doProximityCheck: bool = True,
     proximityFactor: float = 2.0,
@@ -276,6 +308,9 @@ def DiscreteRigidBodyPenaltyContactExplicitFactory(
         particles=particleCollection,
         model=model,
         rigidBody=rigidBody,
+        location=location,
+        faceIDs=faceIDs,
+        vertexIDs=vertexIDs,
         penaltyParameter=penaltyParameter,
         doProximityCheck=doProximityCheck,
         proximityFactor=proximityFactor,
