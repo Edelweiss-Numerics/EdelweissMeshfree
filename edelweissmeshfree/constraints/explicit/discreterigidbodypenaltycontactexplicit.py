@@ -198,7 +198,12 @@ class DiscreteRigidBodyPenaltyContactExplicit(MPMConstraintBase):
         # 6. Apply to RP
         rp_offset = self._node_to_offset[self.rigidBodyRPNode]
         if self._domainSize == 3:
-            rp_pos = self.rigidBodyRPNode.coordinates + translation
+            if hasattr(self.rigidBody, "getCurrentKinematics"):
+                u_rp, _, rp_initial = self.rigidBody.getCurrentKinematics()
+                rp_pos = rp_initial + u_rp
+            else:
+                rp_pos = self.rigidBodyRPNode.coordinates
+                
             r = pen_coords - rp_pos
             moments = np.cross(r, -forces)
             for d in range(3):
