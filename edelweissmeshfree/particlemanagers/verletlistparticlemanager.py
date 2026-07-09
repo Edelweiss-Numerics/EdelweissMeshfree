@@ -151,10 +151,14 @@ class VerletListParticleManager(KDBinOrganizedParticleManager):
                     eval_coords_view = eval_coords_view.reshape(1, -1)
 
                 candidates = verlet_map.get(id(p))
-                if candidates is not None:
-                    for k_idx in candidates:
+                if candidates is not None and len(candidates) > 0:
+                    c_mins = kernel_mins[candidates, :dim]
+                    c_maxs = kernel_maxs[candidates, :dim]
+                    overlap_mask = np.all((p_max_s >= c_mins) & (p_min_s <= c_maxs), axis=1)
+                    precise_candidates = candidates[overlap_mask]
+                    
+                    for k_idx in precise_candidates:
                         sf = all_kernels[k_idx]
-
                         if sf.isAnyCoordinateInSupport(eval_coords_view):
                             valid_indices.append(k_idx)
 
