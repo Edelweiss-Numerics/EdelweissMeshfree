@@ -1,5 +1,5 @@
-import numpy as np
 import edelweissfe.utils.performancetiming as performancetiming
+import numpy as np
 from edelweissfe.config.phenomena import getFieldSize
 from edelweissfe.utils.caseinsensitivedict import CaseInsensitiveDict
 from edelweissfe.utils.inputlanguage import Module
@@ -79,7 +79,7 @@ class DiscreteRigidBody:
             The initial global coordinates of the reference point.
         """
         u_rp = self._getFieldU("displacement", self.rpNode)
-        
+
         if self.domainSize == 3:
             theta = self._getFieldU("rotation", self.rpNode)
             R = self._getRotationMatrix3D(theta)
@@ -88,7 +88,7 @@ class DiscreteRigidBody:
             theta_z = rot_u[0] if len(rot_u) > 0 else 0.0
             c, s = np.cos(theta_z), np.sin(theta_z)
             R = np.array([[c, -s], [s, c]])
-            
+
         return u_rp, R, self.rpNode.coordinates
 
     @performancetiming.timeit("rigid body update kinematics")
@@ -96,7 +96,7 @@ class DiscreteRigidBody:
         """
         Update surface node coordinates and displacement fields based on the current Reference Point state.
 
-        This method applies the current accumulated displacement and rotation from the 
+        This method applies the current accumulated displacement and rotation from the
         reference point to all surface nodes belonging to the discrete rigid body.
 
         Parameters
@@ -105,7 +105,7 @@ class DiscreteRigidBody:
             The current time step information.
         """
         u_rp, R, rp_initial = self.getCurrentKinematics()
-        
+
         # Current RP position (initial + total accumulated displacement)
         rp_current = rp_initial + u_rp
 
@@ -129,8 +129,8 @@ class DiscreteRigidBody:
     def querySurface(self, coords, proximity_factor=None):
         """
         Query the signed distance and outward normals of the surface mesh for the given global coordinates.
-        
-        If `proximity_factor` is provided, a broadphase Axis-Aligned Bounding Box (AABB) 
+
+        If `proximity_factor` is provided, a broadphase Axis-Aligned Bounding Box (AABB)
         check is performed internally to efficiently skip distant points.
 
         Parameters
@@ -138,58 +138,58 @@ class DiscreteRigidBody:
         coords : numpy.ndarray
             An array of shape (N, 3) containing the global query coordinates.
         proximity_factor : float, optional
-            A distance padding added to the rigid body's AABB. Points outside 
+            A distance padding added to the rigid body's AABB. Points outside
             the inflated box are culled from the expensive VTK surface query.
 
         Returns
         -------
         dists : numpy.ndarray
-            Array of shape (N,) containing the signed distances. Negative values 
-            indicate penetration. Distances for points outside the proximity bounding 
+            Array of shape (N,) containing the signed distances. Negative values
+            indicate penetration. Distances for points outside the proximity bounding
             box will be evaluated as `np.inf`.
         normals : numpy.ndarray
             Array of shape (N, 3) containing the outward normal vectors on the surface.
         """
         if not hasattr(self, "_query_engine"):
-            from edelweissmeshfree.utils.discretesurfacequery import DiscreteSurfaceQuery
+            from edelweissmeshfree.utils.discretesurfacequery import (
+                DiscreteSurfaceQuery,
+            )
+
             if not hasattr(self, "surface_mesh"):
                 raise RuntimeError("DiscreteRigidBody has no surface_mesh to query.")
             self._query_engine = DiscreteSurfaceQuery(mesh=self.surface_mesh)
-            
+
         n_points = coords.shape[0]
-        
+
         # Broadphase AABB Check
         if proximity_factor is not None:
             curr_min, curr_max = self.getAABB()
             aabb_min = curr_min - proximity_factor
             aabb_max = curr_max + proximity_factor
-            
+
             in_aabb = np.all((coords >= aabb_min) & (coords <= aabb_max), axis=1)
             active_indices = np.where(in_aabb)[0]
-            
+
             if len(active_indices) == 0:
                 return np.full(n_points, np.inf), np.zeros((n_points, 3))
-            
+
             coords_to_query = coords[active_indices]
         else:
             coords_to_query = coords
             active_indices = np.arange(n_points)
-            
+
         u_rp, R, rp_initial = self.getCurrentKinematics()
         active_dists, active_normals = self._query_engine.query(
-            coords_to_query,
-            translation=u_rp,
-            rotation_matrix=R,
-            rotation_center=rp_initial
+            coords_to_query, translation=u_rp, rotation_matrix=R, rotation_center=rp_initial
         )
-        
+
         # Reassemble full arrays
         dists = np.full(n_points, np.inf)
         dists[active_indices] = active_dists
-        
+
         normals = np.zeros((n_points, 3))
         normals[active_indices] = active_normals
-        
+
         return dists, normals
 
     def getAABB(self):
@@ -213,7 +213,7 @@ class DiscreteRigidBody:
         Parameters
         ----------
         theta : numpy.ndarray
-            A 3D rotation vector where the direction indicates the axis of rotation 
+            A 3D rotation vector where the direction indicates the axis of rotation
             and the magnitude indicates the angle in radians.
 
         Returns
@@ -248,8 +248,8 @@ class DiscreteRigidBody:
         """
         Creates a Discrete Rigid Body directly from a mesh file.
 
-        Encapsulates node creation, surface element generation, and reference point 
-        (RP) kinematics setup automatically. Also computes basic mass and inertia 
+        Encapsulates node creation, surface element generation, and reference point
+        (RP) kinematics setup automatically. Also computes basic mass and inertia
         properties based on the mesh volume if a density is supplied.
 
         Parameters
@@ -271,7 +271,7 @@ class DiscreteRigidBody:
         initial_velocity : list, optional
             The initial velocity vector [vx, vy, vz].
         rp_coordinate : numpy.ndarray, optional
-            The explicit global coordinates for the Reference Point. If None, it 
+            The explicit global coordinates for the Reference Point. If None, it
             defaults to the center of mass of the surface mesh.
         start_label : int, optional
             The starting index label for newly generated nodes and elements.
@@ -282,70 +282,114 @@ class DiscreteRigidBody:
             The fully initialized discrete rigid body entity.
         """
         import pyvista as pv
-        from edelweissfe.points.node import Node
-        from edelweissfe.sets.nodeset import NodeSet
         from edelweissfe.elements.discreterigid import DiscreteRigidElement
+        from edelweissfe.points.node import Node
         from edelweissfe.sets.elementset import ElementSet
+        from edelweissfe.sets.nodeset import NodeSet
 
-        mesh = pv.read(filename)
-        if isinstance(mesh, pv.MultiBlock):
-            mesh = mesh.combine()
+        filename_lower = filename.lower()
+        if filename_lower.endswith(".exo") or filename_lower.endswith(".nc"):
+            import netCDF4
 
-        points = mesh.points.copy()
-        if translation is not None:
-            points += np.array(translation)
+            nc = netCDF4.Dataset(filename, "r")
 
-        mesh.points = points
-        surf = mesh.extract_surface()
-        surf.compute_normals(cell_normals=True, point_normals=False, inplace=True)
+            x = nc.variables["coordx"][:]
+            y = nc.variables["coordy"][:]
+            z = nc.variables["coordz"][:] if "coordz" in nc.variables else np.zeros_like(x)
+            points = np.column_stack((x, y, z))
+
+            if translation is not None:
+                points += np.array(translation)
+
+            # Assume rigid body surface mesh is entirely in connect1
+            if "connect1" not in nc.variables:
+                raise ValueError("No connect1 variable found in NetCDF/Exo file.")
+
+            conn = nc.variables["connect1"][:] - 1  # 0-indexed
+            num_elems, num_nodes_per_elem = conn.shape
+
+            faces = []
+            element_types = []
+            pv_faces = []
+
+            for i in range(num_elems):
+                face = conn[i]
+                faces.append(face)
+
+                pv_faces.append(num_nodes_per_elem)
+                pv_faces.extend(face)
+
+                if num_nodes_per_elem == 3:
+                    element_types.append("tria3")
+                elif num_nodes_per_elem == 4:
+                    element_types.append("quad4")
+                else:
+                    raise ValueError(f"Unsupported number of nodes {num_nodes_per_elem} for surface mesh.")
+
+            surf = pv.PolyData(points, np.array(pv_faces))
+            surf.compute_normals(cell_normals=True, point_normals=False, inplace=True)
+            mesh = surf  # for volume fallback
+
+        else:
+            mesh = pv.read(filename)
+            if isinstance(mesh, pv.MultiBlock):
+                mesh = mesh.combine()
+
+            points = mesh.points.copy()
+            if translation is not None:
+                points += np.array(translation)
+
+            mesh.points = points
+            surf = mesh.extract_surface()
+            surf.compute_normals(cell_normals=True, point_normals=False, inplace=True)
+
+            # Extract faces and map to EdelweissFE element types using actual VTK cell types
+            cells = surf.cells if hasattr(surf, "cells") else mesh.cells
+            faces = []
+            element_types = []
+
+            i = 0
+            cell_idx = 0
+            while i < len(cells):
+                n = cells[i]
+                faces.append(cells[i + 1 : i + 1 + n])
+
+                vtk_type = surf.GetCellType(cell_idx)
+
+                # Map VTK cell types to EdelweissFE element types
+                # 5 = VTK_TRIANGLE, 9 = VTK_QUAD, 7 = VTK_POLYGON
+                if vtk_type == 5:
+                    element_types.append("tria3")
+                elif vtk_type == 9:
+                    element_types.append("quad4")
+                elif vtk_type == 7:
+                    if n == 3:
+                        element_types.append("tria3")
+                    elif n == 4:
+                        element_types.append("quad4")
+                    else:
+                        raise ValueError(f"Unsupported VTK_POLYGON with {n} nodes for Discrete Rigid Body.")
+                else:
+                    # Fallback based on node count for strange/custom VTK cell types
+                    if n == 3:
+                        element_types.append("tria3")
+                    elif n == 4:
+                        element_types.append("quad4")
+                    else:
+                        raise ValueError(f"Unsupported VTK cell type {vtk_type} with {n} nodes.")
+
+                i += 1 + n
+                cell_idx += 1
 
         # Handle density -> mass & inertia
         if density is not None:
             volume = surf.volume
             if volume == 0.0:
-                volume = mesh.volume
+                volume = getattr(mesh, "volume", 0.0)
             mass = volume * density
             # Simple fallback for inertia if none provided
             if inertia is None:
                 inertia = [mass, mass, mass]
-
-        # Extract faces and map to EdelweissFE element types using actual VTK cell types
-        cells = surf.cells if hasattr(surf, 'cells') else mesh.cells
-        faces = []
-        element_types = []
-        
-        i = 0
-        cell_idx = 0
-        while i < len(cells):
-            n = cells[i]
-            faces.append(cells[i + 1 : i + 1 + n])
-            
-            vtk_type = surf.GetCellType(cell_idx)
-            
-            # Map VTK cell types to EdelweissFE element types
-            # 5 = VTK_TRIANGLE, 9 = VTK_QUAD, 7 = VTK_POLYGON
-            if vtk_type == 5:
-                element_types.append("tria3")
-            elif vtk_type == 9:
-                element_types.append("quad4")
-            elif vtk_type == 7:
-                if n == 3:
-                    element_types.append("tria3")
-                elif n == 4:
-                    element_types.append("quad4")
-                else:
-                    raise ValueError(f"Unsupported VTK_POLYGON with {n} nodes for Discrete Rigid Body.")
-            else:
-                # Fallback based on node count for strange/custom VTK cell types
-                if n == 3:
-                    element_types.append("tria3")
-                elif n == 4:
-                    element_types.append("quad4")
-                else:
-                    raise ValueError(f"Unsupported VTK cell type {vtk_type} with {n} nodes.")
-                    
-            i += 1 + n
-            cell_idx += 1
 
         # Generate Node Entities
         rigid_nodes = []
@@ -366,11 +410,11 @@ class DiscreteRigidBody:
             el_type = element_types[i]
             el_nodes = [rigid_nodes[idx] for idx in face]
             el = DiscreteRigidElement(el_id, el_nodes, model, el_type)
-            
+
             model.elements[el.elNumber] = el
             rigid_elements.append(el)
             el_id += 1
-        
+
         eset_name = f"{name}_surface"
         model.elementSets[eset_name] = ElementSet(eset_name, rigid_elements)
 
@@ -380,7 +424,7 @@ class DiscreteRigidBody:
 
         rp = Node(node_id, np.array(rp_coordinate))
         model.nodes[rp.label] = rp
-        
+
         rp_nset_name = f"{name}_rp"
         model.nodeSets[rp_nset_name] = NodeSet(rp_nset_name, [rp])
 
@@ -398,11 +442,11 @@ class DiscreteRigidBody:
             referencePoint=rp_nset_name,
             mass=mass,
             inertia=inertia,
-            initial_velocity=initial_velocity
+            initial_velocity=initial_velocity,
         )
-        
+
         # Store pyvista surface internally so query engine can reuse it without disk reads
         instance.surface_mesh = surf
-        
+
         model.discreteRigidBodies[name] = instance
         return instance

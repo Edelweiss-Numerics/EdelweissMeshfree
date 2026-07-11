@@ -10,7 +10,7 @@ def animate_case():
         print("Error: No .case file specified.")
         print("Usage: python create_animation.py <path_to_case_file.case>")
         sys.exit(1)
-        
+
     case_file = sys.argv[1]
 
     if not os.path.exists(case_file):
@@ -43,11 +43,11 @@ def animate_case():
     plotter = pv.Plotter(notebook=False, off_screen=off_screen, window_size=[1024, 768])
 
     rigid0, particles0 = read_step(time_values[0])
-    warped_rigid0 = warp(rigid0, "rigid_displacement")
+    warped_rigid0 = warp(rigid0, "vertex_displacements")
     warped_particles0 = warp(particles0, "vertex_displacements")
 
-    vel_mag0 = np.linalg.norm(particles0.cell_data["velocity"], axis=1)
-    warped_particles0.cell_data["velocity_magnitude"] = vel_mag0
+    vel_mag0 = np.linalg.norm(particles0.cell_data["displacement"], axis=1)
+    warped_particles0.cell_data["displacement_magnitude"] = vel_mag0
 
     rigid_actor = plotter.add_mesh(
         warped_rigid0,
@@ -63,11 +63,12 @@ def animate_case():
 
     particle_actor = plotter.add_mesh(
         warped_particles0,
-        scalars="velocity_magnitude",
+        scalars="displacement_magnitude",
         cmap="turbo",
-        clim=[0, 10.0],
+        clim=[0.0, 0.5],
+        show_edges=False,
         scalar_bar_args={
-            "title": "Velocity Magnitude (m/s)",
+            "title": "Displacement Magnitude (m)",
             "vertical": True,
             "position_x": 0.88,
             "position_y": 0.15,
@@ -109,17 +110,18 @@ def animate_case():
     for i, time_val in enumerate(time_values):
         rigid, particles = read_step(time_val)
 
-        # Rigid surface: shift reference points by rigid_displacement (per node)
-        rigid_actor.mapper.dataset.points = rigid.points + rigid.point_data["rigid_displacement"]
+        # Update Rigid Body
+        wr = warp(rigid, "vertex_displacements")
+        rigid_actor.mapper.dataset.copy_from(wr)
 
         # Particle block: shift reference points by vertex_displacements (per node)
         particle_actor.mapper.dataset.points = particles.points + particles.point_data["vertex_displacements"]
 
-        # Update velocity magnitude colour
-        vel_mag = np.linalg.norm(particles.cell_data["velocity"], axis=1)
-        particle_actor.mapper.dataset.cell_data["velocity_magnitude"] = vel_mag
+        # Update displacement magnitude colour
+        vel_mag = np.linalg.norm(particles.cell_data["displacement"], axis=1)
+        particle_actor.mapper.dataset.cell_data["displacement_magnitude"] = vel_mag
 
-        text_actor.set_text(0, f"Time: {time_val:.4f} s  (Step {i+1}/{len(time_values)})")
+        text_actor.set_text(0, f"Time: {time_val:.4f} s  (Step {i + 1}/{len(time_values)})")
 
         plotter.write_frame()
 

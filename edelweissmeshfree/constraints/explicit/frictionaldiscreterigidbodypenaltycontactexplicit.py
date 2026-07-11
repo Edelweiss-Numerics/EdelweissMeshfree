@@ -22,6 +22,15 @@ class FrictionalDiscreteRigidBodyPenaltyContactExplicit(DiscreteRigidBodyPenalty
         self.frictionCoefficient = frictionCoefficient
         self.viscousRegularization = viscousRegularization
 
+        self.totalNormalForce = np.zeros(3)
+        self.totalFrictionForce = np.zeros(3)
+
+    def applyConstraint(self, PExt, timeStep):
+        # Reset forces to zero in case there is no contact/penetration in this step
+        self.totalNormalForce = np.zeros(3)
+        self.totalFrictionForce = np.zeros(3)
+        super().applyConstraint(PExt, timeStep)
+
     def _addFrictionForces(self, forces, pen_coords, pen_normals, pen_indices, g, particle_mapping):
         if self.frictionCoefficient <= 0.0:
             return forces
@@ -80,6 +89,9 @@ class FrictionalDiscreteRigidBodyPenaltyContactExplicit(DiscreteRigidBodyPenalty
                 # Friction force opposes sliding
                 f_t = -f_t_mag * (v_t / v_t_norm)
                 frictional_forces[i] = f_t
+
+        self.totalNormalForce = np.sum(forces, axis=0)
+        self.totalFrictionForce = np.sum(frictional_forces, axis=0)
 
         # Return total forces
         return forces + frictional_forces
