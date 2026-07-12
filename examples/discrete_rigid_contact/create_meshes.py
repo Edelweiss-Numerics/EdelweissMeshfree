@@ -1,15 +1,24 @@
 import os
 import sys
 
-# Append Cubit bin directory to sys.path
-cubit_dir = "/home/matthias/Downloads/Coreform-Cubit-2026.6/bin"
-if cubit_dir not in sys.path:
-    sys.path.append(cubit_dir)
-
-import cubit
-
 
 def main():
+    # Append Cubit bin directory to sys.path
+    cubit_dir = os.environ.get("CUBIT_BIN_DIR", "/home/matthias/Downloads/Coreform-Cubit-2026.6/bin")
+    if cubit_dir not in sys.path:
+        sys.path.append(cubit_dir)
+
+    try:
+        import cubit
+    except ImportError:
+        print(
+            f"Error: Could not import cubit. Please ensure Coreform Cubit is installed "
+            f"and set the CUBIT_BIN_DIR environment variable to its bin directory.\n"
+            f"Current directory path: {cubit_dir}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
     cubit.init(["cubit", "-nographics", "-nojournal"])
 
     # Make sure we are in the script's directory for saving files

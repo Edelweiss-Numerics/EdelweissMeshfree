@@ -233,7 +233,7 @@ def run_friction_test():
     ensightOutput.updateDefinition(
         fieldOutput=fieldOutputController.fieldOutputs["rigid_displacement"],
         create="perNode",
-        name="vertex displacements",
+        name="rigid displacements",
     )
     ensightOutput.updateDefinition(
         fieldOutput=fieldOutputController.fieldOutputs["vertex displacements"],

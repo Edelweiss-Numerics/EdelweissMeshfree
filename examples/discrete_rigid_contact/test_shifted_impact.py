@@ -82,13 +82,13 @@ VELOCITY = abs(DISP_Y) / STEP_TIME  # = 6.0 m/s
 GAP = 0.6  # gap from top particle centroid (Y=4.5) to shifted rigid bottom (Y=5.1)
 T_CONTACT = GAP / VELOCITY
 
-print(f"=== Quasi-static mass-scaled contact test ===")
+print("=== Quasi-static mass-scaled contact test ===")
 print(f"  E={E}, ν={NU}, ρ(scaled)={RHO}")
-print(f"  Physical wave speed c = {np.sqrt(E/1.0):.1f} m/s  (ρ_phys=1)")
-print(f"  Scaled  wave speed c*= {np.sqrt(E/RHO):.1f} m/s")
-print(f"  Loading velocity      = {VELOCITY:.1f} m/s  ({VELOCITY/np.sqrt(E/1.0)*100:.0f}% of physical c)")
+print(f"  Physical wave speed c = {np.sqrt(E / 1000.0):.1f} m/s  (ρ_phys=1000)")
+print(f"  Scaled  wave speed c*= {np.sqrt(E / RHO):.1f} m/s")
+print(f"  Loading velocity      = {VELOCITY:.1f} m/s  ({VELOCITY / np.sqrt(E / 1000.0) * 100:.0f}% of physical c)")
 print(f"  Expected contact time = {T_CONTACT:.4f} s")
-print(f"  dt = {DT} s  →  {int(STEP_TIME/DT)} increments")
+print(f"  dt = {DT} s  →  {int(STEP_TIME / DT)} increments")
 print()
 
 
@@ -188,7 +188,7 @@ def run_quasistatic_sim():
         model=theModel,
         filename="rigid_body.exo",
         translation=[0.0, -4.9, 5.0],
-        density=RHO/10,
+        density=RHO / 10,
         # mass=1.56e4,
         # inertia=[6.17e5, 6.17e5, 1.93e5],
         initial_velocity=[0.0, -VELOCITY, 0.0],
@@ -250,8 +250,6 @@ def run_quasistatic_sim():
 
     solver = ExplicitMultiphysicsSolver(theJournal)
 
-
-
     incSize = DT / STEP_TIME
     adaptiveTimeStepper = AdaptiveTimeStepper(
         0.0,
@@ -294,9 +292,9 @@ def validate_results():
         print("No quasistatic .case file found — skipping validation.")
         return
     latest = case_files[-1]
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print(f"VALIDATION  –  {latest}")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
 
     reader = pv.get_reader(latest)
     reader.set_active_time_set(1)
@@ -340,12 +338,12 @@ def validate_results():
     if first_block_deform_t is not None:
         delay = first_block_deform_t - T_CONTACT
         print(
-            f"  First block deformation at t = {first_block_deform_t:.4f} s  (Δt from theory = {delay:+.4f} s = {abs(delay)/DT:.1f} increments)"
+            f"  First block deformation at t = {first_block_deform_t:.4f} s  (Δt from theory = {delay:+.4f} s = {abs(delay) / DT:.1f} increments)"
         )
         if abs(delay) < 10 * DT:
-            print(f"  ✓  Contact onset matches theoretical prediction within 10 time steps.")
+            print("  ✓  Contact onset matches theoretical prediction within 10 time steps.")
         else:
-            errors.append(f"Contact onset delayed by {delay:.4f} s = {abs(delay)/DT:.0f} increments")
+            errors.append(f"Contact onset delayed by {delay:.4f} s = {abs(delay) / DT:.0f} increments")
     else:
         errors.append("Block never deformed – contact was never triggered!")
 

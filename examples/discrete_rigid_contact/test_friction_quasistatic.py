@@ -228,9 +228,7 @@ def run_friction_test():
     )
 
     def get_normal_force():
-        val = contact_constraint.totalNormalForce
-        print(f"EXPORTING Fn: {val}")
-        return val
+        return contact_constraint.totalNormalForce
 
     def get_friction_force():
         return contact_constraint.totalFrictionForce
@@ -262,7 +260,7 @@ def run_friction_test():
     ensightOutput.updateDefinition(
         fieldOutput=fieldOutputController.fieldOutputs["rigid_displacement"],
         create="perNode",
-        name="vertex displacements",
+        name="rigid displacements",
     )
     ensightOutput.updateDefinition(
         fieldOutput=fieldOutputController.fieldOutputs["vertex displacements"],

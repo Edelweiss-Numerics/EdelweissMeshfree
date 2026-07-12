@@ -1,14 +1,12 @@
 import numpy as np
-import pyvista as pv
-import vtk
 
 
 class DiscreteSurfaceQuery:
-    def __init__(self, filename: str = None, mesh: pv.PolyData = None, initial_offset: np.ndarray = None):
+    def __init__(self, filename: str = None, mesh=None, initial_offset: np.ndarray = None):
         """
         Initializes the query engine by loading an Exodus mesh or using a provided PyVista mesh.
-        
-        Uses static VTK locators and evaluators to avoid memory leaks during 
+
+        Uses static VTK locators and evaluators to avoid memory leaks during
         repeated distance evaluations.
 
         Parameters
@@ -21,6 +19,10 @@ class DiscreteSurfaceQuery:
             A translation vector applied to the mesh points before building
             the VTK locators.
         """
+        global pv, vtk
+        import pyvista as pv
+        import vtk
+
         if mesh is not None:
             self.mesh = mesh
         elif filename is not None:
@@ -71,7 +73,7 @@ class DiscreteSurfaceQuery:
             A 3x3 rotation matrix of the rigid body.
         rotation_center : numpy.ndarray, optional
             The center of rotation (initial position of the RP).
-            
+
         Returns
         -------
         dists : numpy.ndarray
