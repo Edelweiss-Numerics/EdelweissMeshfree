@@ -3,10 +3,18 @@ import sys
 
 
 def main():
-    # Append Cubit bin directory to sys.path
-    cubit_dir = os.environ.get("CUBIT_BIN_DIR", "/home/matthias/Downloads/Coreform-Cubit-2026.6/bin")
-    if cubit_dir not in sys.path:
-        sys.path.append(cubit_dir)
+    cubit_dir = os.environ.get("CUBIT_BIN_DIR")
+    if cubit_dir:
+        if cubit_dir not in sys.path:
+            sys.path.append(cubit_dir)
+    else:
+        fallback = "/home/matthias/Downloads/Coreform-Cubit-2026.6/bin"
+        if os.path.exists(fallback):
+            if fallback not in sys.path:
+                sys.path.append(fallback)
+            cubit_dir = fallback
+        else:
+            cubit_dir = "Not Set"
 
     try:
         import cubit

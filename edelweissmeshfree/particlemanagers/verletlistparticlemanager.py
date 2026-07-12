@@ -1,24 +1,20 @@
 import concurrent.futures
-import itertools
-from typing import Any, List, Set, Tuple, Union
+from typing import Any, List, Union
 
 import numpy as np
 from edelweissfe.journal.journal import Journal
-from numpy.typing import NDArray
 
+from edelweissmeshfree.meshfree.particlekerneldomain import ParticleKernelDomain
 from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
     KDBinOrganizedParticleManager,
-)
-from edelweissmeshfree.meshfree.particlekerneldomain import (
-    ParticleKernelDomain,
 )
 
 
 class VerletListParticleManager(KDBinOrganizedParticleManager):
     """
-    A particle manager that extends the KDBinOrganizedParticleManager to use a 
-    Verlet list (skin margin) algorithm. This optimizes the connectivity update 
-    by skipping the global spatial hashing and geometric AABB filter for most 
+    A particle manager that extends the KDBinOrganizedParticleManager to use a
+    Verlet list (skin margin) algorithm. This optimizes the connectivity update
+    by skipping the global spatial hashing and geometric AABB filter for most
     time steps, only rebuilding the list when particles move beyond the skin margin.
     """
 
@@ -96,7 +92,38 @@ class VerletListParticleManager(KDBinOrganizedParticleManager):
         kernel_labels = self._kernelLabels
         dim = self._dimension
         skin_margin = self._skinMargin
-        needs_rebuild = self._needsRebuild
+
+        # Rebuild candidates list sequentially if needed (rebuild is infrequent)
+        if self._needsRebuild:
+            self._verlet_candidates_map = {}
+            for p in self._particles:
+                evaluationCoordinates = p.getEvaluationCoordinates()
+                if len(evaluationCoordinates) == 1:
+                    p_min = evaluationCoordinates[0]
+                    p_max = evaluationCoordinates[0]
+                else:
+                    p_min = np.min(evaluationCoordinates, axis=0)
+                    p_max = np.max(evaluationCoordinates, axis=0)
+
+                # Inflate search box by skin margin
+                p_min_inflated = p_min.copy()
+                p_max_inflated = p_max.copy()
+                p_min_inflated[:dim] -= skin_margin
+                p_max_inflated[:dim] += skin_margin
+
+                candidate_indices = bin_organizer.getCandidateIndices(p_min_inflated, p_max_inflated)
+                cand_idx_arr = np.array(list(candidate_indices), dtype=int)
+                if len(cand_idx_arr) > 0:
+                    c_mins = kernel_mins[cand_idx_arr, :dim]
+                    c_maxs = kernel_maxs[cand_idx_arr, :dim]
+
+                    p_max_s_inf = p_max_inflated[:dim]
+                    p_min_s_inf = p_min_inflated[:dim]
+
+                    overlap_mask = np.all((p_max_s_inf >= c_mins) & (p_min_s_inf <= c_maxs), axis=1)
+                    self._verlet_candidates_map[id(p)] = cand_idx_arr[overlap_mask]
+                else:
+                    self._verlet_candidates_map[id(p)] = np.array([], dtype=int)
 
         verlet_map = self._verlet_candidates_map
 
@@ -117,30 +144,6 @@ class VerletListParticleManager(KDBinOrganizedParticleManager):
                 p_min_s = p_min[:dim]
                 p_max_s = p_max[:dim]
 
-                if needs_rebuild:
-                    # Inflate search box by skin margin
-                    p_min_inflated = p_min.copy()
-                    p_max_inflated = p_max.copy()
-                    p_min_inflated[:dim] -= skin_margin
-                    p_max_inflated[:dim] += skin_margin
-
-                    # 1. Grid Search
-                    candidate_indices = bin_organizer.getCandidateIndices(p_min_inflated, p_max_inflated)
-
-                    # 2. Vectorized AABB Filter (with inflated bounds)
-                    cand_idx_arr = np.array(list(candidate_indices), dtype=int)
-                    if len(cand_idx_arr) > 0:
-                        c_mins = kernel_mins[cand_idx_arr, :dim]
-                        c_maxs = kernel_maxs[cand_idx_arr, :dim]
-                        
-                        p_max_s_inf = p_max_inflated[:dim]
-                        p_min_s_inf = p_min_inflated[:dim]
-
-                        overlap_mask = np.all((p_max_s_inf >= c_mins) & (p_min_s_inf <= c_maxs), axis=1)
-                        verlet_map[id(p)] = cand_idx_arr[overlap_mask]
-                    else:
-                        verlet_map[id(p)] = np.array([], dtype=int)
-
                 # 3. Precise Check (Geometric) using exact non-inflated coordinates
                 valid_indices = []
 
@@ -156,7 +159,7 @@ class VerletListParticleManager(KDBinOrganizedParticleManager):
                     c_maxs = kernel_maxs[candidates, :dim]
                     overlap_mask = np.all((p_max_s >= c_mins) & (p_min_s <= c_maxs), axis=1)
                     precise_candidates = candidates[overlap_mask]
-                    
+
                     for k_idx in precise_candidates:
                         sf = all_kernels[k_idx]
                         if sf.isAnyCoordinateInSupport(eval_coords_view):

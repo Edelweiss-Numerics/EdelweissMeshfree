@@ -59,6 +59,10 @@ class DiscreteRigidBodyPenaltyContactExplicit(MPMConstraintBase):
 
         self._domainSize = model.domainSize
         self.location = location
+        if location == "face" and faceIDs is None:
+            raise ValueError("faceIDs must be specified when location is 'face'.")
+        if location == "vertex" and vertexIDs is None:
+            raise ValueError("vertexIDs must be specified when location is 'vertex'.")
         self.faceIDs = faceIDs
         self.vertexIDs = vertexIDs
         self._penaltyParameter = penaltyParameter
