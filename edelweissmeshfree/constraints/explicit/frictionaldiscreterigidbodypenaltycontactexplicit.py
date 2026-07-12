@@ -1,4 +1,5 @@
 import numpy as np
+from edelweissfe.surfaces.entitybasedsurface import EntityBasedSurface
 
 from edelweissmeshfree.constraints.explicit.discreterigidbodypenaltycontactexplicit import (
     DiscreteRigidBodyPenaltyContactExplicit,
@@ -36,19 +37,14 @@ class FrictionalDiscreteRigidBodyPenaltyContactExplicit(DiscreteRigidBodyPenalty
             return forces
 
         # Get rigid body velocities
-        v_rp = np.zeros(self._domainSize)
-        if hasattr(self.rigidBodyRPNode, "current_velocity"):
-            v_rp = self.rigidBodyRPNode.current_velocity
+        v_rp = self.rigidBodyRPNode.current_velocity
 
         omega = np.zeros(3)
-        if self._domainSize == 3 and hasattr(self.rigidBodyRPNode, "current_angular_velocity"):
+        if self._domainSize == 3:
             omega = self.rigidBodyRPNode.current_angular_velocity
 
-        if hasattr(self.rigidBody, "getCurrentKinematics"):
-            u_rp, _, rp_initial = self.rigidBody.getCurrentKinematics()
-            rp_pos = rp_initial + u_rp
-        else:
-            rp_pos = self.rigidBodyRPNode.coordinates
+        u_rp, _, rp_initial = self.rigidBody.getCurrentKinematics()
+        rp_pos = rp_initial + u_rp
 
         frictional_forces = np.zeros_like(forces)
 
@@ -114,7 +110,7 @@ def FrictionalDiscreteRigidBodyPenaltyContactExplicitFactory(
     constraints = []
 
     # Get particles from collection
-    if hasattr(particleCollection, "getEntities"):
+    if isinstance(particleCollection, EntityBasedSurface):
         elements = particleCollection.getEntities()
     else:
         elements = list(particleCollection)

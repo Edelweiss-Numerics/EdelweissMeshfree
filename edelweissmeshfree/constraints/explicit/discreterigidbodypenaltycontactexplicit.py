@@ -7,7 +7,6 @@ from edelweissfe.timesteppers.timestep import TimeStep
 from edelweissmeshfree.constraints.base.mpmconstraintbase import MPMConstraintBase
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.particles.base.baseparticle import BaseParticle
-from edelweissmeshfree.utils.discretesurfacequery import DiscreteSurfaceQuery
 
 
 class DiscreteRigidBodyPenaltyContactExplicit(MPMConstraintBase):
@@ -190,7 +189,7 @@ class DiscreteRigidBodyPenaltyContactExplicit(MPMConstraintBase):
                 pts = [vertices[idx] for idx in ids]
             else:
                 pts = []
-                
+
             for pt in pts:
                 # Sometimes particles return a list wrapping the array
                 pt_val = pt[0] if isinstance(pt, list) else pt
@@ -229,12 +228,9 @@ class DiscreteRigidBodyPenaltyContactExplicit(MPMConstraintBase):
         # 6. Apply to RP
         rp_offset = self._node_to_offset[self.rigidBodyRPNode]
         if self._domainSize == 3:
-            if hasattr(self.rigidBody, "getCurrentKinematics"):
-                u_rp, _, rp_initial = self.rigidBody.getCurrentKinematics()
-                rp_pos = rp_initial + u_rp
-            else:
-                rp_pos = self.rigidBodyRPNode.coordinates
-                
+            u_rp, _, rp_initial = self.rigidBody.getCurrentKinematics()
+            rp_pos = rp_initial + u_rp
+
             r = pen_coords - rp_pos
             moments = np.cross(r, -forces)
             for d in range(3):
@@ -245,12 +241,11 @@ class DiscreteRigidBodyPenaltyContactExplicit(MPMConstraintBase):
                 PExt[rp_offset + d] -= np.sum(forces[:, d])
 
         # 6. Accumulate forces to the respective particles
-        total_reaction = 0.0
         for i, pen_idx in enumerate(pen_indices):
             p = self.particles[particle_mapping[pen_idx]]
             force_vector = forces[i]
             coord = pen_coords[i]
-            
+
             # Use EdelweissFE shape functions to distribute the force to the particle's nodes
             N = p.getInterpolationVector(coord).flatten()
             for j, kf in enumerate(p.kernelFunctions):
@@ -320,9 +315,9 @@ def DiscreteRigidBodyPenaltyContactExplicitFactory(
         doProximityCheck=doProximityCheck,
         proximityFactor=proximityFactor,
     )
-    
+
     # Automatically register in the model
     model.constraints[name] = constraint
     model.constraintSets[name] = constraint
-    
+
     return constraint

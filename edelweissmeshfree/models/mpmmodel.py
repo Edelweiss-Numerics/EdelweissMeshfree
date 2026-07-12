@@ -78,7 +78,7 @@ class MPMModel(FEModel):
         self.meshfreeKernelFunctions = {}  #: The collection of MeshfreeKernelFunctions in the present model.
         self.particleKernelDomains = {}  #: The collection of ParticleKernelDomains in the present model.
         self.vertexSets = {}  #: The collection of VertexSets for per particle in the present model.
-        self.discreteRigidBodies = {}  #: The collection of DiscreteRigidBodies in the present model.
+        self.rigidBodies = {}  #: The collection of RigidBodies in the present model.
 
         super().__init__(dimension)
 
@@ -131,8 +131,8 @@ class MPMModel(FEModel):
         from edelweissfe.config.phenomena import getFieldSize
         from edelweissfe.variables.fieldvariable import FieldVariable
 
-        for body in self.discreteRigidBodies.values():
-            if not hasattr(body, "rpNode"):
+        for body in self.rigidBodies.values():
+            if body.rpNode is None:
                 continue
             rpNode = body.rpNode
             # Activate the same fields that the rigid body uses (displacement + rotation)
@@ -157,7 +157,7 @@ class MPMModel(FEModel):
         if self.particleKernelDomains:
             journal.message("Activating fields on Nodes from Particles", self.identification)
             self._populateNodeFieldVariablesFromParticleKernelDomains()
-        if self.discreteRigidBodies:
+        if self.rigidBodies:
             journal.message("Activating fields on Nodes from DiscreteRigidBodies", self.identification)
             self._populateNodeFieldVariablesFromDiscreteRigidBodies()
 

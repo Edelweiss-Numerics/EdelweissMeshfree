@@ -681,6 +681,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         time_ = np.array([time, time])
 
         for el in elements:
+            if el.nDof == 0:
+                continue
             dUEl = dU[el]
             UEln = Un[el]
             UElnp = UEln + dUEl
@@ -732,6 +734,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         time_ = np.array([time, time])
 
         for el in elements:
+            if el.nDof == 0:
+                continue
             dUEl = dU[el]
             UEln = Un[el]
             UElnp = UEln + dUEl
@@ -786,6 +790,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         time_ = np.array([time, time])
 
         for el in elements:
+            if el.nDof == 0:
+                continue
             dUEl = dU[el]
             UEln = Un[el]
             UElnp = UEln + dUEl
@@ -836,6 +842,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         """
 
         for el in elements:
+            if el.nDof == 0:
+                continue
             dUEl = dU[el]
             UEln = Un[el]
             UElnp = UEln + dUEl
@@ -1007,7 +1015,13 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
 
     @performancetiming.timeit("computation constraints")
     def _computeConstraints(
-        self, constraints: list, dU: DofVector, P: DofVector, K_VIJ: VIJSystemMatrix, timeStep: TimeStep
+        self,
+        constraints: list,
+        dU: DofVector,
+        P: DofVector,
+        K_VIJ: VIJSystemMatrix,
+        timeStep: TimeStep,
+        F: DofVector = None,
     ):
         """Evaluate all constraints.
 
@@ -1023,6 +1037,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             The global system matrix in VIJ (COO) format.
         timeStep
             The current time increment.
+        F
+            The accumulated fluxes.
         """
         for c in constraints:
             if c.active:
@@ -1031,6 +1047,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
                 Kc = K_VIJ[c]
                 c.applyConstraint(dUc, Pc, Kc, timeStep)
                 P[c] += Pc
+                if F is not None:
+                    F[c] += np.abs(Pc)
 
     @performancetiming.timeit("instancing csr generator")
     def _makeCachedCOOToCSRGenerator(self, K_VIJ):

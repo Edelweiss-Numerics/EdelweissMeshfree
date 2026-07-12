@@ -4,6 +4,8 @@ from edelweissfe.config.phenomena import getFieldSize
 from edelweissfe.utils.caseinsensitivedict import CaseInsensitiveDict
 from edelweissfe.utils.inputlanguage import Module
 
+from edelweissmeshfree.rigidbodies.rigidbody import RigidBody
+
 module = Module("discreterigidbody", "A discrete rigid body entity.")
 module.addRequiredArg("nSet", "The node set containing the surface nodes of the rigid body.", str)
 module.addRequiredArg("referencePoint", "The node set containing the single reference point.", str)
@@ -13,7 +15,7 @@ module.addOptionalArg("initial_velocity", "The initial velocity vector.", list, 
 keyword = "discreterigidbody"
 
 
-class DiscreteRigidBody:
+class DiscreteRigidBody(RigidBody):
     """
     Discrete Rigid Body entity for explicit dynamics.
 
@@ -26,6 +28,8 @@ class DiscreteRigidBody:
         self.name = name
         self.model = model
 
+        model.rigidBodies[self.name] = self
+
         kwargs = CaseInsensitiveDict(kwargs)
 
         self.surfaceNodes = list(model.nodeSets[kwargs["nSet"]])
@@ -36,6 +40,14 @@ class DiscreteRigidBody:
 
         self.rpNode = list(rpNodeSet)[0]
         self.domainSize = model.domainSize
+
+        # Initialize default explicit velocities to avoid hasattr/getattr on RP node
+        self.rpNode.current_velocity = np.zeros(self.domainSize)
+        if self.domainSize == 3:
+            self.rpNode.current_angular_velocity = np.zeros(3)
+
+        self.surface_mesh = None
+        self._query_engine = None
 
         # Precompute initial relative positions of surface nodes w.r.t. the RP
         self.initialRelativePositions = np.array([n.coordinates - self.rpNode.coordinates for n in self.surfaceNodes])
@@ -150,12 +162,12 @@ class DiscreteRigidBody:
         normals : numpy.ndarray
             Array of shape (N, 3) containing the outward normal vectors on the surface.
         """
-        if not hasattr(self, "_query_engine"):
+        if self._query_engine is None:
             from edelweissmeshfree.utils.discretesurfacequery import (
                 DiscreteSurfaceQuery,
             )
 
-            if not hasattr(self, "surface_mesh"):
+            if self.surface_mesh is None:
                 raise RuntimeError("DiscreteRigidBody has no surface_mesh to query.")
             self._query_engine = DiscreteSurfaceQuery(mesh=self.surface_mesh)
 
@@ -344,7 +356,7 @@ class DiscreteRigidBody:
             surf.compute_normals(cell_normals=True, point_normals=False, inplace=True)
 
             # Extract faces and map to EdelweissFE element types using actual VTK cell types
-            cells = surf.cells if hasattr(surf, "cells") else mesh.cells
+            cells = surf.cells
             faces = []
             element_types = []
 
@@ -448,5 +460,5 @@ class DiscreteRigidBody:
         # Store pyvista surface internally so query engine can reuse it without disk reads
         instance.surface_mesh = surf
 
-        model.discreteRigidBodies[name] = instance
+        model.rigidBodies[name] = instance
         return instance

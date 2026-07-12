@@ -239,10 +239,9 @@ class BaseNonlinearSolver:
             | set(n for element in model.cellElements.values() for n in element.nodes)
             | set(n for constraint in model.constraints.values() if constraint.active for n in constraint.nodes)
         )
-        if hasattr(model, "kinematicDrivers"):
-            for driver in model.kinematicDrivers.values():
-                if hasattr(driver, "rpNode"):
-                    activeNodesWithPersistentFieldValues.add(driver.rpNode)
+        for rb in model.rigidBodies.values():
+            if rb.rpNode is not None:
+                activeNodesWithPersistentFieldValues.add(rb.rpNode)
 
         activeNodesWithVolatileFieldValues = set(n for cell in activeCells for n in cell.nodes)
 
@@ -260,10 +259,13 @@ class BaseNonlinearSolver:
             "activeNodesWithVolatileFieldValues", activeNodesWithVolatileFieldValues
         )
 
-        reducedNodeFields = {
-            nodeField.name: MPMNodeField(nodeField.name, nodeField.dimension, activeNodes)
-            for nodeField in model.nodeFields.values()
-        }
+        reducedNodeFields = {}
+        for nodeField in model.nodeFields.values():
+            new_field = MPMNodeField(nodeField.name, nodeField.dimension, activeNodes)
+            for key in nodeField._values.keys():
+                new_field.createFieldValueEntry(key)
+            new_field.copyEntriesFromOther(nodeField)
+            reducedNodeFields[nodeField.name] = new_field
 
         reducedNodeSets = {
             nodeSet: NodeSet(nodeSet.name, set(activeNodes).intersection(nodeSet))

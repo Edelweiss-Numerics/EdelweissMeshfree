@@ -272,10 +272,9 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
 
                     U = theDofManager.constructDofVector()
 
-                    # TODO 3
-                    # if len(activeNodesWithPersistentData) > 0:
-                    #     for field in model.nodeFields.values():
-                    #         theDofManager.writeNodeFieldToDofVector(U, field, "U", activeNodesWithPersistentData)
+                    for field in reducedNodeFields.values():
+                        if "U" in field:
+                            U = theDofManager.writeNodeFieldToDofVector(U, field, "U")
 
                     self.journal.message(
                         "resulting equation system has a size of {:}".format(theDofManager.nDof),
@@ -391,6 +390,8 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                         theDofManager.writeDofVectorToNodeField(P, field, "P")
                         model.nodeFields[field.name].copyEntriesFromOther(field)
 
+                    for rb in model.rigidBodies.values():
+                        rb.updateKinematics(timeStep)
                     model.advanceToTime(timeStep.totalTime)
 
                     self._finalizeIncrementOutput(fieldOutputController, outputManagers)
@@ -702,7 +703,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
 
         self._computeParticles(particles, dU, PInt, F, K_VIJ, timeStep.totalTime, timeStep.timeIncrement, theDofManager)
 
-        self._computeConstraints(constraints, dU, PInt, K_VIJ, timeStep)
+        self._computeConstraints(constraints, dU, PInt, K_VIJ, timeStep, F)
 
         PExt, K = self._computeBodyLoads(bodyLoads, PExt, K_VIJ, timeStep, theDofManager, activeCells)
         PExt, K = self._computeCellDistributedLoads(distributedLoads, PExt, K_VIJ, timeStep, theDofManager)

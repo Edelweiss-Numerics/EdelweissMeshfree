@@ -165,7 +165,7 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
                         theDofManager, model, mpmManagers, constraints
                     )
                     self.updateSystem(particles, timeStep.totalTime, dT, dU_np)
-                    for body in model.discreteRigidBodies.values():
+                    for body in model.rigidBodies.values():
                         body.updateKinematics(timeStep)
                     self.computeSystem(
                         particles,
@@ -250,7 +250,7 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
                                 node.current_angular_velocity = v_np_one_half[dof_indices].copy()
                                 node._velocity_initialized = True
 
-                for body in model.discreteRigidBodies.values():
+                for body in model.rigidBodies.values():
                     body.updateKinematics(timeStep)
 
                 model.advanceToTime(timeStep.totalTime)
