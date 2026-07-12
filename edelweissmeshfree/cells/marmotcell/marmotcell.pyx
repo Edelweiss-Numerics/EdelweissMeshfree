@@ -227,3 +227,7 @@ cdef class MarmotCellWrapper:
         I_[offset : offset + n**2] = VIJLocations.flatten()
         J_[offset : offset + n**2] = VIJLocations.flatten("F")
 
+    def shapeVIJContribution(self, np.ndarray flat_view) -> np.ndarray:
+        """Keep the view flat for Cython 1-D memoryview compatibility."""
+        return flat_view
+
