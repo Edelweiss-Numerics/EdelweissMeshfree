@@ -10,21 +10,20 @@ from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
     MarmotParticleWrapper,
 )
 
-m = MPMModel(3)
-app = MarmotMeshfreeApproximationWrapper("ReproducingKernel", 3, completenessOrder=1)
+if __name__ == "__main__":
+    m = MPMModel(3)
+    app = MarmotMeshfreeApproximationWrapper("ReproducingKernel", 3, completenessOrder=1)
 
+    def f(i, c):
+        return MarmotParticleWrapper(
+            "Displacement/SQCNIxNSNI/3D/Hexa",
+            i,
+            c,
+            0.0,
+            app,
+            {"material": "CompressibleNeoHooke", "properties": np.array([1.0, 1.0, 1.0])},
+        )
 
-def f(i, c):
-    return MarmotParticleWrapper(
-        "Displacement/SQCNIxNSNI/3D/Hexa",
-        i,
-        c,
-        0.0,
-        app,
-        {"material": "CompressibleNeoHooke", "properties": np.array([1.0, 1.0, 1.0])},
-    )
-
-
-generateParticlesFromExodus(m, Journal(), "particles.exo", {"HEX": f, "HEX8": f}, "mp", 1)
-y = [p.getCenterCoordinates()[1] for p in m.particles.values()]
-print("Y range:", min(y), max(y))
+    generateParticlesFromExodus(m, Journal(), "particles.exo", {"HEX": f, "HEX8": f}, "mp", 1)
+    y = [p.getCenterCoordinates()[1] for p in m.particles.values()]
+    print("Y range:", min(y), max(y))

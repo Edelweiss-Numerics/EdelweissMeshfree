@@ -274,7 +274,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
 
                     for field in reducedNodeFields.values():
                         if "U" in field:
-                            U = theDofManager.writeNodeFieldToDofVector(U, field, "U")
+                            theDofManager.writeNodeFieldToDofVector(U, field, "U")
 
                     self.journal.message(
                         "resulting equation system has a size of {:}".format(theDofManager.nDof),

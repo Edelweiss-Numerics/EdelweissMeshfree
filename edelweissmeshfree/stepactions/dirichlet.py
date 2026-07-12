@@ -84,8 +84,13 @@ class Dirichlet(DirichletBase):
     def updateStepAction(self, values, f_t: Callable[[float], float] = None):
         self.active = True
 
-        # Component keys are 1-based strings like "1", "2", "3"; convert to 0-based int indices.
-        self._components = np.array([int(k) - 1 for k in values.keys()], dtype=int)
+        components = []
+        for k in values.keys():
+            if isinstance(k, int):
+                components.append(k)
+            else:
+                components.append(int(k) - 1)
+        self._components = np.array(components, dtype=int)
 
         self._delta = np.array(list(values.values()))
 

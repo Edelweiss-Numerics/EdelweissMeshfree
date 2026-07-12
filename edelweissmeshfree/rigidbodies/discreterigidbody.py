@@ -304,20 +304,23 @@ class DiscreteRigidBody(RigidBody):
             import netCDF4
 
             nc = netCDF4.Dataset(filename, "r")
+            try:
+                x = nc.variables["coordx"][:]
+                y = nc.variables["coordy"][:]
+                z = nc.variables["coordz"][:] if "coordz" in nc.variables else np.zeros_like(x)
+                points = np.column_stack((x, y, z))
 
-            x = nc.variables["coordx"][:]
-            y = nc.variables["coordy"][:]
-            z = nc.variables["coordz"][:] if "coordz" in nc.variables else np.zeros_like(x)
-            points = np.column_stack((x, y, z))
+                if translation is not None:
+                    points += np.array(translation)
 
-            if translation is not None:
-                points += np.array(translation)
+                # Assume rigid body surface mesh is entirely in connect1
+                if "connect1" not in nc.variables:
+                    raise ValueError("No connect1 variable found in NetCDF/Exo file.")
 
-            # Assume rigid body surface mesh is entirely in connect1
-            if "connect1" not in nc.variables:
-                raise ValueError("No connect1 variable found in NetCDF/Exo file.")
+                conn = nc.variables["connect1"][:] - 1  # 0-indexed
+            finally:
+                nc.close()
 
-            conn = nc.variables["connect1"][:] - 1  # 0-indexed
             num_elems, num_nodes_per_elem = conn.shape
 
             faces = []

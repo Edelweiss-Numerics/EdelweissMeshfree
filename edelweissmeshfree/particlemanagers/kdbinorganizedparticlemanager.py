@@ -106,6 +106,11 @@ class _FastKDBinOrganizer:
         min_indices = ((self._mins - self._boundingBoxMin) / self._binSize).astype(int)
         max_indices = ((self._maxs - self._boundingBoxMin) / self._binSize).astype(int)
 
+        # Clamp indices to valid range [0, nBins - 1]
+        for d in range(self._dimension):
+            min_indices[:, d] = np.clip(min_indices[:, d], 0, self._nBins[d] - 1)
+            max_indices[:, d] = np.clip(max_indices[:, d], 0, self._nBins[d] - 1)
+
         # --- 4. Fill Bins ---
         _, stride_y, stride_z = self._strides[0], self._strides[1], self._strides[2]
         bins = self._bins
