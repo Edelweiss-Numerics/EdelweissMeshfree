@@ -27,10 +27,10 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from fd_tangent_check_upj_vms import build_model, make_dQ
+from fd_tangent_check_upj_vms import build_model, check_particle, make_dQ
 
 
-def check_mode2_difference(p1, p2, dQ0, qTotal=None, label=""):
+def check_mode2_difference(p1, p2, dQ0, qTotal=None, label="", skipRows=()):
     """FD check of the PURE mode-2 contribution: (mode2 - mode1) of fInt and K.
 
     Like check_mode_difference of the base harness, but with a RELATIVE zero-block
@@ -71,6 +71,12 @@ def check_mode2_difference(p1, p2, dQ0, qTotal=None, label=""):
     print(f"  |dP| max: {np.abs(dP0).max():.4g}  (nonzero => mode-2 terms active)")
     ok = True
     for rn, ri in rows.items():
+        if rn in skipRows:
+            # mode 3 adds d2S/dF2 terms to this row's TANGENT while its residual is
+            # identical to the mode-1 baseline -- the delta methodology sees additions
+            # with a zero FD counterpart. Validated by the full-particle check instead.
+            print(f"  dK_{rn}*: (skipped -- tangent-only improvements, see full check)")
+            continue
         for cn, ci in rows.items():
             Kb, Fb = dK[np.ix_(ri, ci)], dK_fd[np.ix_(ri, ci)]
             scale = max(np.abs(Fb).max(), np.abs(Kb).max())
@@ -103,18 +109,30 @@ def main():
 
     # NOTE: assignTotalNodalSolution is sticky (see base harness) -- separate model
     # instances per path.
-    for path in ("increment", "total-solution"):
-        model1 = build_model(1)
-        model2 = build_model(2)
-        parts1 = list(model1.particles.values())
-        parts2 = list(model2.particles.values())
+    # mode 3 = mode 2 + FD second-order material tangent: identical residual, so the
+    # delta(mode3 - mode1) check probes the SAME stabilization forces as
+    # delta(mode2 - mode1) but against the completed tangent -- the previously omitted
+    # d2S/dF2 blocks (up to ~6.5 % on corner particles in mode 2) should collapse.
+    for highMode in (2, 3):
+        for path in ("increment", "total-solution"):
+            model1 = build_model(1)
+            model2 = build_model(highMode)
+            parts1 = list(model1.particles.values())
+            parts2 = list(model2.particles.values())
 
-        for idx in (len(parts1) // 2, 0):
-            p1, p2 = parts1[idx], parts2[idx]
-            nDof = p1.nDof
-            dQ0 = make_dQ(nDof, rng)
-            qTot = make_dQ(nDof, rng) if path == "total-solution" else None
-            all_ok &= check_mode2_difference(p1, p2, dQ0, qTotal=qTot, label=f"{path} path")
+            for idx in (len(parts1) // 2, 0):
+                p1, p2 = parts1[idx], parts2[idx]
+                nDof = p1.nDof
+                dQ0 = make_dQ(nDof, rng)
+                qTot = make_dQ(nDof, rng) if path == "total-solution" else None
+                skip = ("p",) if highMode == 3 else ()
+                all_ok &= check_mode2_difference(
+                    p1, p2, dQ0, qTotal=qTot, label=f"mode{highMode}-mode1, {path} path", skipRows=skip
+                )
+                if highMode == 3:
+                    # full-particle check: the mode-3 pressure/momentum rows must match the
+                    # FD of the FULL residual at least as well as the mode-1 baseline does
+                    all_ok &= check_particle(p2, dQ0, qTotal=qTot, label=f"mode 3 full, {path} path")
     print("\nALL OK" if all_ok else "\nMISMATCHES FOUND")
     return 0 if all_ok else 1
 

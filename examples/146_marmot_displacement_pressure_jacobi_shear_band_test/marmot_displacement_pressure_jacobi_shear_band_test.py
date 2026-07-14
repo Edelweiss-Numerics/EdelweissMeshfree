@@ -442,7 +442,7 @@ if __name__ == "__main__":
                         help="run the test_sim configuration and store its result as gold.csv")
     parser.add_argument("--vmsAlpha", "-a", dest="vmsAlpha", type=float, default=0.02,
                         help="alpha >~ 0.05 makes the band-formation peak crossing marginal, see docstring")
-    parser.add_argument("--vmsMode", "-m", dest="vmsMode", type=int, choices=[0, 1, 2], default=0,
+    parser.add_argument("--vmsMode", "-m", dest="vmsMode", type=int, choices=[0, 1, 2, 3], default=0,
                         help="0: pressure-only VMS, 1: full VMS (grad p + div S_dev - rho0 a)")
     parser.add_argument("--nX", type=int, default=15)
     parser.add_argument("--nY", type=int, default=30)

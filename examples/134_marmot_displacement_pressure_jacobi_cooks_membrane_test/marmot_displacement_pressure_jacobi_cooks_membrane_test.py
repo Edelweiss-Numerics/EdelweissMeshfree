@@ -525,7 +525,7 @@ if __name__ == "__main__":
     parser.add_argument("--create-gold", dest="create_gold", action="store_true", help="create the gold file.")
     parser.add_argument("--particleType", "-p", dest="particleType", default="DisplacementPressureJacobiSQCNIxNSNI/PlaneStrain/Quad")
     parser.add_argument("--vmsAlpha", "-a", dest="vmsAlpha", type=float, default=0.1)
-    parser.add_argument("--vmsMode", "-m", dest="vmsMode", type=int, choices=[0, 1, 2], default=0,
+    parser.add_argument("--vmsMode", "-m", dest="vmsMode", type=int, choices=[0, 1, 2, 3], default=0,
                         help="0: pressure-only VMS, 1: full VMS (grad p + div S_dev - rho0 a)")
     parser.add_argument("--nX", type=int, default=12)
     parser.add_argument("--nY", type=int, default=12)
