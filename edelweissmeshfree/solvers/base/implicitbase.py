@@ -1,4 +1,3 @@
-import concurrent.futures
 from abc import abstractmethod
 from typing import Iterable
 
@@ -8,9 +7,11 @@ from edelweissfe.numerics.csrgeneratorv2 import CSRGenerator
 from edelweissfe.numerics.dofmanager import DofManager, DofVector, VIJSystemMatrix
 from edelweissfe.numerics.parallelizationutilities import (
     getNumberOfThreads,
+    getThreadPool,
     isFreeThreadingSupported,
 )
 from edelweissfe.sets.nodeset import NodeSet
+from edelweissfe.solvers.base.parallelelementcomputation import chunked_iterable
 from edelweissfe.stepactions.base.dirichletbase import DirichletBase
 from edelweissfe.stepactions.base.stepactionbase import StepActionBase
 from edelweissfe.timesteppers.timestep import TimeStep
@@ -246,7 +247,10 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             ] = 1.0
             K.setdiag(diag)
 
-            K.eliminate_zeros()
+            # NOTE: the zeroed off-diagonals are deliberately kept as explicitly stored zeros.
+            # This preserves the sparsity pattern, so the assembled CSR matrix can be updated
+            # in place across iterations and direct solvers can reuse their symbolic
+            # factorization. (Direct solvers handle stored zeros without issues.)
 
         return K
 
@@ -423,19 +427,35 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         return ddU
 
     @performancetiming.timeit("conversion VIJ to CSR")
-    def _VIJtoCSR(self, KCoo: VIJSystemMatrix, csrGenerator) -> csr_matrix:
+    def _VIJtoCSR(self, KCoo: VIJSystemMatrix, csrGenerator, useInPlace: bool = False) -> csr_matrix:
         """Construct a CSR matrix from VIJ (COO)format.
 
         Parameters
         ----------
         K
             The system matrix in VIJ format.
+        csrGenerator
+            The CSR generator holding the sparsity pattern.
+        useInPlace
+            If True, update and return the generator's internal CSR matrix directly
+            (no copy). Only safe if the caller does not retain the returned matrix
+            across a subsequent conversion using the *same* ``csrGenerator``
+            instance (e.g. a second matrix such as a mass matrix converted with the
+            same generator would alias and overwrite it). Defaults to False, which
+            always returns an independent copy.
+
         Returns
         -------
         csr_matrix
             The system matrix in compressed sparse row format.
         """
-        KCsr = csrGenerator.updateCSR(KCoo)
+        if useInPlace:
+            # In-place update: the returned matrix is the generator's internal CSR matrix.
+            # The subsequent Dirichlet application only modifies values (the pattern is
+            # preserved), which are fully overwritten again on the next update.
+            KCsr = csrGenerator.updateInPlace(KCoo)
+        else:
+            KCsr = csrGenerator.updateCSR(KCoo)
 
         return KCsr
 
@@ -887,25 +907,23 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             P.createScatterVector()
         )  # make a scatter vector; which gives 1) contiguous memory access and 2) thread safety
 
-        def computeParticleWorker(particle: BaseParticle):
-            """
-            Worker function to compute physics kernels for a single particle.
+        # Process a CHUNK of particles per task, not just one, to keep the per-task
+        # dispatch overhead negligible compared to the actual particle computation.
+        def computeParticlesWorker(particleChunk):
+            for particle in particleChunk:
+                PP = scatter_P[particle]
+                dUP = dU[particle]
+                KP = K_VIJ[particle]
 
-            Parameters
-            ----------
-            particle
-                The particle to be processed.
-            """
-            PP = scatter_P[particle]
-            dUP = dU[particle]
-            KP = K_VIJ[particle]
-
-            particle.computePhysicsKernels(dUP, PP, KP, time, dT)
+                particle.computePhysicsKernels(dUP, PP, KP, time, dT)
 
         numThreads = getNumberOfThreads() if isFreeThreadingSupported() else 1
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=numThreads) as executor:
-            executor.map(computeParticleWorker, particles)
+        chunkSize = max(1, len(particles) // (numThreads * 4))
+        chunks = chunked_iterable(particles, chunkSize)
+
+        executor = getThreadPool(numThreads)
+        list(executor.map(computeParticlesWorker, chunks))
 
         scatter_P.assembleInto(P)
         scatter_P.assembleInto(F, absolute=True)
