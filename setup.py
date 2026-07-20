@@ -163,5 +163,11 @@ extensions += [
 
 setup(
     cmdclass={"build_ext": build_ext},
-    ext_modules=cythonize(extensions, compiler_directives=directives, annotate=True, language_level=3),
-),
+    ext_modules=cythonize(
+        extensions,
+        compiler_directives=directives,
+        # Generate the HTML annotation files only on demand; they slow down the build.
+        annotate=bool(os.environ.get("EDELWEISSMESHFREE_ANNOTATE")),
+        language_level=3,
+    ),
+)
