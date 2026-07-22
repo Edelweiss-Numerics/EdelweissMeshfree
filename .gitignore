@@ -14,3 +14,21 @@
 *rename*
 docs/
 __pycache__
+
+# example run outputs (studies live outside the repo; small examples are output-free)
+**/ensight/
+**/ensight_*/
+**/restart_*.h5
+**/animation.gif
+**/gosford_*.txt
+**/gosford_*_RF.csv
+**/gosford_*_U.csv
+**/export_*.csv
+**/load_displacement*.png
+**/disp_vs_rf.png
+/RF*.csv
+/RFright*.csv
+/U_*.csv
+/diag_*.log
+examples/*/U.csv
+examples/*/RF.csv
