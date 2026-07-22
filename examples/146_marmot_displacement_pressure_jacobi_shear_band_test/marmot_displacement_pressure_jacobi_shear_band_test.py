@@ -208,6 +208,7 @@ def run_sim(
     particleType="DisplacementPressureJacobiSQCNIxNSNI/PlaneStrain/Quad",
     vmsAlpha=0.02,
     vmsMode=0,
+    vmsKawareRatio=0.0,
     nX=15,
     nY=30,
     totalCompression=-1.9,
@@ -364,6 +365,7 @@ def run_sim(
         particle.setProperty("newmark-beta gamma", 0.0)
         particle.setProperty("vms alpha", vmsAlpha)
         particle.setProperty("vms mode", float(vmsMode))
+        particle.setProperty("vms kaware ratio", float(vmsKawareRatio))
         if vci:
             # default order 1 matches the completeness order 1 of the RKPM approximation
             particle.setProperty("VCI order", float(vciOrder))
@@ -773,6 +775,12 @@ if __name__ == "__main__":
                              "only up to ~0.1 (approximate plastic tangent), see docstring")
     parser.add_argument("--vmsMode", "-m", dest="vmsMode", type=int, choices=[0, 1, 2, 3], default=0,
                         help="0: pressure-only VMS, 1: full VMS (grad p + div S_dev - rho0 a)")
+    parser.add_argument("--vmsKawareRatio", dest="vmsKawareRatio", type=float, default=0.0,
+                        help="K-aware stabilization: cap the effective incompressibility at this "
+                             "target K/G ratio R (C = alpha h^2/(2 min(G_ref, K_ref/R))); suppression "
+                             "factor becomes 1+(alpha/2)R independent of the material. 0 = disabled "
+                             "(pure elastic-G). This material has K/G~50, so R~500 gives Cook's-like "
+                             "checkerboard control without raising alpha (see handoff_vms.md Part 7.7)")
     parser.add_argument("--nX", type=int, default=15)
     parser.add_argument("--nY", type=int, default=30)
     parser.add_argument("--compression", type=float, default=-2.0)
@@ -819,6 +827,7 @@ if __name__ == "__main__":
             particleType=args.particleType,
             vmsAlpha=args.vmsAlpha,
             vmsMode=args.vmsMode,
+            vmsKawareRatio=args.vmsKawareRatio,
             nX=args.nX,
             nY=args.nY,
             totalCompression=args.compression,
