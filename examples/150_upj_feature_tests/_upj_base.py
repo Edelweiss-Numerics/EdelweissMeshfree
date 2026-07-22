@@ -4,27 +4,28 @@ verification tests in this directory.
 Each ``upj_<feature>_test.py`` calls :func:`run` with ONE feature toggled and
 asserts a sane result. Target runtime: < 3 s per test (typically ~0.2-0.5 s).
 
-Rationale: the large Cook's-membrane (example 134) and plane-strain-compression
-shear-band (example 146) scripts are numerical STUDIES -- they exercise every
-feature at once and take many seconds. These files are the opposite: one tiny,
-fast, isolated check per feature, so a regression in any single feature is caught
-immediately and adding a test for a NEW feature is a copy-paste of one short file.
+Rationale: the large Cook's-membrane and plane-strain-compression shear-band
+scripts were numerical STUDIES -- they exercised every feature at once, took many
+seconds, and have been moved OUT of the repo. These files are the opposite: one
+tiny, fast, isolated check per feature, so a regression in any single feature is
+caught immediately and adding a test for a NEW feature is a copy-paste of one short
+file.
 
-They reuse example 146's ``run_sim`` (the reference u-p-J implementation) at a
-4x8, nearly-elastic, 2-increment scale. The exact solution of this homogeneous
-compression is a near-uniform (negative) pressure field, so a finite field with a
-negative mean is the basic sanity signal.
+They use the self-contained model-builder ``run_sim`` in ``_upj_compression.py``
+(extracted from the former example 146) at a 4x8, nearly-elastic, 2-increment
+scale. The exact solution of this homogeneous compression is a near-uniform
+(negative) pressure field, so a finite field with a negative mean is the basic
+sanity signal.
 """
 import os
 import sys
 
 import numpy as np
 
-_EX146 = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", "146_marmot_displacement_pressure_jacobi_shear_band_test")
-)
-sys.path.insert(0, _EX146)
-import marmot_displacement_pressure_jacobi_shear_band_test as _compression  # noqa: E402
+# self-contained model-builder fixture in THIS directory (the former example 146,
+# the numerical study, was moved out of the repo -- see _upj_compression.py header)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import _upj_compression as _compression  # noqa: E402
 
 # the C++ particles keep a bare reference to the approximation wrapper -> keep it alive
 _instances = []
