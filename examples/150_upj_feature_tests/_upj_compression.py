@@ -1,3 +1,7 @@
+# NOTE: self-contained u-p-J plane-strain compression model builder used as a
+# FIXTURE by the per-feature tests in this directory. Extracted verbatim from the
+# former example 146 run_sim (the full numerical STUDY, incl. its CLI/gold/ensight
+# outputs, was moved out of the repo). Do not add study/plotting code here.
 # -*- coding: utf-8 -*-
 #  ---------------------------------------------------------------------
 #
@@ -737,111 +741,3 @@ def run_sim(
                 pass
 
     return theModel, fieldOutputController, reactionMonitor
-
-
-@pytest.fixture(autouse=True)
-def change_test_dir(request, monkeypatch):
-    monkeypatch.chdir(request.fspath.dirname)
-
-
-def test_sim():
-    import warnings
-
-    warnings.filterwarnings("ignore")
-
-    theModel, fieldOutputController, _ = run_sim(nX=6, nY=12, totalCompression=-1.5, incSize=0.05)
-
-    res = fieldOutputController.fieldOutputs["alphaP"].getLastResult().flatten()
-
-    if not os.path.exists("gold.csv"):
-        pytest.skip("gold.csv not found - run with --create-gold to create it.")
-
-    gold = np.loadtxt("gold.csv")
-    # LOOSE tolerance: the Marmot finite-strain plastic path is currently not
-    # run-to-run deterministic (same class of issue as the confirmed
-    # uninitialized-memory read behind the example-144 non-determinism, still
-    # open), and the softening localization amplifies it to a few percent of
-    # the band alphaP. Tighten once the Marmot issue is fixed.
-    assert np.isclose(res, gold, rtol=0.15, atol=5e-3).all()
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--create-gold", dest="create_gold", action="store_true",
-                        help="run the test_sim configuration and store its result as gold.csv")
-    parser.add_argument("--vmsAlpha", "-a", dest="vmsAlpha", type=float, default=0.02,
-                        help="pressure-stabilization strength. With the eta=20 default + small-step "
-                             "line search, mode 0 crosses the band peak for alpha in {0..1.0}; mode 1 "
-                             "only up to ~0.1 (approximate plastic tangent), see docstring")
-    parser.add_argument("--vmsMode", "-m", dest="vmsMode", type=int, choices=[0, 1, 2, 3], default=0,
-                        help="0: pressure-only VMS, 1: full VMS (grad p + div S_dev - rho0 a)")
-    parser.add_argument("--vmsKawareRatio", dest="vmsKawareRatio", type=float, default=0.0,
-                        help="K-aware stabilization: cap the effective incompressibility at this "
-                             "target K/G ratio R (C = alpha h^2/(2 min(G_ref, K_ref/R))); suppression "
-                             "factor becomes 1+(alpha/2)R independent of the material. 0 = disabled "
-                             "(pure elastic-G). This material has K/G~50, so R~500 gives Cook's-like "
-                             "checkerboard control without raising alpha (see handoff_vms.md Part 7.7)")
-    parser.add_argument("--nX", type=int, default=15)
-    parser.add_argument("--nY", type=int, default=30)
-    parser.add_argument("--compression", type=float, default=-2.0)
-    parser.add_argument("--incSize", type=float, default=0.01)
-    parser.add_argument("--fyInf", dest="fyInf", type=float, default=80.0,
-                        help="Voce saturation yield stress (fy=100); fyInf<fy softens. "
-                             "Lower = stronger softening. fyInf=90 is too mild (no band); "
-                             "fyInf=80 with the steep eta=30 is the snap-back case")
-    parser.add_argument("--eta", dest="eta", type=float, default=20.0,
-                        help="Voce softening rate; higher = faster/sharper drop. eta=20 (default) "
-                             "gives a REAL post-peak load drop the displacement-control solver traces "
-                             "for every vmsAlpha in mode 0; eta=15 is too gentle (flat plateau, stalls "
-                             "at the peak); eta=30 is the steep snap-back case that needs arc length")
-    parser.add_argument("--particleType", "-p", dest="particleType",
-                        default="DisplacementPressureJacobiSQCNIxNSNI/PlaneStrain/Quad")
-    parser.add_argument("--control", choices=["displacement", "indirect"], default="displacement",
-                        help="'indirect': indirect displacement control (arc-length) to cross the load peak; "
-                             "requires constraintType=mortar and cwf=off")
-    parser.add_argument("--constraintType", choices=["mortar", "lagrange", "nitsche"], default="mortar")
-    parser.add_argument("--nitscheBeta", dest="nitscheBeta", type=float, default=10.0,
-                        help="with 'nitsche': penalty factor, beta = nitscheBeta * K / h")
-    parser.add_argument("--multiplierOrder", type=int, default=6, help="polynomial order of the mortar multiplier field")
-    parser.add_argument("--constraintStride", type=int, default=1,
-                        help="with 'lagrange': clamp every n-th top/bottom-edge particle")
-    parser.add_argument("--cwf", dest="cwf", choices=["off", "top", "bottom", "both"], default="off",
-                        help="consistent-weak-form traction correction on the constrained edges (see run_sim docstring)")
-    parser.add_argument("--vci", dest="vci", action="store_true",
-                        help="variationally consistent integration (test gradient correction)")
-    parser.add_argument("--vciOrder", dest="vciOrder", type=int, default=1,
-                        help="polynomial order of the VCI constraints (default 1)")
-    parser.add_argument("--completenessOrder", dest="completenessOrder", type=int, default=1,
-                        help="completeness order of the RKPM approximation (default 1); must be >= vciOrder")
-    parser.add_argument("--outputName", dest="outputName", default=None,
-                        help="basename for the RF export and the ensight directory")
-    args = parser.parse_args()
-
-    if args.create_gold:
-        # must match the test_sim configuration exactly
-        theModel, fieldOutputController, monitor = run_sim(nX=6, nY=12, totalCompression=-1.5, incSize=0.05)
-        res = fieldOutputController.fieldOutputs["alphaP"].getLastResult().flatten()
-        np.savetxt("gold.csv", res)
-    else:
-        theModel, fieldOutputController, monitor = run_sim(
-            particleType=args.particleType,
-            vmsAlpha=args.vmsAlpha,
-            vmsMode=args.vmsMode,
-            vmsKawareRatio=args.vmsKawareRatio,
-            nX=args.nX,
-            nY=args.nY,
-            totalCompression=args.compression,
-            incSize=args.incSize,
-            fyInf=args.fyInf,
-            eta=args.eta,
-            control=args.control,
-            constraintType=args.constraintType,
-            multiplierOrder=args.multiplierOrder,
-            constraintStride=args.constraintStride,
-            cwfCorrection=args.cwf,
-            vci=args.vci,
-            vciOrder=args.vciOrder,
-            completenessOrder=args.completenessOrder,
-            nitscheBeta=args.nitscheBeta,
-            outputName=args.outputName,
-        )

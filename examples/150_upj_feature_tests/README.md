@@ -3,14 +3,14 @@
 Fast, isolated regression tests for the mixed displacement–pressure–Jacobi (u-p-J)
 meshfree features developed on the VMS / Nitsche feature branches. **One tiny test
 per feature** (~0.3 s each, < 3 s ceiling), sharing one small base problem
-(`_upj_base.py`: a 4×8, nearly-elastic, 2-increment plane-strain compression block —
-the exact pressure is near-uniform, so "finite + compressive mean" is the sanity
-signal).
+(`_upj_base.py` + the self-contained model-builder `_upj_compression.py`: a 4×8,
+nearly-elastic, 2-increment plane-strain compression block — the exact pressure is
+near-uniform, so "finite + compressive mean" is the sanity signal).
 
-These complement the large numerical **studies** (Cook's membrane = example 134,
-plane-strain compression shear band = example 146), which exercise everything at once
-and take many seconds. Here each feature is checked on its own so a regression is
-localized immediately.
+The large numerical **studies** (Cook's membrane and the plane-strain compression
+shear band) live OUTSIDE the repo — they exercise everything at once and take many
+seconds. Here each feature is checked on its own so a regression is localized
+immediately.
 
 | test | feature |
 |---|---|
