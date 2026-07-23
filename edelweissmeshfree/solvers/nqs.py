@@ -698,7 +698,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
         )
 
         self._computeParticles(
-            particles, dU, PInt, F, K_VIJ, timeStep.totalTime, timeStep.timeIncrement, theDofManager, Un=Un
+            particles, dU, PInt, F, K_VIJ, timeStep.totalTime, timeStep.timeIncrement, theDofManager
         )
 
         self._computeConstraints(constraints, dU, PInt, K_VIJ, timeStep)
