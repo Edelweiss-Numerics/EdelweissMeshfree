@@ -38,8 +38,8 @@ import argparse
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 import pytest
+from edelweissfe.config.linsolve import getLinSolverByName
 from edelweissfe.journal.journal import Journal
-from edelweissfe.linsolve.pardiso.pardiso import pardisoSolve
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 
 from edelweissmeshfree.constraints.penaltyequalvalue import PenaltyEqualValue
@@ -197,7 +197,7 @@ def run_sim(logFile=None):
 
     iterationOptions = dict()
 
-    linearSolver = pardisoSolve
+    linearSolver = getLinSolverByName("pardiso", {})
 
     mprightTop = list(mpmModel.materialPointSets["rectangular_grid_rightTop"])[0]
     mpleftTop = list(mpmModel.materialPointSets["rectangular_grid_leftTop"])[0]

@@ -64,6 +64,30 @@ from edelweissmeshfree.stepactions.particledistributedload import (
     ParticleDistributedLoad,
 )
 
+try:
+    from edelweissfe.linsolve.pardiso.pardiso import PardisoSolver
+except ImportError:
+    PardisoSolver = None
+
+
+def invalidateStatefulLinearSolver(linearSolver) -> None:
+    """Force a stateful linear solver to redo its next factorization from scratch.
+
+    Only a :class:`PardisoSolver` instance caches a factorization across calls; other
+    linear solvers (plain functions such as ``pardisoSolve``, or lambdas wrapping
+    ``scipy.sparse.linalg.spsolve``) are already stateless and redo everything on
+    every call, so they need no invalidation.
+
+    Call this whenever a solver rebuilds its Newton cache (i.e. constructs a fresh
+    ``CSRGenerator`` for a new active domain / DOF layout): the meshfree active domain
+    can change mid-run, more often than the "one linear solver instance per analysis
+    step" usage EdelweissFE's own static-mesh solvers rely on, so the solver's
+    automatic array-based pattern-change detection alone is not a sufficient guard
+    here.
+    """
+    if PardisoSolver is not None and isinstance(linearSolver, PardisoSolver):
+        linearSolver.invalidate()
+
 
 class RestartHistoryManager(deque):
 
@@ -97,6 +121,10 @@ class BaseNonlinearSolver:
     journal
         The journal instance for logging.
     """
+
+    #: Cache for :meth:`_findDirichletIndices`; lazily initialized since not all
+    #: subclasses call ``super().__init__()``.
+    _dirichletIndicesCache = None
 
     def __init__(self, journal: Journal):
         self.journal = journal
@@ -208,9 +236,24 @@ class BaseNonlinearSolver:
             action.applyAtIncrementStart(model, timeStep)
 
     def _findDirichletIndices(self, theDofManager, dirichlet, reducedNodeSet):
-        fieldIndices = theDofManager.idcsOfFieldsOnNodeSetsInDofVector[dirichlet.field][reducedNodeSet]
+        # The result is fully determined by the boundary condition, its (mutable)
+        # components, the current DofManager, and the reduced node set, so it is
+        # memoized. It is requested multiple times per Newton iteration (residual
+        # zeroing and system matrix modification), but only changes when the
+        # equation system is rebuilt or the boundary condition is updated between
+        # steps.
+        cache = self._dirichletIndicesCache
+        if cache is None:
+            cache = self._dirichletIndicesCache = {}
 
-        return fieldIndices.reshape((-1, dirichlet.fieldSize))[:, dirichlet.components].flatten()
+        key = (dirichlet, theDofManager, reducedNodeSet, tuple(dirichlet.components))
+        indices = cache.get(key)
+        if indices is None:
+            fieldIndices = theDofManager.idcsOfFieldsOnNodeSetsInDofVector[dirichlet.field][reducedNodeSet]
+
+            indices = cache[key] = fieldIndices.reshape((-1, dirichlet.fieldSize))[:, dirichlet.components].flatten()
+
+        return indices
 
     @performancetiming.timeit("assembly active domain")
     def _assembleActiveDomain(self, activeCells, model: MPMModel) -> tuple[NodeSet, NodeSet, list, list]:

@@ -39,8 +39,8 @@ import argparse
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 import pytest
+from edelweissfe.config.linsolve import getLinSolverByName
 from edelweissfe.journal.journal import Journal
-from edelweissfe.linsolve.pardiso.pardiso import pardisoSolve
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 from edelweissfe.utils.exceptions import StepFailed
 
@@ -221,7 +221,7 @@ def run_sim():
         "default absolute field correction tolerance": 1e-14,
     }
 
-    linearSolver = pardisoSolve
+    linearSolver = getLinSolverByName("pardiso", {})
 
     # theBoundary = [
     #    BoundaryParticleDefinition(theModel.particleSets["rectangular_grid_left"], np.empty(2), 4),
