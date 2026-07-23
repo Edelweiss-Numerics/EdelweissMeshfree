@@ -33,13 +33,18 @@ jobs:
         shell: bash -l {0}
         run: |
           BRANCH="${{ inputs.edelweissfe_branch || github.head_ref || github.ref_name }}"
+          BASE="${{ github.base_ref }}"
 
-          if git ls-remote --exit-code --heads https://github.com/Edelweiss-Numerics/EdelweissFE.git "$BRANCH" > /dev/null 2>&1; then
+          URL="https://github.com/Edelweiss-Numerics/EdelweissFE.git"
+          if git ls-remote --exit-code --heads "$URL" "$BRANCH" > /dev/null 2>&1; then
             echo "Cloning EdelweissFE branch: $BRANCH"
-            git clone  --branch "$BRANCH" https://github.com/Edelweiss-Numerics/EdelweissFE.git
+            git clone --branch "$BRANCH" "$URL"
+          elif [ -n "$BASE" ] && git ls-remote --exit-code --heads "$URL" "$BASE" > /dev/null 2>&1; then
+            echo "::warning title=EdelweissFE Branch Fallback::Branch '$BRANCH' not found. Falling back to PR base branch '$BASE'."
+            git clone --branch "$BASE" "$URL"
           else
-            echo "::warning title=EdelweissFE Branch Fallback::Branch '$BRANCH' not found. Falling back to default branch."
-            git clone  https://github.com/Edelweiss-Numerics/EdelweissFE.git
+            echo "::warning title=EdelweissFE Branch Fallback::Neither branch '$BRANCH' nor base '$BASE' found. Falling back to default branch."
+            git clone "$URL"
           fi
 
           mamba install --file EdelweissFE/conda_requirements.txt
@@ -81,6 +86,7 @@ jobs:
         shell: bash -l {0}
         run: |
           BRANCH="${{ inputs.marmot_branch || github.head_ref || github.ref_name }}"
+          BASE="${{ github.base_ref }}"
 
           # Helper function for mandatory modules
           clone_mandatory() {
@@ -88,8 +94,11 @@ jobs:
             local dir=$2
             if git ls-remote --exit-code --heads "$url" "$BRANCH" > /dev/null 2>&1; then
               git clone --depth 1 --branch "$BRANCH" "$url" "$dir"
+            elif [ -n "$BASE" ] && git ls-remote --exit-code --heads "$url" "$BASE" > /dev/null 2>&1; then
+              echo "::warning title=Marmot Branch Fallback::Branch '$BRANCH' not found in $url. Falling back to PR base branch '$BASE'."
+              git clone --depth 1 --branch "$BASE" "$url" "$dir"
             else
-              echo "::warning title=Marmot Branch Fallback::Branch '$BRANCH' not found in $url. Falling back to default branch."
+              echo "::warning title=Marmot Branch Fallback::Neither branch '$BRANCH' nor base '$BASE' found in $url. Falling back to default branch."
               git clone --depth 1 "$url" "$dir"
             fi
           }
@@ -100,8 +109,11 @@ jobs:
             local dir=$2
             if git ls-remote --exit-code --heads "$url" "$BRANCH" > /dev/null 2>&1; then
               git clone --depth 1 --branch "$BRANCH" "$url" "$dir"
+            elif [ -n "$BASE" ] && git ls-remote --exit-code --heads "$url" "$BASE" > /dev/null 2>&1; then
+              echo "::warning title=Marmot Optional Module Fallback::Branch '$BRANCH' not found in $url. Falling back to PR base branch '$BASE'."
+              git clone --depth 1 --branch "$BASE" "$url" "$dir"
             elif git ls-remote "$url" > /dev/null 2>&1; then
-              echo "::warning title=Marmot Optional Module Fallback::Branch '$BRANCH' not found in $url. Falling back to default branch."
+              echo "::warning title=Marmot Optional Module Fallback::Neither branch '$BRANCH' nor base '$BASE' found in $url. Falling back to default branch."
               git clone --depth 1 "$url" "$dir"
             else
               echo "Repository $url not available, skipping."
