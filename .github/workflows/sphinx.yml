@@ -25,7 +25,21 @@ jobs:
       - name: Install conda packages
         shell: bash -l {0}
         run: |
-          git clone https://github.com/Edelweiss-Numerics/EdelweissFE.git
+          BRANCH="${{ github.head_ref || github.ref_name }}"
+          BASE="${{ github.base_ref }}"
+
+          URL="https://github.com/Edelweiss-Numerics/EdelweissFE.git"
+          if git ls-remote --exit-code --heads "$URL" "$BRANCH" > /dev/null 2>&1; then
+            echo "Cloning EdelweissFE branch: $BRANCH"
+            git clone --branch "$BRANCH" "$URL"
+          elif [ -n "$BASE" ] && git ls-remote --exit-code --heads "$URL" "$BASE" > /dev/null 2>&1; then
+            echo "::warning title=EdelweissFE Branch Fallback::Branch '$BRANCH' not found. Falling back to PR base branch '$BASE'."
+            git clone --branch "$BASE" "$URL"
+          else
+            echo "::warning title=EdelweissFE Branch Fallback::Neither branch '$BRANCH' nor base '$BASE' found. Falling back to default branch."
+            git clone "$URL"
+          fi
+
           mamba install --file EdelweissFE/conda_requirements.txt
 
       - name: Install Eigen
@@ -62,8 +76,26 @@ jobs:
       - name: Install Marmot
         shell: bash -l {0}
         run: |
-          git clone "https://github.com/MAteRialMOdelingToolbox/Marmot.git"
-          git clone "https://github.com/BOKU-CMP-MEC-MAT/MarmotMeshfreeCore.git" ./Marmot/modules/core/MarmotMeshfreeCore
+          BRANCH="${{ github.head_ref || github.ref_name }}"
+          BASE="${{ github.base_ref }}"
+
+          # Helper function for mandatory modules ($2 = optional target dir)
+          clone_mandatory() {
+            local url=$1
+            local dir=$2
+            if git ls-remote --exit-code --heads "$url" "$BRANCH" > /dev/null 2>&1; then
+              git clone --branch "$BRANCH" "$url" $dir
+            elif [ -n "$BASE" ] && git ls-remote --exit-code --heads "$url" "$BASE" > /dev/null 2>&1; then
+              echo "::warning title=Marmot Branch Fallback::Branch '$BRANCH' not found in $url. Falling back to PR base branch '$BASE'."
+              git clone --branch "$BASE" "$url" $dir
+            else
+              echo "::warning title=Marmot Branch Fallback::Neither branch '$BRANCH' nor base '$BASE' found in $url. Falling back to default branch."
+              git clone "$url" $dir
+            fi
+          }
+
+          clone_mandatory "https://github.com/MAteRialMOdelingToolbox/Marmot.git"
+          clone_mandatory "https://github.com/BOKU-CMP-MEC-MAT/MarmotMeshfreeCore.git" ./Marmot/modules/core/MarmotMeshfreeCore
           mkdir ./Marmot/build
           cd ./Marmot/build
           cmake -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX ..
