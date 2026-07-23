@@ -213,6 +213,7 @@ def run_sim(
     vmsAlpha=0.02,
     vmsMode=0,
     vmsKawareRatio=0.0,
+    vmsRefgrad=0.0,
     nX=15,
     nY=30,
     totalCompression=-1.9,
@@ -370,6 +371,10 @@ def run_sim(
         particle.setProperty("vms alpha", vmsAlpha)
         particle.setProperty("vms mode", float(vmsMode))
         particle.setProperty("vms kaware ratio", float(vmsKawareRatio))
+        # optional, NSNI-only experimental flag; set only when enabled so the SDI/base
+        # particles (which don't define it) are never handed an unknown property
+        if vmsRefgrad:
+            particle.setProperty("vms refgrad", float(vmsRefgrad))
         if vci:
             # default order 1 matches the completeness order 1 of the RKPM approximation
             particle.setProperty("VCI order", float(vciOrder))
