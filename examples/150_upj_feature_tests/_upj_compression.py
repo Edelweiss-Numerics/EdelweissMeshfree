@@ -220,6 +220,7 @@ def run_sim(
     incSize=0.01,
     fyInf=80.0,
     eta=20.0,
+    H=0.0,
     control="displacement",
     constraintType="mortar",
     multiplierOrder=6,
@@ -327,7 +328,11 @@ def run_sim(
     # the steep snap-back that plain displacement control cannot trace (needs arc length).
     # (fyInf=90 alone is too mild -- the load rises monotonically and no band forms.) fyInf
     # and eta are run_sim/CLI arguments to sweep the softening severity.
-    fy, H = 100.0, 0.0
+    # fy is the initial yield; the linear hardening modulus H defaults to 0 (run_sim arg).
+    # Setting fyInf = fy switches OFF the Voce softening (the (fy-fyInf) exp term vanishes),
+    # leaving beta(alpha) = fy + H*alpha -- perfect plasticity (H=0) or linear hardening (H>0),
+    # a NON-localizing material that traces to large finite strain (see large_deformation_hardening.py).
+    fy = 100.0
     implementationType, density = 1, 1e-7
 
     def makeMaterial(yieldScale=1.0):

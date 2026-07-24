@@ -11,3 +11,4 @@ U_*.csv
 *_ensight_*/
 _ensight_*/
 *.npz
+large_deformation_hardening.png
