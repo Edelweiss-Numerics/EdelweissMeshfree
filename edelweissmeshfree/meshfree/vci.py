@@ -201,8 +201,14 @@ class VariationallyConsistentIntegrationManager:
                 eta_AjC = np.zeros_like(residuals)
 
                 for A in range(nTestFunctions):
-                    # eta_jC = M_A_CD^-1 * residuals_A_jC
-                    eta_AjC[A, :, :] = np.linalg.solve(mMatrices[A, :, :], residuals[A, :, :].T).T
+                    # eta_jC = M_A_CD^-1 * residuals_A_jC.
+                    # The truncated pseudo-inverse equals the exact solve for
+                    # well-conditioned M, but caps the correction on (nearly)
+                    # degenerate constraint directions: on strongly distorted
+                    # kernel supports the higher-order moment matrix can become
+                    # near-singular, and a plain solve then blows up eta (NaN in
+                    # the first residual after the correction).
+                    eta_AjC[A, :, :] = (np.linalg.pinv(mMatrices[A, :, :], rcond=1e-8) @ residuals[A, :, :].T).T
 
             for p in self._particles:
                 particle_testFunction_block_in_gather = particles_testFunction_blocks_in_gather[p]

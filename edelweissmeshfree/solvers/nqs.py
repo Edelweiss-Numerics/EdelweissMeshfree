@@ -700,7 +700,9 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
             cellElements, dU, Un, PInt, F, K_VIJ, timeStep.totalTime, timeStep.timeIncrement, theDofManager
         )
 
-        self._computeParticles(particles, dU, PInt, F, K_VIJ, timeStep.totalTime, timeStep.timeIncrement, theDofManager)
+        self._computeParticles(
+            particles, dU, PInt, F, K_VIJ, timeStep.totalTime, timeStep.timeIncrement, theDofManager
+        )
 
         self._computeConstraints(constraints, dU, PInt, K_VIJ, timeStep)
 
