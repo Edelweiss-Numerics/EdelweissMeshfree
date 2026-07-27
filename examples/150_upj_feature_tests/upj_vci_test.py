@@ -1,6 +1,7 @@
 """Feature: variationally consistent integration (VCI) -- correction of the nodal
 integration so the discrete divergence theorem is satisfied (order 1 here), applied
 over the specimen boundary edges of the u-p-J particle."""
+
 from _upj_base import assert_sane_compression, run
 
 

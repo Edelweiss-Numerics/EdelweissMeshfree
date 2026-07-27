@@ -1,5 +1,6 @@
 """Feature: u-p-J particle with 'vms mode' 0 -- pressure-only OSS stabilization
 (the classical PSPG-type grad(p) fluctuation penalty). Default u-p-J variant."""
+
 from _upj_base import assert_sane_compression, run
 
 

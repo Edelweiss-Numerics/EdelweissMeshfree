@@ -2,6 +2,7 @@
 incompressibility at a target ratio R = vmsKawareRatio so the checkerboard
 suppression factor is 1+(alpha/2)R independent of the material's K/G. Verifies the
 property is accepted (R>0) and the solve stays sane; R=0 is the plain elastic-G form."""
+
 from _upj_base import assert_sane_compression, run
 
 

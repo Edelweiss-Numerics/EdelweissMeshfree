@@ -1,6 +1,7 @@
 """Feature: Lagrange-multiplier weak Dirichlet BC
 (ParticleLagrangianWeakDirichlet) -- point-collocation enforcement of the boundary
 displacement via Lagrange multipliers."""
+
 from _upj_base import assert_sane_compression, run
 
 

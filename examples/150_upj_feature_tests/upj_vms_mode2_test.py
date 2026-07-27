@@ -1,6 +1,7 @@
 """Feature: u-p-J 'vms mode' 2 -- fully stabilized VMS. Adds the momentum- and
 jacobi-equation consistency terms of the derivation on top of mode 1 (use small
 alpha; the momentum term bounds the stability envelope)."""
+
 from _upj_base import assert_sane_compression, run
 
 
