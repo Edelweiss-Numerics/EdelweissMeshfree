@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import concurrent.futures
 from typing import Iterable
 
 import edelweissfe.utils.performancetiming as performancetiming
@@ -8,8 +7,10 @@ from edelweissfe.journal.journal import Journal
 from edelweissfe.numerics.dofmanager import DofManager, DofVector
 from edelweissfe.numerics.parallelizationutilities import (
     getNumberOfThreads,
+    getThreadPool,
     isFreeThreadingSupported,
 )
+from edelweissfe.solvers.base.parallelelementcomputation import chunked_iterable
 from edelweissfe.timesteppers.timestep import TimeStep
 from edelweissfe.utils.exceptions import StepFailed
 from edelweissfe.utils.fieldoutput import FieldOutputController
@@ -272,27 +273,25 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
         scatter_M = M.createScatterVector()
         scatter_Mv = Mv.createScatterVector()
 
-        def computeParticleWorker(particle: BaseParticle):
-            """
-            Worker function to compute physics kernels for a single particle.
+        # Process a CHUNK of particles per task, not just one, to keep the per-task
+        # dispatch overhead negligible compared to the actual particle computation.
+        def computeParticlesWorker(particleChunk):
+            for particle in particleChunk:
+                PP = scatter_P[particle]
+                MP = scatter_M[particle]
+                MVP = scatter_Mv[particle]
 
-            Parameters
-            ----------
-            particle
-                The particle to be processed.
-            """
-            PP = scatter_P[particle]
-            MP = scatter_M[particle]
-            MVP = scatter_Mv[particle]
-
-            particle.computePhysicsKernelsExplicit(PP)
-            particle.computeLumpedInertia(MP)
-            particle.computeLumpedMomentum(MVP)
+                particle.computePhysicsKernelsExplicit(PP)
+                particle.computeLumpedInertia(MP)
+                particle.computeLumpedMomentum(MVP)
 
         numThreads = getNumberOfThreads() if isFreeThreadingSupported() else 1
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=numThreads) as executor:
-            executor.map(computeParticleWorker, particles)
+        chunkSize = max(1, len(particles) // (numThreads * 4))
+        chunks = chunked_iterable(particles, chunkSize)
+
+        executor = getThreadPool(numThreads)
+        list(executor.map(computeParticlesWorker, chunks))
 
         scatter_P.assembleInto(P)
         scatter_M.assembleInto(M)
@@ -325,22 +324,20 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
 
         particles = list(particles)  # Ensure we have a list
 
-        def computeParticleWorker(particle: BaseParticle):
-            """
-            Worker function to compute physics kernels for a single particle.
-
-            Parameters
-            ----------
-            particle
-                The particle to be processed.
-            """
-            dUP = dU[particle]
-            particle.updatePhysicsExplicit(dUP, time, dT)
+        # Process a CHUNK of particles per task, not just one, to keep the per-task
+        # dispatch overhead negligible compared to the actual particle computation.
+        def computeParticlesWorker(particleChunk):
+            for particle in particleChunk:
+                dUP = dU[particle]
+                particle.updatePhysicsExplicit(dUP, time, dT)
 
         numThreads = getNumberOfThreads() if isFreeThreadingSupported() else 1
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=numThreads) as executor:
-            results = executor.map(computeParticleWorker, particles)
+        chunkSize = max(1, len(particles) // (numThreads * 4))
+        chunks = chunked_iterable(particles, chunkSize)
+
+        executor = getThreadPool(numThreads)
+        results = executor.map(computeParticlesWorker, chunks)
 
         for r in results:
             pass  # Check for exceptions raised in worker threads

@@ -57,6 +57,7 @@ from edelweissmeshfree.particlemanagers.base.baseparticlemanager import (
 from edelweissmeshfree.solvers.base.nonlinearsolverbase import (
     NonlinearImplicitSolverBase,
     RestartHistoryManager,
+    invalidateStatefulLinearSolver,
 )
 from edelweissmeshfree.stepactions.base.mpmbodyloadbase import MPMBodyLoadBase
 from edelweissmeshfree.stepactions.base.mpmdistributedloadbase import (
@@ -485,6 +486,7 @@ class NonlinearDynamicSolver(NonlinearImplicitSolverBase):
 
         if not newtonCache:
             newtonCache = self._createNewtonCache(theDofManager)
+            invalidateStatefulLinearSolver(linearSolver)
         K_VIJ, csrGenerator, dU, Rhs, F, PInt, PExt = newtonCache
 
         dU[:] = 0.0
@@ -671,7 +673,7 @@ class NonlinearDynamicSolver(NonlinearImplicitSolverBase):
             Rhs -= PExt
 
             if useLumpedMassMatrix:
-                K_CSR = self._VIJtoCSR(K_VIJ, csrGenerator)
+                K_CSR = self._VIJtoCSR(K_VIJ, csrGenerator, useInPlace=True)
                 Rhs[:] = Rhs - M.T * (A_int + alphaR * V_int) - K_CSR * V_int * betaR
 
                 # check for zero increment
