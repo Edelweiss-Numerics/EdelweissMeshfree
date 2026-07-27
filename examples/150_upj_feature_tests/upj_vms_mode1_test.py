@@ -1,5 +1,6 @@
 """Feature: u-p-J 'vms mode' 1 -- full VMS. Adds the resolved-scale strong-form
 momentum residual grad(p) + div(S_dev) - rho0*a on top of the mode-0 penalty."""
+
 from _upj_base import assert_sane_compression, run
 
 

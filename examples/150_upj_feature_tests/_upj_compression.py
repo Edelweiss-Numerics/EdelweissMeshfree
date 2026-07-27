@@ -126,12 +126,10 @@ Observed (nX=10, nY=20, eta=20/fyInf=80 defaults, bottom edge fully fixed
   for alpha in {0, 0.01, 0.05, 0.1, 0.5, 1.0}; mode 1 for alpha in {0.1}.
 """
 
-import argparse
 import os
 
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
-import pytest
 from edelweissfe.journal.journal import Journal
 from edelweissfe.linsolve.pardiso.pardiso import pardisoSolve
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
@@ -182,8 +180,9 @@ class _ReactionMonitor:
     sum of the multiplier reactions; nitsche: the consistency+penalty force),
     exactly as in example 134."""
 
-    def __init__(self, model, get_reaction, controlTarget: float,
-                 xlabel: str = r"compressive shortening  $-u_y$  (mm)"):
+    def __init__(
+        self, model, get_reaction, controlTarget: float, xlabel: str = r"compressive shortening  $-u_y$  (mm)"
+    ):
         self._model = model
         self._get_reaction = get_reaction
         # the control quantity driven linearly by f_t(t) = t: the prescribed top
@@ -283,16 +282,16 @@ def run_sim(
     supportRadius = (2.2 if completenessOrder == 1 else 3.2) * particleSize
 
     if outputName is None:
-        outputName = f"shearband_upj_{particleType.split('/')[0]}_alpha{vmsAlpha}_mode{vmsMode}" + (
-            f"_cwf-{cwfCorrection}" if cwfCorrection != "off" else ""
-        ) + (f"_vci{vciOrder}" if vci else "") + (
-            f"_compl{completenessOrder}" if completenessOrder != 1 else ""
-        ) + (f"_nitsche{nitscheBeta}" if constraintType == "nitsche" else "")
+        outputName = (
+            f"shearband_upj_{particleType.split('/')[0]}_alpha{vmsAlpha}_mode{vmsMode}"
+            + (f"_cwf-{cwfCorrection}" if cwfCorrection != "off" else "")
+            + (f"_vci{vciOrder}" if vci else "")
+            + (f"_compl{completenessOrder}" if completenessOrder != 1 else "")
+            + (f"_nitsche{nitscheBeta}" if constraintType == "nitsche" else "")
+        )
 
     def kernelFunctionFactory(node):
-        return MarmotMeshfreeKernelFunctionWrapper(
-            node, "BSplineBoxed", supportRadius=supportRadius, continuityOrder=2
-        )
+        return MarmotMeshfreeKernelFunctionWrapper(node, "BSplineBoxed", supportRadius=supportRadius, continuityOrder=2)
 
     # kernel nodes at the particle centres
     theModel = generateRectangularKernelFunctionGrid(
@@ -308,7 +307,9 @@ def run_sim(
         name="kernel_grid",
     )
 
-    theApproximation = MarmotMeshfreeApproximationWrapper("ReproducingKernel", dimension, completenessOrder=completenessOrder)
+    theApproximation = MarmotMeshfreeApproximationWrapper(
+        "ReproducingKernel", dimension, completenessOrder=completenessOrder
+    )
 
     # near-incompressible elasticity + isochoric Voce-softening J2 plasticity
     E, nu = 11920.0, 0.49
@@ -421,7 +422,9 @@ def run_sim(
         from edelweissmeshfree.stepactions.particledistributedload import (
             ParticleDistributedLoad,
         )
-        from edelweissmeshfree.stepactions.particleindirectcontrol import IndirectControl
+        from edelweissmeshfree.stepactions.particleindirectcontrol import (
+            IndirectControl,
+        )
 
         # bottom roller uy = 0 (mortar, smooth multiplier); its reaction is the total F_y
         mOrder = min(multiplierOrder, nX - 1)
@@ -456,6 +459,7 @@ def run_sim(
                 loadVector=np.array([fy]),  # reference stress scale -> lambda is O(1)
             )
         )
+
         # LOCAL band-opening control: the relative vertical displacement of two particles
         # straddling the diagonal shear band seeded at the bottom-left imperfection. This
         # slip grows monotonically through the load peak (and any snap-back), so the
@@ -474,8 +478,14 @@ def run_sim(
         cVector = np.array([0.0, 1.0, 0.0, -1.0])
         slipTarget = abs(totalCompression)  # drive the band slip up to |totalCompression| mm
         indirectController = IndirectControl(
-            "indirect", theModel, controlParticles, slipTarget, cVector,
-            "displacement", theJournal, f_t=lambda t: t,
+            "indirect",
+            theModel,
+            controlParticles,
+            slipTarget,
+            cVector,
+            "displacement",
+            theJournal,
+            f_t=lambda t: t,
         )
         monitorTarget = slipTarget
         monitorXlabel = r"imposed band slip  $\Delta u_y$  (mm)"
@@ -520,17 +530,35 @@ def run_sim(
             # pressure checkerboard (see example 134 docstring)
             mOrder = min(multiplierOrder, nX - 1)
             dirichletBottom = ParticleMortarWeakDirichletOnParticleSetFactory(
-                    "bottom", theModel.particleSets["specimen_bottom"], "displacement", {1: 0.0, 0: 0.0}, theModel, multiplierOrder=mOrder,
+                "bottom",
+                theModel.particleSets["specimen_bottom"],
+                "displacement",
+                {1: 0.0, 0: 0.0},
+                theModel,
+                multiplierOrder=mOrder,
             )
             dirichletTop = ParticleMortarWeakDirichletOnParticleSetFactory(
-                "top", theModel.particleSets["specimen_top"], "displacement", {1: totalCompression}, theModel, multiplierOrder=mOrder,
+                "top",
+                theModel.particleSets["specimen_top"],
+                "displacement",
+                {1: totalCompression},
+                theModel,
+                multiplierOrder=mOrder,
             )
         elif constraintType == "lagrange":
             dirichletBottom = ParticleLagrangianWeakDirichletOnParticleSetFactory(
-                "bottom", list(theModel.particleSets["specimen_bottom"])[::constraintStride], "displacement", {1: 0.0}, theModel,
+                "bottom",
+                list(theModel.particleSets["specimen_bottom"])[::constraintStride],
+                "displacement",
+                {1: 0.0},
+                theModel,
             )
             dirichletTop = ParticleLagrangianWeakDirichletOnParticleSetFactory(
-                "top", list(theModel.particleSets["specimen_top"])[::constraintStride], "displacement", {1: totalCompression}, theModel,
+                "top",
+                list(theModel.particleSets["specimen_top"])[::constraintStride],
+                "displacement",
+                {1: totalCompression},
+                theModel,
             )
         else:
             raise ValueError(f"unknown constraintType {constraintType}")
@@ -627,7 +655,9 @@ def run_sim(
         fieldOutputController,
         theJournal,
         None,
-        configurations=[{"overwrite": True, "intermediateSaveInterval": 10, "transient": True, "nSet": None, "elSet": None}],
+        configurations=[
+            {"overwrite": True, "intermediateSaveInterval": 10, "transient": True, "nSet": None, "elSet": None}
+        ],
     )
     for fname in ("displacement", "pressure", "jacobi", "stress", "deformation gradient", "alphaP"):
         ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs[fname], create="perElement")

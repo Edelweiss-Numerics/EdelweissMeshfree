@@ -1,6 +1,7 @@
 """Feature: SQCNIxSDI u-p-J particle -- the mixed 3-field (u, p, J) particle using
 SUB-DOMAIN INTEGRATION (SDI, with an OSS split on the subdomain-gradient
 fluctuations) instead of nodal integration (NSNI)."""
+
 from _upj_base import assert_sane_compression, run
 
 _SDI = "DisplacementPressureJacobiSQCNIxSDI/PlaneStrain/Quad"
