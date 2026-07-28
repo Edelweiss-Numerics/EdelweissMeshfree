@@ -177,7 +177,6 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
         journal: Journal,
         bondParticlesToKernelFunctions: bool = False,
         randomlyShiftPartliceShapeFunctions: Union[bool, float] = False,
-        kinematicMode: str = "finite_strain",
     ):
 
         self._meshfreeKernelFunctions = particleKernelDomain.meshfreeKernelFunctions
@@ -198,12 +197,6 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
             raise ValueError("randomlyShiftPartliceShapeFunctions must be a boolean or a float.")
         self._randomlyShiftPartliceShapeFunctions = randomlyShiftPartliceShapeFunctions
 
-        if kinematicMode not in ("finite_strain", "small_strain"):
-            raise ValueError("kinematicMode must be 'finite_strain' or 'small_strain'.")
-        self._kinematicMode = kinematicMode
-        # In small_strain mode the kernel support is computed once and then frozen.
-        self._connectivityIsInitialized = False
-
         if self._bondParticlesToKernelFunctions:
             if len(self._particles) != len(self._meshfreeKernelFunctions):
                 raise ValueError("The number of particles and kernel functions must be equal.")
@@ -218,9 +211,6 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
         self._theBins = _FastKDBinOrganizer(list(self._meshfreeKernelFunctions), self._dimension)
 
     def updateConnectivity(self) -> bool:
-        if self._kinematicMode == "small_strain" and self._connectivityIsInitialized:
-            return False
-
         hasChanged = False
 
         if self._bondParticlesToKernelFunctions:
@@ -325,9 +315,6 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
 
             if any(results):
                 hasChanged = True
-
-        if self._kinematicMode == "small_strain":
-            self._connectivityIsInitialized = True
 
         return hasChanged
 
