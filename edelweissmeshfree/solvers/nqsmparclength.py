@@ -290,7 +290,7 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
 
         self._applyStepActionsAtIncrementStart(model, timeStep, dirichlets + bodyLoads)
 
-        def _assembleArcLengthSystem(dU_current: DofVector, dLambda_current: float):
+        def _assembleArcLengthSystem(dU: DofVector, dLambda: float):
             """Assemble PInt/K and the dead + reference external loads for the current
             iterate and write the arc-length residuals into Rhs_0/Rhs_f (in place, using
             the newtonCache arrays). Factored out of the iteration loop so the line
@@ -301,19 +301,19 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
             PInt[:] = K_VIJ[:] = F[:] = PExt_0[:] = PExt_f[:] = K_VIJ_f[:] = K_VIJ_0[:] = 0.0
 
             self._prepareMaterialPoints(materialPoints, timeStep.totalTime, timeStep.timeIncrement)
-            self._interpolateFieldsToMaterialPoints(activeCells, dU_current)
-            self._interpolateFieldsToMaterialPoints(elements, dU_current)
+            self._interpolateFieldsToMaterialPoints(activeCells, dU)
+            self._interpolateFieldsToMaterialPoints(elements, dU)
             self._computeMaterialPoints(materialPoints, timeStep.totalTime, timeStep.timeIncrement)
             self._computeCells(
-                activeCells, dU_current, PInt, F, K_VIJ, timeStep.totalTime, timeStep.timeIncrement, theDofManager
+                activeCells, dU, PInt, F, K_VIJ, timeStep.totalTime, timeStep.timeIncrement, theDofManager
             )
             self._computeElements(
-                elements, dU_current, Un, PInt, F, K_VIJ, timeStep.totalTime, timeStep.timeIncrement, theDofManager
+                elements, dU, Un, PInt, F, K_VIJ, timeStep.totalTime, timeStep.timeIncrement, theDofManager
             )
             self._computeParticles(
-                particles, dU_current, PInt, F, K_VIJ, timeStep.totalTime, timeStep.timeIncrement, theDofManager
+                particles, dU, PInt, F, K_VIJ, timeStep.totalTime, timeStep.timeIncrement, theDofManager
             )
-            self._computeConstraints(constraints, dU_current, PInt, K_VIJ, timeStep)
+            self._computeConstraints(constraints, dU, PInt, K_VIJ, timeStep)
 
             PExt_0, K_VIJ_0 = self._computeBodyLoads(
                 bodyLoads, PExt_0, K_VIJ_0, zeroTimeStep, theDofManager, activeCells
@@ -339,7 +339,7 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
             K_VIJ_f -= K_VIJ_0
 
             # Dead and Reference load ..
-            Rhs_0[:] = -(PExt_0 + (Lambda + dLambda_current) * PExt_f + PInt)
+            Rhs_0[:] = -(PExt_0 + (Lambda + dLambda) * PExt_f + PInt)
             Rhs_f[:] = -PExt_f
 
         while True:

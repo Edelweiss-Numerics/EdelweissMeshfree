@@ -17,6 +17,7 @@ scale. The exact solution of this homogeneous compression is a near-uniform
 (negative) pressure field, so a finite field with a negative mean is the basic
 sanity signal.
 """
+
 import os
 import sys
 
@@ -30,7 +31,9 @@ import _upj_compression as _compression  # noqa: E402
 # the C++ particles keep a bare reference to the approximation wrapper -> keep it alive
 _instances = []
 _orig_wrap = _compression.MarmotMeshfreeApproximationWrapper
-_compression.MarmotMeshfreeApproximationWrapper = lambda *a, **k: (_instances.append(_orig_wrap(*a, **k)) or _instances[-1])
+_compression.MarmotMeshfreeApproximationWrapper = lambda *a, **k: (
+    _instances.append(_orig_wrap(*a, **k)) or _instances[-1]
+)
 
 # tiny + nearly elastic (gentle softening effectively off) + 2 increments -> fast
 _TINY = dict(nX=4, nY=8, totalCompression=-0.05, incSize=0.5, multiplierOrder=2, eta=1.0, fyInf=99.0)
