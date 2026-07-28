@@ -206,7 +206,6 @@ cdef class MarmotParticleWrapper:
         self._marmotParticle.computePhysicsKernels(&dUc[0], &Pc[0], &Kc[0], timeNew, dTime)
 
 
-
     def updatePhysicsExplicit(self,
                                      double[::1] dUc,
 

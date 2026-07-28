@@ -296,7 +296,14 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
 
         self._applyStepActionsAtIncrementStart(model, timeStep, dirichlets + bodyLoads)
 
-        while True:
+        def _assembleArcLengthSystem(dU: DofVector, dLambda: float):
+            """Assemble PInt/K and the dead + reference external loads for the current
+            iterate and write the arc-length residuals into Rhs_0/Rhs_f (in place, using
+            the newtonCache arrays). Factored out of the iteration loop so the line
+            search can evaluate trial states -- the loop head re-assembles at the
+            accepted iterate afterwards, exactly like the base solver's line search."""
+            nonlocal PExt_0, PExt_f, K_VIJ_0, K_VIJ_f
+
             PInt[:] = K_VIJ[:] = F[:] = PExt_0[:] = PExt_f[:] = K_VIJ_f[:] = K_VIJ_0[:] = 0.0
 
             self._prepareMaterialPoints(materialPoints, timeStep.totalTime, timeStep.timeIncrement)
@@ -340,6 +347,9 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
             # Dead and Reference load ..
             Rhs_0[:] = -(PExt_0 + (Lambda + dLambda) * PExt_f + PInt)
             Rhs_f[:] = -PExt_f
+
+        while True:
+            _assembleArcLengthSystem(dU, dLambda)
 
             # add stiffness contribution
             K_VIJ[:] += K_VIJ_0
@@ -408,6 +418,36 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
 
             # assemble total solution
             ddU = ddU_0 + ddLambda * ddU_f
+
+            if (
+                iterationOptions["line search"]
+                and iterationCounter > iterationOptions["line search after n iterations"]
+                and iterationCounter % iterationOptions["line search every n iterations"] == 0
+            ):
+                # The arc-length step is the PAIR (ddU, ddLambda); damp both with the SAME
+                # step length so the trial stays on the current Newton direction (the
+                # controller's linearized constraint is then under-corrected by the same
+                # factor and re-enforced next iteration). _quadraticLineSearch varies
+                # ddU * alpha only, so recover alpha from the trial vector -- it is an
+                # exact scalar multiple of ddU -- to scale dLambda consistently.
+                alphas = iterationOptions["line search alphas"]
+                ddU_dot = float(ddU @ ddU)
+
+                def _arcResidualCallback(ddU_linesearch: DofVector) -> DofVector:
+                    alpha = float(ddU_linesearch @ ddU) / ddU_dot if ddU_dot > 0.0 else 0.0
+                    _assembleArcLengthSystem(dU + ddU_linesearch, dLambda + alpha * ddLambda)
+                    Rhs_trial = Rhs_0.copy()
+                    for dirichlet in dirichlets:
+                        Rhs_trial[
+                            self._findDirichletIndices(
+                                theDofManager, dirichlet, reducedNodeSet=reducedNodeSets[dirichlet.nSet]
+                            )
+                        ] = 0.0
+                    return Rhs_trial
+
+                ddU_new = self._quadraticLineSearch(_arcResidualCallback, ddU, alphas)
+                ddLambda *= float(ddU_new @ ddU) / ddU_dot if ddU_dot > 0.0 else 0.0
+                ddU = ddU_new
 
             dU += ddU
             dLambda += ddLambda
