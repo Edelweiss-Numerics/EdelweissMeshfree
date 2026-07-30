@@ -134,11 +134,9 @@ def run_sim():
         "ensight", mpmModel, fieldOutputController, journal, None, exportCellSetParts=False
     )
 
-    # ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["dU"], create="perNode")
-    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["displacement"], create="perNode")
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["deformation gradient"], create="perNode"
-    )
+    # ensightOutput.createPerNodeOutput(fieldOutputController.fieldOutputs["dU"])
+    ensightOutput.createPerNodeOutput(fieldOutputController.fieldOutputs["displacement"])
+    ensightOutput.createPerNodeOutput(fieldOutputController.fieldOutputs["deformation gradient"])
     ensightOutput.initializeJob()
 
     outputManagers = [

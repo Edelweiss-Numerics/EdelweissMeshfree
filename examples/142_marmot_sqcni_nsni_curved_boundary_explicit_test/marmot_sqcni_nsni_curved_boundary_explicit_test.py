@@ -242,17 +242,13 @@ def run_sim():
     fieldOutputController.initializeJob()
 
     ensightOutput = EnsightOutputManager("ensight", theModel, fieldOutputController, theJournal, None)
-    # ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["displacement_projectile"], create="perElement")
-    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["acceleration"], create="perElement")
-    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["velocity"], create="perElement")
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["vertex displacements"],
-        name="vertex displacements",
-        create="perNode",
+    # ensightOutput.createPerElementOutput(fieldOutputController.fieldOutputs["displacement_projectile"])
+    ensightOutput.createPerElementOutput(fieldOutputController.fieldOutputs["acceleration"])
+    ensightOutput.createPerElementOutput(fieldOutputController.fieldOutputs["velocity"])
+    ensightOutput.createPerNodeOutput(
+        fieldOutputController.fieldOutputs["vertex displacements"], name="vertex displacements"
     )
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["deformation gradient"], create="perElement"
-    )
+    ensightOutput.createPerElementOutput(fieldOutputController.fieldOutputs["deformation gradient"])
     ensightOutput.initializeJob()
 
     incSize = 3e-3

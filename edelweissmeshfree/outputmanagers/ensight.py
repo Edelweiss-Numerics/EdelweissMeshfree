@@ -34,7 +34,7 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 
-from edelweissfe.outputmanagers.ensight import EnsightUnstructuredPart
+from edelweissfe.outputmanagers.ensight import EnsightSchema, EnsightUnstructuredPart
 from edelweissfe.outputmanagers.ensight import OutputManager as EnsightOutputManager
 from edelweissfe.points.node import Node
 
@@ -151,21 +151,37 @@ class OutputManager(EnsightOutputManager):
         Whether to export cell element set parts.
     exportMPSetParts
         Whether to export material point set parts.
-    exportParticleParts
+    exportParticleSetParts
         Whether to export particle set parts.
+    configuration
+        The options this output manager accepts, forwarded verbatim to the FE base class -- see
+        :class:`~edelweissfe.outputmanagers.ensight.EnsightSchema`.
     """
 
-    def __init__(self, name, model, fieldOutputController, journal, plotter, **kwargs):
-        self._exportCellSetParts = kwargs.get("exportCellSetParts", True)
-        self._exportCellElementSetParts = kwargs.get("exportCellElementSetParts", True)
-        self._exportMPSetParts = kwargs.get("exportMPSetParts", True)
-        self._exportParticleParts = kwargs.get("exportParticleSetParts", True)
+    def __init__(
+        self,
+        name,
+        model,
+        fieldOutputController,
+        journal,
+        plotter,
+        *,
+        exportCellSetParts: bool = True,
+        exportCellElementSetParts: bool = True,
+        exportMPSetParts: bool = True,
+        exportParticleSetParts: bool = True,
+        configuration: EnsightSchema = EnsightSchema(),
+    ):
+        self._exportCellSetParts = exportCellSetParts
+        self._exportCellElementSetParts = exportCellElementSetParts
+        self._exportMPSetParts = exportMPSetParts
+        self._exportParticleParts = exportParticleSetParts
 
         self.mpSetToEnsightPart = dict()
         self.particleSetToEnsightPart = dict()
         self.cellSetToEnsightPart = dict()
         self.cellElementSetToEnsightPart = dict()
-        return super().__init__(name, model, fieldOutputController, journal, plotter, **kwargs)
+        return super().__init__(name, model, fieldOutputController, journal, plotter, configuration=configuration)
 
     def _createGeometryParts(self, firstPartID: int):
         feModelParts = super()._createGeometryParts(firstPartID)

@@ -234,16 +234,10 @@ def run_sim(no_limit=False):
 
     ensightOutput = EnsightOutputManager("ensight", theModel, fieldOutputController, theJournal, None)
     # ensightOutput.minDTForOutput = 1e-3
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["acceleration"], create="perElement", name="acceleration"
-    )
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["velocity"], create="perElement", name="velocity"
-    )
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["vertex displacements"],
-        create="perNode",
-        name="vertex displacements",
+    ensightOutput.createPerElementOutput(fieldOutputController.fieldOutputs["acceleration"], name="acceleration")
+    ensightOutput.createPerElementOutput(fieldOutputController.fieldOutputs["velocity"], name="velocity")
+    ensightOutput.createPerNodeOutput(
+        fieldOutputController.fieldOutputs["vertex displacements"], name="vertex displacements"
     )
     ensightOutput.initializeJob()
 
