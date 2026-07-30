@@ -144,10 +144,8 @@ def run_sim(logFile=None, order: int = 2):
         exportCellSetParts=False,
     )
 
-    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["displacement"], create="perNode")
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["deformation gradient"], create="perNode"
-    )
+    ensightOutput.createPerNodeOutput(fieldOutputController.fieldOutputs["displacement"])
+    ensightOutput.createPerNodeOutput(fieldOutputController.fieldOutputs["deformation gradient"])
     ensightOutput.initializeJob()
 
     outputManagers = [

@@ -212,18 +212,13 @@ def run_sim():
     fieldOutputController.initializeJob()
 
     ensightOutput = EnsightOutputManager("ensight", theModel, fieldOutputController, theJournal, None)
-    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["displacement"], create="perElement")
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["vertex displacements"],
-        create="perNode",
-    )
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["deformation gradient"], create="perElement"
-    )
-    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["stress"], create="perElement")
-    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["F0 XX"], create="perElement")
-    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["F0 YY"], create="perElement")
-    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["F0 ZZ"], create="perElement")
+    ensightOutput.createPerElementOutput(fieldOutputController.fieldOutputs["displacement"])
+    ensightOutput.createPerNodeOutput(fieldOutputController.fieldOutputs["vertex displacements"])
+    ensightOutput.createPerElementOutput(fieldOutputController.fieldOutputs["deformation gradient"])
+    ensightOutput.createPerElementOutput(fieldOutputController.fieldOutputs["stress"])
+    ensightOutput.createPerElementOutput(fieldOutputController.fieldOutputs["F0 XX"])
+    ensightOutput.createPerElementOutput(fieldOutputController.fieldOutputs["F0 YY"])
+    ensightOutput.createPerElementOutput(fieldOutputController.fieldOutputs["F0 ZZ"])
     ensightOutput.initializeJob()
 
     # =====================================================================

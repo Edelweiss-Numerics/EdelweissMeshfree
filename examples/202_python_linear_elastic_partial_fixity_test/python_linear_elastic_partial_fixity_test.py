@@ -121,7 +121,7 @@ def run_sim():
     fieldOutputController.initializeJob()
 
     ensightOutput = EnsightOutputManager("ensight", mpmModel, fieldOutputController, journal, None)
-    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["displacement"], create="perNode")
+    ensightOutput.createPerNodeOutput(fieldOutputController.fieldOutputs["displacement"])
     ensightOutput.initializeJob()
 
     dirichlets = [

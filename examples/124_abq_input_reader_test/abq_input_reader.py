@@ -235,16 +235,11 @@ def run_sim(
     # =====================================================================
 
     ensightOutput = EnsightOutputManager(outputName, theModel, fieldOutputController, theJournal, None)
-    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["displacement"], create="perElement")
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["vertex displacements"],
-        create="perNode",
-    )
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["deformation gradient"], create="perElement"
-    )
-    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["stress"], create="perElement")
-    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["microrotation"], create="perElement")
+    ensightOutput.createPerElementOutput(fieldOutputController.fieldOutputs["displacement"])
+    ensightOutput.createPerNodeOutput(fieldOutputController.fieldOutputs["vertex displacements"])
+    ensightOutput.createPerElementOutput(fieldOutputController.fieldOutputs["deformation gradient"])
+    ensightOutput.createPerElementOutput(fieldOutputController.fieldOutputs["stress"])
+    ensightOutput.createPerElementOutput(fieldOutputController.fieldOutputs["microrotation"])
     ensightOutput.initializeJob()
 
     # =====================================================================

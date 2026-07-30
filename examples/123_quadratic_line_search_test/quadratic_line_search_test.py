@@ -288,29 +288,17 @@ def run_sim(no_limit=False):
 
     ensightOutput = EnsightOutputManager("ensight", theModel, fieldOutputController, theJournal, None)
     ensightOutput.minDTForOutput = 1e-3
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["plate acceleration"], create="perElement", name="acceleration"
+    ensightOutput.createPerElementOutput(fieldOutputController.fieldOutputs["plate acceleration"], name="acceleration")
+    ensightOutput.createPerElementOutput(
+        fieldOutputController.fieldOutputs["particle acceleration"], name="acceleration"
     )
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["particle acceleration"],
-        create="perElement",
-        name="acceleration",
+    ensightOutput.createPerElementOutput(fieldOutputController.fieldOutputs["plate velocity"], name="velocity")
+    ensightOutput.createPerElementOutput(fieldOutputController.fieldOutputs["particle velocity"], name="velocity")
+    ensightOutput.createPerNodeOutput(
+        fieldOutputController.fieldOutputs["plate vertex displacements"], name="vertex displacements"
     )
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["plate velocity"], create="perElement", name="velocity"
-    )
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["particle velocity"], create="perElement", name="velocity"
-    )
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["plate vertex displacements"],
-        create="perNode",
-        name="vertex displacements",
-    )
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["projectile vertex displacements"],
-        create="perNode",
-        name="vertex displacements",
+    ensightOutput.createPerNodeOutput(
+        fieldOutputController.fieldOutputs["projectile vertex displacements"], name="vertex displacements"
     )
     ensightOutput.initializeJob()
 
