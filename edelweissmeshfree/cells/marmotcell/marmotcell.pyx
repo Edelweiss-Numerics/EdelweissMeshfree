@@ -219,6 +219,10 @@ cdef class MarmotCellWrapper:
         """Return the number of entries this entity contributes to the VIJ (COO) system matrix."""
         return self.nDof**2
 
+    def shapeVIJContribution(self, flat_view: np.ndarray) -> np.ndarray:
+        """Keep the view flat for Cython 1-D memoryview compatibility."""
+        return flat_view
+
     def initializeVIJContribution(self, idcs: np.ndarray, I_: np.ndarray, J_: np.ndarray, offset: int) -> None:
         """Initialize the I and J arrays for the VIJ (COO) system matrix assembly. """
 
