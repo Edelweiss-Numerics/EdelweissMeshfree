@@ -315,6 +315,8 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                 if not newtonCache:
                     newtonCache = self._createNewtonCache(theDofManager)
                     invalidateStatefulLinearSolver(linearSolver)
+                    if hasattr(linearSolver, "setJournal"):
+                        linearSolver.setJournal(self.journal)
                     if hasattr(linearSolver, "setModel"):
                         linearSolver.setModel(model, theDofManager)
 
