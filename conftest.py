@@ -35,16 +35,17 @@ import numpy as np
 import pytest
 
 
-@pytest.hookimpl(hookwrapper=True)
+@pytest.hookimpl(wrapper=True)
 def pytest_runtest_call(item):
     """Automatically skip tests that raise NotImplementedError.
 
     This handles the case where optional Marmot modules (particles,
     materialpoints, cells) are not installed in the current environment.
     """
-    outcome = yield
-    if outcome.excinfo is not None and issubclass(outcome.excinfo[0], NotImplementedError):
-        pytest.skip(str(outcome.excinfo[1]))
+    try:
+        return (yield)
+    except NotImplementedError as e:
+        pytest.skip(str(e))
 
 
 @pytest.fixture
