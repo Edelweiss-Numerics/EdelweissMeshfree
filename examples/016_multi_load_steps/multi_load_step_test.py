@@ -220,7 +220,7 @@ def run_sim(logFile=None):
 
         prettytable = performancetiming.makePrettyTable()
         journal.printPrettyTable(prettytable, "Summary Step 1")
-        performancetiming.times.clear()
+        performancetiming.reset()
 
         distance_y = (mpleftTop.getCenterCoordinates() - mprightTop.getCenterCoordinates())[1]
 
