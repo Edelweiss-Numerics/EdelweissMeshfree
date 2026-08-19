@@ -132,6 +132,28 @@ class MPMConstraintBase(ABC, VIJEntityBase):
         The default implementation does nothing, which is correct for every stateless constraint
         (i.e. every constraint that does not override this method)."""
 
+    def getRestartData(self) -> dict[str, np.ndarray] | None:
+        """Capture the state of this constraint for inclusion in a restart checkpoint.
+
+        The default implementation returns ``None``, indicating the constraint carries no
+        checkpointable internal state. Override this in stateful constraints.
+
+        Returns
+        -------
+        dict[str, np.ndarray] | None
+            A mapping from dataset names to NumPy arrays, or ``None`` if stateless.
+        """
+        return None
+
+    def setRestartData(self, restartData: dict[str, np.ndarray]) -> None:
+        """Restore the state of this constraint from a restart checkpoint.
+
+        Parameters
+        ----------
+        restartData
+            The mapping previously returned by :meth:`getRestartData`.
+        """
+
     @abstractmethod
     def applyConstraint(self, dU: np.ndarray, PExt: np.ndarray, V: np.ndarray, timeStep: TimeStep):
         """Apply the constraint, i.e., compute the 'kernels'. Add the contributions to the external load vector and the system matrix.
