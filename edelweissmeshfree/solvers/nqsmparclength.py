@@ -394,7 +394,7 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
                     self._printResidualOutlierNodes(incrementResidualHistory)
                     raise ReachedMaxIterations("Reached max. iterations in current increment, cutting back")
 
-            K_CSR = self._VIJtoCSR(K_VIJ, csrGenerator)
+            K_CSR = self._VIJtoCSR(K_VIJ, csrGenerator, useInPlace=True)
             K_CSR = self._applyDirichletKCsr(K_CSR, dirichlets, theDofManager, reducedNodeSets)
 
             # solve 2 eq. systems at once:

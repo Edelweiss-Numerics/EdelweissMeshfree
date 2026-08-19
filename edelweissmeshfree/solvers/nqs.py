@@ -62,7 +62,10 @@ from edelweissmeshfree.particlemanagers.base.baseparticlemanager import (
     BaseParticleManager,
 )
 from edelweissmeshfree.solvers.base.implicitbase import BaseNonlinearImplicitSolver
-from edelweissmeshfree.solvers.base.nonlinearsolverbase import RestartHistoryManager
+from edelweissmeshfree.solvers.base.nonlinearsolverbase import (
+    RestartHistoryManager,
+    invalidateStatefulLinearSolver,
+)
 from edelweissmeshfree.stepactions.base.mpmbodyloadbase import MPMBodyLoadBase
 from edelweissmeshfree.stepactions.base.mpmdistributedloadbase import (
     MPMDistributedLoadBase,
@@ -311,6 +314,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
 
                 if not newtonCache:
                     newtonCache = self._createNewtonCache(theDofManager)
+                    invalidateStatefulLinearSolver(linearSolver)
 
                 try:
                     for initialGuess in (dUPrediction, None):
@@ -590,7 +594,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                     raise ReachedMaxIterations("Reached max. iterations in current increment, cutting back")
 
             if not quasi_Newton:
-                K_CSR = self._VIJtoCSR(K_VIJ, csrGenerator)
+                K_CSR = self._VIJtoCSR(K_VIJ, csrGenerator, useInPlace=False)
                 if iterationOptions["fall back to quasi Newton after allowed residual growths"]:
                     if iterationCounter == 0:
                         K_CSR_elastic = K_CSR.copy()

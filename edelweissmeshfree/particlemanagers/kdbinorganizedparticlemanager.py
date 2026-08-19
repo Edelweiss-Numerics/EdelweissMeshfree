@@ -32,7 +32,6 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 
-import concurrent.futures
 import itertools
 from typing import Any, List, Set, Tuple, Union
 
@@ -40,6 +39,7 @@ import numpy as np
 from edelweissfe.journal.journal import Journal
 from edelweissfe.numerics.parallelizationutilities import (
     getNumberOfThreads,
+    getThreadPool,
     isFreeThreadingSupported,
 )
 from numpy.typing import NDArray
@@ -310,8 +310,8 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
             chunkSize = len(self._particles) // self._numThreads + 1
             chunks = [self._particles[i : i + chunkSize] for i in range(0, len(self._particles), chunkSize)]
 
-            with concurrent.futures.ThreadPoolExecutor(max_workers=self._numThreads) as executor:
-                results = executor.map(processParticleChunk, chunks)
+            executor = getThreadPool(self._numThreads)
+            results = list(executor.map(processParticleChunk, chunks))
 
             if any(results):
                 hasChanged = True

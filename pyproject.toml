@@ -1,5 +1,7 @@
 [build-system]
-requires = ["setuptools", "Cython", "numpy"]
+# Cython >= 3.1 is required for free-threading (cp314t) support and the
+# freethreading_compatible directive used in setup.py.
+requires = ["setuptools>=77", "Cython>=3.1", "numpy>=2"]
 
 [project]
 name = "EdelweissMeshfree"
@@ -10,9 +12,22 @@ authors = [
     { name = "Matthias Neuner", email = "matthias.neuner@uibk.ac.at" },
     { name = "Thomas Mader", email = "thomas.mader@boku.ac.at" },
 ]
-license = { text = "LGPL-2.1" }
+license = "LGPL-2.1"
+license-files = ["LICENSE.md"]
 urls = { Homepage = "https://github.com/Edelweiss-Numerics/EdelweissMeshfree" }
 requires-python = ">=3.14"
+dependencies = [
+    "EdelweissFE",
+    "numpy>=2",
+    "scipy",
+    "h5py",
+    "prettytable",
+]
+
+[project.optional-dependencies]
+# Optional features; the corresponding modules raise an ImportError at usage time
+# if the extra is not installed.
+exodus = ["netCDF4"]  # generators/particlesfromexodus
 
 [tool.setuptools]
 include-package-data = true

@@ -47,6 +47,10 @@ directives = {
     "wraparound": False,
     "nonecheck": False,
     "initializedcheck": False,
+    # Declare all extensions safe for free-threading CPython builds. Without this,
+    # importing any of them silently re-enables the GIL process-wide, which disables
+    # the thread-parallel particle/element loops of the parallel solvers.
+    "freethreading_compatible": True,
 }
 
 default_install_prefix = sys.prefix
@@ -76,6 +80,7 @@ def MarmotExtension(pyxpath, *args, **kwargs):
         library_dirs=[join(marmot_dir, "lib")],
         runtime_library_dirs=[join(marmot_dir, "lib")],
         language="c++",
+        extra_compile_args=["-O3", "-march=native"],
         *args,
         **kwargs,
     )
@@ -102,6 +107,7 @@ extensions += [
         include_dirs=[join(marmot_dir, "include"), numpy.get_include()],
         runtime_library_dirs=[join(marmot_dir, "lib")],
         language="c++",
+        extra_compile_args=["-O3", "-march=native"],
     )
 ]
 
@@ -114,6 +120,7 @@ extensions += [
         include_dirs=[join(marmot_dir, "include"), numpy.get_include()],
         runtime_library_dirs=[join(marmot_dir, "lib")],
         language="c++",
+        extra_compile_args=["-O3", "-march=native"],
     )
 ]
 
@@ -130,6 +137,8 @@ extensions += [
         include_dirs=[join(marmot_dir, "include"), join(marmot_dir, "include", "eigen3"), numpy.get_include()],
         language="c++",
         extra_compile_args=[
+            "-O3",
+            "-march=native",
             "-fopenmp",
             "-Wno-maybe-uninitialized",
         ],
@@ -154,5 +163,11 @@ extensions += [
 
 setup(
     cmdclass={"build_ext": build_ext},
-    ext_modules=cythonize(extensions, compiler_directives=directives, annotate=True, language_level=3),
-),
+    ext_modules=cythonize(
+        extensions,
+        compiler_directives=directives,
+        # Generate the HTML annotation files only on demand; they slow down the build.
+        annotate=bool(os.environ.get("EDELWEISSMESHFREE_ANNOTATE")),
+        language_level=3,
+    ),
+)
