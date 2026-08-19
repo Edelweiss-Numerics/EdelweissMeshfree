@@ -271,9 +271,38 @@ class MPMModel(FEModel):
             The active sub model.
         """
 
-        activeModel = copy.copy(self)
-
         activeCells = {cell.number: cell for mp in self.materialPoints.values() for cell in mp.cells}
+
+        _, _, reducedNodeFields, reducedNodeSets = self.assembleActiveDomain(activeCells)
+
+        activeModel = copy.copy(self)
+        activeModel.nodeSets = reducedNodeSets
+        activeModel.nodeFields = reducedNodeFields
+        activeModel.cells = activeCells
+
+        return activeModel
+
+    def assembleActiveDomain(self, activeCells) -> tuple[NodeSet, NodeSet, dict, dict]:
+        """Gather the active Nodes, and the NodeFields and NodeSets reduced onto them.
+
+        The single implementation of this; :meth:`getActiveSubModel` wraps it into a reduced model,
+        and the meshfree solvers call it directly (they already know their active cells, which need
+        not agree with the cells reachable from ``self.materialPoints``).
+
+        Parameters
+        ----------
+        activeCells
+            The currently active cells, as determined by the caller.
+
+        Returns
+        -------
+        tuple
+            The tuple containing:
+                - The NodeSet of active Nodes with persistent field values (FEM).
+                - The NodeSet of active Nodes with volatile field values (MPM).
+                - The dict of NodeFields on the active Nodes.
+                - The dict of NodeSets reduced onto the active Nodes.
+        """
 
         activeNodesWithPersistentFieldValues = set(
             n for element in self.elements.values() for n in element.nodes
@@ -288,10 +317,11 @@ class MPMModel(FEModel):
         activeNodes = activeNodesWithVolatileFieldValues | activeNodesWithPersistentFieldValues
 
         # Node defines no __hash__, so a plain set of Node objects iterates in an address-dependent
-        # order that differs between runs. The DOF numbering is assigned in this order, so leaving it
-        # unsorted made the global sparsity pattern irreproducible -- and with it direct-solver
-        # fill-in and AMG aggregation, i.e. solve times and iteration counts. Labels are unique, so
-        # sorting on them pins the numbering down without changing which nodes are active.
+        # order that differs between runs. DofManager assigns DOF indices strictly in
+        # nodeField.nodes order, so leaving this unsorted made the global sparsity pattern
+        # irreproducible -- and with it direct-solver fill-in and AMG aggregation, i.e. solve times
+        # and iteration counts. Labels are unique, so sorting on them pins the numbering down
+        # without changing which nodes are active. Guarded by dof_ordering_test.py.
         activeNodes = NodeSet("activeNodes", sorted(activeNodes, key=lambda n: n.label))
         activeNodesWithPersistentFieldValues = NodeSet(
             "activeNodesWithPersistentFieldvalues",
@@ -308,17 +338,16 @@ class MPMModel(FEModel):
         }
 
         reducedNodeSets = {
-            nodeSet: NodeSet(
-                nodeSet.name, sorted(set(activeNodes).intersection(nodeSet), key=lambda n: n.label)
-            )
+            nodeSet: NodeSet(nodeSet.name, sorted(set(activeNodes).intersection(nodeSet), key=lambda n: n.label))
             for nodeSet in self.nodeSets.values()
         }
 
-        activeModel.nodeSets = reducedNodeSets
-        activeModel.nodeFields = reducedNodeFields
-        activeModel.cells = activeCells
-
-        return activeModel
+        return (
+            activeNodesWithPersistentFieldValues,
+            activeNodesWithVolatileFieldValues,
+            reducedNodeFields,
+            reducedNodeSets,
+        )
 
     def makePrettyTableSummary(self):
         """Create a pretty table with a summary of the model properties."""

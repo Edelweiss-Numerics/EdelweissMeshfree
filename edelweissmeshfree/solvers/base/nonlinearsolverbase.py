@@ -49,7 +49,6 @@ from edelweissfe.timesteppers.timestep import TimeStep
 from edelweissfe.utils.exceptions import ReachedMinIncrementSize, StepFailed
 from edelweissfe.utils.fieldoutput import FieldOutputController
 
-from edelweissmeshfree.fields.nodefield import MPMNodeField
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.mpmmanagers.base.mpmmanagerbase import MPMManagerBase
 from edelweissmeshfree.numerics.dofmanager import MPMDofManager
@@ -275,52 +274,7 @@ class BaseNonlinearSolver:
                 - the list of NodeFields on the active Nodes.
                 - the list of reduced NodeSets on the active Nodes.
         """
-        # TODO: This method should be part of Model, in the spirit of 'getReducedModel()' or similar
-
-        activeNodesWithPersistentFieldValues = set(
-            n for element in model.elements.values() for n in element.nodes
-        ) | set(n for element in model.cellElements.values() for n in element.nodes)
-
-        activeNodesWithVolatileFieldValues = set(n for cell in activeCells for n in cell.nodes)
-
-        activeNodesWithVolatileFieldValues |= set(
-            kf.node for particle in model.particles.values() for kf in particle.kernelFunctions
-        )
-
-        activeNodes = activeNodesWithVolatileFieldValues | activeNodesWithPersistentFieldValues
-
-        # Node defines no __hash__, so a plain set of Node objects iterates in an address-dependent
-        # order that differs between runs. DofManager numbers DOFs strictly in nodeField.nodes order,
-        # so leaving this unsorted made the global sparsity pattern irreproducible -- and with it
-        # direct-solver fill-in and AMG aggregation, i.e. solve times and iteration counts. Labels
-        # are unique, so sorting on them pins the numbering down without changing which nodes are
-        # active.
-        activeNodes = NodeSet("activeNodes", sorted(activeNodes, key=lambda n: n.label))
-        activeNodesWithPersistentFieldValues = NodeSet(
-            "activeNodesWithPersistentFieldvalues",
-            sorted(activeNodesWithPersistentFieldValues, key=lambda n: n.label),
-        )
-        activeNodesWithVolatileFieldValues = NodeSet(
-            "activeNodesWithVolatileFieldValues",
-            sorted(activeNodesWithVolatileFieldValues, key=lambda n: n.label),
-        )
-
-        reducedNodeFields = {
-            nodeField.name: MPMNodeField(nodeField.name, nodeField.dimension, activeNodes)
-            for nodeField in model.nodeFields.values()
-        }
-
-        reducedNodeSets = {
-            nodeSet: NodeSet(nodeSet.name, sorted(set(activeNodes).intersection(nodeSet), key=lambda n: n.label))
-            for nodeSet in model.nodeSets.values()
-        }
-
-        return (
-            activeNodesWithPersistentFieldValues,
-            activeNodesWithVolatileFieldValues,
-            reducedNodeFields,
-            reducedNodeSets,
-        )
+        return model.assembleActiveDomain(activeCells)
 
     @performancetiming.timeit("preparation material points")
     def _prepareMaterialPoints(self, materialPoints: list, time: float, dT: float):
