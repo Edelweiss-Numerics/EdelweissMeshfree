@@ -1083,6 +1083,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         entities = list(particles)
 
         assembler = DirectCSRAssembler(csrGenerator, K_VIJ, self.numThreads)
+        if self.directCSRNumBuffers > 0:
+            assembler.setNumBuffers(self.directCSRNumBuffers)
         assembler.registerEntities(
             np.array([theDofManager.idcsOfHigherOrderEntitiesInVIJ[e] for e in entities], dtype=np.int64),
             np.array([e.nDof for e in entities], dtype=np.intc),

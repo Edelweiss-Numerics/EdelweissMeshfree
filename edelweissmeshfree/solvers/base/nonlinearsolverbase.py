@@ -142,6 +142,12 @@ class BaseNonlinearSolver:
     #: only; the solve continues on the VIJ path so no result changes.
     timeDirectCSRAssembly = False
 
+    #: How many private CSR copies the direct assembler keeps. Zero means one per thread, which is
+    #: the reproducible default; a smaller positive number makes threads share a copy and synchronise
+    #: the scatter with atomics, saving memory at the cost of a fixed summation order. One is fully
+    #: atomic. See ``CSRDirectAssembler::setNumBuffers``.
+    directCSRNumBuffers = 0
+
     #: The CSR generator for the current connectivity, or None. Reachable so the benchmark can time
     #: the production gather.
     _csrGenerator = None

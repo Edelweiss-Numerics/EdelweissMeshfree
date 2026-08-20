@@ -98,6 +98,12 @@ class NQSParallelForMarmot(NonlinearQuasistaticSolver):
     #: order is alternated, so a warm-up or a drifting machine biases neither.
     directCSRTimingRepeats = 5
 
+    #: Private-buffer counts to time in turn, e.g. ``(16, 4, 1)``. Empty means time only whatever the
+    #: assembler is currently configured with. Sweeping here rather than across separate runs keeps
+    #: every configuration on the same state, the same increment and the same process -- and lets one
+    #: offset map serve all of them, since only the buffers are reallocated.
+    directCSRBufferSweep = ()
+
     def __init__(
         self,
         journal: Journal,
@@ -405,6 +411,128 @@ class NQSParallelForMarmot(NonlinearQuasistaticSolver):
                 level=1,
             )
 
+    def _reportAssemblyMemory(self, K_VIJ: VIJSystemMatrix, memoryOfBufferCount: dict):
+        """Report what each assembly path actually costs in memory, term by term.
+
+        The memory balance is the point of the direct path -- the DOF ceiling is set by it, not by
+        the assembly time -- and it has been misreported twice, so this prints every term rather
+        than a single ratio.
+
+        The terms are grouped by who pays for them:
+
+        common
+            ``I``/``J`` (the DofManager's COO index arrays, needed by both paths -- the direct path
+            to build its offset map, the VIJ path to gather), and the CSR matrix itself
+            (``indptr``, ``indices``, ``data``), which is the output of either path.
+        VIJ only
+            the ``sizeVIJ`` value array, plus the gather map ``gather_sources`` (int32 per COO pair)
+            and ``assembly_ptr`` (int32 per nnz).
+        direct only
+            the ``offsets`` map (uint16 per COO pair), the private CSR copies
+            (``nBuffers * nnz * 8``) and ``entityRows``. Reported once per buffer count, because
+            that term is the whole reason the buffer count is a knob.
+
+        The totals reported by the C++ cores (``CSRGenerator.memoryBytes`` and
+        ``DirectCSRAssembler.memoryBytes``) are printed as a cross-check on the per-term arithmetic,
+        so a term that is wrong here shows up as a mismatch rather than propagating silently.
+
+        Parameters
+        ----------
+        K_VIJ
+            The VIJ system matrix, for the value and index array sizes.
+        memoryOfBufferCount
+            ``DirectCSRAssembler.memoryBytes`` for each buffer count that was configured.
+        """
+
+        gib = 1024.0**3
+        generator = self._csrGenerator
+
+        nPairs = int(np.asarray(K_VIJ).size)
+        nnz = int(generator.nnz)
+        nDof = int(K_VIJ.nDof)
+
+        bIJ = float(np.asarray(K_VIJ.I).nbytes + np.asarray(K_VIJ.J).nbytes)
+        bIndptr = float((nDof + 1) * 4)
+        bIndices = float(nnz * 4)
+        bData = float(nnz * 8)
+
+        bV = float(np.asarray(K_VIJ).nbytes)
+        bGatherSources = float(nPairs * 4)
+        bAssemblyPtr = float((nnz + 1) * 4)
+
+        bOffsets = float(nPairs * 2)
+
+        bCommon = bIJ + bIndptr + bIndices + bData
+        bVIJOnly = bV + bGatherSources + bAssemblyPtr
+
+        self.journal.message(
+            "  memory: {:.3e} COO pairs, {:,} nnz ({:.0f} per row), {:} DOF, {:} threads".format(
+                float(nPairs), nnz, nnz / max(nDof, 1), nDof, self.numThreads
+            ),
+            self.identification,
+            level=1,
+        )
+        for group, label, value in (
+            ("common", "I + J (int32 per pair)      ", bIJ),
+            ("common", "CSR indptr + indices        ", bIndptr + bIndices),
+            ("common", "CSR data                    ", bData),
+            ("VIJ   ", "V staging array             ", bV),
+            ("VIJ   ", "gather_sources (int32/pair) ", bGatherSources),
+            ("VIJ   ", "assembly_ptr (int32/nnz)    ", bAssemblyPtr),
+            ("direct", "offsets (uint16/pair)       ", bOffsets),
+        ):
+            self.journal.message(
+                "    {:} {:} {:8.2f} GiB".format(group, label, value / gib),
+                self.identification,
+                level=1,
+            )
+
+        # cross-check the per-term arithmetic above against the generator's own accounting
+        genTotal = float(generator.memoryBytes)
+        genTerms = bIndptr + bIndices + bGatherSources + bAssemblyPtr + bData
+        self.journal.message(
+            "    cross-check  CSRGenerator.memoryBytes {:8.2f} GiB vs terms {:8.2f} GiB"
+            "   (delta {:+.0f} B)".format(genTotal / gib, genTerms / gib, genTotal - genTerms),
+            self.identification,
+            level=1,
+        )
+
+        vijPath = bCommon + bVIJOnly
+        assemblyVIJ = genTotal + bV
+        self.journal.message(
+            "    VIJ path  total {:8.2f} GiB   assembly-only, excl. I/J {:8.2f} GiB"
+            "   exclusive terms {:8.2f} GiB".format(vijPath / gib, assemblyVIJ / gib, bVIJOnly / gib),
+            self.identification,
+            level=1,
+        )
+
+        for nb in sorted(memoryOfBufferCount, reverse=True):
+            asmBytes = float(memoryOfBufferCount[nb])
+            bPriv = float(nb) * nnz * 8.0
+            # residual against the assembler's own total: entityRows plus the small per-entity tables
+            bEntity = asmBytes - bOffsets - bPriv
+            directPath = bCommon + asmBytes
+            assemblyDirect = asmBytes + bIndptr + bIndices + bData
+            self.journal.message(
+                "    direct, {:2d} buffer(s): private copies {:8.2f} GiB, entityRows {:5.2f} GiB"
+                " -> total {:8.2f} GiB   assembly-only {:8.2f} GiB   exclusive {:8.2f} GiB".format(
+                    nb, bPriv / gib, bEntity / gib, directPath / gib, assemblyDirect / gib, asmBytes / gib
+                ),
+                self.identification,
+                level=1,
+            )
+            self.journal.message(
+                "                          ratios vs VIJ: total {:.2f}x   assembly-only {:.2f}x"
+                "   exclusive {:.2f}x   (private copies are {:.0%} of the direct path)".format(
+                    vijPath / directPath,
+                    assemblyVIJ / assemblyDirect,
+                    bVIJOnly / asmBytes,
+                    bPriv / asmBytes,
+                ),
+                self.identification,
+                level=1,
+            )
+
     @performancetiming.timeit("benchmark direct csr")
     def _computeParticlesAndTimeDirectCSR(
         self,
@@ -456,7 +584,14 @@ class NQSParallelForMarmot(NonlinearQuasistaticSolver):
         PDiscard = theDofManager.constructDofVector()
         FDiscard = theDofManager.constructDofVector()
 
-        samples = {k: [] for k in ("zero", "vijEval", "gather", "begin", "fusedEval", "reduce")}
+        bufferCounts = [int(nb) for nb in self.directCSRBufferSweep] or [assembler.numBuffers]
+        originalNumBuffers = assembler.numBuffers
+
+        samples = {k: [] for k in ("zero", "vijEval", "gather")}
+        for nb in bufferCounts:
+            for k in ("begin", "fusedEval", "reduce"):
+                samples[(nb, k)] = []
+        memoryOfBufferCount = {}
 
         def timeVIJ():
             t0 = perf_counter()
@@ -472,7 +607,7 @@ class NQSParallelForMarmot(NonlinearQuasistaticSolver):
             samples["vijEval"].append(t2 - t1)
             samples["gather"].append(t3 - t2)
 
-        def timeFused():
+        def timeFused(nb):
             t0 = perf_counter()
             assembler.beginAssembly()
             t1 = perf_counter()
@@ -491,17 +626,23 @@ class NQSParallelForMarmot(NonlinearQuasistaticSolver):
             t2 = perf_counter()
             assembler.reduce()
             t3 = perf_counter()
-            samples["begin"].append(t1 - t0)
-            samples["fusedEval"].append(t2 - t1)
-            samples["reduce"].append(t3 - t2)
+            samples[(nb, "begin")].append(t1 - t0)
+            samples[(nb, "fusedEval")].append(t2 - t1)
+            samples[(nb, "reduce")].append(t3 - t2)
 
-        for repeat in range(self.directCSRTimingRepeats):
-            if repeat % 2 == 0:
-                timeVIJ()
-                timeFused()
-            else:
-                timeFused()
-                timeVIJ()
+        # The buffer count is set once per configuration rather than per repeat: setNumBuffers
+        # reallocates, and at this size that allocation would otherwise dominate what is being timed.
+        for nb in bufferCounts:
+            assembler.setNumBuffers(nb)
+            memoryOfBufferCount[nb] = assembler.memoryBytes
+            for repeat in range(self.directCSRTimingRepeats):
+                if repeat % 2 == 0:
+                    timeVIJ()
+                    timeFused(nb)
+                else:
+                    timeFused(nb)
+                    timeVIJ()
+        assembler.setNumBuffers(originalNumBuffers)
 
         def med(key):
             return float(np.median(samples[key]))
@@ -511,28 +652,19 @@ class NQSParallelForMarmot(NonlinearQuasistaticSolver):
             return (max(v) - min(v)) / np.median(v) if np.median(v) > 0.0 else 0.0
 
         vijTotal = med("zero") + med("vijEval") + med("gather")
-        fusedTotal = med("begin") + med("fusedEval") + med("reduce")
 
-        gib = 1024.0**3
         self.journal.message(
-            "assembly benchmark, {:} repeats, {:} threads, {:} particles |"
-            " VIJ array {:.2f} GiB, assembler {:.2f} GiB".format(
-                self.directCSRTimingRepeats,
-                self.numThreads,
-                len(particles),
-                np.asarray(K_VIJ).nbytes / gib,
-                assembler.memoryBytes / gib,
+            "assembly benchmark, {:} repeats, {:} threads, {:} particles, buffer counts {:}".format(
+                self.directCSRTimingRepeats, self.numThreads, len(particles), bufferCounts
             ),
             self.identification,
             level=1,
         )
+        self._reportAssemblyMemory(K_VIJ, memoryOfBufferCount)
         for label, key in (
             ("VIJ   zero  ", "zero"),
             ("VIJ   eval  ", "vijEval"),
             ("VIJ   gather", "gather"),
-            ("direct begin", "begin"),
-            ("direct eval ", "fusedEval"),
-            ("direct reduc", "reduce"),
         ):
             self.journal.message(
                 "  {:} {:8.4f} s  (spread {:5.1%})".format(label, med(key), spread(key)),
@@ -540,12 +672,39 @@ class NQSParallelForMarmot(NonlinearQuasistaticSolver):
                 level=1,
             )
         self.journal.message(
-            "  TOTAL  VIJ {:8.4f} s   direct {:8.4f} s   speedup {:.3f}x".format(
-                vijTotal, fusedTotal, vijTotal / fusedTotal if fusedTotal > 0.0 else float("nan")
-            ),
+            "  TOTAL  VIJ {:8.4f} s".format(vijTotal),
             self.identification,
             level=1,
         )
+        for nb in bufferCounts:
+            fusedTotal = med((nb, "begin")) + med((nb, "fusedEval")) + med((nb, "reduce"))
+            mode = "privatised" if nb >= self.numThreads else ("atomic" if nb == 1 else "shared")
+            self.journal.message(
+                "  direct, {:2d} buffer(s) [{:10s}]  begin {:7.4f}  eval {:7.4f}  reduce {:7.4f}"
+                "  (spread {:4.1%}/{:4.1%}/{:4.1%})".format(
+                    nb,
+                    mode,
+                    med((nb, "begin")),
+                    med((nb, "fusedEval")),
+                    med((nb, "reduce")),
+                    spread((nb, "begin")),
+                    spread((nb, "fusedEval")),
+                    spread((nb, "reduce")),
+                ),
+                self.identification,
+                level=1,
+            )
+            self.journal.message(
+                "  TOTAL  direct, {:2d} buffer(s) {:8.4f} s   speedup vs VIJ {:.3f}x"
+                "   assembler {:6.2f} GiB".format(
+                    nb,
+                    fusedTotal,
+                    vijTotal / fusedTotal if fusedTotal > 0.0 else float("nan"),
+                    memoryOfBufferCount[nb] / 1024.0**3,
+                ),
+                self.identification,
+                level=1,
+            )
 
         # restore what the benchmark clobbered, then do the real evaluation
         np.asarray(K_VIJ)[:] = VBefore
