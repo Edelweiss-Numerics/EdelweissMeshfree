@@ -1114,9 +1114,13 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         K_VIJ = theDofManager.constructVIJSystemMatrix()
         csrGenerator = self._makeCachedCOOToCSRGenerator(K_VIJ)
 
+        # kept reachable so the assembly benchmark can time the production gather itself rather
+        # than a stand-in for it; same lifetime as the pattern, like the assembler below
+        self._csrGenerator = csrGenerator
+
         self._directCSRAssembler = None
         self._directCSREntityIds = None
-        if self.useDirectCSRAssembly or self.verifyDirectCSRAssembly:
+        if self.useDirectCSRAssembly or self.verifyDirectCSRAssembly or self.timeDirectCSRAssembly:
             self._directCSRAssembler = self._makeDirectCSRAssembler(K_VIJ, csrGenerator, particles, theDofManager)
         dU = theDofManager.constructDofVector()
         Rhs = theDofManager.constructDofVector()

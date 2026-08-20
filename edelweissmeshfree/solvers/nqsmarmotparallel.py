@@ -35,6 +35,7 @@
 #  ---------------------------------------------------------------------
 import os
 from multiprocessing import cpu_count
+from time import perf_counter
 
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
@@ -93,13 +94,23 @@ class NQSParallelForMarmot(NonlinearQuasistaticSolver):
     #: pinned separately and exactly by the ``scatter`` comparison, which involves no re-evaluation.
     directCSRNoiseFactor = 4.0
 
-    def __init__(self, journal: Journal, verifyDirectCSRAssembly: bool = False):
+    #: Repeats per iteration in the assembly benchmark. Both paths are run every repeat and the
+    #: order is alternated, so a warm-up or a drifting machine biases neither.
+    directCSRTimingRepeats = 5
+
+    def __init__(
+        self,
+        journal: Journal,
+        verifyDirectCSRAssembly: bool = False,
+        timeDirectCSRAssembly: bool = False,
+    ):
         self.numThreads = cpu_count()
 
         if "OMP_NUM_THREADS" in os.environ:
             self.numThreads = int(os.environ["OMP_NUM_THREADS"])
 
         self.verifyDirectCSRAssembly = verifyDirectCSRAssembly
+        self.timeDirectCSRAssembly = timeDirectCSRAssembly
 
         super().__init__(journal)
 
@@ -145,6 +156,11 @@ class NQSParallelForMarmot(NonlinearQuasistaticSolver):
     ):
         if self.verifyDirectCSRAssembly:
             return self._computeParticlesAndVerifyDirectCSR(
+                particles_, dU, P, F, K_VIJ, time, dT, theDofManager
+            )
+
+        if self.timeDirectCSRAssembly:
+            return self._computeParticlesAndTimeDirectCSR(
                 particles_, dU, P, F, K_VIJ, time, dT, theDofManager
             )
 
@@ -388,3 +404,151 @@ class NQSParallelForMarmot(NonlinearQuasistaticSolver):
                 self.identification,
                 level=1,
             )
+
+    @performancetiming.timeit("benchmark direct csr")
+    def _computeParticlesAndTimeDirectCSR(
+        self,
+        particles_: list,
+        dU: DofVector,
+        P: DofVector,
+        F: DofVector,
+        K_VIJ: VIJSystemMatrix,
+        time: float,
+        dT: float,
+        theDofManager: DofManager,
+    ):
+        """Benchmark the two assembly paths against each other on identical state.
+
+        Both paths are timed component by component, every repeat, in the same process and on the
+        same increment, with the order alternated between repeats. That is deliberate: an earlier
+        attempt at this comparison used a separate harness which sliced blocks out of the VIJ array
+        with numpy, and the resulting 3.83 GB of streaming inverted the ranking of the two. Timing
+        both paths side by side against the state the solver actually has removes the harness from
+        the comparison entirely.
+
+        The components, and why each belongs to the path it is charged to:
+
+        VIJ path
+            ``zero`` the whole staging array must be cleared every iteration, and particles are what
+            make it large, so the memset is charged here rather than treated as overhead.
+            ``eval`` the particle loop, writing each block into its slab.
+            ``gather`` ``CSRGenerator.updateCSR``, the production gather.
+
+        direct path
+            ``begin`` clearing the private CSR buffers.
+            ``eval`` the particle loop, writing into a cached scratch block and scattering it.
+            ``reduce`` summing the private buffers.
+
+        Medians are reported, with the spread, because the scatter was previously measured varying by
+        +-18% run to run -- wide enough that a single sample cannot support a ratio.
+
+        The solve continues on the VIJ path: K_VIJ is restored to its pre-benchmark contents and the
+        production evaluation is run last, so the increment is unaffected apart from taking longer.
+        """
+
+        assembler = self._directCSRAssembler
+        particles = list(particles_)
+        entityIds = np.array([self._directCSREntityIds[p] for p in particles], dtype=np.intc)
+
+        # cells and elements may already have contributed, and the benchmark clears the array
+        VBefore = np.array(K_VIJ, copy=True)
+
+        PDiscard = theDofManager.constructDofVector()
+        FDiscard = theDofManager.constructDofVector()
+
+        samples = {k: [] for k in ("zero", "vijEval", "gather", "begin", "fusedEval", "reduce")}
+
+        def timeVIJ():
+            t0 = perf_counter()
+            K_VIJ[:] = 0.0
+            t1 = perf_counter()
+            computeMarmotParticlesInParallel(
+                particles_, dU, PDiscard, FDiscard, K_VIJ, time, dT, theDofManager, self.numThreads
+            )
+            t2 = perf_counter()
+            self._VIJtoCSR(K_VIJ, self._csrGenerator, useInPlace=True)
+            t3 = perf_counter()
+            samples["zero"].append(t1 - t0)
+            samples["vijEval"].append(t2 - t1)
+            samples["gather"].append(t3 - t2)
+
+        def timeFused():
+            t0 = perf_counter()
+            assembler.beginAssembly()
+            t1 = perf_counter()
+            computeMarmotParticlesIntoCSR(
+                particles_,
+                dU,
+                PDiscard,
+                FDiscard,
+                entityIds,
+                assembler.corePointer,
+                time,
+                dT,
+                theDofManager,
+                self.numThreads,
+            )
+            t2 = perf_counter()
+            assembler.reduce()
+            t3 = perf_counter()
+            samples["begin"].append(t1 - t0)
+            samples["fusedEval"].append(t2 - t1)
+            samples["reduce"].append(t3 - t2)
+
+        for repeat in range(self.directCSRTimingRepeats):
+            if repeat % 2 == 0:
+                timeVIJ()
+                timeFused()
+            else:
+                timeFused()
+                timeVIJ()
+
+        def med(key):
+            return float(np.median(samples[key]))
+
+        def spread(key):
+            v = samples[key]
+            return (max(v) - min(v)) / np.median(v) if np.median(v) > 0.0 else 0.0
+
+        vijTotal = med("zero") + med("vijEval") + med("gather")
+        fusedTotal = med("begin") + med("fusedEval") + med("reduce")
+
+        gib = 1024.0**3
+        self.journal.message(
+            "assembly benchmark, {:} repeats, {:} threads, {:} particles |"
+            " VIJ array {:.2f} GiB, assembler {:.2f} GiB".format(
+                self.directCSRTimingRepeats,
+                self.numThreads,
+                len(particles),
+                np.asarray(K_VIJ).nbytes / gib,
+                assembler.memoryBytes / gib,
+            ),
+            self.identification,
+            level=1,
+        )
+        for label, key in (
+            ("VIJ   zero  ", "zero"),
+            ("VIJ   eval  ", "vijEval"),
+            ("VIJ   gather", "gather"),
+            ("direct begin", "begin"),
+            ("direct eval ", "fusedEval"),
+            ("direct reduc", "reduce"),
+        ):
+            self.journal.message(
+                "  {:} {:8.4f} s  (spread {:5.1%})".format(label, med(key), spread(key)),
+                self.identification,
+                level=1,
+            )
+        self.journal.message(
+            "  TOTAL  VIJ {:8.4f} s   direct {:8.4f} s   speedup {:.3f}x".format(
+                vijTotal, fusedTotal, vijTotal / fusedTotal if fusedTotal > 0.0 else float("nan")
+            ),
+            self.identification,
+            level=1,
+        )
+
+        # restore what the benchmark clobbered, then do the real evaluation
+        np.asarray(K_VIJ)[:] = VBefore
+        return computeMarmotParticlesInParallel(
+            particles_, dU, P, F, K_VIJ, time, dT, theDofManager, self.numThreads
+        )

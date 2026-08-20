@@ -138,6 +138,14 @@ class BaseNonlinearSolver:
     #: fully prepared model inside the real solver, which a standalone harness cannot provide.
     verifyDirectCSRAssembly = False
 
+    #: Benchmark both assembly paths against each other, per iteration, on identical state. Diagnostic
+    #: only; the solve continues on the VIJ path so no result changes.
+    timeDirectCSRAssembly = False
+
+    #: The CSR generator for the current connectivity, or None. Reachable so the benchmark can time
+    #: the production gather.
+    _csrGenerator = None
+
     #: The :class:`DirectCSRAssembler` for the current connectivity, or None. Rebuilt whenever the
     #: Newton cache is, since its offset map has exactly the lifetime of the CSR pattern.
     _directCSRAssembler = None
