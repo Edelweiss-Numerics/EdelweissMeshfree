@@ -20,6 +20,12 @@ from numpy import ndarray
 from scipy.sparse import csr_matrix
 
 from edelweissmeshfree.models.mpmmodel import MPMModel
+from edelweissmeshfree.numerics.systemmatrixcontribution import (
+    DirectCSRContribution,
+    SystemMatrixContributionBase,
+    VIJContribution,
+    VIJPattern,
+)
 from edelweissmeshfree.particles.base.baseparticle import BaseParticle
 from edelweissmeshfree.solvers.base.nonlinearsolverbase import BaseNonlinearSolver
 from edelweissmeshfree.stepactions.base.mpmdistributedloadbase import (
@@ -108,7 +114,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         self,
         distributedLoads: list[MPMDistributedLoadBase],
         PExt: DofVector,
-        K_VIJ: VIJSystemMatrix,
+        K: SystemMatrixContributionBase,
         timeStep: TimeStep,
         theDofManager,
     ) -> tuple[DofVector, VIJSystemMatrix]:
@@ -121,8 +127,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             The list of distributed loads.
         PExt
             The external load vector to be augmented.
-        K_VIJ
-            The system matrix to be augmented.
+        K
+            Where each entity writes its stiffness contribution.
         timeStep
             The current time increment.
         theDofManager
@@ -140,7 +146,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
 
                 for cl in mp.assignedCells:
                     Pc = np.zeros(cl.nDof)
-                    Kc = K_VIJ[cl]
+                    Kc = K[cl]
                     cl.computeDistributedLoad(
                         distributedLoad.loadType,
                         surfaceID,
@@ -153,14 +159,14 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
                     )
                     PExt[cl] += Pc
 
-        return PExt, K_VIJ
+        return PExt, K
 
     @performancetiming.timeit("compute distributed loads")
     def _computeParticleDistributedLoads(
         self,
         distributedLoads: list[ParticleDistributedLoad],
         PExt: DofVector,
-        K_VIJ: VIJSystemMatrix,
+        K: SystemMatrixContributionBase,
         timeStep: TimeStep,
         theDofManager,
     ) -> tuple[DofVector, VIJSystemMatrix]:
@@ -173,8 +179,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             The list of distributed loads.
         PExt
             The external load vector to be augmented.
-        K_VIJ
-            The system matrix to be augmented.
+        K
+            Where each entity writes its stiffness contribution.
         timeStep
             The current time increment.
         theDofManager
@@ -192,7 +198,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             # for p in distributedLoad.particles:
             for p, surfaceID, loadVector in distributedLoad.getCurrentParticleLoads(timeStep):
                 Pc = np.zeros(p.nDof)
-                Kc = K_VIJ[p]
+                Kc = K[p]
                 p.computeDistributedLoad(
                     distributedLoad.loadType,
                     surfaceID,
@@ -205,7 +211,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
 
                 PExt[p] += Pc
 
-        return PExt, K_VIJ
+        return PExt, K
 
     @performancetiming.timeit("dirichlet on CSR")
     def _applyDirichletKCsr(
@@ -538,7 +544,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         dU: DofVector,
         P: DofVector,
         F: DofVector,
-        K_VIJ: VIJSystemMatrix,
+        K: SystemMatrixContributionBase,
         time: float,
         dT: float,
         theDofManager: DofManager,
@@ -555,8 +561,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             The current global flux vector.
         F
             The accumulated nodal fluxes vector.
-        K_VIJ
-            The global system matrix in VIJ (COO) format.
+        K
+            Where each entity writes its stiffness contribution.
         time
             The current time.
         dT
@@ -567,7 +573,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         for c in activeCells:
             dUc = dU[c]
             Pc = np.zeros(c.nDof)
-            Kc = K_VIJ[c]
+            Kc = K[c]
             c.computeMaterialPointKernels(dUc, Pc, Kc, time, dT)
             P[c] += Pc
             F[c] += abs(Pc)
@@ -580,7 +586,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         P: DofVector,
         F: DofVector,
         M: DofVector,
-        K_VIJ: VIJSystemMatrix,
+        K: SystemMatrixContributionBase,
         time: float,
         dT: float,
         theDofManager: DofManager,
@@ -597,8 +603,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             The current global flux vector.
         F
             The accumulated nodal fluxes vector.
-        K_VIJ
-            The global system matrix in VIJ (COO) format.
+        K
+            Where each entity writes its stiffness contribution.
         time
             The current time.
         dT
@@ -610,7 +616,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             dUc = dU[c]
             Pc = np.zeros(c.nDof)
             Mc = np.zeros(c.nDof)
-            Kc = K_VIJ[c]
+            Kc = K[c]
             c.computeMaterialPointKernels(dUc, Pc, Kc, time, dT)
             c.computeLumpedInertia(Mc)
             M[c] += Mc
@@ -625,7 +631,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         P: DofVector,
         F: DofVector,
         M: VIJSystemMatrix,
-        K_VIJ: VIJSystemMatrix,
+        K: SystemMatrixContributionBase,
         time: float,
         dT: float,
         theDofManager: DofManager,
@@ -642,8 +648,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             The current global flux vector.
         F
             The accumulated nodal fluxes vector.
-        K_VIJ
-            The global system matrix in VIJ (COO) format.
+        K
+            Where each entity writes its stiffness contribution.
         time
             The current time.
         dT
@@ -655,7 +661,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             dUc = dU[c]
             Pc = np.zeros(c.nDof)
             Mc = np.zeros((c.nDof, c.nDof))
-            Kc = K_VIJ[c]
+            Kc = K[c]
             c.computeMaterialPointKernels(dUc, Pc, Kc, time, dT)
             c.computeConsistentInertia(Mc)
             M[c] += Mc
@@ -670,7 +676,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         Un: DofVector,
         P: DofVector,
         F: DofVector,
-        K_VIJ: VIJSystemMatrix,
+        K: SystemMatrixContributionBase,
         time: float,
         dT: float,
         theDofManager: DofManager,
@@ -689,8 +695,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             The current global flux vector.
         F
             The accumulated nodal fluxes vector.
-        K_VIJ
-            The global system matrix in VIJ (COO) format.
+        K
+            Where each entity writes its stiffness contribution.
         time
             The current time.
         dT
@@ -705,7 +711,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             UEln = Un[el]
             UElnp = UEln + dUEl
             PEl = np.zeros(el.nDof)
-            KEl = K_VIJ[el]
+            KEl = K[el]
             el.computeYourself(KEl, PEl, UElnp, dUEl, time_, dT)
             P[el] -= PEl
             F[el] += abs(PEl)
@@ -719,7 +725,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         P: DofVector,
         F: DofVector,
         M_VIJ: DofVector,
-        K_VIJ: VIJSystemMatrix,
+        K: SystemMatrixContributionBase,
         time: float,
         dT: float,
         theDofManager: DofManager,
@@ -740,8 +746,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             The accumulated nodal fluxes vector.
         M_VIJ
             The global consistent mass matrix in VIJ (COO) format.
-        K_VIJ
-            The global system stiffness matrix in VIJ (COO) format.
+        K
+            Where each entity writes its stiffness contribution.
         time
             The current time.
         dT
@@ -757,7 +763,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             UElnp = UEln + dUEl
             PEl = np.zeros(el.nDof)
             MEl = np.zeros_like(M_VIJ[el])
-            KEl = K_VIJ[el]
+            KEl = K[el]
             el.computeYourself(KEl, PEl, UElnp, dUEl, time_, dT)
             el.computeConsistentInertia(MEl)
             M_VIJ[el] += MEl
@@ -773,7 +779,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         P: DofVector,
         F: DofVector,
         M: DofVector,
-        K_VIJ: VIJSystemMatrix,
+        K: SystemMatrixContributionBase,
         time: float,
         dT: float,
         theDofManager: DofManager,
@@ -794,8 +800,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             The accumulated nodal fluxes vector.
         M
             The lumped mass matrix as vector.
-        K_VIJ
-            The global system matrix in VIJ (COO) format.
+        K
+            Where each entity writes its stiffness contribution.
         time
             The current time.
         dT
@@ -811,7 +817,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             UElnp = UEln + dUEl
             PEl = np.zeros(el.nDof)
             MEl = np.zeros(el.nDof)
-            KEl = K_VIJ[el]
+            KEl = K[el]
             el.computeYourself(KEl, PEl, UElnp, dUEl, time_, dT)
             el.computeLumpedInertia(MEl)
             M[el] += MEl
@@ -826,7 +832,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         Un: DofVector,
         P: DofVector,
         F: DofVector,
-        K_VIJ: VIJSystemMatrix,
+        K: SystemMatrixContributionBase,
         time: float,
         dT: float,
         theDofManager: DofManager,
@@ -845,8 +851,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             The current global flux vector.
         F
             The accumulated nodal fluxes vector.
-        K_VIJ
-            The global system matrix in VIJ (COO) format.
+        K
+            Where each entity writes its stiffness contribution.
         time
             The current time.
         dT
@@ -860,7 +866,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             UEln = Un[el]
             UElnp = UEln + dUEl
             PEl = np.zeros(el.nDof)
-            KEl = K_VIJ[el]
+            KEl = K[el]
             el.computeMaterialPointKernels(UElnp, PEl, KEl, time, dT)
             P[el] += PEl
             F[el] += abs(PEl)
@@ -872,7 +878,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         dU: DofVector,
         P: DofVector,
         F: DofVector,
-        K_VIJ: VIJSystemMatrix,
+        K: SystemMatrixContributionBase,
         time: float,
         dT: float,
         theDofManager: DofManager,
@@ -889,8 +895,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             The current global flux vector.
         F
             The accumulated nodal fluxes vector.
-        K_VIJ
-            The global system matrix in VIJ (COO) format.
+        K
+            Where each entity writes its stiffness contribution.
         time
             The current time.
         dT
@@ -913,7 +919,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             for particle in particleChunk:
                 PP = scatter_P[particle]
                 dUP = dU[particle]
-                KP = K_VIJ[particle]
+                KP = K[particle]
 
                 particle.computePhysicsKernels(dUP, PP, KP, time, dT)
 
@@ -936,7 +942,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         P: DofVector,
         F: DofVector,
         M_VIJ: VIJSystemMatrix,
-        K_VIJ: VIJSystemMatrix,
+        K: SystemMatrixContributionBase,
         time: float,
         dT: float,
         theDofManager: DofManager,
@@ -955,8 +961,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             The accumulated nodal fluxes vector.
         M_VIJ
             The global mass matrix in VIJ (COO) format.
-        K_VIJ
-            The global system matrix in VIJ (COO) format.
+        K
+            Where each entity writes its stiffness contribution.
         time
             The current time.
         dT
@@ -968,7 +974,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             dUP = dU[p]
             PP = np.zeros(p.nDof)
             MP = np.zeros_like(M_VIJ[p])
-            KP = K_VIJ[p]
+            KP = K[p]
             p.computePhysicsKernels(dUP, PP, KP, time, dT)
             p.computeConsistentInertia(MP)
             MP_ = M_VIJ[p]
@@ -984,7 +990,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         P: DofVector,
         F: DofVector,
         M: DofVector,
-        K_VIJ: VIJSystemMatrix,
+        K: SystemMatrixContributionBase,
         time: float,
         dT: float,
         theDofManager: DofManager,
@@ -1003,8 +1009,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             The accumulated nodal fluxes vector.
         M
             The global lumped mass matrix as vector.
-        K_VIJ
-            The global system matrix in VIJ (COO) format.
+        K
+            Where each entity writes its stiffness contribution.
         time
             The current time.
         dT
@@ -1016,7 +1022,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             dUP = dU[p]
             PP = np.zeros(p.nDof)
             MP = np.zeros(p.nDof)
-            KP = K_VIJ[p]
+            KP = K[p]
             p.computePhysicsKernels(dUP, PP, KP, time, dT)
             p.computeLumpedInertia(MP)
             M[p] += MP
@@ -1025,7 +1031,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
 
     @performancetiming.timeit("computation constraints")
     def _computeConstraints(
-        self, constraints: list, dU: DofVector, P: DofVector, K_VIJ: VIJSystemMatrix, timeStep: TimeStep
+        self, constraints: list, dU: DofVector, P: DofVector, K: SystemMatrixContributionBase, timeStep: TimeStep
     ):
         """Evaluate all constraints.
 
@@ -1037,8 +1043,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             The current global solution increment vector.
         P
             The current global flux vector.
-        K_VIJ
-            The global system matrix in VIJ (COO) format.
+        K
+            Where each entity writes its stiffness contribution.
         timeStep
             The current time increment.
         """
@@ -1046,33 +1052,33 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             if c.active:
                 dUc = dU[c]
                 Pc = np.zeros(c.nDof)
-                Kc = K_VIJ[c]
+                Kc = K[c]
                 c.applyConstraint(dUc, Pc, Kc, timeStep)
                 P[c] += Pc
 
     @performancetiming.timeit("instancing csr generator")
-    def _makeCachedCOOToCSRGenerator(self, K_VIJ):
-        return CSRGenerator(K_VIJ)
+    def _makeCachedCOOToCSRGenerator(self, systemMatrix):
+        return CSRGenerator(systemMatrix)
 
     @performancetiming.timeit("instancing direct csr assembler")
-    def _makeDirectCSRAssembler(self, K_VIJ, csrGenerator, particles, theDofManager):
-        """Build the direct-to-CSR assembler and register the particles as its entities.
+    def _makeDirectCSRAssembler(self, systemMatrix, csrGenerator, theDofManager):
+        """Build the direct-to-CSR assembler and register every entity that contributes a block.
 
         The offset map is derived from the pattern ``csrGenerator`` already holds, so there is one
-        definition of the sparsity and the two assembly paths cannot drift. Registration uses the
-        very offsets the DofManager records for the VIJ layout, which is what makes the two paths
-        comparable entity by entity.
+        definition of the sparsity and the two assembly paths cannot drift. Registration uses the very
+        offsets the DofManager records for the VIJ layout, which is what makes the two paths comparable
+        entity by entity -- and it registers *all* higher-order entities, not just the particles,
+        because every contributor has to be able to scatter if the staging array is to go away.
 
         Parameters
         ----------
-        K_VIJ
-            The VIJ system matrix supplying the I/J index arrays.
+        systemMatrix
+            Supplies the I/J index arrays: either a ``VIJSystemMatrix`` or a :class:`VIJPattern`.
         csrGenerator
             The generator whose pattern is borrowed.
-        particles
-            The entities to register, in any order.
         theDofManager
-            The DofManager instance.
+            The DofManager instance, whose ``idcsOfHigherOrderEntitiesInVIJ`` is both the entity list
+            and each entity's offset into the VIJ ordering.
 
         Returns
         -------
@@ -1080,9 +1086,23 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             The registered assembler.
         """
 
-        entities = list(particles)
+        entities = list(theDofManager.idcsOfHigherOrderEntitiesInVIJ.keys())
 
-        assembler = DirectCSRAssembler(csrGenerator, K_VIJ, self.numThreads)
+        # The scatter addresses a dense nDof x nDof column-major block. Every meshfree entity lays its
+        # contribution out that way, but constraints are free to declare a sparse custom pattern, and
+        # such an entity would be silently misassembled rather than obviously broken -- so check here,
+        # once, rather than trusting it.
+        sparse = [e for e in entities if e.getVIJContributionSize() != e.nDof**2]
+        if sparse:
+            raise NotImplementedError(
+                "the direct-to-CSR assembler cannot register {:} of {:} entities, e.g. {:}, because "
+                "they contribute a sparse custom VIJ pattern rather than a dense nDof x nDof block. A "
+                "per-entry scatter variant is needed for those.".format(
+                    len(sparse), len(entities), type(sparse[0]).__name__
+                )
+            )
+
+        assembler = DirectCSRAssembler(csrGenerator, systemMatrix, self.numThreads)
         if self.directCSRNumBuffers > 0:
             assembler.setNumBuffers(self.directCSRNumBuffers)
         assembler.registerEntities(
@@ -1103,9 +1123,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         theDofManager
             The DofManager instance.
         particles
-            The particles to register with the direct-to-CSR assembler, if one is in use. Ignored
-            otherwise. Passed here rather than discovered later because the assembler's offset map
-            has the same lifetime as the CSR pattern built alongside it.
+            Unused. Kept because the arc-length solver's override forwards it; the assembler now takes
+            its entity list from the DofManager, which is the only place that knows all of them.
 
         Returns
         -------
@@ -1113,23 +1132,51 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             The collection of expensive objects.
         """
 
-        K_VIJ = theDofManager.constructVIJSystemMatrix()
-        csrGenerator = self._makeCachedCOOToCSRGenerator(K_VIJ)
+        if self.useDirectCSRAssembly:
+            if self.verifyDirectCSRAssembly or self.timeDirectCSRAssembly:
+                raise ValueError(
+                    "verifyDirectCSRAssembly / timeDirectCSRAssembly compare the direct path against "
+                    "the VIJ path and therefore need the staging array, which useDirectCSRAssembly "
+                    "does not build. Run the diagnostics with useDirectCSRAssembly off."
+                )
 
-        # kept reachable so the assembly benchmark can time the production gather itself rather
-        # than a stand-in for it; same lifetime as the pattern, like the assembler below
-        self._csrGenerator = csrGenerator
+            # No staging array is built at all -- that array is 12.84 GiB at 43,350 DOF and skipping
+            # it is the entire point. CSRGenerator and the assembler need only I/J/nDof, which
+            # VIJPattern supplies from the DofManager's own arrays.
+            pattern = VIJPattern(theDofManager)
+            csrGenerator = self._makeCachedCOOToCSRGenerator(pattern)
+            self._csrGenerator = csrGenerator
+            assembler = self._makeDirectCSRAssembler(pattern, csrGenerator, theDofManager)
+            self._directCSRAssembler = assembler
 
-        self._directCSRAssembler = None
-        self._directCSREntityIds = None
-        if self.useDirectCSRAssembly or self.verifyDirectCSRAssembly or self.timeDirectCSRAssembly:
-            self._directCSRAssembler = self._makeDirectCSRAssembler(K_VIJ, csrGenerator, particles, theDofManager)
+            # The assembler has taken its copy of the pattern, so the generator's gather map -- 6.69
+            # GiB here, more than everything the direct path holds -- is dead weight. Releasing it is
+            # what turns the direct path from "as big as the VIJ path" into 4.46x smaller. The
+            # generator keeps the pattern and can no longer gather; nothing on this path asks it to.
+            csrGenerator.releaseGatherMap()
+
+            K = DirectCSRContribution(assembler, self._directCSREntityIds)
+        else:
+            K_VIJ = theDofManager.constructVIJSystemMatrix()
+            csrGenerator = self._makeCachedCOOToCSRGenerator(K_VIJ)
+
+            # kept reachable so the assembly benchmark can time the production gather itself rather
+            # than a stand-in for it; same lifetime as the pattern, like the assembler below
+            self._csrGenerator = csrGenerator
+
+            self._directCSRAssembler = None
+            self._directCSREntityIds = None
+            if self.verifyDirectCSRAssembly or self.timeDirectCSRAssembly:
+                self._directCSRAssembler = self._makeDirectCSRAssembler(K_VIJ, csrGenerator, theDofManager)
+
+            K = VIJContribution(K_VIJ, csrGenerator)
+
         dU = theDofManager.constructDofVector()
         Rhs = theDofManager.constructDofVector()
         F = theDofManager.constructDofVector()
         PInt = theDofManager.constructDofVector()
         PExt = theDofManager.constructDofVector()
 
-        newtonCache = (K_VIJ, csrGenerator, dU, Rhs, F, PInt, PExt)
+        newtonCache = (K, csrGenerator, dU, Rhs, F, PInt, PExt)
 
         return newtonCache

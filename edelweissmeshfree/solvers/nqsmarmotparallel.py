@@ -131,17 +131,24 @@ class NQSParallelForMarmot(NonlinearQuasistaticSolver):
         dU: DofVector,
         P: DofVector,
         F: DofVector,
-        K_VIJ: VIJSystemMatrix,
+        K,
         time: float,
         dT: float,
         theDofManager: DofManager,
     ):
+        if K.vijArray is None:
+            # The threaded Marmot cell kernel writes into a slab of the staging array, which the
+            # direct path does not have. Fall back to the base class's sequential loop, which goes
+            # through the contribution object: cells are ~0.0002 s of a 3.4 s assembly here, so the
+            # threading is not worth a second kernel.
+            return super()._computeCells(activeCells_, dU, P, F, K, time, dT, theDofManager)
+
         return computeMarmotCellsInParallel(
             activeCells_,
             dU,
             P,
             F,
-            K_VIJ,
+            K.vijArray,
             time,
             dT,
             theDofManager,
@@ -155,19 +162,22 @@ class NQSParallelForMarmot(NonlinearQuasistaticSolver):
         dU: DofVector,
         P: DofVector,
         F: DofVector,
-        K_VIJ: VIJSystemMatrix,
+        K,
         time: float,
         dT: float,
         theDofManager: DofManager,
     ):
+        if K.vijArray is None:
+            return self._computeParticlesIntoCSR(particles_, dU, P, F, time, dT, theDofManager)
+
         if self.verifyDirectCSRAssembly:
             return self._computeParticlesAndVerifyDirectCSR(
-                particles_, dU, P, F, K_VIJ, time, dT, theDofManager
+                particles_, dU, P, F, K.vijArray, time, dT, theDofManager
             )
 
         if self.timeDirectCSRAssembly:
             return self._computeParticlesAndTimeDirectCSR(
-                particles_, dU, P, F, K_VIJ, time, dT, theDofManager
+                particles_, dU, P, F, K.vijArray, time, dT, theDofManager
             )
 
         return computeMarmotParticlesInParallel(
@@ -175,7 +185,41 @@ class NQSParallelForMarmot(NonlinearQuasistaticSolver):
             dU,
             P,
             F,
-            K_VIJ,
+            K.vijArray,
+            time,
+            dT,
+            theDofManager,
+            self.numThreads,
+        )
+
+    def _computeParticlesIntoCSR(
+        self,
+        particles_: list,
+        dU: DofVector,
+        P: DofVector,
+        F: DofVector,
+        time: float,
+        dT: float,
+        theDofManager: DofManager,
+    ):
+        """Evaluate the particles straight into the CSR data, with no staging array involved.
+
+        The production form of what the cross-check in :meth:`_computeParticlesAndVerifyDirectCSR`
+        validated and the benchmark in :meth:`_computeParticlesAndTimeDirectCSR` timed. Each thread
+        writes its block into a small reused scratch buffer and scatters it through the offset map, so
+        nothing has to clear or re-read a multi-gigabyte array.
+        """
+
+        assembler = self._directCSRAssembler
+        entityIds = np.array([self._directCSREntityIds[p] for p in particles_], dtype=np.intc)
+
+        return computeMarmotParticlesIntoCSR(
+            particles_,
+            dU,
+            P,
+            F,
+            entityIds,
+            assembler.corePointer,
             time,
             dT,
             theDofManager,
