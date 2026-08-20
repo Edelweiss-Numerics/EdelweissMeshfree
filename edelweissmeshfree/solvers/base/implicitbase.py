@@ -3,7 +3,7 @@ from typing import Iterable
 
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
-from edelweissfe.numerics.csrgeneratorv2 import CSRGenerator
+from edelweissfe.numerics.csrgeneratorv2 import CSRGenerator, DirectCSRAssembler
 from edelweissfe.numerics.dofmanager import DofManager, DofVector, VIJSystemMatrix
 from edelweissfe.numerics.parallelizationutilities import (
     getNumberOfThreads,
@@ -1054,14 +1054,56 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
     def _makeCachedCOOToCSRGenerator(self, K_VIJ):
         return CSRGenerator(K_VIJ)
 
+    @performancetiming.timeit("instancing direct csr assembler")
+    def _makeDirectCSRAssembler(self, K_VIJ, csrGenerator, particles, theDofManager):
+        """Build the direct-to-CSR assembler and register the particles as its entities.
+
+        The offset map is derived from the pattern ``csrGenerator`` already holds, so there is one
+        definition of the sparsity and the two assembly paths cannot drift. Registration uses the
+        very offsets the DofManager records for the VIJ layout, which is what makes the two paths
+        comparable entity by entity.
+
+        Parameters
+        ----------
+        K_VIJ
+            The VIJ system matrix supplying the I/J index arrays.
+        csrGenerator
+            The generator whose pattern is borrowed.
+        particles
+            The entities to register, in any order.
+        theDofManager
+            The DofManager instance.
+
+        Returns
+        -------
+        DirectCSRAssembler
+            The registered assembler.
+        """
+
+        entities = list(particles)
+
+        assembler = DirectCSRAssembler(csrGenerator, K_VIJ, self.numThreads)
+        assembler.registerEntities(
+            np.array([theDofManager.idcsOfHigherOrderEntitiesInVIJ[e] for e in entities], dtype=np.int64),
+            np.array([e.nDof for e in entities], dtype=np.intc),
+        )
+
+        self._directCSREntityIds = {e: i for i, e in enumerate(entities)}
+
+        return assembler
+
     @performancetiming.timeit("creation newton cache")
-    def _createNewtonCache(self, theDofManager):
+    def _createNewtonCache(self, theDofManager, particles=()):
         """Create expensive objects, which may be reused if the global system does not change.
 
         Parameters
         ----------
         theDofManager
             The DofManager instance.
+        particles
+            The particles to register with the direct-to-CSR assembler, if one is in use. Ignored
+            otherwise. Passed here rather than discovered later because the assembler's offset map
+            has the same lifetime as the CSR pattern built alongside it.
 
         Returns
         -------
@@ -1071,6 +1113,11 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
 
         K_VIJ = theDofManager.constructVIJSystemMatrix()
         csrGenerator = self._makeCachedCOOToCSRGenerator(K_VIJ)
+
+        self._directCSRAssembler = None
+        self._directCSREntityIds = None
+        if self.useDirectCSRAssembly or self.verifyDirectCSRAssembly:
+            self._directCSRAssembler = self._makeDirectCSRAssembler(K_VIJ, csrGenerator, particles, theDofManager)
         dU = theDofManager.constructDofVector()
         Rhs = theDofManager.constructDofVector()
         F = theDofManager.constructDofVector()

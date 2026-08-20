@@ -125,6 +125,27 @@ class BaseNonlinearSolver:
     #: subclasses call ``super().__init__()``.
     _dirichletIndicesCache = None
 
+    #: Number of threads used by threaded assembly kernels. Parallel solvers shadow this with an
+    #: instance attribute; the sequential default of one keeps the base solvers meaningful.
+    numThreads = 1
+
+    #: Assemble particle contributions straight into CSR, bypassing the VIJ staging array. Off by
+    #: default: the VIJ path remains the reference until the direct path has been measured.
+    useDirectCSRAssembly = False
+
+    #: Run *both* assembly paths per iteration and compare the resulting CSR data. Diagnostic only,
+    #: and roughly twice the assembly cost -- the point is that the comparison happens against a
+    #: fully prepared model inside the real solver, which a standalone harness cannot provide.
+    verifyDirectCSRAssembly = False
+
+    #: The :class:`DirectCSRAssembler` for the current connectivity, or None. Rebuilt whenever the
+    #: Newton cache is, since its offset map has exactly the lifetime of the CSR pattern.
+    _directCSRAssembler = None
+
+    #: Maps each registered entity to its index in the assembler's map. Keyed by entity rather than
+    #: inferred from iteration order, so a reordering of the active set cannot silently misaddress.
+    _directCSREntityIds = None
+
     def __init__(self, journal: Journal):
         self.journal = journal
 

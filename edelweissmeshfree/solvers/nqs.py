@@ -313,7 +313,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                 self.journal.message(iterationHeader2, self.identification, level=2)
 
                 if not newtonCache:
-                    newtonCache = self._createNewtonCache(theDofManager)
+                    newtonCache = self._createNewtonCache(theDofManager, particles)
                     invalidateStatefulLinearSolver(linearSolver)
                     if hasattr(linearSolver, "setJournal"):
                         linearSolver.setJournal(self.journal)
