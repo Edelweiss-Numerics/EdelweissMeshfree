@@ -59,7 +59,7 @@ from multiprocessing import cpu_count
 from time import time as getCurrentTime
 
 
-def computeMarmotMaterialPointsInParallel(materialPoints_, float time, float dT, int numThreads):
+def computeMarmotMaterialPointsInParallel(materialPoints_, double time, double dT, int numThreads):
     """Evaluate all material points' physics in an OpenMP prange loop.
 
     Parameters
@@ -103,8 +103,8 @@ def computeMarmotCellsInParallel(
     double[::1] P,
     double[::1] F,
     K_VIJ,
-    float time,
-    float dT,
+    double time,
+    double dT,
     theDofManager,
     int numThreads
 ):
@@ -211,8 +211,8 @@ def computeMarmotParticlesInParallel(
     double[::1] P,
     double[::1] F,
     K_VIJ,
-    float time,
-    float dT,
+    double time,
+    double dT,
     theDofManager: DofManager,
     int numThreads
 ):
