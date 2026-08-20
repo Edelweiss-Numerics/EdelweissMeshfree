@@ -1057,8 +1057,18 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
                 P[c] += Pc
 
     @performancetiming.timeit("instancing csr generator")
-    def _makeCachedCOOToCSRGenerator(self, systemMatrix):
-        return CSRGenerator(systemMatrix)
+    def _makeCachedCOOToCSRGenerator(self, systemMatrix, patternOnly: bool = False):
+        """Build the CSR pattern, and the gather map unless only the pattern is wanted.
+
+        Parameters
+        ----------
+        systemMatrix
+            Supplies the I/J index arrays and nDof.
+        patternOnly
+            Skip the gather map. Halves the build's sort array and removes the 32-bit cap on the pair
+            count, which is what actually limits the model size -- see ``CSRCore``'s constructor.
+        """
+        return CSRGenerator(systemMatrix, patternOnly)
 
     @performancetiming.timeit("instancing direct csr assembler")
     def _makeDirectCSRAssembler(self, systemMatrix, csrGenerator, theDofManager):
@@ -1144,16 +1154,16 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             # it is the entire point. CSRGenerator and the assembler need only I/J/nDof, which
             # VIJPattern supplies from the DofManager's own arrays.
             pattern = VIJPattern(theDofManager)
-            csrGenerator = self._makeCachedCOOToCSRGenerator(pattern)
+
+            # Pattern only: the assembler borrows indptr/indices and nothing else, so the gather map is
+            # never built. That halves the build's sort array (16 bytes per pair down to 8, the largest
+            # allocation in the whole solve) and removes the 32-bit cap on the pair count, which is the
+            # measured ceiling on model size -- it bites at ~50,000 DOF with a third of the machine in
+            # use. The generator keeps the pattern and refuses to gather; nothing here asks it to.
+            csrGenerator = self._makeCachedCOOToCSRGenerator(pattern, patternOnly=True)
             self._csrGenerator = csrGenerator
             assembler = self._makeDirectCSRAssembler(pattern, csrGenerator, theDofManager)
             self._directCSRAssembler = assembler
-
-            # The assembler has taken its copy of the pattern, so the generator's gather map -- 6.69
-            # GiB here, more than everything the direct path holds -- is dead weight. Releasing it is
-            # what turns the direct path from "as big as the VIJ path" into 4.46x smaller. The
-            # generator keeps the pattern and can no longer gather; nothing on this path asks it to.
-            csrGenerator.releaseGatherMap()
 
             K = DirectCSRContribution(assembler, self._directCSREntityIds)
         else:
