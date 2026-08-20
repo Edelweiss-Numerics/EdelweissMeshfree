@@ -428,13 +428,16 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
             return dU, PInt, iterationHistory, newtonCache
 
     @performancetiming.timeit("creation newton cache")
-    def _createNewtonCache(self, theDofManager: DofManager) -> tuple:
+    def _createNewtonCache(self, theDofManager: DofManager, particles=()) -> tuple:
         """Create expensive objects, which may be reused if the global system does not change.
 
         Parameters
         ----------
         theDofManager
             The DofManager instance.
+        particles
+            The particles to register with the direct-to-CSR assembler, if one is in use. Forwarded
+            to the base implementation; the arc-length cache below builds no assembler of its own.
 
         Returns
         -------
@@ -444,7 +447,7 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
         arcLengthController = self._arcLengthController
 
         if arcLengthController is None:
-            return super()._createNewtonCache(theDofManager)
+            return super()._createNewtonCache(theDofManager, particles)
 
         K_VIJ = theDofManager.constructVIJSystemMatrix()
         csrGenerator = self._makeCachedCOOToCSRGenerator(K_VIJ)
@@ -459,6 +462,11 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
         K_VIJ_f = theDofManager.constructVIJSystemMatrix()
 
         newtonCache = (K_VIJ, csrGenerator, dU, Rhs_, F, PInt, PExt, PExt_0, PExt_f, K_VIJ_0, K_VIJ_f)
+
+        # this cache carries three VIJ matrices and no direct-to-CSR assembler; cleared explicitly so
+        # a stale one from a previous connectivity cannot be reached from the arc-length path
+        self._directCSRAssembler = None
+        self._directCSREntityIds = None
 
         return newtonCache
 
