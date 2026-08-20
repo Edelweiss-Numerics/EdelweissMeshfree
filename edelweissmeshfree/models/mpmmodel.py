@@ -287,12 +287,19 @@ class MPMModel(FEModel):
 
         activeNodes = activeNodesWithVolatileFieldValues | activeNodesWithPersistentFieldValues
 
-        activeNodes = NodeSet("activeNodes", activeNodes)
+        # Node defines no __hash__, so a plain set of Node objects iterates in an address-dependent
+        # order that differs between runs. The DOF numbering is assigned in this order, so leaving it
+        # unsorted made the global sparsity pattern irreproducible -- and with it direct-solver
+        # fill-in and AMG aggregation, i.e. solve times and iteration counts. Labels are unique, so
+        # sorting on them pins the numbering down without changing which nodes are active.
+        activeNodes = NodeSet("activeNodes", sorted(activeNodes, key=lambda n: n.label))
         activeNodesWithPersistentFieldValues = NodeSet(
-            "activeNodesWithPersistentFieldvalues", activeNodesWithPersistentFieldValues
+            "activeNodesWithPersistentFieldvalues",
+            sorted(activeNodesWithPersistentFieldValues, key=lambda n: n.label),
         )
         activeNodesWithVolatileFieldValues = NodeSet(
-            "activeNodesWithVolatileFieldValues", activeNodesWithVolatileFieldValues
+            "activeNodesWithVolatileFieldValues",
+            sorted(activeNodesWithVolatileFieldValues, key=lambda n: n.label),
         )
 
         reducedNodeFields = {
@@ -301,7 +308,10 @@ class MPMModel(FEModel):
         }
 
         reducedNodeSets = {
-            nodeSet: NodeSet(nodeSet.name, set(activeNodes).intersection(nodeSet)) for nodeSet in self.nodeSets.values()
+            nodeSet: NodeSet(
+                nodeSet.name, sorted(set(activeNodes).intersection(nodeSet), key=lambda n: n.label)
+            )
+            for nodeSet in self.nodeSets.values()
         }
 
         activeModel.nodeSets = reducedNodeSets

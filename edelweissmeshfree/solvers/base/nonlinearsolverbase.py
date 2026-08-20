@@ -289,12 +289,20 @@ class BaseNonlinearSolver:
 
         activeNodes = activeNodesWithVolatileFieldValues | activeNodesWithPersistentFieldValues
 
-        activeNodes = NodeSet("activeNodes", activeNodes)
+        # Node defines no __hash__, so a plain set of Node objects iterates in an address-dependent
+        # order that differs between runs. DofManager numbers DOFs strictly in nodeField.nodes order,
+        # so leaving this unsorted made the global sparsity pattern irreproducible -- and with it
+        # direct-solver fill-in and AMG aggregation, i.e. solve times and iteration counts. Labels
+        # are unique, so sorting on them pins the numbering down without changing which nodes are
+        # active.
+        activeNodes = NodeSet("activeNodes", sorted(activeNodes, key=lambda n: n.label))
         activeNodesWithPersistentFieldValues = NodeSet(
-            "activeNodesWithPersistentFieldvalues", activeNodesWithPersistentFieldValues
+            "activeNodesWithPersistentFieldvalues",
+            sorted(activeNodesWithPersistentFieldValues, key=lambda n: n.label),
         )
         activeNodesWithVolatileFieldValues = NodeSet(
-            "activeNodesWithVolatileFieldValues", activeNodesWithVolatileFieldValues
+            "activeNodesWithVolatileFieldValues",
+            sorted(activeNodesWithVolatileFieldValues, key=lambda n: n.label),
         )
 
         reducedNodeFields = {
@@ -303,7 +311,7 @@ class BaseNonlinearSolver:
         }
 
         reducedNodeSets = {
-            nodeSet: NodeSet(nodeSet.name, set(activeNodes).intersection(nodeSet))
+            nodeSet: NodeSet(nodeSet.name, sorted(set(activeNodes).intersection(nodeSet), key=lambda n: n.label))
             for nodeSet in model.nodeSets.values()
         }
 
