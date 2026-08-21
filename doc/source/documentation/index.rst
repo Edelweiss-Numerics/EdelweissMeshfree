@@ -10,6 +10,7 @@ Documentation
    cellelements
    mpm/material_points
    solvers
+   choosing_a_solver
    mpm/material_point_managers
    model_generators
    particles
