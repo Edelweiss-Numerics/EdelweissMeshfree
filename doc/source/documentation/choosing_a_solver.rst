@@ -174,6 +174,14 @@ The default is ``0.0`` (off) for two honest reasons: the sweep never found the p
 breaks, so the safe end of the range is unknown; and it has been measured on one operator at one support
 radius. ``1e-4`` has the most margin on either side for this problem class.
 
+Plain truncation is what to use. The standard refinement -- lumping each dropped entry onto the diagonal
+so row sums are preserved exactly -- was implemented and measured, and is neutral at best and 8.1% slower
+at ``1e-2``; see ``hierarchyDropLumping`` in the table below. Three independent results now point the same
+way on this operator (the rigid-body nullspace is inert, ``eps_strong`` does nothing, and lumping does
+nothing): **near-null-space and strength-of-connection fidelity are not what limits this preconditioner.**
+What limited it was the cost of applying a hierarchy built from a numerically dense operator, which is
+what the truncation fixes.
+
 The criterion is scale invariant, and symmetric in ``(i, j)`` for a symmetric matrix, so the sparsified
 block stays symmetric as smoothed aggregation and the Chebyshev smoother both require. The diagonal is
 always kept, so no row can be emptied -- the sparsest configuration above still leaves 35 off-diagonals
@@ -240,6 +248,14 @@ that time is not spent on them again.
       - Iteration counts change by under 1.5% and cost 12% more time. Hierarchy staleness is not what
         makes these solves expensive: in the baseline, refreshed and reused solves have near-identical
         median iteration counts.
+    * - ``hierarchyDropLumping=True``
+      - Neutral at ``hierarchyDropTol=1e-4`` (-0.08%) and **8.1% slower** at ``1e-2``. This is the AMG
+        literature's preferred filtering construction -- lumping each dropped entry onto the diagonal
+        preserves row sums exactly, and it verifiably does so here (relative row-sum error 4.65e-02
+        truncated against 3.11e-15 lumped at ``1e-2``). It simply buys nothing on this operator: outer
+        GMRES time is unchanged, so convergence is identical, and the whole penalty is the extra pass
+        itself, +32% on the hierarchy build. Consistent with ``useRigidBodyNullspace`` being inert --
+        this preconditioner is insensitive to near-null-space fidelity.
 
 Where the time actually goes
 ----------------------------
