@@ -1142,6 +1142,20 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             The collection of expensive objects.
         """
 
+        # Release the previous connectivity's pattern and assembler *before* building the new ones.
+        # nqs.py drops its own reference to the cache when the active domain changes, but these two
+        # attributes are otherwise only overwritten at the end of this method -- so the old objects stay
+        # alive for the whole of the new build, and both are large. At 120,960 DOF the old assembler
+        # alone is the private CSR copies plus the offset map, and the new build's own transient is the
+        # I/J arrays plus the sort keys; holding all of it at once is what made a spin-up peak at
+        # 161.43 GiB where a single increment needs 100.34. Nothing is lost by releasing early: a
+        # connectivity change renumbers the DOFs, which makes the old pattern meaningless.
+        #
+        # This fires on most increments, not rarely -- 22 rebuilds in 38 increments at 120,960 DOF.
+        self._csrGenerator = None
+        self._directCSRAssembler = None
+        self._directCSREntityIds = None
+
         if self.useDirectCSRAssembly:
             if self.verifyDirectCSRAssembly or self.timeDirectCSRAssembly:
                 raise ValueError(
