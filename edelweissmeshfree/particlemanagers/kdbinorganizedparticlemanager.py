@@ -193,6 +193,10 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
         # Pre-fetch labels for integer sorting
         self._kernelLabels = np.array([k.node.label for k in self._meshfreeKernelFunctions], dtype=int)
 
+        # If every kernel's support is exactly its bounding box, the precise support check reduces
+        # to a strict box test that can be vectorised over all surviving candidates at once.
+        self._allKernelsHaveBoxSupport = all(k.hasBoxSupport for k in self._meshfreeKernelFunctions)
+
         if not isinstance(randomlyShiftPartliceShapeFunctions, (bool, float)):
             raise ValueError("randomlyShiftPartliceShapeFunctions must be a boolean or a float.")
         self._randomlyShiftPartliceShapeFunctions = randomlyShiftPartliceShapeFunctions
@@ -242,6 +246,7 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
         bin_organizer = self._theBins
         kernel_labels = self._kernelLabels
         dim = self._dimension
+        boxSupport = self._allKernelsHaveBoxSupport
 
         def processParticleChunk(particleChunk: List[Any]) -> bool:
             particlesInChunkHaveChanged = False
@@ -261,7 +266,9 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
                 candidate_indices = bin_organizer.getCandidateIndices(p_min, p_max)
 
                 # 2. Vectorized AABB Filter
-                cand_idx_arr = np.array(list(candidate_indices), dtype=int)
+                # np.fromiter consumes the candidate set directly; going through list() first
+                # materialises a throwaway Python list of a few hundred ints per particle.
+                cand_idx_arr = np.fromiter(candidate_indices, dtype=np.intp, count=len(candidate_indices))
 
                 c_mins = kernel_mins[cand_idx_arr, :dim]
                 c_maxs = kernel_maxs[cand_idx_arr, :dim]
@@ -272,21 +279,33 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
                 surviving_indices = cand_idx_arr[overlap_mask]
 
                 # 3. Precise Check (Geometric)
-                valid_indices = []
-
                 # Ensure coordinates are 2D for the Cython signature
                 eval_coords_view = evaluationCoordinates
                 if eval_coords_view.ndim == 1:
                     # Reshape (dim,) -> (1, dim)
                     eval_coords_view = eval_coords_view.reshape(1, -1)
 
-                for k_idx in surviving_indices:
-                    sf = all_kernels[k_idx]
+                if boxSupport:
+                    # A kernel with box support covers a coordinate exactly when the coordinate lies
+                    # strictly inside its bounding box, and the bounds of every candidate are already
+                    # to hand from the broad phase -- so the whole per-candidate support query becomes
+                    # one vectorised test. Both comparisons are strict: a coordinate on the boundary
+                    # sits where the kernel is exactly zero and is not covered.
+                    s_mins = kernel_mins[surviving_indices, :dim]
+                    s_maxs = kernel_maxs[surviving_indices, :dim]
+                    pts = eval_coords_view[:, None, :dim]
+                    isCovering = np.any(np.all((pts > s_mins[None, :, :]) & (pts < s_maxs[None, :, :]), axis=2), axis=0)
+                    covering = surviving_indices[isCovering]
+                    valid_indices = list(covering[np.argsort(kernel_labels[covering], kind="stable")])
+                else:
+                    valid_indices = []
+                    for k_idx in surviving_indices:
+                        sf = all_kernels[k_idx]
 
-                    if sf.isAnyCoordinateInSupport(eval_coords_view):
-                        valid_indices.append(k_idx)
+                        if sf.isAnyCoordinateInSupport(eval_coords_view):
+                            valid_indices.append(k_idx)
 
-                valid_indices.sort(key=lambda idx: kernel_labels[idx])
+                    valid_indices.sort(key=lambda idx: kernel_labels[idx])
                 validKernels = [all_kernels[i] for i in valid_indices]
 
                 if not validKernels:
