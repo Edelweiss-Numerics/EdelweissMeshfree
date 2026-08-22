@@ -209,8 +209,15 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
 
         # Positions as of the last search, against which motion is measured. Empty means no search
         # has happened yet, so the next call has to be one.
+        #
+        # The evaluation coordinates of every particle are held end to end in one array rather than one
+        # array per particle. Measuring motion is then a single reduction over that array, instead of a
+        # few small NumPy calls per particle -- which, at tens of thousands of particles, cost more than
+        # the search this criterion exists to avoid.
         self._kernelCentresAtLastSearch = None
         self._evaluationCoordinatesAtLastSearch = None
+        self._currentEvaluationCoordinates = None
+        self._firstEvaluationCoordinateOfParticle = None
 
         if not isinstance(randomlyShiftPartliceShapeFunctions, (bool, float)):
             raise ValueError("randomlyShiftPartliceShapeFunctions must be a boolean or a float.")
@@ -332,6 +339,52 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
 
             kernelFunction.moveTo(particleCoordinates)
 
+    def _allocateMotionTrackingBuffers(self) -> None:
+        """Lay out the contiguous buffers the motion criterion works in.
+
+        Particles may report different numbers of evaluation coordinates, so the buffers are indexed
+        through a start offset per particle rather than assuming a fixed count.
+        """
+
+        numbersOfCoordinates = [
+            np.atleast_2d(particle.getEvaluationCoordinates()).shape[0] for particle in self._particles
+        ]
+
+        self._firstEvaluationCoordinateOfParticle = np.concatenate(([0], np.cumsum(numbersOfCoordinates)))
+
+        totalNumberOfCoordinates = int(self._firstEvaluationCoordinateOfParticle[-1])
+
+        self._evaluationCoordinatesAtLastSearch = np.zeros((totalNumberOfCoordinates, self._dimension))
+        self._currentEvaluationCoordinates = np.zeros((totalNumberOfCoordinates, self._dimension))
+
+    def _gatherEvaluationCoordinates(self, destination: NDArray[np.float64]) -> None:
+        """Copy every particle's evaluation coordinates into one contiguous array.
+
+        Parameters
+        ----------
+        destination
+            The array to fill, with one row per evaluation coordinate of the whole domain.
+        """
+
+        particles = self._particles
+        firstCoordinate = self._firstEvaluationCoordinateOfParticle
+        dim = self._dimension
+
+        def gatherChunk(particleIndices) -> None:
+            for i in particleIndices:
+                coordinates = np.atleast_2d(particles[i].getEvaluationCoordinates())
+                destination[firstCoordinate[i] : firstCoordinate[i + 1], :] = coordinates[:, :dim]
+
+        if self._numThreads <= 1:
+            gatherChunk(range(len(particles)))
+            return
+
+        chunkSize = len(particles) // self._numThreads + 1
+        chunks = [range(start, min(start + chunkSize, len(particles))) for start in range(0, len(particles), chunkSize)]
+
+        executor = getThreadPool(self._numThreads)
+        list(executor.map(gatherChunk, chunks))
+
     def _aSearchIsDue(self) -> bool:
         """Whether the neighbour lists have to be searched for again.
 
@@ -356,49 +409,20 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
         if self._neighbourListSkin == 0.0:
             return True
 
-        if self._kernelCentresAtLastSearch is None:
+        if self._evaluationCoordinatesAtLastSearch is None:
             return True
 
         kernelDisplacements = self._currentKernelCentres() - self._kernelCentresAtLastSearch
         rigidTranslation = np.mean(kernelDisplacements, axis=0)
 
         largestKernelMotion = np.max(np.abs(kernelDisplacements - rigidTranslation))
-        largestParticleMotion = self._largestParticleMotionRelativeTo(rigidTranslation)
+
+        self._gatherEvaluationCoordinates(self._currentEvaluationCoordinates)
+        largestParticleMotion = np.max(
+            np.abs(self._currentEvaluationCoordinates - self._evaluationCoordinatesAtLastSearch - rigidTranslation)
+        )
 
         return largestKernelMotion + largestParticleMotion > self._neighbourListSkin
-
-    def _largestParticleMotionRelativeTo(self, rigidTranslation: NDArray[np.float64]) -> float:
-        """The largest departure of any evaluation coordinate from the given rigid translation.
-
-        Parameters
-        ----------
-        rigidTranslation
-            The displacement to measure against.
-
-        Returns
-        -------
-        float
-            The largest absolute deviation, over all evaluation coordinates of all particles.
-        """
-
-        particlesAndReferences = list(zip(self._particles, self._evaluationCoordinatesAtLastSearch))
-
-        def largestMotionInChunk(chunk) -> float:
-            largestMotion = 0.0
-            for particle, coordinatesAtLastSearch in chunk:
-                displacements = particle.getEvaluationCoordinates() - coordinatesAtLastSearch
-                largestMotion = max(largestMotion, np.max(np.abs(displacements - rigidTranslation)))
-            return largestMotion
-
-        if self._numThreads <= 1:
-            return largestMotionInChunk(particlesAndReferences)
-
-        chunkSize = len(particlesAndReferences) // self._numThreads + 1
-        chunks = [particlesAndReferences[i : i + chunkSize] for i in range(0, len(particlesAndReferences), chunkSize)]
-
-        executor = getThreadPool(self._numThreads)
-
-        return max(executor.map(largestMotionInChunk, chunks))
 
     def _currentKernelCentres(self) -> NDArray[np.float64]:
         """The current centre of every kernel function, as one array.
@@ -417,10 +441,11 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
         if self._neighbourListSkin == 0.0:
             return
 
+        if self._firstEvaluationCoordinateOfParticle is None:
+            self._allocateMotionTrackingBuffers()
+
         self._kernelCentresAtLastSearch = self._currentKernelCentres()
-        self._evaluationCoordinatesAtLastSearch = [
-            np.copy(particle.getEvaluationCoordinates()) for particle in self._particles
-        ]
+        self._gatherEvaluationCoordinates(self._evaluationCoordinatesAtLastSearch)
 
     def _rebuildShapeFunctionsWithUnchangedNeighbours(self) -> None:
         """Rebuild every particle's shape functions from its existing set of kernel functions.
