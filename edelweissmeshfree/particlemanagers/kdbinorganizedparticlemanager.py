@@ -55,10 +55,13 @@ class _FastKDBinOrganizer:
     Optimized Bin Organizer using pure NumPy vectorization and integer indexing.
     """
 
-    def __init__(self, kernelFunctions: List[Any], dimension: int) -> None:
+    def __init__(self, kernelFunctions: List[Any], dimension: int, skin: float = 0.0) -> None:
         self._dimension = dimension
 
         # --- 1. Vectorized Bounding Box Extraction ---
+        # Every bounding box is grown by `skin` on all sides. A search then reports the kernels that
+        # cover a particle *or come within skin of doing so*, which is what allows a later increment
+        # to reuse the answer -- see KDBinOrganizedParticleManager.
         boundingBoxesPerKernel = [sf.getBoundingBox() for sf in kernelFunctions]
 
         if not boundingBoxesPerKernel:
@@ -73,8 +76,8 @@ class _FastKDBinOrganizer:
             return
 
         boundingBoxes = np.array(boundingBoxesPerKernel)
-        self._mins = boundingBoxes[:, 0, :]
-        self._maxs = boundingBoxes[:, 1, :]
+        self._mins = boundingBoxes[:, 0, :] - skin
+        self._maxs = boundingBoxes[:, 1, :] + skin
 
         # --- 2. Grid Setup ---
         self._boundingBoxMin = np.min(self._mins, axis=0) - 1e-12
@@ -179,6 +182,7 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
         journal: Journal,
         bondParticlesToKernelFunctions: bool = False,
         randomlyShiftPartliceShapeFunctions: Union[bool, float] = False,
+        neighbourListSkinFraction: float = 0.0,
     ):
 
         self._meshfreeKernelFunctions = particleKernelDomain.meshfreeKernelFunctions
@@ -201,6 +205,13 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
         # to a strict box test that can be vectorised over all surviving candidates at once.
         self._allKernelsHaveBoxSupport = all(k.hasBoxSupport for k in self._meshfreeKernelFunctions)
 
+        self._neighbourListSkin = self._computeNeighbourListSkin(neighbourListSkinFraction)
+
+        # Positions as of the last search, against which motion is measured. Empty means no search
+        # has happened yet, so the next call has to be one.
+        self._kernelCentresAtLastSearch = None
+        self._evaluationCoordinatesAtLastSearch = None
+
         if not isinstance(randomlyShiftPartliceShapeFunctions, (bool, float)):
             raise ValueError("randomlyShiftPartliceShapeFunctions must be a boolean or a float.")
         self._randomlyShiftPartliceShapeFunctions = randomlyShiftPartliceShapeFunctions
@@ -219,31 +230,223 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
     def particlesWithChangedKernelFunctions(self) -> list:
         return self._particlesWithChangedKernelFunctions
 
+    def _computeNeighbourListSkin(self, neighbourListSkinFraction: float) -> float:
+        """Turn the requested skin fraction into an absolute distance.
+
+        Parameters
+        ----------
+        neighbourListSkinFraction
+            The skin, as a fraction of the smallest kernel support half-width in the domain. Zero
+            disables neighbour list reuse, so that every increment performs a full search.
+
+        Returns
+        -------
+        float
+            The skin as an absolute distance.
+        """
+
+        if neighbourListSkinFraction < 0.0:
+            raise ValueError("neighbourListSkinFraction must not be negative.")
+
+        if neighbourListSkinFraction == 0.0:
+            return 0.0
+
+        if not self._allKernelsHaveBoxSupport:
+            raise ValueError(
+                "A neighbour list skin requires every kernel function to have box support, because "
+                "reuse relies on the search testing an inflated bounding box. Use a skin of zero for "
+                "kernel functions whose support is smaller than their bounding box."
+            )
+
+        # The smallest half-width in the domain, so that the skin is a conservative fraction of even
+        # the tightest support.
+        boundingBoxes = np.array([k.getBoundingBox() for k in self._meshfreeKernelFunctions])
+        smallestSupportHalfWidth = np.min(0.5 * (boundingBoxes[:, 1, :] - boundingBoxes[:, 0, :]))
+
+        return neighbourListSkinFraction * smallestSupportHalfWidth
+
     def signalizeKernelFunctionUpdate(self) -> None:
-        self._theBins = _FastKDBinOrganizer(list(self._meshfreeKernelFunctions), self._dimension)
+        self._theBins = _FastKDBinOrganizer(
+            list(self._meshfreeKernelFunctions), self._dimension, skin=self._neighbourListSkin
+        )
 
     def updateConnectivity(self) -> bool:
+        """Bring the particle-to-kernel-function connectivity up to date.
+
+        A full search is expensive and, in a dynamic simulation, usually pointless: neighbours change
+        through deformation, not through the bar as a whole moving, so from one increment to the next
+        almost no particle changes its set of kernel functions.
+
+        With a neighbour list skin the search therefore reports every kernel function that covers a
+        particle *or comes within the skin of covering it*, and that answer stays usable until
+        accumulated motion could have carried something across the remaining margin. Increments in
+        between only rebuild the shape functions, which have to be rebuilt in any case because the
+        particles have moved.
+
+        The extra kernel functions this admits are harmless rather than approximate: they evaluate to
+        exactly zero at the particle, and the reconstruction discards anything that does, so the shape
+        functions are the same ones a full search would have produced.
+
+        Returns
+        -------
+        bool
+            True if any particle's set of kernel functions changed.
+        """
+
         if self._bondParticlesToKernelFunctions:
-            self._journal.message("Updating kernel function positions...", "ParticleManager")
-            for particle, kernelFunction in zip(self._particles, self._meshfreeKernelFunctions):
-                particleCoordinates = particle.getCenterCoordinates()
+            self._moveKernelFunctionsToTheirParticles()
 
-                if self._randomlyShiftPartliceShapeFunctions:
-                    if isinstance(self._randomlyShiftPartliceShapeFunctions, float):
-                        particleVol = particle.getVolumeUndeformed()
-                        particleSize = particleVol ** (1.0 / self._dimension)
+        if not self._aSearchIsDue():
+            self._rebuildShapeFunctionsWithUnchangedNeighbours()
+            self._particlesWithChangedKernelFunctions = []
+            return False
 
-                        randdisp = (
-                            (np.random.rand(self._dimension) - 0.5)
-                            * np.sqrt(particle.getVolumeUndeformed())
-                            * self._randomlyShiftPartliceShapeFunctions
-                            * particleSize
-                        )
-                        particleCoordinates += randdisp
-
-                kernelFunction.moveTo(particleCoordinates)
-
+        if self._bondParticlesToKernelFunctions:
             self.signalizeKernelFunctionUpdate()
+
+        self._searchForCoveringKernelFunctions()
+        self._recordPositionsAtThisSearch()
+
+        return len(self._particlesWithChangedKernelFunctions) > 0
+
+    def _moveKernelFunctionsToTheirParticles(self) -> None:
+        """Move every kernel function onto the centre of the particle it is bonded to."""
+
+        self._journal.message("Updating kernel function positions...", "ParticleManager")
+
+        for particle, kernelFunction in zip(self._particles, self._meshfreeKernelFunctions):
+            particleCoordinates = particle.getCenterCoordinates()
+
+            if self._randomlyShiftPartliceShapeFunctions:
+                if isinstance(self._randomlyShiftPartliceShapeFunctions, float):
+                    particleVol = particle.getVolumeUndeformed()
+                    particleSize = particleVol ** (1.0 / self._dimension)
+
+                    randdisp = (
+                        (np.random.rand(self._dimension) - 0.5)
+                        * np.sqrt(particle.getVolumeUndeformed())
+                        * self._randomlyShiftPartliceShapeFunctions
+                        * particleSize
+                    )
+                    particleCoordinates += randdisp
+
+            kernelFunction.moveTo(particleCoordinates)
+
+    def _aSearchIsDue(self) -> bool:
+        """Whether the neighbour lists have to be searched for again.
+
+        A kernel function covers a particle when one of the particle's evaluation coordinates lies
+        inside the kernel's box, and both ends of that test move between increments. What eats into
+        the skin is the *relative* displacement of a pair, which for any common reference displacement
+        d is bounded by
+
+            || dx_i - dc_j || <= || dx_i - d || + || dc_j - d ||
+
+        for every pair, so taking the two maxima separately is conservative whatever d is. Choosing d
+        to be the mean displacement is what makes the bound useful here: a bar flying towards a wall
+        translates far more than it deforms, and rigid translation cannot change which kernel function
+        covers which particle. Measured against the mean, only the departure from rigid motion counts.
+
+        Returns
+        -------
+        bool
+            True if a full search is required.
+        """
+
+        if self._neighbourListSkin == 0.0:
+            return True
+
+        if self._kernelCentresAtLastSearch is None:
+            return True
+
+        kernelDisplacements = self._currentKernelCentres() - self._kernelCentresAtLastSearch
+        rigidTranslation = np.mean(kernelDisplacements, axis=0)
+
+        largestKernelMotion = np.max(np.abs(kernelDisplacements - rigidTranslation))
+        largestParticleMotion = self._largestParticleMotionRelativeTo(rigidTranslation)
+
+        return largestKernelMotion + largestParticleMotion > self._neighbourListSkin
+
+    def _largestParticleMotionRelativeTo(self, rigidTranslation: NDArray[np.float64]) -> float:
+        """The largest departure of any evaluation coordinate from the given rigid translation.
+
+        Parameters
+        ----------
+        rigidTranslation
+            The displacement to measure against.
+
+        Returns
+        -------
+        float
+            The largest absolute deviation, over all evaluation coordinates of all particles.
+        """
+
+        particlesAndReferences = list(zip(self._particles, self._evaluationCoordinatesAtLastSearch))
+
+        def largestMotionInChunk(chunk) -> float:
+            largestMotion = 0.0
+            for particle, coordinatesAtLastSearch in chunk:
+                displacements = particle.getEvaluationCoordinates() - coordinatesAtLastSearch
+                largestMotion = max(largestMotion, np.max(np.abs(displacements - rigidTranslation)))
+            return largestMotion
+
+        if self._numThreads <= 1:
+            return largestMotionInChunk(particlesAndReferences)
+
+        chunkSize = len(particlesAndReferences) // self._numThreads + 1
+        chunks = [particlesAndReferences[i : i + chunkSize] for i in range(0, len(particlesAndReferences), chunkSize)]
+
+        executor = getThreadPool(self._numThreads)
+
+        return max(executor.map(largestMotionInChunk, chunks))
+
+    def _currentKernelCentres(self) -> NDArray[np.float64]:
+        """The current centre of every kernel function, as one array.
+
+        Returns
+        -------
+        NDArray[np.float64]
+            The kernel function centres, one row per kernel function.
+        """
+
+        return np.array([kernelFunction.center for kernelFunction in self._meshfreeKernelFunctions])
+
+    def _recordPositionsAtThisSearch(self) -> None:
+        """Remember the positions the current neighbour lists were searched at."""
+
+        if self._neighbourListSkin == 0.0:
+            return
+
+        self._kernelCentresAtLastSearch = self._currentKernelCentres()
+        self._evaluationCoordinatesAtLastSearch = [
+            np.copy(particle.getEvaluationCoordinates()) for particle in self._particles
+        ]
+
+    def _rebuildShapeFunctionsWithUnchangedNeighbours(self) -> None:
+        """Rebuild every particle's shape functions from its existing set of kernel functions.
+
+        The particles have moved, so the shape functions are stale even though the neighbour lists are
+        not. Reassigning the unchanged set is what recomputes them.
+        """
+
+        def rebuildChunk(particleChunk: List[Any]) -> None:
+            for particle in particleChunk:
+                particle.assignKernelFunctions(particle.kernelFunctions)
+
+        if self._numThreads <= 1:
+            rebuildChunk(self._particles)
+            return
+
+        chunkSize = len(self._particles) // self._numThreads + 1
+        chunks = [self._particles[i : i + chunkSize] for i in range(0, len(self._particles), chunkSize)]
+
+        executor = getThreadPool(self._numThreads)
+        list(executor.map(rebuildChunk, chunks))
+
+    def _searchForCoveringKernelFunctions(self) -> None:
+        """Search, for every particle, the kernel functions that cover it within the skin."""
+
+        self._journal.message("Searching particle-kernel connectivity...", "ParticleManager", level=1)
 
         # Capture variables for closure
         allKernels = self._meshfreeKernelFunctions
@@ -359,10 +562,6 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
         self._particlesWithChangedKernelFunctions = [
             particle for chunk in changedParticlesPerChunk for particle in chunk
         ]
-
-        hasChanged = len(self._particlesWithChangedKernelFunctions) > 0
-
-        return hasChanged
 
     def getCoveredDomain(self) -> Tuple[NDArray[np.float64], NDArray[np.float64]]:
         return self._theBins._boundingBoxMin, self._theBins._boundingBoxMax
