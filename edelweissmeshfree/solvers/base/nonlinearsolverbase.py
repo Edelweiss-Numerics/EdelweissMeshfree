@@ -498,6 +498,28 @@ class BaseNonlinearSolver:
             self._prepareParticles(particles, timeStep.totalTime, timeStep.timeIncrement)
             connectivityHasChanged |= self._updateManagedConnectivity(particleManagers)
 
+        connectivityHasChanged |= self._updateConstraintConnectivity(constraints, model)
+
+        return connectivityHasChanged
+
+    @performancetiming.timeit("constraint connectivity")
+    def _updateConstraintConnectivity(self, constraints: list, model) -> bool:
+        """Update the connectivity of all constraints.
+
+        Parameters
+        ----------
+        constraints
+            The list of constraints to be updated.
+        model
+            The model the constraints act on.
+
+        Returns
+        -------
+        bool
+            True if the connectivity of any constraint has changed.
+        """
+
+        connectivityHasChanged = False
         for c in constraints:
             connectivityHasChanged |= c.updateConnectivity(model)
 
