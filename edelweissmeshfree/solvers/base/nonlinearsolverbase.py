@@ -168,6 +168,14 @@ class BaseNonlinearSolver:
     def __init__(self, journal: Journal):
         self.journal = journal
 
+        # Whatever a solver put into a restart file's solverState group, once one has been read.
+        # Empty means either "started fresh" or "the restart file predates solver state", which are
+        # different situations -- hence the separate flag below.
+        self._restoredSolverState = {}
+
+        # Whether a restart file has been read at all.
+        self._restartWasRead = False
+
     @abstractmethod
     def solveStep(
         self,
@@ -405,7 +413,7 @@ class BaseNonlinearSolver:
             man.finalizeIncrement()
 
     @performancetiming.timeit("writing restart")
-    def _writeRestart(self, model: MPMModel, timeStepper, fileName):
+    def _writeRestart(self, model: MPMModel, timeStepper, fileName, solverState: dict = None):
         """Write the restart file.
 
         Parameters
@@ -416,11 +424,20 @@ class BaseNonlinearSolver:
             The timeStepper to be written.
         fileName
             The name of the restart file.
+        solverState
+            Arrays the solver itself has to carry across a restart, by name. Anything a solver keeps
+            outside the model and the time stepper -- an explicit integrator's half-step velocity, for
+            instance -- has to be written here, or it can only be guessed at on the way back in.
         """
         theRestartFile = h5py.File(fileName, "w")
 
         model.writeRestart(theRestartFile)
         timeStepper.writeRestart(theRestartFile)
+
+        if solverState:
+            group = theRestartFile.create_group("solverState")
+            for name, array in solverState.items():
+                group.create_dataset(name, data=array)
 
     def readRestart(
         self,
@@ -438,11 +455,24 @@ class BaseNonlinearSolver:
             The timeStepper instance to be read from the restart file.
         model
             The full MPMModel instance to be read from the restart file.
+
+        Notes
+        -----
+        Anything the writing solver put into ``solverState`` is made available in
+        ``self._restoredSolverState``, which is empty for a fresh start and for restart files written
+        before solvers carried state.
         """
         theRestartFile = h5py.File(restartFile, "r")
 
         model.readRestart(theRestartFile)
         timeStepper.readRestart(theRestartFile)
+
+        self._restartWasRead = True
+
+        self._restoredSolverState = {}
+        if "solverState" in theRestartFile:
+            for name, dataset in theRestartFile["solverState"].items():
+                self._restoredSolverState[name] = dataset[()]
 
     def _tryFallbackWithRestartFiles(
         self, writtenRestarts: RestartHistoryManager, timeStepper, model: MPMModel, iterationOptions: dict
