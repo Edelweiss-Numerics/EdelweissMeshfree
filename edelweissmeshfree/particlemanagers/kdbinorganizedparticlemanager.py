@@ -195,6 +195,8 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
         # Pre-fetch labels for integer sorting
         self._kernelLabels = np.array([k.node.label for k in self._meshfreeKernelFunctions], dtype=int)
 
+        self._particlesWithChangedKernelFunctions = []
+
         # If every kernel's support is exactly its bounding box, the precise support check reduces
         # to a strict box test that can be vectorised over all surviving candidates at once.
         self._allKernelsHaveBoxSupport = all(k.hasBoxSupport for k in self._meshfreeKernelFunctions)
@@ -213,12 +215,14 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
 
         self.signalizeKernelFunctionUpdate()
 
+    @property
+    def particlesWithChangedKernelFunctions(self) -> list:
+        return self._particlesWithChangedKernelFunctions
+
     def signalizeKernelFunctionUpdate(self) -> None:
         self._theBins = _FastKDBinOrganizer(list(self._meshfreeKernelFunctions), self._dimension)
 
     def updateConnectivity(self) -> bool:
-        hasChanged = False
-
         if self._bondParticlesToKernelFunctions:
             self._journal.message("Updating kernel function positions...", "ParticleManager")
             for particle, kernelFunction in zip(self._particles, self._meshfreeKernelFunctions):
@@ -250,8 +254,8 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
         dim = self._dimension
         boxSupport = self._allKernelsHaveBoxSupport
 
-        def processParticleChunk(particleChunk: List[Any]) -> bool:
-            particlesInChunkHaveChanged = False
+        def processParticleChunk(particleChunk: List[Any]) -> List[Any]:
+            particlesInChunkWithChangedKernelFunctions = []
 
             for particle in particleChunk:
                 evaluationCoordinates = particle.getEvaluationCoordinates()
@@ -333,26 +337,30 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
                     )
 
                 if validKernels != particle.kernelFunctions:
-                    particlesInChunkHaveChanged = True
+                    particlesInChunkWithChangedKernelFunctions.append(particle)
 
                 particle.assignKernelFunctions(
                     validKernels
                 )  # assign the kernel functions. This happens even if they are the same, because the overlap with the particle usually changes due to movement.
 
-            return particlesInChunkHaveChanged
+            return particlesInChunkWithChangedKernelFunctions
 
         if self._numThreads <= 1:
-            if processParticleChunk(self._particles):
-                hasChanged = True
+            changedParticlesPerChunk = [processParticleChunk(self._particles)]
         else:
             chunkSize = len(self._particles) // self._numThreads + 1
             chunks = [self._particles[i : i + chunkSize] for i in range(0, len(self._particles), chunkSize)]
 
             executor = getThreadPool(self._numThreads)
-            results = list(executor.map(processParticleChunk, chunks))
+            changedParticlesPerChunk = list(executor.map(processParticleChunk, chunks))
 
-            if any(results):
-                hasChanged = True
+        # Chunks are handed out in particle order and executor.map preserves that order, so the
+        # collected list is the same for any number of threads.
+        self._particlesWithChangedKernelFunctions = [
+            particle for chunk in changedParticlesPerChunk for particle in chunk
+        ]
+
+        hasChanged = len(self._particlesWithChangedKernelFunctions) > 0
 
         return hasChanged
 

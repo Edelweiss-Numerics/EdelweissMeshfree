@@ -199,7 +199,15 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
                     activeConstraints = [c for c in constraints if c.active]
 
                     if shallowUpdateOfDofManager:
-                        self._updateDofManager(theDofManager, activeConstraints, particles)
+                        # The mapping of a particle into the dof vector follows from its kernel
+                        # functions, so only the particles whose kernel functions changed need a new
+                        # one. A connectivity change reported by a constraint alone leaves every
+                        # particle mapping valid, and then this list is empty.
+                        self._updateDofManager(
+                            theDofManager,
+                            activeConstraints,
+                            self._getParticlesWithChangedKernelFunctions(particleManagers),
+                        )
                     else:
                         theDofManager = self._instanceDofManager(model, activeConstraints, particles)
 
@@ -487,11 +495,34 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
         constraints
             The list of constraints to be evaluated.
         particles
-            The list of particles to be evaluated.
+            The particles whose mapping into the dof vector has to be recomputed. Passing only the
+            particles that actually changed is what keeps this cheap; see
+            :meth:`~edelweissmeshfree.numerics.dofmanager.MPMDofManager.updateParticles` for the
+            condition under which that is sound.
         """
 
         theDofManager.updateParticles(particles)
         theDofManager.updateConstraints(constraints)
+
+    def _getParticlesWithChangedKernelFunctions(self, particleManagers: list[BaseParticleManager]) -> list:
+        """Collect the particles whose kernel functions changed in the last connectivity update.
+
+        Parameters
+        ----------
+        particleManagers
+            The particle managers that were asked to update their connectivity.
+
+        Returns
+        -------
+        list
+            The particles reported as changed, across all managers.
+        """
+
+        particlesWithChangedKernelFunctions = []
+        for manager in particleManagers:
+            particlesWithChangedKernelFunctions += manager.particlesWithChangedKernelFunctions
+
+        return particlesWithChangedKernelFunctions
 
     @performancetiming.timeit("instance dof structure")
     def _instanceDofManager(self, model: MPMModel, constraints: list, particles: list) -> DofManager:

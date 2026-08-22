@@ -214,13 +214,22 @@ class MPMDofManager(DofManager):
 
     def updateParticles(self, particles: list):
         """
-        Updates the connectivity mapping for particles without rebuilding
+        Updates the connectivity mapping for the given particles without rebuilding
         the entire DofManager structure.
+
+        Only the mappings of the particles passed in are recomputed; the mappings of all other
+        particles are left as they are. That is what makes it worth passing just the particles whose
+        kernel functions actually changed, which is usually a small fraction of the model.
+
+        It is also why this method may only be used while the global degree-of-freedom numbering
+        stays put: an untouched particle keeps the indices it was given earlier, so those indices
+        have to still mean the same thing. Whenever the numbering itself changes, the DofManager has
+        to be rebuilt from scratch instead.
 
         Parameters
         ----------
         particles : list
-            The list of particles to update.
+            The particles whose mapping is to be recomputed.
         """
 
         if not particles:
@@ -228,8 +237,10 @@ class MPMDofManager(DofManager):
 
         particles = list(particles)  # Ensure we have a list for iteration
 
-        self.idcsOfParticlesInDofVector = self._locateParticlesInDofVector(particles)
-        self.idcsOfHigherOrderEntitiesInDofVector.update(self.idcsOfParticlesInDofVector)
+        relocatedParticles = self._locateParticlesInDofVector(particles)
+
+        self.idcsOfParticlesInDofVector.update(relocatedParticles)
+        self.idcsOfHigherOrderEntitiesInDofVector.update(relocatedParticles)
 
     def updateConstraints(self, constraints: list):
         """
