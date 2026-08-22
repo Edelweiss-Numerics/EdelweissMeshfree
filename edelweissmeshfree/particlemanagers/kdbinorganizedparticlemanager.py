@@ -59,9 +59,9 @@ class _FastKDBinOrganizer:
         self._dimension = dimension
 
         # --- 1. Vectorized Bounding Box Extraction ---
-        bboxes = [sf.getBoundingBox() for sf in kernelFunctions]
+        boundingBoxesPerKernel = [sf.getBoundingBox() for sf in kernelFunctions]
 
-        if not bboxes:
+        if not boundingBoxesPerKernel:
             self._mins = np.empty((0, dimension))
             self._maxs = np.empty((0, dimension))
             self._bins = []
@@ -72,16 +72,16 @@ class _FastKDBinOrganizer:
             self._strides = np.ones(3, dtype=int)
             return
 
-        bboxes_arr = np.array(bboxes)
-        self._mins = bboxes_arr[:, 0, :]
-        self._maxs = bboxes_arr[:, 1, :]
+        boundingBoxes = np.array(boundingBoxesPerKernel)
+        self._mins = boundingBoxes[:, 0, :]
+        self._maxs = boundingBoxes[:, 1, :]
 
         # --- 2. Grid Setup ---
         self._boundingBoxMin = np.min(self._mins, axis=0) - 1e-12
         self._boundingBoxMax = np.max(self._maxs, axis=0) + 1e-12
 
-        avg_size = np.mean(self._maxs - self._mins, axis=0)
-        self._binSize = avg_size / 2.0
+        averageBoundingBoxExtent = np.mean(self._maxs - self._mins, axis=0)
+        self._binSize = averageBoundingBoxExtent / 2.0
 
         self._nBins = np.ceil((self._boundingBoxMax - self._boundingBoxMin) / self._binSize).astype(int)
 
@@ -91,82 +91,84 @@ class _FastKDBinOrganizer:
         if dimension == 3:
             self._strides[2] = self._nBins[0] * self._nBins[1]
 
-        total_bins = int(np.prod(self._nBins))
-        self._bins = [[] for _ in range(total_bins)]
+        numberOfBins = int(np.prod(self._nBins))
+        self._bins = [[] for _ in range(numberOfBins)]
 
         # --- 3. Vectorized Bin Index Calculation ---
-        min_indices = ((self._mins - self._boundingBoxMin) / self._binSize).astype(int)
-        max_indices = ((self._maxs - self._boundingBoxMin) / self._binSize).astype(int)
+        lowestBinIndexPerKernel = ((self._mins - self._boundingBoxMin) / self._binSize).astype(int)
+        highestBinIndexPerKernel = ((self._maxs - self._boundingBoxMin) / self._binSize).astype(int)
 
         # --- 4. Fill Bins ---
-        _, stride_y, stride_z = self._strides[0], self._strides[1], self._strides[2]
+        _, strideAlongY, strideAlongZ = self._strides[0], self._strides[1], self._strides[2]
         bins = self._bins
 
-        for k_idx, (min_idx, max_idx) in enumerate(zip(min_indices, max_indices)):
+        for kernelIndex, (lowestBinIndex, highestBinIndex) in enumerate(
+            zip(lowestBinIndexPerKernel, highestBinIndexPerKernel)
+        ):
             if dimension == 3:
-                for z in range(min_idx[2], max_idx[2] + 1):
-                    z_offset = z * stride_z
-                    for y in range(min_idx[1], max_idx[1] + 1):
-                        y_offset = z_offset + y * stride_y
-                        start = y_offset + min_idx[0]
-                        end = y_offset + max_idx[0] + 1
-                        for bin_idx in range(start, end):
-                            bins[bin_idx].append(k_idx)
+                for z in range(lowestBinIndex[2], highestBinIndex[2] + 1):
+                    offsetOfPlane = z * strideAlongZ
+                    for y in range(lowestBinIndex[1], highestBinIndex[1] + 1):
+                        offsetOfRow = offsetOfPlane + y * strideAlongY
+                        start = offsetOfRow + lowestBinIndex[0]
+                        end = offsetOfRow + highestBinIndex[0] + 1
+                        for binIndex in range(start, end):
+                            bins[binIndex].append(kernelIndex)
             elif dimension == 2:
-                for y in range(min_idx[1], max_idx[1] + 1):
-                    y_offset = y * stride_y
-                    start = y_offset + min_idx[0]
-                    end = y_offset + max_idx[0] + 1
-                    for bin_idx in range(start, end):
-                        bins[bin_idx].append(k_idx)
+                for y in range(lowestBinIndex[1], highestBinIndex[1] + 1):
+                    offsetOfRow = y * strideAlongY
+                    start = offsetOfRow + lowestBinIndex[0]
+                    end = offsetOfRow + highestBinIndex[0] + 1
+                    for binIndex in range(start, end):
+                        bins[binIndex].append(kernelIndex)
             else:
-                for bin_idx in range(min_idx[0], max_idx[0] + 1):
-                    bins[bin_idx].append(k_idx)
+                for binIndex in range(lowestBinIndex[0], highestBinIndex[0] + 1):
+                    bins[binIndex].append(kernelIndex)
 
-    def getCandidateIndices(self, query_min: NDArray[np.float64], query_max: NDArray[np.float64]) -> Set[int]:
+    def getCandidateIndices(self, queryBoxMin: NDArray[np.float64], queryBoxMax: NDArray[np.float64]) -> Set[int]:
         if not self._bins:
             return set()
 
-        idx_lower = ((query_min - self._boundingBoxMin) / self._binSize).astype(int)
-        idx_upper = ((query_max - self._boundingBoxMin) / self._binSize).astype(int)
+        lowestQueriedBinIndex = ((queryBoxMin - self._boundingBoxMin) / self._binSize).astype(int)
+        highestQueriedBinIndex = ((queryBoxMax - self._boundingBoxMin) / self._binSize).astype(int)
 
-        np.maximum(idx_lower, 0, out=idx_lower)
-        np.minimum(idx_upper, self._nBins - 1, out=idx_upper)
+        np.maximum(lowestQueriedBinIndex, 0, out=lowestQueriedBinIndex)
+        np.minimum(highestQueriedBinIndex, self._nBins - 1, out=highestQueriedBinIndex)
 
         bins = self._bins
-        _, stride_y, stride_z = self._strides[0], self._strides[1], self._strides[2]
+        _, strideAlongY, strideAlongZ = self._strides[0], self._strides[1], self._strides[2]
 
-        lists_to_chain = []
+        kernelListsInQueriedBins = []
 
         if self._dimension == 3:
-            for z in range(idx_lower[2], idx_upper[2] + 1):
-                z_offset = z * stride_z
-                for y in range(idx_lower[1], idx_upper[1] + 1):
-                    y_offset = z_offset + y * stride_y
-                    start = y_offset + idx_lower[0]
-                    end = y_offset + idx_upper[0] + 1
-                    for bin_idx in range(start, end):
-                        if bins[bin_idx]:
-                            lists_to_chain.append(bins[bin_idx])
+            for z in range(lowestQueriedBinIndex[2], highestQueriedBinIndex[2] + 1):
+                offsetOfPlane = z * strideAlongZ
+                for y in range(lowestQueriedBinIndex[1], highestQueriedBinIndex[1] + 1):
+                    offsetOfRow = offsetOfPlane + y * strideAlongY
+                    start = offsetOfRow + lowestQueriedBinIndex[0]
+                    end = offsetOfRow + highestQueriedBinIndex[0] + 1
+                    for binIndex in range(start, end):
+                        if bins[binIndex]:
+                            kernelListsInQueriedBins.append(bins[binIndex])
 
         elif self._dimension == 2:
-            for y in range(idx_lower[1], idx_upper[1] + 1):
-                y_offset = y * stride_y
-                start = y_offset + idx_lower[0]
-                end = y_offset + idx_upper[0] + 1
-                for bin_idx in range(start, end):
-                    if bins[bin_idx]:
-                        lists_to_chain.append(bins[bin_idx])
+            for y in range(lowestQueriedBinIndex[1], highestQueriedBinIndex[1] + 1):
+                offsetOfRow = y * strideAlongY
+                start = offsetOfRow + lowestQueriedBinIndex[0]
+                end = offsetOfRow + highestQueriedBinIndex[0] + 1
+                for binIndex in range(start, end):
+                    if bins[binIndex]:
+                        kernelListsInQueriedBins.append(bins[binIndex])
 
         elif self._dimension == 1:
-            for bin_idx in range(idx_lower[0], idx_upper[0] + 1):
-                if bins[bin_idx]:
-                    lists_to_chain.append(bins[bin_idx])
+            for binIndex in range(lowestQueriedBinIndex[0], highestQueriedBinIndex[0] + 1):
+                if bins[binIndex]:
+                    kernelListsInQueriedBins.append(bins[binIndex])
 
-        if not lists_to_chain:
+        if not kernelListsInQueriedBins:
             return set()
 
-        return set(itertools.chain.from_iterable(lists_to_chain))
+        return set(itertools.chain.from_iterable(kernelListsInQueriedBins))
 
 
 class KDBinOrganizedParticleManager(BaseParticleManager):
@@ -240,50 +242,56 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
             self.signalizeKernelFunctionUpdate()
 
         # Capture variables for closure
-        all_kernels = self._meshfreeKernelFunctions
-        kernel_mins = self._theBins._mins
-        kernel_maxs = self._theBins._maxs
-        bin_organizer = self._theBins
-        kernel_labels = self._kernelLabels
+        allKernels = self._meshfreeKernelFunctions
+        kernelBoundingBoxMins = self._theBins._mins
+        kernelBoundingBoxMaxs = self._theBins._maxs
+        binOrganizer = self._theBins
+        kernelLabels = self._kernelLabels
         dim = self._dimension
         boxSupport = self._allKernelsHaveBoxSupport
 
         def processParticleChunk(particleChunk: List[Any]) -> bool:
             particlesInChunkHaveChanged = False
 
-            for p in particleChunk:
-                evaluationCoordinates = p.getEvaluationCoordinates()
+            for particle in particleChunk:
+                evaluationCoordinates = particle.getEvaluationCoordinates()
 
                 # Broad Phase Min/Max Calculation
                 if len(evaluationCoordinates) == 1:
-                    p_min = evaluationCoordinates[0]
-                    p_max = evaluationCoordinates[0]
+                    particleBoxMin = evaluationCoordinates[0]
+                    particleBoxMax = evaluationCoordinates[0]
                 else:
-                    p_min = np.min(evaluationCoordinates, axis=0)
-                    p_max = np.max(evaluationCoordinates, axis=0)
+                    particleBoxMin = np.min(evaluationCoordinates, axis=0)
+                    particleBoxMax = np.max(evaluationCoordinates, axis=0)
 
                 # 1. Grid Search
-                candidate_indices = bin_organizer.getCandidateIndices(p_min, p_max)
+                candidateKernelIndices = binOrganizer.getCandidateIndices(particleBoxMin, particleBoxMax)
 
                 # 2. Vectorized AABB Filter
                 # np.fromiter consumes the candidate set directly; going through list() first
                 # materialises a throwaway Python list of a few hundred ints per particle.
-                cand_idx_arr = np.fromiter(candidate_indices, dtype=np.intp, count=len(candidate_indices))
+                candidateKernelIndices = np.fromiter(
+                    candidateKernelIndices, dtype=np.intp, count=len(candidateKernelIndices)
+                )
 
-                c_mins = kernel_mins[cand_idx_arr, :dim]
-                c_maxs = kernel_maxs[cand_idx_arr, :dim]
-                p_max_s = p_max[:dim]
-                p_min_s = p_min[:dim]
+                candidateBoundingBoxMins = kernelBoundingBoxMins[candidateKernelIndices, :dim]
+                candidateBoundingBoxMaxs = kernelBoundingBoxMaxs[candidateKernelIndices, :dim]
+                particleBoxMaxInDomainDimensions = particleBoxMax[:dim]
+                particleBoxMinInDomainDimensions = particleBoxMin[:dim]
 
-                overlap_mask = np.all((p_max_s >= c_mins) & (p_min_s <= c_maxs), axis=1)
-                surviving_indices = cand_idx_arr[overlap_mask]
+                candidateBoxOverlapsParticleBox = np.all(
+                    (particleBoxMaxInDomainDimensions >= candidateBoundingBoxMins)
+                    & (particleBoxMinInDomainDimensions <= candidateBoundingBoxMaxs),
+                    axis=1,
+                )
+                overlappingKernelIndices = candidateKernelIndices[candidateBoxOverlapsParticleBox]
 
                 # 3. Precise Check (Geometric)
                 # Ensure coordinates are 2D for the Cython signature
-                eval_coords_view = evaluationCoordinates
-                if eval_coords_view.ndim == 1:
+                evaluationCoordinates2D = evaluationCoordinates
+                if evaluationCoordinates2D.ndim == 1:
                     # Reshape (dim,) -> (1, dim)
-                    eval_coords_view = eval_coords_view.reshape(1, -1)
+                    evaluationCoordinates2D = evaluationCoordinates2D.reshape(1, -1)
 
                 if boxSupport:
                     # A kernel with box support covers a coordinate exactly when the coordinate lies
@@ -291,32 +299,43 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
                     # to hand from the broad phase -- so the whole per-candidate support query becomes
                     # one vectorised test. Both comparisons are strict: a coordinate on the boundary
                     # sits where the kernel is exactly zero and is not covered.
-                    s_mins = kernel_mins[surviving_indices, :dim]
-                    s_maxs = kernel_maxs[surviving_indices, :dim]
-                    pts = eval_coords_view[:, None, :dim]
-                    isCovering = np.any(np.all((pts > s_mins[None, :, :]) & (pts < s_maxs[None, :, :]), axis=2), axis=0)
-                    covering = surviving_indices[isCovering]
-                    valid_indices = list(covering[np.argsort(kernel_labels[covering], kind="stable")])
+                    overlappingBoundingBoxMins = kernelBoundingBoxMins[overlappingKernelIndices, :dim]
+                    overlappingBoundingBoxMaxs = kernelBoundingBoxMaxs[overlappingKernelIndices, :dim]
+                    evaluationPoints = evaluationCoordinates2D[:, None, :dim]
+                    kernelCoversParticle = np.any(
+                        np.all(
+                            (evaluationPoints > overlappingBoundingBoxMins[None, :, :])
+                            & (evaluationPoints < overlappingBoundingBoxMaxs[None, :, :]),
+                            axis=2,
+                        ),
+                        axis=0,
+                    )
+                    coveringKernelIndicesUnsorted = overlappingKernelIndices[kernelCoversParticle]
+                    coveringKernelIndices = list(
+                        coveringKernelIndicesUnsorted[
+                            np.argsort(kernelLabels[coveringKernelIndicesUnsorted], kind="stable")
+                        ]
+                    )
                 else:
-                    valid_indices = []
-                    for k_idx in surviving_indices:
-                        sf = all_kernels[k_idx]
+                    coveringKernelIndices = []
+                    for kernelIndex in overlappingKernelIndices:
+                        candidateKernel = allKernels[kernelIndex]
 
-                        if sf.isAnyCoordinateInSupport(eval_coords_view):
-                            valid_indices.append(k_idx)
+                        if candidateKernel.isAnyCoordinateInSupport(evaluationCoordinates2D):
+                            coveringKernelIndices.append(kernelIndex)
 
-                    valid_indices.sort(key=lambda idx: kernel_labels[idx])
-                validKernels = [all_kernels[i] for i in valid_indices]
+                    coveringKernelIndices.sort(key=lambda idx: kernelLabels[idx])
+                validKernels = [allKernels[i] for i in coveringKernelIndices]
 
                 if not validKernels:
                     raise ValueError(
-                        f"Particle at {p.getCenterCoordinates()} has no associated kernel functions after connectivity update."
+                        f"Particle at {particle.getCenterCoordinates()} has no associated kernel functions after connectivity update."
                     )
 
-                if validKernels != p.kernelFunctions:
+                if validKernels != particle.kernelFunctions:
                     particlesInChunkHaveChanged = True
 
-                p.assignKernelFunctions(
+                particle.assignKernelFunctions(
                     validKernels
                 )  # assign the kernel functions. This happens even if they are the same, because the overlap with the particle usually changes due to movement.
 
@@ -358,8 +377,8 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
 
         for i in range(nBins[0]):
             for j in range(nBins[1]):
-                flat_idx = j * self._theBins._strides[1] + i
-                nKernelFunctions[i, j] = len(self._theBins._bins[flat_idx])
+                flatBinIndex = j * self._theBins._strides[1] + i
+                nKernelFunctions[i, j] = len(self._theBins._bins[flatBinIndex])
 
         plt.figure()
         plt.imshow(nKernelFunctions.T, origin="lower")
