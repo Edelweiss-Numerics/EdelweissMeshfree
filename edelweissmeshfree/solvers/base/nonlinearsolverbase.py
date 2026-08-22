@@ -42,6 +42,11 @@ import h5py
 from edelweissfe.constraints.base.constraintbase import ConstraintBase
 from edelweissfe.journal.journal import Journal
 from edelweissfe.numerics.dofmanager import DofManager, DofVector
+from edelweissfe.numerics.parallelizationutilities import (
+    getNumberOfThreads,
+    getThreadPool,
+    isFreeThreadingSupported,
+)
 from edelweissfe.outputmanagers.base.outputmanagerbase import OutputManagerBase
 from edelweissfe.sets.nodeset import NodeSet
 from edelweissfe.stepactions.base.dirichletbase import DirichletBase
@@ -506,6 +511,18 @@ class BaseNonlinearSolver:
     def _updateConstraintConnectivity(self, constraints: list, model) -> bool:
         """Update the connectivity of all constraints.
 
+        In a particle simulation there is typically one constraint per particle, so this loop is
+        long enough to be worth spreading over the available threads.
+
+        That is safe here for two reasons, both worth being explicit about:
+
+        1. Every ``updateConnectivity`` implementation writes only to the constraint it belongs to.
+           None of them writes to the model, and none of them creates nodes or variables, so two
+           constraints can never touch the same memory.
+        2. The individual answers are combined with a logical *or*. That is independent of the order
+           in which the answers arrive, so the result does not depend on how the work was split, nor
+           on how the threads happened to be scheduled.
+
         Parameters
         ----------
         constraints
@@ -516,12 +533,50 @@ class BaseNonlinearSolver:
         Returns
         -------
         bool
-            True if the connectivity of any constraint has changed.
+            True if the connectivity of at least one constraint has changed.
+        """
+
+        # Callers legitimately hand over a dict view rather than a list, which the serial loop this
+        # replaced was happy with; chunking needs indexing, so materialise it once.
+        constraints = list(constraints)
+
+        numberOfThreads = getNumberOfThreads() if isFreeThreadingSupported() else 1
+
+        # Below this size the cost of handing work to the thread pool outweighs the work itself.
+        minimumNumberOfConstraintsForThreading = 500
+
+        if numberOfThreads == 1 or len(constraints) < minimumNumberOfConstraintsForThreading:
+            return self._updateConnectivityOfConstraintChunk(constraints, model)
+
+        chunkSize = len(constraints) // numberOfThreads + 1
+        constraintChunks = [constraints[i : i + chunkSize] for i in range(0, len(constraints), chunkSize)]
+
+        threadPool = getThreadPool(numberOfThreads)
+        connectivityHasChangedPerChunk = threadPool.map(
+            lambda chunk: self._updateConnectivityOfConstraintChunk(chunk, model), constraintChunks
+        )
+
+        return any(connectivityHasChangedPerChunk)
+
+    def _updateConnectivityOfConstraintChunk(self, constraints: list, model) -> bool:
+        """Update the connectivity of one chunk of constraints.
+
+        Parameters
+        ----------
+        constraints
+            The chunk of constraints to be updated.
+        model
+            The model the constraints act on.
+
+        Returns
+        -------
+        bool
+            True if the connectivity of at least one constraint in this chunk has changed.
         """
 
         connectivityHasChanged = False
-        for c in constraints:
-            connectivityHasChanged |= c.updateConnectivity(model)
+        for constraint in constraints:
+            connectivityHasChanged |= constraint.updateConnectivity(model)
 
         return connectivityHasChanged
 
