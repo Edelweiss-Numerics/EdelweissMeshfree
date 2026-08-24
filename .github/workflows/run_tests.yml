@@ -38,24 +38,24 @@ jobs:
           URL="https://github.com/Edelweiss-Numerics/EdelweissFE.git"
           if git ls-remote --exit-code --heads "$URL" "$BRANCH" > /dev/null 2>&1; then
             echo "Cloning EdelweissFE branch: $BRANCH"
-            git clone --branch "$BRANCH" "$URL"
+            git clone --depth 1 --branch "$BRANCH" "$URL" "$RUNNER_TEMP/EdelweissFE"
           elif [ -n "$BASE" ] && git ls-remote --exit-code --heads "$URL" "$BASE" > /dev/null 2>&1; then
             echo "::warning title=EdelweissFE Branch Fallback::Branch '$BRANCH' not found. Falling back to PR base branch '$BASE'."
-            git clone --branch "$BASE" "$URL"
+            git clone --depth 1 --branch "$BASE" "$URL" "$RUNNER_TEMP/EdelweissFE"
           else
             echo "::warning title=EdelweissFE Branch Fallback::Neither branch '$BRANCH' nor base '$BASE' found. Falling back to default branch."
-            git clone "$URL"
+            git clone --depth 1 "$URL" "$RUNNER_TEMP/EdelweissFE"
           fi
 
-          mamba install --file EdelweissFE/conda_requirements.txt
+          mamba install --file "$RUNNER_TEMP/EdelweissFE/conda_requirements.txt"
 
           pip install matplotlib
 
       - name: Install Eigen
         shell: bash -l {0}
         run: |
-          git clone --depth 1 --branch 3.4.0 https://gitlab.com/libeigen/eigen.git
-          cd eigen
+          git clone --depth 1 --branch 3.4.0 https://gitlab.com/libeigen/eigen.git "$RUNNER_TEMP/eigen"
+          cd "$RUNNER_TEMP/eigen"
           mkdir build
           cd build
           cmake -DBUILD_TESTING=OFF -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DINCLUDE_INSTALL_DIR=$CONDA_PREFIX/include ..
@@ -65,8 +65,8 @@ jobs:
       - name: Install Autodiff
         shell: bash -l {0}
         run: |
-          git clone --depth 1 --branch v1.1.0 https://github.com/autodiff/autodiff.git
-          cd autodiff
+          git clone --depth 1 --branch v1.1.0 https://github.com/autodiff/autodiff.git "$RUNNER_TEMP/autodiff"
+          cd "$RUNNER_TEMP/autodiff"
           mkdir build
           cd build
           cmake -DAUTODIFF_BUILD_TESTS=OFF -DAUTODIFF_BUILD_PYTHON=OFF -DAUTODIFF_BUILD_EXAMPLES=OFF -DAUTODIFF_BUILD_DOCS=OFF ..
@@ -76,8 +76,8 @@ jobs:
       - name: Install Fastor
         shell: bash -l {0}
         run: |
-          git clone --depth 1 https://github.com/romeric/Fastor.git
-          cd Fastor
+          git clone --depth 1 https://github.com/romeric/Fastor.git "$RUNNER_TEMP/Fastor"
+          cd "$RUNNER_TEMP/Fastor"
           cmake -DBUILD_TESTING=OFF -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX .
           make install
           cd ..
@@ -121,15 +121,15 @@ jobs:
           }
 
           # Clone Repositories
-          clone_mandatory "https://github.com/MAteRialMOdelingToolbox/Marmot.git" "Marmot"
-          clone_mandatory "https://github.com/BOKU-CMP-MEC-MAT/MarmotMeshfreeCore.git" "Marmot/modules/core/MarmotMeshfreeCore"
+          clone_mandatory "https://github.com/MAteRialMOdelingToolbox/Marmot.git" "$RUNNER_TEMP/Marmot"
+          clone_mandatory "https://github.com/BOKU-CMP-MEC-MAT/MarmotMeshfreeCore.git" "$RUNNER_TEMP/Marmot/modules/core/MarmotMeshfreeCore"
 
-          clone_optional "https://github.com/BOKU-CMP-MEC-MAT/DisplacementParticle.git" "Marmot/modules/particles/DisplacementParticle"
-          clone_optional "https://github.com/BOKU-CMP-MEC-MAT/DisplacementMaterialPoint.git" "Marmot/modules/materialpoints/DisplacementMaterialPoint"
+          clone_optional "https://github.com/BOKU-CMP-MEC-MAT/DisplacementParticle.git" "$RUNNER_TEMP/Marmot/modules/particles/DisplacementParticle"
+          clone_optional "https://github.com/BOKU-CMP-MEC-MAT/DisplacementMaterialPoint.git" "$RUNNER_TEMP/Marmot/modules/materialpoints/DisplacementMaterialPoint"
 
           # Build Marmot
-          mkdir ./Marmot/build
-          cd ./Marmot/build
+          mkdir "$RUNNER_TEMP/Marmot/build"
+          cd "$RUNNER_TEMP/Marmot/build"
           cmake -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX ..
           make install
           cd ../..
@@ -137,9 +137,7 @@ jobs:
       - name: Install EdelweissFE
         shell: bash -l {0}
         run: |
-          cd EdelweissFE
-          pip install -e .
-          cd ..
+          pip install -e "$RUNNER_TEMP/EdelweissFE"
 
       - name: Build EdelweissMeshfree
         shell: bash -l {0}
@@ -150,3 +148,4 @@ jobs:
         shell: bash -l {0}
         run: |
           pytest .
+

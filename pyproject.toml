@@ -22,6 +22,8 @@ where = ["."]
 
 [tool.pytest.ini_options]
 addopts = "-v --tb=short"
+testpaths = ["edelweissmeshfree", "examples"]
+norecursedirs = ["EdelweissFE", "Marmot", "build", ".*"]
 
 [tool.black]
 line-length = 120
