@@ -195,17 +195,11 @@ def run_sim():
 
     fieldOutputController.initializeJob()
 
-    ensightOutput = EnsightOutputManager(
-        "ensight", theModel, fieldOutputController, theJournal, None, intermediateSaveInterval=2
-    )
-    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["displacement"], create="perElement")
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["vertex displacements"],
-        create="perNode",
-    )
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["deformation gradient"], create="perElement"
-    )
+    ensightOutput = EnsightOutputManager("ensight", theModel, fieldOutputController, theJournal, None)
+    ensightOutput.applyOptionsOverride({"intermediateSaveInterval": 2})
+    ensightOutput.createPerElementOutput(fieldOutputController.fieldOutputs["displacement"])
+    ensightOutput.createPerNodeOutput(fieldOutputController.fieldOutputs["vertex displacements"])
+    ensightOutput.createPerElementOutput(fieldOutputController.fieldOutputs["deformation gradient"])
     ensightOutput.initializeJob()
 
     dirichlets = theModel.constraints.values()
@@ -217,7 +211,7 @@ def run_sim():
         incSize,
         incSize,
         incSize / 100,
-        2,
+        3,
         theJournal,
     )
 

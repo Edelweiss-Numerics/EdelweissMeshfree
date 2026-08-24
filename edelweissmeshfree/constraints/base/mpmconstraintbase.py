@@ -123,6 +123,15 @@ class MPMConstraintBase(ABC, VIJEntityBase):
             The truth value if the connectivity has changed.
         """
 
+    def acceptLastState(self):
+        """Called by :meth:`~edelweissfe.models.femodel.FEModel.advanceToTime` (via
+        :meth:`~edelweissmeshfree.models.mpmmodel.MPMModel.advanceToTime`) when an increment is
+        accepted, so a stateful constraint can promote the state of the last (converged) Newton
+        iterate to its history.
+
+        The default implementation does nothing, which is correct for every stateless constraint
+        (i.e. every constraint that does not override this method)."""
+
     @abstractmethod
     def applyConstraint(self, dU: np.ndarray, PExt: np.ndarray, V: np.ndarray, timeStep: TimeStep):
         """Apply the constraint, i.e., compute the 'kernels'. Add the contributions to the external load vector and the system matrix.
