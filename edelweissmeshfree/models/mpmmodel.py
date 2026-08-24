@@ -273,7 +273,7 @@ class MPMModel(FEModel):
 
         activeCells = {cell.number: cell for mp in self.materialPoints.values() for cell in mp.cells}
 
-        _, _, reducedNodeFields, reducedNodeSets = self.assembleActiveDomain(activeCells)
+        _, _, reducedNodeFields, reducedNodeSets = self.assembleActiveDomain(activeCells.values())
 
         activeModel = copy.copy(self)
         activeModel.nodeSets = reducedNodeSets
@@ -304,11 +304,13 @@ class MPMModel(FEModel):
                 - The dict of NodeSets reduced onto the active Nodes.
         """
 
+        cells = activeCells.values() if isinstance(activeCells, dict) else activeCells
+
         activeNodesWithPersistentFieldValues = set(
             n for element in self.elements.values() for n in element.nodes
         ) | set(n for element in self.cellElements.values() for n in element.nodes)
 
-        activeNodesWithVolatileFieldValues = set(n for cell in activeCells for n in cell.nodes)
+        activeNodesWithVolatileFieldValues = set(n for cell in cells for n in cell.nodes)
 
         activeNodesWithVolatileFieldValues |= set(
             kf.node for particle in self.particles.values() for kf in particle.kernelFunctions

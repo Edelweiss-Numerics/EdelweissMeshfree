@@ -255,15 +255,15 @@ class BaseNonlinearSolver:
         return indices
 
     @performancetiming.timeit("assembly active domain")
-    def _assembleActiveDomain(self, activeCells, model: MPMModel) -> tuple[NodeSet, NodeSet, list, list]:
+    def _assembleActiveDomain(self, activeCells, model: MPMModel) -> tuple[NodeSet, NodeSet, dict, dict]:
         """Gather the Nodes, active NodeFields and NodeSets.
 
         Parameters
         ----------
+        activeCells
+            The currently active cells.
         model
             The full MPMModel.
-        mpmManager
-            The MPMManager intance.
 
         Returns
         -------
@@ -271,8 +271,8 @@ class BaseNonlinearSolver:
             The tuple containing:
                 - The set of active Nodes with persistent field values (FEM).
                 - The set of active Nodes with volatile field values (MPM).
-                - the list of NodeFields on the active Nodes.
-                - the list of reduced NodeSets on the active Nodes.
+                - The dict of NodeFields on the active Nodes.
+                - The dict of reduced NodeSets on the active Nodes.
         """
         return model.assembleActiveDomain(activeCells)
 

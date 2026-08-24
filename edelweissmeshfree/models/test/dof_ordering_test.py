@@ -119,3 +119,36 @@ def test_solver_active_domain_assembly_does_not_diverge_from_the_model():
     assert [n.label for n in fromSolver[2][_FIELD].nodes] == [n.label for n in fromModel[2][_FIELD].nodes]
     assert [n.label for n in fromSolver[0]] == [n.label for n in fromModel[0]]
     assert [n.label for n in fromSolver[1]] == [n.label for n in fromModel[1]]
+
+
+class _CellStub:
+    def __init__(self, number, nodes):
+        self.number = number
+        self.nodes = nodes
+
+
+class _MaterialPointStub:
+    def __init__(self, cells):
+        self.cells = cells
+
+
+def test_get_active_sub_model_with_material_points_and_cells():
+    """getActiveSubModel must properly extract cell nodes from mp.cells without dict key errors."""
+    nodes = [Node(i, np.zeros(3)) for i in range(1, 9)]
+    for node in nodes:
+        node.fields[_FIELD] = None
+
+    cell1 = _CellStub(10, nodes[:4])
+    cell2 = _CellStub(20, nodes[4:])
+    mp1 = _MaterialPointStub([cell1])
+    mp2 = _MaterialPointStub([cell2])
+
+    model = MPMModel(3)
+    model.materialPoints = {1: mp1, 2: mp2}
+    model.nodeFields = {_FIELD: MPMNodeField(_FIELD, 3, NodeSet("all", nodes))}
+    model.nodeSets = {"all": NodeSet("all", nodes)}
+
+    activeModel = model.getActiveSubModel()
+    assert len(activeModel.cells) == 2
+    labels = [n.label for n in activeModel.nodeFields[_FIELD].nodes]
+    assert labels == list(range(1, 9))
