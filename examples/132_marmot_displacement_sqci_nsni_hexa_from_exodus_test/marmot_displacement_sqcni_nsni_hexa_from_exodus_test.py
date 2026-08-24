@@ -209,7 +209,7 @@ def run_sim():
         incSize,
         incSize,
         incSize / 100,
-        2,
+        3,
         theJournal,
     )
 

@@ -182,7 +182,7 @@ class BaseNonlinearSolver:
 
         for dirichlet in dirichlets:
             dirichletNodes = reducedNodeSets[dirichlet.nSet]
-            R[self._findDirichletIndices(theDofManager, dirichlet, dirichletNodes)] = dirichlet.getDelta(
+            R[self._findDirichletIndices(theDofManager, dirichlet, dirichletNodes)] = dirichlet.getPrescribedIncrement(
                 timeStep, dirichletNodes
             ).flatten()
 
