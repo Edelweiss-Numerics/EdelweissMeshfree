@@ -101,7 +101,10 @@ class ParticleLagrangianEqualValueConstraint(MPMConstraintBase):
         nodes = {
             n: i
             for i, n in enumerate(
-                set(kf.node for p in [self._masterParticle, self._slaveParticle] for kf in p.kernelFunctions)
+                sorted(
+                    set(kf.node for p in [self._masterParticle, self._slaveParticle] for kf in p.kernelFunctions),
+                    key=lambda n: n.label,
+                )
             )
         }
 

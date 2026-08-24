@@ -6,6 +6,7 @@ total nodal coefficients (the kernel-drift trap).
 This feature lives on the ``tom/feat/nitsche-dirichlet`` branch (Marmot particle +
 materialpoint + MarmotMeshfreeCore + this step action); it is not on the VMS branch.
 """
+
 from _upj_base import assert_sane_compression, run
 
 

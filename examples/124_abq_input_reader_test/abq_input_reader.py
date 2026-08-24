@@ -353,7 +353,7 @@ def run_sim(
 
         prettytable = performancetiming.makePrettyTable()
         theJournal.printPrettyTable(prettytable, "Summary Step 1")
-        performancetiming.times.clear()
+        performancetiming.reset()
 
     finally:
         fieldOutputController.finalizeJob()

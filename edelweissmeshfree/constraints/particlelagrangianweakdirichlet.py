@@ -106,7 +106,12 @@ class ParticleLagrangianWeakDirichlet(MPMConstraintBase):
 
     def updateConnectivity(self, model):
 
-        nodes = {n: i for i, n in enumerate(set(kf.node for kf in self._constrainedParticle.kernelFunctions))}
+        nodes = {
+            n: i
+            for i, n in enumerate(
+                sorted(set(kf.node for kf in self._constrainedParticle.kernelFunctions), key=lambda n: n.label)
+            )
+        }
 
         hasChanged = False
         if nodes != self._nodes:
