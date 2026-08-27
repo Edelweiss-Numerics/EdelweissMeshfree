@@ -418,6 +418,13 @@ def run_sim(frameUpdate=1, coarse=False, ensightName=None, spacing=None,
 
     history = []  # (nominal axial shortening, mean tau_yy over the mid-height slice, omega, R^p)
     xyAll = np.array([centreOf(p) for p in sets["all"]])
+    # the undeformed smoothing-domain corners, captured before anything moves.  For a quad
+    # particle getVertexCoordinates() returns the 4 corners of the smoothing domain; for the
+    # point particle it returns the single material point, and there is no domain to draw.
+    verts0 = (
+        np.array([np.asarray(p.getVertexCoordinates()).reshape(-1, 2) for p in sets["all"]])
+        if quad else None
+    )
     midSlice = np.abs(xyAll[:, 1] - 0.5 * HEIGHT) <= 1.01 * h
 
     snapshots = []
@@ -455,6 +462,10 @@ def run_sim(frameUpdate=1, coarse=False, ensightName=None, spacing=None,
                 frameRotation=fo["frameRotation"].getLastResult().reshape(-1).copy(),
                 axis1=fo["materialAxis1"].getLastResult().reshape(-1, 3).copy(),
                 axis2=fo["materialAxis2"].getLastResult().reshape(-1, 3).copy(),
+                # the smoothing domains as they actually are at this increment
+                verts=( verts0
+                        + fo["vertex displacements"].getLastResult().reshape(-1, 4, 3)[:, :, :2]
+                        if quad else None ),
                 heterogeneity=float(omega.std()),
             )
         )
@@ -584,6 +595,7 @@ def run_sim(frameUpdate=1, coarse=False, ensightName=None, spacing=None,
         model=theModel,
         snapshots=snapshots,
         xy0=xyAll,
+        verts0=verts0,
         fieldOutputController=fieldOutputController,
         history=np.array(history),
         h=h,
@@ -671,6 +683,27 @@ def makePlots(results, which="best", fname="contour_plots.png"):
 
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+    from matplotlib.collections import PolyCollection
+
+    def drawField(ax, f, values, cmap, alpha=1.0):
+        """Draw the field on the SMOOTHING DOMAINS where they exist, else on markers.
+
+        The smoothing domain is the quantity the SQCNI gradients are integrated over, so it is
+        the honest picture of the discretisation: it shows how the band is resolved and how the
+        domains themselves distort, which a scatter of markers hides.
+        """
+        if f.get("verts") is not None:
+            pc = PolyCollection(f["verts"], array=np.asarray(values), cmap=cmap,
+                                edgecolors="0.35", linewidths=0.25, alpha=alpha)
+            ax.add_collection(pc)
+            ax.autoscale_view()
+            allV = f["verts"].reshape(-1, 2)
+            ax.set_xlim(allV[:, 0].min() - 0.3, allV[:, 0].max() + 0.3)
+            ax.set_ylim(allV[:, 1].min() - 0.3, allV[:, 1].max() + 0.3)
+            return pc
+        size = max(4.0, 1400.0 / np.sqrt(len(values)))
+        return ax.scatter(f["xy"][:, 0], f["xy"][:, 1], c=values, s=size, cmap=cmap,
+                          marker="s", linewidths=0, alpha=alpha)
 
     n = len(results)
     fig, axes = plt.subplots(n, 3, figsize=(13.5, 6.4 * n), squeeze=False)
@@ -687,8 +720,7 @@ def makePlots(results, which="best", fname="contour_plots.png"):
             )
         ):
             ax = axes[row][col]
-            sc = ax.scatter(f["xy"][:, 0], f["xy"][:, 1], c=f[field], s=95, cmap=cmap,
-                            marker="s", linewidths=0)
+            sc = drawField(ax, f, f[field], cmap)
             plt.colorbar(sc, ax=ax, shrink=0.7)
             ax.set_title(f"{title}\n{label}", fontsize=9)
             ax.set_aspect("equal")
@@ -697,10 +729,11 @@ def makePlots(results, which="best", fname="contour_plots.png"):
 
         # the material axes themselves, on the deformed configuration, over the damage field
         ax = axes[row][2]
-        sc = ax.scatter(f["xy"][:, 0], f["xy"][:, 1], c=f["omega"], s=95, cmap="inferno",
-                        marker="s", linewidths=0, alpha=0.5)
+        sc = drawField(ax, f, f["omega"], "inferno", alpha=0.5)
         plt.colorbar(sc, ax=ax, shrink=0.7)
-        span = 0.5 * L_NONLOCAL
+        # scale the axis glyphs to the particle size, not to the nonlocal length, so they stay
+        # readable when the mesh is refined
+        span = 0.45 * result["h"]
         for sign in (+1.0, -1.0):
             # e2 spans the bedding PLANE in the x-y plane, so drawing it draws the bedding trace
             ax.quiver(f["xy"][:, 0], f["xy"][:, 1], sign * f["axis2"][:, 0], sign * f["axis2"][:, 1],
@@ -840,5 +873,7 @@ if __name__ == "__main__":
             axis1=np.array([sn["axis1"] for sn in r["snapshots"]]),
             axis2=np.array([sn["axis2"] for sn in r["snapshots"]]),
             u=np.array([sn["u"] for sn in r["snapshots"]]),
+            **( {"verts": np.array([sn["verts"] for sn in r["snapshots"]])}
+                if r["snapshots"][0]["verts"] is not None else {} ),
         )
         print(f"  wrote snapshots_frame{r['frameUpdate']}{tag}.npz")
