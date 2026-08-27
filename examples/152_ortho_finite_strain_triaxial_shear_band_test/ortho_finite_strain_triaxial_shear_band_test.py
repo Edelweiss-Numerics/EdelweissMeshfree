@@ -219,6 +219,21 @@ ZETA, XI, ETA = 1.30, 1.00, 1.00
 WEIGHT_M = 1.05  # over-nonlocal m > 1
 L_NONLOCAL = 1.25  # nonlocal length l [mm]; FIXED by the material, not by the mesh
 
+# Hardening level at which damage is allowed to start.  1.0 is the material's default and has a
+# structural convergence wall: dqH/dalphaP vanishes quadratically at alphaP = 1, so the tangent
+# is singular at the plastic limit load while omega is still exactly 0 -- the implicit-gradient
+# regularisation is gated off precisely where it is needed.  Coarse meshes overshoot the gate;
+# fine meshes resolve it and park there, which is why refinement made every run fail earlier and
+# why arc-length control would not have helped.  0.95 is what the material README recommends.
+DAMAGE_ONSET = 0.95
+
+# Residual hardening slope of the yield surface over alphaP in [1,2].  This is the lever that
+# actually makes the softening traversable: without it dqH/dalphaP is identically 0 beyond
+# alphaP = 1, so the tangent is singular at the plastic limit load while omega is still 0 and
+# the implicit-gradient regularisation is not yet doing anything.  The strength gain is bounded
+# by the value itself.
+H_RESIDUAL = 0.05
+
 CAP_FACTOR = 3.00  # strengths of the platen caps
 SEED_FACTOR = 0.90  # strengths of the seed patch
 
@@ -229,7 +244,11 @@ SEED_FACTOR = 0.90  # strengths of the seed patch
 WIDTH = 10.0
 HEIGHT = 20.0
 BEDDING_PHI_DEG = 45.0  # angle of the bedding NORMAL from the x axis, in the x-y plane
-AXIAL_STRAIN = 0.20  # nominal shortening
+AXIAL_STRAIN = 0.20  # nominal shortening, compression mode
+SHEAR_STRAIN = 0.30  # nominal shear angle gamma = u_x(top)/H, shear mode
+
+
+OVERRIDES = {}  # set from the CLI: softMod, maxDmg, l, m
 
 
 def materialProperties(strengthFactor, frameUpdate):
@@ -245,27 +264,61 @@ def materialProperties(strengthFactor, frameUpdate):
             FBU * strengthFactor, FTU * strengthFactor,
             DF,
             AH, BH, CH, DH, AS,
-            SOFTMOD, MAXDMG,
+            OVERRIDES.get("softMod", SOFTMOD), OVERRIDES.get("maxDmg", MAXDMG),
             ALPHA, BETA, GAMMA, ZETA, XI, ETA,
-            L_NONLOCAL, WEIGHT_M,
+            OVERRIDES.get("l", L_NONLOCAL), OVERRIDES.get("m", WEIGHT_M),
             float(frameUpdate),                          # 1 = convected frame, 0 = frozen
+            OVERRIDES.get("damageOnset", DAMAGE_ONSET),   # alphaP at which damage may start
+            OVERRIDES.get("hres", H_RESIDUAL),            # residual hardening slope over [1,2]
         ]
     )
 
 
-CAP_DEPTH = 2.0 * L_NONLOCAL   # depth of the hard platen caps [mm]
-SEED_SIZE = 1.0 * L_NONLOCAL   # half-height / width of the weak seed patch [mm]
+def lNonlocal():
+    return OVERRIDES.get("l", L_NONLOCAL)
 
 
-def strengthFactorAt(x, y):
-    """Hard caps at both platens, one weak seed patch at mid-height on the left edge.
+def capDepth():
+    return 2.0 * lNonlocal()   # depth of the hard platen caps [mm]
 
-    Both zones are sized against the NONLOCAL LENGTH, not against the particle spacing, so
-    that refining the mesh refines the band and not the specimen.
+
+def seedSize():
+    return 1.0 * lNonlocal()   # half-height / width of the weak seed patch [mm]
+
+
+SLAB_ANGLE_DEG = 45.0   # inclination of the weak slab to the load axis
+SLAB_WIDTH = 2.0        # width of the weak slab in units of the nonlocal length l
+SLAB_FACTOR = 0.85      # strengths inside the slab
+
+
+def strengthFactorAt(x, y, seed="slab"):
+    """Hard caps at both platens plus a weak seed; both sized against the NONLOCAL LENGTH.
+
+    Two seed shapes:
+
+    "patch" -- one small weak square at mid-height on the left edge.  This lets the band choose
+        its own path, which sounds better and is worse: the band only forms once the global
+        plastic limit load is reached, and at that point (in compression) omega is still ~2e-4,
+        the hardening modulus has vanished and the run stops.  Every mesh with h <= l dies there.
+
+    "slab" (default) -- a weak slab of FIXED PHYSICAL WIDTH (2 l) inclined at SLAB_ANGLE_DEG,
+        crossing the specimen.  This is the recipe that produced the 3D shear band of the old
+        example 147.  It pre-localises the band geometrically, so the slab yields and starts to
+        dilate -- and therefore to damage -- BEFORE the specimen reaches its global limit load.
+        The softening is then carried by the regularised damage rather than by unregularised
+        perfect plasticity, and the band width is set by l, not by the slab, which is what makes
+        the mesh study mean something.
     """
-    if y < CAP_DEPTH or y > HEIGHT - CAP_DEPTH:
+    if y < capDepth() or y > HEIGHT - capDepth():
         return CAP_FACTOR
-    if abs(y - 0.5 * HEIGHT) <= SEED_SIZE and x <= 2.0 * SEED_SIZE:
+    if seed == "slab":
+        th = math.radians(SLAB_ANGLE_DEG)
+        # signed distance from the slab's mid-line through the specimen centre
+        d = ( ( x - 0.5 * WIDTH ) * math.cos( th ) - ( y - 0.5 * HEIGHT ) * math.sin( th ) )
+        if abs( d ) <= 0.5 * SLAB_WIDTH * lNonlocal():
+            return SLAB_FACTOR
+        return 1.0
+    if abs(y - 0.5 * HEIGHT) <= seedSize() and x <= 2.0 * seedSize():
         return SEED_FACTOR
     return 1.0
 
@@ -276,14 +329,14 @@ def strengthFactorAt(x, y):
 
 
 def run_sim(frameUpdate=1, coarse=False, ensightName=None, spacing=None,
-            particleType="sqcnixnsni", confiningPressure=0.0):
+            particleType="sqcnixnsni", confiningPressure=0.0, mode="shear", seed="slab"):
     np.set_printoptions(linewidth=200, precision=3)
 
     dimension = 2
     journal = Journal()
     theModel = MPMModel(dimension)
 
-    h = spacing if spacing else (2.5 if coarse else L_NONLOCAL)
+    h = spacing if spacing else (2.5 if coarse else lNonlocal())
     nX = int(round(WIDTH / h))
     nY = int(round(HEIGHT / h))
     supportRadius = 2.0 * h  # UNIFORM; local scaling is what OOM-killed the hexa studies
@@ -294,7 +347,10 @@ def run_sim(frameUpdate=1, coarse=False, ensightName=None, spacing=None,
 
     journal.message(
         f"specimen {WIDTH} x {HEIGHT} mm, h = {h} mm, {nX} x {nY} cells, "
-        f"H/l = {HEIGHT / L_NONLOCAL:.1f}, particle = {pName}, frameUpdate = {frameUpdate}, "
+        f"H/l = {HEIGHT / lNonlocal():.1f}, particle = {pName}, frameUpdate = {frameUpdate}, "
+        f"softMod = {OVERRIDES.get('softMod', SOFTMOD):g}, "
+        f"damageOnset = {OVERRIDES.get('damageOnset', DAMAGE_ONSET):g}, "
+        f"Hres = {OVERRIDES.get('hres', H_RESIDUAL):g}, "
         f"confining pressure = {confiningPressure} MPa",
         "setup",
     )
@@ -322,14 +378,14 @@ def run_sim(frameUpdate=1, coarse=False, ensightName=None, spacing=None,
             "material": "GRADIENTENHANCEDORTHOCDPFINITESTRAIN",
             "properties": materialProperties(f, frameUpdate),
         }
-        for f in (1.0, CAP_FACTOR, SEED_FACTOR)
+        for f in (1.0, CAP_FACTOR, SEED_FACTOR, SLAB_FACTOR)
     }
 
     def theParticleFactory(number, coordinates, volume):
         c = np.asarray(coordinates).reshape(-1, 2).mean(axis=0)  # centre, from centre or vertices
         return MarmotParticleWrapper(
             pName, number, coordinates, volume, theApproximation,
-            cards[strengthFactorAt(c[0], c[1])],
+            cards[strengthFactorAt(c[0], c[1], seed)],
         )
 
     generator = generateRectangularQuadParticleGrid if quad else generateRectangularParticleGrid
@@ -399,19 +455,20 @@ def run_sim(frameUpdate=1, coarse=False, ensightName=None, spacing=None,
     xyBottom = np.array([centreOf(p) for p in bottomParticles])
     anchor = [bottomParticles[int(np.argmin(np.abs(xyBottom[:, 0] - 0.5 * WIDTH)))]]
 
-    # These are the settings that actually get through the softening branch on this problem.
-    # Two more permissive variants were tried and are WORSE, not better:
-    #   * a quadratic line search every iteration after the 3rd: it keeps selecting alpha > 1,
-    #     costs 3-4 extra residual evaluations per iteration, and did not extend the reachable
-    #     shortening on the h = l mesh (1.4 % with it, 2.9 % without).
-    #   * a minimum increment of 1e-8 with 3000 allowed increments: the stepper then CRAWLS at
-    #     the limit point instead of cutting back and failing fast, and the run does not finish.
-    # A stalled increment deep in the softening is a result here, not a crash -- the band has
-    # formed by then, and the post-processing contours the most heterogeneous increment anyway.
+    # Solver leash.  The wall is Newton divergence ("residual grew 3 times, cutting back") at
+    # the PLASTIC limit point -- alphaP ~ 1.2 with omega still ~2e-4, so it is not the damage
+    # softening at all.  A short leash (3 allowed growths, 15 iterations, no line search) gives
+    # up on a step that a longer one walks through.  The earlier finding that a line search
+    # "made it worse" was confounded: that test also carried a 1e-8 minimum increment, and the
+    # crawling came from the minimum increment, not from the line search.
     iterationOptions = {
-        "max. iterations": 15,
-        "critical iterations": 4,
-        "allowed residual growths": 3,
+        "max. iterations": 40,
+        "critical iterations": 10,
+        "allowed residual growths": 15,
+        "line search": True,
+        "line search after n iterations": 6,
+        "line search every n iterations": 2,
+        "line search alphas": [0.25, 0.5, 0.75, 1.0],
     }
     linearSolver = getLinSolverByName("pardiso", {})
     nonlinearSolver = NonlinearQuasistaticSolver(journal)
@@ -443,7 +500,7 @@ def run_sim(frameUpdate=1, coarse=False, ensightName=None, spacing=None,
         omega = fo["omega"].getLastResult().reshape(-1).copy()
         history.append(
             (
-                -du[:, 1].min() / HEIGHT,
+                ( -du[:, 1].min() if mode == "compression" else du[:, 0].max() ) / HEIGHT,
                 float(tau[midSlice, 1, 1].mean()),
                 float(omega.max()),
                 float(fo["frameRotation"].getLastResult().max()),
@@ -533,8 +590,41 @@ def run_sim(frameUpdate=1, coarse=False, ensightName=None, spacing=None,
         )
 
     # ---- step 2: compress axially, confinement held ----------------------------------------
-    journal.message(f"STEP 2 -- compressing to {AXIAL_STRAIN * 100:.0f} % nominal shortening", "step")
-    uMax = AXIAL_STRAIN * HEIGHT
+    # ---- step 2: drive the band ------------------------------------------------------------
+    # TWO LOADING MODES, and the choice matters more than any material parameter:
+    #
+    #  "compression" -- axial shortening of a slender specimen.  This is the configuration of
+    #      the earlier sessions, and on a mesh with h <= l it does NOT work: the run terminates
+    #      at the PLASTIC limit load with omega still ~2e-4, because in compression this model's
+    #      damage is driven by plastic volumetric EXPANSION and grows far too slowly to take
+    #      over the softening.  The tangent is singular there (dqH/dalphaP vanishes
+    #      quadratically at alphaP = 1) and the implicit-gradient regularisation, which acts on
+    #      the DAMAGE, is not yet doing anything.  Neither a residual hardening slope, nor
+    #      moving the damage onset, nor a longer solver leash, nor dropping the confinement
+    #      gets a full curve out of it -- each buys a little more strain (2.09 % -> 3.6 % at
+    #      best) and then stalls.  The material README says as much: "use 3D with free lateral
+    #      faces, not plane strain".
+    #
+    #  "shear" (the default) -- SIMPLE SHEAR of the same panel.  Two reasons it behaves:
+    #      almost no axial elastic energy is stored, so there is nothing to drive a snap-back;
+    #      and shearing across the bedding is dilatant from the start, so damage engages early
+    #      and the regularised damage softening -- not unregularised perfect plasticity -- is
+    #      what governs the localisation.  That is also the state the material-point check
+    #      test/frame_update_check.cpp exercises, where the frame turns 16.9 deg at gamma = 0.6.
+    uMax = ( AXIAL_STRAIN * HEIGHT if mode == "compression" else SHEAR_STRAIN * HEIGHT )
+    if mode == "compression":
+        journal.message(f"STEP 2 -- compressing to {AXIAL_STRAIN * 100:.0f} % shortening", "step")
+        axialBCs = [
+            bc("botY", bottomParticles, {1: 0.0}),
+            bc("topY", list(sets["rectangular_grid_top"]), {1: -uMax}),
+            bc("anchorX", anchor, {0: 0.0}),
+        ]
+    else:
+        journal.message(f"STEP 2 -- shearing to gamma = {SHEAR_STRAIN:.2f}", "step")
+        axialBCs = [
+            bc("bot", bottomParticles, {0: 0.0, 1: 0.0}),
+            bc("top", list(sets["rectangular_grid_top"]), {0: uMax, 1: 0.0}),
+        ]
     inc = 0.005
     stepFailed = False
 
@@ -569,11 +659,7 @@ def run_sim(frameUpdate=1, coarse=False, ensightName=None, spacing=None,
             linearSolver, theModel, fieldOutputController,
             outputManagers=outputManagers + [_Recorder()],
             particleManagers=[theParticleManager],
-            constraints=[
-                bc("botY", bottomParticles, {1: 0.0}),
-                bc("topY", list(sets["rectangular_grid_top"]), {1: -uMax}),
-                bc("anchorX", anchor, {0: 0.0}),
-            ],
+            constraints=axialBCs,
             particleDistributedLoads=distributedLoads,
             userIterationOptions=iterationOptions,
         )
@@ -599,6 +685,8 @@ def run_sim(frameUpdate=1, coarse=False, ensightName=None, spacing=None,
         fieldOutputController=fieldOutputController,
         history=np.array(history),
         h=h,
+        mode=mode,
+        seed=seed,
         particleType=pName,
         confiningPressure=confiningPressure,
         stepFailed=stepFailed,
@@ -640,11 +728,12 @@ def report(result, which="best"):
     f = pickSnapshot(result, which)
     whichLabel = which if isinstance(which, str) else f"{float(which) * 100:.2f} %"
     y = f["xy0"][:, 1]
-    core = (y > CAP_DEPTH) & (y < HEIGHT - CAP_DEPTH)
+    core = (y > capDepth()) & (y < HEIGHT - capDepth())
     caps = ~core
     hist = result["history"]
     print("\n" + "=" * 78)
-    print(f" PLANE-STRAIN COMPRESSION, frameUpdate = {result['frameUpdate']}"
+    print(f" PLANE-STRAIN {'SIMPLE SHEAR' if result['mode'] == 'shear' else 'COMPRESSION'},"
+          f" frameUpdate = {result['frameUpdate']}"
           f" ({'convected' if result['frameUpdate'] else 'frozen'} material frame)")
     print(f"   {result['particleType']},  h = {result['h']} mm,  "
           f"confining pressure {result['confiningPressure']} MPa")
@@ -655,6 +744,8 @@ def report(result, which="best"):
     print(f"  contoured increment ({whichLabel:>8s})              : shortening"
           f" {f['shortening'] * 100:.2f} %, omega std {f['heterogeneity']:.4f}")
     print(f"  peak mean tau_yy at mid-height              : {hist[:, 1].min():8.3f} MPa")
+    print(f"  control measure reached                     : {hist[:, 0].max() * 100:8.3f} %"
+          f"   ({'shortening' if result['mode'] == 'compression' else 'shear angle gamma'})")
     print(f"  mean tau_xx over the specimen (confinement) : {hist[1:, 4].mean():8.3f} MPa"
           f"   (target {-result['confiningPressure']:.3f})")
     print(f"  max omega  (core / caps)                    : {f['omega'][core].max():8.4f}"
@@ -831,16 +922,48 @@ if __name__ == "__main__":
                         help="constant confining pressure [MPa] on the lateral faces "
                              "(needs --particle sqcnixnsni); 0 = free lateral boundaries")
     parser.add_argument("--no-ensight", action="store_true")
+    parser.add_argument("--softmod", type=float, default=None,
+                        help="softeningModulus; LARGER = slower damage growth = more ductile = "
+                             "traversable softening under displacement control")
+    parser.add_argument("--maxdmg", type=float, default=None,
+                        help="maxDamage cap; < 1 leaves the band residual stiffness")
+    parser.add_argument("--lnl", type=float, default=None, help="nonlocal length l [mm]")
+    parser.add_argument("--seed", choices=("slab", "patch"), default="slab",
+                        help="slab = a fixed-width inclined weak slab (default, pre-localises "
+                             "the band so damage starts before the global limit load); "
+                             "patch = a small weak square at the edge")
+    parser.add_argument("--mode", choices=("shear", "compression"), default="shear",
+                        help="shear = simple shear of the panel (default, traversable at every "
+                             "mesh); compression = axial shortening (stalls at the plastic "
+                             "limit load for h <= l)")
+    parser.add_argument("--hres", type=float, default=None,
+                        help="residual hardening slope over alphaP in [1,2] (0 = the original "
+                             "law, which has a singular tangent at the plastic limit load)")
+    parser.add_argument("--onset", type=float, default=None,
+                        help="alphaP at which damage may start (1.0 = the material default, "
+                             "which has a singular tangent at the plastic limit load)")
+    parser.add_argument("--m", type=float, default=None, help="over-nonlocal weighting m")
+    parser.add_argument("--strain", type=float, default=None, help="nominal shortening target")
     parser.add_argument("--tag", default="", help="suffix for the output file names, so several "
                                                  "mesh sizes can be run side by side")
     args = parser.parse_args()
+
+    for key, val in (("softMod", args.softmod), ("maxDmg", args.maxdmg),
+                     ("l", args.lnl), ("m", args.m), ("damageOnset", args.onset),
+                     ("hres", args.hres)):
+        if val is not None:
+            OVERRIDES[key] = val
+    if args.strain is not None:
+        globals()["AXIAL_STRAIN"] = args.strain
+        globals()["SHEAR_STRAIN"] = args.strain
 
     modes = [0, 1] if args.compare else [0 if args.frozen else 1]
     results = []
     for m in modes:
         name = None if args.no_ensight else f"_ensight_frame{m}"
         results.append(run_sim(frameUpdate=m, coarse=args.coarse, ensightName=name, spacing=args.h,
-                               particleType=args.particle, confiningPressure=args.confine))
+                               particleType=args.particle, confiningPressure=args.confine,
+                               mode=args.mode, seed=args.seed))
         report(results[-1])
 
     tag = f"_{args.tag}" if args.tag else ""

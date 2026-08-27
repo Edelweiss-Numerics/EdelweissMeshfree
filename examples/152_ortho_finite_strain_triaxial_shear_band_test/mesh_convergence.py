@@ -23,6 +23,7 @@ Usage
 
 import glob
 import re
+import sys
 
 import numpy as np
 
@@ -30,10 +31,11 @@ L_NONLOCAL = 1.25
 WIDTH, HEIGHT = 10.0, 20.0
 
 
-def load():
+def load(pattern="h"):
+    """``pattern`` is the tag prefix: "h" for the compression study, "sh" for the shear study."""
     runs = {}
-    for path in sorted(glob.glob("snapshots_frame*_h*l.npz")):
-        m = re.match(r"snapshots_frame(\d)_(h.*)\.npz", path)
+    for path in sorted(glob.glob(f"snapshots_frame*_{pattern}*l.npz")):
+        m = re.match(rf"snapshots_frame(\d)_({pattern}.*)\.npz", path)
         if not m:
             continue
         frame, tag = int(m.group(1)), m.group(2)
@@ -47,15 +49,18 @@ def load():
 
 
 def main():
-    runs = load()
+    pattern = sys.argv[1] if len(sys.argv) > 1 else "h"
+    isShear = pattern == "sh"
+    runs = load(pattern)
     if not runs:
-        print("no snapshots_frame*_h*l.npz found -- run the test with --tag h... first")
+        print(f"no snapshots_frame*_{pattern}*l.npz found -- run the test with --tag {pattern}... first")
         return
 
     tags = sorted({k[0] for k in runs}, key=lambda t: -runs[(t, 0)]["h"])
 
     print("=" * 100)
-    print(" MESH CONVERGENCE -- plane-strain triaxial compression, 5 MPa confinement,")
+    print(f" MESH CONVERGENCE -- plane-strain {'SIMPLE SHEAR' if isShear else 'triaxial compression'},"
+          f" 5 MPa confinement,")
     print(" SQCNIxNSNI stabilized nodal integration, bedding normal at 45 deg")
     print("=" * 100)
     print(f"{'h [mm]':>8} {'h/l':>6} {'particles':>10} | {'peak frozen':>12} {'at [%]':>7}"
@@ -82,9 +87,13 @@ def main():
                           for i in range(len(rows) - 1)))
         print(f"  the two frames agree on the peak to {max(abs(r[4] - r[2]) / r[2] for r in rows) * 100:.3f} %"
               " at every mesh -- the frame has barely turned by the peak, so it cannot matter there")
-        print("  reachable shortening COLLAPSES with refinement: that is the limit point, not"
-              " mesh dependence,")
-        print("  and it is why the post-peak comparison is only available on the coarsest mesh.")
+        reach = [min(r[6], r[7]) for r in rows]
+        if max(reach) - min(reach) > 0.4 * max(reach):
+            print("  reachable strain varies strongly with h: that is the LIMIT POINT, not mesh")
+            print("  dependence, and it confines any post-peak comparison to the coarsest mesh.")
+        else:
+            print(f"  reachable strain is comparable at every mesh ({min(reach):.2f}-{max(reach):.2f} %):")
+            print("  the softening is traversable, so the curves below are comparable throughout.")
 
     import matplotlib
 
@@ -121,8 +130,31 @@ def main():
         a_.grid(alpha=0.3, which="both")
         a_.legend(fontsize=8)
     fig.tight_layout()
-    fig.savefig("mesh_convergence.png", dpi=140)
-    print("\n  wrote mesh_convergence.png")
+
+    # THE mesh-objectivity picture: if the gradient enhancement is doing its job, the whole
+    # load-displacement curve -- not just the peak -- must be independent of h.
+    fig3, ax3 = plt.subplots(1, 2, figsize=(11.0, 4.2))
+    for tag in tags:
+        for frame, axx, ls in ((0, ax3[0], "-"), (1, ax3[1], "--")):
+            if (tag, frame) not in runs:
+                continue
+            r = runs[(tag, frame)]
+            hh = r["d"]["history"]
+            axx.plot(hh[:, 0] * 100, -hh[:, 1], ls, lw=1.4,
+                     label=f"h = {r['h']:.3f} mm ({r['nP']} particles)")
+    for axx, ttl in ((ax3[0], "frozen frame"), (ax3[1], "convected frame")):
+        axx.set_xlabel(("shear angle" if isShear else "shortening") + r" $\gamma$ [%]")
+        axx.set_ylabel(r"$-\tau_{yy}$ at mid-height [MPa]")
+        axx.set_title(ttl + " -- curves should coincide if the\ngradient enhancement regularises",
+                      fontsize=9)
+        axx.grid(alpha=0.3)
+        axx.legend(fontsize=8)
+    fig3.tight_layout()
+    fig3.savefig(f"mesh_objectivity_{pattern}.png", dpi=140)
+    print(f"  wrote mesh_objectivity_{pattern}.png")
+
+    fig.savefig(f"mesh_convergence_{pattern}.png", dpi=140)
+    print(f"\n  wrote mesh_convergence_{pattern}.png")
 
 
 if __name__ == "__main__":
