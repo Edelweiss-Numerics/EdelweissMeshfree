@@ -143,8 +143,15 @@ from edelweissmeshfree.fieldoutput.fieldoutput import MPMFieldOutputController
 from edelweissmeshfree.generators.rectangularkernelfunctiongridgenerator import (
     generateRectangularKernelFunctionGrid,
 )
+from edelweissfe.surfaces.entitybasedsurface import EntityBasedSurface
 from edelweissmeshfree.generators.rectangularparticlegridgenerator import (
     generateRectangularParticleGrid,
+)
+from edelweissmeshfree.generators.rectangularquadparticlegridgenerator import (
+    generateRectangularQuadParticleGrid,
+)
+from edelweissmeshfree.stepactions.particledistributedload import (
+    ParticleDistributedLoad,
 )
 from edelweissmeshfree.meshfree.approximations.marmot.marmotmeshfreeapproximation import (
     MarmotMeshfreeApproximationWrapper,
@@ -268,7 +275,8 @@ def strengthFactorAt(x, y):
 # =============================================================================================
 
 
-def run_sim(frameUpdate=1, coarse=False, ensightName=None, spacing=None):
+def run_sim(frameUpdate=1, coarse=False, ensightName=None, spacing=None,
+            particleType="sqcnixnsni", confiningPressure=0.0):
     np.set_printoptions(linewidth=200, precision=3)
 
     dimension = 2
@@ -276,18 +284,25 @@ def run_sim(frameUpdate=1, coarse=False, ensightName=None, spacing=None):
     theModel = MPMModel(dimension)
 
     h = spacing if spacing else (2.5 if coarse else L_NONLOCAL)
-    # the grid generators lay points out INCLUSIVE of both endpoints, so nX points span the
-    # width with nX-1 gaps: asking for a spacing h means nX = W/h + 1, not W/h.
-    nX = int(round(WIDTH / h)) + 1
-    nY = int(round(HEIGHT / h)) + 1
+    nX = int(round(WIDTH / h))
+    nY = int(round(HEIGHT / h))
     supportRadius = 2.0 * h  # UNIFORM; local scaling is what OOM-killed the hexa studies
 
+    quad = particleType == "sqcnixnsni"
+    pName = ( "GradientEnhancedFiniteStrainSQCNIxNSNI/PlaneStrain/Quad" if quad
+              else "GradientEnhancedFiniteStrain/PlaneStrain/Point" )
+
     journal.message(
-        f"specimen {WIDTH} x {HEIGHT} mm, h = {h} mm, {nX} x {nY} = {nX * nY} particles, "
-        f"H/l = {HEIGHT / L_NONLOCAL:.1f}, frameUpdate = {frameUpdate}",
+        f"specimen {WIDTH} x {HEIGHT} mm, h = {h} mm, {nX} x {nY} cells, "
+        f"H/l = {HEIGHT / L_NONLOCAL:.1f}, particle = {pName}, frameUpdate = {frameUpdate}, "
+        f"confining pressure = {confiningPressure} MPa",
         "setup",
     )
 
+    # The kernel grid is point-INCLUSIVE (nX points, nX-1 gaps), the quad particle grid is
+    # cell-based (nX cells).  Using the same nX for both, as the existing SQCNI examples do,
+    # leaves the kernel spacing a factor nX/(nX-1) above the cell size, which the 2h support
+    # covers comfortably.
     theModel = generateRectangularKernelFunctionGrid(
         theModel,
         journal,
@@ -311,17 +326,14 @@ def run_sim(frameUpdate=1, coarse=False, ensightName=None, spacing=None):
     }
 
     def theParticleFactory(number, coordinates, volume):
-        x, y = np.asarray(coordinates).reshape(-1)[:2]  # generator hands over shape (1, 2)
+        c = np.asarray(coordinates).reshape(-1, 2).mean(axis=0)  # centre, from centre or vertices
         return MarmotParticleWrapper(
-            "GradientEnhancedFiniteStrain/PlaneStrain/Point",
-            number,
-            coordinates,
-            volume,
-            theApproximation,
-            cards[strengthFactorAt(x, y)],
+            pName, number, coordinates, volume, theApproximation,
+            cards[strengthFactorAt(c[0], c[1])],
         )
 
-    theModel = generateRectangularParticleGrid(
+    generator = generateRectangularQuadParticleGrid if quad else generateRectangularParticleGrid
+    theModel = generator(
         theModel, journal, theParticleFactory, x0=0.0, y0=0.0, h=HEIGHT, l=WIDTH, nX=nX, nY=nY
     )
 
@@ -340,14 +352,31 @@ def run_sim(frameUpdate=1, coarse=False, ensightName=None, spacing=None):
     for name in ("displacement", "stress", "omega", "alphaP", "frameRotation",
                  "materialAxis1", "materialAxis2"):
         fieldOutputController.addPerParticleFieldOutput(name, theModel.particleSets["all"], name)
+    if quad:
+        fieldOutputController.addPerParticleFieldOutput(
+            "vertex displacements",
+            theModel.particleSets["all"],
+            "vertex displacements",
+            f_x=lambda x: np.pad(np.reshape(x, (-1, 2)), ((0, 0), (0, 1)), mode="constant",
+                                 constant_values=0),
+        )
     fieldOutputController.initializeJob()
 
     outputManagers = []
     if ensightName:
         ensightOutput = EnsightOutputManager(ensightName, theModel, fieldOutputController, journal, None)
+        # the particle CENTRE displacement is one value per particle; a quad particle's Ensight
+        # part has 4 vertices, so perNode would abort with "Variable displacement result size
+        # (128) does not match the number of nodes (512)".  perElement for quads, and a proper
+        # per-vertex field alongside it.
         ensightOutput.updateDefinition(
-            fieldOutput=fieldOutputController.fieldOutputs["displacement"], create="perNode"
+            fieldOutput=fieldOutputController.fieldOutputs["displacement"],
+            create="perElement" if quad else "perNode",
         )
+        if quad:
+            ensightOutput.updateDefinition(
+                fieldOutput=fieldOutputController.fieldOutputs["vertex displacements"], create="perNode"
+            )
         for name in ("omega", "alphaP", "frameRotation", "materialAxis1", "stress"):
             ensightOutput.updateDefinition(
                 fieldOutput=fieldOutputController.fieldOutputs[name], create="perElement"
@@ -363,8 +392,11 @@ def run_sim(frameUpdate=1, coarse=False, ensightName=None, spacing=None):
 
     # one single particle carries u_x = 0: enough to kill the x translation without turning the
     # platen into a rough (confining) one, which smears the damage instead of localising it
+    def centreOf(p):
+        return np.asarray(p.getVertexCoordinates()).reshape(-1, 2).mean(axis=0)
+
     bottomParticles = list(sets["rectangular_grid_bottom"])
-    xyBottom = np.array([np.asarray(p.getVertexCoordinates()).reshape(-1)[:2] for p in bottomParticles])
+    xyBottom = np.array([centreOf(p) for p in bottomParticles])
     anchor = [bottomParticles[int(np.argmin(np.abs(xyBottom[:, 0] - 0.5 * WIDTH)))]]
 
     # These are the settings that actually get through the softening branch on this problem.
@@ -385,24 +417,30 @@ def run_sim(frameUpdate=1, coarse=False, ensightName=None, spacing=None):
     nonlinearSolver = NonlinearQuasistaticSolver(journal)
 
     history = []  # (nominal axial shortening, mean tau_yy over the mid-height slice, omega, R^p)
-    xyAll = np.array(
-        [np.asarray(p.getVertexCoordinates()).reshape(-1)[:2] for p in sets["all"]]
-    )
+    xyAll = np.array([centreOf(p) for p in sets["all"]])
     midSlice = np.abs(xyAll[:, 1] - 0.5 * HEIGHT) <= 1.01 * h
 
     snapshots = []
 
+    uRef = {"u0": None}
+
     def recordHistory():
         fo = fieldOutputController.fieldOutputs
         u = fo["displacement"].getLastResult()[:, :2]
+        # the confinement step already moves the specimen, so the axial shortening is counted
+        # from the state at the END of it, not from the undeformed configuration
+        if uRef["u0"] is None:
+            uRef["u0"] = u.copy()
+        du = u - uRef["u0"]
         tau = fo["stress"].getLastResult().reshape(-1, 3, 3)
         omega = fo["omega"].getLastResult().reshape(-1).copy()
         history.append(
             (
-                -u[:, 1].min() / HEIGHT,
+                -du[:, 1].min() / HEIGHT,
                 float(tau[midSlice, 1, 1].mean()),
                 float(omega.max()),
                 float(fo["frameRotation"].getLastResult().max()),
+                float(tau[:, 0, 0].mean()),
             )
         )
         # The band is a TRANSIENT: run far enough and omega saturates over almost the whole
@@ -421,7 +459,70 @@ def run_sim(frameUpdate=1, coarse=False, ensightName=None, spacing=None):
             )
         )
 
-    journal.message(f"compressing to {AXIAL_STRAIN * 100:.0f} % nominal shortening", "step")
+    # A GENUINE TRIAXIAL CONFINEMENT is possible with the SQCNI family and only with it: the
+    # smoothing domain gives the particle faces, so a surface load can reach it.  Quad face ids
+    # for the generator's CCW vertex order (x,y),(x+1,y),(x+1,y+1),(x,y+1) are
+    # 1 = bottom, 2 = right, 3 = top, 4 = left.  A NEGATIVE load is compressive (the load is
+    # applied along the OUTWARD surface vector), which is checked below by measuring tau_xx.
+    distributedLoads = []
+    if confiningPressure > 0.0:
+        if not quad:
+            raise ValueError(
+                "a constant-pressure confinement needs a particle with faces; the Point "
+                "particle has none.  Use --particle sqcnixnsni."
+            )
+        theModel.surfaces["confinement"] = EntityBasedSurface(
+            "confinement",
+            {4: list(sets["rectangular_grid_left"]), 2: list(sets["rectangular_grid_right"])},
+        )
+        distributedLoads.append(
+            ParticleDistributedLoad(
+                "confinement", theModel, journal, theModel.surfaces["confinement"],
+                "pressure", np.array([-confiningPressure]),
+            )
+        )
+
+    # ---- step 1: build the confinement up, with the axial faces held ------------------------
+    # ParticleDistributedLoad ramps its load over a step and then goes IDLE, holding the full
+    # value for every later step it is passed to.  So the SAME object in two steps gives exactly
+    # ramp-then-hold, which is what a triaxial cell does: consolidate, then shear.  Applying it
+    # in one step instead makes the confinement grow together with the axial load -- measured
+    # -0.19 MPa of an intended -5.0 at the point the run stopped, i.e. essentially unconfined.
+    if distributedLoads:
+        journal.message(f"STEP 1 -- building up {confiningPressure} MPa of confinement", "step")
+        try:
+            nonlinearSolver.solveStep(
+                AdaptiveTimeStepper(theModel.time, 1.0, 0.2, 0.5, 1e-3, 100, journal),
+                linearSolver, theModel, fieldOutputController,
+                outputManagers=outputManagers,
+                particleManagers=[theParticleManager],
+                constraints=[
+                    bc("botY", bottomParticles, {1: 0.0}),
+                    bc("topY", list(sets["rectangular_grid_top"]), {1: 0.0}),
+                    bc("anchorX", anchor, {0: 0.0}),
+                ],
+                particleDistributedLoads=distributedLoads,
+                userIterationOptions=iterationOptions,
+            )
+        except StepFailed as e:
+            journal.message(f"confinement step failed: {e}", "error")
+            raise
+        # The meshfree NQS solver does NOT call applyAtStepEnd on distributed loads (only the
+        # arc-length solver in EdelweissFE does), so the load object never latches the value it
+        # ramped to and step 2 would ramp it from ZERO all over again.  Measured before this
+        # call: tau_xx back to -0.000 at the first increment of step 2, then linear in the step
+        # progress, reaching only -2.0 of the intended -5.0 by the end.  Latch it by hand.
+        for dl in distributedLoads:
+            dl.applyAtStepEnd(theModel)
+        tau = fieldOutputController.fieldOutputs["stress"].getLastResult().reshape(-1, 3, 3)
+        journal.message(
+            f"confinement in place and latched: mean tau_xx = {tau[:, 0, 0].mean():.3f} MPa "
+            f"(target {-confiningPressure:.3f})",
+            "step",
+        )
+
+    # ---- step 2: compress axially, confinement held ----------------------------------------
+    journal.message(f"STEP 2 -- compressing to {AXIAL_STRAIN * 100:.0f} % nominal shortening", "step")
     uMax = AXIAL_STRAIN * HEIGHT
     inc = 0.005
     stepFailed = False
@@ -448,6 +549,10 @@ def run_sim(frameUpdate=1, coarse=False, ensightName=None, spacing=None):
             pass
 
     try:
+        recordHistory()  # establishes the zero of the axial shortening after the confinement
+    except Exception:
+        pass
+    try:
         nonlinearSolver.solveStep(
             AdaptiveTimeStepper(theModel.time, 1.0, inc, 4.0 * inc, 1e-5, 600, journal),
             linearSolver, theModel, fieldOutputController,
@@ -458,6 +563,7 @@ def run_sim(frameUpdate=1, coarse=False, ensightName=None, spacing=None):
                 bc("topY", list(sets["rectangular_grid_top"]), {1: -uMax}),
                 bc("anchorX", anchor, {0: 0.0}),
             ],
+            particleDistributedLoads=distributedLoads,
             userIterationOptions=iterationOptions,
         )
     except StepFailed as e:
@@ -481,6 +587,8 @@ def run_sim(frameUpdate=1, coarse=False, ensightName=None, spacing=None):
         fieldOutputController=fieldOutputController,
         history=np.array(history),
         h=h,
+        particleType=pName,
+        confiningPressure=confiningPressure,
         stepFailed=stepFailed,
         frameUpdate=frameUpdate,
     )
@@ -524,8 +632,10 @@ def report(result, which="best"):
     caps = ~core
     hist = result["history"]
     print("\n" + "=" * 78)
-    print(f" PLANE-STRAIN COMPRESSION, free lateral boundaries, frameUpdate = {result['frameUpdate']}"
+    print(f" PLANE-STRAIN COMPRESSION, frameUpdate = {result['frameUpdate']}"
           f" ({'convected' if result['frameUpdate'] else 'frozen'} material frame)")
+    print(f"   {result['particleType']},  h = {result['h']} mm,  "
+          f"confining pressure {result['confiningPressure']} MPa")
     print("=" * 78)
     print(f"  increments recorded / reached shortening    : {len(result['snapshots']):5d}"
           f" / {hist[:, 0].max() * 100:.2f} %"
@@ -533,6 +643,8 @@ def report(result, which="best"):
     print(f"  contoured increment ({whichLabel:>8s})              : shortening"
           f" {f['shortening'] * 100:.2f} %, omega std {f['heterogeneity']:.4f}")
     print(f"  peak mean tau_yy at mid-height              : {hist[:, 1].min():8.3f} MPa")
+    print(f"  mean tau_xx over the specimen (confinement) : {hist[1:, 4].mean():8.3f} MPa"
+          f"   (target {-result['confiningPressure']:.3f})")
     print(f"  max omega  (core / caps)                    : {f['omega'][core].max():8.4f}"
           f" / {f['omega'][caps].max():.4f}")
     print(f"  max alphaP (core)                           : {f['alphaP'][core].max():8.3f}")
@@ -624,8 +736,9 @@ def makePlots(results, which="best", fname="contour_plots.png"):
         a.grid(alpha=0.3)
         a.legend(fontsize=8)
     fig2.tight_layout()
-    fig2.savefig("load_displacement.png", dpi=140)
-    print("  wrote load_displacement.png")
+    ldName = fname.replace("contour_plots", "load_displacement")
+    fig2.savefig(ldName, dpi=140)
+    print(f"  wrote {ldName}")
 
 
 @pytest.fixture(autouse=True)
@@ -678,22 +791,32 @@ if __name__ == "__main__":
     parser.add_argument("--compare", action="store_true", help="run both frames and overlay")
     parser.add_argument("--coarse", action="store_true", help="h = 2.5 mm instead of 1.25 mm")
     parser.add_argument("--h", type=float, default=None, help="particle spacing [mm], overrides --coarse")
+    parser.add_argument("--particle", choices=("sqcnixnsni", "point"), default="sqcnixnsni",
+                        help="sqcnixnsni = stabilized nodal integration on quad smoothing "
+                             "domains (default); point = plain unstabilized nodal integration")
+    parser.add_argument("--confine", type=float, default=0.0,
+                        help="constant confining pressure [MPa] on the lateral faces "
+                             "(needs --particle sqcnixnsni); 0 = free lateral boundaries")
     parser.add_argument("--no-ensight", action="store_true")
+    parser.add_argument("--tag", default="", help="suffix for the output file names, so several "
+                                                 "mesh sizes can be run side by side")
     args = parser.parse_args()
 
     modes = [0, 1] if args.compare else [0 if args.frozen else 1]
     results = []
     for m in modes:
         name = None if args.no_ensight else f"_ensight_frame{m}"
-        results.append(run_sim(frameUpdate=m, coarse=args.coarse, ensightName=name, spacing=args.h))
+        results.append(run_sim(frameUpdate=m, coarse=args.coarse, ensightName=name, spacing=args.h,
+                               particleType=args.particle, confiningPressure=args.confine))
         report(results[-1])
 
-    makePlots(results)
+    tag = f"_{args.tag}" if args.tag else ""
+    makePlots(results, fname=f"contour_plots{tag}.png")
 
     print("\n  --- final increment, for comparison ---")
     for r in results:
         report(r, which="last")
-    makePlots(results, which="last", fname="contour_plots_last.png")
+    makePlots(results, which="last", fname=f"contour_plots_last{tag}.png")
 
     if len(results) > 1:
         # The two frames do NOT reach the same shortening -- the convected one localises
@@ -703,11 +826,11 @@ if __name__ == "__main__":
         print(f"\n  --- MATCHED shortening {target * 100:.2f} %, the largest both runs reached ---")
         for r in results:
             report(r, which=target)
-        makePlots(results, which=target, fname="contour_plots_matched.png")
+        makePlots(results, which=target, fname=f"contour_plots_matched{tag}.png")
 
     for r in results:
         np.savez_compressed(
-            f"snapshots_frame{r['frameUpdate']}.npz",
+            f"snapshots_frame{r['frameUpdate']}{tag}.npz",
             xy0=r["xy0"],
             history=r["history"],
             shortening=np.array([sn["shortening"] for sn in r["snapshots"]]),
@@ -718,4 +841,4 @@ if __name__ == "__main__":
             axis2=np.array([sn["axis2"] for sn in r["snapshots"]]),
             u=np.array([sn["u"] for sn in r["snapshots"]]),
         )
-        print(f"  wrote snapshots_frame{r['frameUpdate']}.npz")
+        print(f"  wrote snapshots_frame{r['frameUpdate']}{tag}.npz")
