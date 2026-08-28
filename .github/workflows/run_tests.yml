@@ -82,6 +82,15 @@ jobs:
           make install
           cd ..
 
+      - name: Install AMGCL
+        shell: bash -l {0}
+        run: |
+          git clone --branch 1.4.7 --depth 1 https://github.com/ddemidov/amgcl.git "$RUNNER_TEMP/amgcl"
+          cd "$RUNNER_TEMP/amgcl"
+          cmake -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX .
+          make install
+          cd ..
+
       - name: Install Marmot
         shell: bash -l {0}
         run: |
