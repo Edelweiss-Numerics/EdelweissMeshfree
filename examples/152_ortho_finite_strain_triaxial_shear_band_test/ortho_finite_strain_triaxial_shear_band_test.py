@@ -975,6 +975,11 @@ if __name__ == "__main__":
                         help="patch = one small weak square at mid-height on the left edge "
                              "(default; with As = 2 this localises cleanly); slab = a "
                              "fixed-width inclined weak slab, which does not help here")
+    parser.add_argument("--beta", type=float, default=None,
+                        help="inclination of the stratification PLANES to the horizontal [deg], "
+                             "the paper's beta.  beta = 0 puts the bedding normal along the load "
+                             "axis, beta = 90 perpendicular to it.  Internally the card carries "
+                             "the NORMAL angle from x, so phi = 90 - beta.")
     parser.add_argument("--case", choices=("ortho", "niandou"), default="ortho",
                         help="ortho = the 3D-printed-concrete card and the 10x20 mm specimen "
                              "(default); niandou = the Tournemire-shale card of "
@@ -998,6 +1003,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     applyCase(args.case)
+    if args.beta is not None:
+        # the card stores the angle of the bedding NORMAL from x; the paper's beta is the
+        # inclination of the PLANES from the horizontal, and the load axis is y, so the two are
+        # complementary.  Keeping the CLI in the paper's beta means the FE and RKPM drivers take
+        # the same number.
+        globals()["BEDDING_PHI_DEG"] = 90.0 - args.beta
 
     for key, val in (("softMod", args.softmod), ("maxDmg", args.maxdmg),
                      ("l", args.lnl), ("m", args.m), ("damageOnset", args.onset),
