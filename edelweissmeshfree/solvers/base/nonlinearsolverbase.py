@@ -130,6 +130,41 @@ class BaseNonlinearSolver:
     #: subclasses call ``super().__init__()``.
     _dirichletIndicesCache = None
 
+    #: Number of threads used by threaded assembly kernels. Parallel solvers shadow this with an
+    #: instance attribute; the sequential default of one keeps the base solvers meaningful.
+    numThreads = 1
+
+    #: Assemble particle contributions straight into CSR, bypassing the VIJ staging array. Off by
+    #: default: the VIJ path remains the reference until the direct path has been measured.
+    useDirectCSRAssembly = False
+
+    #: Run *both* assembly paths per iteration and compare the resulting CSR data. Diagnostic only,
+    #: and roughly twice the assembly cost -- the point is that the comparison happens against a
+    #: fully prepared model inside the real solver, which a standalone harness cannot provide.
+    verifyDirectCSRAssembly = False
+
+    #: Benchmark both assembly paths against each other, per iteration, on identical state. Diagnostic
+    #: only; the solve continues on the VIJ path so no result changes.
+    timeDirectCSRAssembly = False
+
+    #: How many private CSR copies the direct assembler keeps. Zero means one per thread, which is
+    #: the reproducible default; a smaller positive number makes threads share a copy and synchronise
+    #: the scatter with atomics, saving memory at the cost of a fixed summation order. One is fully
+    #: atomic. See ``CSRDirectAssembler::setNumBuffers``.
+    directCSRNumBuffers = 0
+
+    #: The CSR generator for the current connectivity, or None. Reachable so the benchmark can time
+    #: the production gather.
+    _csrGenerator = None
+
+    #: The :class:`DirectCSRAssembler` for the current connectivity, or None. Rebuilt whenever the
+    #: Newton cache is, since its offset map has exactly the lifetime of the CSR pattern.
+    _directCSRAssembler = None
+
+    #: Maps each registered entity to its index in the assembler's map. Keyed by entity rather than
+    #: inferred from iteration order, so a reordering of the active set cannot silently misaddress.
+    _directCSREntityIds = None
+
     def __init__(self, journal: Journal):
         self.journal = journal
 
