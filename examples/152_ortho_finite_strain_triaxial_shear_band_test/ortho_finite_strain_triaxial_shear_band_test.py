@@ -250,6 +250,38 @@ SEED_FACTOR = 0.90  # strengths of the seed patch
 
 WIDTH = 10.0
 HEIGHT = 20.0
+
+# =============================================================================================
+#  SECOND CASE: the Niandou Tournemire-shale triaxial tests, card from
+#  Mader/Schreter/Hofstetter, IJNAMG 46 (2022) 933-960, Table 3.  Selected with --case niandou.
+#  This is the RKPM half of the FE-vs-RKPM comparison; the FE half is
+#  Marmot/modules/materials/GradientEnhancedOrthoCDPFiniteStrain/testCases/edelweissFE/
+#  niandou_triaxial_fe.py, which solves the identical plane-strain problem with GCPE8RUL.
+#  What is exact, what is derived and what cannot be transferred is documented there and in
+#  test/niandou_triaxial_single_element.cpp.
+# =============================================================================================
+NIANDOU = dict(
+    WIDTH=37.0, HEIGHT=75.0,          # the paper's specimen, 37 mm diameter x 75 mm high
+    E1=7000.0, E2=18000.0, E3=18000.0,  # 1 = normal to the stratification planes
+    NU12=0.2, NU13=0.2, NU23=0.25,
+    G12=4000.0, G13=4000.0, G23=18000.0 / (2.0 * 1.25),
+    FCU=42.54, FCY=22.25, FTU=9.1608, FBU=43.8059,  # ftu/fbu derived: e = 0.51, m0* = 4.487
+    DF=0.85, AH=0.022, BH=0.01, CH=1.0, DH=1e-6, AS=15.0,
+    SOFTMOD=4.75e-4,                  # eps_f*
+    L_NONLOCAL=5.0, WEIGHT_M=1.05,
+    ALPHA=1.0, BETA=1.0, GAMMA=1.0, ZETA=1.0, XI=1.0, ETA=1.0,
+    BEDDING_PHI_DEG=45.0,             # beta: inclination of the stratification planes
+    AXIAL_STRAIN=0.04,                # 3 mm of 75 mm
+)
+
+
+def applyCase(name):
+    """Switch the module-level card and geometry to a named case."""
+    if name != "niandou":
+        return
+    g = globals()
+    for k, v in NIANDOU.items():
+        g[k] = v
 BEDDING_PHI_DEG = 45.0  # angle of the bedding NORMAL from the x axis, in the x-y plane
 AXIAL_STRAIN = 0.12  # nominal shortening, compression mode
 SHEAR_STRAIN = 0.30  # nominal shear angle gamma = u_x(top)/H, shear mode
@@ -943,6 +975,11 @@ if __name__ == "__main__":
                         help="patch = one small weak square at mid-height on the left edge "
                              "(default; with As = 2 this localises cleanly); slab = a "
                              "fixed-width inclined weak slab, which does not help here")
+    parser.add_argument("--case", choices=("ortho", "niandou"), default="ortho",
+                        help="ortho = the 3D-printed-concrete card and the 10x20 mm specimen "
+                             "(default); niandou = the Tournemire-shale card of "
+                             "Mader/Schreter/Hofstetter (2022) Table 3 and their 37x75 mm "
+                             "specimen, for comparison against EdelweissFE and the paper")
     parser.add_argument("--mode", choices=("compression", "shear"), default="compression",
                         help="compression = axial shortening (default; gives a LOCALISED "
                              "inclined shear band and a full curve at h >= l with As = 2); "
@@ -959,6 +996,8 @@ if __name__ == "__main__":
     parser.add_argument("--tag", default="", help="suffix for the output file names, so several "
                                                  "mesh sizes can be run side by side")
     args = parser.parse_args()
+
+    applyCase(args.case)
 
     for key, val in (("softMod", args.softmod), ("maxDmg", args.maxdmg),
                      ("l", args.lnl), ("m", args.m), ("damageOnset", args.onset),
