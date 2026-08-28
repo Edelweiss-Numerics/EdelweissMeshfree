@@ -3,7 +3,7 @@ from typing import Iterable
 
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
-from edelweissfe.numerics.csrgeneratorv2 import CSRGenerator, DirectCSRAssembler
+from edelweissfe.numerics.csrgeneratorv2 import CSRGenerator
 from edelweissfe.numerics.dofmanager import DofManager, DofVector, VIJSystemMatrix
 from edelweissfe.numerics.parallelizationutilities import (
     getNumberOfThreads,
@@ -1095,6 +1095,12 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         DirectCSRAssembler
             The registered assembler.
         """
+
+        # Imported lazily: useDirectCSRAssembly is off by default, and the EdelweissFE-side
+        # DirectCSRAssembler this wraps has not landed on next_v26.11 yet (it lives on the unmerged
+        # feat/direct-csr-assembly branch) -- a module-level import would break every solver that
+        # never touches this path.
+        from edelweissfe.numerics.csrgeneratorv2 import DirectCSRAssembler
 
         entities = list(theDofManager.idcsOfHigherOrderEntitiesInVIJ.keys())
 
