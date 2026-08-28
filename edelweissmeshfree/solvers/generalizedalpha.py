@@ -487,17 +487,7 @@ class NonlinearDynamicSolver(NonlinearImplicitSolverBase):
         if not newtonCache:
             newtonCache = self._createNewtonCache(theDofManager)
             invalidateStatefulLinearSolver(linearSolver)
-        K, csrGenerator, dU, Rhs, F, PInt, PExt = newtonCache
-
-        # This solver forms M and K as separate VIJ arrays and does array arithmetic on them, which
-        # the direct-to-CSR path has no equivalent for -- it accumulates into one CSR copy. So it stays
-        # on the staging path and takes the array out of the contribution object.
-        if K.vijArray is None:
-            raise NotImplementedError(
-                "useDirectCSRAssembly is not supported by GeneralizedAlpha: it assembles a mass matrix "
-                "alongside the stiffness and combines the two as VIJ arrays. Use the VIJ path here."
-            )
-        K_VIJ = K.vijArray
+        K_VIJ, csrGenerator, dU, Rhs, F, PInt, PExt = newtonCache
 
         dU[:] = 0.0
         ddU = None
@@ -577,7 +567,7 @@ class NonlinearDynamicSolver(NonlinearImplicitSolverBase):
                     PInt,
                     F,
                     M,
-                    K,
+                    K_VIJ,
                     timeStep_int.totalTime,
                     timeStep_int.timeIncrement,
                     theDofManager,
@@ -590,7 +580,7 @@ class NonlinearDynamicSolver(NonlinearImplicitSolverBase):
                     PInt,
                     F,
                     M,
-                    K,
+                    K_VIJ,
                     timeStep_int.totalTime,
                     timeStep_int.timeIncrement,
                     theDofManager,
@@ -602,7 +592,7 @@ class NonlinearDynamicSolver(NonlinearImplicitSolverBase):
                     Un,
                     PInt,
                     F,
-                    K,
+                    K_VIJ,
                     timeStep_int.totalTime,
                     timeStep_int.timeIncrement,
                     theDofManager,
@@ -614,7 +604,7 @@ class NonlinearDynamicSolver(NonlinearImplicitSolverBase):
                     PInt,
                     F,
                     M,
-                    K,
+                    K_VIJ,
                     timeStep.totalTime,
                     timeStep.timeIncrement,
                     theDofManager,
@@ -627,7 +617,7 @@ class NonlinearDynamicSolver(NonlinearImplicitSolverBase):
                     PInt,
                     F,
                     M,
-                    K,
+                    K_VIJ,
                     timeStep_int.totalTime,
                     timeStep_int.timeIncrement,
                     theDofManager,
@@ -640,7 +630,7 @@ class NonlinearDynamicSolver(NonlinearImplicitSolverBase):
                     PInt,
                     F,
                     M,
-                    K,
+                    K_VIJ,
                     timeStep_int.totalTime,
                     timeStep_int.timeIncrement,
                     theDofManager,
@@ -652,7 +642,7 @@ class NonlinearDynamicSolver(NonlinearImplicitSolverBase):
                     Un,
                     PInt,
                     F,
-                    K,
+                    K_VIJ,
                     timeStep_int.totalTime,
                     timeStep_int.timeIncrement,
                     theDofManager,
@@ -664,19 +654,19 @@ class NonlinearDynamicSolver(NonlinearImplicitSolverBase):
                     PInt,
                     F,
                     M,
-                    K,
+                    K_VIJ,
                     timeStep_int.totalTime,
                     timeStep_int.timeIncrement,
                     theDofManager,
                 )
 
-            self._computeConstraints(constraints, dU_int, PInt, K, timeStep_int)
+            self._computeConstraints(constraints, dU_int, PInt, K_VIJ, timeStep_int)
 
-            PExt, K = self._computeBodyLoads(bodyLoads, PExt, K, timeStep_int, theDofManager, activeCells)
-            PExt, K = self._computeCellDistributedLoads(distributedLoads, PExt, K, timeStep_int, theDofManager)
+            PExt, K = self._computeBodyLoads(bodyLoads, PExt, K_VIJ, timeStep_int, theDofManager, activeCells)
+            PExt, K = self._computeCellDistributedLoads(distributedLoads, PExt, K_VIJ, timeStep_int, theDofManager)
 
             PExt, K = self._computeParticleDistributedLoads(
-                particleDistributedLoads, PExt, K, timeStep_int, theDofManager
+                particleDistributedLoads, PExt, K_VIJ, timeStep_int, theDofManager
             )
 
             Rhs[:] = -PInt
@@ -749,7 +739,7 @@ class NonlinearDynamicSolver(NonlinearImplicitSolverBase):
                             PInt,
                             F,
                             M,
-                            K,
+                            K_VIJ,
                             timeStep.totalTime,
                             timeStep.timeIncrement,
                             theDofManager,
@@ -762,7 +752,7 @@ class NonlinearDynamicSolver(NonlinearImplicitSolverBase):
                             PInt,
                             F,
                             M,
-                            K,
+                            K_VIJ,
                             timeStep.totalTime,
                             timeStep.timeIncrement,
                             theDofManager,
@@ -774,7 +764,7 @@ class NonlinearDynamicSolver(NonlinearImplicitSolverBase):
                             Un,
                             PInt,
                             F,
-                            K,
+                            K_VIJ,
                             timeStep.totalTime,
                             timeStep.timeIncrement,
                             theDofManager,
@@ -786,7 +776,7 @@ class NonlinearDynamicSolver(NonlinearImplicitSolverBase):
                             PInt,
                             F,
                             M,
-                            K,
+                            K_VIJ,
                             timeStep.totalTime,
                             timeStep.timeIncrement,
                             theDofManager,
@@ -799,7 +789,7 @@ class NonlinearDynamicSolver(NonlinearImplicitSolverBase):
                             PInt,
                             F,
                             M,
-                            K,
+                            K_VIJ,
                             timeStep.totalTime,
                             timeStep.timeIncrement,
                             theDofManager,
@@ -812,7 +802,7 @@ class NonlinearDynamicSolver(NonlinearImplicitSolverBase):
                             PInt,
                             F,
                             M,
-                            K,
+                            K_VIJ,
                             timeStep.totalTime,
                             timeStep.timeIncrement,
                             theDofManager,
@@ -824,7 +814,7 @@ class NonlinearDynamicSolver(NonlinearImplicitSolverBase):
                             Un,
                             PInt,
                             F,
-                            K,
+                            K_VIJ,
                             timeStep.totalTime,
                             timeStep.timeIncrement,
                             theDofManager,
@@ -836,7 +826,7 @@ class NonlinearDynamicSolver(NonlinearImplicitSolverBase):
                             PInt,
                             F,
                             M,
-                            K,
+                            K_VIJ,
                             timeStep.totalTime,
                             timeStep.timeIncrement,
                             theDofManager,

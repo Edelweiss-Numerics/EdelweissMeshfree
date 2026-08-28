@@ -48,7 +48,6 @@ from edelweissfe.utils.fieldoutput import FieldOutputController
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.mpmmanagers.base.mpmmanagerbase import MPMManagerBase
 from edelweissmeshfree.numerics.predictors.basepredictor import BasePredictor
-from edelweissmeshfree.numerics.systemmatrixcontribution import VIJContribution
 from edelweissmeshfree.particlemanagers.base.baseparticlemanager import (
     BaseParticleManager,
 )
@@ -274,15 +273,7 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
 
         # if not newtonCache:
         #     newtonCache = self._createArcLengthNewtonCache(theDofManager)
-        K, csrGenerator, dU, Rhs_, F, PInt, PExt, PExt_0, PExt_f, K_0, K_f = newtonCache
-
-        # The contributors write through the contribution objects; the arc-length combination of the
-        # dead and reference load stiffnesses is array arithmetic and needs the arrays underneath. This
-        # solver is therefore VIJ-only, which is why _createNewtonCache below builds three staging
-        # arrays and no direct-to-CSR assembler.
-        K_VIJ = K.vijArray
-        K_VIJ_0 = K_0.vijArray
-        K_VIJ_f = K_f.vijArray
+        K_VIJ, csrGenerator, dU, Rhs_, F, PInt, PExt, PExt_0, PExt_f, K_VIJ_0, K_VIJ_f = newtonCache
 
         if isinstance(dUGuess, tuple):
             dU_temp, dLambda_temp = dUGuess
@@ -311,7 +302,7 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
             the newtonCache arrays). Factored out of the iteration loop so the line
             search can evaluate trial states -- the loop head re-assembles at the
             accepted iterate afterwards, exactly like the base solver's line search."""
-            nonlocal PExt_0, PExt_f, K_0, K_f, K_VIJ_f
+            nonlocal PExt_0, PExt_f, K_VIJ_0, K_VIJ_f
 
             PInt[:] = K_VIJ[:] = F[:] = PExt_0[:] = PExt_f[:] = K_VIJ_f[:] = K_VIJ_0[:] = 0.0
 
@@ -319,25 +310,35 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
             self._interpolateFieldsToMaterialPoints(activeCells, dU)
             self._interpolateFieldsToMaterialPoints(elements, dU)
             self._computeMaterialPoints(materialPoints, timeStep.totalTime, timeStep.timeIncrement)
-            self._computeCells(activeCells, dU, PInt, F, K, timeStep.totalTime, timeStep.timeIncrement, theDofManager)
+            self._computeCells(
+                activeCells, dU, PInt, F, K_VIJ, timeStep.totalTime, timeStep.timeIncrement, theDofManager
+            )
             self._computeElements(
-                elements, dU, Un, PInt, F, K, timeStep.totalTime, timeStep.timeIncrement, theDofManager
+                elements, dU, Un, PInt, F, K_VIJ, timeStep.totalTime, timeStep.timeIncrement, theDofManager
             )
-            self._computeParticles(particles, dU, PInt, F, K, timeStep.totalTime, timeStep.timeIncrement, theDofManager)
-            self._computeConstraints(constraints, dU, PInt, K, timeStep)
+            self._computeParticles(
+                particles, dU, PInt, F, K_VIJ, timeStep.totalTime, timeStep.timeIncrement, theDofManager
+            )
+            self._computeConstraints(constraints, dU, PInt, K_VIJ, timeStep)
 
-            PExt_0, K_0 = self._computeBodyLoads(bodyLoads, PExt_0, K_0, zeroTimeStep, theDofManager, activeCells)
-            PExt_0, K_0 = self._computeCellDistributedLoads(distributedLoads, PExt_0, K_0, zeroTimeStep, theDofManager)
-            PExt_0, K_0 = self._computeParticleDistributedLoads(
-                particleDistributedLoads, PExt_0, K_0, zeroTimeStep, theDofManager
+            PExt_0, K_VIJ_0 = self._computeBodyLoads(
+                bodyLoads, PExt_0, K_VIJ_0, zeroTimeStep, theDofManager, activeCells
+            )
+            PExt_0, K_VIJ_0 = self._computeCellDistributedLoads(
+                distributedLoads, PExt_0, K_VIJ_0, zeroTimeStep, theDofManager
+            )
+            PExt_0, K_VIJ_0 = self._computeParticleDistributedLoads(
+                particleDistributedLoads, PExt_0, K_VIJ_0, zeroTimeStep, theDofManager
             )
 
-            PExt_f, K_f = self._computeBodyLoads(bodyLoads, PExt_f, K_f, referenceTimeStep, theDofManager, activeCells)
-            PExt_f, K_f = self._computeCellDistributedLoads(
-                distributedLoads, PExt_f, K_f, referenceTimeStep, theDofManager
+            PExt_f, K_VIJ_f = self._computeBodyLoads(
+                bodyLoads, PExt_f, K_VIJ_f, referenceTimeStep, theDofManager, activeCells
             )
-            PExt_f, K_f = self._computeParticleDistributedLoads(
-                particleDistributedLoads, PExt_f, K_f, referenceTimeStep, theDofManager
+            PExt_f, K_VIJ_f = self._computeCellDistributedLoads(
+                distributedLoads, PExt_f, K_VIJ_f, referenceTimeStep, theDofManager
+            )
+            PExt_f, K_VIJ_f = self._computeParticleDistributedLoads(
+                particleDistributedLoads, PExt_f, K_VIJ_f, referenceTimeStep, theDofManager
             )
 
             PExt_f -= PExt_0  # and subtract the dead part, since we are only interested in the homogeneous linear part
@@ -467,16 +468,13 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
             return dU, PInt, iterationHistory, newtonCache
 
     @performancetiming.timeit("creation newton cache")
-    def _createNewtonCache(self, theDofManager: DofManager, particles=()) -> tuple:
+    def _createNewtonCache(self, theDofManager: DofManager) -> tuple:
         """Create expensive objects, which may be reused if the global system does not change.
 
         Parameters
         ----------
         theDofManager
             The DofManager instance.
-        particles
-            The particles to register with the direct-to-CSR assembler, if one is in use. Forwarded
-            to the base implementation; the arc-length cache below builds no assembler of its own.
 
         Returns
         -------
@@ -486,7 +484,7 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
         arcLengthController = self._arcLengthController
 
         if arcLengthController is None:
-            return super()._createNewtonCache(theDofManager, particles)
+            return super()._createNewtonCache(theDofManager)
 
         K_VIJ = theDofManager.constructVIJSystemMatrix()
         csrGenerator = self._makeCachedCOOToCSRGenerator(K_VIJ)
@@ -500,24 +498,7 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
         K_VIJ_0 = theDofManager.constructVIJSystemMatrix()
         K_VIJ_f = theDofManager.constructVIJSystemMatrix()
 
-        newtonCache = (
-            VIJContribution(K_VIJ, csrGenerator),
-            csrGenerator,
-            dU,
-            Rhs_,
-            F,
-            PInt,
-            PExt,
-            PExt_0,
-            PExt_f,
-            VIJContribution(K_VIJ_0, csrGenerator),
-            VIJContribution(K_VIJ_f, csrGenerator),
-        )
-
-        # this cache carries three VIJ matrices and no direct-to-CSR assembler; cleared explicitly so
-        # a stale one from a previous connectivity cannot be reached from the arc-length path
-        self._directCSRAssembler = None
-        self._directCSREntityIds = None
+        newtonCache = (K_VIJ, csrGenerator, dU, Rhs_, F, PInt, PExt, PExt_0, PExt_f, K_VIJ_0, K_VIJ_f)
 
         return newtonCache
 

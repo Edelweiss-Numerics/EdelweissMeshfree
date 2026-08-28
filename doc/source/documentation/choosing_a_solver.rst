@@ -33,11 +33,8 @@ Start here
     * - above ~40,000 DOF
       - ``BlockAMGSolver``
       - AMG's iteration count is mesh independent here; a direct factorisation is not
-    * - above ~50,000 DOF
-      - ``BlockAMGSolver``, and ``useDirectCSRAssembly`` on the solver
-      - the staging assembly path cannot build its gather map beyond ~2.15e9 COO pairs
     * - memory bound rather than time bound
-      - ``BlockAMGSolver`` + ``useDirectCSRAssembly``
+      - ``BlockAMGSolver``
       - a direct factorisation's fill-in is the one term that has never been bounded here
 
 The crossover near 40,000 DOF is a measured property of this problem class, not a general rule. Below
@@ -315,9 +312,11 @@ steady state:
 
 Practical consequences:
 
-- **Use** ``useDirectCSRAssembly`` **above ~50,000 DOF.** It is not only faster; the staging assembly
-  path stores an int32 index per COO pair and therefore cannot build its gather map beyond 2.15e9 pairs,
-  which this problem class reaches at about 50,000 DOF -- with only a third of a 187 GB machine in use.
+- The staging assembly path stores an int32 index per COO pair and therefore cannot build its gather
+  map beyond 2.15e9 pairs, which this problem class reaches at about 50,000 DOF -- with only a third
+  of a 187 GB machine in use. A direct-to-CSR assembly path that bypasses the staging array entirely
+  is planned to raise this ceiling, but is not yet available (it depends on unreleased EdelweissFE
+  support).
 - Assembly cost and memory then scale **linearly** in DOF, measured over a 2.8x range.
 - Peak memory is set by setup transients (pattern construction, and rebuilding on a connectivity change),
   not by the assembly or the solve. Size a machine for the peak, and expect it to be well above what the
@@ -390,8 +389,6 @@ For an RKPM impact problem above the crossover, on the deformed states where the
         hierarchyDropTol=1e-4,  # ~1.8x on the linear solve; verify on your own operator first
         verbosity="info",
     )
-
-    nonlinearSolver.useDirectCSRAssembly = True   # required above ~50,000 DOF
 
 Then check three things in the performance table before tuning further: the share of the linear solve
 that is actually ``blockamg: outer GMRES``, the outer iteration counts on the *late* Newton iterations of

@@ -313,7 +313,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                 self.journal.message(iterationHeader2, self.identification, level=2)
 
                 if not newtonCache:
-                    newtonCache = self._createNewtonCache(theDofManager, particles)
+                    newtonCache = self._createNewtonCache(theDofManager)
                     invalidateStatefulLinearSolver(linearSolver)
                     if hasattr(linearSolver, "setJournal"):
                         linearSolver.setJournal(self.journal)
@@ -512,7 +512,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
 
         nAllowedResidualGrowths = iterationOptions["allowed residual growths"]
 
-        K, csrGenerator, dU, Rhs, F, PInt, PExt = newtonCache
+        K_VIJ, csrGenerator, dU, Rhs, F, PInt, PExt = newtonCache
 
         dU[:] = initialGuess if initialGuess is not None else 0.0
         ddU = None
@@ -523,7 +523,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
 
         while True:
 
-            Rhs, K, F, PInt, PExt = self._computeSystem(
+            Rhs, K_VIJ, F, PInt, PExt = self._computeSystem(
                 dirichlets,
                 bodyLoads,
                 distributedLoads,
@@ -540,7 +540,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                 theDofManager,
                 dU,
                 Rhs,
-                K,
+                K_VIJ,
                 PInt,
                 PExt,
                 F,
@@ -598,7 +598,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                     raise ReachedMaxIterations("Reached max. iterations in current increment, cutting back")
 
             if not quasi_Newton:
-                K_CSR = K.toCSR(useInPlace=False)
+                K_CSR = self._VIJtoCSR(K_VIJ, csrGenerator, useInPlace=False)
                 if iterationOptions["fall back to quasi Newton after allowed residual growths"]:
                     if iterationCounter == 0:
                         K_CSR_elastic = K_CSR.copy()
@@ -639,7 +639,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                         theDofManager,
                         dU_linesearch,
                         Rhs,
-                        K,
+                        K_VIJ,
                         PInt,
                         PExt,
                         F,
@@ -684,41 +684,38 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
         theDofManager: DofManager,
         dU,
         Rhs,
-        K,
+        K_VIJ,
         PInt,
         PExt,
         F,
     ):
         """Compute the global residual vector and the global stiffness matrix."""
 
-        PInt[:] = F[:] = PExt[:] = 0.0
-        K.beginAssembly()
+        PInt[:] = K_VIJ[:] = F[:] = PExt[:] = 0.0
 
         self._prepareMaterialPoints(materialPoints, timeStep.totalTime, timeStep.timeIncrement)
         self._interpolateFieldsToMaterialPoints(activeCells, dU)
         self._interpolateFieldsToMaterialPoints(cellElements, dU)
         self._computeMaterialPoints(materialPoints, timeStep.totalTime, timeStep.timeIncrement)
 
-        self._computeCells(activeCells, dU, PInt, F, K, timeStep.totalTime, timeStep.timeIncrement, theDofManager)
+        self._computeCells(activeCells, dU, PInt, F, K_VIJ, timeStep.totalTime, timeStep.timeIncrement, theDofManager)
 
-        self._computeElements(elements, dU, Un, PInt, F, K, timeStep.totalTime, timeStep.timeIncrement, theDofManager)
-
-        self._computeCellElements(
-            cellElements, dU, Un, PInt, F, K, timeStep.totalTime, timeStep.timeIncrement, theDofManager
+        self._computeElements(
+            elements, dU, Un, PInt, F, K_VIJ, timeStep.totalTime, timeStep.timeIncrement, theDofManager
         )
 
-        self._computeParticles(particles, dU, PInt, F, K, timeStep.totalTime, timeStep.timeIncrement, theDofManager)
+        self._computeCellElements(
+            cellElements, dU, Un, PInt, F, K_VIJ, timeStep.totalTime, timeStep.timeIncrement, theDofManager
+        )
 
-        self._computeConstraints(constraints, dU, PInt, K, timeStep)
+        self._computeParticles(particles, dU, PInt, F, K_VIJ, timeStep.totalTime, timeStep.timeIncrement, theDofManager)
 
-        PExt, K = self._computeBodyLoads(bodyLoads, PExt, K, timeStep, theDofManager, activeCells)
-        PExt, K = self._computeCellDistributedLoads(distributedLoads, PExt, K, timeStep, theDofManager)
+        self._computeConstraints(constraints, dU, PInt, K_VIJ, timeStep)
 
-        PExt, K = self._computeParticleDistributedLoads(particleDistributedLoads, PExt, K, timeStep, theDofManager)
+        PExt, K = self._computeBodyLoads(bodyLoads, PExt, K_VIJ, timeStep, theDofManager, activeCells)
+        PExt, K = self._computeCellDistributedLoads(distributedLoads, PExt, K_VIJ, timeStep, theDofManager)
 
-        # every contributor has had its say; commit whatever is still held so the matrix is complete
-        # when this returns rather than only once someone asks for the CSR form
-        K.flush()
+        PExt, K = self._computeParticleDistributedLoads(particleDistributedLoads, PExt, K_VIJ, timeStep, theDofManager)
 
         Rhs[:] = -PInt
         Rhs -= PExt
