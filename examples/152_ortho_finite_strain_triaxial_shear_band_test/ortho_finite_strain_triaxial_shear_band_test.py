@@ -194,7 +194,14 @@ FCY = FCU / 3.0
 FBU = 1.16 * FCU
 
 AH, BH, CH, DH = 0.08, 0.003, 2.0, 1e-6
-AS = 15.0
+# Ductility divisor of the DAMAGE DRIVER: deltaAlphaLocal = dEPVol / xs, xs = 1 + As(4 sqrt(Rs)-3).
+# The calibrated 15 makes xs ~ 16 in compression, so damage crawls and the run stalls at the
+# plastic limit load with omega ~ 2e-4 while the implicit-gradient regularisation -- which acts on
+# the damage -- is still doing nothing.  A material-point scan (test/compression_damage_scan.cpp)
+# shows omega at 12 % shortening and 5 MPa confinement going 0.34 (As = 15) -> 0.78 (As = 0.5)
+# with the PEAK UNCHANGED to 3 decimals, so this buys damage without touching the strength
+# calibration.  As = 2 is the value that both damages and stays traversable.
+AS = 2.0
 DF = 0.85
 # softMod is THE lever for whether the damage localises at all, and it has a NARROW usable
 # window: on the earlier cylinder study 3.95e-3 gave a mid/end damage contrast of 1.43
@@ -232,7 +239,7 @@ DAMAGE_ONSET = 0.95
 # alphaP = 1, so the tangent is singular at the plastic limit load while omega is still 0 and
 # the implicit-gradient regularisation is not yet doing anything.  The strength gain is bounded
 # by the value itself.
-H_RESIDUAL = 0.05
+H_RESIDUAL = 0.02
 
 CAP_FACTOR = 3.00  # strengths of the platen caps
 SEED_FACTOR = 0.90  # strengths of the seed patch
@@ -244,7 +251,7 @@ SEED_FACTOR = 0.90  # strengths of the seed patch
 WIDTH = 10.0
 HEIGHT = 20.0
 BEDDING_PHI_DEG = 45.0  # angle of the bedding NORMAL from the x axis, in the x-y plane
-AXIAL_STRAIN = 0.20  # nominal shortening, compression mode
+AXIAL_STRAIN = 0.12  # nominal shortening, compression mode
 SHEAR_STRAIN = 0.30  # nominal shear angle gamma = u_x(top)/H, shear mode
 
 
@@ -263,7 +270,7 @@ def materialProperties(strengthFactor, frameUpdate):
             FCY * strengthFactor, FCU * strengthFactor,
             FBU * strengthFactor, FTU * strengthFactor,
             DF,
-            AH, BH, CH, DH, AS,
+            AH, BH, CH, DH, OVERRIDES.get("As", AS),
             OVERRIDES.get("softMod", SOFTMOD), OVERRIDES.get("maxDmg", MAXDMG),
             ALPHA, BETA, GAMMA, ZETA, XI, ETA,
             OVERRIDES.get("l", L_NONLOCAL), OVERRIDES.get("m", WEIGHT_M),
@@ -291,7 +298,7 @@ SLAB_WIDTH = 2.0        # width of the weak slab in units of the nonlocal length
 SLAB_FACTOR = 0.85      # strengths inside the slab
 
 
-def strengthFactorAt(x, y, seed="slab"):
+def strengthFactorAt(x, y, seed="patch"):
     """Hard caps at both platens plus a weak seed; both sized against the NONLOCAL LENGTH.
 
     Two seed shapes:
@@ -329,7 +336,7 @@ def strengthFactorAt(x, y, seed="slab"):
 
 
 def run_sim(frameUpdate=1, coarse=False, ensightName=None, spacing=None,
-            particleType="sqcnixnsni", confiningPressure=0.0, mode="shear", seed="slab"):
+            particleType="sqcnixnsni", confiningPressure=2.0, mode="compression", seed="patch"):
     np.set_printoptions(linewidth=200, precision=3)
 
     dimension = 2
@@ -350,7 +357,7 @@ def run_sim(frameUpdate=1, coarse=False, ensightName=None, spacing=None,
         f"H/l = {HEIGHT / lNonlocal():.1f}, particle = {pName}, frameUpdate = {frameUpdate}, "
         f"softMod = {OVERRIDES.get('softMod', SOFTMOD):g}, "
         f"damageOnset = {OVERRIDES.get('damageOnset', DAMAGE_ONSET):g}, "
-        f"Hres = {OVERRIDES.get('hres', H_RESIDUAL):g}, "
+        f"Hres = {OVERRIDES.get('hres', H_RESIDUAL):g}, As = {OVERRIDES.get('As', AS):g}, "
         f"confining pressure = {confiningPressure} MPa",
         "setup",
     )
@@ -918,7 +925,7 @@ if __name__ == "__main__":
     parser.add_argument("--particle", choices=("sqcnixnsni", "point"), default="sqcnixnsni",
                         help="sqcnixnsni = stabilized nodal integration on quad smoothing "
                              "domains (default); point = plain unstabilized nodal integration")
-    parser.add_argument("--confine", type=float, default=0.0,
+    parser.add_argument("--confine", type=float, default=2.0,
                         help="constant confining pressure [MPa] on the lateral faces "
                              "(needs --particle sqcnixnsni); 0 = free lateral boundaries")
     parser.add_argument("--no-ensight", action="store_true")
@@ -927,15 +934,20 @@ if __name__ == "__main__":
                              "traversable softening under displacement control")
     parser.add_argument("--maxdmg", type=float, default=None,
                         help="maxDamage cap; < 1 leaves the band residual stiffness")
+    parser.add_argument("--As", dest="As", type=float, default=None,
+                        help="ductility divisor As of the damage driver: xs = 1 + As(4 sqrt(Rs)-3). "
+                             "The calibrated 15 makes xs ~ 16 in compression and damage crawl; "
+                             "0.5-2 makes compression damage properly and leaves the peak intact")
     parser.add_argument("--lnl", type=float, default=None, help="nonlocal length l [mm]")
-    parser.add_argument("--seed", choices=("slab", "patch"), default="slab",
-                        help="slab = a fixed-width inclined weak slab (default, pre-localises "
-                             "the band so damage starts before the global limit load); "
-                             "patch = a small weak square at the edge")
-    parser.add_argument("--mode", choices=("shear", "compression"), default="shear",
-                        help="shear = simple shear of the panel (default, traversable at every "
-                             "mesh); compression = axial shortening (stalls at the plastic "
-                             "limit load for h <= l)")
+    parser.add_argument("--seed", choices=("slab", "patch"), default="patch",
+                        help="patch = one small weak square at mid-height on the left edge "
+                             "(default; with As = 2 this localises cleanly); slab = a "
+                             "fixed-width inclined weak slab, which does not help here")
+    parser.add_argument("--mode", choices=("compression", "shear"), default="compression",
+                        help="compression = axial shortening (default; gives a LOCALISED "
+                             "inclined shear band and a full curve at h >= l with As = 2); "
+                             "shear = simple shear (traverses at every mesh but the damage is "
+                             "diffuse, since simple shear of a panel is a homogeneous state)")
     parser.add_argument("--hres", type=float, default=None,
                         help="residual hardening slope over alphaP in [1,2] (0 = the original "
                              "law, which has a singular tangent at the plastic limit load)")
@@ -950,7 +962,7 @@ if __name__ == "__main__":
 
     for key, val in (("softMod", args.softmod), ("maxDmg", args.maxdmg),
                      ("l", args.lnl), ("m", args.m), ("damageOnset", args.onset),
-                     ("hres", args.hres)):
+                     ("hres", args.hres), ("As", args.As)):
         if val is not None:
             OVERRIDES[key] = val
     if args.strain is not None:
