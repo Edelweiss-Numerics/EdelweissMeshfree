@@ -196,6 +196,18 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
 
         self.signalizeKernelFunctionUpdate()
 
+    @property
+    def particlesWithChangedKernelFunctions(self) -> list:
+        """Every particle, conservatively.
+
+        This manager does not track which individual particles changed, so it cannot narrow the
+        answer down. Reporting all of them is the safe direction: a caller that rebuilds more
+        mappings than strictly necessary is merely slower, whereas one that rebuilds too few would
+        be left with stale indices.
+        """
+
+        return list(self._particles)
+
     def signalizeKernelFunctionUpdate(
         self,
     ):

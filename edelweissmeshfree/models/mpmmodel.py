@@ -273,7 +273,7 @@ class MPMModel(FEModel):
 
         activeCells = {cell.number: cell for mp in self.materialPoints.values() for cell in mp.cells}
 
-        _, _, reducedNodeFields, reducedNodeSets = self.assembleActiveDomain(activeCells.values())
+        _, _, reducedNodeFields, reducedNodeSets = self.assembleActiveDomain(activeCells)
 
         activeModel = copy.copy(self)
         activeModel.nodeSets = reducedNodeSets
