@@ -304,7 +304,7 @@ def materialProperties(strengthFactor, frameUpdate):
             DF,
             AH, BH, CH, DH, OVERRIDES.get("As", AS),
             OVERRIDES.get("softMod", SOFTMOD), OVERRIDES.get("maxDmg", MAXDMG),
-            ALPHA, BETA, GAMMA, ZETA, XI, ETA,
+            *OVERRIDES.get("weights", (ALPHA, BETA, GAMMA, ZETA, XI, ETA)),
             OVERRIDES.get("l", L_NONLOCAL), OVERRIDES.get("m", WEIGHT_M),
             float(frameUpdate),                          # 1 = convected frame, 0 = frozen
             OVERRIDES.get("damageOnset", DAMAGE_ONSET),   # alphaP at which damage may start
@@ -975,6 +975,11 @@ if __name__ == "__main__":
                         help="patch = one small weak square at mid-height on the left edge "
                              "(default; with As = 2 this localises cleanly); slab = a "
                              "fixed-width inclined weak slab, which does not help here")
+    parser.add_argument("--weights", default=None,
+                        help="six Walpole/Kelvin weights 'alpha,beta,gamma,zeta,xi,eta'.  NOTE: at "
+                             "1,1,1,1,1,1 the mapping tensor is the IDENTITY for every frame "
+                             "(verified to 3.6e-16), so the yield surface cannot see the material "
+                             "frame at all and the frame update only reaches the elasticity.")
     parser.add_argument("--beta", type=float, default=None,
                         help="inclination of the stratification PLANES to the horizontal [deg], "
                              "the paper's beta.  beta = 0 puts the bedding normal along the load "
@@ -1003,6 +1008,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     applyCase(args.case)
+    if args.weights is not None:
+        OVERRIDES["weights"] = tuple(float(v) for v in args.weights.split(","))
     if args.beta is not None:
         # the card stores the angle of the bedding NORMAL from x; the paper's beta is the
         # inclination of the PLANES from the horizontal, and the load axis is y, so the two are
