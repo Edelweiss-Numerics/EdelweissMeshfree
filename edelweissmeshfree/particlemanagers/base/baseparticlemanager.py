@@ -74,7 +74,10 @@ class BaseParticleManager(ABC):
         set changes. Reporting *which* particles changed, rather than only *whether* any did, is what
         lets a solver rebuild a handful of mappings instead of all of them.
 
-        This is empty exactly when :meth:`updateConnectivity` returned False.
+        Empty whenever :meth:`updateConnectivity` returned ``False``. A manager that cannot track
+        which individual particles changed may fall back to reporting all of them even when
+        ``True`` was returned -- conservative, since a caller that rebuilds more mappings than
+        necessary is merely slower, never wrong.
 
         Returns
         -------
