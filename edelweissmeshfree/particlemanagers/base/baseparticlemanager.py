@@ -64,6 +64,27 @@ class BaseParticleManager(ABC):
             The truth value of change.
         """
 
+    @property
+    @abstractmethod
+    def particlesWithChangedKernelFunctions(self) -> list:
+        """The particles whose set of kernel functions changed during the last connectivity update.
+
+        A particle contributes to the global equation system through the nodes of its kernel
+        functions, so its mapping into the degree-of-freedom vector only has to be rebuilt when that
+        set changes. Reporting *which* particles changed, rather than only *whether* any did, is what
+        lets a solver rebuild a handful of mappings instead of all of them.
+
+        Empty whenever :meth:`updateConnectivity` returned ``False``. A manager that cannot track
+        which individual particles changed may fall back to reporting all of them even when
+        ``True`` was returned -- conservative, since a caller that rebuilds more mappings than
+        necessary is merely slower, never wrong.
+
+        Returns
+        -------
+        list
+            The particles whose kernel functions changed during the last connectivity update.
+        """
+
     @abstractmethod
     def signalizeKernelFunctionUpdate(
         self,

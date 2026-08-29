@@ -42,6 +42,11 @@ import h5py
 from edelweissfe.constraints.base.constraintbase import ConstraintBase
 from edelweissfe.journal.journal import Journal
 from edelweissfe.numerics.dofmanager import DofManager, DofVector
+from edelweissfe.numerics.parallelizationutilities import (
+    getNumberOfThreads,
+    getThreadPool,
+    isFreeThreadingSupported,
+)
 from edelweissfe.outputmanagers.base.outputmanagerbase import OutputManagerBase
 from edelweissfe.sets.nodeset import NodeSet
 from edelweissfe.stepactions.base.dirichletbase import DirichletBase
@@ -125,8 +130,51 @@ class BaseNonlinearSolver:
     #: subclasses call ``super().__init__()``.
     _dirichletIndicesCache = None
 
+    #: Number of threads used by threaded assembly kernels. Parallel solvers shadow this with an
+    #: instance attribute; the sequential default of one keeps the base solvers meaningful.
+    numThreads = 1
+
+    #: Assemble particle contributions straight into CSR, bypassing the VIJ staging array. Off by
+    #: default: the VIJ path remains the reference until the direct path has been measured.
+    useDirectCSRAssembly = False
+
+    #: Run *both* assembly paths per iteration and compare the resulting CSR data. Diagnostic only,
+    #: and roughly twice the assembly cost -- the point is that the comparison happens against a
+    #: fully prepared model inside the real solver, which a standalone harness cannot provide.
+    verifyDirectCSRAssembly = False
+
+    #: Benchmark both assembly paths against each other, per iteration, on identical state. Diagnostic
+    #: only; the solve continues on the VIJ path so no result changes.
+    timeDirectCSRAssembly = False
+
+    #: How many private CSR copies the direct assembler keeps. Zero means one per thread, which is
+    #: the reproducible default; a smaller positive number makes threads share a copy and synchronise
+    #: the scatter with atomics, saving memory at the cost of a fixed summation order. One is fully
+    #: atomic. See ``CSRDirectAssembler::setNumBuffers``.
+    directCSRNumBuffers = 0
+
+    #: The CSR generator for the current connectivity, or None. Reachable so the benchmark can time
+    #: the production gather.
+    _csrGenerator = None
+
+    #: The :class:`DirectCSRAssembler` for the current connectivity, or None. Rebuilt whenever the
+    #: Newton cache is, since its offset map has exactly the lifetime of the CSR pattern.
+    _directCSRAssembler = None
+
+    #: Maps each registered entity to its index in the assembler's map. Keyed by entity rather than
+    #: inferred from iteration order, so a reordering of the active set cannot silently misaddress.
+    _directCSREntityIds = None
+
     def __init__(self, journal: Journal):
         self.journal = journal
+
+        # Whatever a solver put into a restart file's solverState group, once one has been read.
+        # Empty means either "started fresh" or "the restart file predates solver state", which are
+        # different situations -- hence the separate flag below.
+        self._restoredSolverState = {}
+
+        # Whether a restart file has been read at all.
+        self._restartWasRead = False
 
     @abstractmethod
     def solveStep(
@@ -365,7 +413,7 @@ class BaseNonlinearSolver:
             man.finalizeIncrement()
 
     @performancetiming.timeit("writing restart")
-    def _writeRestart(self, model: MPMModel, timeStepper, fileName):
+    def _writeRestart(self, model: MPMModel, timeStepper, fileName, solverState: dict = None):
         """Write the restart file.
 
         Parameters
@@ -376,11 +424,20 @@ class BaseNonlinearSolver:
             The timeStepper to be written.
         fileName
             The name of the restart file.
+        solverState
+            Arrays the solver itself has to carry across a restart, by name. Anything a solver keeps
+            outside the model and the time stepper -- an explicit integrator's half-step velocity, for
+            instance -- has to be written here, or it can only be guessed at on the way back in.
         """
         theRestartFile = h5py.File(fileName, "w")
 
         model.writeRestart(theRestartFile)
         timeStepper.writeRestart(theRestartFile)
+
+        if solverState:
+            group = theRestartFile.create_group("solverState")
+            for name, array in solverState.items():
+                group.create_dataset(name, data=array)
 
     def readRestart(
         self,
@@ -398,11 +455,24 @@ class BaseNonlinearSolver:
             The timeStepper instance to be read from the restart file.
         model
             The full MPMModel instance to be read from the restart file.
+
+        Notes
+        -----
+        Anything the writing solver put into ``solverState`` is made available in
+        ``self._restoredSolverState``, which is empty for a fresh start and for restart files written
+        before solvers carried state.
         """
         theRestartFile = h5py.File(restartFile, "r")
 
         model.readRestart(theRestartFile)
         timeStepper.readRestart(theRestartFile)
+
+        self._restartWasRead = True
+
+        self._restoredSolverState = {}
+        if "solverState" in theRestartFile:
+            for name, dataset in theRestartFile["solverState"].items():
+                self._restoredSolverState[name] = dataset[()]
 
     def _tryFallbackWithRestartFiles(
         self, writtenRestarts: RestartHistoryManager, timeStepper, model: MPMModel, iterationOptions: dict
@@ -463,8 +533,80 @@ class BaseNonlinearSolver:
             self._prepareParticles(particles, timeStep.totalTime, timeStep.timeIncrement)
             connectivityHasChanged |= self._updateManagedConnectivity(particleManagers)
 
-        for c in constraints:
-            connectivityHasChanged |= c.updateConnectivity(model)
+        connectivityHasChanged |= self._updateConstraintConnectivity(constraints, model)
+
+        return connectivityHasChanged
+
+    @performancetiming.timeit("constraint connectivity")
+    def _updateConstraintConnectivity(self, constraints: list, model) -> bool:
+        """Update the connectivity of all constraints.
+
+        In a particle simulation there is typically one constraint per particle, so this loop is
+        long enough to be worth spreading over the available threads.
+
+        That is safe here for two reasons, both worth being explicit about:
+
+        1. Every ``updateConnectivity`` implementation writes only to the constraint it belongs to.
+           None of them writes to the model, and none of them creates nodes or variables, so two
+           constraints can never touch the same memory.
+        2. The individual answers are combined with a logical *or*. That is independent of the order
+           in which the answers arrive, so the result does not depend on how the work was split, nor
+           on how the threads happened to be scheduled.
+
+        Parameters
+        ----------
+        constraints
+            The list of constraints to be updated.
+        model
+            The model the constraints act on.
+
+        Returns
+        -------
+        bool
+            True if the connectivity of at least one constraint has changed.
+        """
+
+        # Callers legitimately hand over a dict view rather than a list, which the serial loop this
+        # replaced was happy with; chunking needs indexing, so materialise it once.
+        constraints = list(constraints)
+
+        numberOfThreads = getNumberOfThreads() if isFreeThreadingSupported() else 1
+
+        # Below this size the cost of handing work to the thread pool outweighs the work itself.
+        minimumNumberOfConstraintsForThreading = 500
+
+        if numberOfThreads == 1 or len(constraints) < minimumNumberOfConstraintsForThreading:
+            return self._updateConnectivityOfConstraintChunk(constraints, model)
+
+        chunkSize = len(constraints) // numberOfThreads + 1
+        constraintChunks = [constraints[i : i + chunkSize] for i in range(0, len(constraints), chunkSize)]
+
+        threadPool = getThreadPool(numberOfThreads)
+        connectivityHasChangedPerChunk = threadPool.map(
+            lambda chunk: self._updateConnectivityOfConstraintChunk(chunk, model), constraintChunks
+        )
+
+        return any(connectivityHasChangedPerChunk)
+
+    def _updateConnectivityOfConstraintChunk(self, constraints: list, model) -> bool:
+        """Update the connectivity of one chunk of constraints.
+
+        Parameters
+        ----------
+        constraints
+            The chunk of constraints to be updated.
+        model
+            The model the constraints act on.
+
+        Returns
+        -------
+        bool
+            True if the connectivity of at least one constraint in this chunk has changed.
+        """
+
+        connectivityHasChanged = False
+        for constraint in constraints:
+            connectivityHasChanged |= constraint.updateConnectivity(model)
 
         return connectivityHasChanged
 

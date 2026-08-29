@@ -39,6 +39,7 @@ from os.path import expanduser, join
 
 import numpy
 from Cython.Build import build_ext, cythonize
+from edelweissfe.numerics import get_include as _fe_numerics_include
 from setuptools import setup
 from setuptools.extension import Extension
 
@@ -134,7 +135,15 @@ extensions += [
         sources=[
             "edelweissmeshfree/solvers/base/parallelization.pyx",
         ],
-        include_dirs=[join(marmot_dir, "include"), join(marmot_dir, "include", "eigen3"), numpy.get_include()],
+        # _fe_numerics_include() supplies _csrcore.h, whose CSRDirectAssembler::scatterBlock is called
+        # from inside the particle prange. Declaring the C++ class here rather than reimplementing the
+        # addressing against raw memoryviews keeps the scatter to a single implementation.
+        include_dirs=[
+            join(marmot_dir, "include"),
+            join(marmot_dir, "include", "eigen3"),
+            numpy.get_include(),
+            _fe_numerics_include(),
+        ],
         language="c++",
         extra_compile_args=[
             "-O3",
