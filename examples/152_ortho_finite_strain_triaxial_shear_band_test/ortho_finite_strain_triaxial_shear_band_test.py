@@ -707,14 +707,43 @@ def run_sim(frameUpdate=1, coarse=False, ensightName=None, spacing=None,
         # not a crash: the band has formed by then.  Report it and keep the state.
         journal.message(f"step stopped early: {e}", "warning")
         stepFailed = True
-    finally:
-        recordHistory()
-        fieldOutputController.finalizeJob()
-        for om in outputManagers:
-            om.finalizeJob()
-        prettytable = performancetiming.makePrettyTable()
-        prettytable.min_table_width = journal.linewidth
-        journal.printPrettyTable(prettytable, "Summary")
+
+    # ---------------------------------------------------------------- optional unloading step
+    # Reversing part of the axial displacement relaxes the ELASTIC deformation while leaving the
+    # plastic deformation in place.  It is what shows that the elastic half of the frame
+    # reorientation is recoverable and the plastic half is not: on unloading the pushed-forward
+    # bedding direction F e_0 must swing back onto the stored frame e(Fp), which is the state the
+    # stored frame has represented all along.  A small fraction suffices, since the elastic strains
+    # are of the order of a per cent while uMax is 12 % of the height.
+    unloadFrac = OVERRIDES.get("unload", 0.0)
+    if unloadFrac > 0.0:
+        journal.message(f"STEP 3 -- unloading by {unloadFrac:.0%} of uMax", "step")
+        try:
+            nonlinearSolver.solveStep(
+                AdaptiveTimeStepper(theModel.time, 1.0, inc, 4.0 * inc, 1e-5, 600, journal),
+                linearSolver, theModel, fieldOutputController,
+                outputManagers=outputManagers + [_Recorder()],
+                particleManagers=[theParticleManager],
+                constraints=[
+                    bc("botY_u", bottomParticles, {1: 0.0}),
+                    bc("topY_u", list(sets["rectangular_grid_top"]),
+                       {1: +unloadFrac * uMax}),
+                    bc("anchorX_u", anchor, {0: 0.0}),
+                ],
+                particleDistributedLoads=distributedLoads,
+                userIterationOptions=iterationOptions,
+            )
+        except StepFailed as e:
+            journal.message(f"unloading stopped early: {e}", "warning")
+
+    # finalisation, unconditional: the loading step raising StepFailed is a normal outcome here
+    recordHistory()
+    fieldOutputController.finalizeJob()
+    for om in outputManagers:
+        om.finalizeJob()
+    prettytable = performancetiming.makePrettyTable()
+    prettytable.min_table_width = journal.linewidth
+    journal.printPrettyTable(prettytable, "Summary")
 
     return dict(
         model=theModel,
@@ -966,6 +995,11 @@ if __name__ == "__main__":
                              "traversable softening under displacement control")
     parser.add_argument("--maxdmg", type=float, default=None,
                         help="maxDamage cap; < 1 leaves the band residual stiffness")
+    parser.add_argument("--unload", dest="unload", type=float, default=None,
+                        help="after the loading step, reverse this fraction of uMax to relax the "
+                             "ELASTIC deformation; shows that the elastic part of the frame "
+                             "reorientation is recoverable and the plastic part is not "
+                             "(0.15 is ample, elastic strains being ~1 %%)")
     parser.add_argument("--As", dest="As", type=float, default=None,
                         help="ductility divisor As of the damage driver: xs = 1 + As(4 sqrt(Rs)-3). "
                              "The calibrated 15 makes xs ~ 16 in compression and damage crawl; "
@@ -1019,7 +1053,7 @@ if __name__ == "__main__":
 
     for key, val in (("softMod", args.softmod), ("maxDmg", args.maxdmg),
                      ("l", args.lnl), ("m", args.m), ("damageOnset", args.onset),
-                     ("hres", args.hres), ("As", args.As)):
+                     ("hres", args.hres), ("As", args.As), ("unload", args.unload)):
         if val is not None:
             OVERRIDES[key] = val
     if args.strain is not None:

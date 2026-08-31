@@ -32,7 +32,8 @@ from 0.85 mm at the peak to 5.87 mm at the end.  Those regions are displacing a 
 are simply not straining: the deformation is concentrated in the band and the blocks either side
 translate and rotate as bodies.
 
-Usage:  python band_evolution.py [beta] [meshkey]      default: 45 m1
+Usage:  python band_evolution.py [beta] [meshkey] [--which=both|total|plastic]
+        default: 45 m1 --which=both
 """
 import os
 import sys
@@ -44,18 +45,21 @@ NSTAGE = 5
 
 
 def main():
-    beta = sys.argv[1] if len(sys.argv) > 1 else "45"
-    mk = sys.argv[2] if len(sys.argv) > 2 else "m1"
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    opts = {a.split("=")[0]: (a.split("=", 1)[1] if "=" in a else "")
+            for a in sys.argv[1:] if a.startswith("--")}
+    beta = args[0] if args else "45"
+    mk = args[1] if len(args) > 1 else "m1"
+    which = opts.get("--which", "both")
     tag = f"snapshots_frame1_A_b{beta}_{mk}"
     d = np.load(os.path.join(HERE, tag + ".npz"))
     verts, u, om, a2 = d["verts"], d["u"], d["omega"], d["axis2"]
     ap, fr, xy0 = d["alphaP"], d["frameRotation"], d["xy0"]
-    hist, short = d["history"], d["shortening"]
-    sig = -hist[:, 1] - 30.0
+    short = d["shortening"]
+    sig = -d["history"][:, 1] - 30.0
     n = len(short)
     iPk = int(np.argmax(sig))
 
-    # five stages: two on the way up (one clearly elastic), the peak, and two post-peak
     stages = sorted({max(1, iPk // 3), max(2, (2 * iPk) // 3), iPk,
                      iPk + (n - 1 - iPk) // 3, n - 1})
     while len(stages) > NSTAGE:
@@ -66,64 +70,76 @@ def main():
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     from matplotlib.collections import LineCollection, PolyCollection
+    from matplotlib.lines import Line2D
 
     def fitF(ref, cur):
         """least-squares 2x2 deformation gradient per particle, from quad vertices"""
         R = ref - ref.mean(axis=1, keepdims=True)
         D = cur - cur.mean(axis=1, keepdims=True)
-        out = np.empty((len(R), 2, 2))
-        for i in range(len(R)):
-            out[i] = np.linalg.lstsq(R[i], D[i], rcond=None)[0].T
-        return out
+        return np.array([np.linalg.lstsq(R[i], D[i], rcond=None)[0].T for i in range(len(R))])
 
     bb = np.radians(float(beta))
     e0 = np.array([-np.sin(bb), np.cos(bb)])
 
     omMax = float(om[stages[-1]].max())
-    fig, ax = plt.subplots(1, len(stages), figsize=(3.05 * len(stages), 6.6))
-    ax = np.atleast_1d(ax)
+    # a common frame for every panel, so the specimens share a baseline and one length scale
+    allV = np.concatenate([verts[k].reshape(-1, 2) for k in stages])
+    x0, x1 = allV[:, 0].min() - 2, allV[:, 0].max() + 2
+    y0, y1 = -2.0, allV[:, 1].max() + 2
+
+    # a dedicated narrow column for the colour bar, so it cannot overlap the last specimen
+    aspect = (y1 - y0) / (x1 - x0)
+    fig = plt.figure(figsize=(2.35 * len(stages) + 1.0, 2.35 * aspect + 1.5))
+    gs = fig.add_gridspec(1, len(stages) + 1,
+                          width_ratios=[1] * len(stages) + [0.06], wspace=0.06)
+    ax = np.array([fig.add_subplot(gs[0, j]) for j in range(len(stages))])
+    cax = fig.add_subplot(gs[0, len(stages)])
     for a, k in zip(ax, stages):
-        pc = PolyCollection(verts[k], array=om[k], cmap="inferno", edgecolors="0.45",
-                            linewidths=0.2)
+        pc = PolyCollection(verts[k], array=om[k], cmap="inferno", edgecolors="0.5",
+                            linewidths=0.15)
         pc.set_clim(0.0, max(omMax, 1e-6))
         a.add_collection(pc)
-        # the convected bedding trace on every particle, at the deformed position
         xy = xy0 + u[k]
-        v = a2[k][:, :2]
         span = 2.1
-        segs = np.stack([xy - span * v, xy + span * v], axis=1)
-        a.add_collection(LineCollection(segs, colors="#00f0ff", linewidths=1.6))
-        # push-forward of the reference direction by the TOTAL F: includes the elastic part
         F = fitF(verts[0], verts[k])
         tot = np.einsum("nij,j->ni", F, e0)
         tot /= np.maximum(np.linalg.norm(tot, axis=1)[:, None], 1e-30)
-        segs2 = np.stack([xy - span * tot, xy + span * tot], axis=1)
-        a.add_collection(LineCollection(segs2, colors="#ffe100", linewidths=0.8))
-        dev = np.degrees(np.arccos(np.clip(np.abs(np.einsum("ni,ni->n", v, tot)), 0, 1)))
-        print(f"    {short[k]*100:6.2f} %: plastic vs total bedding direction differ by "
-              f"max {dev.max():5.2f} deg, mean {dev.mean():5.2f} deg")
-        allV = verts[k].reshape(-1, 2)
-        a.set_xlim(allV[:, 0].min() - 2, allV[:, 0].max() + 2)
-        a.set_ylim(-2, verts[0].reshape(-1, 2)[:, 1].max() + 2)
+        if which in ("both", "plastic"):
+            v = a2[k][:, :2]
+            a.add_collection(LineCollection(
+                np.stack([xy - span * v, xy + span * v], axis=1),
+                colors="#00f0ff", linewidths=1.6 if which == "both" else 1.2))
+        if which in ("both", "total"):
+            a.add_collection(LineCollection(
+                np.stack([xy - span * tot, xy + span * tot], axis=1),
+                colors="#ffe100", linewidths=0.9 if which == "both" else 1.3))
+        if which == "both":
+            v = a2[k][:, :2]
+            dev = np.degrees(np.arccos(np.clip(np.abs(np.einsum("ni,ni->n", v, tot)), 0, 1)))
+            print(f"    {short[k]*100:6.2f} %: plastic vs total differ by max {dev.max():5.2f}, "
+                  f"mean {dev.mean():5.2f} deg")
+        a.set_xlim(x0, x1)
+        a.set_ylim(y0, y1)
         a.set_aspect("equal")
-        el = ap[k] < 1e-12
-        a.set_title(f"{short[k]*100:.2f} % shortening\n"
-                    f"sig_dev = {sig[k]:.1f} MPa{'  (peak)' if k == iPk else ''}\n"
-                    f"omega max {om[k].max():.3f},  Rp max {np.abs(fr[k]).max():.1f} deg\n"
-                    f"{el.sum()} of {len(el)} particles still elastic", fontsize=7.5)
-        a.set_xlabel("x [mm]", fontsize=8)
-        a.tick_params(labelsize=7)
-    ax[0].set_ylabel("y [mm]", fontsize=8)
-    fig.colorbar(pc, ax=list(ax), shrink=0.55, pad=0.015).set_label(
-        "damage omega", fontsize=9)
-    fig.suptitle(f"Plane-strain compression, bedding at beta = {beta} deg, RKPM, "
-                 f"sigma_0 = 30 MPa, deformed at true scale\n"
-                 "cyan: stored (PLASTIC) bedding direction;  yellow: push-forward F e_0 / |F e_0|, "
-                 "the orientation in the deformed body\n"
-                 "their difference is the ELASTIC part of the reorientation, which the stored frame "
-                 "does not carry", fontsize=9, y=1.005)
-    out = os.path.join(HERE, f"band_evolution_b{beta}_{mk}.png")
-    fig.savefig(out, dpi=140, bbox_inches="tight")
+        a.set_axis_off()                      # no box, no ticks, no annotations
+        a.set_title(f"$t/t_{{\\rm end}}$ = {(k + 1) / n:.2f}\n"
+                    f"$\\varepsilon_{{yy}}$ = {short[k] * 100:.2f} %", fontsize=10)
+    hs = []
+    if which in ("both", "plastic"):
+        hs.append(Line2D([], [], color="#00f0ff", lw=1.8,
+                         label=r"stored (plastic) bedding direction  $e(F^{\rm p})$"))
+    if which in ("both", "total"):
+        hs.append(Line2D([], [], color="#ffe100", lw=1.8,
+                         label=r"total bedding direction  $F e_0/\|F e_0\|$"))
+    fig.legend(handles=hs, loc="lower center", ncol=2, fontsize=9.5, frameon=False,
+               bbox_to_anchor=(0.5, 0.0))
+    cb = fig.colorbar(pc, cax=cax)
+    cb.set_label(r"damage $\omega$", fontsize=10)
+    cb.ax.tick_params(labelsize=8)
+    fig.subplots_adjust(left=0.01, right=0.93, top=0.90, bottom=0.11)
+    suffix = "" if which == "both" else f"_{which}"
+    out = os.path.join(HERE, f"band_evolution_b{beta}_{mk}{suffix}.png")
+    fig.savefig(out, dpi=145, bbox_inches="tight")
     fig.savefig(out.replace(".png", ".pdf"), bbox_inches="tight")
     print(f"  wrote {out}")
 
