@@ -44,26 +44,66 @@ import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-# ParaView's "Fast" preset, from the RGBPoints of its ColorMaps.json entry.  Interpolated in RGB
-# rather than in Lab as ParaView does, so it is a close reproduction and not a bit-exact one.
+NSTAGE = 5      # loading stages; an unloaded panel is appended when the record has one
+
+# ParaView's "Fast" preset, RGBPoints read straight out of the installed ParaView via
+# `pvpython -c "... vtkSMTransferFunctionPresets ... GetPresetAsString"`, not from memory: an
+# earlier hand-written table was actually a cool-warm map and looked nothing like Fast, which runs
+# dark blue -> cyan -> pale yellow-green -> orange -> dark red.  ParaView declares
+# "ColorSpace": "Lab" for it, so the control points are interpolated in CIELAB below rather than
+# in RGB, which is what makes the reproduction faithful rather than merely similar.
 PARAVIEW_FAST = [
-    (0.00000, (0.0564, 0.0564, 0.4700)),
-    (0.17159, (0.2430, 0.4384, 0.8135)),
-    (0.27390, (0.3661, 0.7178, 0.8607)),
-    (0.40250, (0.7502, 0.8988, 0.8934)),
-    (0.47390, (0.9269, 0.9066, 0.8578)),
-    (0.51880, (0.9917, 0.8598, 0.7449)),
-    (0.62730, (0.9788, 0.6008, 0.4184)),
-    (0.76470, (0.9297, 0.3277, 0.1808)),
-    (0.90200, (0.7947, 0.1454, 0.0980)),
-    (1.00000, (0.6188, 0.0069, 0.0069)),
+    (0.000000, (0.0564, 0.0564, 0.4700)),
+    (0.171592, (0.2430, 0.4604, 0.8100)),
+    (0.298491, (0.3568, 0.7450, 0.9544)),
+    (0.432129, (0.6882, 0.9300, 0.9179)),
+    (0.500000, (0.8995, 0.9446, 0.7687)),
+    (0.588226, (0.9571, 0.8338, 0.5089)),
+    (0.706141, (0.9275, 0.6214, 0.3154)),
+    (0.847640, (0.8000, 0.3520, 0.1600)),
+    (1.000000, (0.5900, 0.0767, 0.1195)),
 ]
 
+_WP = np.array([0.95047, 1.0, 1.08883])          # D65
+_M = np.array([[0.4124, 0.3576, 0.1805],
+               [0.2126, 0.7152, 0.0722],
+               [0.0193, 0.1192, 0.9505]])
 
-def fastCmap():
-    from matplotlib.colors import LinearSegmentedColormap
-    return LinearSegmentedColormap.from_list("pvFast", PARAVIEW_FAST)
-NSTAGE = 5      # loading stages; an unloaded panel is appended when the record has one
+
+def _srgbToLab(c):
+    c = np.asarray(c, float)
+    lin = np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
+    xyz = lin @ _M.T / _WP
+    d = (6.0 / 29.0) ** 3
+    f = np.where(xyz > d, np.cbrt(xyz), xyz / (3 * (6.0 / 29.0) ** 2) + 4.0 / 29.0)
+    return np.stack([116 * f[..., 1] - 16,
+                     500 * (f[..., 0] - f[..., 1]),
+                     200 * (f[..., 1] - f[..., 2])], axis=-1)
+
+
+def _labToSrgb(lab):
+    lab = np.asarray(lab, float)
+    fy = (lab[..., 0] + 16) / 116
+    fx = fy + lab[..., 1] / 500
+    fz = fy - lab[..., 2] / 200
+    f = np.stack([fx, fy, fz], axis=-1)
+    d = 6.0 / 29.0
+    xyz = np.where(f > d, f ** 3, 3 * d ** 2 * (f - 4.0 / 29.0)) * _WP
+    lin = xyz @ np.linalg.inv(_M).T
+    c = np.where(lin <= 0.0031308, 12.92 * lin, 1.055 * np.abs(lin) ** (1 / 2.4) - 0.055)
+    return np.clip(c, 0.0, 1.0)
+
+
+def fastCmap(n=256):
+    """ParaView's Fast preset, interpolated in CIELAB as ParaView does."""
+    from matplotlib.colors import ListedColormap
+    pos = np.array([p for p, _ in PARAVIEW_FAST])
+    lab = _srgbToLab(np.array([c for _, c in PARAVIEW_FAST]))
+    t = np.linspace(0.0, 1.0, n)
+    out = np.empty((n, 3))
+    for k in range(3):
+        out[:, k] = np.interp(t, pos, lab[:, k])
+    return ListedColormap(_labToSrgb(out), name="pvFast")
 
 
 def main():
@@ -128,8 +168,18 @@ def main():
         D = cur - cur.mean(axis=1, keepdims=True)
         return np.array([np.linalg.lstsq(R[i], D[i], rcond=None)[0].T for i in range(len(R))])
 
-    bb = np.radians(float(beta))
-    e0 = np.array([-np.sin(bb), np.cos(bb)])
+    # The REFERENCE in-plane bedding axis, taken from the data rather than from beta.  This
+    # example sets the card's direction from BEDDING_PHI_DEG = 90 - beta, so an analytic
+    # (-sin beta, cos beta) is the NORMAL, not the in-plane axis, at every beta except 45 where the
+    # two conventions happen to agree -- which is exactly how the error hid: it gave a degenerate
+    # 90 deg at beta = 0 and 90 and looked correct at 45.  axis2 at the first increment is the
+    # reference axis by construction (Fp = I there); verified unit-norm with alphaP = 0.
+    k0 = next((k for k in range(len(a2))
+               if abs(np.linalg.norm(a2[k][0]) - 1.0) < 1e-6 and ap[k].max() < 1e-12), 0)
+    e0all = a2[k0][:, :2]
+    if abs(np.linalg.norm(e0all[0]) - 1.0) > 1e-6:
+        raise SystemExit("reference material axis not found in the record")
+    print(f"  reference in-plane axis from increment {k0}: {np.round(e0all[0], 4)}")
 
     omMax = float(om[iLast].max())
     # a common frame for every panel, so the specimens share a baseline and one length scale
@@ -154,7 +204,7 @@ def main():
         xy = xy0 + defScale * u[k]
         span = 2.1
         F = fitF(verts[0], verts[k])
-        tot = np.einsum("nij,j->ni", F, e0)
+        tot = np.einsum("nij,nj->ni", F, e0all)
         tot /= np.maximum(np.linalg.norm(tot, axis=1)[:, None], 1e-30)
         if which in ("both", "plastic"):
             v = a2[k][:, :2]
