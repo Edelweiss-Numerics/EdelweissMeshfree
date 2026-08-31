@@ -32,8 +32,10 @@ from 0.85 mm at the peak to 5.87 mm at the end.  Those regions are displacing a 
 are simply not straining: the deformation is concentrated in the band and the blocks either side
 translate and rotate as bodies.
 
-Usage:  python band_evolution.py [beta] [meshkey] [--which=both|total|plastic]
-        default: 45 m1 --which=both
+Usage:  python band_evolution.py [beta] [tag] [--which=both|total|plastic]
+                                 [--defscale=S] [--cmap=fast|<matplotlib name>]
+        default: 45 m1 --which=both --defscale=1 --cmap=fast
+        --defscale exaggerates the displacements; 1 is true scale.
 """
 import os
 import sys
@@ -41,6 +43,26 @@ import sys
 import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+
+# ParaView's "Fast" preset, from the RGBPoints of its ColorMaps.json entry.  Interpolated in RGB
+# rather than in Lab as ParaView does, so it is a close reproduction and not a bit-exact one.
+PARAVIEW_FAST = [
+    (0.00000, (0.0564, 0.0564, 0.4700)),
+    (0.17159, (0.2430, 0.4384, 0.8135)),
+    (0.27390, (0.3661, 0.7178, 0.8607)),
+    (0.40250, (0.7502, 0.8988, 0.8934)),
+    (0.47390, (0.9269, 0.9066, 0.8578)),
+    (0.51880, (0.9917, 0.8598, 0.7449)),
+    (0.62730, (0.9788, 0.6008, 0.4184)),
+    (0.76470, (0.9297, 0.3277, 0.1808)),
+    (0.90200, (0.7947, 0.1454, 0.0980)),
+    (1.00000, (0.6188, 0.0069, 0.0069)),
+]
+
+
+def fastCmap():
+    from matplotlib.colors import LinearSegmentedColormap
+    return LinearSegmentedColormap.from_list("pvFast", PARAVIEW_FAST)
 NSTAGE = 5      # loading stages; an unloaded panel is appended when the record has one
 
 
@@ -51,6 +73,8 @@ def main():
     beta = args[0] if args else "45"
     mk = args[1] if len(args) > 1 else "m1"
     which = opts.get("--which", "both")
+    defScale = float(opts.get("--defscale", "1") or 1)
+    cmapName = opts.get("--cmap", "fast")
     # `mk` may be a mesh key of the standard sweep ("m1") or a full run tag ("UL2_b")
     cand = [f"snapshots_frame1_A_b{beta}_{mk}", f"snapshots_frame1_{mk}"]
     tag = next((c for c in cand if os.path.exists(os.path.join(HERE, c + ".npz"))), cand[0])
@@ -91,6 +115,12 @@ def main():
     import matplotlib.pyplot as plt
     from matplotlib.collections import LineCollection, PolyCollection
     from matplotlib.lines import Line2D
+    from matplotlib.patheffects import withStroke
+
+    # The Fast colour map runs dark blue -> near white -> dark red, so no single flat colour is
+    # legible over all of it.  Both trace families get a dark outline instead.
+    PE = [withStroke(linewidth=2.6, foreground="0.12")]
+    C_PLASTIC, C_TOTAL = "#ff2ec4", "#00ff7f"
 
     def fitF(ref, cur):
         """least-squares 2x2 deformation gradient per particle, from quad vertices"""
@@ -103,7 +133,8 @@ def main():
 
     omMax = float(om[iLast].max())
     # a common frame for every panel, so the specimens share a baseline and one length scale
-    allV = np.concatenate([verts[k].reshape(-1, 2) for k in stages])
+    allV = np.concatenate([(verts[0] + defScale * (verts[k] - verts[0])).reshape(-1, 2)
+                           for k in stages])
     x0, x1 = allV[:, 0].min() - 2, allV[:, 0].max() + 2
     y0, y1 = -2.0, allV[:, 1].max() + 2
 
@@ -115,24 +146,31 @@ def main():
     ax = np.array([fig.add_subplot(gs[0, j]) for j in range(len(stages))])
     cax = fig.add_subplot(gs[0, len(stages)])
     for a, k in zip(ax, stages):
-        pc = PolyCollection(verts[k], array=om[k], cmap="inferno", edgecolors="0.5",
-                            linewidths=0.15)
+        cm = fastCmap() if cmapName == "fast" else cmapName
+        vk = verts[0] + defScale * (verts[k] - verts[0])
+        pc = PolyCollection(vk, array=om[k], cmap=cm, edgecolors="0.45", linewidths=0.15)
         pc.set_clim(0.0, max(omMax, 1e-6))
         a.add_collection(pc)
-        xy = xy0 + u[k]
+        xy = xy0 + defScale * u[k]
         span = 2.1
         F = fitF(verts[0], verts[k])
         tot = np.einsum("nij,j->ni", F, e0)
         tot /= np.maximum(np.linalg.norm(tot, axis=1)[:, None], 1e-30)
         if which in ("both", "plastic"):
             v = a2[k][:, :2]
+            # drawn LONGER and thicker than the total one, which is laid on top: where the two
+            # coincide only a magenta shadow shows at the ends, and where they diverge the pair
+            # opens into a visible V
+            sp = span * (1.35 if which == "both" else 1.0)
             a.add_collection(LineCollection(
-                np.stack([xy - span * v, xy + span * v], axis=1),
-                colors="#00f0ff", linewidths=1.6 if which == "both" else 1.2))
+                np.stack([xy - sp * v, xy + sp * v], axis=1),
+                colors=C_PLASTIC, linewidths=2.3 if which == "both" else 1.4,
+                path_effects=PE))
         if which in ("both", "total"):
             a.add_collection(LineCollection(
                 np.stack([xy - span * tot, xy + span * tot], axis=1),
-                colors="#ffe100", linewidths=0.9 if which == "both" else 1.3))
+                colors=C_TOTAL, linewidths=1.5 if which == "both" else 1.3,
+                path_effects=PE))
         if which == "both":
             v = a2[k][:, :2]
             dev = np.degrees(np.arccos(np.clip(np.abs(np.einsum("ni,ni->n", v, tot)), 0, 1)))
@@ -154,10 +192,10 @@ def main():
                         f"$\\varepsilon_{{yy}}$ = {short[k] * 100:.2f} %", fontsize=10)
     hs = []
     if which in ("both", "plastic"):
-        hs.append(Line2D([], [], color="#00f0ff", lw=1.8,
+        hs.append(Line2D([], [], color=C_PLASTIC, lw=2.2, path_effects=PE,
                          label=r"stored (plastic) bedding direction  $e(F^{\rm p})$"))
     if which in ("both", "total"):
-        hs.append(Line2D([], [], color="#ffe100", lw=1.8,
+        hs.append(Line2D([], [], color=C_TOTAL, lw=2.2, path_effects=PE,
                          label=r"total bedding direction  $F e_0/\|F e_0\|$"))
     fig.legend(handles=hs, loc="lower center", ncol=2, fontsize=9.5, frameon=False,
                bbox_to_anchor=(0.5, 0.0))
