@@ -6,7 +6,15 @@ Shows how the specimen gets from a homogeneous elastic state to a fully formed s
 the CONVECTED material orientation drawn on every particle so the frame reorientation can be
 followed alongside the damage.
 
-WHAT THE DRAWN ORIENTATION IS, AND WHAT IT IS NOT.  The cyan traces are the stored material frame
+TWO ORIENTATIONS ARE DRAWN.  Cyan is the stored frame, yellow the push-forward of the reference
+bedding direction by the TOTAL deformation gradient, F e_0 / |F e_0| -- the orientation as it
+appears in the deformed body.  The difference between them is exactly the ELASTIC part of the
+reorientation, which the stored frame does not carry (see below).  F is fitted per particle by
+least squares from the reference to the deformed smoothing-domain vertices; the reference is
+increment 0, which carries only the confinement (max |u| = 0.16 mm over a 75 mm specimen), so the
+bias is negligible for an orientation.
+
+WHAT THE STORED ORIENTATION IS, AND WHAT IT IS NOT.  The cyan traces are the stored material frame
 `e^(2)(Fp)`, which convects with the PLASTIC deformation only, by eq. (framestate).  The elastic
 part of the rotation is deliberately NOT folded into it -- it is carried by the image
 `F^e e^(i)` on the current configuration, which is what the potential charges energy for, and
@@ -59,6 +67,18 @@ def main():
     import matplotlib.pyplot as plt
     from matplotlib.collections import LineCollection, PolyCollection
 
+    def fitF(ref, cur):
+        """least-squares 2x2 deformation gradient per particle, from quad vertices"""
+        R = ref - ref.mean(axis=1, keepdims=True)
+        D = cur - cur.mean(axis=1, keepdims=True)
+        out = np.empty((len(R), 2, 2))
+        for i in range(len(R)):
+            out[i] = np.linalg.lstsq(R[i], D[i], rcond=None)[0].T
+        return out
+
+    bb = np.radians(float(beta))
+    e0 = np.array([-np.sin(bb), np.cos(bb)])
+
     omMax = float(om[stages[-1]].max())
     fig, ax = plt.subplots(1, len(stages), figsize=(3.05 * len(stages), 6.6))
     ax = np.atleast_1d(ax)
@@ -72,7 +92,16 @@ def main():
         v = a2[k][:, :2]
         span = 2.1
         segs = np.stack([xy - span * v, xy + span * v], axis=1)
-        a.add_collection(LineCollection(segs, colors="#00f0ff", linewidths=0.8))
+        a.add_collection(LineCollection(segs, colors="#00f0ff", linewidths=1.6))
+        # push-forward of the reference direction by the TOTAL F: includes the elastic part
+        F = fitF(verts[0], verts[k])
+        tot = np.einsum("nij,j->ni", F, e0)
+        tot /= np.maximum(np.linalg.norm(tot, axis=1)[:, None], 1e-30)
+        segs2 = np.stack([xy - span * tot, xy + span * tot], axis=1)
+        a.add_collection(LineCollection(segs2, colors="#ffe100", linewidths=0.8))
+        dev = np.degrees(np.arccos(np.clip(np.abs(np.einsum("ni,ni->n", v, tot)), 0, 1)))
+        print(f"    {short[k]*100:6.2f} %: plastic vs total bedding direction differ by "
+              f"max {dev.max():5.2f} deg, mean {dev.mean():5.2f} deg")
         allV = verts[k].reshape(-1, 2)
         a.set_xlim(allV[:, 0].min() - 2, allV[:, 0].max() + 2)
         a.set_ylim(-2, verts[0].reshape(-1, 2)[:, 1].max() + 2)
@@ -89,8 +118,10 @@ def main():
         "damage omega", fontsize=9)
     fig.suptitle(f"Plane-strain compression, bedding at beta = {beta} deg, RKPM, "
                  f"sigma_0 = 30 MPa, deformed at true scale\n"
-                 "cyan: the stored material orientation e2(Fp), which convects with the PLASTIC "
-                 "deformation only", fontsize=9.5, y=0.99)
+                 "cyan: stored (PLASTIC) bedding direction;  yellow: push-forward F e_0 / |F e_0|, "
+                 "the orientation in the deformed body\n"
+                 "their difference is the ELASTIC part of the reorientation, which the stored frame "
+                 "does not carry", fontsize=9, y=1.005)
     out = os.path.join(HERE, f"band_evolution_b{beta}_{mk}.png")
     fig.savefig(out, dpi=140, bbox_inches="tight")
     fig.savefig(out.replace(".png", ".pdf"), bbox_inches="tight")
