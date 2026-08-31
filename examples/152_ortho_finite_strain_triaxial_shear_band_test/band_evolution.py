@@ -41,7 +41,7 @@ import sys
 import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-NSTAGE = 5
+NSTAGE = 5      # loading stages; an unloaded panel is appended when the record has one
 
 
 def main():
@@ -51,7 +51,9 @@ def main():
     beta = args[0] if args else "45"
     mk = args[1] if len(args) > 1 else "m1"
     which = opts.get("--which", "both")
-    tag = f"snapshots_frame1_A_b{beta}_{mk}"
+    # `mk` may be a mesh key of the standard sweep ("m1") or a full run tag ("UL2_b")
+    cand = [f"snapshots_frame1_A_b{beta}_{mk}", f"snapshots_frame1_{mk}"]
+    tag = next((c for c in cand if os.path.exists(os.path.join(HERE, c + ".npz"))), cand[0])
     d = np.load(os.path.join(HERE, tag + ".npz"))
     verts, u, om, a2 = d["verts"], d["u"], d["omega"], d["axis2"]
     ap, fr, xy0 = d["alphaP"], d["frameRotation"], d["xy0"]
@@ -60,10 +62,28 @@ def main():
     n = len(short)
     iPk = int(np.argmax(sig))
 
-    stages = sorted({max(1, iPk // 3), max(2, (2 * iPk) // 3), iPk,
-                     iPk + (n - 1 - iPk) // 3, n - 1})
-    while len(stages) > NSTAGE:
-        stages.pop(1)
+    # If the record contains an UNLOADING tail (the shortening decreases at the end), the
+    # loading stages must be chosen from the loading part only, and the unloaded state is added
+    # as a final panel.  The state to show is the increment where sigma_dev crosses ZERO, not the
+    # last one: a prescribed reversal easily overshoots into REVERSE loading (measured -26 MPa),
+    # where the elastic reorientation has changed sign rather than relaxed.
+    iEndLoad = int(np.argmax(short))
+    iUnload = None
+    if iEndLoad < n - 2:
+        post = np.arange(iEndLoad, n)
+        iUnload = int(post[int(np.argmin(np.abs(sig[post])))])
+        print(f"  unloading tail found: load to {short[iEndLoad]*100:.2f} %, "
+              f"sigma_dev = 0 at increment {iUnload} ({short[iUnload]*100:.2f} %)")
+    iLast = iEndLoad
+    # Choose the stages by STRAIN, not by increment index: the increments are far from uniform in
+    # strain (the stepper cuts back around the peak and in the band), so index interpolation
+    # clusters two panels at almost the same state.
+    sPk, sMax = short[iPk], short[iLast]
+    targets = [0.25 * sPk, 0.7 * sPk, sPk,
+               sPk + 0.40 * (sMax - sPk), sMax][:NSTAGE]
+    stages = sorted({int(np.argmin(np.abs(short[: iLast + 1] - t))) for t in targets})
+    if iUnload is not None:
+        stages.append(iUnload)
     print(f"  {tag}: {n} increments, peak at {iPk} ({short[iPk]*100:.2f} %); stages {stages}")
 
     import matplotlib
@@ -81,7 +101,7 @@ def main():
     bb = np.radians(float(beta))
     e0 = np.array([-np.sin(bb), np.cos(bb)])
 
-    omMax = float(om[stages[-1]].max())
+    omMax = float(om[iLast].max())
     # a common frame for every panel, so the specimens share a baseline and one length scale
     allV = np.concatenate([verts[k].reshape(-1, 2) for k in stages])
     x0, x1 = allV[:, 0].min() - 2, allV[:, 0].max() + 2
@@ -122,8 +142,16 @@ def main():
         a.set_ylim(y0, y1)
         a.set_aspect("equal")
         a.set_axis_off()                      # no box, no ticks, no annotations
-        a.set_title(f"$t/t_{{\\rm end}}$ = {(k + 1) / n:.2f}\n"
-                    f"$\\varepsilon_{{yy}}$ = {short[k] * 100:.2f} %", fontsize=10)
+        if iUnload is not None and k == iUnload:
+            a.set_title(f"unloaded, $\\sigma_{{\\rm dev}}\\!\\approx\\!0$\n"
+                        f"$\\varepsilon_{{yy}}$ = {short[k] * 100:.2f} %", fontsize=10)
+        else:
+            # t/t_end from the PRESCRIBED shortening, not from the increment index: the axial
+            # displacement is imposed at a constant rate so time is proportional to it, whereas
+            # the increments cluster heavily where the stepper cuts back (in the band), which made
+            # index fractions read 0.07 ... 0.24 for states spanning most of the loading.
+            a.set_title(f"$t/t_{{\\rm end}}$ = {short[k] / max(short[iLast], 1e-30):.2f}\n"
+                        f"$\\varepsilon_{{yy}}$ = {short[k] * 100:.2f} %", fontsize=10)
     hs = []
     if which in ("both", "plastic"):
         hs.append(Line2D([], [], color="#00f0ff", lw=1.8,
