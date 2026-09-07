@@ -180,6 +180,26 @@ def exactDisplacement(A, xy):
     return xy @ A.T
 
 
+# The illustration case, and the reason it exists: a patch test CANNOT show what the
+# smoothing-domain update does.  The update is per particle,
+#     x = c0 + u(c0) + F(c0) (X - c0),
+# so two domains sharing a reference vertex map it with THEIR OWN gradients -- but a
+# homogeneous field gives every centre the same F, every per-centre map is the same affine map,
+# and the deformed domains tile to 1e-15 no matter how large the stretch or how coarse the
+# patch.  To see the update do anything the deformation has to be INHOMOGENEOUS.  This is a
+# bending-type field, whose gradient varies linearly over the patch:
+#     u_1 = -kappa X_1 (X_2 - L/2),      u_2 = kappa X_1^2 / 2
+# It is prescribed on the whole boundary, so it is a well-posed elastic Dirichlet problem, but
+# it is NOT a patch test: the exact field is not in the approximation space and div tau does
+# not vanish, so the interior is whatever equilibrium gives.  It is drawn, not measured against.
+BENDING_KAPPA = 0.060  # 1/mm; chosen so the per-centre gap reads at figure scale (~8 % of h_p)
+
+
+def bendingDisplacement(xy, kappa=BENDING_KAPPA):
+    x1, x2 = xy[:, 0], xy[:, 1]
+    return np.stack([-kappa * x1 * (x2 - 0.5 * LENGTH), 0.5 * kappa * x1 ** 2], axis=1)
+
+
 # =============================================================================================
 #  a randomly perturbed quad particle grid
 # =============================================================================================
@@ -278,7 +298,8 @@ def generatePerturbedQuadGrid(model, journal, particleFactory, kernelFactory,
 
 def run_patch(beddingDeg, case="mixed", nX=8, perturb=0.4, seed=7, particle="sqcnixnsni",
               vci=True, vciOrder=1, nRings=1, support=2.5, bc="face",
-              cwfRamp=lambda t: 1.0, amplitude=None, tolerance=None, journal=None):
+              cwfRamp=lambda t: 1.0, amplitude=None, tolerance=None, fieldFun=None,
+              journal=None):
     """Impose u = A X on the boundary and report how well the interior reproduces it.
 
     ``vci`` switches the variationally consistent integration correction of Eq. (73) on and
@@ -296,6 +317,9 @@ def run_patch(beddingDeg, case="mixed", nX=8, perturb=0.4, seed=7, particle="sqc
     A = LOAD_CASES[case]
     if amplitude is not None:
         A = A * (amplitude / AMPLITUDE)
+    # `fieldFun` replaces the homogeneous field by an arbitrary one; the error measures below
+    # are then meaningless and the caller must not use them (see bendingDisplacement)
+    uOf = fieldFun if fieldFun is not None else (lambda q: exactDisplacement(A, q))
     journal = journal or Journal()
     dimension = 2
     theModel = MPMModel(dimension)
@@ -395,7 +419,7 @@ def run_patch(beddingDeg, case="mixed", nX=8, perturb=0.4, seed=7, particle="sqc
         for side, faceID in faceOf.items():
             for p in theModel.particleSets[side]:
                 xy = np.asarray(p.getFaceCoordinates(faceID)).reshape(-1)[:2]
-                u = A @ xy
+                u = uOf(xy.reshape(1, 2))[0]
                 constraints.append(
                     ParticleLagrangianWeakDirichlet(
                         f"bc_{side}_{p.number}", p, "displacement",
@@ -406,7 +430,7 @@ def run_patch(beddingDeg, case="mixed", nX=8, perturb=0.4, seed=7, particle="sqc
     else:
         for p in theModel.particleSets[f"band{nRings}"]:
             xy = np.asarray(p.getCenterCoordinates()).reshape(2)
-            u = A @ xy
+            u = uOf(xy.reshape(1, 2))[0]
             constraints.append(
                 ParticleLagrangianWeakDirichlet(
                     f"bc_{p.number}", p, "displacement",
@@ -536,7 +560,7 @@ def run_patch(beddingDeg, case="mixed", nX=8, perturb=0.4, seed=7, particle="sqc
                    for im in shared.values() if len(im) > 1]
         domainGap = float(max(spreads)) if spreads else 0.0
 
-    uEx = exactDisplacement(A, xy0)
+    uEx = uOf(xy0)
     scale = np.abs(uEx).max()
     FEx = np.eye(3)
     FEx[:2, :2] += A
@@ -799,33 +823,53 @@ def makeFigure(orientation, out=None, nX=8, perturb=0.4):
     ], loc="upper center", ncol=2, fontsize=7.0 * FS, frameon=True, framealpha=0.92)
 
     # ---------------------------------------------------------------- (b) as computed
-    # The smoothing domains AS THE COMPUTATION LEFT THEM -- the vertex displacements the
-    # particles carry, not a re-drawn affine map -- for the uniaxial stretch at an amplitude
-    # large enough to see.  The domains still tile, which is the point: they are carried by the
-    # deformation gradient at their own centres.
+    # WHAT THE PER-CENTRE UPDATE ACTUALLY DOES, which the patch test itself cannot show: a
+    # homogeneous field gives every domain the same F, so the images tile to 1e-14 mm however
+    # large the stretch or however coarse the patch.  This panel is therefore the INHOMOGENEOUS
+    # bending field on the same discretisation, where the per-centre gradients differ and the
+    # images separate -- drawn from the same vertex-displacement state variable, zoomed onto
+    # the 3 x 3 block carrying the largest separation so that a gap of ~8 % of a cell reads.
     b = ax[1]
-    r = run_patch(30.0, case="stretch", nX=nX, perturb=perturb,
-                  amplitude=DEFORMED_AMPLITUDE, journal=Journal())
-    b.add_collection(PolyCollection(list(r["verts"]), facecolors="#eef3f8",
-                                    edgecolors="#1b6ca8", linewidths=0.6 * FS))
-    # the reference OUTLINE on top, not the reference cells: behind the filled deformed
-    # domains they are invisible, and the outline is what makes the deformation readable
-    b.plot([0, LENGTH, LENGTH, 0, 0], [0, 0, LENGTH, LENGTH, 0], "--",
-           color="0.45", lw=0.7 * FS)
-    lim = np.concatenate([r["verts"].reshape(-1, 2), r["verts0"].reshape(-1, 2)])
-    b.set_xlim(lim[:, 0].min() - 0.6, lim[:, 0].max() + 0.6)
-    b.set_ylim(lim[:, 1].min() - 0.6, lim[:, 1].max() + 0.6)
+    rB = run_patch(30.0, case="stretch", nX=nX, perturb=perturb,
+                   fieldFun=lambda q: bendingDisplacement(q, kappa=BENDING_KAPPA),
+                   journal=Journal())
+    v0, vD = rB["verts0"], rB["verts"]
+    # locate the block: the particle whose shared vertices separate most
+    shared = {}
+    for pp in range(v0.shape[0]):
+        for kk in range(4):
+            key = (round(float(v0[pp, kk, 0]), 9), round(float(v0[pp, kk, 1]), 9))
+            shared.setdefault(key, []).append((pp, vD[pp, kk]))
+    worst, worstP = 0.0, 0
+    for im in shared.values():
+        if len(im) < 2:
+            continue
+        pts = np.asarray([q for _, q in im])
+        sp = np.linalg.norm(pts - pts.mean(axis=0), axis=1).max()
+        if sp > worst:
+            worst, worstP = sp, im[0][0]
+    i0, j0 = divmod(worstP, nX)
+    i0 = min(max(i0 - 1, 0), nX - 3)
+    j0 = min(max(j0 - 1, 0), nX - 3)
+    blk = [i * nX + j for i in range(i0, i0 + 3) for j in range(j0, j0 + 3)]
+    b.add_collection(PolyCollection([vD[k] for k in blk], facecolors="#dce8f2",
+                                    edgecolors="#1b6ca8", linewidths=0.9 * FS))
+    lim = np.concatenate([vD[k] for k in blk])
+    pad = 0.10 * (lim[:, 0].max() - lim[:, 0].min())
+    b.set_xlim(lim[:, 0].min() - pad, lim[:, 0].max() + pad)
+    b.set_ylim(lim[:, 1].min() - pad, lim[:, 1].max() + pad)
     b.set_aspect("equal")
     b.set_xlabel(r"$x_1$ [mm]")
     b.set_ylabel(r"$x_2$ [mm]")
-    b.set_title(rf"(b) as computed, stretch at ${DEFORMED_AMPLITUDE*100:.0f}\,\%$",
-                fontsize=9.5 * FS)
-    print(f"  panel (b): deformed smoothing domains, non-conformity "
-          f"{r['domainGap']:.2e} mm over a {LENGTH:g} mm patch")
-    b.legend(handles=[
-        Line2D([], [], color="0.45", lw=0.7 * FS, ls="--", label="reference outline"),
-        Line2D([], [], color="#1b6ca8", lw=0.7 * FS, label="deformed domains"),
-    ], loc="upper center", ncol=1, fontsize=7.0 * FS, frameon=True, framealpha=0.92)
+    b.set_title(r"(b) deformed domains, inhomogeneous field", fontsize=9.5 * FS)
+    b.text(0.5, 0.015,
+           rf"gap ${rB['domainGap']*1e3:.0f}\,\mu$m $= {100*rB['domainGap']/rB['h']:.0f}\,\%$ of $h_p$",
+           transform=b.transAxes, ha="center", va="bottom", fontsize=8.0 * FS,
+           color="#b1500f")
+    print(f"  panel (b): bending field, kappa = {BENDING_KAPPA} 1/mm, "
+          f"domain gap {rB['domainGap']:.4f} mm = "
+          f"{100 * rB['domainGap'] / rB['h']:.1f} % of h_p, "
+          f"max|u| = {np.abs(vD - v0).max():.2f} mm, alphaP = {rB['alphaPMax']:.1e}")
 
     # ---------------------------------------------------------------- (c) the error
     c = ax[2]
