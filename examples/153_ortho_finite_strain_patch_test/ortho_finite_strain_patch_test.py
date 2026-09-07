@@ -749,28 +749,103 @@ def makeFigure(orientation, out=None, nX=8, perturb=0.4):
     ], loc="upper center", ncol=2, fontsize=7.2 * FS, frameon=True, framealpha=0.92)
 
     # ------------------------------------------------- (b) over the bedding orientation
+    # ONE measure, not two.  err(u) and err(F) are the same absolute error under two
+    # normalisations -- |u| by the field amplitude max|A X| ~ |A| L, F by |A| -- so plotting
+    # both produces two curves a fixed factor L apart and invites the reader to look for a
+    # difference that is not there.  Measured: the ABSOLUTE errors agree to within a factor
+    # two (2.7e-14 mm against 1.6e-14 for the stretch), while the relative ones differ by 5 to
+    # 21, which is exactly the ratio of the two normalisations.  The gradient is what the
+    # constitutive routine consumes, so it is the one plotted; err(u) is quoted in the text.
     b = ax[1]
     for case in LOAD_CASES:
         rr = sorted([r for r in orientation if r["case"] == case], key=lambda r: r["bedding"])
         if not rr:
             continue
-        b.semilogy([r["bedding"] for r in rr], [max(r["errU"], FLOOR) for r in rr],
-                   "-", marker=marks[case], color=cols[case], ms=3.2 * FS, lw=1.1 * FS,
-                   label=rf"{case}, $u$")
         b.semilogy([r["bedding"] for r in rr], [max(r["errF"], FLOOR) for r in rr],
-                   "--", marker=marks[case], color=cols[case], ms=2.8 * FS, lw=1.0 * FS,
-                   mfc="none", label=rf"{case}, $F$")
+                   "-", marker=marks[case], color=cols[case], ms=3.4 * FS, lw=1.1 * FS,
+                   label=case)
     b.set_xticks(BEDDINGS)
     b.set_xlabel(r"bedding orientation $\beta$ [deg]")
-    b.set_ylabel("relative reproduction error")
-    b.set_ylim(FLOOR, 1e-8)
+    b.set_ylabel(r"error in $F_{iI}$, relative to $\|\mathbf{A}\|$")
+    b.set_ylim(1e-15, 1e-10)
     b.set_title("(b) interior error over the orientation", fontsize=9.5 * FS)
-    b.legend(loc="upper center", ncol=3, fontsize=7.0 * FS, frameon=False,
-             columnspacing=0.9, handlelength=1.5)
+    b.legend(loc="upper center", ncol=3, fontsize=7.6 * FS, frameon=False,
+             columnspacing=1.1, handlelength=1.5)
     b.grid(True, which="major", color="#DDDDDD", lw=0.4 * FS)
 
     fig.tight_layout()
     out = out or os.path.join(HERE, "fig_patch_test.pdf")
+    fig.savefig(out)
+    fig.savefig(out.replace(".pdf", ".png"), dpi=145)
+    print(f"  wrote {out}")
+
+
+def makeDomainFigure(out=None, nX=8, perturb=0.4, gain=10.0, block=3):
+    """The smoothing-domain update: a non-conforming one against the one SQCNI applies.
+
+    The update is, per particle and exactly as in
+    GradientEnhancedFiniteStrainParticleSQCNI::updateSmoothingDomain,
+
+        x_vertex = c0 + u(c0) + M (X_vertex - c0)
+
+    with c0 the domain's undeformed centre and M the part of the deformation the update keeps:
+    the identity for a frozen domain (SNNI), the polar rotation for RotationOnly, and the full
+    deformation gradient for SQCNI.  For the homogeneous field of a patch test M = I + A is the
+    same for every domain, so the SQCNI image is the global affine map (I + A) X and the tiling
+    survives exactly; a frozen domain instead keeps its reference shape and is merely carried
+    by its own centre's displacement, so neighbours separate by A (c_1 - c_2) ~ |A| h_p and the
+    image is no longer a tiling.  Drawn at `gain` times the true deformation.
+    """
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from matplotlib.collections import PolyCollection
+    from matplotlib.lines import Line2D
+
+    figW = 8.6
+    FS = paperStyle(figW)
+    fig, ax = plt.subplots(1, 2, figsize=(figW, 3.9))
+
+    A = LOAD_CASES["mixed"] * gain
+    cells, _, _ = latticeForDrawing(nX, perturb)
+    k0 = nX // 2 - block // 2
+    sel = [cells[i * nX + j] for i in range(k0, k0 + block) for j in range(k0, k0 + block)]
+
+    def image(v, M):
+        c0 = v.mean(axis=0)
+        return (c0 + A @ c0) + (v - c0) @ M.T
+
+    for a, (M, tag, title) in zip(ax, (
+        (np.eye(2), "frozen", r"(a) frozen domain: $\mathbf{M}=\mathbf{I}$"),
+        (np.eye(2) + A, "sqcni", r"(b) SQCNI: $\mathbf{M}=\mathbf{F}$"),
+    )):
+        a.add_collection(PolyCollection(sel, facecolors="#f0f3f6", edgecolors="0.62",
+                                        linewidths=0.6 * FS))
+        a.add_collection(PolyCollection([image(v, M) for v in sel], facecolors="none",
+                                        edgecolors="#1b6ca8" if tag == "sqcni" else "#b1500f",
+                                        linewidths=1.0 * FS))
+        a.set_aspect("equal")
+        a.set_axis_off()
+        a.set_title(title, fontsize=9.5 * FS)
+
+    # a common frame, so the two panels are directly comparable
+    allV = np.concatenate([np.concatenate(sel)] +
+                          [np.concatenate([image(v, np.eye(2) + A) for v in sel])])
+    pad = 0.12 * (allV[:, 0].max() - allV[:, 0].min())
+    for a in ax:
+        a.set_xlim(allV[:, 0].min() - pad, allV[:, 0].max() + pad)
+        a.set_ylim(allV[:, 1].min() - pad, allV[:, 1].max() + pad)
+
+    # figure-level legend below both panels: inside panel (a) it sits on the drawing
+    fig.legend(handles=[
+        Line2D([], [], color="0.62", lw=0.7 * FS, label="reference domains"),
+        Line2D([], [], color="#b1500f", lw=1.0 * FS, label="image, frozen"),
+        Line2D([], [], color="#1b6ca8", lw=1.0 * FS, label=r"image, carried by $\mathbf{F}$"),
+    ], loc="lower center", ncol=3, fontsize=7.8 * FS, frameon=False, handlelength=1.6,
+        bbox_to_anchor=(0.5, 0.0))
+
+    fig.tight_layout(rect=(0, 0.07, 1, 1))
+    out = out or os.path.join(HERE, "fig_patch_domains.pdf")
     fig.savefig(out)
     fig.savefig(out.replace(".pdf", ".png"), dpi=145)
     print(f"  wrote {out}")
@@ -825,6 +900,7 @@ def main():
 
     if args.figure:
         makeFigure(orientation, nX=args.nx, perturb=args.perturb)
+        makeDomainFigure(nX=args.nx, perturb=args.perturb)
 
 
 @pytest.fixture(autouse=True)
