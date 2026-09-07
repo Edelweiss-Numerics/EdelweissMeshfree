@@ -691,58 +691,62 @@ def latticeForDrawing(nX, perturb, seed=7):
     return cells, V, np.asarray(isBnd)
 
 
-GAIN = 8.0  # the deformation of panel (a) is drawn this many times its true size
+def makeFigure(orientation, out=None, nX=8, perturb=0.4):
+    """Two panels, in the style of the plane-strain compression figures of the paper.
 
-
-def makeFigure(orientation, perturbation=None, updates=None, out=None, nX=8, perturb=0.4):
-    """Four panels, in the style of the plane-strain compression figures of the paper."""
+    The setup and the result, and nothing else.  The randomness sweep and the
+    smoothing-domain-update comparison are studies of the discretisation rather than results
+    of the paper -- they are printed by --all and recorded in the handoff, and the paper shows
+    only the variant it uses.  A row of four panels was tried and is too much.
+    """
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     from matplotlib.collections import PolyCollection
     from matplotlib.lines import Line2D
 
-    figW = 13.0
+    figW = 8.6
     FS = paperStyle(figW)
-    fig, ax = plt.subplots(1, 4, figsize=(figW, 3.5))
+    fig, ax = plt.subplots(1, 2, figsize=(figW, 3.6))
 
     cols = {"stretch": "#1b6ca8", "shear": "#e8871a", "mixed": "#2e8b57"}
     marks = {"stretch": "o", "shear": "s", "mixed": "^"}
     FLOOR = 1e-17
 
-    # ---------------------------------------------------------------- (a) the SQCNI update
-    # What the DeformationGradient update does: every smoothing domain is carried by the
-    # deformation gradient evaluated at its OWN centre.  For a homogeneous patch-test field
-    # that map is the same for every domain, so the tiling stays conforming -- which is why
-    # SQCNI passes -- but the image is a different tiling for each load case, and that is what
-    # the three blocks show.  One 3 x 3 block of the perturbed lattice per case, reference in
-    # grey and image in colour, drawn at GAIN times the true deformation so that 2 % is visible.
+    # ---------------------------------------------------------------- (a) the patch
     a = ax[0]
-    cells, _, _ = latticeForDrawing(nX, perturb)
-    # cells are stored row-major over (i, j), so index them arithmetically: np.asarray on a
-    # list of (4, 2) arrays gives an (n, 4, 2) array, not an object grid
-    block = [cells[i * nX + j] for i in range(nX // 2 - 1, nX // 2 + 2)
-             for j in range(nX // 2 - 1, nX // 2 + 2)]
-    h = LENGTH / nX
-    x0 = min(c[:, 0].min() for c in block)
-    y0 = min(c[:, 1].min() for c in block)
-    block = [c - np.array([x0, y0]) for c in block]
-    # stacked vertically: a tall narrow block fills this panel, three side by side does not
-    pitch = 3.0 * h * 1.42
-    for k, (case, A) in enumerate(LOAD_CASES.items()):
-        off = np.array([0.0, -k * pitch])
-        Fg = np.eye(2) + GAIN * A
-        a.add_collection(PolyCollection([c + off for c in block], facecolors="#f0f3f6",
-                                        edgecolors="0.62", linewidths=0.6 * FS))
-        a.add_collection(PolyCollection([c @ Fg.T + off for c in block], facecolors="none",
-                                        edgecolors=cols[case], linewidths=0.9 * FS))
-        a.text(-0.35 * h, off[1] + 1.5 * h, case, ha="right", va="center",
-               rotation=90, fontsize=8.4 * FS, color=cols[case])
-    a.set_xlim(-1.15 * h, 3.5 * h)
-    a.set_ylim(-2 * pitch - 0.7 * h, 3.6 * h)
+    cells, _, isBnd = latticeForDrawing(nX, perturb)
+    a.add_collection(PolyCollection([cells[k] for k in np.where(~isBnd)[0]],
+                                    facecolors="#eef3f8", edgecolors="0.55",
+                                    linewidths=0.5 * FS))
+    a.add_collection(PolyCollection([cells[k] for k in np.where(isBnd)[0]],
+                                    facecolors="#f7e2d3", edgecolors="0.55",
+                                    linewidths=0.5 * FS))
+    cen = np.array([c.mean(axis=0) for c in cells])
+    a.plot(cen[:, 0], cen[:, 1], ".", color="0.2", ms=2.4 * FS)
+    # the imposed field acts on the boundary FACE centres, which is where the reaction lives
+    fc = []
+    for c, b in zip(cells, isBnd):
+        if not b:
+            continue
+        for k in range(4):
+            mid = 0.5 * (c[k] + c[(k + 1) % 4])
+            if min(mid[0], mid[1]) < 1e-9 or max(mid[0], mid[1]) > LENGTH - 1e-9:
+                fc.append(mid)
+    fc = np.asarray(fc)
+    a.plot(fc[:, 0], fc[:, 1], "o", color="#b1500f", ms=2.8 * FS)
+    a.set_xlim(-0.5, LENGTH + 0.5)
+    a.set_ylim(-0.5, LENGTH + 0.5)
     a.set_aspect("equal")
-    a.set_axis_off()
-    a.set_title(r"(a) domains carried by $\mathbf{F}$", fontsize=9.5 * FS)
+    a.set_xlabel(r"$X_1$ [mm]")
+    a.set_ylabel(r"$X_2$ [mm]")
+    a.set_title(rf"(a) patch, {nX}$\times${nX} particles, ${perturb:.1f}\,h_p$ perturbation",
+                fontsize=9.5 * FS)
+    a.legend(handles=[
+        Line2D([], [], marker="o", ls="none", color="#b1500f", ms=2.8 * FS,
+               label=r"$u=\mathbf{A}\mathbf{X}$ imposed"),
+        Line2D([], [], marker=".", ls="none", color="0.2", ms=2.4 * FS, label="particle"),
+    ], loc="upper center", ncol=2, fontsize=7.2 * FS, frameon=True, framealpha=0.92)
 
     # ------------------------------------------------- (b) over the bedding orientation
     b = ax[1]
@@ -756,60 +760,14 @@ def makeFigure(orientation, perturbation=None, updates=None, out=None, nX=8, per
         b.semilogy([r["bedding"] for r in rr], [max(r["errF"], FLOOR) for r in rr],
                    "--", marker=marks[case], color=cols[case], ms=2.8 * FS, lw=1.0 * FS,
                    mfc="none", label=rf"{case}, $F$")
-    b.set_xticks(BEDDINGS[::2])
+    b.set_xticks(BEDDINGS)
     b.set_xlabel(r"bedding orientation $\beta$ [deg]")
-    b.set_ylabel("relative error")
-    b.set_ylim(FLOOR, 1.0)
-    b.set_title(r"(b) over the orientation", fontsize=9.5 * FS)
-    b.legend(loc="upper center", ncol=2, fontsize=6.6 * FS, frameon=False,
-             columnspacing=0.8, handlelength=1.4)
+    b.set_ylabel("relative reproduction error")
+    b.set_ylim(FLOOR, 1e-8)
+    b.set_title("(b) interior error over the orientation", fontsize=9.5 * FS)
+    b.legend(loc="upper center", ncol=3, fontsize=7.0 * FS, frameon=False,
+             columnspacing=0.9, handlelength=1.5)
     b.grid(True, which="major", color="#DDDDDD", lw=0.4 * FS)
-
-    # ------------------------------------------------- (c) how random the distribution may be
-    c = ax[2]
-    if perturbation:
-        pp = sorted(perturbation, key=lambda r: r["perturb"])
-        c.semilogy([r["perturb"] for r in pp], [max(r["errU"], FLOOR) for r in pp],
-                   "-o", color="#1b6ca8", ms=3.2 * FS, lw=1.1 * FS, label=r"err$(u)$")
-        c.semilogy([r["perturb"] for r in pp], [max(r["errF"], FLOOR) for r in pp],
-                   "--o", color="#1b6ca8", ms=2.8 * FS, lw=1.0 * FS, mfc="none",
-                   label=r"err$(F)$")
-        c.set_xlabel(r"lattice perturbation $[h_p]$")
-        c.set_ylabel(r"relative error")
-        c.set_ylim(FLOOR, 1.0)
-        c.set_title("(c) how random the particles may be", fontsize=9.5 * FS)
-        c.grid(True, which="major", color="#DDDDDD", lw=0.4 * FS)
-        c2 = c.twinx()
-        c2.plot([r["perturb"] for r in pp], [r["nConcave"] for r in pp], "-s",
-                color="#b1500f", ms=3.0 * FS, lw=1.0 * FS)
-        c2.set_ylabel("concave cells", color="#b1500f")
-        c2.tick_params(axis="y", colors="#b1500f")
-        c.legend(loc="center left", fontsize=7.2 * FS, frameon=False, handlelength=1.4)
-    else:
-        c.axis("off")
-
-    # ------------------------------------------------- (d) the smoothing-domain update
-    d = ax[3]
-    if updates:
-        labels = [lab for _, lab in UPDATES]
-        x = np.arange(len(UPDATES))
-        w = 0.26
-        for k, case in enumerate(LOAD_CASES):
-            vals = []
-            for pName, _ in UPDATES:
-                m_ = [r for r in updates if r["update"] == pName and r["case"] == case
-                      and r["vci"] is True]
-                vals.append(max(m_[0]["errU"], FLOOR) if m_ else FLOOR)
-            d.bar(x + (k - 1) * w, vals, w, color=cols[case], label=case, log=True)
-        d.set_xticks(x)
-        d.set_xticklabels(labels, rotation=28, ha="right", fontsize=7.0 * FS)
-        d.set_ylabel(r"relative error in $u$")
-        d.set_ylim(FLOOR, 1.0)
-        d.set_title("(d) smoothing-domain update", fontsize=9.5 * FS)
-        d.legend(loc="upper left", fontsize=7.2 * FS, frameon=False)
-        d.grid(True, which="major", axis="y", color="#DDDDDD", lw=0.4 * FS)
-    else:
-        d.axis("off")
 
     fig.tight_layout()
     out = out or os.path.join(HERE, "fig_patch_test.pdf")
@@ -866,7 +824,7 @@ def main():
                       f"err(u) = {r['errU']:.2e}  err(F) = {r['errF']:.2e}")
 
     if args.figure:
-        makeFigure(orientation, perturbation, updates, nX=args.nx, perturb=args.perturb)
+        makeFigure(orientation, nX=args.nx, perturb=args.perturb)
 
 
 @pytest.fixture(autouse=True)
