@@ -33,12 +33,23 @@ WHAT IS MEASURED
 The strengths are scaled by 1e3 so that no orientation can yield at the amplitudes used; the
 elastic card and everything else is the reference card of examples/152.
 
+THE THREE THINGS THE TEST SETTLED, each a switch of its own
+    --bc {face,center,cwf}   where the essential condition acts.  `face` is the one that
+        works; `center` is the instructive failure (2 % error, insensitive to everything);
+        `cwf` adds the consistent-weak-form correction, which does not converge on a fully
+        constrained boundary -- see sweepBoundary().
+    --perturb X              how random the distribution is, in units of h_p.  Limited by the
+        VALIDITY of the quad cells, not by the approximation: see sweepPerturbation() and
+        cellQuality(), which counts concave cells.
+    --particle {sqcni,sqcni_r,sqcni_ru,snni,...}   how the smoothing domain is carried into
+        the deformed configuration.  Only the full deformation gradient passes for every load
+        case; see sweepUpdateType().
+
 USAGE
-    python ortho_finite_strain_patch_test.py                # the 3 x 7 sweep, coarse patch
-    python ortho_finite_strain_patch_test.py --nx 12        # a finer patch
-    python ortho_finite_strain_patch_test.py --perturb 0.0  # regular particle distribution
-    python ortho_finite_strain_patch_test.py --refine       # the same sweep at 3 spacings
-    python ortho_finite_strain_patch_test.py --figure       # write the paper figure
+    python ortho_finite_strain_patch_test.py --all --figure   # everything + the paper figure
+    python ortho_finite_strain_patch_test.py --nx 12          # a finer patch
+    python ortho_finite_strain_patch_test.py --refine         # the spacing study
+    python ortho_finite_strain_patch_test.py --no-vci         # the VCI correction off
 Run under BASE python (/home/tom/miniforge3/bin/python).
 """
 
@@ -73,6 +84,10 @@ from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
 )
 from edelweissmeshfree.sets.particleset import ParticleSet
 from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
+from edelweissmeshfree.stepactions.particledistributedload import (
+    ParticleDistributedLoad,
+)
+from edelweissfe.surfaces.entitybasedsurface import EntityBasedSurface
 from edelweissfe.points.node import Node
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -166,7 +181,7 @@ def exactDisplacement(A, xy):
 
 
 def generatePerturbedQuadGrid(model, journal, particleFactory, kernelFactory,
-                              length, nX, perturb, rng, shrink=0.0):
+                              length, nX, perturb, rng):
     """Tile [0,L]^2 with nX x nX quad particles on a randomly perturbed vertex lattice.
 
     The lattice is perturbed rather than the particles independently, so the smoothing domains
@@ -204,19 +219,11 @@ def generatePerturbedQuadGrid(model, journal, particleFactory, kernelFactory,
         x, y = v[:, 0], v[:, 1]
         return 0.5 * abs(np.dot(x, np.roll(y, -1)) - np.dot(y, np.roll(x, -1)))
 
-    # `shrink` deliberately BREAKS the conforming tiling: each smoothing domain is scaled about
-    # its own centroid by a random factor, so the cells no longer share their vertices and
-    # sum_q V_q < |Omega|.  That is what violates the integration constraint of Eq. (72), and it
-    # is the configuration in which the correction of Eq. (73) has something to repair.  With a
-    # conforming tiling the SQCNI gradients satisfy the constraint by construction.
     particles, kernels = [], []
     number = 1
     for i in range(nX):
         for j in range(nX):
             v = np.asarray([V[i, j], V[i + 1, j], V[i + 1, j + 1], V[i, j + 1]])
-            if shrink > 0.0:
-                c = v.mean(axis=0)
-                v = c + (1.0 - shrink * rng.random()) * (v - c)
             p = particleFactory(number, v, quadArea(v))
             model.particles[number] = p
             particles.append(p)
@@ -265,7 +272,8 @@ def generatePerturbedQuadGrid(model, journal, particleFactory, kernelFactory,
 
 
 def run_patch(beddingDeg, case="mixed", nX=8, perturb=0.4, seed=7, particle="sqcnixnsni",
-              vci=True, vciOrder=1, nRings=1, support=2.5, shrink=0.0, journal=None):
+              vci=True, vciOrder=1, nRings=1, support=2.5, bc="face",
+              cwfRamp=lambda t: 1.0, amplitude=None, journal=None):
     """Impose u = A X on the boundary and report how well the interior reproduces it.
 
     ``vci`` switches the variationally consistent integration correction of Eq. (73) on and
@@ -281,6 +289,8 @@ def run_patch(beddingDeg, case="mixed", nX=8, perturb=0.4, seed=7, particle="sqc
     changes nothing at all in this test, which is exactly the trap met while setting it up.
     """
     A = LOAD_CASES[case]
+    if amplitude is not None:
+        A = A * (amplitude / AMPLITUDE)
     journal = journal or Journal()
     dimension = 2
     theModel = MPMModel(dimension)
@@ -303,6 +313,16 @@ def run_patch(beddingDeg, case="mixed", nX=8, perturb=0.4, seed=7, particle="sqc
         "sqcni": "GradientEnhancedFiniteStrainSQCNI/PlaneStrain/Quad",
         "snni": "GradientEnhancedFiniteStrainSNNI/PlaneStrain/Quad",
         "snnixnsni": "GradientEnhancedFiniteStrainSNNIxNSNI/PlaneStrain/Quad",
+        # The smoothing-domain update variants.  SQCNI deforms the domain by the deformation
+        # gradient evaluated at its centre, SQCNI_R by the rotation only, SQCNI_RU by the
+        # rotation and the principal stretches, SNNI not at all.  This is the physical source
+        # of non-conformity in this framework: a domain that is not carried by F stops tiling
+        # the DEFORMED body, and the integration constraint is a statement about the deformed
+        # configuration.
+        "sqcni_r": "GradientEnhancedFiniteStrainSQCNI_R/PlaneStrain/Quad",
+        "sqcni_ru": "GradientEnhancedFiniteStrainSQCNI_RU/PlaneStrain/Quad",
+        "sqcni_rxnsni": "GradientEnhancedFiniteStrainSQCNI_RxNSNI/PlaneStrain/Quad",
+        "sqcni_ruxnsni": "GradientEnhancedFiniteStrainSQCNI_RUxNSNI/PlaneStrain/Quad",
         "point": "GradientEnhancedFiniteStrain/PlaneStrain/Point",
     }
     pName = PARTICLES[particle]
@@ -324,7 +344,7 @@ def run_patch(beddingDeg, case="mixed", nX=8, perturb=0.4, seed=7, particle="sqc
         lambda node: MarmotMeshfreeKernelFunctionWrapper(
             node, "BSplineBoxed", supportRadius=supportRadius, continuityOrder=2
         ),
-        LENGTH, nX, perturb, np.random.default_rng(seed), shrink=shrink,
+        LENGTH, nX, perturb, np.random.default_rng(seed),
     )
 
     theParticleKernelDomain = ParticleKernelDomain(
@@ -344,29 +364,65 @@ def run_patch(beddingDeg, case="mixed", nX=8, perturb=0.4, seed=7, particle="sqc
     # particle carries its OWN value of u = A x.  The multiplier method is used rather than the
     # penalty variant of examples/152 on purpose: it enforces the boundary values EXACTLY, so a
     # nonzero interior error cannot be blamed on a finite penalty stiffness.
-    # THE CONSTRAINT MUST SIT ON THE DOMAIN BOUNDARY, NOT AT THE BOUNDARY PARTICLE'S CENTRE.
-    # A particle centre lies half a cell inside the patch, and the weak form's surface integral
-    # over the outer faces is then still traction FREE -- so prescribing the field at the
-    # centres poses a body with a free outer strip and a displacement condition behind it,
-    # whose solution is not the linear field at all.  Measured: 2.5 % error in u, insensitive
-    # to the particle type, to VCI, and almost to h, which is what an inconsistent problem
-    # rather than a discretisation defect looks like.  Constraining the boundary FACE centres
-    # instead makes the multiplier the reaction of that face: the true traction integral over
-    # the face is one-point-integrated at its centre, which is exactly the virtual work the
-    # multiplier delivers.
+    # THREE WAYS TO IMPOSE THE ESSENTIAL CONDITION, and the choice decides whether the problem
+    # posed is the one the patch test assumes.
+    #
+    # "center" -- the field at the boundary particle CENTRES.  A centre lies half a cell inside
+    #     the patch, so the surface integral of the weak form over the outer faces is still
+    #     traction FREE: the body has a free outer strip behind a displacement condition, and
+    #     its solution is not the linear field.  Measured 2.5 % error in u, insensitive to the
+    #     particle type, to VCI, and almost to the spacing -- an inconsistent problem, not a
+    #     discretisation defect.  Kept as a switch because it is the instructive failure.
+    #
+    # "cwf" -- the same centre constraints PLUS the consistent-weak-form correction on the
+    #     Dirichlet boundary.  This is the framework's own answer: `cwfcorrection` subtracts
+    #     the particle's own traction S.n dA, with n from Nanson's formula on the CURRENT
+    #     smoothing-domain face, from the external force of every kernel function reaching that
+    #     face -- i.e. it supplies exactly the surface term that integration by parts left
+    #     behind, evaluated consistently with the internal stress instead of being dropped.
+    #
+    # "face" -- the field at the boundary FACE centres.  The multiplier then IS the reaction of
+    #     that face, which is what a one-point integration of the true traction over the face
+    #     delivers, so no correction is needed.
     faceOf = {"bottom": 1, "right": 2, "top": 3, "left": 4}
     constraints = []
-    for side, faceID in faceOf.items():
-        for p in theModel.particleSets[side]:
-            xy = np.asarray(p.getFaceCoordinates(faceID)).reshape(-1)[:2]
+    if bc == "face":
+        for side, faceID in faceOf.items():
+            for p in theModel.particleSets[side]:
+                xy = np.asarray(p.getFaceCoordinates(faceID)).reshape(-1)[:2]
+                u = A @ xy
+                constraints.append(
+                    ParticleLagrangianWeakDirichlet(
+                        f"bc_{side}_{p.number}", p, "displacement",
+                        {0: float(u[0]), 1: float(u[1])}, theModel,
+                        location="face", faceID=faceID,
+                    )
+                )
+    else:
+        for p in theModel.particleSets[f"band{nRings}"]:
+            xy = np.asarray(p.getCenterCoordinates()).reshape(2)
             u = A @ xy
             constraints.append(
                 ParticleLagrangianWeakDirichlet(
-                    f"bc_{side}_{p.number}", p, "displacement",
-                    {0: float(u[0]), 1: float(u[1])}, theModel,
-                    location="face", faceID=faceID,
+                    f"bc_{p.number}", p, "displacement",
+                    {0: float(u[0]), 1: float(u[1])}, theModel, location="center",
                 )
             )
+
+    distributedLoads = []
+    if bc == "cwf":
+        theModel.surfaces["dirichlet"] = EntityBasedSurface(
+            "dirichlet",
+            {faceID: list(theModel.particleSets[side]) for side, faceID in faceOf.items()},
+        )
+        distributedLoads.append(
+            ParticleDistributedLoad(
+                name="cwf_dirichlet", model=theModel, journal=journal,
+                particleSurface=theModel.surfaces["dirichlet"],
+                distributedLoadType="cwfcorrection",
+                loadVector=np.array([0.0]), f_t=cwfRamp,
+            )
+        )
     for c in constraints:
         theModel.constraints[c.name] = c
 
@@ -421,7 +477,7 @@ def run_patch(beddingDeg, case="mixed", nX=8, perturb=0.4, seed=7, particle="sqc
             linearSolver, theModel, fieldOutputController,
             outputManagers=[], particleManagers=[theParticleManager],
             constraints=constraints, userIterationOptions=iterationOptions,
-            vciManagers=vciManagers,
+            vciManagers=vciManagers, particleDistributedLoads=distributedLoads,
         )
     except StepFailed as e:
         journal.message(f"patch test step failed: {e}", "error")
@@ -447,7 +503,8 @@ def run_patch(beddingDeg, case="mixed", nX=8, perturb=0.4, seed=7, particle="sqc
 
     return dict(
         bedding=beddingDeg, case=case, nX=nX, h=h, perturb=perturb, vci=vci,
-        vciOrder=(vciOrder if vci else None), nRings=nRings, support=support, shrink=shrink,
+        vciOrder=(vciOrder if vci else None), nRings=nRings, support=support,
+        bc=bc, particle=particle,
         errU=float(errU), errF=float(errF),
         alphaPMax=float(np.abs(alphaP).max()),
         nInterior=int(inner.sum()), failed=failed,
@@ -457,51 +514,134 @@ def run_patch(beddingDeg, case="mixed", nX=8, perturb=0.4, seed=7, particle="sqc
 
 
 # =============================================================================================
-#  the sweep
+#  the sweeps
 # =============================================================================================
 
 BEDDINGS = [0, 15, 30, 45, 60, 75, 90]
 
+# the smoothing-domain update variants, in the order they are reported
+UPDATES = [
+    ("sqcni", r"$\mathbf{F}$ (SQCNI)"),
+    ("sqcni_ru", r"$\mathbf{R}^{\rm e}\mathbf{U}$ (SQCNI\_RU)"),
+    ("sqcni_r", r"$\mathbf{R}^{\rm e}$ (SQCNI\_R)"),
+    ("snni", r"frozen (SNNI)"),
+]
+
+PERTURBATIONS = [0.0, 0.2, 0.4, 0.5, 0.6, 0.8]
+
 
 def sweep(nX=8, perturb=0.4, cases=tuple(LOAD_CASES), beddings=tuple(BEDDINGS), seed=7,
-          vci=True, vciOrder=1, nRings=1, support=2.5, shrink=0.0):
+          vci=True, vciOrder=1, nRings=1, support=2.5, bc="face",
+          particle="sqcnixnsni", quiet=False):
     journal = Journal()
     out = []
     for case in cases:
         for b in beddings:
             r = run_patch(b, case=case, nX=nX, perturb=perturb, seed=seed, vci=vci,
-                          vciOrder=vciOrder, nRings=nRings, support=support, shrink=shrink,
-                          journal=journal)
+                          vciOrder=vciOrder, nRings=nRings, support=support, bc=bc,
+                          particle=particle, journal=journal)
             out.append(r)
-            print(f"  {case:8s} beta = {b:5.1f} deg   err(u) = {r['errU']:.2e}   "
-                  f"err(F) = {r['errF']:.2e}   max alphaP = {r['alphaPMax']:.1e}"
-                  f"{'   STEP FAILED' if r['failed'] else ''}")
+            if not quiet:
+                print(f"  {case:8s} beta = {b:5.1f} deg   err(u) = {r['errU']:.2e}   "
+                      f"err(F) = {r['errF']:.2e}   max alphaP = {r['alphaPMax']:.1e}"
+                      f"{'   STEP FAILED' if r['failed'] else ''}")
     return out
 
 
-def report(results):
-    print("\n" + "=" * 92)
-    print(f"  patch test, {results[0]['nX']}x{results[0]['nX']} particles, "
-          f"perturbation {results[0]['perturb']:.2f} h")
-    print("=" * 92)
-    print(f"  {'case':10s}" + "".join(f"{b:>10g}" for b in BEDDINGS) + "     worst")
-    for tag, key in (("err(u)", "errU"), ("err(F)", "errF")):
+def cellQuality(nX, perturb, seed=7):
+    """Validity of the conforming quad tiling: the bilinear map's corner Jacobians.
+
+    A quad smoothing domain is a valid integration cell only while the bilinear map is
+    injective, i.e. while its Jacobian is positive at all four corners.  A positive shoelace
+    AREA is not enough -- a quad can be concave and still have positive area, and that is what
+    limits how far the lattice may be perturbed.
+    """
+    cells, _, _ = latticeForDrawing(nX, perturb, seed=seed)
+    h2 = (LENGTH / nX) ** 2
+    xi = [(-1, -1), (1, -1), (1, 1), (-1, 1)]
+    jac, area = [], []
+    for v in cells:
+        js = []
+        for a, b in xi:
+            dN = 0.25 * np.array([[-(1 - b), -(1 - a)], [(1 - b), -(1 + a)],
+                                  [(1 + b), (1 + a)], [-(1 + b), (1 - a)]])
+            js.append(np.linalg.det(v.T @ dN))
+        jac.append(js)
+        x, y = v[:, 0], v[:, 1]
+        area.append(0.5 * (np.dot(x, np.roll(y, -1)) - np.dot(y, np.roll(x, -1))) / h2)
+    jac = np.asarray(jac)
+    area = np.asarray(area)
+    return dict(minJac=float(jac.min()), nConcave=int((jac.min(axis=1) <= 0).sum()),
+                nCells=len(cells), areaSpread=float(area.max() / max(area.min(), 1e-12)),
+                minArea=float(area.min()))
+
+
+def sweepPerturbation(nX=8, case="mixed", bedding=30.0, seed=7, support=2.5):
+    """How random may the particle distribution be?  Sweep the lattice perturbation."""
+    print("\n  HOW RANDOM MAY THE DISTRIBUTION BE -- lattice perturbation sweep")
+    print(f"  {'perturb':>9s}{'err(u)':>11s}{'err(F)':>11s}{'min corner J':>14s}"
+          f"{'concave':>9s}{'area max/min':>14s}")
+    out = []
+    for pert in PERTURBATIONS:
+        q = cellQuality(nX, pert, seed=seed)
+        r = run_patch(bedding, case=case, nX=nX, perturb=pert, seed=seed, support=support)
+        r.update(q)
+        out.append(r)
+        print(f"  {pert:9.2f}{r['errU']:11.2e}{r['errF']:11.2e}{q['minJac']:14.4f}"
+              f"{q['nConcave']:6d}/{q['nCells']:<3d}{q['areaSpread']:14.1f}")
+    return out
+
+
+def sweepUpdateType(nX=8, perturb=0.4, bedding=30.0, seed=7, support=2.5):
+    """The smoothing-domain update, with and without the VCI correction, per load case.
+
+    This is the physical source of non-conformity in this framework, and it is what the
+    integration constraint is about: the constraint is a statement about the DEFORMED
+    configuration, so a smoothing domain that is not carried there by the deformation gradient
+    stops tiling the body it is supposed to integrate over.
+    """
+    print("\n  THE SMOOTHING-DOMAIN UPDATE -- err(u), VCI on / off")
+    print(f"  {'update':>22s}" + "".join(f"{c:>24s}" for c in LOAD_CASES))
+    out = []
+    for pName, _ in UPDATES:
+        row = []
         for case in LOAD_CASES:
-            row = [r for r in results if r["case"] == case]
-            if not row:
-                continue
-            print(f"  {case + ' ' + tag:16s}" + "".join(f"{r[key]:10.1e}" for r in row)
-                  + f"{max(r[key] for r in row):10.1e}")
+            for vci in (True, False):
+                r = run_patch(bedding, case=case, nX=nX, perturb=perturb, seed=seed,
+                              support=support, particle=pName, vci=vci)
+                r["update"] = pName
+                out.append(r)
+                row.append(r["errU"])
+        print(f"  {pName:>22s}" + "".join(f"{row[2 * k]:11.1e} /{row[2 * k + 1]:10.1e}"
+                                          for k in range(len(LOAD_CASES))))
+    return out
+
+
+def sweepBoundary(nX=8, perturb=0.4, bedding=30.0, seed=7, support=2.5, case="mixed"):
+    """The three ways of imposing the essential condition, including the CWF correction."""
+    print("\n  THE ESSENTIAL CONDITION -- three boundary treatments")
+    out = []
+    for bc, what in (("face", "multiplier at the boundary FACE centres"),
+                     ("center", "multiplier at the boundary PARTICLE centres"),
+                     ("cwf", "particle centres + consistent-weak-form correction")):
+        r = run_patch(bedding, case=case, nX=nX, perturb=perturb, seed=seed,
+                      support=support, bc=bc)
+        r["bcWhat"] = what
+        out.append(r)
+        print(f"  {bc:>8s}  err(u) = {r['errU']:.2e}  err(F) = {r['errF']:.2e}   {what}")
+    return out
+
+
+def report(results, tag=""):
     worstU = max(r["errU"] for r in results)
     worstF = max(r["errF"] for r in results)
     worstA = max(r["alphaPMax"] for r in results)
     nFail = sum(r["failed"] for r in results)
     print("-" * 92)
-    print(f"  worst over the whole sweep:  err(u) = {worstU:.2e}   err(F) = {worstF:.2e}   "
+    print(f"  {tag}worst over the sweep:  err(u) = {worstU:.2e}   err(F) = {worstF:.2e}   "
           f"max alphaP = {worstA:.1e}   failed steps: {nFail}")
     verdict = "PASS" if (worstU < 1e-8 and worstF < 1e-8 and worstA == 0.0 and nFail == 0) else "FAIL"
-    print(f"  {verdict}: the interior reproduces the imposed field to machine precision at "
-          f"every orientation" if verdict == "PASS" else f"  {verdict}")
+    print(f"  {verdict}")
     print("=" * 92)
     return verdict
 
@@ -527,8 +667,8 @@ def paperStyle(figWidthIn, pageFrac=1.0, legacyBase=10.0):
                             legacy_base=legacyBase, grid=False)
 
 
-def latticeForDrawing(nX, perturb, seed=7, shrink=0.0):
-    """Rebuild, for drawing only, the lattice a run with these settings used."""
+def latticeForDrawing(nX, perturb, seed=7):
+    """Rebuild, for drawing and for the cell-quality check, the lattice a run used."""
     rng = np.random.default_rng(seed)
     h = LENGTH / nX
     nV = nX + 1
@@ -543,120 +683,133 @@ def latticeForDrawing(nX, perturb, seed=7, shrink=0.0):
         V[1:-1, -1, 0] += d[1:-1, -1, 0]
         V[0, 1:-1, 1] += d[0, 1:-1, 1]
         V[-1, 1:-1, 1] += d[-1, 1:-1, 1]
-    cells, shrunk, isBnd = [], [], []
+    cells, isBnd = [], []
     for i in range(nX):
         for j in range(nX):
-            v = np.asarray([V[i, j], V[i + 1, j], V[i + 1, j + 1], V[i, j + 1]])
-            cells.append(v)
-            c = v.mean(axis=0)
-            shrunk.append(c + (1.0 - shrink * rng.random()) * (v - c) if shrink > 0 else v)
+            cells.append(np.asarray([V[i, j], V[i + 1, j], V[i + 1, j + 1], V[i, j + 1]]))
             isBnd.append(i in (0, nX - 1) or j in (0, nX - 1))
-    return cells, shrunk, np.asarray(isBnd)
+    return cells, V, np.asarray(isBnd)
 
 
-def makeFigure(conforming, nonconforming=None, out=None):
-    """Three panels, in the style of the plane-strain compression figures of the paper."""
+GAIN = 8.0  # the deformation of panel (a) is drawn this many times its true size
+
+
+def makeFigure(orientation, perturbation=None, updates=None, out=None, nX=8, perturb=0.4):
+    """Four panels, in the style of the plane-strain compression figures of the paper."""
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     from matplotlib.collections import PolyCollection
     from matplotlib.lines import Line2D
 
-    figW = 12.2
+    figW = 13.0
     FS = paperStyle(figW)
-    fig, ax = plt.subplots(1, 3, figsize=(figW, 3.9))
+    fig, ax = plt.subplots(1, 4, figsize=(figW, 3.5))
 
     cols = {"stretch": "#1b6ca8", "shear": "#e8871a", "mixed": "#2e8b57"}
     marks = {"stretch": "o", "shear": "s", "mixed": "^"}
     FLOOR = 1e-17
 
-    # ---------------------------------------------------------------- (a) the patch
+    # ---------------------------------------------------------------- (a) the SQCNI update
+    # What the DeformationGradient update does: every smoothing domain is carried by the
+    # deformation gradient evaluated at its OWN centre.  For a homogeneous patch-test field
+    # that map is the same for every domain, so the tiling stays conforming -- which is why
+    # SQCNI passes -- but the image is a different tiling for each load case, and that is what
+    # the three blocks show.  One 3 x 3 block of the perturbed lattice per case, reference in
+    # grey and image in colour, drawn at GAIN times the true deformation so that 2 % is visible.
     a = ax[0]
-    r0 = conforming[0]
-    nX, pert = r0["nX"], r0["perturb"]
-    cells, shrunk, isBnd = latticeForDrawing(nX, pert, shrink=0.25)
-    a.add_collection(PolyCollection([cells[k] for k in np.where(~isBnd)[0]],
-                                    facecolors="#eef3f8", edgecolors="0.55",
-                                    linewidths=0.5 * FS))
-    a.add_collection(PolyCollection([cells[k] for k in np.where(isBnd)[0]],
-                                    facecolors="#f7e2d3", edgecolors="0.55",
-                                    linewidths=0.5 * FS))
-    a.add_collection(PolyCollection(shrunk, facecolors="none", edgecolors="#b1500f",
-                                    linewidths=0.55 * FS, linestyles="--", alpha=0.75))
-    cen = np.array([c.mean(axis=0) for c in cells])
-    a.plot(cen[:, 0], cen[:, 1], ".", color="0.2", ms=2.4 * FS)
-    # the imposed field acts on the boundary FACE centres, which is where the reaction lives
-    fc = []
-    e = LENGTH
-    for c, b in zip(cells, isBnd):
-        if not b:
-            continue
-        for k in range(4):
-            m = 0.5 * (c[k] + c[(k + 1) % 4])
-            if min(m[0], m[1]) < 1e-9 or max(m[0], m[1]) > e - 1e-9:
-                fc.append(m)
-    fc = np.asarray(fc)
-    a.plot(fc[:, 0], fc[:, 1], "o", color="#b1500f", ms=2.8 * FS)
-    a.set_xlim(-0.5, LENGTH + 0.5)
-    a.set_ylim(-0.5, LENGTH + 0.5)
+    cells, _, _ = latticeForDrawing(nX, perturb)
+    # cells are stored row-major over (i, j), so index them arithmetically: np.asarray on a
+    # list of (4, 2) arrays gives an (n, 4, 2) array, not an object grid
+    block = [cells[i * nX + j] for i in range(nX // 2 - 1, nX // 2 + 2)
+             for j in range(nX // 2 - 1, nX // 2 + 2)]
+    h = LENGTH / nX
+    x0 = min(c[:, 0].min() for c in block)
+    y0 = min(c[:, 1].min() for c in block)
+    block = [c - np.array([x0, y0]) for c in block]
+    # stacked vertically: a tall narrow block fills this panel, three side by side does not
+    pitch = 3.0 * h * 1.42
+    for k, (case, A) in enumerate(LOAD_CASES.items()):
+        off = np.array([0.0, -k * pitch])
+        Fg = np.eye(2) + GAIN * A
+        a.add_collection(PolyCollection([c + off for c in block], facecolors="#f0f3f6",
+                                        edgecolors="0.62", linewidths=0.6 * FS))
+        a.add_collection(PolyCollection([c @ Fg.T + off for c in block], facecolors="none",
+                                        edgecolors=cols[case], linewidths=0.9 * FS))
+        a.text(-0.35 * h, off[1] + 1.5 * h, case, ha="right", va="center",
+               rotation=90, fontsize=8.4 * FS, color=cols[case])
+    a.set_xlim(-1.15 * h, 3.5 * h)
+    a.set_ylim(-2 * pitch - 0.7 * h, 3.6 * h)
     a.set_aspect("equal")
-    a.set_xlabel(r"$X_1$ [mm]")
-    a.set_ylabel(r"$X_2$ [mm]")
-    a.set_title(rf"(a) patch, {nX}$\times${nX} particles, ${pert:.1f}\,h_p$ perturbation",
-                fontsize=9.5 * FS)
-    a.legend(handles=[
-        Line2D([], [], marker="o", ls="none", color="#b1500f", ms=2.8 * FS,
-               label=r"$u=\mathbf{A}\mathbf{X}$ imposed"),
-        Line2D([], [], marker=".", ls="none", color="0.2", ms=2.4 * FS, label="particle"),
-        Line2D([], [], ls="--", color="#b1500f", lw=0.55 * FS, label="non-conforming domains"),
-    ], loc="upper center", ncol=1, fontsize=7.4 * FS, frameon=True, framealpha=0.92)
+    a.set_axis_off()
+    a.set_title(r"(a) domains carried by $\mathbf{F}$", fontsize=9.5 * FS)
 
-    # ------------------------------------------------- (b) conforming, over the orientation
+    # ------------------------------------------------- (b) over the bedding orientation
     b = ax[1]
     for case in LOAD_CASES:
-        rr = sorted([r for r in conforming if r["case"] == case], key=lambda r: r["bedding"])
+        rr = sorted([r for r in orientation if r["case"] == case], key=lambda r: r["bedding"])
         if not rr:
             continue
         b.semilogy([r["bedding"] for r in rr], [max(r["errU"], FLOOR) for r in rr],
-                   "-", marker=marks[case], color=cols[case], ms=3.4 * FS, lw=1.1 * FS,
+                   "-", marker=marks[case], color=cols[case], ms=3.2 * FS, lw=1.1 * FS,
                    label=rf"{case}, $u$")
         b.semilogy([r["bedding"] for r in rr], [max(r["errF"], FLOOR) for r in rr],
-                   "--", marker=marks[case], color=cols[case], ms=3.0 * FS, lw=1.0 * FS,
+                   "--", marker=marks[case], color=cols[case], ms=2.8 * FS, lw=1.0 * FS,
                    mfc="none", label=rf"{case}, $F$")
-    b.set_xticks(BEDDINGS)
+    b.set_xticks(BEDDINGS[::2])
     b.set_xlabel(r"bedding orientation $\beta$ [deg]")
-    b.set_ylabel("relative reproduction error")
+    b.set_ylabel("relative error")
     b.set_ylim(FLOOR, 1.0)
-    b.set_title("(b) conforming smoothing domains", fontsize=9.5 * FS)
-    b.legend(loc="upper center", ncol=3, fontsize=7.0 * FS, frameon=False,
-             columnspacing=0.9, handlelength=1.5)
+    b.set_title(r"(b) over the orientation", fontsize=9.5 * FS)
+    b.legend(loc="upper center", ncol=2, fontsize=6.6 * FS, frameon=False,
+             columnspacing=0.8, handlelength=1.4)
     b.grid(True, which="major", color="#DDDDDD", lw=0.4 * FS)
 
-    # ------------------------------------------------- (c) non-conforming, with / without VCI
+    # ------------------------------------------------- (c) how random the distribution may be
     c = ax[2]
-    if nonconforming:
-        for case in LOAD_CASES:
-            for vciOn, style, kw in ((True, "-", dict()), (False, ":", dict(mfc="none"))):
-                rr = sorted([r for r in nonconforming
-                             if r["case"] == case and r["vci"] is vciOn],
-                            key=lambda r: r["bedding"])
-                if not rr:
-                    continue
-                c.semilogy([r["bedding"] for r in rr], [max(r["errU"], FLOOR) for r in rr],
-                           style, marker=marks[case], color=cols[case], ms=3.4 * FS,
-                           lw=1.1 * FS,
-                           label=rf"{case}, {'with' if vciOn else 'without'} VCI", **kw)
-        c.set_xticks(BEDDINGS)
-        c.set_xlabel(r"bedding orientation $\beta$ [deg]")
-        c.set_ylabel(r"relative error in $u$")
+    if perturbation:
+        pp = sorted(perturbation, key=lambda r: r["perturb"])
+        c.semilogy([r["perturb"] for r in pp], [max(r["errU"], FLOOR) for r in pp],
+                   "-o", color="#1b6ca8", ms=3.2 * FS, lw=1.1 * FS, label=r"err$(u)$")
+        c.semilogy([r["perturb"] for r in pp], [max(r["errF"], FLOOR) for r in pp],
+                   "--o", color="#1b6ca8", ms=2.8 * FS, lw=1.0 * FS, mfc="none",
+                   label=r"err$(F)$")
+        c.set_xlabel(r"lattice perturbation $[h_p]$")
+        c.set_ylabel(r"relative error")
         c.set_ylim(FLOOR, 1.0)
-        # no equation number in the title: the paper renumbers, the figure does not
-        c.set_title("(c) non-conforming domains, VCI on and off", fontsize=9.5 * FS)
-        c.legend(loc="center right", ncol=1, fontsize=7.0 * FS, frameon=False,
-                 handlelength=1.5)
+        c.set_title("(c) how random the particles may be", fontsize=9.5 * FS)
         c.grid(True, which="major", color="#DDDDDD", lw=0.4 * FS)
+        c2 = c.twinx()
+        c2.plot([r["perturb"] for r in pp], [r["nConcave"] for r in pp], "-s",
+                color="#b1500f", ms=3.0 * FS, lw=1.0 * FS)
+        c2.set_ylabel("concave cells", color="#b1500f")
+        c2.tick_params(axis="y", colors="#b1500f")
+        c.legend(loc="center left", fontsize=7.2 * FS, frameon=False, handlelength=1.4)
     else:
         c.axis("off")
+
+    # ------------------------------------------------- (d) the smoothing-domain update
+    d = ax[3]
+    if updates:
+        labels = [lab for _, lab in UPDATES]
+        x = np.arange(len(UPDATES))
+        w = 0.26
+        for k, case in enumerate(LOAD_CASES):
+            vals = []
+            for pName, _ in UPDATES:
+                m_ = [r for r in updates if r["update"] == pName and r["case"] == case
+                      and r["vci"] is True]
+                vals.append(max(m_[0]["errU"], FLOOR) if m_ else FLOOR)
+            d.bar(x + (k - 1) * w, vals, w, color=cols[case], label=case, log=True)
+        d.set_xticks(x)
+        d.set_xticklabels(labels, rotation=28, ha="right", fontsize=7.0 * FS)
+        d.set_ylabel(r"relative error in $u$")
+        d.set_ylim(FLOOR, 1.0)
+        d.set_title("(d) smoothing-domain update", fontsize=9.5 * FS)
+        d.legend(loc="upper left", fontsize=7.2 * FS, frameon=False)
+        d.grid(True, which="major", axis="y", color="#DDDDDD", lw=0.4 * FS)
+    else:
+        d.axis("off")
 
     fig.tight_layout()
     out = out or os.path.join(HERE, "fig_patch_test.pdf")
@@ -677,46 +830,43 @@ def main():
     ap.add_argument("--support", type=float, default=2.5,
                     help="kernel support radius in units of the particle spacing")
     ap.add_argument("--no-vci", action="store_true")
-    ap.add_argument("--seed", type=int, default=7)
+    ap.add_argument("--particle", default="sqcnixnsni")
+    ap.add_argument("--bc", default="face", choices=("face", "center", "cwf"))
     ap.add_argument("--case", default=None, choices=list(LOAD_CASES))
     ap.add_argument("--bedding", type=float, default=None)
-    ap.add_argument("--nonconforming", action="store_true",
-                    help="also run the sweep on non-conforming smoothing domains")
-    ap.add_argument("--refine", action="store_true",
-                    help="repeat the sweep at three particle spacings")
+    ap.add_argument("--all", action="store_true",
+                    help="the orientation sweep plus the boundary, perturbation and "
+                         "smoothing-domain studies")
+    ap.add_argument("--refine", action="store_true")
     ap.add_argument("--figure", action="store_true", help="write fig_patch_test.pdf")
     args = ap.parse_args()
 
     cases = (args.case,) if args.case else tuple(LOAD_CASES)
     beddings = (args.bedding,) if args.bedding is not None else tuple(BEDDINGS)
 
-    results = sweep(nX=args.nx, perturb=args.perturb, cases=cases, beddings=beddings,
-                    seed=args.seed, vci=not args.no_vci, support=args.support)
-    report(results)
+    print("\n  THE PATCH TEST OVER THE BEDDING ORIENTATION")
+    orientation = sweep(nX=args.nx, perturb=args.perturb, cases=cases, beddings=beddings,
+                        seed=7, vci=not args.no_vci, support=args.support, bc=args.bc,
+                        particle=args.particle)
+    report(orientation)
 
-    nonconforming = None
-    if args.nonconforming or args.figure:
-        print("\n  the same sweep on NON-CONFORMING smoothing domains, Eq. (73) on and off")
-        nonconforming = []
-        for vciOn in (True, False):
-            nonconforming += sweep(nX=args.nx, perturb=args.perturb, cases=cases,
-                                   beddings=beddings, seed=args.seed, vci=vciOn,
-                                   support=args.support, shrink=0.25)
-        report([r for r in nonconforming if r["vci"] is False])
+    perturbation = updates = None
+    if args.all or args.figure:
+        sweepBoundary(nX=args.nx, perturb=args.perturb, support=args.support)
+        perturbation = sweepPerturbation(nX=args.nx, support=args.support)
+        updates = sweepUpdateType(nX=args.nx, perturb=args.perturb, support=args.support)
 
     if args.refine:
-        worst = max(results, key=lambda r: r["errU"])["bedding"]
-        print(f"\n  refinement at beta = {worst} deg, conforming and non-conforming")
+        print("\n  REFINEMENT at beta = 30 deg, mixed")
         for nX in (6, 8, 12, 16):
-            for shrink, vciOn in ((0.0, True), (0.25, False)):
-                r = run_patch(worst, case="mixed", nX=nX, perturb=args.perturb,
-                              seed=args.seed, vci=vciOn, support=args.support, shrink=shrink)
-                tag = "conforming+VCI" if shrink == 0.0 else "non-conforming, no VCI"
-                print(f"    {tag:24s} nX = {nX:3d}  h = {r['h']:.3f}  "
+            for pName in ("sqcni", "snni"):
+                r = run_patch(30.0, case="mixed", nX=nX, perturb=args.perturb,
+                              support=args.support, particle=pName)
+                print(f"    {pName:>8s}  nX = {nX:3d}  h = {r['h']:.3f}  "
                       f"err(u) = {r['errU']:.2e}  err(F) = {r['errF']:.2e}")
 
     if args.figure:
-        makeFigure(results, nonconforming)
+        makeFigure(orientation, perturbation, updates, nX=args.nx, perturb=args.perturb)
 
 
 @pytest.fixture(autouse=True)
