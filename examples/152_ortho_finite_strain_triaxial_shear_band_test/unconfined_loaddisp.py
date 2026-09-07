@@ -18,7 +18,7 @@ import sys
 
 import numpy as np
 
-from band_evolution import fastCmap  # noqa: F401  (keeps one colour convention in the study)
+from band_evolution import fastCmap, npzGlob, paperStyle  # noqa: F401
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 HEIGHT = 75.0
@@ -33,10 +33,11 @@ def main():
     from matplotlib.lines import Line2D
 
     cols = {0: "#1b6ca8", 45: "#e8871a", 90: "#2e8b57"}
+    FS = paperStyle(12.2)          # \includegraphics[width=\linewidth]
     fig, ax = plt.subplots(1, 3, figsize=(12.2, 3.9))
     rows = []
     for b in BETAS:
-        f = glob.glob(os.path.join(HERE, f"snapshots_frame1_{pre}{b}*.npz"))
+        f = npzGlob(f"snapshots_frame1_{pre}{b}*.npz")
         if not f:
             continue
         d = np.load(f[0])
@@ -56,9 +57,9 @@ def main():
         ax[2].plot(omMax[: iL + 1], sig[: iL + 1] / max(sig[iPk], 1e-30), color=cols[b], lw=1.9)
         rows.append((b, sig[iPk], s[iPk], sig[iL], s[iL], omMax[iL],
                      100 * (1 - sig[iL] / sig[iPk]), iL < len(s) - 2))
-    ax[0].set_xlabel("axial shortening [%]")
+    ax[0].set_xlabel(r"axial shortening [\%]")
     ax[0].set_ylabel(r"$\sigma_{yy}$ [MPa]")
-    ax[1].set_xlabel("axial shortening [%]")
+    ax[1].set_xlabel(r"axial shortening [\%]")
     ax[1].set_ylabel(r"max damage $\omega$")
     ax[1].set_ylim(-0.03, 1.03)
     ax[2].set_xlabel(r"max damage $\omega$")
@@ -68,10 +69,10 @@ def main():
         a.grid(alpha=0.3)
     h = [Line2D([], [], color=cols[b], lw=1.9, label=rf"$\beta = {b}^\circ$") for b in BETAS]
     h += [Line2D([], [], color="0.35", lw=1.4, ls=":", label="unloading")]
-    fig.legend(handles=h, loc="upper center", ncol=4, fontsize=9, frameon=False,
+    fig.legend(handles=h, loc="upper center", ncol=4, fontsize=9 * FS, frameon=False,
                bbox_to_anchor=(0.5, 1.02))
     fig.suptitle("Unconfined plane-strain compression, paper card, "
-                 r"$h_p = l_d = 5$ mm", fontsize=9.5, y=0.90)
+                 r"$h_p = l_d = 5$ mm", fontsize=9.5 * FS, y=0.90)
     fig.tight_layout(rect=(0, 0, 1, 0.86))
     out = os.path.join(HERE, "fig_unconfined_loaddisp.pdf")
     fig.savefig(out)

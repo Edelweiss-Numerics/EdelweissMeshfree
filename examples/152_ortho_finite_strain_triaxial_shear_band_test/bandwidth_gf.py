@@ -20,7 +20,7 @@ import sys
 
 import numpy as np
 
-from band_evolution import fastCmap
+from band_evolution import fastCmap, npzPath, paperStyle
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CASES = [("GFa_b", 5.00, 4.7485e-4, 2.50), ("GFb_b", 2.50, 9.4970e-4, 1.25)]
@@ -57,12 +57,14 @@ def main():
     from matplotlib.patheffects import withStroke
 
     PE = [withStroke(linewidth=2.4, foreground="0.12")]
-    fig, ax = plt.subplots(1, len(CASES), figsize=(3.9 * len(CASES) + 1.1, 6.8))
+    figW = 3.9 * len(CASES) + 1.1
+    FS = paperStyle(figW, pageFrac=0.86)   # width=0.86\linewidth in main.tex
+    fig, ax = plt.subplots(1, len(CASES), figsize=(figW, 6.8))
     ax = np.atleast_1d(ax)
     cm = fastCmap()
     rows = []
     for a, (tag, l, ef, h) in zip(ax, CASES):
-        d = np.load(os.path.join(HERE, f"snapshots_frame1_{tag}.npz"))
+        d = np.load(npzPath(f"snapshots_frame1_{tag}"))
         om, u, xy0, verts, a2, ap = (d["omega"], d["u"], d["xy0"], d["verts"],
                                      d["axis2"], d["alphaP"])
         s = d["shortening"] * 100
@@ -101,16 +103,16 @@ def main():
         a.set_title(f"$l_d$ = {l:.2f} mm,  $h_p$ = {h:.2f} mm  ({len(xy0)} particles)\n"
                     f"$\\varepsilon_f^*$ = {ef:.2e},  $G_f$ = {Gf:.1f} J/m$^2$\n"
                     f"band width = {w:.2f} mm = {w/l:.2f} $l_d$,  dir {ang:.0f}$^\\circ$",
-                    fontsize=9.5)
+                    fontsize=9.5 * FS)
         rows.append((l, ef, h, len(xy0), Gf, w, om[k].max(), s[k], ang))
         last = pc
     cb = fig.colorbar(last, ax=list(ax), shrink=0.6, pad=0.015)
-    cb.set_label(r"damage $\omega$", fontsize=10)
+    cb.set_label(r"damage $\omega$", fontsize=10 * FS)
     fig.suptitle(r"Unconfined plane strain, $\beta = 45^\circ$, compared at matched damage "
                  r"$\omega_{\max}\approx$ " + f"{omTarget:.2f}" + "\n"
                  "same fracture energy, half the internal length\n"
                  "grey: reference bedding direction, magenta: stored (convected) one",
-                 fontsize=10.5, y=1.05)
+                 fontsize=10.5 * FS, y=1.05)
     out = os.path.join(HERE, "fig_bandwidth_gf.pdf")
     fig.savefig(out, bbox_inches="tight")
     fig.savefig(out.replace(".pdf", ".png"), dpi=145, bbox_inches="tight")

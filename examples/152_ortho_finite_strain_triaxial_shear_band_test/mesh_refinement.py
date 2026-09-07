@@ -25,7 +25,7 @@ import sys
 
 import numpy as np
 
-from band_evolution import fastCmap  # noqa: F401
+from band_evolution import fastCmap, npzPath, paperStyle  # noqa: F401
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CASES = [(5.00, "MR5.0_b"), (2.50, "MR2.5_b"), (1.25, "MR1.25_b")]
@@ -58,10 +58,11 @@ def main():
     from matplotlib.lines import Line2D
 
     cols = {5.00: "#1b6ca8", 2.50: "#e8871a", 1.25: "#2e8b57"}
+    FS = paperStyle(12.4)          # \includegraphics[width=\linewidth]
     fig, ax = plt.subplots(1, 3, figsize=(12.4, 4.0))
     rows = []
     for h, tag in CASES:
-        d = np.load(os.path.join(HERE, f"snapshots_frame1_{tag}.npz"))
+        d = np.load(npzPath(f"snapshots_frame1_{tag}"))
         s = d["shortening"] * 100
         sig = -d["history"][:, 1]
         om = d["omega"]
@@ -77,8 +78,8 @@ def main():
                 k = int(np.argmin(np.abs(omM[: iL + 1] - t)))
                 wm[t] = bandWidth(d["xy0"] + d["u"][k], om[k])[0]
         rows.append((h, n, s[iL], sig[iP], s[iP], sig[iL], omM[iL], wm))
-    ax[0].set_xlabel("axial shortening [%]"); ax[0].set_ylabel(r"$\sigma_{yy}$ [MPa]")
-    ax[1].set_xlabel("axial shortening [%]"); ax[1].set_ylabel(r"max damage $\omega$")
+    ax[0].set_xlabel(r"axial shortening [\%]"); ax[0].set_ylabel(r"$\sigma_{yy}$ [MPa]")
+    ax[1].set_xlabel(r"axial shortening [\%]"); ax[1].set_ylabel(r"max damage $\omega$")
     ax[1].set_ylim(-0.03, 1.03)
     ax[2].set_xscale("log")
     ax[2].set_xlabel("particles")
@@ -90,11 +91,11 @@ def main():
         a_.grid(alpha=0.3)
     h_ = [Line2D([], [], color=cols[h], lw=1.9, label=rf"$h_p$ = {h:.2f} mm ({n} particles)")
           for h, n, *_ in rows]
-    fig.legend(handles=h_, loc="upper center", ncol=3, fontsize=9, frameon=False,
+    fig.legend(handles=h_, loc="upper center", ncol=3, fontsize=9 * FS, frameon=False,
                bbox_to_anchor=(0.5, 1.03))
     fig.suptitle(r"Unconfined plane strain, $\beta=45^\circ$, fixed $l_d = 5$ mm: "
                  "the peak is mesh independent, the reachable post-peak is not",
-                 fontsize=9.5, y=0.90)
+                 fontsize=9.5 * FS, y=0.90)
     fig.tight_layout(rect=(0, 0, 1, 0.86))
     out = os.path.join(HERE, "fig_mesh_refinement.pdf")
     fig.savefig(out); fig.savefig(out.replace(".pdf", ".png"), dpi=145)

@@ -44,6 +44,49 @@ import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
+
+def npzPath(tag):
+    """Locate a sweep result.  The runs wrote into this directory; they were later
+    collected into npzs/, so look in both rather than only where they landed first."""
+    for d in (HERE, os.path.join(HERE, "npzs")):
+        f = os.path.join(d, tag + ".npz")
+        if os.path.exists(f):
+            return f
+    return os.path.join(HERE, tag + ".npz")
+
+
+def npzGlob(pattern):
+    """npzPath for a glob; returns every match in this directory and in npzs/."""
+    import glob as _glob
+    return sorted(q for d in (HERE, os.path.join(HERE, "npzs"))
+                  for q in _glob.glob(os.path.join(d, pattern)))
+
+
+def paperStyle(figWidthIn, pageFrac=1.0, legacyBase=10.0):
+    """Apply the paper's one figure style and return the hardcoded-fontsize factor.
+
+    THESE FOUR FIGURES GO INTO THE PAPER, so they must carry the document's
+    Computer Modern at the pgfplots sizes of `figures.tex` rather than
+    matplotlib's sans-serif default -- otherwise half the paper's figures are in
+    one font and half in another, at three different on-page sizes.  The style
+    itself lives with the paper, in
+    `paper_FiniteStrainOrthoCDP/tools/paperstyle.py`, and is located by the
+    workspace layout, the same way gen_niandou_figures.py over there locates the
+    result files over here.  Missing paper checkout -> matplotlib's defaults and
+    a warning, so the scripts still run standalone.
+    """
+    cand = os.path.abspath(os.path.join(HERE, "..", "..", "..",
+                                        "paper_FiniteStrainOrthoCDP", "tools"))
+    if cand not in sys.path:
+        sys.path.insert(0, cand)
+    try:
+        import paperstyle
+    except ImportError:
+        print(f"  paperstyle.py not found under {cand} -- using matplotlib defaults")
+        return 1.0
+    return paperstyle.apply(fig_width_in=figWidthIn, page_frac=pageFrac,
+                            legacy_base=legacyBase, grid=False)
+
 NSTAGE = 5      # loading stages; an unloaded panel is appended when the record has one
 
 # ParaView's "Fast" preset, RGBPoints read straight out of the installed ParaView via
@@ -117,8 +160,8 @@ def main():
     cmapName = opts.get("--cmap", "fast")
     # `mk` may be a mesh key of the standard sweep ("m1") or a full run tag ("UL2_b")
     cand = [f"snapshots_frame1_A_b{beta}_{mk}", f"snapshots_frame1_{mk}"]
-    tag = next((c for c in cand if os.path.exists(os.path.join(HERE, c + ".npz"))), cand[0])
-    d = np.load(os.path.join(HERE, tag + ".npz"))
+    tag = next((c for c in cand if os.path.exists(npzPath(c))), cand[0])
+    d = np.load(npzPath(tag))
     verts, u, om, a2 = d["verts"], d["u"], d["omega"], d["axis2"]
     ap, fr, xy0 = d["alphaP"], d["frameRotation"], d["xy0"]
     short = d["shortening"]
@@ -190,7 +233,9 @@ def main():
 
     # a dedicated narrow column for the colour bar, so it cannot overlap the last specimen
     aspect = (y1 - y0) / (x1 - x0)
-    fig = plt.figure(figsize=(2.35 * len(stages) + 1.0, 2.35 * aspect + 1.5))
+    figW = 2.35 * len(stages) + 1.0
+    FS = paperStyle(figW)          # \includegraphics[width=\linewidth]
+    fig = plt.figure(figsize=(figW, 2.35 * aspect + 1.5))
     gs = fig.add_gridspec(1, len(stages) + 1,
                           width_ratios=[1] * len(stages) + [0.06], wspace=0.06)
     ax = np.array([fig.add_subplot(gs[0, j]) for j in range(len(stages))])
@@ -232,14 +277,14 @@ def main():
         a.set_axis_off()                      # no box, no ticks, no annotations
         if iUnload is not None and k == iUnload:
             a.set_title(f"unloaded, $\\sigma_{{\\rm dev}}\\!\\approx\\!0$\n"
-                        f"$\\varepsilon_{{yy}}$ = {short[k] * 100:.2f} %", fontsize=10)
+                        f"$\\varepsilon_{{yy}}$ = {short[k] * 100:.2f} \\%", fontsize=10 * FS)
         else:
             # t/t_end from the PRESCRIBED shortening, not from the increment index: the axial
             # displacement is imposed at a constant rate so time is proportional to it, whereas
             # the increments cluster heavily where the stepper cuts back (in the band), which made
             # index fractions read 0.07 ... 0.24 for states spanning most of the loading.
             a.set_title(f"$t/t_{{\\rm end}}$ = {short[k] / max(short[iLast], 1e-30):.2f}\n"
-                        f"$\\varepsilon_{{yy}}$ = {short[k] * 100:.2f} %", fontsize=10)
+                        f"$\\varepsilon_{{yy}}$ = {short[k] * 100:.2f} \\%", fontsize=10 * FS)
     hs = []
     if which in ("both", "plastic"):
         hs.append(Line2D([], [], color=C_PLASTIC, lw=2.2, path_effects=PE,
@@ -247,11 +292,11 @@ def main():
     if which in ("both", "total"):
         hs.append(Line2D([], [], color=C_TOTAL, lw=2.2, path_effects=PE,
                          label=r"total bedding direction  $F e_0/\|F e_0\|$"))
-    fig.legend(handles=hs, loc="lower center", ncol=2, fontsize=9.5, frameon=False,
+    fig.legend(handles=hs, loc="lower center", ncol=2, fontsize=9.5 * FS, frameon=False,
                bbox_to_anchor=(0.5, 0.0))
     cb = fig.colorbar(pc, cax=cax)
-    cb.set_label(r"damage $\omega$", fontsize=10)
-    cb.ax.tick_params(labelsize=8)
+    cb.set_label(r"damage $\omega$", fontsize=10 * FS)
+    cb.ax.tick_params(labelsize=8 * FS)
     fig.subplots_adjust(left=0.01, right=0.93, top=0.90, bottom=0.11)
     suffix = "" if which == "both" else f"_{which}"
     out = os.path.join(HERE, f"band_evolution_b{beta}_{mk}{suffix}.png")
