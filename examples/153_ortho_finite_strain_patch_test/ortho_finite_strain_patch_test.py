@@ -159,8 +159,13 @@ def materialProperties(beddingDeg, frameUpdate=1):
 
 AMPLITUDE = 0.02
 
+# NOTE ON THE NAMES.  These are prescribed DEFORMATIONS, not stress states.  The whole boundary
+# is constrained, so both components of every case are imposed: the -0.3 in "stretch" is a
+# chosen lateral contraction, NOT a Poisson response to an axial pull, and the deformed patch
+# contracts laterally because it was told to.  Nothing here is a material response; the test is
+# about reproduction in the interior.
 LOAD_CASES = {
-    # uniaxial stretch with a lateral contraction: the stretch stays coaxial with x, y
+    # axial stretch with a prescribed lateral contraction; coaxial with x, y
     "stretch": np.array([[AMPLITUDE, 0.0], [0.0, -0.3 * AMPLITUDE]]),
     # simple shear: F is non-symmetric, so R^e is not the identity anywhere
     "shear": np.array([[0.0, AMPLITUDE], [0.0, 0.0]]),
@@ -513,6 +518,24 @@ def run_patch(beddingDeg, case="mixed", nX=8, perturb=0.4, seed=7, particle="sqc
     FNum = fo["deformation gradient"].getLastResult().reshape(nP, 3, 3)
     alphaP = fo["alphaP"].getLastResult().reshape(nP, -1)
 
+    vertsDef = (verts0 + fo["vertex displacements"].getLastResult().reshape(-1, 4, 3)[:, :, :2]
+                if quad else None)
+    # HOW NON-CONFORMING ARE THE DEFORMED DOMAINS?  Each domain is carried by the deformation
+    # gradient at its OWN centre, so in general the images of a shared reference vertex do not
+    # coincide and gaps open.  In a patch test they must coincide: the field is homogeneous, so
+    # every centre sees the same F and the per-centre maps are the same affine map.  Measured
+    # rather than asserted -- the spread of the images of each shared reference vertex.
+    domainGap = None
+    if quad:
+        shared = {}
+        for pp in range(verts0.shape[0]):
+            for kk in range(4):
+                k_ = (round(float(verts0[pp, kk, 0]), 9), round(float(verts0[pp, kk, 1]), 9))
+                shared.setdefault(k_, []).append(vertsDef[pp, kk])
+        spreads = [np.linalg.norm(np.asarray(im) - np.mean(im, axis=0), axis=1).max()
+                   for im in shared.values() if len(im) > 1]
+        domainGap = float(max(spreads)) if spreads else 0.0
+
     uEx = exactDisplacement(A, xy0)
     scale = np.abs(uEx).max()
     FEx = np.eye(3)
@@ -532,10 +555,14 @@ def run_patch(beddingDeg, case="mixed", nX=8, perturb=0.4, seed=7, particle="sqc
         errUField=np.abs(uNum - uEx).max(axis=1) / scale,
         errFComp=np.abs(FNum - FEx)[inner].max(axis=0),
         stressMax=float(np.abs(fo["stress"].getLastResult()).max()),
-        # the smoothing domains AS THE COMPUTATION LEFT THEM, for the deformed-geometry panel
+        # The smoothing domains AS THE COMPUTATION LEFT THEM.  "vertex displacements" on the
+        # SQCNI particle is `_vertexDisplacements_SmoothingDomain`, the state variable
+        # updateSmoothingDomain() writes, so this is the domain the integration actually used
+        # -- not the approximated displacement field sampled at the vertices, which would be
+        # single valued and conforming by construction and would prove nothing.
         verts0=verts0,
-        verts=(verts0 + fo["vertex displacements"].getLastResult().reshape(-1, 4, 3)[:, :, :2]
-               if quad else None),
+        verts=vertsDef,
+        domainGap=domainGap,
         xy0=xy0, interior=isInterior,
     )
 
@@ -570,7 +597,8 @@ def sweep(nX=8, perturb=0.4, cases=tuple(LOAD_CASES), beddings=tuple(BEDDINGS), 
             out.append(r)
             if not quiet:
                 print(f"  {case:8s} beta = {b:5.1f} deg   err(u) = {r['errU']:.2e}   "
-                      f"err(F) = {r['errF']:.2e}   max alphaP = {r['alphaPMax']:.1e}"
+                      f"err(F) = {r['errF']:.2e}   domain gap = "
+                      f"{r['domainGap']:.1e} mm   max alphaP = {r['alphaPMax']:.1e}"
                       f"{'   STEP FAILED' if r['failed'] else ''}")
     return out
 
@@ -792,6 +820,8 @@ def makeFigure(orientation, out=None, nX=8, perturb=0.4):
     b.set_ylabel(r"$x_2$ [mm]")
     b.set_title(rf"(b) as computed, stretch at ${DEFORMED_AMPLITUDE*100:.0f}\,\%$",
                 fontsize=9.5 * FS)
+    print(f"  panel (b): deformed smoothing domains, non-conformity "
+          f"{r['domainGap']:.2e} mm over a {LENGTH:g} mm patch")
     b.legend(handles=[
         Line2D([], [], color="0.45", lw=0.7 * FS, ls="--", label="reference outline"),
         Line2D([], [], color="#1b6ca8", lw=0.7 * FS, label="deformed domains"),
