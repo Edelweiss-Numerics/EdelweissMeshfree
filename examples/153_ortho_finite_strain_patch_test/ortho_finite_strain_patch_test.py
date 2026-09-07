@@ -823,53 +823,74 @@ def makeFigure(orientation, out=None, nX=8, perturb=0.4):
     ], loc="upper center", ncol=2, fontsize=7.0 * FS, frameon=True, framealpha=0.92)
 
     # ---------------------------------------------------------------- (b) as computed
-    # WHAT THE PER-CENTRE UPDATE ACTUALLY DOES, which the patch test itself cannot show: a
-    # homogeneous field gives every domain the same F, so the images tile to 1e-14 mm however
-    # large the stretch or however coarse the patch.  This panel is therefore the INHOMOGENEOUS
-    # bending field on the same discretisation, where the per-centre gradients differ and the
-    # images separate -- drawn from the same vertex-displacement state variable, zoomed onto
-    # the 3 x 3 block carrying the largest separation so that a gap of ~8 % of a cell reads.
+    # The smoothing domains AS THE COMPUTATION LEFT THEM -- the vertex displacements the
+    # particles carry, not a re-drawn affine map -- for the axial stretch at an amplitude
+    # large enough to see.  Two things are drawn on top of it, and both are the answer to the
+    # same reading, that this looks like a tension test whose top face has come loose:
+    #   * the arrows are the BOUNDARY CONDITION at true scale, from each boundary face centre
+    #     to its imposed image u = A X.  Both components are prescribed on all four sides, so
+    #     the lateral contraction is imposed and is not a Poisson response, and the fan out of
+    #     the fixed origin is what a homogeneous gradient looks like;
+    #   * the numbers are the two extreme components of it, +A11 L outward at x1 = L and
+    #     A22 L inward at x2 = L.
+    # The domains still tile, which is the other point: each is carried by the deformation
+    # gradient at its OWN centre, and for a homogeneous field those gradients coincide.
     b = ax[1]
-    rB = run_patch(30.0, case="stretch", nX=nX, perturb=perturb,
-                   fieldFun=lambda q: bendingDisplacement(q, kappa=BENDING_KAPPA),
-                   journal=Journal())
-    v0, vD = rB["verts0"], rB["verts"]
-    # locate the block: the particle whose shared vertices separate most
-    shared = {}
-    for pp in range(v0.shape[0]):
-        for kk in range(4):
-            key = (round(float(v0[pp, kk, 0]), 9), round(float(v0[pp, kk, 1]), 9))
-            shared.setdefault(key, []).append((pp, vD[pp, kk]))
-    worst, worstP = 0.0, 0
-    for im in shared.values():
-        if len(im) < 2:
+    AB = LOAD_CASES["stretch"] * (DEFORMED_AMPLITUDE / AMPLITUDE)
+    r = run_patch(30.0, case="stretch", nX=nX, perturb=perturb,
+                  amplitude=DEFORMED_AMPLITUDE, journal=Journal())
+    b.add_collection(PolyCollection(list(r["verts"]), facecolors="#eef3f8",
+                                    edgecolors="#1b6ca8", linewidths=0.6 * FS))
+    # the reference OUTLINE on top, not the reference cells: behind the filled deformed
+    # domains they are invisible, and the outline is what makes the deformation readable
+    b.plot([0, LENGTH, LENGTH, 0, 0], [0, 0, LENGTH, LENGTH, 0], "--",
+           color="0.45", lw=0.7 * FS, zorder=4)
+    # the imposed displacement at every constrained face centre, drawn at true scale (`fc` is
+    # the same set of points panel (a) marks)
+    OFF = 0.35   # the tails are set this far outside the boundary, so that the arrows read
+    for q0 in fc:                                       # against the body instead of over it
+        du = AB @ q0
+        if np.hypot(*du) < 0.02:      # u = A X vanishes at the origin; a 20 um arrow is a blob
             continue
-        pts = np.asarray([q for _, q in im])
-        sp = np.linalg.norm(pts - pts.mean(axis=0), axis=1).max()
-        if sp > worst:
-            worst, worstP = sp, im[0][0]
-    i0, j0 = divmod(worstP, nX)
-    i0 = min(max(i0 - 1, 0), nX - 3)
-    j0 = min(max(j0 - 1, 0), nX - 3)
-    blk = [i * nX + j for i in range(i0, i0 + 3) for j in range(j0, j0 + 3)]
-    b.add_collection(PolyCollection([vD[k] for k in blk], facecolors="#dce8f2",
-                                    edgecolors="#1b6ca8", linewidths=0.9 * FS))
-    lim = np.concatenate([vD[k] for k in blk])
-    pad = 0.10 * (lim[:, 0].max() - lim[:, 0].min())
-    b.set_xlim(lim[:, 0].min() - pad, lim[:, 0].max() + pad)
-    b.set_ylim(lim[:, 1].min() - pad, lim[:, 1].max() + pad)
+        n = np.zeros(2)
+        n[0] = -1.0 if q0[0] < 1e-9 else (1.0 if q0[0] > LENGTH - 1e-9 else 0.0)
+        n[1] = -1.0 if q0[1] < 1e-9 else (1.0 if q0[1] > LENGTH - 1e-9 else 0.0)
+        n /= max(np.linalg.norm(n), 1.0)
+        # push the tail past whichever configuration reaches further out along that normal,
+        # so that no arrow is drawn over the body: on the right face that is the deformed edge
+        t = q0 + n * (OFF + max(0.0, float(n @ du)))
+        b.annotate("", xy=tuple(t + du), xytext=tuple(t), zorder=5,
+                   arrowprops=dict(arrowstyle="-|>", color="#b1500f", lw=0.6 * FS,
+                                   shrinkA=0.0, shrinkB=0.0, mutation_scale=5.0 * FS))
+    dx, dy = AB[0, 0] * LENGTH, AB[1, 1] * LENGTH
+    b.text(LENGTH + 2.0 * dx + 0.9, 0.5 * LENGTH, rf"$u_1={dx:+.2f}$ mm", color="#b1500f",
+           rotation=90, ha="left", va="center", fontsize=7.6 * FS)
+    b.text(0.32 * LENGTH, LENGTH + 0.85, rf"$u_2={dy:+.2f}$ mm", color="#b1500f",
+           ha="center", va="bottom", fontsize=7.6 * FS)
+    b.text(LENGTH + 0.35, LENGTH + 0.85, "reference", color="0.45",
+           ha="left", va="bottom", fontsize=7.0 * FS)
+    b.set_xlim(-0.9, LENGTH + 2.0 * dx + 1.7)
+    b.set_ylim(-0.9, LENGTH + 1.8)
     b.set_aspect("equal")
     b.set_xlabel(r"$x_1$ [mm]")
     b.set_ylabel(r"$x_2$ [mm]")
-    b.set_title(r"(b) deformed domains, inhomogeneous field", fontsize=9.5 * FS)
-    b.text(0.5, 0.015,
-           rf"gap ${rB['domainGap']*1e3:.0f}\,\mu$m $= {100*rB['domainGap']/rB['h']:.0f}\,\%$ of $h_p$",
-           transform=b.transAxes, ha="center", va="bottom", fontsize=8.0 * FS,
-           color="#b1500f")
-    print(f"  panel (b): bending field, kappa = {BENDING_KAPPA} 1/mm, "
-          f"domain gap {rB['domainGap']:.4f} mm = "
+    b.set_title(rf"(b) as computed, stretch at ${DEFORMED_AMPLITUDE*100:.0f}\,\%$",
+                fontsize=9.5 * FS)
+    print(f"  panel (b): stretch at {DEFORMED_AMPLITUDE*100:.0f} %, imposed corner "
+          f"displacement ({dx:+.2f}, {dy:+.2f}) mm, deformed smoothing domains "
+          f"non-conforming by {r['domainGap']:.2e} mm over a {LENGTH:g} mm patch, "
+          f"alphaP = {r['alphaPMax']:.1e}")
+    # And what the same measurement gives when the field is NOT homogeneous, which no patch
+    # test can show: the bending field of the text, same discretisation, per-centre gradients
+    # that differ.  Printed rather than drawn -- it is the number Sec. 6.1 quotes.
+    rB = run_patch(30.0, case="stretch", nX=nX, perturb=perturb,
+                   fieldFun=lambda q: bendingDisplacement(q, kappa=BENDING_KAPPA),
+                   journal=Journal())
+    print(f"             companion, inhomogeneous (bending, kappa = {BENDING_KAPPA} 1/mm): "
+          f"gap {rB['domainGap']*1e3:.0f} um = "
           f"{100 * rB['domainGap'] / rB['h']:.1f} % of h_p, "
-          f"max|u| = {np.abs(vD - v0).max():.2f} mm, alphaP = {rB['alphaPMax']:.1e}")
+          f"max|u| = {np.abs(rB['verts'] - rB['verts0']).max():.2f} mm, "
+          f"alphaP = {rB['alphaPMax']:.1e}")
 
     # ---------------------------------------------------------------- (c) the error
     c = ax[2]
