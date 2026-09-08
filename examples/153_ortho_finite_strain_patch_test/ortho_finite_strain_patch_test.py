@@ -771,6 +771,8 @@ def latticeForDrawing(nX, perturb, seed=7):
 
 
 DEFORMED_AMPLITUDE = 0.10  # the amplitude panel (b) is computed at, so that it is visible
+DEFORMED_CASE = "mixed"    # and the load case it draws: the one coaxial with neither the
+                           # coordinate axes nor the material axes, so it cannot be misread
 
 
 def makeFigure(orientation, out=None, nX=8, perturb=0.4):
@@ -824,20 +826,20 @@ def makeFigure(orientation, out=None, nX=8, perturb=0.4):
 
     # ---------------------------------------------------------------- (b) as computed
     # The smoothing domains AS THE COMPUTATION LEFT THEM -- the vertex displacements the
-    # particles carry, not a re-drawn affine map -- for the axial stretch at an amplitude
-    # large enough to see.  Two things are drawn on top of it, and both are the answer to the
-    # same reading, that this looks like a tension test whose top face has come loose:
+    # particles carry, not a re-drawn affine map -- at an amplitude large enough to see.
+    # Two things are drawn on top of it, and both answer the reading that a deformed patch
+    # with a contracted top face is a tension test whose boundary condition came loose:
     #   * the arrows are the BOUNDARY CONDITION at true scale, from each boundary face centre
-    #     to its imposed image u = A X.  Both components are prescribed on all four sides, so
-    #     the lateral contraction is imposed and is not a Poisson response, and the fan out of
-    #     the fixed origin is what a homogeneous gradient looks like;
-    #   * the numbers are the two extreme components of it, +A11 L outward at x1 = L and
-    #     A22 L inward at x2 = L.
+    #     to its imposed image u = A X.  Both components are prescribed on all four sides,
+    #     tangential as well as normal, so nothing here is a material response, and the fan
+    #     out of the fixed origin is what a homogeneous gradient looks like;
+    #   * the matrix is A itself, at the amplitude drawn, and the corner label is what it
+    #     does to the far corner of the patch.
     # The domains still tile, which is the other point: each is carried by the deformation
     # gradient at its OWN centre, and for a homogeneous field those gradients coincide.
     b = ax[1]
-    AB = LOAD_CASES["stretch"] * (DEFORMED_AMPLITUDE / AMPLITUDE)
-    r = run_patch(30.0, case="stretch", nX=nX, perturb=perturb,
+    AB = LOAD_CASES[DEFORMED_CASE] * (DEFORMED_AMPLITUDE / AMPLITUDE)
+    r = run_patch(30.0, case=DEFORMED_CASE, nX=nX, perturb=perturb,
                   amplitude=DEFORMED_AMPLITUDE, journal=Journal())
     b.add_collection(PolyCollection(list(r["verts"]), facecolors="#eef3f8",
                                     edgecolors="#1b6ca8", linewidths=0.6 * FS))
@@ -862,22 +864,25 @@ def makeFigure(orientation, out=None, nX=8, perturb=0.4):
         b.annotate("", xy=tuple(t + du), xytext=tuple(t), zorder=5,
                    arrowprops=dict(arrowstyle="-|>", color="#b1500f", lw=0.6 * FS,
                                    shrinkA=0.0, shrinkB=0.0, mutation_scale=5.0 * FS))
-    dx, dy = AB[0, 0] * LENGTH, AB[1, 1] * LENGTH
-    b.text(LENGTH + 2.0 * dx + 0.9, 0.5 * LENGTH, rf"$u_1={dx:+.2f}$ mm", color="#b1500f",
-           rotation=90, ha="left", va="center", fontsize=7.6 * FS)
-    b.text(0.32 * LENGTH, LENGTH + 0.85, rf"$u_2={dy:+.2f}$ mm", color="#b1500f",
-           ha="center", va="bottom", fontsize=7.6 * FS)
-    b.text(LENGTH + 0.35, LENGTH + 0.85, "reference", color="0.45",
-           ha="left", va="bottom", fontsize=7.0 * FS)
-    b.set_xlim(-0.9, LENGTH + 2.0 * dx + 1.7)
-    b.set_ylim(-0.9, LENGTH + 1.8)
+    # A itself, in the free strip above the patch: the complete statement of what was
+    # imposed, which is what the arrows draw.  The corner displacement it produces is
+    # printed and quoted in the caption rather than crowded into the panel.
+    uL = AB @ np.array([LENGTH, LENGTH])
+    xMax = max(LENGTH, float(r["verts"][:, :, 0].max())) + 2.0 * OFF
+    b.text(0.5, 0.99, transform=b.transAxes, s=
+           r"$u=\mathbf{A}\mathbf{X},\quad\mathbf{A}="
+           r"\begin{bmatrix}%+.3f & %+.3f\\ %+.3f & %+.3f\end{bmatrix}$"
+           % (AB[0, 0], AB[0, 1], AB[1, 0], AB[1, 1]),
+           color="#b1500f", ha="center", va="top", fontsize=7.2 * FS)
+    b.set_xlim(-0.9, xMax + 0.9)
+    b.set_ylim(-0.9, LENGTH + 3.1)
     b.set_aspect("equal")
     b.set_xlabel(r"$x_1$ [mm]")
     b.set_ylabel(r"$x_2$ [mm]")
-    b.set_title(rf"(b) as computed, stretch at ${DEFORMED_AMPLITUDE*100:.0f}\,\%$",
+    b.set_title(rf"(b) as computed, {DEFORMED_CASE} at ${DEFORMED_AMPLITUDE*100:.0f}\,\%$",
                 fontsize=9.5 * FS)
-    print(f"  panel (b): stretch at {DEFORMED_AMPLITUDE*100:.0f} %, imposed corner "
-          f"displacement ({dx:+.2f}, {dy:+.2f}) mm, deformed smoothing domains "
+    print(f"  panel (b): {DEFORMED_CASE} at {DEFORMED_AMPLITUDE*100:.0f} %, imposed corner "
+          f"displacement ({uL[0]:+.2f}, {uL[1]:+.2f}) mm, deformed smoothing domains "
           f"non-conforming by {r['domainGap']:.2e} mm over a {LENGTH:g} mm patch, "
           f"alphaP = {r['alphaPMax']:.1e}")
     # And what the same measurement gives when the field is NOT homogeneous, which no patch
