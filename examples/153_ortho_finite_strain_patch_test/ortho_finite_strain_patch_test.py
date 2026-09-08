@@ -42,7 +42,11 @@ WHAT IS MEASURED
     alphaP  the hardening variable, which must be identically zero -- the check that the run
             really was elastic, and hence that the exact-solution argument applies at all.
 The strengths are scaled by 1e3 so that no orientation can yield at the amplitudes used; the
-elastic card and everything else is the reference card of examples/152.
+elastic card is the one of examples/152 with its AXES RELABELLED so that the soft modulus is
+the one across the bedding, e^(1) -- see the note above E1 -- and the Walpole weights are made
+transversely isotropic about the same axis, so that the elastic anisotropy and the plastic one
+are the same anisotropy.  Everything else is the card of examples/152.  NOTE that 152 itself
+has not been changed; whether to propagate this is open.
 
 THE THREE THINGS THE TEST SETTLED, each a switch of its own
     --bc {face,center,cwf}   where the essential condition acts.  `face` is the one that
@@ -105,7 +109,7 @@ from edelweissfe.points.node import Node
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 # =============================================================================================
-#  material -- the reference card of examples/152, with the strengths lifted out of reach
+#  material -- examples/152's card, axes aligned on the bedding normal, strengths out of reach
 # =============================================================================================
 
 
@@ -114,11 +118,20 @@ def saintVenantG(Ei, Ej, nuij):
     return 1.0 / (1.0 / Ei + 1.0 / Ej + 2.0 * nuij / Ej)
 
 
-E1, E2, E3 = 2400.0, 2400.0, 1800.0
-NU12, NU13, NU23 = 0.21, 0.24, 0.24
+# THE CARD, AND THE ONE THING THAT WAS WRONG WITH IT.  e^(1) is the bedding NORMAL, by the
+# convention of the paper and of the material alike, so a bedded rock has the soft modulus on
+# axis 1 and its isotropy plane spanned by e^(2), e^(3).  Examples 152 and 153 used to carry
+# E1 = E2 = 2400, E3 = 1800 -- the same three moduli, but with the distinguished axis on 3.
+# That makes the material transversely isotropic about the OUT-OF-PLANE axis, i.e. the plane
+# of a plane-strain model IS its isotropy plane, and then no in-plane deformation can feel the
+# bedding orientation at all: measured before the fix, the stored energy and every stress
+# component were identical to the last digit at beta = 0, 30, 45 and 90.  The numbers below are
+# the same material with the axes relabelled the way the convention requires.
+E1, E2, E3 = 1800.0, 2400.0, 2400.0        # 1 = across the bedding, 2-3 = the bedding plane
+NU12, NU13, NU23 = 0.24, 0.24, 0.21        # 1-2 and 1-3 across, 2-3 within
 G12 = saintVenantG(E1, E2, NU12)
 G13 = saintVenantG(E1, E3, NU13)
-G23 = saintVenantG(E2, E3, NU23)
+G23 = saintVenantG(E2, E3, NU23)           # = E2/2(1+nu23): the isotropy plane, exactly
 
 # The patch test is a statement about the DISCRETISATION, so the constitutive law must stay on
 # its elastic branch at every orientation.  1e3 on the four strengths puts the yield surface
@@ -134,9 +147,15 @@ AH, BH, CH, DH = 0.08, 0.003, 2.0, 1e-6
 AS, DF = 2.0, 0.85
 SOFTMOD, MAXDMG = 3.95e-3, 0.9999
 
-# genuinely orthotropic weights, so the mapping tensor is not the identity in any frame
-ALPHA, BETA_W, GAMMA_W = 1.20, 1.00, 1.00
-ZETA, XI, ETA = 1.30, 1.00, 1.00
+# The Walpole weights of the yield surface, in Marmot's Voigt order (11, 22, 33, 12, 13, 23),
+# so (ALPHA, BETA_W, GAMMA_W) scale the normal components and (ZETA, XI, ETA) the shears.  They
+# are TRANSVERSELY ISOTROPIC ABOUT e^(1) as well, which is what makes the plastic anisotropy
+# and the elastic one the same anisotropy rather than two unrelated ones: o22 = o33 and
+# o12 = o13, with o23 = o22 as isotropy in the 2-3 plane requires.  ZETA alone used to be
+# raised, which left the map orthotropic while the elasticity was transversely isotropic about
+# a different axis again.
+ALPHA, BETA_W, GAMMA_W = 1.20, 1.00, 1.00      # o11 across the bedding, o22 = o33 within it
+ZETA, XI, ETA = 1.30, 1.30, 1.00               # o12 = o13 across, o23 within
 
 L_NONLOCAL, WEIGHT_M = 1.25, 1.05
 DAMAGE_ONSET, H_RESIDUAL = 0.95, 0.02
@@ -974,8 +993,8 @@ def drawImposedDeformation(ax, r, A, cOff, fc, FS, matrixAt=0.99, header=True,
     # not
     xs = np.concatenate([r["verts"][:, :, 0].reshape(-1), [LENGTH]])
     ys = np.concatenate([r["verts"][:, :, 1].reshape(-1), [LENGTH]])
-    ax.set_xlim(-0.9, max(LENGTH, xs.max()) + 2.0 * ARROW_OFFSET + 0.9)
-    ax.set_ylim(-0.9, max(LENGTH, ys.max()) + 2.0 * ARROW_OFFSET + (2.6 if header else 0.9))
+    ax.set_xlim(-0.6, max(LENGTH, xs.max()) + 2.0 * ARROW_OFFSET + 0.6)
+    ax.set_ylim(-0.6, max(LENGTH, ys.max()) + 2.0 * ARROW_OFFSET + (2.6 if header else 0.6))
     ax.set_aspect("equal")
     ax.set_xlabel(r"$x_1$ [mm]")
     ax.set_ylabel(r"$x_2$ [mm]")
@@ -1093,69 +1112,29 @@ def drawSqcniStencil(ax, nX, perturb, FS, support=2.5, which=None):
     return which, R
 
 
-def makeFigure(orientation, out=None, nX=8, perturb=0.4):
-    """Three panels: the patch, the deformed patch as computed, and the error."""
+def makeFigure(orientation, out=None, nX=8, perturb=0.4, affine=None):
+    """The patch test as one panel: the interior error over the bedding sweep.
+
+    What the patch IS and what it looks like deformed lives in the affine figure, which draws
+    both properly; repeating them here bought nothing but space.
+    """
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
-    from matplotlib.collections import PolyCollection
-    from matplotlib.lines import Line2D
 
-    figW = 12.2
+    figW = 6.6
     FS = paperStyle(figW)
-    fig, ax = plt.subplots(1, 3, figsize=(figW, 3.7))
+    fig, c = plt.subplots(1, 1, figsize=(figW, 4.3))
 
-    cols = {"stretch": "#1b6ca8", "shear": "#e8871a", "mixed": "#2e8b57"}
-    marks = {"stretch": "o", "shear": "s", "mixed": "^"}
+    cols = {"stretch": "#1b6ca8", "shear": "#e8871a", "mixed": "#2e8b57", "affine": "#7b52ab"}
+    marks = {"stretch": "o", "shear": "s", "mixed": "^", "affine": "D"}
     FLOOR = 1e-17
 
-    # ---------------------------------------------------------------- (a) the patch
-    a = ax[0]
-    cells, isBnd, fc = drawReferencePatch(a, nX, perturb, FS)
-    a.set_title(rf"(a) reference, {nX}$\times${nX} particles", fontsize=9.5 * FS)
-
-    # ---------------------------------------------------------------- (b) as computed
-    # The smoothing domains AS THE COMPUTATION LEFT THEM -- the vertex displacements the
-    # particles carry, not a re-drawn affine map -- at an amplitude large enough to see.
-    # Two things are drawn on top of it, and both answer the reading that a deformed patch
-    # with a contracted top face is a tension test whose boundary condition came loose:
-    #   * the arrows are the BOUNDARY CONDITION at true scale, from each boundary face centre
-    #     to its imposed image u = A X.  Both components are prescribed on all four sides,
-    #     tangential as well as normal, so nothing here is a material response, and the fan
-    #     out of the fixed origin is what a homogeneous gradient looks like;
-    #   * the matrix is A itself, at the amplitude drawn, and the corner label is what it
-    #     does to the far corner of the patch.
-    # The domains still tile, which is the other point: each is carried by the deformation
-    # gradient at its OWN centre, and for a homogeneous field those gradients coincide.
-    b = ax[1]
-    AB, cB = caseField(DEFORMED_CASE)
-    AB, cB = AB * (DEFORMED_AMPLITUDE / AMPLITUDE), cB * (DEFORMED_AMPLITUDE / AMPLITUDE)
-    r = run_patch(30.0, case=DEFORMED_CASE, nX=nX, perturb=perturb,
-                  amplitude=DEFORMED_AMPLITUDE, journal=Journal())
-    uL = AB @ np.array([LENGTH, LENGTH]) + cB
-    drawImposedDeformation(b, r, AB, cB, fc, FS)
-    b.set_title(rf"(b) as computed, {DEFORMED_CASE} at ${DEFORMED_AMPLITUDE*100:.0f}\,\%$",
-                fontsize=9.5 * FS)
-    print(f"  panel (b): {DEFORMED_CASE} at {DEFORMED_AMPLITUDE*100:.0f} %, imposed corner "
-          f"displacement ({uL[0]:+.2f}, {uL[1]:+.2f}) mm, deformed smoothing domains "
-          f"non-conforming by {r['domainGap']:.2e} mm over a {LENGTH:g} mm patch, "
-          f"alphaP = {r['alphaPMax']:.1e}")
-    # And what the same measurement gives when the field is NOT homogeneous, which no patch
-    # test can show: the bending field of the text, same discretisation, per-centre gradients
-    # that differ.  Printed rather than drawn -- it is the number Sec. 6.1 quotes.
-    rB = run_patch(30.0, case="stretch", nX=nX, perturb=perturb,
-                   fieldFun=lambda q: bendingDisplacement(q, kappa=BENDING_KAPPA),
-                   journal=Journal())
-    print(f"             companion, inhomogeneous (bending, kappa = {BENDING_KAPPA} 1/mm): "
-          f"gap {rB['domainGap']*1e3:.0f} um = "
-          f"{100 * rB['domainGap'] / rB['h']:.1f} % of h_p, "
-          f"max|u| = {np.abs(rB['verts'] - rB['verts0']).max():.2f} mm, "
-          f"alphaP = {rB['alphaPMax']:.1e}")
-
-    # ---------------------------------------------------------------- (c) the error
-    c = ax[2]
-    for case in LOAD_CASES:
-        rr = sorted([q for q in orientation if q["case"] == case], key=lambda q: q["bedding"])
+    series = [(case, [q for q in orientation if q["case"] == case]) for case in LOAD_CASES]
+    if affine:
+        series.append(("affine", list(affine)))
+    for case, rr in series:
+        rr = sorted(rr, key=lambda q: q["bedding"])
         if not rr:
             continue
         c.semilogy([q["bedding"] for q in rr], [max(q["errF"], FLOOR) for q in rr],
@@ -1165,8 +1144,7 @@ def makeFigure(orientation, out=None, nX=8, perturb=0.4):
     c.set_xlabel(r"bedding orientation $\beta$ [deg]")
     c.set_ylabel(r"error in $F_{iI}$, relative to $\|\mathbf{A}\|$")
     c.set_ylim(1e-15, 1e-10)
-    c.set_title(r"(c) interior error, $\|\mathbf{A}\|=2\,\%$", fontsize=9.5 * FS)
-    c.legend(loc="upper center", ncol=3, fontsize=7.6 * FS, frameon=False,
+    c.legend(loc="upper center", ncol=4, fontsize=7.6 * FS, frameon=False,
              columnspacing=1.1, handlelength=1.5)
     c.grid(True, which="major", color="#DDDDDD", lw=0.4 * FS)
 
@@ -1245,7 +1223,7 @@ def sweepPlastic(nX=8, perturb=0.4, seed=7, support=2.5, beddings=tuple(BEDDINGS
     return out
 
 
-def makeAffineFigure(results, out=None, nX=8, perturb=0.4):
+def makeAffineFigure(results, out=None, nX=8, perturb=0.4, plastic=None):
     """Six panels: what is set up, what is imposed, what a particle is -- then the errors.
 
     Row 1 is the test itself: (a) the undeformed patch, as Fig. 14(a); (b) the same patch
@@ -1262,7 +1240,7 @@ def makeAffineFigure(results, out=None, nX=8, perturb=0.4):
 
     figW = 13.4
     FS = paperStyle(figW)
-    fig, axes = plt.subplots(2, 3, figsize=(figW, 7.2))
+    fig, axes = plt.subplots(2, 3, figsize=(figW, 8.2))
     (a, b, cc), (d, e, f) = axes
 
     A, cOff = caseField("affine")
@@ -1277,7 +1255,6 @@ def makeAffineFigure(results, out=None, nX=8, perturb=0.4):
     # ------------------------------------------------------- (b) the field where it is applied
     drawImposedDeformation(b, rC, A, cOff, fc, FS, header=False, atDeformed=True)
     b.set_title("(b) imposed at the deformed face centres", fontsize=9.5 * FS)
-    fig.suptitle(fieldHeader(A, cOff), fontsize=9.0 * FS, color="#b1500f", y=0.998)
 
     # ------------------------------------------------------------------ (c) what a particle is
     which, R = drawSqcniStencil(cc, nX, perturb, FS, support=rC["support"])
@@ -1323,15 +1300,20 @@ def makeAffineFigure(results, out=None, nX=8, perturb=0.4):
         cb.ax.tick_params(labelsize=7.0 * FS)
         cb.set_label(rf"$\times 10^{{{expo}}}$", fontsize=7.4 * FS)
         ax.set_aspect("equal")
-        pad = 0.5
+        pad = 0.3
         ax.set_xlim(min(0.0, vD[:, :, 0].min()) - pad, max(LENGTH, vD[:, :, 0].max()) + pad)
         ax.set_ylim(min(0.0, vD[:, :, 1].min()) - pad, max(LENGTH, vD[:, :, 1].max()) + pad)
         ax.set_xlabel(r"$x_1$ [mm]")
         ax.set_ylabel(r"$x_2$ [mm]")
         ax.set_title(title + rf" at $\beta={rC['bedding']:.0f}^\circ$", fontsize=8.6 * FS)
 
-    # ------------------------------------------------------------------------ (f) the sweep
-    rr = sorted(results, key=lambda q: q["bedding"])
+    # ------------------------------------------------------- (f) the same test, but plastic
+    # The elastic errors over the sweep are the patch-test figure's business; what this panel
+    # adds is that the test survives the return map, and that the plastic strain it produces
+    # is orientation dependent -- which is the whole point of sweeping beta and is something
+    # only a yielding run can show.
+    src = plastic if plastic else results
+    rr = sorted(src, key=lambda q: q["bedding"])
     bs = [q["bedding"] for q in rr]
     for key, lab, col, mk in (("errU", r"$\mathrm{err}(u)$", "#1b6ca8", "o"),
                               ("errF", r"$\mathrm{err}(F)$", "#e8871a", "s"),
@@ -1339,13 +1321,26 @@ def makeAffineFigure(results, out=None, nX=8, perturb=0.4):
         f.semilogy(bs, [max(q[key], 1e-17) for q in rr], "-", marker=mk, color=col,
                    ms=3.4 * FS, lw=1.1 * FS, label=lab)
     f.set_xticks(BEDDINGS)
-    f.set_ylim(1e-16, 1e-12)
+    f.set_ylim(1e-16, 1e-10 if plastic else 1e-12)
     f.set_xlabel(r"bedding orientation $\beta$ [deg]")
     f.set_ylabel("relative error, interior particles")
-    f.set_title("(f) the three errors over the sweep", fontsize=9.5 * FS)
-    f.legend(loc="upper center", ncol=3, fontsize=7.6 * FS, frameon=False,
-             columnspacing=1.1, handlelength=1.5)
     f.grid(True, which="major", color="#DDDDDD", lw=0.4 * FS)
+    if plastic:
+        g = f.twinx()
+        g.plot(bs, [q["alphaPMax"] for q in rr], "--", color="0.35", lw=1.1 * FS,
+               marker="v", ms=3.0 * FS, label=r"$\alpha_{\rm p}$")
+        g.set_ylabel(r"$\alpha_{\rm p}$", color="0.35")
+        g.tick_params(axis="y", labelcolor="0.35")
+        g.set_ylim(0.0, 1.35 * max(q["alphaPMax"] for q in rr))
+        f.set_title("(f) the plastic patch test", fontsize=9.5 * FS)
+        hl, ll = f.get_legend_handles_labels()
+        hg, lg = g.get_legend_handles_labels()
+        f.legend(hl + hg, ll + lg, loc="lower center", ncol=2, fontsize=7.4 * FS,
+                 frameon=False, columnspacing=1.0, handlelength=1.5)
+    else:
+        f.set_title("(f) the three errors over the sweep", fontsize=9.5 * FS)
+        f.legend(loc="upper center", ncol=3, fontsize=7.6 * FS, frameon=False,
+                 columnspacing=1.1, handlelength=1.5)
 
     print(f"  contours at beta = {rC['bedding']:.0f} deg, relative, and their interior maxima "
           f"against panel (f): err(u) {rC['errUField'][interior].max():.2e} vs "
@@ -1355,7 +1350,7 @@ def makeAffineFigure(results, out=None, nX=8, perturb=0.4):
           f"{rC['errUAbsField'].max():.2e} mm, |Psi - Psi_ex| max "
           f"{rC['errEAbsField'].max():.2e} MPa on Psi_ex = {rC['psiEx']:.4f} MPa")
     print(f"             panel (c): particle {which}, support radius {R:.3f} mm")
-    fig.tight_layout(rect=(0.0, 0.0, 1.0, 0.988))
+    fig.tight_layout(pad=0.5, w_pad=0.9, h_pad=1.0)
     out = out or os.path.join(HERE, "fig_patch_affine.pdf")
     fig.savefig(out)
     fig.savefig(out.replace(".pdf", ".png"), dpi=145)
@@ -1414,15 +1409,17 @@ def main():
                 print(f"    {pName:>8s}  nX = {nX:3d}  h = {r['h']:.3f}  "
                       f"err(u) = {r['errU']:.2e}  err(F) = {r['errF']:.2e}")
 
+    aff = pla = None
+    if args.affine or args.figure:
+        aff = sweepAffine(nX=args.nx, perturb=args.perturb, support=args.support)
+    if args.plastic or args.affine:
+        pla = sweepPlastic(nX=args.nx, perturb=args.perturb, support=args.support)
+
     if args.figure:
-        makeFigure(orientation, nX=args.nx, perturb=args.perturb)
+        makeFigure(orientation, nX=args.nx, perturb=args.perturb, affine=aff)
 
     if args.affine:
-        aff = sweepAffine(nX=args.nx, perturb=args.perturb, support=args.support)
-        makeAffineFigure(aff, nX=args.nx, perturb=args.perturb)
-
-    if args.plastic:
-        sweepPlastic(nX=args.nx, perturb=args.perturb, support=args.support)
+        makeAffineFigure(aff, nX=args.nx, perturb=args.perturb, plastic=pla)
 
 
 @pytest.fixture(autouse=True)
