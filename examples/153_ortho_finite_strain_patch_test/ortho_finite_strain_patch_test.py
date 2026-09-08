@@ -802,7 +802,7 @@ def cellQuality(nX, perturb, seed=7):
                 minArea=float(area.min()))
 
 
-def sweepPerturbation(nX=8, case="mixed", bedding=30.0, seed=7, support=2.5):
+def sweepPerturbation(nX=8, case="affine", bedding=30.0, seed=7, support=2.5):
     """How random may the particle distribution be?  Sweep the lattice perturbation."""
     print("\n  HOW RANDOM MAY THE DISTRIBUTION BE -- lattice perturbation sweep")
     print(f"  {'perturb':>9s}{'err(u)':>11s}{'err(F)':>11s}{'min corner J':>14s}"
@@ -843,7 +843,7 @@ def sweepUpdateType(nX=8, perturb=0.4, bedding=30.0, seed=7, support=2.5):
     return out
 
 
-def sweepBoundary(nX=8, perturb=0.4, bedding=30.0, seed=7, support=2.5, case="mixed"):
+def sweepBoundary(nX=8, perturb=0.4, bedding=30.0, seed=7, support=2.5, case="affine"):
     """The three ways of imposing the essential condition, including the CWF correction."""
     print("\n  THE ESSENTIAL CONDITION -- three boundary treatments")
     out = []
@@ -996,8 +996,8 @@ def drawImposedDeformation(ax, r, A, cOff, fc, FS, matrixAt=0.99, header=True,
     ax.set_xlim(-0.6, max(LENGTH, xs.max()) + 2.0 * ARROW_OFFSET + 0.6)
     ax.set_ylim(-0.6, max(LENGTH, ys.max()) + 2.0 * ARROW_OFFSET + (2.6 if header else 0.6))
     ax.set_aspect("equal")
-    ax.set_xlabel(r"$x_1$ [mm]")
-    ax.set_ylabel(r"$x_2$ [mm]")
+    ax.set_xlabel(r"$x_1$ in mm")
+    ax.set_ylabel(r"$x_2$ in mm")
 
 
 def drawReferencePatch(ax, nX, perturb, FS, legendLabel=r"$u=\mathbf{A}\mathbf{X}$ imposed"):
@@ -1034,8 +1034,8 @@ def drawReferencePatch(ax, nX, perturb, FS, legendLabel=r"$u=\mathbf{A}\mathbf{X
     ax.set_xlim(-0.6, LENGTH + 0.6)
     ax.set_ylim(-0.6, LENGTH + 0.6)
     ax.set_aspect("equal")
-    ax.set_xlabel(r"$X_1$ [mm]")
-    ax.set_ylabel(r"$X_2$ [mm]")
+    ax.set_xlabel(r"$X_1$ in mm")
+    ax.set_ylabel(r"$X_2$ in mm")
     ax.legend(handles=[
         Line2D([], [], marker="o", ls="none", color="#b1500f", ms=2.8 * FS, label=legendLabel),
         Line2D([], [], marker=".", ls="none", color="0.2", ms=2.4 * FS, label="particle"),
@@ -1099,8 +1099,8 @@ def drawSqcniStencil(ax, nX, perturb, FS, support=2.5, which=None):
     ax.set_aspect("equal")
     ax.set_xlim(c0[0] - R - 0.7, c0[0] + R + 0.7)
     ax.set_ylim(c0[1] - R - 0.7, c0[1] + R + 3.4)
-    ax.set_xlabel(r"$X_1$ [mm]")
-    ax.set_ylabel(r"$X_2$ [mm]")
+    ax.set_xlabel(r"$X_1$ in mm")
+    ax.set_ylabel(r"$X_2$ in mm")
     ax.legend(handles=[
         Line2D([], [], marker="s", ls="none", color="#1b6ca8", ms=3.0 * FS,
                label="integration point"),
@@ -1110,49 +1110,6 @@ def drawSqcniStencil(ax, nX, perturb, FS, support=2.5, which=None):
                label=rf"support $\hat s={support:g}\,h_p$"),
     ], loc="upper center", ncol=1, fontsize=6.6 * FS, frameon=True, framealpha=0.94)
     return which, R
-
-
-def makeFigure(orientation, out=None, nX=8, perturb=0.4, affine=None):
-    """The patch test as one panel: the interior error over the bedding sweep.
-
-    What the patch IS and what it looks like deformed lives in the affine figure, which draws
-    both properly; repeating them here bought nothing but space.
-    """
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-
-    figW = 6.6
-    FS = paperStyle(figW)
-    fig, c = plt.subplots(1, 1, figsize=(figW, 4.3))
-
-    cols = {"stretch": "#1b6ca8", "shear": "#e8871a", "mixed": "#2e8b57", "affine": "#7b52ab"}
-    marks = {"stretch": "o", "shear": "s", "mixed": "^", "affine": "D"}
-    FLOOR = 1e-17
-
-    series = [(case, [q for q in orientation if q["case"] == case]) for case in LOAD_CASES]
-    if affine:
-        series.append(("affine", list(affine)))
-    for case, rr in series:
-        rr = sorted(rr, key=lambda q: q["bedding"])
-        if not rr:
-            continue
-        c.semilogy([q["bedding"] for q in rr], [max(q["errF"], FLOOR) for q in rr],
-                   "-", marker=marks[case], color=cols[case], ms=3.4 * FS, lw=1.1 * FS,
-                   label=case)
-    c.set_xticks(BEDDINGS)
-    c.set_xlabel(r"bedding orientation $\beta$ [deg]")
-    c.set_ylabel(r"error in $F_{iI}$, relative to $\|\mathbf{A}\|$")
-    c.set_ylim(1e-15, 1e-10)
-    c.legend(loc="upper center", ncol=4, fontsize=7.6 * FS, frameon=False,
-             columnspacing=1.1, handlelength=1.5)
-    c.grid(True, which="major", color="#DDDDDD", lw=0.4 * FS)
-
-    fig.tight_layout()
-    out = out or os.path.join(HERE, "fig_patch_test.pdf")
-    fig.savefig(out)
-    fig.savefig(out.replace(".pdf", ".png"), dpi=145)
-    print(f"  wrote {out}")
 
 
 # =============================================================================================
@@ -1303,44 +1260,49 @@ def makeAffineFigure(results, out=None, nX=8, perturb=0.4, plastic=None):
         pad = 0.3
         ax.set_xlim(min(0.0, vD[:, :, 0].min()) - pad, max(LENGTH, vD[:, :, 0].max()) + pad)
         ax.set_ylim(min(0.0, vD[:, :, 1].min()) - pad, max(LENGTH, vD[:, :, 1].max()) + pad)
-        ax.set_xlabel(r"$x_1$ [mm]")
-        ax.set_ylabel(r"$x_2$ [mm]")
+        ax.set_xlabel(r"$x_1$ in mm")
+        ax.set_ylabel(r"$x_2$ in mm")
         ax.set_title(title + rf" at $\beta={rC['bedding']:.0f}^\circ$", fontsize=8.6 * FS)
 
-    # ------------------------------------------------------- (f) the same test, but plastic
-    # The elastic errors over the sweep are the patch-test figure's business; what this panel
-    # adds is that the test survives the return map, and that the plastic strain it produces
-    # is orientation dependent -- which is the whole point of sweeping beta and is something
-    # only a yielding run can show.
-    src = plastic if plastic else results
-    rr = sorted(src, key=lambda q: q["bedding"])
-    bs = [q["bedding"] for q in rr]
-    for key, lab, col, mk in (("errU", r"$\mathrm{err}(u)$", "#1b6ca8", "o"),
-                              ("errF", r"$\mathrm{err}(F)$", "#e8871a", "s"),
-                              ("errE", r"$\mathrm{err}(\Psi^{\rm e})$", "#2e8b57", "^")):
-        f.semilogy(bs, [max(q[key], 1e-17) for q in rr], "-", marker=mk, color=col,
-                   ms=3.4 * FS, lw=1.1 * FS, label=lab)
+    # ------------------------------------------------------------------ (f) both error levels
+    # BOTH runs go in here, and that is deliberate: the elastic band is the level panels (d)
+    # and (e) resolve, and without it beside the plastic one the reader is left wondering why
+    # the contours sit three decades below the curve.  Colour is the measure, line style is
+    # the run, and alphaP on the right axis is what only the yielding one can show.
+    from matplotlib.lines import Line2D
+    MEASURES = (("errU", r"$\mathrm{err}(u)$", "#1b6ca8", "o"),
+                ("errF", r"$\mathrm{err}(F)$", "#e8871a", "s"),
+                ("errE", r"$\mathrm{err}(\Psi^{\rm e})$", "#2e8b57", "^"))
+    for src, style, alpha in ((results, "-", 1.0), (plastic, "--", 0.85)):
+        if not src:
+            continue
+        rr = sorted(src, key=lambda q: q["bedding"])
+        bs = [q["bedding"] for q in rr]
+        for key, lab, col, mk in MEASURES:
+            f.semilogy(bs, [max(q[key], 1e-17) for q in rr], style, marker=mk, color=col,
+                       ms=3.0 * FS, lw=1.1 * FS, alpha=alpha)
     f.set_xticks(BEDDINGS)
-    f.set_ylim(1e-16, 1e-10 if plastic else 1e-12)
-    f.set_xlabel(r"bedding orientation $\beta$ [deg]")
+    f.set_ylim(1e-16, 1e-9)     # headroom for the legend, which the curves leave empty
+    f.set_xlabel(r"bedding orientation $\beta$ in deg")
     f.set_ylabel("relative error, interior particles")
+    f.set_title("(f) elastic and plastic, over the sweep", fontsize=9.5 * FS)
     f.grid(True, which="major", color="#DDDDDD", lw=0.4 * FS)
+    handles = [Line2D([], [], color=col, marker=mk, ms=3.0 * FS, lw=1.1 * FS, label=lab)
+               for _, lab, col, mk in MEASURES]
     if plastic:
+        rr = sorted(plastic, key=lambda q: q["bedding"])
         g = f.twinx()
-        g.plot(bs, [q["alphaPMax"] for q in rr], "--", color="0.35", lw=1.1 * FS,
-               marker="v", ms=3.0 * FS, label=r"$\alpha_{\rm p}$")
-        g.set_ylabel(r"$\alpha_{\rm p}$", color="0.35")
+        g.plot([q["bedding"] for q in rr], [q["alphaPMax"] for q in rr], ":", color="0.35",
+               lw=1.2 * FS, marker="v", ms=3.0 * FS)
+        g.set_ylabel(r"$\alpha_{\rm p}$, plastic run", color="0.35")
         g.tick_params(axis="y", labelcolor="0.35")
-        g.set_ylim(0.0, 1.35 * max(q["alphaPMax"] for q in rr))
-        f.set_title("(f) the plastic patch test", fontsize=9.5 * FS)
-        hl, ll = f.get_legend_handles_labels()
-        hg, lg = g.get_legend_handles_labels()
-        f.legend(hl + hg, ll + lg, loc="lower center", ncol=2, fontsize=7.4 * FS,
-                 frameon=False, columnspacing=1.0, handlelength=1.5)
-    else:
-        f.set_title("(f) the three errors over the sweep", fontsize=9.5 * FS)
-        f.legend(loc="upper center", ncol=3, fontsize=7.6 * FS, frameon=False,
-                 columnspacing=1.1, handlelength=1.5)
+        g.set_ylim(0.0, 1.5 * max(q["alphaPMax"] for q in rr))
+        handles += [Line2D([], [], color="0.4", ls="-", lw=1.1 * FS, label="elastic"),
+                    Line2D([], [], color="0.4", ls="--", lw=1.1 * FS, label="plastic"),
+                    Line2D([], [], color="0.35", ls=":", marker="v", ms=3.0 * FS,
+                           lw=1.2 * FS, label=r"$\alpha_{\rm p}$")]
+    f.legend(handles=handles, loc="upper center", ncol=3, fontsize=7.0 * FS, frameon=False,
+             columnspacing=0.9, handlelength=1.6)
 
     print(f"  contours at beta = {rC['bedding']:.0f} deg, relative, and their interior maxima "
           f"against panel (f): err(u) {rC['errUField'][interior].max():.2e} vs "
@@ -1377,7 +1339,8 @@ def main():
                     help="the orientation sweep plus the boundary, perturbation and "
                          "smoothing-domain studies")
     ap.add_argument("--refine", action="store_true")
-    ap.add_argument("--figure", action="store_true", help="write fig_patch_test.pdf")
+    ap.add_argument("--figure", action="store_true",
+                    help="write fig_patch_affine.pdf, the paper figure")
     ap.add_argument("--affine", action="store_true",
                     help="the affine study u = c + A X, with the energy error, and "
                          "fig_patch_affine.pdf")
@@ -1409,17 +1372,12 @@ def main():
                 print(f"    {pName:>8s}  nX = {nX:3d}  h = {r['h']:.3f}  "
                       f"err(u) = {r['errU']:.2e}  err(F) = {r['errF']:.2e}")
 
-    aff = pla = None
     if args.affine or args.figure:
         aff = sweepAffine(nX=args.nx, perturb=args.perturb, support=args.support)
-    if args.plastic or args.affine:
         pla = sweepPlastic(nX=args.nx, perturb=args.perturb, support=args.support)
-
-    if args.figure:
-        makeFigure(orientation, nX=args.nx, perturb=args.perturb, affine=aff)
-
-    if args.affine:
         makeAffineFigure(aff, nX=args.nx, perturb=args.perturb, plastic=pla)
+    elif args.plastic:
+        sweepPlastic(nX=args.nx, perturb=args.perturb, support=args.support)
 
 
 @pytest.fixture(autouse=True)
