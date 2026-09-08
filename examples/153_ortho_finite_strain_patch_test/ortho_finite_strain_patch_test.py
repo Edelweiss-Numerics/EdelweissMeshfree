@@ -25,9 +25,20 @@ the mixed case is coaxial with neither the coordinate axes nor the material axes
 orientation in the sweep.  All three are homogeneous, so all three have the same exact-solution
 property.
 
+A FOURTH CASE, AND WHY.  The three above are pure gradients, u = A X, which leave the origin
+fixed and test only the first-order part of the reproducing conditions.  `affine` carries a
+translation as well, u = c + A X with c = (0.10, 0.05) mm and A = [[0.10, 0.20], [0.15, 0.10]],
+so it tests the zeroth-order part too -- that a rigid translation is reproduced exactly -- and
+it is the largest deformation in this file, det F = 1.18.  It is not in the Fig. 14 sweep; it
+has its own study and its own figure, `--affine`, which adds the ENERGY error to the two below
+and shows both as contours over the patch.
+
 WHAT IS MEASURED
-    err(u)  max over interior particles of |u_num - A x| / max|A x|
+    err(u)  max over interior particles of |u_num - u_ex| / max|u_ex|
     err(F)  max over interior particles of |F_num - (I + A)| / |A|
+    err(E)  max over interior particles of |Psi(F_num) - Psi(F_ex)| / Psi(F_ex), with Psi the
+            STORED energy density Psi^e(U) - Psi^e(I).  Marmot does not export it, so it is
+            evaluated here with the paper's own reference implementation of the potential.
     alphaP  the hardening variable, which must be identically zero -- the check that the run
             really was elastic, and hence that the exact-solution argument applies at all.
 The strengths are scaled by 1e3 so that no orientation can yield at the amplitudes used; the
@@ -47,6 +58,7 @@ THE THREE THINGS THE TEST SETTLED, each a switch of its own
 
 USAGE
     python ortho_finite_strain_patch_test.py --all --figure   # everything + the paper figure
+    python ortho_finite_strain_patch_test.py --affine         # u = c + A X, energy + contours
     python ortho_finite_strain_patch_test.py --nx 12          # a finer patch
     python ortho_finite_strain_patch_test.py --refine         # the spacing study
     python ortho_finite_strain_patch_test.py --no-vci         # the VCI correction off
@@ -175,9 +187,90 @@ LOAD_CASES = {
 }
 
 
-def exactDisplacement(A, xy):
-    """u_i = A_ij X_j, evaluated on an (n, 2) array of reference coordinates."""
-    return xy @ A.T
+def exactDisplacement(A, xy, c=None):
+    """u_i = c_i + A_ij X_j, evaluated on an (n, 2) array of reference coordinates."""
+    u = xy @ A.T
+    return u if c is None else u + np.asarray(c).reshape(1, 2)
+
+
+# A FOURTH CASE, WITH A TRANSLATION IN IT.  The three cases above are pure gradients, u = A X,
+# which leaves the origin fixed and tests only the FIRST-order part of the reproducing
+# conditions.  This one carries a constant term as well,
+#
+#     u = c + A X,   c = (0.10, 0.05) mm,   A = [[0.10, 0.20], [0.15, 0.10]],
+#
+# so it also tests the zeroth-order part -- that the approximation reproduces a rigid
+# translation exactly, which is the partition-of-unity property of the kernels, and that the
+# smoothing-domain update carries it without drift.  It is far from small: F = I + A has
+# det F = 1.18 and 20 % off-diagonal terms, non-symmetric, coaxial with nothing, and it is the
+# largest deformation anywhere in this file.  Everything the three cases above are measured
+# with applies unchanged, because the field is still affine and the stress it produces is
+# still homogeneous.
+EXTRA_CASES = {
+    "affine": (np.array([[0.10, 0.20], [0.15, 0.10]]), np.array([0.10, 0.05])),
+}
+
+
+def caseField(case):
+    """(A, c) of a load case, from either table.  The three homogeneous ones have c = 0."""
+    if case in LOAD_CASES:
+        return LOAD_CASES[case], np.zeros(2)
+    return EXTRA_CASES[case]
+
+
+# =============================================================================================
+#  the strain energy, for the energy error
+# =============================================================================================
+#
+# The material does not export the elastic energy density (`response.elasticEnergyDensity` is
+# left at zero in the Marmot module), so it is evaluated here, from the deformation gradient
+# the run reports, with the paper's OWN reference implementation of the potential --
+# `paper_FiniteStrainOrthoCDP/tools/orthotropic_hyperelasticity.py`, the same file the
+# stress-measure and dissipation verifications use.  Psi^e is a function of the elastic right
+# stretch in the MATERIAL frame, so U = sqrt(F^T F) is rotated by the bedding frame before it
+# is passed; e^(1) is the bedding normal, which is the convention of the card and of the paper.
+# The run is elastic (alphaP = 0 is checked), so F^e = F and there is no damage factor.
+
+_POTENTIAL = {}
+
+
+def potential():
+    """The paper's Psi^e on the card of this study, or None if the paper tree is not there."""
+    if "model" not in _POTENTIAL:
+        import sys
+        cand = os.path.abspath(os.path.join(HERE, "..", "..", "..",
+                                            "paper_FiniteStrainOrthoCDP", "tools"))
+        if cand not in sys.path:
+            sys.path.insert(0, cand)
+        try:
+            from orthotropic_hyperelasticity import OrthotropicCard, OrthotropicNeoHooke
+            _POTENTIAL["model"] = OrthotropicNeoHooke(
+                OrthotropicCard(E1, E2, E3, NU12, NU13, NU23, G12, G13, G23))
+        except ImportError:
+            print(f"  orthotropic_hyperelasticity.py not found under {cand} -- "
+                  f"the energy error is not evaluated")
+            _POTENTIAL["model"] = None
+    return _POTENTIAL["model"]
+
+
+def strainEnergyDensity(F, beddingDeg):
+    """The STORED energy density of a 3x3 deformation gradient: Psi^e(U) - Psi^e(I).
+
+    The potential is not normalised to zero at the reference state -- Psi^e(I) = 1530 MPa on
+    this card, against the 89 MPa the affine case stores -- so the reference value is
+    subtracted.  Without that the relative energy error is flattered by a factor of twenty.
+    U is taken to the bedding frame first; e^(1) is the bedding normal.
+    """
+    model = potential()
+    if model is None:
+        return float("nan")
+    C = np.asarray(F).T @ np.asarray(F)
+    w, V = np.linalg.eigh(0.5 * (C + C.T))
+    U = V @ np.diag(np.sqrt(np.maximum(w, 1e-30))) @ V.T
+    phi = math.radians(beddingDeg)
+    ct, st = math.cos(phi), math.sin(phi)
+    Q = np.array([[ct, -st, 0.0], [st, ct, 0.0], [0.0, 0.0, 1.0]])   # columns e1, e2, e3
+    return model.energy(Q.T @ U @ Q) - model.energy(np.eye(3))
 
 
 # The illustration case, and the reason it exists: a patch test CANNOT show what the
@@ -314,12 +407,12 @@ def run_patch(beddingDeg, case="mixed", nX=8, perturb=0.4, seed=7, particle="sqc
     ``vciOrder = 1``.  Running with the correction switched on but left at its default order
     changes nothing at all in this test, which is exactly the trap met while setting it up.
     """
-    A = LOAD_CASES[case]
+    A, cOff = caseField(case)
     if amplitude is not None:
-        A = A * (amplitude / AMPLITUDE)
+        A, cOff = A * (amplitude / AMPLITUDE), cOff * (amplitude / AMPLITUDE)
     # `fieldFun` replaces the homogeneous field by an arbitrary one; the error measures below
     # are then meaningless and the caller must not use them (see bendingDisplacement)
-    uOf = fieldFun if fieldFun is not None else (lambda q: exactDisplacement(A, q))
+    uOf = fieldFun if fieldFun is not None else (lambda q: exactDisplacement(A, q, cOff))
     journal = journal or Journal()
     dimension = 2
     theModel = MPMModel(dimension)
@@ -569,11 +662,23 @@ def run_patch(beddingDeg, case="mixed", nX=8, perturb=0.4, seed=7, particle="sqc
     errU = np.abs(uNum - uEx)[inner].max() / scale
     errF = np.abs(FNum - FEx)[inner].max() / np.abs(A).max()
 
+    # THE ENERGY ERROR.  The exact field is homogeneous, so the exact stored energy density is
+    # one number, and the departure of the per-particle energy from it is the error in the
+    # quantity the weak form is stationary with respect to -- a scalar that weights the
+    # components of the gradient error the way the material does, rather than by the largest
+    # of them.  Relative to the stored energy itself, and reported the same way as the other
+    # two, as the largest value over the interior.
+    psiEx = strainEnergyDensity(FEx, beddingDeg)
+    psiNum = np.array([strainEnergyDensity(FNum[i], beddingDeg) for i in range(nP)])
+    errEField = np.abs(psiNum - psiEx) / abs(psiEx)
+    errE = float(errEField[inner].max()) if np.isfinite(psiEx) else float("nan")
+
     return dict(
         bedding=beddingDeg, case=case, nX=nX, h=h, perturb=perturb, vci=vci,
         vciOrder=(vciOrder if vci else None), nRings=nRings, support=support,
         bc=bc, particle=particle,
-        errU=float(errU), errF=float(errF),
+        errU=float(errU), errF=float(errF), errE=errE,
+        psiEx=float(psiEx), psiNum=psiNum, errEField=errEField,
         alphaPMax=float(np.abs(alphaP).max()),
         nInterior=int(inner.sum()), failed=failed,
         errUField=np.abs(uNum - uEx).max(axis=1) / scale,
@@ -775,6 +880,72 @@ DEFORMED_CASE = "mixed"    # and the load case it draws: the one coaxial with ne
                            # coordinate axes nor the material axes, so it cannot be misread
 
 
+ARROW_OFFSET = 0.35   # mm; how far outside the boundary the boundary-condition arrows start
+
+
+def fieldHeader(A, cOff, sep=r",\;\;"):
+    """The imposed field as one typeset line: u = A X, or u = c + A X when there is a c."""
+    mat = (r"\mathbf{A}=\begin{bmatrix}%+.3f & %+.3f\\ %+.3f & %+.3f\end{bmatrix}"
+           % (A[0, 0], A[0, 1], A[1, 0], A[1, 1]))
+    if np.abs(cOff).max() > 0.0:
+        return (r"$u=\mathbf{c}+\mathbf{A}\mathbf{X}" + sep
+                + r"\mathbf{c}=(%.2f,\,%.2f)^{\mathsf{T}}\,\mathrm{mm}" % (cOff[0], cOff[1])
+                + sep + mat + "$")
+    return r"$u=\mathbf{A}\mathbf{X},\quad" + mat + "$"
+
+
+def drawImposedDeformation(ax, r, A, cOff, fc, FS, matrixAt=0.99, header=True):
+    """The deformed patch as computed, the reference outline, and the imposed field on it.
+
+    `r` is a run_patch result, `A` and `cOff` the field it was run with, u = c + A X, and `fc`
+    the boundary face centres of the same lattice (what panel (a) marks).  Three things go on
+    the axes and each answers a question the drawing would otherwise leave open:
+
+      * the smoothing domains AS THE COMPUTATION LEFT THEM -- the vertex displacements the
+        particles carry, not a re-drawn affine map.  That they still tile is the result: each
+        is carried by the deformation gradient at its OWN centre, and for a homogeneous field
+        those gradients coincide;
+      * the reference outline, dashed, so the deformation is readable;
+      * an arrow at every constrained face centre, from that centre to its imposed image, AT
+        TRUE SCALE.  Both components are prescribed on every face, tangential as well as
+        normal, so no part of the deformed shape is a material response.  The tails are set
+        `ARROW_OFFSET` outside the boundary PLUS the outward part of the displacement itself,
+        which is what keeps them off a face that moves outwards.
+      * the matrix, which is the complete statement of what was imposed.
+    """
+    from matplotlib.collections import PolyCollection
+
+    ax.add_collection(PolyCollection(list(r["verts"]), facecolors="#eef3f8",
+                                     edgecolors="#1b6ca8", linewidths=0.6 * FS))
+    ax.plot([0, LENGTH, LENGTH, 0, 0], [0, 0, LENGTH, LENGTH, 0], "--",
+            color="0.45", lw=0.7 * FS, zorder=4)
+    for q0 in fc:
+        du = A @ q0 + cOff
+        if np.hypot(*du) < 0.02:      # the field can vanish; a 20 um arrow is a blob
+            continue
+        n = np.zeros(2)
+        n[0] = -1.0 if q0[0] < 1e-9 else (1.0 if q0[0] > LENGTH - 1e-9 else 0.0)
+        n[1] = -1.0 if q0[1] < 1e-9 else (1.0 if q0[1] > LENGTH - 1e-9 else 0.0)
+        n /= max(np.linalg.norm(n), 1.0)
+        t = q0 + n * (ARROW_OFFSET + max(0.0, float(n @ du)))
+        ax.annotate("", xy=tuple(t + du), xytext=tuple(t), zorder=5,
+                    arrowprops=dict(arrowstyle="-|>", color="#b1500f", lw=0.6 * FS,
+                                    shrinkA=0.0, shrinkB=0.0, mutation_scale=5.0 * FS))
+    if header:
+        ax.text(0.5, matrixAt, fieldHeader(A, cOff), transform=ax.transAxes,
+                color="#b1500f", ha="center", va="top", fontsize=7.2 * FS)
+    # the frame follows whichever configuration reaches furthest, plus the arrows, plus the
+    # strip the header needs -- so the same call works for a patch that grows and one that does
+    # not
+    xs = np.concatenate([r["verts"][:, :, 0].reshape(-1), [LENGTH]])
+    ys = np.concatenate([r["verts"][:, :, 1].reshape(-1), [LENGTH]])
+    ax.set_xlim(-0.9, max(LENGTH, xs.max()) + 2.0 * ARROW_OFFSET + 0.9)
+    ax.set_ylim(-0.9, max(LENGTH, ys.max()) + 2.0 * ARROW_OFFSET + (2.6 if header else 0.9))
+    ax.set_aspect("equal")
+    ax.set_xlabel(r"$x_1$ [mm]")
+    ax.set_ylabel(r"$x_2$ [mm]")
+
+
 def makeFigure(orientation, out=None, nX=8, perturb=0.4):
     """Three panels: the patch, the deformed patch as computed, and the error."""
     import matplotlib
@@ -838,47 +1009,12 @@ def makeFigure(orientation, out=None, nX=8, perturb=0.4):
     # The domains still tile, which is the other point: each is carried by the deformation
     # gradient at its OWN centre, and for a homogeneous field those gradients coincide.
     b = ax[1]
-    AB = LOAD_CASES[DEFORMED_CASE] * (DEFORMED_AMPLITUDE / AMPLITUDE)
+    AB, cB = caseField(DEFORMED_CASE)
+    AB, cB = AB * (DEFORMED_AMPLITUDE / AMPLITUDE), cB * (DEFORMED_AMPLITUDE / AMPLITUDE)
     r = run_patch(30.0, case=DEFORMED_CASE, nX=nX, perturb=perturb,
                   amplitude=DEFORMED_AMPLITUDE, journal=Journal())
-    b.add_collection(PolyCollection(list(r["verts"]), facecolors="#eef3f8",
-                                    edgecolors="#1b6ca8", linewidths=0.6 * FS))
-    # the reference OUTLINE on top, not the reference cells: behind the filled deformed
-    # domains they are invisible, and the outline is what makes the deformation readable
-    b.plot([0, LENGTH, LENGTH, 0, 0], [0, 0, LENGTH, LENGTH, 0], "--",
-           color="0.45", lw=0.7 * FS, zorder=4)
-    # the imposed displacement at every constrained face centre, drawn at true scale (`fc` is
-    # the same set of points panel (a) marks)
-    OFF = 0.35   # the tails are set this far outside the boundary, so that the arrows read
-    for q0 in fc:                                       # against the body instead of over it
-        du = AB @ q0
-        if np.hypot(*du) < 0.02:      # u = A X vanishes at the origin; a 20 um arrow is a blob
-            continue
-        n = np.zeros(2)
-        n[0] = -1.0 if q0[0] < 1e-9 else (1.0 if q0[0] > LENGTH - 1e-9 else 0.0)
-        n[1] = -1.0 if q0[1] < 1e-9 else (1.0 if q0[1] > LENGTH - 1e-9 else 0.0)
-        n /= max(np.linalg.norm(n), 1.0)
-        # push the tail past whichever configuration reaches further out along that normal,
-        # so that no arrow is drawn over the body: on the right face that is the deformed edge
-        t = q0 + n * (OFF + max(0.0, float(n @ du)))
-        b.annotate("", xy=tuple(t + du), xytext=tuple(t), zorder=5,
-                   arrowprops=dict(arrowstyle="-|>", color="#b1500f", lw=0.6 * FS,
-                                   shrinkA=0.0, shrinkB=0.0, mutation_scale=5.0 * FS))
-    # A itself, in the free strip above the patch: the complete statement of what was
-    # imposed, which is what the arrows draw.  The corner displacement it produces is
-    # printed and quoted in the caption rather than crowded into the panel.
-    uL = AB @ np.array([LENGTH, LENGTH])
-    xMax = max(LENGTH, float(r["verts"][:, :, 0].max())) + 2.0 * OFF
-    b.text(0.5, 0.99, transform=b.transAxes, s=
-           r"$u=\mathbf{A}\mathbf{X},\quad\mathbf{A}="
-           r"\begin{bmatrix}%+.3f & %+.3f\\ %+.3f & %+.3f\end{bmatrix}$"
-           % (AB[0, 0], AB[0, 1], AB[1, 0], AB[1, 1]),
-           color="#b1500f", ha="center", va="top", fontsize=7.2 * FS)
-    b.set_xlim(-0.9, xMax + 0.9)
-    b.set_ylim(-0.9, LENGTH + 3.1)
-    b.set_aspect("equal")
-    b.set_xlabel(r"$x_1$ [mm]")
-    b.set_ylabel(r"$x_2$ [mm]")
+    uL = AB @ np.array([LENGTH, LENGTH]) + cB
+    drawImposedDeformation(b, r, AB, cB, fc, FS)
     b.set_title(rf"(b) as computed, {DEFORMED_CASE} at ${DEFORMED_AMPLITUDE*100:.0f}\,\%$",
                 fontsize=9.5 * FS)
     print(f"  panel (b): {DEFORMED_CASE} at {DEFORMED_AMPLITUDE*100:.0f} %, imposed corner "
@@ -923,6 +1059,129 @@ def makeFigure(orientation, out=None, nX=8, perturb=0.4):
 
 
 # =============================================================================================
+#  the affine study: u = c + A X, the displacement error and the energy error
+# =============================================================================================
+
+AFFINE_CONTOUR_BEDDING = 30.0
+
+
+def sweepAffine(nX=8, perturb=0.4, seed=7, support=2.5, beddings=tuple(BEDDINGS)):
+    """The affine case of EXTRA_CASES over the bedding sweep, with the energy error."""
+    print("\n  THE AFFINE FIELD u = c + A X, OVER THE BEDDING ORIENTATION")
+    A, cOff = caseField("affine")
+    print(f"    c = ({cOff[0]:.2f}, {cOff[1]:.2f}) mm,  A = [[{A[0,0]:.2f}, {A[0,1]:.2f}], "
+          f"[{A[1,0]:.2f}, {A[1,1]:.2f}]],  det F = {np.linalg.det(np.eye(2) + A):.4f}")
+    journal = Journal()
+    out = []
+    for b in beddings:
+        r = run_patch(float(b), case="affine", nX=nX, perturb=perturb, seed=seed,
+                      support=support, journal=journal)
+        out.append(r)
+        print(f"    beta = {b:5.1f} deg   err(u) = {r['errU']:.2e}   err(F) = {r['errF']:.2e}"
+              f"   err(E) = {r['errE']:.2e}   Psi = {r['psiEx']:.4f} MPa"
+              f"   max alphaP = {r['alphaPMax']:.1e}")
+    print(f"    worst: err(u) = {max(r['errU'] for r in out):.2e}   "
+          f"err(F) = {max(r['errF'] for r in out):.2e}   "
+          f"err(E) = {max(r['errE'] for r in out):.2e}")
+    # The elastic card of this study is transversely isotropic about the OUT-OF-PLANE axis --
+    # E1 = E2, nu13 = nu23, and the Saint Venant formula makes G12 = E1/2(1+nu12) exactly --
+    # so an in-plane deformation stores the same energy at every bedding orientation, and the
+    # Biot stress stays coaxial with U.  Psi above is printed at every beta to show it: the
+    # sweep varies the material bookkeeping, not the physical problem, as long as the run is
+    # elastic.  What breaks the orientation symmetry is the Walpole map of the yield surface,
+    # which a patch test never reaches (alphaP = 0).
+    return out
+
+
+def makeAffineFigure(results, out=None, nX=8, perturb=0.4):
+    """Four panels: the field, the two errors over the bedding sweep, and both as contours."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    import matplotlib.tri as mtri
+
+    figW = 9.2
+    FS = paperStyle(figW)
+    fig, axes = plt.subplots(2, 2, figsize=(figW, 7.2))
+    (a, b), (c, d) = axes
+
+    A, cOff = caseField("affine")
+    cells, _, isBnd = latticeForDrawing(nX, perturb)
+    fc = []
+    for cell, onB in zip(cells, isBnd):
+        if not onB:
+            continue
+        for k in range(4):
+            mid = 0.5 * (cell[k] + cell[(k + 1) % 4])
+            if min(mid[0], mid[1]) < 1e-9 or max(mid[0], mid[1]) > LENGTH - 1e-9:
+                fc.append(mid)
+    fc = np.asarray(fc)
+
+    # ------------------------------------------------------------- (a) the field as imposed
+    rC = [r for r in results if abs(r["bedding"] - AFFINE_CONTOUR_BEDDING) < 1e-9]
+    rC = rC[0] if rC else results[0]
+    drawImposedDeformation(a, rC, A, cOff, fc, FS, header=False)
+    a.set_title("(a) the imposed field, as computed", fontsize=9.5 * FS)
+    # the field itself over the whole figure, once: it is what all four panels are about, and
+    # a 4.4 in panel is too narrow for the line
+    fig.suptitle(fieldHeader(A, cOff), fontsize=9.0 * FS, color="#b1500f", y=0.998)
+
+    # ------------------------------------------------------- (b) both errors over the sweep
+    rr = sorted(results, key=lambda q: q["bedding"])
+    bs = [q["bedding"] for q in rr]
+    for key, lab, col, mk in (("errU", r"$\mathrm{err}(u)$", "#1b6ca8", "o"),
+                              ("errF", r"$\mathrm{err}(F)$", "#e8871a", "s"),
+                              ("errE", r"$\mathrm{err}(\Psi^{\rm e})$", "#2e8b57", "^")):
+        b.semilogy(bs, [max(q[key], 1e-17) for q in rr], "-", marker=mk, color=col,
+                   ms=3.4 * FS, lw=1.1 * FS, label=lab)
+    b.set_xticks(BEDDINGS)
+    b.set_ylim(1e-16, 1e-12)
+    b.set_xlabel(r"bedding orientation $\beta$ [deg]")
+    b.set_ylabel("relative error, interior particles")
+    b.set_title(r"(b) displacement, gradient and energy error", fontsize=9.5 * FS)
+    b.legend(loc="upper center", ncol=3, fontsize=7.6 * FS, frameon=False,
+             columnspacing=1.1, handlelength=1.5)
+    b.grid(True, which="major", color="#DDDDDD", lw=0.4 * FS)
+
+    # ------------------------------------------------------------------- (c), (d) contours
+    xy0, interior = rC["xy0"], rC["interior"]
+    tri = mtri.Triangulation(xy0[:, 0], xy0[:, 1])
+    for ax, field, title, cmap in (
+            (c, rC["errUField"], r"(c) $|u-u_{\rm ex}|/\max|u_{\rm ex}|$", "Blues"),
+            (d, rC["errEField"], r"(d) $|\Psi^{\rm e}-\Psi^{\rm e}_{\rm ex}|"
+                                 r"/\Psi^{\rm e}_{\rm ex}$", "Greens")):
+        f15 = np.asarray(field) * 1e15
+        cf = ax.tricontourf(tri, f15, levels=12, cmap=cmap)
+        ax.plot(xy0[interior, 0], xy0[interior, 1], ".", color="0.25", ms=2.2 * FS)
+        ax.plot(xy0[~interior, 0], xy0[~interior, 1], "o", mfc="none", mec="0.25",
+                ms=2.6 * FS, mew=0.5 * FS)
+        ax.plot([0, LENGTH, LENGTH, 0, 0], [0, 0, LENGTH, LENGTH, 0], "-",
+                color="0.35", lw=0.6 * FS)
+        cb = fig.colorbar(cf, ax=ax, fraction=0.046, pad=0.03)
+        cb.ax.tick_params(labelsize=7.0 * FS)
+        cb.set_label(r"$\times 10^{-15}$", fontsize=7.4 * FS)
+        ax.set_aspect("equal")
+        ax.set_xlim(-0.4, LENGTH + 0.4)
+        ax.set_ylim(-0.4, LENGTH + 0.4)
+        ax.set_xlabel(r"$X_1$ [mm]")
+        ax.set_ylabel(r"$X_2$ [mm]")
+        ax.set_title(title + rf" at $\beta={rC['bedding']:.0f}^\circ$", fontsize=9.5 * FS)
+    # no legend on the contours: the filled dots are the interior particles the maxima are
+    # taken over, the open ones the constrained ring, and the caption says so rather than a
+    # box over the field
+    print(f"  contours at beta = {rC['bedding']:.0f} deg: "
+          f"err(u) max {rC['errUField'].max():.2e} (interior "
+          f"{rC['errUField'][interior].max():.2e}), "
+          f"err(E) max {rC['errEField'].max():.2e} (interior "
+          f"{rC['errEField'][interior].max():.2e}), Psi = {rC['psiEx']:.4f} MPa")
+    fig.tight_layout(rect=(0.0, 0.0, 1.0, 0.975))
+    out = out or os.path.join(HERE, "fig_patch_affine.pdf")
+    fig.savefig(out)
+    fig.savefig(out.replace(".pdf", ".png"), dpi=145)
+    print(f"  wrote {out}")
+
+
+# =============================================================================================
 #  CLI and the regression test
 # =============================================================================================
 
@@ -936,13 +1195,16 @@ def main():
     ap.add_argument("--no-vci", action="store_true")
     ap.add_argument("--particle", default="sqcnixnsni")
     ap.add_argument("--bc", default="face", choices=("face", "center", "cwf"))
-    ap.add_argument("--case", default=None, choices=list(LOAD_CASES))
+    ap.add_argument("--case", default=None, choices=list(LOAD_CASES) + list(EXTRA_CASES))
     ap.add_argument("--bedding", type=float, default=None)
     ap.add_argument("--all", action="store_true",
                     help="the orientation sweep plus the boundary, perturbation and "
                          "smoothing-domain studies")
     ap.add_argument("--refine", action="store_true")
     ap.add_argument("--figure", action="store_true", help="write fig_patch_test.pdf")
+    ap.add_argument("--affine", action="store_true",
+                    help="the affine study u = c + A X, with the energy error, and "
+                         "fig_patch_affine.pdf")
     args = ap.parse_args()
 
     cases = (args.case,) if args.case else tuple(LOAD_CASES)
@@ -972,6 +1234,10 @@ def main():
     if args.figure:
         makeFigure(orientation, nX=args.nx, perturb=args.perturb)
 
+    if args.affine:
+        aff = sweepAffine(nX=args.nx, perturb=args.perturb, support=args.support)
+        makeAffineFigure(aff, nX=args.nx, perturb=args.perturb)
+
 
 @pytest.fixture(autouse=True)
 def change_test_dir(request, monkeypatch):
@@ -985,6 +1251,20 @@ def test_patch():
     assert max(r["errU"] for r in results) < 1e-8
     assert max(r["errF"] for r in results) < 1e-8
     assert max(r["alphaPMax"] for r in results) == 0.0
+
+
+def test_affine_patch():
+    """u = c + A X: the same guard on the case that carries a translation and 20 % strain.
+
+    The energy error is only asserted if the paper's potential is importable -- without the
+    paper tree next to this repo `strainEnergyDensity` returns NaN by design.
+    """
+    r = run_patch(45.0, case="affine", nX=6, perturb=0.4)
+    assert not r["failed"]
+    assert r["errU"] < 1e-8
+    assert r["errF"] < 1e-8
+    assert r["alphaPMax"] == 0.0
+    assert math.isnan(r["errE"]) or r["errE"] < 1e-8
 
 
 if __name__ == "__main__":
