@@ -144,16 +144,24 @@ DAMAGE_ONSET, H_RESIDUAL = 0.95, 0.02
 LENGTH = 10.0  # the patch is LENGTH x LENGTH
 
 
-def materialProperties(beddingDeg, frameUpdate=1):
-    """The 33-property card of GradientEnhancedOrthoCDPFiniteStrain."""
+def materialProperties(beddingDeg, frameUpdate=1, strengthScale=None):
+    """The 33-property card of GradientEnhancedOrthoCDPFiniteStrain.
+
+    `strengthScale` overrides STRENGTH_SCALE, which lifts the yield surface out of reach.  Set
+    it to 1 and the same homogeneous field yields: the exact-solution argument survives that
+    (a homogeneous F still gives a homogeneous stress, whatever the constitutive path), so the
+    patch test remains binary and now tests the return map and the gradient-damage coupling
+    rather than the elastic branch alone.
+    """
     phi = math.radians(beddingDeg)
+    k = 1.0 if strengthScale is None else strengthScale / STRENGTH_SCALE
     return np.array(
         [
             E1, E2, E3,
             NU12, NU13, NU23,
             G12, G13, G23,
             math.cos(phi), math.sin(phi), 0.0,      # bedding normal n0 in the x-y plane
-            FCY, FCU, FBU, FTU,
+            k * FCY, k * FCU, k * FBU, k * FTU,
             DF,
             AH, BH, CH, DH, AS,
             SOFTMOD, MAXDMG,
@@ -208,6 +216,17 @@ def exactDisplacement(A, xy, c=None):
 # still homogeneous.
 EXTRA_CASES = {
     "affine": (np.array([[0.10, 0.20], [0.15, 0.10]]), np.array([0.10, 0.05])),
+    # A PLASTIC patch test.  A homogeneous field yields homogeneously, so the exact-solution
+    # argument survives the return map untouched: a constant F still gives a constant stress,
+    # div tau = 0 still holds, and the field is still the exact solution of the discrete
+    # problem.  What it now tests is the return map itself and the gradient-damage coupling.
+    # It has to be COMPRESSIVE and it has to stay in the hardening branch.  In tension the card
+    # fails at f_tu = 5.1 MPa and softens to nothing -- measured, the affine case above at real
+    # strengths reaches alphaP = 398 and 1.2 MPa of stress at a fiftieth of its amplitude --
+    # and in the softening branch the homogeneous state is no longer the only solution, so the
+    # test stops being binary.  diag(-0.010, +0.003) puts the stress at 25.9 MPa, above
+    # f_cy = 17 and well below f_cu = 51.
+    "compression": (np.array([[-0.010, 0.0], [0.0, 0.003]]), np.zeros(2)),
 }
 
 
@@ -392,7 +411,7 @@ def generatePerturbedQuadGrid(model, journal, particleFactory, kernelFactory,
 def run_patch(beddingDeg, case="mixed", nX=8, perturb=0.4, seed=7, particle="sqcnixnsni",
               vci=True, vciOrder=1, nRings=1, support=2.5, bc="face",
               cwfRamp=lambda t: 1.0, amplitude=None, tolerance=None, fieldFun=None,
-              journal=None):
+              strengthScale=None, journal=None):
     """Impose u = A X on the boundary and report how well the interior reproduces it.
 
     ``vci`` switches the variationally consistent integration correction of Eq. (73) on and
@@ -455,7 +474,7 @@ def run_patch(beddingDeg, case="mixed", nX=8, perturb=0.4, seed=7, particle="sqc
     )
     card = {
         "material": "GRADIENTENHANCEDORTHOCDPFINITESTRAIN",
-        "properties": materialProperties(beddingDeg),
+        "properties": materialProperties(beddingDeg, strengthScale=strengthScale),
     }
 
     theModel = generatePerturbedQuadGrid(
@@ -898,7 +917,8 @@ def fieldHeader(A, cOff, sep=r",\;\;"):
     return r"$u=\mathbf{A}\mathbf{X},\quad" + mat + "$"
 
 
-def drawImposedDeformation(ax, r, A, cOff, fc, FS, matrixAt=0.99, header=True):
+def drawImposedDeformation(ax, r, A, cOff, fc, FS, matrixAt=0.99, header=True,
+                           atDeformed=False):
     """The deformed patch as computed, the reference outline, and the imposed field on it.
 
     `r` is a run_patch result, `A` and `cOff` the field it was run with, u = c + A X, and `fc`
@@ -927,6 +947,17 @@ def drawImposedDeformation(ax, r, A, cOff, fc, FS, matrixAt=0.99, header=True):
         du = A @ q0 + cOff
         if np.hypot(*du) < 0.02:      # the field can vanish; a 20 um arrow is a blob
             continue
+        if atDeformed:
+            # the arrow ENDS on the constrained point where it now is: tail at the reference
+            # face centre, head at its image, and a dot on the head.  That is the multiplier's
+            # own position in the deformed configuration, and the same point SQCNI evaluates
+            # the shape functions at (panel (c)).
+            ax.annotate("", xy=tuple(q0 + du), xytext=tuple(q0), zorder=5,
+                        arrowprops=dict(arrowstyle="-|>", color="#b1500f", lw=0.6 * FS,
+                                        shrinkA=0.0, shrinkB=0.0, mutation_scale=5.0 * FS))
+            ax.plot([q0[0] + du[0]], [q0[1] + du[1]], "o", color="#b1500f", ms=2.4 * FS,
+                    zorder=6)
+            continue
         n = np.zeros(2)
         n[0] = -1.0 if q0[0] < 1e-9 else (1.0 if q0[0] > LENGTH - 1e-9 else 0.0)
         n[1] = -1.0 if q0[1] < 1e-9 else (1.0 if q0[1] > LENGTH - 1e-9 else 0.0)
@@ -950,6 +981,118 @@ def drawImposedDeformation(ax, r, A, cOff, fc, FS, matrixAt=0.99, header=True):
     ax.set_ylabel(r"$x_2$ [mm]")
 
 
+def drawReferencePatch(ax, nX, perturb, FS, legendLabel=r"$u=\mathbf{A}\mathbf{X}$ imposed"):
+    """The undeformed patch: smoothing domains, particles, and the constrained face centres.
+
+    The boundary ring is shaded because the error measures exclude it, and the orange points
+    are the face centres of the boundary smoothing domains -- where the Lagrange multipliers of
+    Sec. 6.1 act, and, not by coincidence, the points at which SQCNI evaluates the shape
+    functions for its boundary integration (see drawSqcniStencil).  Returns
+    (cells, isBnd, faceCentres) so a caller can reuse the same lattice.
+    """
+    from matplotlib.collections import PolyCollection
+    from matplotlib.lines import Line2D
+
+    cells, _, isBnd = latticeForDrawing(nX, perturb)
+    ax.add_collection(PolyCollection([cells[k] for k in np.where(~isBnd)[0]],
+                                     facecolors="#eef3f8", edgecolors="0.55",
+                                     linewidths=0.5 * FS))
+    ax.add_collection(PolyCollection([cells[k] for k in np.where(isBnd)[0]],
+                                     facecolors="#f7e2d3", edgecolors="0.55",
+                                     linewidths=0.5 * FS))
+    cen = np.array([c.mean(axis=0) for c in cells])
+    ax.plot(cen[:, 0], cen[:, 1], ".", color="0.2", ms=2.4 * FS)
+    fc = []
+    for c, b in zip(cells, isBnd):
+        if not b:
+            continue
+        for k in range(4):
+            mid = 0.5 * (c[k] + c[(k + 1) % 4])
+            if min(mid[0], mid[1]) < 1e-9 or max(mid[0], mid[1]) > LENGTH - 1e-9:
+                fc.append(mid)
+    fc = np.asarray(fc)
+    ax.plot(fc[:, 0], fc[:, 1], "o", color="#b1500f", ms=2.8 * FS)
+    ax.set_xlim(-0.6, LENGTH + 0.6)
+    ax.set_ylim(-0.6, LENGTH + 0.6)
+    ax.set_aspect("equal")
+    ax.set_xlabel(r"$X_1$ [mm]")
+    ax.set_ylabel(r"$X_2$ [mm]")
+    ax.legend(handles=[
+        Line2D([], [], marker="o", ls="none", color="#b1500f", ms=2.8 * FS, label=legendLabel),
+        Line2D([], [], marker=".", ls="none", color="0.2", ms=2.4 * FS, label="particle"),
+    ], loc="upper center", ncol=2, fontsize=7.0 * FS, frameon=True, framealpha=0.92)
+    return cells, isBnd, fc
+
+
+def drawSqcniStencil(ax, nX, perturb, FS, support=2.5, which=None):
+    """What one particle IS, in SQCNI -- the panel the patch test needs and never had.
+
+    Stabilized quasi-conforming nodal integration puts ONE integration point per particle, at
+    the centre of its smoothing domain, and builds the smoothed gradient there by integrating
+    over the domain BOUNDARY: the shape functions are evaluated at the four face centres and
+    contracted with the face's n dA (Marmot, GradientEnhancedFiniteStrainParticleSQCNI, the
+    one-point rule per face).  NSNI adds the second derivatives from the same boundary
+    integration, contracted with the second moments of the domain about that centre.
+
+    So the picture is: the domain, its four face centres with their outward n dA, the particle
+    at the centre, and the kernel support that decides which particles enter the sum -- the
+    normalised support s_hat = 2.5, which is where the support-size discussion of Sec. 6.1
+    lands.  The same face centres carry the Dirichlet multipliers on the boundary, which is why
+    imposing the field there is what makes the patch test pass.
+    """
+    from matplotlib.collections import PolyCollection
+    from matplotlib.patches import Circle
+    from matplotlib.lines import Line2D
+
+    cells, _, isBnd = latticeForDrawing(nX, perturb)
+    cen = np.array([c.mean(axis=0) for c in cells])
+    if which is None:                      # the interior particle closest to the centre
+        which = int(np.argmin(np.linalg.norm(cen - 0.5 * LENGTH, axis=1)))
+    h = LENGTH / nX
+    R = support * h
+    c0 = cen[which]
+
+    inSupport = np.linalg.norm(cen - c0, axis=1) <= R + 1e-12
+    ax.add_collection(PolyCollection(cells, facecolors="none", edgecolors="0.72",
+                                     linewidths=0.45 * FS))
+    ax.add_collection(PolyCollection([cells[k] for k in np.where(inSupport)[0]],
+                                     facecolors="#eef3f8", edgecolors="0.72",
+                                     linewidths=0.45 * FS))
+    ax.add_collection(PolyCollection([cells[which]], facecolors="#dce8f2",
+                                     edgecolors="#1b6ca8", linewidths=1.0 * FS, zorder=3))
+    ax.add_patch(Circle(c0, R, fill=False, ls=":", ec="#2e8b57", lw=1.0 * FS, zorder=4))
+    ax.plot(cen[inSupport, 0], cen[inSupport, 1], ".", color="0.2", ms=2.4 * FS, zorder=5)
+    ax.plot(cen[~inSupport, 0], cen[~inSupport, 1], ".", color="0.72", ms=2.0 * FS)
+    # the four face centres of THIS domain, with the outward n dA that multiplies them
+    quad = cells[which]
+    for k in range(4):
+        p1, p2 = quad[k], quad[(k + 1) % 4]
+        mid = 0.5 * (p1 + p2)
+        e = p2 - p1
+        n = np.array([e[1], -e[0]])                       # outward for a ccw quad
+        if float(n @ (mid - c0)) < 0.0:
+            n = -n
+        ax.annotate("", xy=tuple(mid + 0.75 * n), xytext=tuple(mid), zorder=6,
+                    arrowprops=dict(arrowstyle="-|>", color="#b1500f", lw=0.8 * FS,
+                                    shrinkA=0.0, shrinkB=0.0, mutation_scale=6.0 * FS))
+        ax.plot([mid[0]], [mid[1]], "o", color="#b1500f", ms=2.8 * FS, zorder=7)
+    ax.plot([c0[0]], [c0[1]], "s", color="#1b6ca8", ms=3.4 * FS, zorder=7)
+    ax.set_aspect("equal")
+    ax.set_xlim(c0[0] - R - 0.7, c0[0] + R + 0.7)
+    ax.set_ylim(c0[1] - R - 0.7, c0[1] + R + 3.4)
+    ax.set_xlabel(r"$X_1$ [mm]")
+    ax.set_ylabel(r"$X_2$ [mm]")
+    ax.legend(handles=[
+        Line2D([], [], marker="s", ls="none", color="#1b6ca8", ms=3.0 * FS,
+               label="integration point"),
+        Line2D([], [], marker="o", ls="none", color="#b1500f", ms=2.6 * FS,
+               label=r"face centre, $\mathbf{n}\,\mathrm{d}A$"),
+        Line2D([], [], ls=":", color="#2e8b57", lw=1.0 * FS,
+               label=rf"support $\hat s={support:g}\,h_p$"),
+    ], loc="upper center", ncol=1, fontsize=6.6 * FS, frameon=True, framealpha=0.94)
+    return which, R
+
+
 def makeFigure(orientation, out=None, nX=8, perturb=0.4):
     """Three panels: the patch, the deformed patch as computed, and the error."""
     import matplotlib
@@ -968,36 +1111,8 @@ def makeFigure(orientation, out=None, nX=8, perturb=0.4):
 
     # ---------------------------------------------------------------- (a) the patch
     a = ax[0]
-    cells, _, isBnd = latticeForDrawing(nX, perturb)
-    a.add_collection(PolyCollection([cells[k] for k in np.where(~isBnd)[0]],
-                                    facecolors="#eef3f8", edgecolors="0.55",
-                                    linewidths=0.5 * FS))
-    a.add_collection(PolyCollection([cells[k] for k in np.where(isBnd)[0]],
-                                    facecolors="#f7e2d3", edgecolors="0.55",
-                                    linewidths=0.5 * FS))
-    cen = np.array([c.mean(axis=0) for c in cells])
-    a.plot(cen[:, 0], cen[:, 1], ".", color="0.2", ms=2.4 * FS)
-    fc = []
-    for c, b in zip(cells, isBnd):
-        if not b:
-            continue
-        for k in range(4):
-            mid = 0.5 * (c[k] + c[(k + 1) % 4])
-            if min(mid[0], mid[1]) < 1e-9 or max(mid[0], mid[1]) > LENGTH - 1e-9:
-                fc.append(mid)
-    fc = np.asarray(fc)
-    a.plot(fc[:, 0], fc[:, 1], "o", color="#b1500f", ms=2.8 * FS)
-    a.set_xlim(-0.6, LENGTH + 0.6)
-    a.set_ylim(-0.6, LENGTH + 0.6)
-    a.set_aspect("equal")
-    a.set_xlabel(r"$X_1$ [mm]")
-    a.set_ylabel(r"$X_2$ [mm]")
+    cells, isBnd, fc = drawReferencePatch(a, nX, perturb, FS)
     a.set_title(rf"(a) reference, {nX}$\times${nX} particles", fontsize=9.5 * FS)
-    a.legend(handles=[
-        Line2D([], [], marker="o", ls="none", color="#b1500f", ms=2.8 * FS,
-               label=r"$u=\mathbf{A}\mathbf{X}$ imposed"),
-        Line2D([], [], marker=".", ls="none", color="0.2", ms=2.4 * FS, label="particle"),
-    ], loc="upper center", ncol=2, fontsize=7.0 * FS, frameon=True, framealpha=0.92)
 
     # ---------------------------------------------------------------- (b) as computed
     # The smoothing domains AS THE COMPUTATION LEFT THEM -- the vertex displacements the
@@ -1097,73 +1212,85 @@ def sweepAffine(nX=8, perturb=0.4, seed=7, support=2.5, beddings=tuple(BEDDINGS)
     return out
 
 
+def sweepPlastic(nX=8, perturb=0.4, seed=7, support=2.5, beddings=tuple(BEDDINGS)):
+    """The same test with the strengths at their real values, in the hardening branch.
+
+    Two things come out of it that the elastic test cannot give.  The reproduction survives the
+    return map -- three orders worse than elastic, which is the return map's own convergence
+    floor, but still machine precision on any reading.  And the bedding sweep finally varies
+    the physics: alphaP is orientation dependent by a factor of five, because the Walpole map
+    of the yield surface is orthotropic where the elastic card, for an in-plane deformation,
+    is not (see sweepAffine).
+    """
+    print("\n  THE PLASTIC PATCH TEST -- real strengths, compressive, hardening branch")
+    A, _ = caseField("compression")
+    print(f"    A = diag({A[0,0]:+.3f}, {A[1,1]:+.3f}), strengths at 1x "
+          f"(f_cy = {FCY/STRENGTH_SCALE:.1f}, f_cu = {FCU/STRENGTH_SCALE:.1f} MPa)")
+    journal = Journal()
+    out = []
+    for b in beddings:
+        r = run_patch(float(b), case="compression", nX=nX, perturb=perturb, seed=seed,
+                      support=support, strengthScale=1.0, journal=journal)
+        out.append(r)
+        print(f"    beta = {b:5.1f} deg   err(u) = {r['errU']:.2e}   err(F) = {r['errF']:.2e}"
+              f"   err(E) = {r['errE']:.2e}   alphaP = {r['alphaPMax']:.4f}"
+              f"   max|stress| = {r['stressMax']:.2f} MPa")
+    aP = [r["alphaPMax"] for r in out]
+    print(f"    worst: err(u) = {max(r['errU'] for r in out):.2e}   "
+          f"err(F) = {max(r['errF'] for r in out):.2e}   "
+          f"err(E) = {max(r['errE'] for r in out):.2e}")
+    print(f"    alphaP over the sweep: {min(aP):.3f} to {max(aP):.3f}, "
+          f"a factor {max(aP)/max(min(aP), 1e-30):.1f} -- the orientation dependence the "
+          f"elastic sweep has none of")
+    return out
+
+
 def makeAffineFigure(results, out=None, nX=8, perturb=0.4):
-    """Four panels: the field, the two errors over the bedding sweep, and both as contours."""
+    """Six panels: what is set up, what is imposed, what a particle is -- then the errors.
+
+    Row 1 is the test itself: (a) the undeformed patch, as Fig. 14(a); (b) the same patch
+    deformed, with the imposed displacement drawn AT the points it is applied to, which in the
+    deformed configuration is where those face centres have moved to; (c) one particle's SQCNI
+    stencil, which is what makes those points the right ones.
+    Row 2 is the result: (d), (e) the two errors resolved over the body, (f) the sweep.
+    """
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     import matplotlib.tri as mtri
     from matplotlib.collections import PolyCollection
 
-    figW = 9.2
+    figW = 13.4
     FS = paperStyle(figW)
-    fig, axes = plt.subplots(2, 2, figsize=(figW, 7.2))
-    (a, b), (c, d) = axes
+    fig, axes = plt.subplots(2, 3, figsize=(figW, 7.2))
+    (a, b, cc), (d, e, f) = axes
 
     A, cOff = caseField("affine")
-    cells, _, isBnd = latticeForDrawing(nX, perturb)
-    fc = []
-    for cell, onB in zip(cells, isBnd):
-        if not onB:
-            continue
-        for k in range(4):
-            mid = 0.5 * (cell[k] + cell[(k + 1) % 4])
-            if min(mid[0], mid[1]) < 1e-9 or max(mid[0], mid[1]) > LENGTH - 1e-9:
-                fc.append(mid)
-    fc = np.asarray(fc)
-
-    # ------------------------------------------------------------- (a) the field as imposed
     rC = [r for r in results if abs(r["bedding"] - AFFINE_CONTOUR_BEDDING) < 1e-9]
     rC = rC[0] if rC else results[0]
-    drawImposedDeformation(a, rC, A, cOff, fc, FS, header=False)
-    a.set_title("(a) the imposed field, as computed", fontsize=9.5 * FS)
-    # the field itself over the whole figure, once: it is what all four panels are about, and
-    # a 4.4 in panel is too narrow for the line
+
+    # ------------------------------------------------------------------- (a) the setup
+    cells, isBnd, fc = drawReferencePatch(a, nX, perturb, FS,
+                                          legendLabel=r"$u=\mathbf{c}+\mathbf{A}\mathbf{X}$")
+    a.set_title(rf"(a) reference, {nX}$\times${nX} particles", fontsize=9.5 * FS)
+
+    # ------------------------------------------------------- (b) the field where it is applied
+    drawImposedDeformation(b, rC, A, cOff, fc, FS, header=False, atDeformed=True)
+    b.set_title("(b) imposed at the deformed face centres", fontsize=9.5 * FS)
     fig.suptitle(fieldHeader(A, cOff), fontsize=9.0 * FS, color="#b1500f", y=0.998)
 
-    # ------------------------------------------------------- (b) both errors over the sweep
-    rr = sorted(results, key=lambda q: q["bedding"])
-    bs = [q["bedding"] for q in rr]
-    for key, lab, col, mk in (("errU", r"$\mathrm{err}(u)$", "#1b6ca8", "o"),
-                              ("errF", r"$\mathrm{err}(F)$", "#e8871a", "s"),
-                              ("errE", r"$\mathrm{err}(\Psi^{\rm e})$", "#2e8b57", "^")):
-        b.semilogy(bs, [max(q[key], 1e-17) for q in rr], "-", marker=mk, color=col,
-                   ms=3.4 * FS, lw=1.1 * FS, label=lab)
-    b.set_xticks(BEDDINGS)
-    b.set_ylim(1e-16, 1e-12)
-    b.set_xlabel(r"bedding orientation $\beta$ [deg]")
-    b.set_ylabel("relative error, interior particles")
-    b.set_title(r"(b) displacement, gradient and energy error", fontsize=9.5 * FS)
-    b.legend(loc="upper center", ncol=3, fontsize=7.6 * FS, frameon=False,
-             columnspacing=1.1, handlelength=1.5)
-    b.grid(True, which="major", color="#DDDDDD", lw=0.4 * FS)
+    # ------------------------------------------------------------------ (c) what a particle is
+    which, R = drawSqcniStencil(cc, nX, perturb, FS, support=rC["support"])
+    cc.set_title("(c) the SQCNI stencil of one particle", fontsize=9.5 * FS)
 
-    # ------------------------------------------------------------------- (c), (d) contours
-    # THE CONTOURS ARE DRAWN ON THE DEFORMED CONFIGURATION, so that all four panels show the
-    # same body.  The cells are the smoothing domains as the computation left them -- the same
-    # vertex-displacement state variable panel (a) is drawn from -- and each particle's value
-    # sits at the position the run gives it, X + u.  The centroid of a domain is NOT that
-    # position: the particle centre of a perturbed quad differs from the mean of its four
-    # vertices by up to 0.15 mm here, so using the centroid would misplace every value.
+    # ------------------------------------------------------------------- (d), (e) the contours
     xy0, interior = rC["xy0"], rC["interior"]
     xyD = xy0 + rC["uNum"]
     vD, v0 = rC["verts"], rC["verts0"]
-    # THE FIELD IS CARRIED OVER THE WHOLE BODY, not just to the outermost particle centres.
-    # The particles carry one value each, so the contour needs nodes on the boundary too: the
-    # smoothing-domain corners are added, each with the mean of the particles that share it,
-    # which is the usual nodal averaging of a cell-wise field and the only interpolation
-    # anywhere in this figure.  The images of a shared reference vertex coincide here (the
-    # field is homogeneous), so one deformed position per corner is well defined.
+    # The field is carried over the whole body, not just to the outermost particle centres: the
+    # particles carry one value each, so the smoothing-domain corners are added as nodes, with
+    # the mean of the particles sharing them.  That is the usual nodal averaging of a cell-wise
+    # field and the only interpolation in this figure.
     corners = {}
     for pp in range(v0.shape[0]):
         for kk in range(4):
@@ -1171,27 +1298,20 @@ def makeAffineFigure(results, out=None, nX=8, perturb=0.4):
             corners.setdefault(k_, []).append((vD[pp, kk], pp))
     cornerXY = np.array([np.mean([q for q, _ in im], axis=0) for im in corners.values()])
     cornerOf = [[i for _, i in im] for im in corners.values()]
-    # The SAME two measures panel (b) plots, so that the largest value of each field over the
-    # interior particles IS the point (b) shows at this orientation -- both are the largest
-    # componentwise departure, referred to the amplitude of the quantity itself, and neither
-    # is a Euclidean norm.  The absolute fields are returned by run_patch as well and printed
-    # below, in mm and MPa, since the relative ones cannot carry a unit.
+    # the SAME two measures panel (f) plots, so the largest value of each field over the
+    # interior particles IS the point (f) shows at this orientation
     for ax, field, title, cmap in (
-            (c, rC["errUField"],
-             r"(c) $\max_i|u_i-u_{{\rm ex},i}|/\max|u_{\rm ex}|$, deformed patch", "Blues"),
-            (d, rC["errEField"],
-             r"(d) $|\Psi^{\rm e}-\Psi^{\rm e}_{\rm ex}|/\Psi^{\rm e}_{\rm ex}$, "
-             r"deformed patch", "Greens")):
+            (d, rC["errUField"],
+             r"(d) $\max_i|u_i-u_{{\rm ex},i}|/\max|u_{\rm ex}|$", "Blues"),
+            (e, rC["errEField"],
+             r"(e) $|\Psi^{\rm e}-\Psi^{\rm e}_{\rm ex}|/\Psi^{\rm e}_{\rm ex}$",
+             "Greens")):
         field = np.asarray(field)
         vals = np.concatenate([field, [field[ii].mean() for ii in cornerOf]])
         pts = np.vstack([xyD, cornerXY])
         tri = mtri.Triangulation(pts[:, 0], pts[:, 1])
         expo = int(math.floor(math.log10(max(vals.max(), 1e-300))))
         cf = ax.tricontourf(tri, vals / 10.0 ** expo, levels=12, cmap=cmap)
-        # The deformed smoothing domains over the field, and the reference outline dashed
-        # behind it, so that these panels are the same body as panel (a) and are seen to be.
-        # The coloured area still stops short of the boundary: it is the hull of the particle
-        # centres, which lie half a cell inside it, and that is where the field is sampled.
         ax.add_collection(PolyCollection(list(vD), facecolors="none", edgecolors="0.45",
                                          linewidths=0.35 * FS, alpha=0.75, zorder=3))
         ax.plot([0, LENGTH, LENGTH, 0, 0], [0, 0, LENGTH, LENGTH, 0], "--",
@@ -1209,17 +1329,33 @@ def makeAffineFigure(results, out=None, nX=8, perturb=0.4):
         ax.set_xlabel(r"$x_1$ [mm]")
         ax.set_ylabel(r"$x_2$ [mm]")
         ax.set_title(title + rf" at $\beta={rC['bedding']:.0f}^\circ$", fontsize=8.6 * FS)
-    # no legend on the contours: the filled dots are the interior particles the maxima are
-    # taken over, the open ones the constrained ring, and the caption says so rather than a
-    # box over the field
+
+    # ------------------------------------------------------------------------ (f) the sweep
+    rr = sorted(results, key=lambda q: q["bedding"])
+    bs = [q["bedding"] for q in rr]
+    for key, lab, col, mk in (("errU", r"$\mathrm{err}(u)$", "#1b6ca8", "o"),
+                              ("errF", r"$\mathrm{err}(F)$", "#e8871a", "s"),
+                              ("errE", r"$\mathrm{err}(\Psi^{\rm e})$", "#2e8b57", "^")):
+        f.semilogy(bs, [max(q[key], 1e-17) for q in rr], "-", marker=mk, color=col,
+                   ms=3.4 * FS, lw=1.1 * FS, label=lab)
+    f.set_xticks(BEDDINGS)
+    f.set_ylim(1e-16, 1e-12)
+    f.set_xlabel(r"bedding orientation $\beta$ [deg]")
+    f.set_ylabel("relative error, interior particles")
+    f.set_title("(f) the three errors over the sweep", fontsize=9.5 * FS)
+    f.legend(loc="upper center", ncol=3, fontsize=7.6 * FS, frameon=False,
+             columnspacing=1.1, handlelength=1.5)
+    f.grid(True, which="major", color="#DDDDDD", lw=0.4 * FS)
+
     print(f"  contours at beta = {rC['bedding']:.0f} deg, relative, and their interior maxima "
-          f"against panel (b): err(u) {rC['errUField'][interior].max():.2e} vs "
+          f"against panel (f): err(u) {rC['errUField'][interior].max():.2e} vs "
           f"{rC['errU']:.2e}, err(E) {rC['errEField'][interior].max():.2e} vs "
           f"{rC['errE']:.2e}")
     print(f"             the same two absolutely: |u - u_ex| max "
           f"{rC['errUAbsField'].max():.2e} mm, |Psi - Psi_ex| max "
           f"{rC['errEAbsField'].max():.2e} MPa on Psi_ex = {rC['psiEx']:.4f} MPa")
-    fig.tight_layout(rect=(0.0, 0.0, 1.0, 0.975))
+    print(f"             panel (c): particle {which}, support radius {R:.3f} mm")
+    fig.tight_layout(rect=(0.0, 0.0, 1.0, 0.988))
     out = out or os.path.join(HERE, "fig_patch_affine.pdf")
     fig.savefig(out)
     fig.savefig(out.replace(".pdf", ".png"), dpi=145)
@@ -1250,6 +1386,8 @@ def main():
     ap.add_argument("--affine", action="store_true",
                     help="the affine study u = c + A X, with the energy error, and "
                          "fig_patch_affine.pdf")
+    ap.add_argument("--plastic", action="store_true",
+                    help="the same test with the strengths at their real values, compressive")
     args = ap.parse_args()
 
     cases = (args.case,) if args.case else tuple(LOAD_CASES)
@@ -1282,6 +1420,9 @@ def main():
     if args.affine:
         aff = sweepAffine(nX=args.nx, perturb=args.perturb, support=args.support)
         makeAffineFigure(aff, nX=args.nx, perturb=args.perturb)
+
+    if args.plastic:
+        sweepPlastic(nX=args.nx, perturb=args.perturb, support=args.support)
 
 
 @pytest.fixture(autouse=True)
