@@ -1099,6 +1099,7 @@ def makeAffineFigure(results, out=None, nX=8, perturb=0.4):
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     import matplotlib.tri as mtri
+    from matplotlib.collections import PolyCollection
 
     figW = 9.2
     FS = paperStyle(figW)
@@ -1147,16 +1148,23 @@ def makeAffineFigure(results, out=None, nX=8, perturb=0.4):
     xy0, interior = rC["xy0"], rC["interior"]
     tri = mtri.Triangulation(xy0[:, 0], xy0[:, 1])
     for ax, field, title, cmap in (
-            (c, rC["errUField"], r"(c) $|u-u_{\rm ex}|/\max|u_{\rm ex}|$", "Blues"),
+            (c, rC["errUField"], r"(c) $|u-u_{\rm ex}|/\max|u_{\rm ex}|$, reference patch",
+             "Blues"),
             (d, rC["errEField"], r"(d) $|\Psi^{\rm e}-\Psi^{\rm e}_{\rm ex}|"
-                                 r"/\Psi^{\rm e}_{\rm ex}$", "Greens")):
+                                 r"/\Psi^{\rm e}_{\rm ex}$, reference patch", "Greens")):
         f15 = np.asarray(field) * 1e15
         cf = ax.tricontourf(tri, f15, levels=12, cmap=cmap)
-        ax.plot(xy0[interior, 0], xy0[interior, 1], ".", color="0.25", ms=2.2 * FS)
-        ax.plot(xy0[~interior, 0], xy0[~interior, 1], "o", mfc="none", mec="0.25",
-                ms=2.6 * FS, mew=0.5 * FS)
-        ax.plot([0, LENGTH, LENGTH, 0, 0], [0, 0, LENGTH, LENGTH, 0], "-",
-                color="0.35", lw=0.6 * FS)
+        # THE REFERENCE LATTICE ON TOP, and it is there to stop a misreading: these two panels
+        # are the REFERENCE configuration, not the deformed one of panel (a).  What makes the
+        # coloured area look distorted is nothing to do with the deformation -- it is the hull
+        # of the particle CENTRES, which sit half a cell inside the boundary and are perturbed
+        # by 0.4 h_p, so its edge is wavy and inset.  With the undeformed cells drawn over it
+        # the frame is unmistakable.
+        ax.add_collection(PolyCollection(cells, facecolors="none", edgecolors="0.45",
+                                         linewidths=0.35 * FS, alpha=0.75, zorder=3))
+        ax.plot(xy0[interior, 0], xy0[interior, 1], ".", color="0.15", ms=2.2 * FS, zorder=4)
+        ax.plot(xy0[~interior, 0], xy0[~interior, 1], "o", mfc="none", mec="0.15",
+                ms=2.6 * FS, mew=0.5 * FS, zorder=4)
         cb = fig.colorbar(cf, ax=ax, fraction=0.046, pad=0.03)
         cb.ax.tick_params(labelsize=7.0 * FS)
         cb.set_label(r"$\times 10^{-15}$", fontsize=7.4 * FS)
@@ -1165,7 +1173,7 @@ def makeAffineFigure(results, out=None, nX=8, perturb=0.4):
         ax.set_ylim(-0.4, LENGTH + 0.4)
         ax.set_xlabel(r"$X_1$ [mm]")
         ax.set_ylabel(r"$X_2$ [mm]")
-        ax.set_title(title + rf" at $\beta={rC['bedding']:.0f}^\circ$", fontsize=9.5 * FS)
+        ax.set_title(title + rf" at $\beta={rC['bedding']:.0f}^\circ$", fontsize=8.6 * FS)
     # no legend on the contours: the filled dots are the interior particles the maxima are
     # taken over, the open ones the constrained ring, and the caption says so rather than a
     # box over the field
