@@ -1171,11 +1171,17 @@ def makeAffineFigure(results, out=None, nX=8, perturb=0.4):
             corners.setdefault(k_, []).append((vD[pp, kk], pp))
     cornerXY = np.array([np.mean([q for q, _ in im], axis=0) for im in corners.values()])
     cornerOf = [[i for _, i in im] for im in corners.values()]
-    for ax, field, title, unit, cmap in (
-            (c, rC["errUAbsField"], r"(c) $|u-u_{\rm ex}|$, deformed patch", "mm", "Blues"),
-            (d, rC["errEAbsField"],
-             r"(d) $|\Psi^{\rm e}-\Psi^{\rm e}_{\rm ex}|$, deformed patch", "MPa",
-             "Greens")):
+    # The SAME two measures panel (b) plots, so that the largest value of each field over the
+    # interior particles IS the point (b) shows at this orientation -- both are the largest
+    # componentwise departure, referred to the amplitude of the quantity itself, and neither
+    # is a Euclidean norm.  The absolute fields are returned by run_patch as well and printed
+    # below, in mm and MPa, since the relative ones cannot carry a unit.
+    for ax, field, title, cmap in (
+            (c, rC["errUField"],
+             r"(c) $\max_i|u_i-u_{{\rm ex},i}|/\max|u_{\rm ex}|$, deformed patch", "Blues"),
+            (d, rC["errEField"],
+             r"(d) $|\Psi^{\rm e}-\Psi^{\rm e}_{\rm ex}|/\Psi^{\rm e}_{\rm ex}$, "
+             r"deformed patch", "Greens")):
         field = np.asarray(field)
         vals = np.concatenate([field, [field[ii].mean() for ii in cornerOf]])
         pts = np.vstack([xyD, cornerXY])
@@ -1195,7 +1201,7 @@ def makeAffineFigure(results, out=None, nX=8, perturb=0.4):
                 ms=2.6 * FS, mew=0.5 * FS, zorder=4)
         cb = fig.colorbar(cf, ax=ax, fraction=0.046, pad=0.03)
         cb.ax.tick_params(labelsize=7.0 * FS)
-        cb.set_label(rf"$\times 10^{{{expo}}}$ {unit}", fontsize=7.4 * FS)
+        cb.set_label(rf"$\times 10^{{{expo}}}$", fontsize=7.4 * FS)
         ax.set_aspect("equal")
         pad = 0.5
         ax.set_xlim(min(0.0, vD[:, :, 0].min()) - pad, max(LENGTH, vD[:, :, 0].max()) + pad)
@@ -1206,11 +1212,13 @@ def makeAffineFigure(results, out=None, nX=8, perturb=0.4):
     # no legend on the contours: the filled dots are the interior particles the maxima are
     # taken over, the open ones the constrained ring, and the caption says so rather than a
     # box over the field
-    print(f"  contours at beta = {rC['bedding']:.0f} deg, absolute: "
-          f"|u - u_ex| max {rC['errUAbsField'].max():.2e} mm (interior "
-          f"{rC['errUAbsField'][interior].max():.2e}), "
-          f"|Psi - Psi_ex| max {rC['errEAbsField'].max():.2e} MPa (interior "
-          f"{rC['errEAbsField'][interior].max():.2e}), Psi_ex = {rC['psiEx']:.4f} MPa")
+    print(f"  contours at beta = {rC['bedding']:.0f} deg, relative, and their interior maxima "
+          f"against panel (b): err(u) {rC['errUField'][interior].max():.2e} vs "
+          f"{rC['errU']:.2e}, err(E) {rC['errEField'][interior].max():.2e} vs "
+          f"{rC['errE']:.2e}")
+    print(f"             the same two absolutely: |u - u_ex| max "
+          f"{rC['errUAbsField'].max():.2e} mm, |Psi - Psi_ex| max "
+          f"{rC['errEAbsField'].max():.2e} MPa on Psi_ex = {rC['psiEx']:.4f} MPa")
     fig.tight_layout(rect=(0.0, 0.0, 1.0, 0.975))
     out = out or os.path.join(HERE, "fig_patch_affine.pdf")
     fig.savefig(out)
