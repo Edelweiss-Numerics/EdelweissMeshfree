@@ -670,7 +670,8 @@ def run_patch(beddingDeg, case="mixed", nX=8, perturb=0.4, seed=7, particle="sqc
     # two, as the largest value over the interior.
     psiEx = strainEnergyDensity(FEx, beddingDeg)
     psiNum = np.array([strainEnergyDensity(FNum[i], beddingDeg) for i in range(nP)])
-    errEField = np.abs(psiNum - psiEx) / abs(psiEx)
+    errEAbsField = np.abs(psiNum - psiEx)
+    errEField = errEAbsField / abs(psiEx)
     errE = float(errEField[inner].max()) if np.isfinite(psiEx) else float("nan")
 
     return dict(
@@ -682,6 +683,9 @@ def run_patch(beddingDeg, case="mixed", nX=8, perturb=0.4, seed=7, particle="sqc
         alphaPMax=float(np.abs(alphaP).max()),
         nInterior=int(inner.sum()), failed=failed,
         errUField=np.abs(uNum - uEx).max(axis=1) / scale,
+        # the same two fields unnormalised, for the contours: mm and MPa
+        errUAbsField=np.linalg.norm(uNum - uEx, axis=1),
+        errEAbsField=errEAbsField,
         errFComp=np.abs(FNum - FEx)[inner].max(axis=0),
         stressMax=float(np.abs(fo["stress"].getLastResult()).max()),
         # The smoothing domains AS THE COMPUTATION LEFT THEM.  "vertex displacements" on the
@@ -1153,15 +1157,31 @@ def makeAffineFigure(results, out=None, nX=8, perturb=0.4):
     # vertices by up to 0.15 mm here, so using the centroid would misplace every value.
     xy0, interior = rC["xy0"], rC["interior"]
     xyD = xy0 + rC["uNum"]
-    vD = rC["verts"]
-    tri = mtri.Triangulation(xyD[:, 0], xyD[:, 1])
-    for ax, field, title, cmap in (
-            (c, rC["errUField"], r"(c) $|u-u_{\rm ex}|/\max|u_{\rm ex}|$, deformed patch",
-             "Blues"),
-            (d, rC["errEField"], r"(d) $|\Psi^{\rm e}-\Psi^{\rm e}_{\rm ex}|"
-                                 r"/\Psi^{\rm e}_{\rm ex}$, deformed patch", "Greens")):
-        f15 = np.asarray(field) * 1e15
-        cf = ax.tricontourf(tri, f15, levels=12, cmap=cmap)
+    vD, v0 = rC["verts"], rC["verts0"]
+    # THE FIELD IS CARRIED OVER THE WHOLE BODY, not just to the outermost particle centres.
+    # The particles carry one value each, so the contour needs nodes on the boundary too: the
+    # smoothing-domain corners are added, each with the mean of the particles that share it,
+    # which is the usual nodal averaging of a cell-wise field and the only interpolation
+    # anywhere in this figure.  The images of a shared reference vertex coincide here (the
+    # field is homogeneous), so one deformed position per corner is well defined.
+    corners = {}
+    for pp in range(v0.shape[0]):
+        for kk in range(4):
+            k_ = (round(float(v0[pp, kk, 0]), 9), round(float(v0[pp, kk, 1]), 9))
+            corners.setdefault(k_, []).append((vD[pp, kk], pp))
+    cornerXY = np.array([np.mean([q for q, _ in im], axis=0) for im in corners.values()])
+    cornerOf = [[i for _, i in im] for im in corners.values()]
+    for ax, field, title, unit, cmap in (
+            (c, rC["errUAbsField"], r"(c) $|u-u_{\rm ex}|$, deformed patch", "mm", "Blues"),
+            (d, rC["errEAbsField"],
+             r"(d) $|\Psi^{\rm e}-\Psi^{\rm e}_{\rm ex}|$, deformed patch", "MPa",
+             "Greens")):
+        field = np.asarray(field)
+        vals = np.concatenate([field, [field[ii].mean() for ii in cornerOf]])
+        pts = np.vstack([xyD, cornerXY])
+        tri = mtri.Triangulation(pts[:, 0], pts[:, 1])
+        expo = int(math.floor(math.log10(max(vals.max(), 1e-300))))
+        cf = ax.tricontourf(tri, vals / 10.0 ** expo, levels=12, cmap=cmap)
         # The deformed smoothing domains over the field, and the reference outline dashed
         # behind it, so that these panels are the same body as panel (a) and are seen to be.
         # The coloured area still stops short of the boundary: it is the hull of the particle
@@ -1175,7 +1195,7 @@ def makeAffineFigure(results, out=None, nX=8, perturb=0.4):
                 ms=2.6 * FS, mew=0.5 * FS, zorder=4)
         cb = fig.colorbar(cf, ax=ax, fraction=0.046, pad=0.03)
         cb.ax.tick_params(labelsize=7.0 * FS)
-        cb.set_label(r"$\times 10^{-15}$", fontsize=7.4 * FS)
+        cb.set_label(rf"$\times 10^{{{expo}}}$ {unit}", fontsize=7.4 * FS)
         ax.set_aspect("equal")
         pad = 0.5
         ax.set_xlim(min(0.0, vD[:, :, 0].min()) - pad, max(LENGTH, vD[:, :, 0].max()) + pad)
@@ -1186,11 +1206,11 @@ def makeAffineFigure(results, out=None, nX=8, perturb=0.4):
     # no legend on the contours: the filled dots are the interior particles the maxima are
     # taken over, the open ones the constrained ring, and the caption says so rather than a
     # box over the field
-    print(f"  contours at beta = {rC['bedding']:.0f} deg: "
-          f"err(u) max {rC['errUField'].max():.2e} (interior "
-          f"{rC['errUField'][interior].max():.2e}), "
-          f"err(E) max {rC['errEField'].max():.2e} (interior "
-          f"{rC['errEField'][interior].max():.2e}), Psi = {rC['psiEx']:.4f} MPa")
+    print(f"  contours at beta = {rC['bedding']:.0f} deg, absolute: "
+          f"|u - u_ex| max {rC['errUAbsField'].max():.2e} mm (interior "
+          f"{rC['errUAbsField'][interior].max():.2e}), "
+          f"|Psi - Psi_ex| max {rC['errEAbsField'].max():.2e} MPa (interior "
+          f"{rC['errEAbsField'][interior].max():.2e}), Psi_ex = {rC['psiEx']:.4f} MPa")
     fig.tight_layout(rect=(0.0, 0.0, 1.0, 0.975))
     out = out or os.path.join(HERE, "fig_patch_affine.pdf")
     fig.savefig(out)
