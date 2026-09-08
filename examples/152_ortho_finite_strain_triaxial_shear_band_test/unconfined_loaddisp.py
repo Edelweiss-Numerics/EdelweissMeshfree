@@ -57,9 +57,9 @@ def main():
         ax[2].plot(omMax[: iL + 1], sig[: iL + 1] / max(sig[iPk], 1e-30), color=cols[b], lw=1.9)
         rows.append((b, sig[iPk], s[iPk], sig[iL], s[iL], omMax[iL],
                      100 * (1 - sig[iL] / sig[iPk]), iL < len(s) - 2))
-    ax[0].set_xlabel(r"axial shortening [\%]")
-    ax[0].set_ylabel(r"$\sigma_{yy}$ [MPa]")
-    ax[1].set_xlabel(r"axial shortening [\%]")
+    ax[0].set_xlabel(r"axial shortening in \%")
+    ax[0].set_ylabel(r"$\sigma_{yy}$ in MPa")
+    ax[1].set_xlabel(r"axial shortening in \%")
     ax[1].set_ylabel(r"max damage $\omega$")
     ax[1].set_ylim(-0.03, 1.03)
     ax[2].set_xlabel(r"max damage $\omega$")
@@ -78,7 +78,7 @@ def main():
     fig.savefig(out)
     fig.savefig(out.replace(".pdf", ".png"), dpi=145)
     print(f"  wrote {out}\n")
-    print("  beta | peak [MPa] @eps%  | end [MPa] @eps% | omegaMax | softening | unloading")
+    print("  beta | peak in MPa @eps%  | end in MPa @eps% | omegaMax | softening | unloading")
     print("  " + "-" * 78)
     for b, sp, ep, se, ee, o, sf, ul in rows:
         print(f"  {b:4d} | {sp:10.2f} {ep:6.2f}  | {se:9.2f} {ee:6.2f} | {o:8.3f} | "

@@ -63,9 +63,9 @@ def main():
           f" 5 MPa confinement,")
     print(" SQCNIxNSNI stabilized nodal integration, bedding normal at 45 deg")
     print("=" * 100)
-    print(f"{'h [mm]':>8} {'h/l':>6} {'particles':>10} | {'peak frozen':>12} {'at [%]':>7}"
-          f" | {'peak convect':>13} {'at [%]':>7} | {'diff [%]':>9} | {'reached f/c [%]':>16}"
-          f" | {'max Rp [deg]':>12}")
+    print(f"{'h in mm':>8} {'h/l':>6} {'particles':>10} | {'peak frozen':>12} {'at in %':>7}"
+          f" | {'peak convect':>13} {'at in %':>7} | {'diff in %':>9} | {'reached f/c in %':>16}"
+          f" | {'max Rp in deg':>12}")
     print("-" * 100)
     rows = []
     for tag in tags:
@@ -107,14 +107,14 @@ def main():
     ax[0].plot(a[:, 1], a[:, 4], "s--", label="convected frame")
     ax[0].set_xscale("log")
     ax[0].set_xlabel("particles")
-    ax[0].set_ylabel(r"peak $-\tau_{yy}$ [MPa]")
+    ax[0].set_ylabel(r"peak $-\tau_{yy}$ in MPa")
     ax[0].set_title("peak strength converges", fontsize=10)
 
     ax[1].plot(a[:, 1], a[:, 3], "o-", label="frozen frame")
     ax[1].plot(a[:, 1], a[:, 5], "s--", label="convected frame")
     ax[1].set_xscale("log")
     ax[1].set_xlabel("particles")
-    ax[1].set_ylabel("shortening at the peak [%]")
+    ax[1].set_ylabel("shortening at the peak in %")
     ax[1].set_title("and so does the strain at the peak", fontsize=10)
 
     ax[2].plot(a[:, 1], a[:, 6], "o-", label="frozen frame")
@@ -122,7 +122,7 @@ def main():
     ax[2].set_xscale("log")
     ax[2].set_yscale("log")
     ax[2].set_xlabel("particles")
-    ax[2].set_ylabel("reachable shortening [%]")
+    ax[2].set_ylabel("reachable shortening in %")
     ax[2].set_title("but the reachable post-peak collapses\n(the limit point, not the mesh)",
                     fontsize=10)
 
@@ -143,8 +143,8 @@ def main():
             axx.plot(hh[:, 0] * 100, -hh[:, 1], ls, lw=1.4,
                      label=f"h = {r['h']:.3f} mm ({r['nP']} particles)")
     for axx, ttl in ((ax3[0], "frozen frame"), (ax3[1], "convected frame")):
-        axx.set_xlabel(("shear angle" if isShear else "shortening") + r" $\gamma$ [%]")
-        axx.set_ylabel(r"$-\tau_{yy}$ at mid-height [MPa]")
+        axx.set_xlabel(("shear angle" if isShear else "shortening") + r" $\gamma$ in %")
+        axx.set_ylabel(r"$-\tau_{yy}$ at mid-height in MPa")
         axx.set_title(ttl + " -- curves should coincide if the\ngradient enhancement regularises",
                       fontsize=9)
         axx.grid(alpha=0.3)

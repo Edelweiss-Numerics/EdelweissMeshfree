@@ -78,12 +78,12 @@ def main():
                 k = int(np.argmin(np.abs(omM[: iL + 1] - t)))
                 wm[t] = bandWidth(d["xy0"] + d["u"][k], om[k])[0]
         rows.append((h, n, s[iL], sig[iP], s[iP], sig[iL], omM[iL], wm))
-    ax[0].set_xlabel(r"axial shortening [\%]"); ax[0].set_ylabel(r"$\sigma_{yy}$ [MPa]")
-    ax[1].set_xlabel(r"axial shortening [\%]"); ax[1].set_ylabel(r"max damage $\omega$")
+    ax[0].set_xlabel(r"axial shortening in \%"); ax[0].set_ylabel(r"$\sigma_{yy}$ in MPa")
+    ax[1].set_xlabel(r"axial shortening in \%"); ax[1].set_ylabel(r"max damage $\omega$")
     ax[1].set_ylim(-0.03, 1.03)
     ax[2].set_xscale("log")
     ax[2].set_xlabel("particles")
-    ax[2].set_ylabel(r"peak $\sigma_{yy}$ [MPa]")
+    ax[2].set_ylabel(r"peak $\sigma_{yy}$ in MPa")
     pk = [r[3] for r in rows]
     ax[2].set_ylim(min(pk) - 3, max(pk) + 3)
     ax[2].axhline(np.mean(pk), color="0.5", ls="--", lw=1.0)
@@ -105,7 +105,7 @@ def main():
         print(f"  {h:5.2f} {n:5d} {sr:7.2f} {pkv:7.2f} {pe:6.2f} {ev:7.2f} {o:9.3f}")
     print(f"\n  peak spread over a {max(r[1] for r in rows)//min(r[1] for r in rows)}x range in "
           f"particle number: {100*(max(pk)-min(pk))/np.mean(pk):.1f} %")
-    print("\n  band width at MATCHED maximum damage [mm]  (in brackets: width / l)")
+    print("\n  band width at MATCHED maximum damage in mm  (in brackets: width / l)")
     hdr = "   omega |" + "".join(f"  h_p = {h:.2f}      " for h, *_ in rows)
     print(hdr)
     for t in targets:

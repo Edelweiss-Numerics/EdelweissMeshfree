@@ -32,7 +32,7 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 """
-Plane-strain TRIAXIAL COMPRESSION of a bedded specimen, RKPM meshfree, with the
+Plane-strain COMPRESSION of a bedded specimen, RKPM meshfree, with the
 gradient-enhanced orthotropic finite-strain damage-plasticity model
 ``GRADIENTENHANCEDORTHOCDPFINITESTRAIN`` -- run to a localised inclined SHEAR BAND, and
 used to show what the PLASTIC CONVECTION OF THE MATERIAL FRAME does inside that band.
@@ -224,7 +224,7 @@ ALPHA, BETA, GAMMA = 1.20, 1.00, 1.00
 ZETA, XI, ETA = 1.30, 1.00, 1.00
 
 WEIGHT_M = 1.05  # over-nonlocal m > 1
-L_NONLOCAL = 1.25  # nonlocal length l [mm]; FIXED by the material, not by the mesh
+L_NONLOCAL = 1.25  # nonlocal length l in mm; FIXED by the material, not by the mesh
 
 # Hardening level at which damage is allowed to start.  1.0 is the material's default and has a
 # structural convergence wall: dqH/dalphaP vanishes quadratically at alphaP = 1, so the tangent
@@ -318,11 +318,11 @@ def lNonlocal():
 
 
 def capDepth():
-    return 2.0 * lNonlocal()   # depth of the hard platen caps [mm]
+    return 2.0 * lNonlocal()   # depth of the hard platen caps in mm
 
 
 def seedSize():
-    return 1.0 * lNonlocal()   # half-height / width of the weak seed patch [mm]
+    return 1.0 * lNonlocal()   # half-height / width of the weak seed patch in mm
 
 
 SLAB_ANGLE_DEG = 45.0   # inclination of the weak slab to the load axis
@@ -875,7 +875,7 @@ def makePlots(results, which="best", fname="contour_plots.png"):
         for col, (field, title, cmap) in enumerate(
             (
                 ("omega", r"damage $\omega$", "inferno"),
-                ("frameRotation", r"material frame rotation $R^p$ [deg]", "viridis"),
+                ("frameRotation", r"material frame rotation $R^p$ in deg", "viridis"),
             )
         ):
             ax = axes[row][col]
@@ -883,8 +883,8 @@ def makePlots(results, which="best", fname="contour_plots.png"):
             plt.colorbar(sc, ax=ax, shrink=0.7)
             ax.set_title(f"{title}\n{label}", fontsize=9)
             ax.set_aspect("equal")
-            ax.set_xlabel("x [mm]")
-            ax.set_ylabel("y [mm]")
+            ax.set_xlabel("x in mm")
+            ax.set_ylabel("y in mm")
 
         # the material axes themselves, on the deformed configuration, over the damage field
         ax = axes[row][2]
@@ -904,8 +904,8 @@ def makePlots(results, which="best", fname="contour_plots.png"):
         ax.set_title(f"bedding trace $e^{{(2)}}$ (cyan), normal $e^{{(1)}}$ (white)\n{label}",
                      fontsize=9)
         ax.set_aspect("equal")
-        ax.set_xlabel("x [mm]")
-        ax.set_ylabel("y [mm]")
+        ax.set_xlabel("x in mm")
+        ax.set_ylabel("y in mm")
 
     fig.tight_layout()
     fig.savefig(fname, dpi=140)
@@ -918,11 +918,11 @@ def makePlots(results, which="best", fname="contour_plots.png"):
         lab = "convected frame" if result["frameUpdate"] else "frozen frame (legacy)"
         ax.plot(hist[:, 0] * 100, -hist[:, 1], "-", lw=1.4, label=lab)
         ax2.plot(hist[:, 0] * 100, hist[:, 3], "-", lw=1.4, label=lab)
-    ax.set_xlabel("nominal axial shortening [%]")
-    ax.set_ylabel(r"$-\tau_{yy}$ at mid-height [MPa]")
+    ax.set_xlabel("nominal axial shortening in %")
+    ax.set_ylabel(r"$-\tau_{yy}$ at mid-height in MPa")
     ax.set_title(f"bedding normal at {BEDDING_PHI_DEG:.0f}$^\\circ$ to $x$", fontsize=10)
-    ax2.set_xlabel("nominal axial shortening [%]")
-    ax2.set_ylabel(r"max material frame rotation $R^p$ [deg]")
+    ax2.set_xlabel("nominal axial shortening in %")
+    ax2.set_ylabel(r"max material frame rotation $R^p$ in deg")
     ax2.set_title("how far the bedding has turned", fontsize=10)
     for a in (ax, ax2):
         a.grid(alpha=0.3)
@@ -982,12 +982,12 @@ if __name__ == "__main__":
     parser.add_argument("--frozen", action="store_true", help="legacy frozen material frame")
     parser.add_argument("--compare", action="store_true", help="run both frames and overlay")
     parser.add_argument("--coarse", action="store_true", help="h = 2.5 mm instead of 1.25 mm")
-    parser.add_argument("--h", type=float, default=None, help="particle spacing [mm], overrides --coarse")
+    parser.add_argument("--h", type=float, default=None, help="particle spacing in mm, overrides --coarse")
     parser.add_argument("--particle", choices=("sqcnixnsni", "point"), default="sqcnixnsni",
                         help="sqcnixnsni = stabilized nodal integration on quad smoothing "
                              "domains (default); point = plain unstabilized nodal integration")
     parser.add_argument("--confine", type=float, default=2.0,
-                        help="constant confining pressure [MPa] on the lateral faces "
+                        help="constant confining pressure in MPa on the lateral faces "
                              "(needs --particle sqcnixnsni); 0 = free lateral boundaries")
     parser.add_argument("--no-ensight", action="store_true")
     parser.add_argument("--softmod", type=float, default=None,
@@ -1004,7 +1004,7 @@ if __name__ == "__main__":
                         help="ductility divisor As of the damage driver: xs = 1 + As(4 sqrt(Rs)-3). "
                              "The calibrated 15 makes xs ~ 16 in compression and damage crawl; "
                              "0.5-2 makes compression damage properly and leaves the peak intact")
-    parser.add_argument("--lnl", type=float, default=None, help="nonlocal length l [mm]")
+    parser.add_argument("--lnl", type=float, default=None, help="nonlocal length l in mm")
     parser.add_argument("--seed", choices=("slab", "patch"), default="patch",
                         help="patch = one small weak square at mid-height on the left edge "
                              "(default; with As = 2 this localises cleanly); slab = a "
@@ -1015,7 +1015,7 @@ if __name__ == "__main__":
                              "(verified to 3.6e-16), so the yield surface cannot see the material "
                              "frame at all and the frame update only reaches the elasticity.")
     parser.add_argument("--beta", type=float, default=None,
-                        help="inclination of the stratification PLANES to the horizontal [deg], "
+                        help="inclination of the stratification PLANES to the horizontal in deg, "
                              "the paper's beta.  beta = 0 puts the bedding normal along the load "
                              "axis, beta = 90 perpendicular to it.  Internally the card carries "
                              "the NORMAL angle from x, so phi = 90 - beta.")

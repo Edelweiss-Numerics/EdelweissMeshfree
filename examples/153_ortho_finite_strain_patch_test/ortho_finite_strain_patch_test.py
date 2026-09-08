@@ -234,18 +234,30 @@ def exactDisplacement(A, xy, c=None):
 # with applies unchanged, because the field is still affine and the stress it produces is
 # still homogeneous.
 EXTRA_CASES = {
-    "affine": (np.array([[0.10, 0.20], [0.15, 0.10]]), np.array([0.10, 0.05])),
-    # A PLASTIC patch test.  A homogeneous field yields homogeneously, so the exact-solution
-    # argument survives the return map untouched: a constant F still gives a constant stress,
-    # div tau = 0 still holds, and the field is still the exact solution of the discrete
-    # problem.  What it now tests is the return map itself and the gradient-damage coupling.
-    # It has to be COMPRESSIVE and it has to stay in the hardening branch.  In tension the card
-    # fails at f_tu = 5.1 MPa and softens to nothing -- measured, the affine case above at real
-    # strengths reaches alphaP = 398 and 1.2 MPa of stress at a fiftieth of its amplitude --
-    # and in the softening branch the homogeneous state is no longer the only solution, so the
-    # test stops being binary.  diag(-0.010, +0.003) puts the stress at 25.9 MPa, above
-    # f_cy = 17 and well below f_cu = 51.
-    "compression": (np.array([[-0.010, 0.0], [0.0, 0.003]]), np.zeros(2)),
+    # THE FIELD, and every choice in it is forced by something.
+    #
+    #   u = c + A X,   c = (0.10, 0.05) mm,   A = [[-0.010, -0.020], [-0.015, -0.010]]
+    #
+    # * AFFINE, so it is in the approximation space and produces a homogeneous stress: the
+    #   exact field is then the exact solution of the discrete problem and the test is binary.
+    # * with a TRANSLATION, because u = A X leaves the origin fixed and tests only the
+    #   first-order part of the reproducing conditions.  The zeroth-order part -- a rigid
+    #   translation reproduced exactly, which is the partition of unity of the kernels, and
+    #   carried without drift by the smoothing-domain update -- needs a constant term.
+    # * NON-SYMMETRIC and coaxial with neither the coordinate nor the material axes, so the
+    #   Biot stress and the elastic stretch are not coaxial and the Mandel stress is genuinely
+    #   non-symmetric.
+    # * COMPRESSIVE and this small.  The test is run with the strengths at their REAL values,
+    #   so the patch yields, and the amplitude is then set by the material and not by us: in
+    #   tension this card reaches f_tu = 5.1 MPa and softens to nothing, and past the peak the
+    #   homogeneous state stops being the only solution of the discrete problem, so the test
+    #   would stop being binary.  At this amplitude the stress is 24 to 34 MPa over the sweep,
+    #   between f_cy = 17 and f_cu = 51, and alphaP is 0.57 to 0.95: hardening throughout.
+    #
+    # Running it plastically is what makes the elastic run redundant rather than the other way
+    # round: everything an elastic patch test exercises is exercised here as well, and the
+    # return map and the gradient-damage coupling on top of it.
+    "affine": (np.array([[-0.010, -0.020], [-0.015, -0.010]]), np.array([0.10, 0.05])),
 }
 
 
@@ -589,7 +601,7 @@ def run_patch(beddingDeg, case="mixed", nX=8, perturb=0.4, seed=7, particle="sqc
     theModel.prepareYourself(journal)
 
     fieldOutputController = MPMFieldOutputController(theModel, journal)
-    for name in ("displacement", "deformation gradient", "alphaP", "stress"):
+    for name in ("displacement", "deformation gradient", "alphaP", "stress", "Fp"):
         fieldOutputController.addPerParticleFieldOutput(
             name, theModel.particleSets["all_particles"], name
         )
@@ -672,6 +684,7 @@ def run_patch(beddingDeg, case="mixed", nX=8, perturb=0.4, seed=7, particle="sqc
     uNum = fo["displacement"].getLastResult().reshape(nP, -1)[:, :dimension]
     FNum = fo["deformation gradient"].getLastResult().reshape(nP, 3, 3)
     alphaP = fo["alphaP"].getLastResult().reshape(nP, -1)
+    FpNum = fo["Fp"].getLastResult().reshape(nP, 3, 3)
 
     vertsDef = (verts0 + fo["vertex displacements"].getLastResult().reshape(-1, 4, 3)[:, :, :2]
                 if quad else None)
@@ -700,14 +713,18 @@ def run_patch(beddingDeg, case="mixed", nX=8, perturb=0.4, seed=7, particle="sqc
     errU = np.abs(uNum - uEx)[inner].max() / scale
     errF = np.abs(FNum - FEx)[inner].max() / np.abs(A).max()
 
-    # THE ENERGY ERROR.  The exact field is homogeneous, so the exact stored energy density is
-    # one number, and the departure of the per-particle energy from it is the error in the
-    # quantity the weak form is stationary with respect to -- a scalar that weights the
-    # components of the gradient error the way the material does, rather than by the largest
-    # of them.  Relative to the stored energy itself, and reported the same way as the other
-    # two, as the largest value over the interior.
-    psiEx = strainEnergyDensity(FEx, beddingDeg)
-    psiNum = np.array([strainEnergyDensity(FNum[i], beddingDeg) for i in range(nP)])
+    # THE ENERGY ERROR.  Psi^e is a function of the ELASTIC stretch, so once the run yields it
+    # has to be evaluated on F^e = F Fp^-1 and not on F -- the material exports Fp, and using F
+    # instead would measure the energy of a deformation the material never stored.
+    # The exact field is homogeneous, so the exact solution has one Psi^e for the whole patch;
+    # but with a return map in the loop that number is not known in closed form, so the measure
+    # is the departure from the patch's own mean.  That is the same statement -- a homogeneous
+    # problem must give a homogeneous answer -- and it is the only computable form of it.  It
+    # is the quantity the weak form is stationary with respect to, and it weights the
+    # components of the gradient error the way the material does rather than by the largest.
+    Fe = np.array([FNum[i] @ np.linalg.inv(FpNum[i]) for i in range(nP)])
+    psiNum = np.array([strainEnergyDensity(Fe[i], beddingDeg) for i in range(nP)])
+    psiEx = float(psiNum[inner].mean()) if np.isfinite(psiNum).all() else float("nan")
     errEAbsField = np.abs(psiNum - psiEx)
     errEField = errEAbsField / abs(psiEx)
     errE = float(errEField[inner].max()) if np.isfinite(psiEx) else float("nan")
@@ -719,6 +736,9 @@ def run_patch(beddingDeg, case="mixed", nX=8, perturb=0.4, seed=7, particle="sqc
         errU=float(errU), errF=float(errF), errE=errE,
         psiEx=float(psiEx), psiNum=psiNum, errEField=errEField,
         alphaPMax=float(np.abs(alphaP).max()),
+        # the hardening variable per particle: for a homogeneous field it must be one number,
+        # and how nearly it is one number is the plastic half of the patch test
+        alphaPField=alphaP.reshape(-1),
         nInterior=int(inner.sum()), failed=failed,
         errUField=np.abs(uNum - uEx).max(axis=1) / scale,
         # the same two fields unnormalised, for the contours: mm and MPa
@@ -851,7 +871,7 @@ def sweepBoundary(nX=8, perturb=0.4, bedding=30.0, seed=7, support=2.5, case="af
                      ("center", "multiplier at the boundary PARTICLE centres"),
                      ("cwf", "particle centres + consistent-weak-form correction")):
         r = run_patch(bedding, case=case, nX=nX, perturb=perturb, seed=seed,
-                      support=support, bc=bc)
+                      support=support, bc=bc, strengthScale=1.0)
         r["bcWhat"] = what
         out.append(r)
         print(f"  {bc:>8s}  err(u) = {r['errU']:.2e}  err(F) = {r['errF']:.2e}   {what}")
@@ -937,7 +957,7 @@ def fieldHeader(A, cOff, sep=r",\;\;"):
 
 
 def drawImposedDeformation(ax, r, A, cOff, fc, FS, matrixAt=0.99, header=True,
-                           atDeformed=False):
+                           atDeformed=False, gain=1.0):
     """The deformed patch as computed, the reference outline, and the imposed field on it.
 
     `r` is a run_patch result, `A` and `cOff` the field it was run with, u = c + A X, and `fc`
@@ -958,12 +978,17 @@ def drawImposedDeformation(ax, r, A, cOff, fc, FS, matrixAt=0.99, header=True,
     """
     from matplotlib.collections import PolyCollection
 
-    ax.add_collection(PolyCollection(list(r["verts"]), facecolors="#eef3f8",
+    # `gain` amplifies the displacement for the drawing.  The patch test is run at the
+    # amplitude the material allows -- 2 % here, because the strengths are real and the run has
+    # to stay in the hardening branch -- and at 2 % the deformed patch is the reference patch
+    # to the eye.  Everything drawn is the computed field, scaled uniformly; the panel says so.
+    vDraw = r["verts0"] + gain * (r["verts"] - r["verts0"])
+    ax.add_collection(PolyCollection(list(vDraw), facecolors="#eef3f8",
                                      edgecolors="#1b6ca8", linewidths=0.6 * FS))
     ax.plot([0, LENGTH, LENGTH, 0, 0], [0, 0, LENGTH, LENGTH, 0], "--",
             color="0.45", lw=0.7 * FS, zorder=4)
     for q0 in fc:
-        du = A @ q0 + cOff
+        du = gain * (A @ q0 + cOff)
         if np.hypot(*du) < 0.02:      # the field can vanish; a 20 um arrow is a blob
             continue
         if atDeformed:
@@ -991,8 +1016,8 @@ def drawImposedDeformation(ax, r, A, cOff, fc, FS, matrixAt=0.99, header=True,
     # the frame follows whichever configuration reaches furthest, plus the arrows, plus the
     # strip the header needs -- so the same call works for a patch that grows and one that does
     # not
-    xs = np.concatenate([r["verts"][:, :, 0].reshape(-1), [LENGTH]])
-    ys = np.concatenate([r["verts"][:, :, 1].reshape(-1), [LENGTH]])
+    xs = np.concatenate([vDraw[:, :, 0].reshape(-1), [LENGTH]])
+    ys = np.concatenate([vDraw[:, :, 1].reshape(-1), [LENGTH]])
     ax.set_xlim(-0.6, max(LENGTH, xs.max()) + 2.0 * ARROW_OFFSET + 0.6)
     ax.set_ylim(-0.6, max(LENGTH, ys.max()) + 2.0 * ARROW_OFFSET + (2.6 if header else 0.6))
     ax.set_aspect("equal")
@@ -1120,67 +1145,37 @@ AFFINE_CONTOUR_BEDDING = 30.0
 
 
 def sweepAffine(nX=8, perturb=0.4, seed=7, support=2.5, beddings=tuple(BEDDINGS)):
-    """The affine case of EXTRA_CASES over the bedding sweep, with the energy error."""
-    print("\n  THE AFFINE FIELD u = c + A X, OVER THE BEDDING ORIENTATION")
+    """The patch test over the bedding sweep, with the strengths at their real values."""
+    print("\n  THE PATCH TEST, u = c + A X, OVER THE BEDDING ORIENTATION")
     A, cOff = caseField("affine")
-    print(f"    c = ({cOff[0]:.2f}, {cOff[1]:.2f}) mm,  A = [[{A[0,0]:.2f}, {A[0,1]:.2f}], "
-          f"[{A[1,0]:.2f}, {A[1,1]:.2f}]],  det F = {np.linalg.det(np.eye(2) + A):.4f}")
+    print(f"    c = ({cOff[0]:.2f}, {cOff[1]:.2f}) mm,  A = [[{A[0,0]:.3f}, {A[0,1]:.3f}], "
+          f"[{A[1,0]:.3f}, {A[1,1]:.3f}]],  det F = {np.linalg.det(np.eye(2) + A):.4f},  "
+          f"strengths at 1x (f_cy = {FCY/STRENGTH_SCALE:.1f}, f_cu = {FCU/STRENGTH_SCALE:.1f} MPa)")
     journal = Journal()
     out = []
     for b in beddings:
         r = run_patch(float(b), case="affine", nX=nX, perturb=perturb, seed=seed,
-                      support=support, journal=journal)
-        out.append(r)
-        print(f"    beta = {b:5.1f} deg   err(u) = {r['errU']:.2e}   err(F) = {r['errF']:.2e}"
-              f"   err(E) = {r['errE']:.2e}   Psi = {r['psiEx']:.4f} MPa"
-              f"   max alphaP = {r['alphaPMax']:.1e}")
-    print(f"    worst: err(u) = {max(r['errU'] for r in out):.2e}   "
-          f"err(F) = {max(r['errF'] for r in out):.2e}   "
-          f"err(E) = {max(r['errE'] for r in out):.2e}")
-    # The elastic card of this study is transversely isotropic about the OUT-OF-PLANE axis --
-    # E1 = E2, nu13 = nu23, and the Saint Venant formula makes G12 = E1/2(1+nu12) exactly --
-    # so an in-plane deformation stores the same energy at every bedding orientation, and the
-    # Biot stress stays coaxial with U.  Psi above is printed at every beta to show it: the
-    # sweep varies the material bookkeeping, not the physical problem, as long as the run is
-    # elastic.  What breaks the orientation symmetry is the Walpole map of the yield surface,
-    # which a patch test never reaches (alphaP = 0).
-    return out
-
-
-def sweepPlastic(nX=8, perturb=0.4, seed=7, support=2.5, beddings=tuple(BEDDINGS)):
-    """The same test with the strengths at their real values, in the hardening branch.
-
-    Two things come out of it that the elastic test cannot give.  The reproduction survives the
-    return map -- three orders worse than elastic, which is the return map's own convergence
-    floor, but still machine precision on any reading.  And the bedding sweep finally varies
-    the physics: alphaP is orientation dependent by a factor of five, because the Walpole map
-    of the yield surface is orthotropic where the elastic card, for an in-plane deformation,
-    is not (see sweepAffine).
-    """
-    print("\n  THE PLASTIC PATCH TEST -- real strengths, compressive, hardening branch")
-    A, _ = caseField("compression")
-    print(f"    A = diag({A[0,0]:+.3f}, {A[1,1]:+.3f}), strengths at 1x "
-          f"(f_cy = {FCY/STRENGTH_SCALE:.1f}, f_cu = {FCU/STRENGTH_SCALE:.1f} MPa)")
-    journal = Journal()
-    out = []
-    for b in beddings:
-        r = run_patch(float(b), case="compression", nX=nX, perturb=perturb, seed=seed,
                       support=support, strengthScale=1.0, journal=journal)
+        ap = r["alphaPField"][r["interior"]]
+        r["alphaPMean"] = float(ap.mean())
+        r["alphaPSpread"] = float((ap.max() - ap.min()) / max(ap.mean(), 1e-30))
         out.append(r)
         print(f"    beta = {b:5.1f} deg   err(u) = {r['errU']:.2e}   err(F) = {r['errF']:.2e}"
-              f"   err(E) = {r['errE']:.2e}   alphaP = {r['alphaPMax']:.4f}"
-              f"   max|stress| = {r['stressMax']:.2f} MPa")
-    aP = [r["alphaPMax"] for r in out]
+              f"   err(E) = {r['errE']:.2e}   alphaP = {r['alphaPMean']:.4f}"
+              f" (spread {r['alphaPSpread']:.1e})   max|stress| = {r['stressMax']:.2f} MPa")
+    aP = [r["alphaPMean"] for r in out]
     print(f"    worst: err(u) = {max(r['errU'] for r in out):.2e}   "
           f"err(F) = {max(r['errF'] for r in out):.2e}   "
-          f"err(E) = {max(r['errE'] for r in out):.2e}")
-    print(f"    alphaP over the sweep: {min(aP):.3f} to {max(aP):.3f}, "
-          f"a factor {max(aP)/max(min(aP), 1e-30):.1f} -- the orientation dependence the "
-          f"elastic sweep has none of")
+          f"err(E) = {max(r['errE'] for r in out):.2e}   "
+          f"alphaP spread = {max(r['alphaPSpread'] for r in out):.1e}")
+    print(f"    alphaP over the sweep: {min(aP):.3f} to {max(aP):.3f}, a factor "
+          f"{max(aP)/max(min(aP), 1e-30):.1f}; stress "
+          f"{min(r['stressMax'] for r in out):.1f} to "
+          f"{max(r['stressMax'] for r in out):.1f} MPa")
     return out
 
 
-def makeAffineFigure(results, out=None, nX=8, perturb=0.4, plastic=None):
+def makeAffineFigure(results, out=None, nX=8, perturb=0.4):
     """Six panels: what is set up, what is imposed, what a particle is -- then the errors.
 
     Row 1 is the test itself: (a) the undeformed patch, as Fig. 14(a); (b) the same patch
@@ -1210,8 +1205,9 @@ def makeAffineFigure(results, out=None, nX=8, perturb=0.4, plastic=None):
     a.set_title(rf"(a) reference, {nX}$\times${nX} particles", fontsize=9.5 * FS)
 
     # ------------------------------------------------------- (b) the field where it is applied
-    drawImposedDeformation(b, rC, A, cOff, fc, FS, header=False, atDeformed=True)
-    b.set_title("(b) imposed at the deformed face centres", fontsize=9.5 * FS)
+    GAIN = 10.0
+    drawImposedDeformation(b, rC, A, cOff, fc, FS, header=False, atDeformed=True, gain=GAIN)
+    b.set_title(rf"(b) imposed at the face centres, $\times{GAIN:.0f}$", fontsize=9.5 * FS)
 
     # ------------------------------------------------------------------ (c) what a particle is
     which, R = drawSqcniStencil(cc, nX, perturb, FS, support=rC["support"])
@@ -1264,44 +1260,36 @@ def makeAffineFigure(results, out=None, nX=8, perturb=0.4, plastic=None):
         ax.set_ylabel(r"$x_2$ in mm")
         ax.set_title(title + rf" at $\beta={rC['bedding']:.0f}^\circ$", fontsize=8.6 * FS)
 
-    # ------------------------------------------------------------------ (f) both error levels
-    # BOTH runs go in here, and that is deliberate: the elastic band is the level panels (d)
-    # and (e) resolve, and without it beside the plastic one the reader is left wondering why
-    # the contours sit three decades below the curve.  Colour is the measure, line style is
-    # the run, and alphaP on the right axis is what only the yielding one can show.
+    # -------------------------------------------------------------------- (f) over the sweep
+    # The three measures and, on the right axis, the hardening variable: the errors say the
+    # field is reproduced, alphaP says the run was plastic and that the sweep varies the
+    # physics -- both of which an elastic patch test leaves open.
     from matplotlib.lines import Line2D
     MEASURES = (("errU", r"$\mathrm{err}(u)$", "#1b6ca8", "o"),
                 ("errF", r"$\mathrm{err}(F)$", "#e8871a", "s"),
                 ("errE", r"$\mathrm{err}(\Psi^{\rm e})$", "#2e8b57", "^"))
-    for src, style, alpha in ((results, "-", 1.0), (plastic, "--", 0.85)):
-        if not src:
-            continue
-        rr = sorted(src, key=lambda q: q["bedding"])
-        bs = [q["bedding"] for q in rr]
-        for key, lab, col, mk in MEASURES:
-            f.semilogy(bs, [max(q[key], 1e-17) for q in rr], style, marker=mk, color=col,
-                       ms=3.0 * FS, lw=1.1 * FS, alpha=alpha)
+    rr = sorted(results, key=lambda q: q["bedding"])
+    bs = [q["bedding"] for q in rr]
+    for key, lab, col, mk in MEASURES:
+        f.semilogy(bs, [max(q[key], 1e-17) for q in rr], "-", marker=mk, color=col,
+                   ms=3.0 * FS, lw=1.1 * FS)
     f.set_xticks(BEDDINGS)
-    f.set_ylim(1e-16, 1e-9)     # headroom for the legend, which the curves leave empty
+    f.set_ylim(1e-16, 1e-9)      # headroom for the legend, which the curves leave empty
     f.set_xlabel(r"bedding orientation $\beta$ in deg")
     f.set_ylabel("relative error, interior particles")
-    f.set_title("(f) elastic and plastic, over the sweep", fontsize=9.5 * FS)
+    f.set_title("(f) the errors and the plastic strain", fontsize=9.5 * FS)
     f.grid(True, which="major", color="#DDDDDD", lw=0.4 * FS)
     handles = [Line2D([], [], color=col, marker=mk, ms=3.0 * FS, lw=1.1 * FS, label=lab)
                for _, lab, col, mk in MEASURES]
-    if plastic:
-        rr = sorted(plastic, key=lambda q: q["bedding"])
-        g = f.twinx()
-        g.plot([q["bedding"] for q in rr], [q["alphaPMax"] for q in rr], ":", color="0.35",
-               lw=1.2 * FS, marker="v", ms=3.0 * FS)
-        g.set_ylabel(r"$\alpha_{\rm p}$, plastic run", color="0.35")
-        g.tick_params(axis="y", labelcolor="0.35")
-        g.set_ylim(0.0, 1.5 * max(q["alphaPMax"] for q in rr))
-        handles += [Line2D([], [], color="0.4", ls="-", lw=1.1 * FS, label="elastic"),
-                    Line2D([], [], color="0.4", ls="--", lw=1.1 * FS, label="plastic"),
-                    Line2D([], [], color="0.35", ls=":", marker="v", ms=3.0 * FS,
-                           lw=1.2 * FS, label=r"$\alpha_{\rm p}$")]
-    f.legend(handles=handles, loc="upper center", ncol=3, fontsize=7.0 * FS, frameon=False,
+    g = f.twinx()
+    g.plot(bs, [q.get("alphaPMean", q["alphaPMax"]) for q in rr], ":", color="0.35",
+           lw=1.2 * FS, marker="v", ms=3.0 * FS)
+    g.set_ylabel(r"$\alpha_{\rm p}$", color="0.35")
+    g.tick_params(axis="y", labelcolor="0.35")
+    g.set_ylim(0.0, 1.35 * max(q.get("alphaPMean", q["alphaPMax"]) for q in rr))
+    handles.append(Line2D([], [], color="0.35", ls=":", marker="v", ms=3.0 * FS,
+                          lw=1.2 * FS, label=r"$\alpha_{\rm p}$"))
+    f.legend(handles=handles, loc="upper center", ncol=4, fontsize=7.0 * FS, frameon=False,
              columnspacing=0.9, handlelength=1.6)
 
     print(f"  contours at beta = {rC['bedding']:.0f} deg, relative, and their interior maxima "
@@ -1344,8 +1332,6 @@ def main():
     ap.add_argument("--affine", action="store_true",
                     help="the affine study u = c + A X, with the energy error, and "
                          "fig_patch_affine.pdf")
-    ap.add_argument("--plastic", action="store_true",
-                    help="the same test with the strengths at their real values, compressive")
     args = ap.parse_args()
 
     cases = (args.case,) if args.case else tuple(LOAD_CASES)
@@ -1374,10 +1360,7 @@ def main():
 
     if args.affine or args.figure:
         aff = sweepAffine(nX=args.nx, perturb=args.perturb, support=args.support)
-        pla = sweepPlastic(nX=args.nx, perturb=args.perturb, support=args.support)
-        makeAffineFigure(aff, nX=args.nx, perturb=args.perturb, plastic=pla)
-    elif args.plastic:
-        sweepPlastic(nX=args.nx, perturb=args.perturb, support=args.support)
+        makeAffineFigure(aff, nX=args.nx, perturb=args.perturb)
 
 
 @pytest.fixture(autouse=True)
@@ -1395,17 +1378,21 @@ def test_patch():
 
 
 def test_affine_patch():
-    """u = c + A X: the same guard on the case that carries a translation and 20 % strain.
+    """u = c + A X with the strengths at their real values: the patch test the paper runs.
 
-    The energy error is only asserted if the paper's potential is importable -- without the
-    paper tree next to this repo `strainEnergyDensity` returns NaN by design.
+    The run must YIELD -- otherwise it is the elastic test under another name -- and the
+    hardening variable must come out the same at every particle, which is the plastic half of
+    the reproduction.  The energy error is only asserted if the paper's potential is
+    importable; without the paper tree next to this repo `strainEnergyDensity` returns NaN.
     """
-    r = run_patch(45.0, case="affine", nX=6, perturb=0.4)
+    r = run_patch(45.0, case="affine", nX=6, perturb=0.4, strengthScale=1.0)
     assert not r["failed"]
     assert r["errU"] < 1e-8
     assert r["errF"] < 1e-8
-    assert r["alphaPMax"] == 0.0
-    assert math.isnan(r["errE"]) or r["errE"] < 1e-8
+    assert math.isnan(r["errE"]) or r["errE"] < 1e-6
+    ap = r["alphaPField"][r["interior"]]
+    assert ap.min() > 0.0
+    assert (ap.max() - ap.min()) / ap.mean() < 1e-8
 
 
 if __name__ == "__main__":
