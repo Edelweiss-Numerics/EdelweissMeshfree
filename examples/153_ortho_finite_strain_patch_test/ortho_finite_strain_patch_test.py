@@ -692,7 +692,7 @@ def run_patch(beddingDeg, case="mixed", nX=8, perturb=0.4, seed=7, particle="sqc
         verts0=verts0,
         verts=vertsDef,
         domainGap=domainGap,
-        xy0=xy0, interior=isInterior,
+        xy0=xy0, uNum=uNum, uEx=uEx, interior=isInterior,
     )
 
 
@@ -1145,34 +1145,43 @@ def makeAffineFigure(results, out=None, nX=8, perturb=0.4):
     b.grid(True, which="major", color="#DDDDDD", lw=0.4 * FS)
 
     # ------------------------------------------------------------------- (c), (d) contours
+    # THE CONTOURS ARE DRAWN ON THE DEFORMED CONFIGURATION, so that all four panels show the
+    # same body.  The cells are the smoothing domains as the computation left them -- the same
+    # vertex-displacement state variable panel (a) is drawn from -- and each particle's value
+    # sits at the position the run gives it, X + u.  The centroid of a domain is NOT that
+    # position: the particle centre of a perturbed quad differs from the mean of its four
+    # vertices by up to 0.15 mm here, so using the centroid would misplace every value.
     xy0, interior = rC["xy0"], rC["interior"]
-    tri = mtri.Triangulation(xy0[:, 0], xy0[:, 1])
+    xyD = xy0 + rC["uNum"]
+    vD = rC["verts"]
+    tri = mtri.Triangulation(xyD[:, 0], xyD[:, 1])
     for ax, field, title, cmap in (
-            (c, rC["errUField"], r"(c) $|u-u_{\rm ex}|/\max|u_{\rm ex}|$, reference patch",
+            (c, rC["errUField"], r"(c) $|u-u_{\rm ex}|/\max|u_{\rm ex}|$, deformed patch",
              "Blues"),
             (d, rC["errEField"], r"(d) $|\Psi^{\rm e}-\Psi^{\rm e}_{\rm ex}|"
-                                 r"/\Psi^{\rm e}_{\rm ex}$, reference patch", "Greens")):
+                                 r"/\Psi^{\rm e}_{\rm ex}$, deformed patch", "Greens")):
         f15 = np.asarray(field) * 1e15
         cf = ax.tricontourf(tri, f15, levels=12, cmap=cmap)
-        # THE REFERENCE LATTICE ON TOP, and it is there to stop a misreading: these two panels
-        # are the REFERENCE configuration, not the deformed one of panel (a).  What makes the
-        # coloured area look distorted is nothing to do with the deformation -- it is the hull
-        # of the particle CENTRES, which sit half a cell inside the boundary and are perturbed
-        # by 0.4 h_p, so its edge is wavy and inset.  With the undeformed cells drawn over it
-        # the frame is unmistakable.
-        ax.add_collection(PolyCollection(cells, facecolors="none", edgecolors="0.45",
+        # The deformed smoothing domains over the field, and the reference outline dashed
+        # behind it, so that these panels are the same body as panel (a) and are seen to be.
+        # The coloured area still stops short of the boundary: it is the hull of the particle
+        # centres, which lie half a cell inside it, and that is where the field is sampled.
+        ax.add_collection(PolyCollection(list(vD), facecolors="none", edgecolors="0.45",
                                          linewidths=0.35 * FS, alpha=0.75, zorder=3))
-        ax.plot(xy0[interior, 0], xy0[interior, 1], ".", color="0.15", ms=2.2 * FS, zorder=4)
-        ax.plot(xy0[~interior, 0], xy0[~interior, 1], "o", mfc="none", mec="0.15",
+        ax.plot([0, LENGTH, LENGTH, 0, 0], [0, 0, LENGTH, LENGTH, 0], "--",
+                color="0.55", lw=0.5 * FS, zorder=2)
+        ax.plot(xyD[interior, 0], xyD[interior, 1], ".", color="0.15", ms=2.2 * FS, zorder=4)
+        ax.plot(xyD[~interior, 0], xyD[~interior, 1], "o", mfc="none", mec="0.15",
                 ms=2.6 * FS, mew=0.5 * FS, zorder=4)
         cb = fig.colorbar(cf, ax=ax, fraction=0.046, pad=0.03)
         cb.ax.tick_params(labelsize=7.0 * FS)
         cb.set_label(r"$\times 10^{-15}$", fontsize=7.4 * FS)
         ax.set_aspect("equal")
-        ax.set_xlim(-0.4, LENGTH + 0.4)
-        ax.set_ylim(-0.4, LENGTH + 0.4)
-        ax.set_xlabel(r"$X_1$ [mm]")
-        ax.set_ylabel(r"$X_2$ [mm]")
+        pad = 0.5
+        ax.set_xlim(min(0.0, vD[:, :, 0].min()) - pad, max(LENGTH, vD[:, :, 0].max()) + pad)
+        ax.set_ylim(min(0.0, vD[:, :, 1].min()) - pad, max(LENGTH, vD[:, :, 1].max()) + pad)
+        ax.set_xlabel(r"$x_1$ [mm]")
+        ax.set_ylabel(r"$x_2$ [mm]")
         ax.set_title(title + rf" at $\beta={rC['bedding']:.0f}^\circ$", fontsize=8.6 * FS)
     # no legend on the contours: the filled dots are the interior particles the maxima are
     # taken over, the open ones the constrained ring, and the caption says so rather than a
