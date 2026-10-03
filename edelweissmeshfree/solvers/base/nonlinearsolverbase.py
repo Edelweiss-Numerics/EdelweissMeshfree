@@ -503,7 +503,7 @@ class BaseNonlinearSolver:
             )
 
             try:
-                timeStepper.reduceNextIncrement(iterationOptions["failed increment cutback factor"])
+                timeStepper.rejectTimeStep(iterationOptions["failed increment cutback factor"])
             except ReachedMinIncrementSize:
                 continue
 

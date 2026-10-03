@@ -128,7 +128,7 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
         # half-step velocity with it, so there is nothing left to establish.
         isRestarted = self._restartWasRead
 
-        if not isRestarted and not timeStepper.doesZeroIncrement():
+        if not isRestarted and timeStepper.proposeTimeStep().timeIncrement != 0.0:
             raise ValueError(
                 "The first time increment must be zero for explicit time integration, so that the "
                 "initial accelerations can be evaluated before anything moves."
@@ -140,7 +140,8 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
         discretizationIsInitialized = False
 
         try:
-            for timeStep in timeStepper.generateTimeStep():
+            while not timeStepper.isFinished():
+                timeStep = timeStepper.proposeTimeStep()
                 dT = timeStep.timeIncrement
                 self.journal.message(
                     f"Step {timeStep.number}: Time {timeStep.totalTime:.6e}, dt {dT:.6e}", self.identification
@@ -253,6 +254,8 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
                 # For RKPM omitting this step and simple taking v_np_one_half from previous step leads to way less dissipative results
                 if reinitializationOfVelocitiesFromMomentum:
                     v_np_one_half = momentum * M_inv
+
+                timeStepper.acceptTimeStep(timeStep)
 
                 self._finalizeIncrementOutput(fieldOutputController, outputManagers)
 
