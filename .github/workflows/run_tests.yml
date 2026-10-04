@@ -21,16 +21,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Setup Mambaforge
-        uses: conda-incubator/setup-miniconda@v3
-        with:
-          use-mamba: true
-          miniforge-variant: Miniforge3
-          miniforge-version: latest
-          activate-environment: anaconda-client-env
-
-      - name: Install conda packages
-        shell: bash -l {0}
+      # The EdelweissFE branch to build against: the same-named branch, else the PR's base branch.
+      # Cloned first: its conda-lock.yml defines the environment.
+      - name: Select EdelweissFE
+        shell: bash
         run: |
           BRANCH="${{ inputs.edelweissfe_branch || github.head_ref || github.ref_name }}"
           BASE="${{ github.base_ref || 'next_v26.11' }}"
@@ -47,52 +41,18 @@ jobs:
             git clone --depth 1 "$URL" "$RUNNER_TEMP/EdelweissFE"
           fi
 
-          mamba install --file "$RUNNER_TEMP/EdelweissFE/conda_requirements.txt"
-
-          pip install matplotlib
-
-      - name: Install Eigen
-        shell: bash -l {0}
-        run: |
-          git clone --depth 1 --branch 3.4.0 https://gitlab.com/libeigen/eigen.git "$RUNNER_TEMP/eigen"
-          cd "$RUNNER_TEMP/eigen"
-          mkdir build
-          cd build
-          cmake -DBUILD_TESTING=OFF -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DINCLUDE_INSTALL_DIR=$CONDA_PREFIX/include ..
-          make install
-          cd ../..
-
-      - name: Install Autodiff
-        shell: bash -l {0}
-        run: |
-          git clone --depth 1 --branch v1.1.0 https://github.com/autodiff/autodiff.git "$RUNNER_TEMP/autodiff"
-          cd "$RUNNER_TEMP/autodiff"
-          mkdir build
-          cd build
-          cmake -DAUTODIFF_BUILD_TESTS=OFF -DAUTODIFF_BUILD_PYTHON=OFF -DAUTODIFF_BUILD_EXAMPLES=OFF -DAUTODIFF_BUILD_DOCS=OFF ..
-          make install
-          cd ../..
-
-      - name: Install Fastor
-        shell: bash -l {0}
-        run: |
-          git clone --depth 1 https://github.com/romeric/Fastor.git "$RUNNER_TEMP/Fastor"
-          cd "$RUNNER_TEMP/Fastor"
-          cmake -DBUILD_TESTING=OFF -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX .
-          make install
-          cd ..
-
-      - name: Install AMGCL
-        shell: bash -l {0}
-        run: |
-          git clone --branch 1.4.7 --depth 1 https://github.com/ddemidov/amgcl.git "$RUNNER_TEMP/amgcl"
-          cd "$RUNNER_TEMP/amgcl"
-          cmake -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX .
-          make install
-          cd ..
+      # Exactly what EdelweissFE's conda-lock.yml pins (no solving), as EdelweissFE's own CI installs it
+      # (its .github/actions/setup-locked-env): compilers, CMake, Eigen, autodiff, Fastor, AMGCL, the
+      # free-threaded Python and the Python packages both projects need.
+      - uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-file: ${{ runner.temp }}/EdelweissFE/conda-lock.yml
+          environment-name: edelweissfe
+          cache-environment: true
+          init-shell: bash
 
       - name: Install Marmot
-        shell: bash -l {0}
+        shell: bash -leo pipefail {0}
         run: |
           BRANCH="${{ inputs.marmot_branch || github.head_ref || github.ref_name }}"
           BASE="${{ github.base_ref || 'next_v26.11' }}"
@@ -139,22 +99,24 @@ jobs:
           # Build Marmot
           mkdir "$RUNNER_TEMP/Marmot/build"
           cd "$RUNNER_TEMP/Marmot/build"
-          cmake -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX ..
-          make install
+          cmake -DCMAKE_INSTALL_PREFIX="$CONDA_PREFIX" -DCMAKE_PREFIX_PATH="$CONDA_PREFIX" -DCMAKE_FIND_USE_PACKAGE_REGISTRY=OFF ..
+          make -j 4 install
           cd ../..
 
+      # --no-deps --no-build-isolation: everything comes from the locked environment, as in
+      # EdelweissFE's CI; pip must neither resolve nor build in an isolated environment of its own.
       - name: Install EdelweissFE
-        shell: bash -l {0}
+        shell: bash -leo pipefail {0}
         run: |
-          pip install -e "$RUNNER_TEMP/EdelweissFE"
+          pip install -v --no-deps --no-build-isolation -e "$RUNNER_TEMP/EdelweissFE"
 
       - name: Build EdelweissMeshfree
-        shell: bash -l {0}
+        shell: bash -leo pipefail {0}
         run: |
-          pip install -e .
+          pip install -v --no-deps --no-build-isolation -e .
 
       - name: Run tests
-        shell: bash -l {0}
+        shell: bash -leo pipefail {0}
         run: |
           pytest .
 
