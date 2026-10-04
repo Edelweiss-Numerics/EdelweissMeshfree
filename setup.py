@@ -40,6 +40,13 @@ from os.path import expanduser, join
 import numpy
 from Cython.Build import build_ext, cythonize
 from edelweissfe.numerics import get_include as _fe_numerics_include
+from edelweissfe.utils.extensionbuild import (
+    compile_flags,
+    get_arch_flags,
+    link_flags,
+    native_prefix,
+    runtime_library_dirs,
+)
 from setuptools import setup
 from setuptools.extension import Extension
 
@@ -54,15 +61,18 @@ directives = {
     "freethreading_compatible": True,
 }
 
-default_install_prefix = sys.prefix
 print("*" * 80)
 print("EdelweissMeshfree setup")
 print("System prefix: " + sys.prefix)
 print("*" * 80)
 
-marmot_dir = expanduser(os.environ.get("MARMOT_INSTALL_DIR", default_install_prefix))
+marmot_dir = expanduser(os.environ.get("MARMOT_INSTALL_DIR", native_prefix))
+# The same platform logic and flags as EdelweissFE, see edelweissfe.utils.extensionbuild.
+arch_flags = get_arch_flags()
 print("Marmot install directory (overwrite via environment var. MARMOT_INSTALL_DIR):")
 print(marmot_dir)
+print("Architecture compile flags (overwrite via environment var. EDELWEISSFE_ARCH_FLAGS):")
+print(arch_flags)
 print("*" * 80)
 
 extensions = list()
@@ -79,9 +89,9 @@ def MarmotExtension(pyxpath, *args, **kwargs):
         include_dirs=[join(marmot_dir, "include"), join(marmot_dir, "include", "eigen3"), numpy.get_include()],
         libraries=["Marmot"],
         library_dirs=[join(marmot_dir, "lib")],
-        runtime_library_dirs=[join(marmot_dir, "lib")],
+        runtime_library_dirs=runtime_library_dirs(join(marmot_dir, "lib")),
         language="c++",
-        extra_compile_args=["-O3", "-march=native"],
+        extra_compile_args=compile_flags(arch=arch_flags),
         *args,
         **kwargs,
     )
@@ -106,9 +116,8 @@ extensions += [
             "edelweissmeshfree/mpmmanagers/utils.pyx",
         ],
         include_dirs=[join(marmot_dir, "include"), numpy.get_include()],
-        runtime_library_dirs=[join(marmot_dir, "lib")],
         language="c++",
-        extra_compile_args=["-O3", "-march=native"],
+        extra_compile_args=compile_flags(arch=arch_flags),
     )
 ]
 
@@ -119,9 +128,8 @@ extensions += [
             "edelweissmeshfree/fieldoutput/mpresultcollector.pyx",
         ],
         include_dirs=[join(marmot_dir, "include"), numpy.get_include()],
-        runtime_library_dirs=[join(marmot_dir, "lib")],
         language="c++",
-        extra_compile_args=["-O3", "-march=native"],
+        extra_compile_args=compile_flags(arch=arch_flags),
     )
 ]
 
@@ -145,13 +153,8 @@ extensions += [
             _fe_numerics_include(),
         ],
         language="c++",
-        extra_compile_args=[
-            "-O3",
-            "-march=native",
-            "-fopenmp",
-            "-Wno-maybe-uninitialized",
-        ],
-        extra_link_args=["-fopenmp"],
+        extra_compile_args=compile_flags(openmp=True, arch=arch_flags, gcc_only=["-Wno-maybe-uninitialized"]),
+        extra_link_args=link_flags(openmp=True),
     )
 ]
 
