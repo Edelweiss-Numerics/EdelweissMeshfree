@@ -37,17 +37,11 @@ Marmot-backed Cython extensions) and on
 
 Prerequisites, in order:
 
-1. A conda environment with the free-threading Python build — the easiest way is
-   EdelweissFE's bootstrap script, which sets up the environment and builds the complete
-   stack (Eigen, autodiff, Fastor, AMGCL, Marmot, EdelweissFE):
-
-   ```bash
-   cd ../EdelweissFE
-   bash scripts/bootstrap_stack.sh
-   ```
-
-   Alternatively, follow the manual "installation with Marmot" instructions in
-   EdelweissFE's README.
+1. EdelweissFE, installed with Marmot into its conda environment `edelweissfe`. Follow
+   EdelweissFE's [installation instructions](https://github.com/Edelweiss-Numerics/EdelweissFE#installation),
+   including the section *Optional: Marmot*. The environment is pinned by EdelweissFE's
+   lock file and provides everything EdelweissMeshfree needs to build (compilers, Cython,
+   numpy, Eigen, the free-threaded Python).
 
 2. Marmot must be installed into the active environment prefix. If it lives elsewhere,
    point the build to it via `MARMOT_INSTALL_DIR`.
@@ -57,8 +51,14 @@ provided by the conda environment, so disable pip's build isolation to compile a
 them:
 
 ```bash
-pip install --no-build-isolation .
+conda activate edelweissfe
+pip install --no-build-isolation -e .
 ```
+
+The extensions are compiled with the same settings as EdelweissFE's, from
+`edelweissfe.utils.extensionbuild`. In particular, they are compiled with `-march=native`
+by default; set `EDELWEISSFE_ARCH_FLAGS` (e.g. `-march=x86-64-v3`, or empty for none) when
+the build must run on other machines, e.g. in a container image.
 
 Unlike EdelweissFE, all Cython extensions here are mandatory — a build failure indicates
 a broken Marmot installation and aborts the install.

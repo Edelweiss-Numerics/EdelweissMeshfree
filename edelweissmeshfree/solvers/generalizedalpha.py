@@ -200,7 +200,8 @@ class NonlinearDynamicSolver(NonlinearImplicitSolverBase):
         restartHistoryManager = RestartHistoryManager(restartBaseName, numberOfRestartsToStore)
 
         try:
-            for timeStep in timeStepper.generateTimeStep():
+            while not timeStepper.isFinished():
+                timeStep = timeStepper.proposeTimeStep()
                 self.journal.printSeperationLine()
                 self.journal.message(
                     "increment {:}: {:8f}, {:8f}; time {:10f} to {:10f}".format(
@@ -344,7 +345,7 @@ class NonlinearDynamicSolver(NonlinearImplicitSolverBase):
                     self.journal.message(str(e), self.identification, 1)
 
                     try:
-                        timeStepper.discardAndChangeIncrement(iterationOptions["failed increment cutback factor"])
+                        timeStepper.rejectTimeStep(iterationOptions["failed increment cutback factor"])
                     except ReachedMinIncrementSize:
 
                         if not allowFallBackToRestart:
@@ -358,6 +359,7 @@ class NonlinearDynamicSolver(NonlinearImplicitSolverBase):
                 else:
                     if iterationHistory["iterations"] >= iterationOptions["critical iterations"]:
                         timeStepper.preventIncrementIncrease()
+                    timeStepper.acceptTimeStep(timeStep)
 
                     U += dU
 

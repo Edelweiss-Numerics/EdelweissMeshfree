@@ -51,6 +51,7 @@ from edelweissfe.outputmanagers.base.outputmanagerbase import OutputManagerBase
 from edelweissfe.sets.nodeset import NodeSet
 from edelweissfe.stepactions.base.dirichletbase import DirichletBase
 from edelweissfe.timesteppers.timestep import TimeStep
+from edelweissfe.utils.checkpoint import readRestartDataInto, writeRestartDataOf
 from edelweissfe.utils.exceptions import ReachedMinIncrementSize, StepFailed
 from edelweissfe.utils.fieldoutput import FieldOutputController
 
@@ -432,7 +433,7 @@ class BaseNonlinearSolver:
         theRestartFile = h5py.File(fileName, "w")
 
         model.writeRestart(theRestartFile)
-        timeStepper.writeRestart(theRestartFile)
+        writeRestartDataOf(theRestartFile, {"timestepper": timeStepper})
 
         if solverState:
             group = theRestartFile.create_group("solverState")
@@ -465,7 +466,7 @@ class BaseNonlinearSolver:
         theRestartFile = h5py.File(restartFile, "r")
 
         model.readRestart(theRestartFile)
-        timeStepper.readRestart(theRestartFile)
+        readRestartDataInto(theRestartFile, {"timestepper": timeStepper})
 
         self._restartWasRead = True
 
@@ -503,7 +504,7 @@ class BaseNonlinearSolver:
             )
 
             try:
-                timeStepper.reduceNextIncrement(iterationOptions["failed increment cutback factor"])
+                timeStepper.rejectTimeStep(iterationOptions["failed increment cutback factor"])
             except ReachedMinIncrementSize:
                 continue
 
