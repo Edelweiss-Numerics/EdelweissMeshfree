@@ -132,6 +132,7 @@ import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 from edelweissfe.journal.journal import Journal
 from edelweissfe.linsolve.pardiso.pardiso import pardisoSolve
+from edelweissfe.outputmanagers.ensight import EnsightConfigurationSchema, EnsightSchema
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 from edelweissfe.utils.exceptions import StepFailed
 
@@ -655,15 +656,13 @@ def run_sim(
         fieldOutputController,
         theJournal,
         None,
-        configurations=[
-            {"overwrite": True, "intermediateSaveInterval": 10, "transient": True, "nSet": None, "elSet": None}
-        ],
+        configuration=EnsightSchema(
+            configurations=(EnsightConfigurationSchema(overwrite=True, intermediateSaveInterval=10, transient=True),)
+        ),
     )
     for fname in ("displacement", "pressure", "jacobi", "stress", "deformation gradient", "alphaP"):
-        ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs[fname], create="perElement")
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["vertex displacements"], create="perNode"
-    )
+        ensightOutput.createPerElementOutput(fieldOutputController.fieldOutputs[fname])
+    ensightOutput.createPerNodeOutput(fieldOutputController.fieldOutputs["vertex displacements"])
     ensightOutput.initializeJob()
 
     adaptiveTimeStepper = AdaptiveTimeStepper(
