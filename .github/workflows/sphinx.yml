@@ -83,6 +83,12 @@ jobs:
           clone_mandatory() {
             local url=$1
             local dir=$2
+            if [ -n "$dir" ] && [ -e "$dir" ]; then
+              # the module is part of the Marmot tree itself (MAteRialMOdelingToolbox/Marmot#104 moves the meshfree core and
+              # modules in-tree); a clone into the same directory would fail
+              echo "Module $dir is already part of the Marmot tree, not cloning $url."
+              return 0
+            fi
             if git ls-remote --exit-code --heads "$url" "$BRANCH" > /dev/null 2>&1; then
               git clone --branch "$BRANCH" "$url" $dir
             elif [ -n "$BASE" ] && git ls-remote --exit-code --heads "$url" "$BASE" > /dev/null 2>&1; then
