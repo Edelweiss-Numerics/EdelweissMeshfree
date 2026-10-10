@@ -27,7 +27,7 @@ jobs:
         shell: bash
         run: |
           BRANCH="${{ inputs.edelweissfe_branch || github.head_ref || github.ref_name }}"
-          BASE="${{ github.base_ref || 'next_v26.11' }}"
+          BASE="${{ github.base_ref || 'master' }}"
 
           URL="https://github.com/Edelweiss-Numerics/EdelweissFE.git"
           if git ls-remote --exit-code --heads "$URL" "$BRANCH" > /dev/null 2>&1; then
@@ -55,7 +55,7 @@ jobs:
         shell: bash -leo pipefail {0}
         run: |
           BRANCH="${{ inputs.marmot_branch || github.head_ref || github.ref_name }}"
-          BASE="${{ github.base_ref || 'next_v26.11' }}"
+          BASE="${{ github.base_ref || 'master' }}"
 
           # Helper function for mandatory modules
           clone_mandatory() {
