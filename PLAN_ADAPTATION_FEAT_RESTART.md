@@ -34,7 +34,7 @@ EdelweissFE Stack (next_v26.11):
 - **`MPMConstraintBase`**: Must implement `acceptLastState()`, `getRestartData()`, and `setRestartData()`.
 
 ### D. Linear Solver Modernization (`perf/linsolve-consolidated`)
-- `BlockAMGSolver` now features native AMGCL `lgmres` outer solver with reset-on-increment support, vectorized diagonal equilibration, and threaded off-diagonal SpMV.
+- The monolithic `BlockAMGSolver` is gone (EdelweissFE #236): `blockamg` is now a preset of the composable linear solvers, obtained with `getLinSolverByName("blockamg", {})`.
 - `MPMDofManager` must conform to `DofVector` permutations and assembly patterns.
 
 ---
@@ -71,7 +71,7 @@ EdelweissFE Stack (next_v26.11):
 ### Phase 4: Solver & Linear Solver Integration
 - [ ] **Solver Re-Alignment**: Audit [`nqs.py`](file:///home/matthias/constitutive_modeling/next_v2611/EdelweissMeshfree/edelweissmeshfree/solvers/nqs.py), [`nqsmarmotparallel.py`](file:///home/matthias/constitutive_modeling/next_v2611/EdelweissMeshfree/edelweissmeshfree/solvers/nqsmarmotparallel.py), [`nqsmparclength.py`](file:///home/matthias/constitutive_modeling/next_v2611/EdelweissMeshfree/edelweissmeshfree/solvers/nqsmparclength.py), and [`explicitmultiphysicssolver.py`](file:///home/matthias/constitutive_modeling/next_v2611/EdelweissMeshfree/edelweissmeshfree/solvers/explicitmultiphysicssolver.py).
 - [ ] **Restart Output Integration**: Wire `RestartOutputManager` from `edelweissfe.outputmanagers.restart` into the solver step loop as an optional output manager, unifying checkpoint writing.
-- [ ] **`BlockAMGSolver` Verification**: Ensure `python_linear_elastic_blockamg_test.py` runs with full solution-preserving convergence.
+- [ ] **`BlockAMGSolver` Verification**: Ensure `python_linear_elastic_blockamg_test.py` (now `getLinSolverByName("blockamg", {})`) runs with full solution-preserving convergence.
 
 ### Phase 5: Test Suite Verification & Gold File Audit
 - [ ] **Unit & Integration Suite**: Run `pytest` across all ~64 examples in `examples/`.
