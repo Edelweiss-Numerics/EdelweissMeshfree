@@ -69,30 +69,6 @@ from edelweissmeshfree.stepactions.particledistributedload import (
     ParticleDistributedLoad,
 )
 
-try:
-    from edelweissfe.linsolve.pardiso.pardiso import PardisoSolver
-except ImportError:
-    PardisoSolver = None
-
-
-def invalidateStatefulLinearSolver(linearSolver) -> None:
-    """Force a stateful linear solver to redo its next factorization from scratch.
-
-    Only a :class:`PardisoSolver` instance caches a factorization across calls; other
-    linear solvers (plain functions such as ``pardisoSolve``, or lambdas wrapping
-    ``scipy.sparse.linalg.spsolve``) are already stateless and redo everything on
-    every call, so they need no invalidation.
-
-    Call this whenever a solver rebuilds its Newton cache (i.e. constructs a fresh
-    ``CSRGenerator`` for a new active domain / DOF layout): the meshfree active domain
-    can change mid-run, more often than the "one linear solver instance per analysis
-    step" usage EdelweissFE's own static-mesh solvers rely on, so the solver's
-    automatic array-based pattern-change detection alone is not a sufficient guard
-    here.
-    """
-    if PardisoSolver is not None and isinstance(linearSolver, PardisoSolver):
-        linearSolver.invalidate()
-
 
 class RestartHistoryManager(deque):
 
