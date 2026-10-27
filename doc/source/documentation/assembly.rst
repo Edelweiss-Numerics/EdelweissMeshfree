@@ -177,9 +177,9 @@ Limitations
   meshfree entity lays its contribution out that way, but a constraint is free to declare a sparse
   custom VIJ pattern; such an entity raises ``NotImplementedError`` at registration rather than being
   silently misassembled.
-- **The arc-length and generalized-alpha solvers are not supported.** Both form more than one matrix
-  (a reference-load stiffness, or a mass matrix) and combine them by array arithmetic, which a path that
-  accumulates into a single CSR copy cannot express. They stay on the staging path and say so.
+- **The arc-length solver is not supported.** It forms more than one matrix (a reference-load
+  stiffness) and combines them by array arithmetic, which a path that accumulates into a single CSR copy
+  cannot express. It stays on the staging path and says so.
 - **The non-particle contributors are assembled sequentially.** They are under 2% of the runtime, so
   this is deliberate; a threaded caller reaching
   :class:`~edelweissmeshfree.numerics.systemmatrixcontribution.DirectCSRContribution` raises rather than
