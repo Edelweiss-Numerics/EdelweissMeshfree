@@ -99,8 +99,8 @@ cdef class BSplineMarmotCellWrapper(MarmotCellWrapper):
                                                                     &knotVectorsView[0,0],
                                                                     knotVectorsView.size)
 
-        except ValueError:
-            raise NotImplementedError("Marmot cell {:} not found in library.".format(cellType))
+        except ValueError as e:
+            raise NotImplementedError("Failed to create instance of Marmot cell {:}: {:}".format(cellType, e)) from e
 
     def __dealloc__(self):
         if isinstance(self, BSplineMarmotCellWrapper):
