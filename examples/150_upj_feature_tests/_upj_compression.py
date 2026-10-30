@@ -130,8 +130,8 @@ import os
 
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
+from edelweissfe.config.linsolve import getLinSolverByName
 from edelweissfe.journal.journal import Journal
-from edelweissfe.linsolve.pardiso.pardiso import pardisoSolve
 from edelweissfe.outputmanagers.ensight import EnsightConfigurationSchema, EnsightSchema
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 from edelweissfe.utils.exceptions import StepFailed
@@ -708,7 +708,7 @@ def run_sim(
             nonlinearSolver = NonlinearQuasistaticMarmotArcLengthSolver(theJournal)
             nonlinearSolver.solveStep(
                 adaptiveTimeStepper,
-                pardisoSolve,
+                getLinSolverByName("pardiso", {}),
                 theModel,
                 fieldOutputController,
                 indirectController,
@@ -723,7 +723,7 @@ def run_sim(
             nonlinearSolver = NonlinearQuasistaticSolver(theJournal)
             nonlinearSolver.solveStep(
                 adaptiveTimeStepper,
-                pardisoSolve,
+                getLinSolverByName("pardiso", {}),
                 theModel,
                 fieldOutputController,
                 outputManagers=[ensightOutput, reactionMonitor],

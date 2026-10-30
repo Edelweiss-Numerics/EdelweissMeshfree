@@ -31,13 +31,13 @@ Start here
       - ``pardiso`` with ``reuseSymbolicFactorization=True``
       - a direct factorisation still wins, and symbolic reuse is worth 3x on its own
     * - above ~40,000 DOF
-      - ``BlockAMGSolver``
+      - ``blockamg``
       - AMG's iteration count is mesh independent here; a direct factorisation is not
     * - above ~50,000 DOF
-      - ``BlockAMGSolver``, and ``useDirectCSRAssembly`` on the solver
+      - ``blockamg``, and ``useDirectCSRAssembly`` on the solver
       - the staging assembly path cannot build its gather map beyond ~2.15e9 COO pairs
     * - memory bound rather than time bound
-      - ``BlockAMGSolver`` + ``useDirectCSRAssembly``
+      - ``blockamg`` + ``useDirectCSRAssembly``
       - a direct factorisation's fill-in is the one term that has never been bounded here
 
 The crossover near 40,000 DOF is a measured property of this problem class, not a general rule. Below
@@ -326,9 +326,9 @@ Practical consequences:
 Diagnosing a slow solve
 -----------------------
 
-**Read the per-solve log lines.** ``BlockAMGSolver`` prints one line per solve with its outer iteration
+**Read the per-solve log lines.** ``blockamg`` prints one line per solve with its outer iteration
 count, whether the hierarchy was refreshed or reused, the tolerance it was given, and the time taken. A
-warning is emitted above ``warnOuterIterationsThreshold`` outer iterations.
+warning is emitted above ``warnOuterIterations`` outer iterations.
 
 **Pair each solve with the residual it was asked to reduce.** Iteration counts vary strongly *within* an
 increment -- from single digits early to several hundred late -- so a mean over an increment hides the
@@ -372,23 +372,15 @@ For an RKPM impact problem above the crossover, on the deformed states where the
 
 .. code-block:: python
 
-    from edelweissfe.linsolve.blockamg.blockamg import BlockAMGSolver
+    from edelweissfe.config.linsolve import getLinSolverByName
 
-    linearSolver = BlockAMGSolver(
-        fieldPreconds={
-            "displacement": {
-                "backendBlockSize": 3,
-                "coarsening": {"type": "smoothed_aggregation", "aggr": {"eps_strong": 0.10}},
-                "relax": {"type": "chebyshev", "degree": 2, "power_iters": 80, "lower": 0.08},
-                "npre": 1,
-                "npost": 1,
-            }
+    linearSolver = getLinSolverByName(
+        "blockamg",
+        {
+            "tolerance": 1e-4,  # fixed; note this bypasses Eisenstat--Walker forcing entirely
+            "symmetric": False,  # the reverse sweep is a wasted V-cycle for a single field
+            "dropTolerance": 1e-4,  # ~1.8x on the linear solve; verify on your own operator first
         },
-        lgmresM=60,
-        outerTol=1e-4,          # fixed; note this bypasses Eisenstat--Walker forcing entirely
-        symmetric=False,        # the reverse sweep is a wasted V-cycle for a single field
-        hierarchyDropTol=1e-4,  # ~1.8x on the linear solve; verify on your own operator first
-        verbosity="info",
     )
 
     nonlinearSolver.useDirectCSRAssembly = True   # required above ~50,000 DOF

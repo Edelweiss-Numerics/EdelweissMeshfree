@@ -62,10 +62,7 @@ from edelweissmeshfree.particlemanagers.base.baseparticlemanager import (
     BaseParticleManager,
 )
 from edelweissmeshfree.solvers.base.implicitbase import BaseNonlinearImplicitSolver
-from edelweissmeshfree.solvers.base.nonlinearsolverbase import (
-    RestartHistoryManager,
-    invalidateStatefulLinearSolver,
-)
+from edelweissmeshfree.solvers.base.nonlinearsolverbase import RestartHistoryManager
 from edelweissmeshfree.stepactions.base.mpmbodyloadbase import MPMBodyLoadBase
 from edelweissmeshfree.stepactions.base.mpmdistributedloadbase import (
     MPMDistributedLoadBase,
@@ -315,11 +312,8 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
 
                 if not newtonCache:
                     newtonCache = self._createNewtonCache(theDofManager, particles)
-                    invalidateStatefulLinearSolver(linearSolver)
-                    if hasattr(linearSolver, "setJournal"):
-                        linearSolver.setJournal(self.journal)
-                    if hasattr(linearSolver, "setModel"):
-                        linearSolver.setModel(model, theDofManager)
+                    linearSolver.setJournal(self.journal)
+                    linearSolver.setModel(model, theDofManager)
 
                 try:
                     for initialGuess in (dUPrediction, None):

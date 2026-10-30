@@ -45,6 +45,7 @@ import argparse
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 import pytest
+from edelweissfe.config.linsolve import getLinSolverByName
 from edelweissfe.journal.journal import Journal
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 from edelweissfe.utils.exceptions import StepFailed
@@ -142,9 +143,7 @@ def run_sim():
         "allowed residual growths": 3,
     }
 
-    from edelweissfe.linsolve.blockamg.blockamg import BlockAMGSolver
-
-    linearSolver = BlockAMGSolver()
+    linearSolver = getLinSolverByName("blockamg", {})
 
     try:
         nonlinearSolver.solveStep(
@@ -181,10 +180,6 @@ def change_test_dir(request, monkeypatch):
 
 def test_sim(assert_gold):
     """Uniaxial compression: left fixed, right displaced by -10 in x."""
-    pytest.importorskip(
-        "edelweissfe.linsolve.blockamg.blockamg",
-        reason="BlockAMGSolver not available in current EdelweissFE environment",
-    )
     mpmModel = run_sim()
     ordered_mps = [mp for _, mp in sorted(mpmModel.materialPoints.items())]
     res = np.array([mp.getResultArray("displacement") for mp in ordered_mps])

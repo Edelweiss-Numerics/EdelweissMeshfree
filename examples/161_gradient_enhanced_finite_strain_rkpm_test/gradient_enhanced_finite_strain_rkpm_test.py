@@ -48,8 +48,8 @@ import argparse
 
 import numpy as np
 import pytest
+from edelweissfe.config.linsolve import getLinSolverByName
 from edelweissfe.journal.journal import Journal
-from edelweissfe.linsolve.pardiso.pardiso import pardisoSolve
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 
 from edelweissmeshfree.constraints.particlelagrangianweakdirichlet import (
@@ -174,7 +174,7 @@ def run_sim(particleType, materialName):
     try:
         NonlinearQuasistaticSolver(journal).solveStep(
             adaptiveTimeStepper,
-            pardisoSolve,
+            getLinSolverByName("pardiso", {}),
             model,
             fieldOutputController,
             outputManagers=[],
