@@ -133,7 +133,7 @@ def run_sim():
             "Displacement/SQCNIxNSNI/PlaneStrain/Quad",
             number,
             vertexCoordinates,
-            volume,
+            0.0,
             theApproximation,
             theMaterialProjectile,
         )
@@ -222,7 +222,7 @@ def run_sim():
 
     incSize = 2e-3
     adaptiveTimeStepper = AdaptiveTimeStepper(
-        0.0, tMax, incSize, incSize, incSize / 1e8, 100, theJournal, increaseFactor=1.5
+        0.0, tMax, incSize, incSize, incSize / 1e8, 101, theJournal, increaseFactor=1.5
     )
 
     # nonlinearSolver = NQSParallelForMarmot(theJournal)
