@@ -42,6 +42,9 @@ class ParticleLagrangianContactCartesianBoundaryConstraint(MPMConstraintBase):
         The simulation model.
     """
 
+    #: Carries nothing from one increment to the next.
+    checkpointedState = {}
+
     def __init__(
         self,
         name: str,
@@ -144,14 +147,14 @@ class ParticleLagrangianContactCartesianBoundaryConstraint(MPMConstraintBase):
 
         return hasChanged
 
-    def applyConstraint(self, dU_: np.ndarray, PExt: np.ndarray, V: np.ndarray, timeStep: TimeStep):
+    def computeKernels(self, U_np: np.ndarray, dU: np.ndarray, P: np.ndarray, K: np.ndarray, timeStep: TimeStep):
 
-        dU_U = dU_[: -self._nLagrangianMultipliers]
-        dU_L = dU_[-self._nLagrangianMultipliers :]
-        PExt_U = PExt[: -self._nLagrangianMultipliers]
-        PExt_L = PExt[-self._nLagrangianMultipliers :]
+        dU_U = dU[: -self._nLagrangianMultipliers]
+        dU_L = dU[-self._nLagrangianMultipliers :]
+        P_U = P[: -self._nLagrangianMultipliers]
+        P_L = P[-self._nLagrangianMultipliers :]
 
-        K = V.reshape((self.nDof, self.nDof))
+        K = K.reshape((self.nDof, self.nDof))
 
         K_UL = K[: -self._nLagrangianMultipliers, -self._nLagrangianMultipliers :]
         K_LU = K[-self._nLagrangianMultipliers :, : -self._nLagrangianMultipliers]
@@ -162,7 +165,7 @@ class ParticleLagrangianContactCartesianBoundaryConstraint(MPMConstraintBase):
         i = self._component
         lag = 0
 
-        P_U_i = PExt_U[i :: self._fieldSize]
+        P_U_i = P_U[i :: self._fieldSize]
         dU_U_j = dU_U[i :: self._fieldSize]
 
         K_UL_j = K_UL[i :: self._fieldSize, :]
@@ -195,7 +198,7 @@ class ParticleLagrangianContactCartesianBoundaryConstraint(MPMConstraintBase):
 
         if not should_be_active:
             # contact not active, but we need to ensure that no force is transferred
-            PExt_L[lag] += dL_l
+            P_L[lag] += dL_l
             K_LL[lag, lag] += 1.0
 
             return
@@ -203,7 +206,7 @@ class ParticleLagrangianContactCartesianBoundaryConstraint(MPMConstraintBase):
         dg_l_dU_j = N * self._orientation
 
         P_U_i[nodeIdcs] += dL_l * dg_l_dU_j
-        PExt_L[lag] += g_l
+        P_L[lag] += g_l
 
         K_UL_j[nodeIdcs, lag] += dg_l_dU_j
         K_LU_j[lag, nodeIdcs] += dg_l_dU_j

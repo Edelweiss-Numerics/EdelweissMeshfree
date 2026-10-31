@@ -323,7 +323,7 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
                 elements, dU, Un, PInt, F, K, timeStep.totalTime, timeStep.timeIncrement, theDofManager
             )
             self._computeParticles(particles, dU, PInt, F, K, timeStep.totalTime, timeStep.timeIncrement, theDofManager)
-            self._computeConstraints(constraints, dU, PInt, K, timeStep)
+            self._computeConstraints(constraints, Un + dU, dU, PInt, K, timeStep)
 
             PExt_0, K_0 = self._computeBodyLoads(bodyLoads, PExt_0, K_0, zeroTimeStep, theDofManager, activeCells)
             PExt_0, K_0 = self._computeCellDistributedLoads(distributedLoads, PExt_0, K_0, zeroTimeStep, theDofManager)

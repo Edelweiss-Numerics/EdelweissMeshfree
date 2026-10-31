@@ -56,6 +56,9 @@ class ParticlePenaltyContactCartesianBoundaryConstraint(MPMConstraintBase):
         The factor to multiply the particle characteristic length for proximity checking.
     """
 
+    #: Carries nothing from one increment to the next.
+    checkpointedState = {}
+
     def __init__(
         self,
         name: str,
@@ -221,21 +224,14 @@ class ParticlePenaltyContactCartesianBoundaryConstraint(MPMConstraintBase):
 
         return hasChanged
 
-    def applyConstraint(self, dU_: np.ndarray, PExt: np.ndarray, V: np.ndarray, timeStep: TimeStep):
+    def computeKernels(self, U_np: np.ndarray, dU: np.ndarray, P: np.ndarray, K: np.ndarray, timeStep: TimeStep):
 
-        if not self.isActive:
-            return
-
-        dU_U = dU_
-        PExt_U = PExt
-
-        K = V.reshape((self.nDof, self.nDof))
-        K_UU = K
+        K_UU = K.reshape((self.nDof, self.nDof))
 
         i = self._component
 
-        P_U_i = PExt_U[i :: self._fieldSize]
-        dU_U_j = dU_U[i :: self._fieldSize]
+        P_U_i = P[i :: self._fieldSize]
+        dU_U_j = dU[i :: self._fieldSize]
         K_UU_ij = K_UU[i :: self._fieldSize, i :: self._fieldSize]
 
         penaltyForce = 0.0
