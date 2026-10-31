@@ -239,9 +239,6 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                 if connectivityHasChanged or not theDofManager:
 
                     activeCells = self._getActiveCellsFromManagers(mpmManagers)
-                    # activeCells = set()
-                    # for man in mpmManagers:
-                    #     activeCells |= man.getActiveCells()
 
                     self.journal.message(
                         "active domain has changed, (re)initializing equation system & clearing cache",
@@ -249,7 +246,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                         level=1,
                     )
 
-                    activeNodesWithPersistentData, activeNodesWithVolatileData, reducedNodeFields, reducedNodeSets = (
+                    activeNodesWithPersistentFieldValues, _, reducedNodeFields, reducedNodeSets = (
                         self._assembleActiveDomain(activeCells, model)
                     )
 
@@ -259,24 +256,24 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                     theDofManager = self._createDofManager(
                         reducedNodeFields.values(),
                         activeConstraintsScalarVariables,
-                        elements,
-                        activeConstraints,
-                        # TODO : Check how to make next line more elegant
-                        # TODO 2
-                        # list(
-                        reducedNodeSets.values(),
-                        # ) + [activeNodesWithPersistentData],
-                        activeCells,
-                        model.cellElements.values(),
-                        particles,
+                        elements=elements,
+                        constraints=activeConstraints,
+                        nodeSets=reducedNodeSets.values(),
+                        cells=activeCells,
+                        cellElements=model.cellElements.values(),
+                        particles=particles,
                     )
 
                     U = theDofManager.constructDofVector()
 
-                    # TODO 3
-                    # if len(activeNodesWithPersistentData) > 0:
-                    #     for field in model.nodeFields.values():
-                    #         theDofManager.writeNodeFieldToDofVector(U, field, "U", activeNodesWithPersistentData)
+                    # Finite element nodes carry their total solution across increments; the nodes of
+                    # cells and particles are volatile and start every rebuild at zero.
+                    if activeNodesWithPersistentFieldValues:
+                        for field in model.nodeFields.values():
+                            if "U" in field:
+                                theDofManager.writeNodeFieldToDofVector(
+                                    U, field, "U", activeNodesWithPersistentFieldValues
+                                )
 
                     self.journal.message(
                         "resulting equation system has a size of {:}".format(theDofManager.nDof),
@@ -287,11 +284,6 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                     newtonCache = None
 
                 presentVariableNames = list(theDofManager.idcsOfFieldsInDofVector.keys())
-
-                # if theDofManager.idcsOfScalarVariablesInDofVector:
-                #     presentVariableNames += [
-                #         "scalar variables",
-                #     ]
 
                 # TODO: We are handling this currently as a dedicated special case,
                 # but we should consider to make this part of a more general
@@ -311,7 +303,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                 self.journal.message(iterationHeader2, self.identification, level=2)
 
                 if not newtonCache:
-                    newtonCache = self._createNewtonCache(theDofManager, particles)
+                    newtonCache = self._createNewtonCache(theDofManager)
                     linearSolver.setJournal(self.journal)
                     linearSolver.setModel(model, theDofManager)
 
@@ -465,7 +457,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
         activeNodeSets
             The list of (reduced) active NodeSets.
         elements
-            The list of elements.
+            The finite elements.
         Un
             The old solution vector.
         activeCells

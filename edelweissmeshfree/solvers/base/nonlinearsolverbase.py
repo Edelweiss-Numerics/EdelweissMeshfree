@@ -587,9 +587,26 @@ class BaseNonlinearSolver:
 
         return connectivityHasChanged
 
-    def _getActiveCellsFromManagers(self, mpmManagers):
+    def _getActiveCellsFromManagers(self, mpmManagers: list[MPMManagerBase]) -> list:
+        """Collect the cells that are active in any of the MPM managers.
+
+        Cells define no ``__hash__``, so a set of them iterates in an address-dependent order that
+        differs between runs. The order of the active cells fixes their blocks in the system matrix and
+        the order in which their contributions are summed, so the cells are sorted by their unique number.
+
+        Parameters
+        ----------
+        mpmManagers
+            The list of MPMManagerBase instances.
+
+        Returns
+        -------
+        list
+            The active cells, each once, sorted by cell number.
+        """
 
         activeCells = set()
         for man in mpmManagers:
-            activeCells |= man.getActiveCells()
-        return activeCells
+            activeCells.update(man.getActiveCells())
+
+        return sorted(activeCells, key=lambda cell: cell.cellNumber)

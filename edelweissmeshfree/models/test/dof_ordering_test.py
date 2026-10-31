@@ -37,6 +37,9 @@ The invariant asserted here -- active nodes come out sorted by label -- is what 
 reproducible across processes. Asserting the invariant rather than comparing two in-process
 constructions matters: within one process a ``set`` of the same objects iterates consistently, so a
 "build it twice and compare" test would pass even on the buggy code.
+
+Cells hash by identity as well. Their order fixes their blocks in the system matrix and the order in
+which their contributions are summed, so the active cells come out sorted by number.
 """
 
 import numpy as np
@@ -152,3 +155,38 @@ def test_get_active_sub_model_with_material_points_and_cells():
     assert len(activeModel.cells) == 2
     labels = [n.label for n in activeModel.nodeFields[_FIELD].nodes]
     assert labels == list(range(1, 9))
+
+
+class _NumberedCellStub:
+    """The only thing the active-cell collection asks of a cell is its number."""
+
+    def __init__(self, cellNumber):
+        self.cellNumber = cellNumber
+
+
+class _MPMManagerStub:
+    def __init__(self, cells):
+        self._activeCells = dict.fromkeys(cells)
+
+    def getActiveCells(self):
+        return self._activeCells.keys()
+
+
+def test_active_cells_are_ordered_by_number():
+    """The active cells must come out each once, in an order that depends on their numbers, not on memory."""
+
+    from edelweissmeshfree.solvers.base.nonlinearsolverbase import BaseNonlinearSolver
+
+    cells = [_NumberedCellStub(number) for number in range(1, 33)]
+    shuffled = list(cells)
+    np.random.default_rng(20261031).shuffle(shuffled)
+    assert [c.cellNumber for c in shuffled] != sorted(c.cellNumber for c in shuffled)
+
+    # two managers sharing some of the cells
+    managers = [_MPMManagerStub(shuffled[:20]), _MPMManagerStub(shuffled[12:])]
+
+    # unbound on purpose: the method must not depend on solver state
+    activeCells = BaseNonlinearSolver._getActiveCellsFromManagers(None, managers)
+
+    assert isinstance(activeCells, list)
+    assert [c.cellNumber for c in activeCells] == list(range(1, 33))
