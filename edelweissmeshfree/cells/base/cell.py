@@ -142,24 +142,33 @@ class CellBase(ABC, VIJEntityBase):
         """
 
     @abstractmethod
-    def computeMaterialPointKernels(
+    def computeKernels(
         self,
-        dU: np.ndarray,
-        P: np.ndarray,
         K: np.ndarray,
+        P: np.ndarray,
+        U: np.ndarray,
+        dU: np.ndarray,
         timeTotal: float,
         dTime: float,
     ):
-        """Evaluate the kernel residual and stiffness for given time based for all assigned MaterialPoints.
+        """Add the internal forces of all assigned material points to the residual, and their tangent: the
+        signature of :meth:`edelweissfe.elements.base.baseelement.BaseElement.computeKernels`, so that a solver
+        evaluates cells and elements alike.
+
+        A cell is incremental on the current configuration: its nodal values are increments, so a cell may read
+        ``dU``, but never ``U``. The increment has reached its material points by interpolation before, and their
+        state is what the cell integrates.
 
         Parameters
         ----------
+        K
+            The tangent ``dP/dU`` to augment, the stiffness matrix.
+        P
+            The residual contribution to augment, the internal forces.
+        U
+            The current solution.
         dU
             The current solution increment.
-        P
-            The external load vector to be defined.
-        K
-            The stiffness matrix to be defined.
         timeTotal
             The current total time.
         dTime

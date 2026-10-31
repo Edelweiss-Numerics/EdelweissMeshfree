@@ -194,16 +194,20 @@ cdef class MarmotParticleWrapper:
     def dofIndicesPermutation(self):
         return None
 
-    def computePhysicsKernels(self,
-                                     double[::1] dUc,
-                                     double[::1] Pc,
-                                     double[::1] Kc,
-                                     double timeNew,
-                                     double dTime, ) :
-        """Evaluate residual and stiffness for given time, field, and field increment."""
+    def computeKernels(self,
+                       double[::1] Kc,
+                       double[::1] Pc,
+                       const double[::1] Uc,
+                       const double[::1] dUc,
+                       double timeNew,
+                       double dTime):
+        """Add the internal forces of the particle to the residual, and their tangent; see
+        :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeKernels`. A particle is incremental,
+        so Marmot gets the solution increment."""
 
         self._initializeStateVarsTemp()
-        self._marmotParticle.computePhysicsKernels(&dUc[0], &Pc[0], &Kc[0], timeNew, dTime)
+        with nogil:
+            self._marmotParticle.computePhysicsKernels(&dUc[0], &Pc[0], &Kc[0], timeNew, dTime)
 
 
     def updatePhysicsExplicit(self,

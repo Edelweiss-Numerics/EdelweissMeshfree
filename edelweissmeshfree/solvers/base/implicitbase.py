@@ -546,6 +546,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
     def _computeCells(
         self,
         activeCells: list,
+        U_np: DofVector,
         dU: DofVector,
         P: DofVector,
         F: DofVector,
@@ -560,6 +561,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         ----------
         activeCells
             The list of (active) cells to be evaluated.
+        U_np
+            The current global solution vector.
         dU
             The current global solution increment vector.
         P
@@ -576,10 +579,9 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             The DofManager instance.
         """
         for c in activeCells:
-            dUc = dU[c]
             Pc = np.zeros(c.nDof)
             Kc = K[c]
-            c.computeMaterialPointKernels(dUc, Pc, Kc, time, dT)
+            c.computeKernels(Kc, Pc, U_np[c], dU[c], time, dT)
             P[c] += Pc
             F[c] += abs(Pc)
 
@@ -587,8 +589,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
     def _computeElements(
         self,
         elements: list,
+        U_np: DofVector,
         dU: DofVector,
-        Un: DofVector,
         P: DofVector,
         F: DofVector,
         K: SystemMatrixContributionBase,
@@ -605,10 +607,10 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         ----------
         elements
             The list of elements to be evaluated.
+        U_np
+            The current global solution vector.
         dU
             The current global solution increment vector.
-        Un
-            The previous global solution vector.
         P
             The current global internal force vector.
         F
@@ -624,9 +626,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         """
 
         for el in elements:
-            dUEl = dU[el]
             PEl = np.zeros(el.nDof)
-            el.computeKernels(K[el], PEl, Un[el] + dUEl, dUEl, time, dT)
+            el.computeKernels(K[el], PEl, U_np[el], dU[el], time, dT)
             P[el] += PEl
             F[el] += abs(PEl)
 
@@ -634,8 +635,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
     def _computeCellElements(
         self,
         elements: list,
+        U_np: DofVector,
         dU: DofVector,
-        Un: DofVector,
         P: DofVector,
         F: DofVector,
         K: SystemMatrixContributionBase,
@@ -643,16 +644,16 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         dT: float,
         theDofManager: DofManager,
     ):
-        """Evaluate all cells.
+        """Evaluate all cell elements.
 
         Parameters
         ----------
         elements
             The list of elements to be evaluated.
+        U_np
+            The current global solution vector.
         dU
             The current global solution increment vector.
-        Un
-            The previous global solution vector.
         P
             The current global flux vector.
         F
@@ -668,12 +669,9 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         """
 
         for el in elements:
-            dUEl = dU[el]
-            UEln = Un[el]
-            UElnp = UEln + dUEl
             PEl = np.zeros(el.nDof)
             KEl = K[el]
-            el.computeMaterialPointKernels(UElnp, PEl, KEl, time, dT)
+            el.computeKernels(KEl, PEl, U_np[el], dU[el], time, dT)
             P[el] += PEl
             F[el] += abs(PEl)
 
@@ -681,6 +679,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
     def _computeParticles(
         self,
         particles: Iterable[BaseParticle],
+        U_np: DofVector,
         dU: DofVector,
         P: DofVector,
         F: DofVector,
@@ -695,6 +694,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         ----------
         particles
             The list of particles to be evaluated.
+        U_np
+            The current global solution vector.
         dU
             The current global solution increment vector.
         P
@@ -724,10 +725,9 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         def computeParticlesWorker(particleChunk):
             for particle in particleChunk:
                 PP = scatter_P[particle]
-                dUP = dU[particle]
                 KP = K[particle]
 
-                particle.computePhysicsKernels(dUP, PP, KP, time, dT)
+                particle.computeKernels(KP, PP, U_np[particle], dU[particle], time, dT)
 
         numThreads = getNumberOfThreads() if isFreeThreadingSupported() else 1
 

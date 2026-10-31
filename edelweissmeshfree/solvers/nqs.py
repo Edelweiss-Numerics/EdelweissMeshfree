@@ -688,17 +688,19 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
         self._interpolateFieldsToMaterialPoints(cellElements, dU)
         self._computeMaterialPoints(materialPoints, timeStep.totalTime, timeStep.timeIncrement)
 
-        self._computeCells(activeCells, dU, PInt, F, K, timeStep.totalTime, timeStep.timeIncrement, theDofManager)
+        U_np = Un + dU
+        time = timeStep.totalTime
+        dT = timeStep.timeIncrement
 
-        self._computeElements(elements, dU, Un, PInt, F, K, timeStep.totalTime, timeStep.timeIncrement, theDofManager)
+        self._computeCells(activeCells, U_np, dU, PInt, F, K, time, dT, theDofManager)
 
-        self._computeCellElements(
-            cellElements, dU, Un, PInt, F, K, timeStep.totalTime, timeStep.timeIncrement, theDofManager
-        )
+        self._computeElements(elements, U_np, dU, PInt, F, K, time, dT, theDofManager)
 
-        self._computeParticles(particles, dU, PInt, F, K, timeStep.totalTime, timeStep.timeIncrement, theDofManager)
+        self._computeCellElements(cellElements, U_np, dU, PInt, F, K, time, dT, theDofManager)
 
-        self._computeConstraints(constraints, Un + dU, dU, PInt, K, timeStep)
+        self._computeParticles(particles, U_np, dU, PInt, F, K, time, dT, theDofManager)
+
+        self._computeConstraints(constraints, U_np, dU, PInt, K, timeStep)
 
         PExt, K = self._computeBodyLoads(bodyLoads, PExt, K, timeStep, theDofManager, activeCells)
         PExt, K = self._computeCellDistributedLoads(distributedLoads, PExt, K, timeStep, theDofManager)

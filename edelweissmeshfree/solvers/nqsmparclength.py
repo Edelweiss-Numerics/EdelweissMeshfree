@@ -318,12 +318,13 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
             self._prepareMaterialPoints(materialPoints, timeStep.totalTime, timeStep.timeIncrement)
             self._interpolateFieldsToMaterialPoints(activeCells, dU)
             self._computeMaterialPoints(materialPoints, timeStep.totalTime, timeStep.timeIncrement)
-            self._computeCells(activeCells, dU, PInt, F, K, timeStep.totalTime, timeStep.timeIncrement, theDofManager)
-            self._computeElements(
-                elements, dU, Un, PInt, F, K, timeStep.totalTime, timeStep.timeIncrement, theDofManager
-            )
-            self._computeParticles(particles, dU, PInt, F, K, timeStep.totalTime, timeStep.timeIncrement, theDofManager)
-            self._computeConstraints(constraints, Un + dU, dU, PInt, K, timeStep)
+            U_np = Un + dU
+            time = timeStep.totalTime
+            dT = timeStep.timeIncrement
+            self._computeCells(activeCells, U_np, dU, PInt, F, K, time, dT, theDofManager)
+            self._computeElements(elements, U_np, dU, PInt, F, K, time, dT, theDofManager)
+            self._computeParticles(particles, U_np, dU, PInt, F, K, time, dT, theDofManager)
+            self._computeConstraints(constraints, U_np, dU, PInt, K, timeStep)
 
             PExt_0, K_0 = self._computeBodyLoads(bodyLoads, PExt_0, K_0, zeroTimeStep, theDofManager, activeCells)
             PExt_0, K_0 = self._computeCellDistributedLoads(distributedLoads, PExt_0, K_0, zeroTimeStep, theDofManager)
