@@ -186,19 +186,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
             The tuple containing:
                 - the truth value of success.
                 - the updated MPMModel.
-
-        Raises
-        ------
-        NotImplementedError
-            If the model contains finite elements, which this solver does not evaluate.
         """
-
-        if model.elements:
-            raise NotImplementedError(
-                "{:} does not evaluate finite elements, but the model contains {:}".format(
-                    self.identification, len(model.elements)
-                )
-            )
 
         iterationOptions = self.validOptions.copy()
 
@@ -217,6 +205,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
 
         self._applyStepActionsAtStepStart(model, dirichlets + bodyLoads + distributedLoads)
 
+        elements = model.elements.values()
         particles = model.particles.values()
 
         newtonCache = None
@@ -257,7 +246,9 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                         level=1,
                     )
 
-                    _, _, reducedNodeFields, reducedNodeSets = self._assembleActiveDomain(activeCells, model)
+                    activeNodesWithPersistentFieldValues, _, reducedNodeFields, reducedNodeSets = (
+                        self._assembleActiveDomain(activeCells, model)
+                    )
 
                     activeConstraints = [c for c in constraints if c.active]
                     activeConstraintsScalarVariables = [v for c in activeConstraints for v in c.scalarVariables]
@@ -265,6 +256,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                     theDofManager = self._createDofManager(
                         reducedNodeFields.values(),
                         activeConstraintsScalarVariables,
+                        elements=elements,
                         constraints=activeConstraints,
                         nodeSets=reducedNodeSets.values(),
                         cells=activeCells,
@@ -273,6 +265,15 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                     )
 
                     U = theDofManager.constructDofVector()
+
+                    # Finite element nodes carry their total solution across increments; the nodes of
+                    # cells and particles are volatile and start every rebuild at zero.
+                    if activeNodesWithPersistentFieldValues:
+                        for field in model.nodeFields.values():
+                            if "U" in field:
+                                theDofManager.writeNodeFieldToDofVector(
+                                    U, field, "U", activeNodesWithPersistentFieldValues
+                                )
 
                     self.journal.message(
                         "resulting equation system has a size of {:}".format(theDofManager.nDof),
@@ -322,6 +323,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                                 distributedLoads,
                                 particleDistributedLoads,
                                 reducedNodeSets,
+                                elements,
                                 U,
                                 activeCells,
                                 model.cellElements.values(),
@@ -427,6 +429,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
         distributedLoads: list,
         particleDistributedLoads: list,
         reducedNodeSets: list,
+        elements: list,
         Un: DofVector,
         activeCells: list,
         cellElements: list,
@@ -453,6 +456,8 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
             The list of distributed load StepActions.
         activeNodeSets
             The list of (reduced) active NodeSets.
+        elements
+            The finite elements.
         Un
             The old solution vector.
         activeCells
@@ -513,6 +518,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                 distributedLoads,
                 particleDistributedLoads,
                 reducedNodeSets,
+                elements,
                 Un,
                 activeCells,
                 cellElements,
@@ -611,6 +617,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                         distributedLoads,
                         particleDistributedLoads,
                         reducedNodeSets,
+                        elements,
                         Un,
                         activeCells,
                         cellElements,
@@ -655,6 +662,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
         distributedLoads: list,
         particleDistributedLoads: list,
         reducedNodeSets: list,
+        elements: list,
         Un: DofVector,
         activeCells: list,
         cellElements: list,
@@ -681,6 +689,8 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
         self._computeMaterialPoints(materialPoints, timeStep.totalTime, timeStep.timeIncrement)
 
         self._computeCells(activeCells, dU, PInt, F, K, timeStep.totalTime, timeStep.timeIncrement, theDofManager)
+
+        self._computeElements(elements, dU, Un, PInt, F, K, timeStep.totalTime, timeStep.timeIncrement, theDofManager)
 
         self._computeCellElements(
             cellElements, dU, Un, PInt, F, K, timeStep.totalTime, timeStep.timeIncrement, theDofManager
