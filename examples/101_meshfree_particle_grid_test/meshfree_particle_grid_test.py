@@ -151,7 +151,7 @@ def run_sim():
         dUc[indicesDisplacement_x] = disp_x
         dUc[indicesDisplacement_y] = disp_y
 
-        theParticle.computePhysicsKernels(dUc, Pc, Kc, timeNew, dTime)
+        theParticle.computeKernels(Kc, Pc, dUc, dUc, timeNew, dTime)
         theParticle.acceptStateAndPosition()
 
         print("step: ", i)

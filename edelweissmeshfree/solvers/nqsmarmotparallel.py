@@ -128,6 +128,7 @@ class NQSParallelForMarmot(NonlinearQuasistaticSolver):
     def _computeCells(
         self,
         activeCells_: list,
+        U_np: DofVector,
         dU: DofVector,
         P: DofVector,
         F: DofVector,
@@ -141,8 +142,9 @@ class NQSParallelForMarmot(NonlinearQuasistaticSolver):
             # direct path does not have. Fall back to the base class's sequential loop, which goes
             # through the contribution object: cells are ~0.0002 s of a 3.4 s assembly here, so the
             # threading is not worth a second kernel.
-            return super()._computeCells(activeCells_, dU, P, F, K, time, dT, theDofManager)
+            return super()._computeCells(activeCells_, U_np, dU, P, F, K, time, dT, theDofManager)
 
+        # Marmot cells are incremental: the kernel hands them the solution increment only.
         return computeMarmotCellsInParallel(
             activeCells_,
             dU,
@@ -159,6 +161,7 @@ class NQSParallelForMarmot(NonlinearQuasistaticSolver):
     def _computeParticles(
         self,
         particles_: list,
+        U_np: DofVector,
         dU: DofVector,
         P: DofVector,
         F: DofVector,
@@ -167,6 +170,7 @@ class NQSParallelForMarmot(NonlinearQuasistaticSolver):
         dT: float,
         theDofManager: DofManager,
     ):
+        # Marmot particles are incremental: the kernels hand them the solution increment only.
         if K.vijArray is None:
             return self._computeParticlesIntoCSR(particles_, dU, P, F, time, dT, theDofManager)
 
