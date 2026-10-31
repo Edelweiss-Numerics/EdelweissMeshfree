@@ -705,10 +705,9 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
 
         self._computeConstraints(constraints, U_np, dU, PInt, K, timeStep)
 
-        PExt, K = self._computeBodyLoads(bodyLoads, PExt, K, timeStep, theDofManager, activeCells)
-        PExt, K = self._computeCellDistributedLoads(distributedLoads, PExt, K, timeStep, theDofManager)
-
-        PExt, K = self._computeParticleDistributedLoads(particleDistributedLoads, PExt, K, timeStep, theDofManager)
+        self._assembleLoads(
+            [*bodyLoads, *distributedLoads, *particleDistributedLoads], U_np, dU, PExt, K, timeStep, theDofManager
+        )
 
         # every contributor has had its say; commit whatever is still held so the matrix is complete
         # when this returns rather than only once someone asks for the CSR form
