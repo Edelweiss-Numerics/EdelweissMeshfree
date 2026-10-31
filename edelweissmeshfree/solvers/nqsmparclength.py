@@ -183,6 +183,7 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
         distributedLoads: list,
         particleDistributedLoads: list,
         reducedNodeSets: list,
+        elements: list,
         Un: DofVector,
         activeCells: list,
         cellElements: list,
@@ -250,6 +251,7 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
                 distributedLoads,
                 particleDistributedLoads,
                 reducedNodeSets,
+                elements,
                 Un,
                 activeCells,
                 cellElements,
@@ -317,6 +319,9 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
             self._interpolateFieldsToMaterialPoints(activeCells, dU)
             self._computeMaterialPoints(materialPoints, timeStep.totalTime, timeStep.timeIncrement)
             self._computeCells(activeCells, dU, PInt, F, K, timeStep.totalTime, timeStep.timeIncrement, theDofManager)
+            self._computeElements(
+                elements, dU, Un, PInt, F, K, timeStep.totalTime, timeStep.timeIncrement, theDofManager
+            )
             self._computeParticles(particles, dU, PInt, F, K, timeStep.totalTime, timeStep.timeIncrement, theDofManager)
             self._computeConstraints(constraints, dU, PInt, K, timeStep)
 
