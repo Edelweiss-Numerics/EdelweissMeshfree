@@ -71,21 +71,23 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         theDofManager,
         activeCells,
     ) -> tuple[DofVector, VIJSystemMatrix]:
-        """Loop over all body forces loads acting on elements, and evaluate them.
+        """Loop over all body forces loads acting on cells, and evaluate them on the active ones.
         Assembles into the global external load vector and the system matrix.
 
         Parameters
         ----------
-        distributedLoads
-            The list of distributed loads.
-        U_np
-            The current solution vector.
+        bodyForces
+            The list of body loads.
         PExt
             The external load vector to be augmented.
         K
             The system matrix to be augmented.
         timeStep
             The current time increment.
+        theDofManager
+            The DofManager instance.
+        activeCells
+            The list of active cells. A body load acts only on the cells of its cell set that are active.
 
         Returns
         -------
@@ -93,12 +95,15 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             The augmented load vector and system matrix.
         """
 
+        # for the membership test only; the contributions are summed in the order of each load's cell set
+        activeCellsLookup = set(activeCells)
+
         for bForce in bodyForces:
             loadVector = bForce.getCurrentLoad(timeStep)
             bLoadType = bForce.loadType
 
             for cl in bForce.cellSet:
-                if cl in activeCells:
+                if cl in activeCellsLookup:
                     Pc = np.zeros(cl.nDof)
                     Kc = K[theDofManager.idcsOfCellsInDofVector[cl]]
 
