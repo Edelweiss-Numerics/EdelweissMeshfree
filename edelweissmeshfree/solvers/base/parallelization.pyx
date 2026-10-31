@@ -37,6 +37,7 @@
 import numpy as np
 from edelweissfe.journal.journal import Journal
 from edelweissfe.numerics.dofmanager import DofManager, DofVector, VIJSystemMatrix
+from edelweissfe.utils.exceptions import CutbackRequest
 
 from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
 
@@ -60,7 +61,8 @@ from time import time as getCurrentTime
 
 
 def computeMarmotMaterialPointsInParallel(materialPoints_, double time, double dT, int numThreads):
-    """Evaluate all material points' physics in an OpenMP prange loop.
+    """Evaluate all material points' physics in an OpenMP prange loop. A failure in Marmot, e.g. a material that
+    cannot integrate the increment, requests a cutback, as in the material point wrapper.
 
     Parameters
     ----------
@@ -94,6 +96,8 @@ def computeMarmotMaterialPointsInParallel(materialPoints_, double time, double d
 
             (<MarmotMaterialPoint*> cppMPs[i] )[0].computeYourself(time, dT,)
 
+    except (RuntimeError, ValueError) as e:
+        raise CutbackRequest(str(e), 0.5)
     finally:
         free( cppMPs )
 
@@ -108,7 +112,7 @@ def computeMarmotCellsInParallel(
     theDofManager,
     int numThreads
 ):
-    """Evaluate all cells.
+    """Evaluate all cells. A failure in Marmot requests a cutback, as in the cell wrapper.
 
     Parameters
     ----------
@@ -202,6 +206,8 @@ def computeMarmotCellsInParallel(
             for j in range (cellNDof):
                 P_mView[ I[cellIdxInVIJ + j] ] +=      Pe[ cellIdxInPe + j ]
                 F_mView[ I[cellIdxInVIJ + j] ] += abs( Pe[ cellIdxInPe + j ] )
+    except (RuntimeError, ValueError) as e:
+        raise CutbackRequest(str(e), 0.5)
     finally:
         free( cppActiveCells )
 
@@ -216,7 +222,8 @@ def computeMarmotParticlesInParallel(
     theDofManager: DofManager,
     int numThreads
 ):
-    """Evaluate all particles in parallel (MarmotParticles only).
+    """Evaluate all particles in parallel (MarmotParticles only). A failure in Marmot, e.g. a material that cannot
+    integrate the increment, requests a cutback, as in the particle wrapper.
 
     Parameters
     ----------
@@ -312,6 +319,8 @@ def computeMarmotParticlesInParallel(
             for j in range (particleNDof):
                 P_mView[ I[particleIdxInVIJ + j] ] +=      Pe[ particleIdxInPe + j ]
                 F_mView[ I[particleIdxInVIJ + j] ] += abs( Pe[ particleIdxInPe + j ] )
+    except (RuntimeError, ValueError) as e:
+        raise CutbackRequest(str(e), 0.5)
     finally:
         free( cppActiveParticles )
 
@@ -335,8 +344,9 @@ def computeMarmotParticlesIntoCSR(
 ):
     """Evaluate all particles and scatter their blocks straight into CSR.
 
-    The direct-to-CSR counterpart of :func:`computeMarmotParticlesInParallel`. Identical in every
-    respect except where the local stiffness goes: instead of a slab of a sizeVIJ-sized VIJ array, each
+    The direct-to-CSR counterpart of :func:`computeMarmotParticlesInParallel`, including the cutback requested by a
+    failure in Marmot. Identical in every respect except where the local stiffness goes: instead of a slab of a
+    sizeVIJ-sized VIJ array, each
     thread is handed a small scratch block which it scatters through the assembler's offset map. The
     VIJ value array is therefore never allocated -- 12.15 GB at 43k DOF -- and the per-iteration
     re-zeroing becomes cache-resident rather than a full-array memset.
@@ -442,5 +452,7 @@ def computeMarmotParticlesIntoCSR(
             for j in range(particleNDof):
                 P_mView[ I[particleIdxInVIJ + j] ] +=      Pe[ particleIdxInPe + j ]
                 F_mView[ I[particleIdxInVIJ + j] ] += abs( Pe[ particleIdxInPe + j ] )
+    except (RuntimeError, ValueError) as e:
+        raise CutbackRequest(str(e), 0.5)
     finally:
         free(cppActiveParticles)

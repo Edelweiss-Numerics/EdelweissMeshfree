@@ -46,6 +46,7 @@ from edelweissfe.stepactions.base.dirichletbase import DirichletBase
 from edelweissfe.timesteppers.timestep import TimeStep
 from edelweissfe.utils.exceptions import (
     ConditionalStop,
+    CutbackRequest,
     DivergingSolution,
     ReachedMaxIncrements,
     ReachedMaxIterations,
@@ -348,7 +349,9 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                             else:
                                 raise
 
-                except (RuntimeError, DivergingSolution, ReachedMaxIterations) as e:
+                # A cutback request comes from an entity whose material cannot integrate the increment; the Marmot
+                # wrappers turn a failure in Marmot into one.
+                except (CutbackRequest, DivergingSolution, ReachedMaxIterations) as e:
                     self.journal.message(str(e), self.identification, 1)
 
                     try:
