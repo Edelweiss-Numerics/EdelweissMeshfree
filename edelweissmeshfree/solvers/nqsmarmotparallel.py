@@ -294,7 +294,7 @@ class NQSParallelForMarmot(NonlinearQuasistaticSolver):
         # ---- evaluation 1: the production path, untouched -------------------------------------
         computeMarmotParticlesInParallel(particles_, dU, P, F, K_VIJ, time, dT, theDofManager, self.numThreads)
 
-        # cells and elements may have written before us, so the particle contribution is the delta
+        # cells and cell elements may have written before us, so the particle contribution is the delta
         VParticles = np.ascontiguousarray(np.asarray(K_VIJ) - VBefore)
         PParticles = np.asarray(P) - PBefore
 
@@ -618,7 +618,7 @@ class NQSParallelForMarmot(NonlinearQuasistaticSolver):
         particles = list(particles_)
         entityIds = np.array([self._directCSREntityIds[p] for p in particles], dtype=np.intc)
 
-        # cells and elements may already have contributed, and the benchmark clears the array
+        # cells and cell elements may already have contributed, and the benchmark clears the array
         VBefore = np.array(K_VIJ, copy=True)
 
         PDiscard = theDofManager.constructDofVector()

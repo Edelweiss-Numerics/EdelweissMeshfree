@@ -36,8 +36,8 @@ That is the whole change. What it does:
 
 - no VIJ staging array is allocated,
 - the particle kernel scatters each block through the offset map from inside its own ``prange``,
-- every other contributor -- cells, elements, cell elements, constraints, body loads, cell and particle
-  distributed loads -- writes into a small reused scratch block that is then scattered.
+- every other contributor -- cells, cell elements, constraints, body loads, cell and particle distributed
+  loads -- writes into a small reused scratch block that is then scattered.
 
 None of the contributors themselves changed. They ask the same question they always did (*"give me the
 block for this entity"*); only what sits behind that request differs, via

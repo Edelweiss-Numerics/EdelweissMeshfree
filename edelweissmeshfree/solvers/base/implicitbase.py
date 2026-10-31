@@ -3,7 +3,7 @@ from typing import Iterable
 
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
-from edelweissfe.numerics.csrgeneratorv2 import CSRGenerator
+from edelweissfe.numerics.csrgeneratorv2 import CSRGenerator, DirectCSRAssembler
 from edelweissfe.numerics.dofmanager import DofManager, DofVector, VIJSystemMatrix
 from edelweissfe.numerics.parallelizationutilities import (
     getNumberOfThreads,
@@ -46,7 +46,6 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         distributedLoads: list,
         particleDistributedLoads: list,
         reducedNodeSets: list,
-        elements: list,
         Un: DofVector,
         activeCells: list,
         cellElements: list,
@@ -578,252 +577,6 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             P[c] += Pc
             F[c] += abs(Pc)
 
-    @performancetiming.timeit("computation active cells")
-    def _computeCellsWithLumpedInertia(
-        self,
-        activeCells: list,
-        dU: DofVector,
-        P: DofVector,
-        F: DofVector,
-        M: DofVector,
-        K: SystemMatrixContributionBase,
-        time: float,
-        dT: float,
-        theDofManager: DofManager,
-    ):
-        """Evaluate all cells.
-
-        Parameters
-        ----------
-        activeCells
-            The list of (active) cells to be evaluated.
-        dU
-            The current global solution increment vector.
-        P
-            The current global flux vector.
-        F
-            The accumulated nodal fluxes vector.
-        K
-            Where each entity writes its stiffness contribution.
-        time
-            The current time.
-        dT
-            The increment of time.
-        theDofManager
-            The DofManager instance.
-        """
-        for c in activeCells:
-            dUc = dU[c]
-            Pc = np.zeros(c.nDof)
-            Mc = np.zeros(c.nDof)
-            Kc = K[c]
-            c.computeMaterialPointKernels(dUc, Pc, Kc, time, dT)
-            c.computeLumpedInertia(Mc)
-            M[c] += Mc
-            P[c] += Pc
-            F[c] += abs(Pc)
-
-    @performancetiming.timeit("computation active cells")
-    def _computeCellsWithConsistentInertia(
-        self,
-        activeCells: list,
-        dU: DofVector,
-        P: DofVector,
-        F: DofVector,
-        M: VIJSystemMatrix,
-        K: SystemMatrixContributionBase,
-        time: float,
-        dT: float,
-        theDofManager: DofManager,
-    ):
-        """Evaluate all cells.
-
-        Parameters
-        ----------
-        activeCells
-            The list of (active) cells to be evaluated.
-        dU
-            The current global solution increment vector.
-        P
-            The current global flux vector.
-        F
-            The accumulated nodal fluxes vector.
-        K
-            Where each entity writes its stiffness contribution.
-        time
-            The current time.
-        dT
-            The increment of time.
-        theDofManager
-            The DofManager instance.
-        """
-        for c in activeCells:
-            dUc = dU[c]
-            Pc = np.zeros(c.nDof)
-            Mc = np.zeros((c.nDof, c.nDof))
-            Kc = K[c]
-            c.computeMaterialPointKernels(dUc, Pc, Kc, time, dT)
-            c.computeConsistentInertia(Mc)
-            M[c] += Mc
-            P[c] += Pc
-            F[c] += abs(Pc)
-
-    @performancetiming.timeit("computation elements")
-    def _computeElements(
-        self,
-        elements: list,
-        dU: DofVector,
-        Un: DofVector,
-        P: DofVector,
-        F: DofVector,
-        K: SystemMatrixContributionBase,
-        time: float,
-        dT: float,
-        theDofManager: DofManager,
-    ):
-        """Evaluate all cells.
-
-        Parameters
-        ----------
-        elements
-            The list of elements to be evaluated.
-        dU
-            The current global solution increment vector.
-        Un
-            The previous global solution vector.
-        P
-            The current global flux vector.
-        F
-            The accumulated nodal fluxes vector.
-        K
-            Where each entity writes its stiffness contribution.
-        time
-            The current time.
-        dT
-            The increment of time.
-        theDofManager
-            The DofManager instance.
-        """
-        time_ = np.array([time, time])
-
-        for el in elements:
-            dUEl = dU[el]
-            UEln = Un[el]
-            UElnp = UEln + dUEl
-            PEl = np.zeros(el.nDof)
-            KEl = K[el]
-            el.computeYourself(KEl, PEl, UElnp, dUEl, time_, dT)
-            P[el] -= PEl
-            F[el] += abs(PEl)
-
-    @performancetiming.timeit("computation elements")
-    def _computeElementsWithConsistentInertia(
-        self,
-        elements: list,
-        dU: DofVector,
-        Un: DofVector,
-        P: DofVector,
-        F: DofVector,
-        M_VIJ: DofVector,
-        K: SystemMatrixContributionBase,
-        time: float,
-        dT: float,
-        theDofManager: DofManager,
-    ):
-        """Evaluate all elements with consistent inertia.
-
-        Parameters
-        ----------
-        elements
-            The list of elements to be evaluated.
-        dU
-            The current global solution increment vector.
-        Un
-            The previous global solution vector.
-        P
-            The current global flux vector.
-        F
-            The accumulated nodal fluxes vector.
-        M_VIJ
-            The global consistent mass matrix in VIJ (COO) format.
-        K
-            Where each entity writes its stiffness contribution.
-        time
-            The current time.
-        dT
-            The increment of time.
-        theDofManager
-            The DofManager instance.
-        """
-        time_ = np.array([time, time])
-
-        for el in elements:
-            dUEl = dU[el]
-            UEln = Un[el]
-            UElnp = UEln + dUEl
-            PEl = np.zeros(el.nDof)
-            MEl = np.zeros_like(M_VIJ[el])
-            KEl = K[el]
-            el.computeYourself(KEl, PEl, UElnp, dUEl, time_, dT)
-            el.computeConsistentInertia(MEl)
-            M_VIJ[el] += MEl
-            P[el] -= PEl
-            F[el] += abs(PEl)
-
-    @performancetiming.timeit("computation elements")
-    def _computeElementsWithLumpedInertia(
-        self,
-        elements: list,
-        dU: DofVector,
-        Un: DofVector,
-        P: DofVector,
-        F: DofVector,
-        M: DofVector,
-        K: SystemMatrixContributionBase,
-        time: float,
-        dT: float,
-        theDofManager: DofManager,
-    ):
-        """Evaluate all elements with lumped inertia.
-
-        Parameters
-        ----------
-        elements
-            The list of elements to be evaluated.
-        dU
-            The current global solution increment vector.
-        Un
-            The previous global solution vector.
-        P
-            The current global flux vector.
-        F
-            The accumulated nodal fluxes vector.
-        M
-            The lumped mass matrix as vector.
-        K
-            Where each entity writes its stiffness contribution.
-        time
-            The current time.
-        dT
-            The increment of time.
-        theDofManager
-            The DofManager instance.
-        """
-        time_ = np.array([time, time])
-
-        for el in elements:
-            dUEl = dU[el]
-            UEln = Un[el]
-            UElnp = UEln + dUEl
-            PEl = np.zeros(el.nDof)
-            MEl = np.zeros(el.nDof)
-            KEl = K[el]
-            el.computeYourself(KEl, PEl, UElnp, dUEl, time_, dT)
-            el.computeLumpedInertia(MEl)
-            M[el] += MEl
-            P[el] -= PEl
-            F[el] += abs(PEl)
-
     @performancetiming.timeit("computation cell elements")
     def _computeCellElements(
         self,
@@ -934,101 +687,6 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         scatter_P.assembleInto(P)
         scatter_P.assembleInto(F, absolute=True)
 
-    @performancetiming.timeit("computation particles")
-    def _computeParticlesWithConsistentInertia(
-        self,
-        particles: list,
-        dU: DofVector,
-        P: DofVector,
-        F: DofVector,
-        M_VIJ: VIJSystemMatrix,
-        K: SystemMatrixContributionBase,
-        time: float,
-        dT: float,
-        theDofManager: DofManager,
-    ):
-        """Evaluate all particles with consistent inertia.
-
-        Parameters
-        ----------
-        elements
-            The list of elements to be evaluated.
-        dU
-            The current global solution increment vector.
-        P
-            The current global flux vector.
-        F
-            The accumulated nodal fluxes vector.
-        M_VIJ
-            The global mass matrix in VIJ (COO) format.
-        K
-            Where each entity writes its stiffness contribution.
-        time
-            The current time.
-        dT
-            The increment of time.
-        theDofManager
-            The DofManager instance.
-        """
-        for p in particles:
-            dUP = dU[p]
-            PP = np.zeros(p.nDof)
-            MP = np.zeros_like(M_VIJ[p])
-            KP = K[p]
-            p.computePhysicsKernels(dUP, PP, KP, time, dT)
-            p.computeConsistentInertia(MP)
-            MP_ = M_VIJ[p]
-            MP_ += MP
-            P[p] += PP
-            F[p] += abs(PP)
-
-    @performancetiming.timeit("computation particles")
-    def _computeParticlesWithLumpedInertia(
-        self,
-        particles: list,
-        dU: DofVector,
-        P: DofVector,
-        F: DofVector,
-        M: DofVector,
-        K: SystemMatrixContributionBase,
-        time: float,
-        dT: float,
-        theDofManager: DofManager,
-    ):
-        """Evaluate all particles with consistent inertia.
-
-        Parameters
-        ----------
-        elements
-            The list of elements to be evaluated.
-        dU
-            The current global solution increment vector.
-        P
-            The current global flux vector.
-        F
-            The accumulated nodal fluxes vector.
-        M
-            The global lumped mass matrix as vector.
-        K
-            Where each entity writes its stiffness contribution.
-        time
-            The current time.
-        dT
-            The increment of time.
-        theDofManager
-            The DofManager instance.
-        """
-        for p in particles:
-            dUP = dU[p]
-            PP = np.zeros(p.nDof)
-            MP = np.zeros(p.nDof)
-            KP = K[p]
-            p.computePhysicsKernels(dUP, PP, KP, time, dT)
-            p.computeLumpedInertia(MP)
-            M[p] += MP
-            P[p] += PP
-            F[p] += abs(PP)
-
     @performancetiming.timeit("computation constraints")
     def _computeConstraints(
         self, constraints: list, dU: DofVector, P: DofVector, K: SystemMatrixContributionBase, timeStep: TimeStep
@@ -1096,12 +754,6 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             The registered assembler.
         """
 
-        # Imported lazily: useDirectCSRAssembly is off by default, and the EdelweissFE-side
-        # DirectCSRAssembler this wraps has not landed on next_v26.11 yet (it lives on the unmerged
-        # feat/direct-csr-assembly branch) -- a module-level import would break every solver that
-        # never touches this path.
-        from edelweissfe.numerics.csrgeneratorv2 import DirectCSRAssembler
-
         entities = list(theDofManager.idcsOfHigherOrderEntitiesInVIJ.keys())
 
         # The scatter addresses a dense nDof x nDof column-major block. Every meshfree entity lays its
@@ -1131,16 +783,14 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         return assembler
 
     @performancetiming.timeit("creation newton cache")
-    def _createNewtonCache(self, theDofManager, particles=()):
+    def _createNewtonCache(self, theDofManager):
         """Create expensive objects, which may be reused if the global system does not change.
 
         Parameters
         ----------
         theDofManager
-            The DofManager instance.
-        particles
-            Unused. Kept because the arc-length solver's override forwards it; the assembler now takes
-            its entity list from the DofManager, which is the only place that knows all of them.
+            The DofManager instance. The direct-to-CSR assembler takes its entity list from it, since it
+            is the only place that knows all of them.
 
         Returns
         -------
