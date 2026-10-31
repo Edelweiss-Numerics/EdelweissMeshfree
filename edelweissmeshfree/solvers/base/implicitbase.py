@@ -742,14 +742,23 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
 
     @performancetiming.timeit("computation constraints")
     def _computeConstraints(
-        self, constraints: list, dU: DofVector, P: DofVector, K: SystemMatrixContributionBase, timeStep: TimeStep
+        self,
+        constraints: list,
+        U_np: DofVector,
+        dU: DofVector,
+        P: DofVector,
+        K: SystemMatrixContributionBase,
+        timeStep: TimeStep,
     ):
-        """Evaluate all constraints.
+        """Evaluate all active constraints: each adds its residual contribution and its tangent, see
+        :meth:`~edelweissfe.constraints.base.constraintbase.ConstraintBase.computeKernels`.
 
         Parameters
         ----------
         constraints
             The list of constraints to be evaluated.
+        U_np
+            The current global solution vector.
         dU
             The current global solution increment vector.
         P
@@ -761,10 +770,9 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         """
         for c in constraints:
             if c.active:
-                dUc = dU[c]
                 Pc = np.zeros(c.nDof)
                 Kc = K[c]
-                c.applyConstraint(dUc, Pc, Kc, timeStep)
+                c.computeKernels(U_np[c], dU[c], Pc, Kc, timeStep)
                 P[c] += Pc
 
     @performancetiming.timeit("instancing csr generator")

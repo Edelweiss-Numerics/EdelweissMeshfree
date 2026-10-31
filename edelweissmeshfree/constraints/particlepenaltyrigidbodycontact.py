@@ -23,6 +23,9 @@ class ParticlePenaltyContactImplicitSurfaceConstraint(MPMConstraintBase):
         Returns gradient vector. Convention: Points OUTWARD (Normal).
     """
 
+    #: Carries nothing from one increment to the next.
+    checkpointedState = {}
+
     def __init__(
         self,
         name: str,
@@ -133,13 +136,8 @@ class ParticlePenaltyContactImplicitSurfaceConstraint(MPMConstraintBase):
 
         return hasChanged
 
-    def applyConstraint(self, dU_: np.ndarray, PExt: np.ndarray, V: np.ndarray, timeStep: TimeStep):
-        if not self.isActive:
-            return
-
-        K_UU = V.reshape((self.nDof, self.nDof))
-
-        dU = dU_
+    def computeKernels(self, U_np: np.ndarray, dU: np.ndarray, P: np.ndarray, K: np.ndarray, timeStep: TimeStep):
+        K_UU = K.reshape((self.nDof, self.nDof))
 
         for constrained_point in self._constrained_points:
 
@@ -176,7 +174,7 @@ class ParticlePenaltyContactImplicitSurfaceConstraint(MPMConstraintBase):
                 dg_dU[start_idx : start_idx + self._fieldSize] = N_vec[i] * constraint_vec
 
             # Update Force (Using += just like original)
-            PExt += self._penaltyParameter * dg_dU * g
+            P += self._penaltyParameter * dg_dU * g
 
             # Update Stiffness (Using += just like original)
             K_update = self._penaltyParameter * np.outer(dg_dU, dg_dU)

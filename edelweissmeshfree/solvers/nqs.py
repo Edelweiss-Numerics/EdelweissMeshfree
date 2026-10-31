@@ -698,7 +698,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
 
         self._computeParticles(particles, dU, PInt, F, K, timeStep.totalTime, timeStep.timeIncrement, theDofManager)
 
-        self._computeConstraints(constraints, dU, PInt, K, timeStep)
+        self._computeConstraints(constraints, Un + dU, dU, PInt, K, timeStep)
 
         PExt, K = self._computeBodyLoads(bodyLoads, PExt, K, timeStep, theDofManager, activeCells)
         PExt, K = self._computeCellDistributedLoads(distributedLoads, PExt, K, timeStep, theDofManager)

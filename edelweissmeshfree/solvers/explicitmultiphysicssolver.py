@@ -169,7 +169,15 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
                     )
                     self.updateSystem(particles, timeStep.totalTime, dT, dU_np)
                     self.computeSystem(
-                        particles, activeConstraints, particleDistributedLoads, P_Int, P_Ext, M, momentum, timeStep
+                        particles,
+                        activeConstraints,
+                        particleDistributedLoads,
+                        dU_np,
+                        P_Int,
+                        P_Ext,
+                        M,
+                        momentum,
+                        timeStep,
                     )
                     M_inv = np.reciprocal(M)
 
@@ -245,7 +253,7 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
 
                 P_Int[:] = P_Ext[:] = M[:] = momentum[:] = 0.0
                 self.computeSystem(
-                    particles, activeConstraints, particleDistributedLoads, P_Int, P_Ext, M, momentum, timeStep
+                    particles, activeConstraints, particleDistributedLoads, dU_np, P_Int, P_Ext, M, momentum, timeStep
                 )
                 # prevent division close to zero:
                 M[M < 1e-12] = 1e-12
@@ -422,6 +430,7 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
         particles: list,
         constraints: list,
         particleDistributedLoads: list[ParticleDistributedLoad],
+        dU: DofVector,
         P_Int: DofVector,
         P_Ext: DofVector,
         M: DofVector,
@@ -438,6 +447,8 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
             The list of constraints to be applied.
         particleDistributedLoads
             The list of particle distributed loads to be applied.
+        dU
+            The global solution increment vector.
         P_Int
             The global internal flux vector.
         P_Ext
@@ -458,7 +469,7 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
         )
 
         self._computeParticleDistributedLoads(particleDistributedLoads, P_Ext, timeStep)
-        self._computeConstraints(constraints, P_Ext, timeStep)
+        self._computeConstraints(constraints, dU, P_Ext, timeStep)
 
         return P_Int, P_Ext, M, Mv
 
@@ -489,23 +500,33 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
         )
 
     @performancetiming.timeit("computation constraints")
-    def _computeConstraints(self, constraints: list, P: DofVector, timeStep: TimeStep):
-        """Evaluate all constraints.
+    def _computeConstraints(self, constraints: list, dU: DofVector, P: DofVector, timeStep: TimeStep):
+        """Evaluate all active constraints, without a tangent, and add the forces they exert to the external
+        forces.
+
+        A constraint adds its residual contribution, the *negative* of the force it exerts on its nodes (see
+        :meth:`~edelweissfe.constraints.base.constraintbase.ConstraintBase.computeKernelsExplicit`), whereas this
+        solver collects the external forces, so the contribution is subtracted.
 
         Parameters
         ----------
         constraints
             The list of constraints to be evaluated.
+        dU
+            The current global solution increment vector.
         P
-            The current global flux vector.
+            The global external force vector.
         timeStep
             The current time increment.
         """
         for c in constraints:
             if c.active:
                 Pc = np.zeros(c.nDof)
-                c.applyConstraint(Pc, timeStep)
-                P[c] += Pc
+                # The nodes of the particles carry no total solution: they move with the particles, so the current
+                # solution is the increment itself.
+                dUc = dU[c]
+                c.computeKernelsExplicit(dUc, dUc, Pc, timeStep)
+                P[c] -= Pc
 
     def _restoreHalfStepVelocity(self, expectedNumberOfDofs: int) -> np.ndarray:
         """Take the half-step velocity out of the restart file that was read.
