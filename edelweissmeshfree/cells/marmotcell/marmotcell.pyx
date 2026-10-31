@@ -138,10 +138,13 @@ cdef class MarmotCellWrapper:
                        double dTime):
         """Add the internal forces of the assigned material points to the residual, and their tangent; see
         :meth:`edelweissmeshfree.cells.base.cell.CellBase.computeKernels`. A cell is incremental, so Marmot gets the
-        solution increment."""
+        solution increment. A failure in Marmot requests a cutback, as for an EdelweissFE element."""
 
-        with nogil:
-            self._marmotCell.computeMaterialPointKernels(&dUc[0], &Pc[0], &Kc[0], timeNew, dTime)
+        try:
+            with nogil:
+                self._marmotCell.computeMaterialPointKernels(&dUc[0], &Pc[0], &Kc[0], timeNew, dTime)
+        except (RuntimeError, ValueError) as e:
+            raise CutbackRequest(str(e), 0.5)
 
     cpdef void interpolateFieldsToMaterialPoints(self, double[::1] dUc) nogil:
 
