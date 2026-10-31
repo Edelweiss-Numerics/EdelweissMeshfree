@@ -46,6 +46,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         distributedLoads: list,
         particleDistributedLoads: list,
         reducedNodeSets: list,
+        elements: list,
         Un: DofVector,
         activeCells: list,
         cellElements: list,
@@ -581,6 +582,53 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             c.computeMaterialPointKernels(dUc, Pc, Kc, time, dT)
             P[c] += Pc
             F[c] += abs(Pc)
+
+    @performancetiming.timeit("computation elements")
+    def _computeElements(
+        self,
+        elements: list,
+        dU: DofVector,
+        Un: DofVector,
+        P: DofVector,
+        F: DofVector,
+        K: SystemMatrixContributionBase,
+        time: float,
+        dT: float,
+        theDofManager: DofManager,
+    ):
+        """Evaluate all finite elements.
+
+        An element contributes its internal force, which is the sign convention of cells and
+        particles as well, so it is accumulated into the same vector.
+
+        Parameters
+        ----------
+        elements
+            The list of elements to be evaluated.
+        dU
+            The current global solution increment vector.
+        Un
+            The previous global solution vector.
+        P
+            The current global internal force vector.
+        F
+            The accumulated nodal fluxes vector.
+        K
+            Where each entity writes its stiffness contribution.
+        time
+            The current time.
+        dT
+            The increment of time.
+        theDofManager
+            The DofManager instance.
+        """
+
+        for el in elements:
+            dUEl = dU[el]
+            PEl = np.zeros(el.nDof)
+            el.computeKernels(K[el], PEl, Un[el] + dUEl, dUEl, time, dT)
+            P[el] += PEl
+            F[el] += abs(PEl)
 
     @performancetiming.timeit("computation cell elements")
     def _computeCellElements(
