@@ -41,6 +41,9 @@ import numpy as np
 import pytest
 from edelweissfe.config.linsolve import getLinSolverByName
 from edelweissfe.journal.journal import Journal
+from edelweissfe.solvers.nonlinearimplicitstatic import NIST
+from edelweissfe.steps.adaptivestep import AdaptiveStep
+from edelweissfe.steps.stepmanager import StepActionCollection
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 from edelweissfe.utils.exceptions import StepFailed
 
@@ -71,6 +74,10 @@ from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
 from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
     MarmotParticleWrapper,
 )
+from edelweissmeshfree.solvers.meshfreeconvergencecriterion import (
+    jobInfoWithMeshfreeTolerances,
+    meshfreeCriterionOptions,
+)
 from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
 
 # from edelweissmeshfree.generators.rectangularparticlegridgenerator import (
@@ -78,7 +85,14 @@ from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
 # )
 
 
-def run_sim():
+def run_sim(withEdelweissFESolver: bool = False):
+    """Solve the example with the deprecated meshfree solver, or with EdelweissFE's NIST, which solves the same model.
+
+    Parameters
+    ----------
+    withEdelweissFESolver
+        Solve with EdelweissFE's NIST, set up from Python with the convergence criterion of the deprecated solver.
+    """
     dimension = 2
 
     # set nump linewidth to 200:
@@ -226,18 +240,47 @@ def run_sim():
     )
 
     try:
-        nonlinearSolver.solveStep(
-            adaptiveTimeStepper,
-            linearSolver,
-            theModel,
-            fieldOutputController,
-            outputManagers=[ensightOutput],
-            particleManagers=[theParticleManager],
-            constraints=dirichlets,
-            userIterationOptions=iterationOptions,
-            particleDistributedLoads=[pressureTop],
-            vciManagers=[vciManager],
-        )
+        if withEdelweissFESolver:
+            # The model holds its managers and constraints, the load is a step action of the step.
+            theModel.particleManagers.append(theParticleManager)
+            theModel.vciManagers.append(vciManager)
+            for constraint in dirichlets:
+                theModel.constraints[constraint.name] = constraint
+            stepActions = StepActionCollection()
+            stepActions["distributedload"][pressureTop.name] = pressureTop
+
+            jobInfo = jobInfoWithMeshfreeTolerances()
+            step = AdaptiveStep(
+                0,
+                theModel,
+                fieldOutputController,
+                theJournal,
+                jobInfo,
+                NIST(jobInfo, theJournal, linsolver="pardiso", **meshfreeCriterionOptions),
+                [],
+                stepActions,
+                startInc=incSize,
+                maxInc=incSize,
+                minInc=incSize,
+                maxNumInc=50,
+                maxIter=iterationOptions["max. iterations"],
+                criticalIter=iterationOptions["critical iterations"],
+                maxGrowIter=iterationOptions["allowed residual growths"],
+            )
+            step.solve()
+        else:
+            nonlinearSolver.solveStep(
+                adaptiveTimeStepper,
+                linearSolver,
+                theModel,
+                fieldOutputController,
+                outputManagers=[ensightOutput],
+                particleManagers=[theParticleManager],
+                constraints=dirichlets,
+                userIterationOptions=iterationOptions,
+                particleDistributedLoads=[pressureTop],
+                vciManagers=[vciManager],
+            )
 
     except StepFailed as e:
         theJournal.message(f"Step failed: {str(e)}", "error")
@@ -273,6 +316,25 @@ def test_sim(assert_gold):
     warnings.filterwarnings("ignore")
 
     theModel, fieldOutputController = run_sim()
+
+    res = fieldOutputController.fieldOutputs["displacement"].getLastResult()
+
+    gold = np.loadtxt("gold.csv")
+
+    assert_gold(res, gold, rtol=1e-12)
+
+
+def test_sim_with_edelweissfe_solver(assert_gold):
+    """The same model, solved by EdelweissFE's NIST with the convergence criterion of the deprecated solver."""
+
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import warnings
+
+    warnings.filterwarnings("ignore")
+
+    theModel, fieldOutputController = run_sim(withEdelweissFESolver=True)
 
     res = fieldOutputController.fieldOutputs["displacement"].getLastResult()
 
