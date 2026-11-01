@@ -30,9 +30,6 @@ class ParticleLagrangianContactCartesianBoundaryConstraint(MPMConstraintBase):
         Name of the constraint.
     particle : BaseParticle
         The particle to which the constraint is applied.
-    location:
-        Either "center", "face" or "vertex. For face or vertex, the IDs need
-        to be specified in the particle definition. Note that faceIDs start (Abaqus-convention) at 1.
     component : int
         The component (0 for x, 1 for y, 2 for z) of
         the displacement field that is constrained.
@@ -40,6 +37,15 @@ class ParticleLagrangianContactCartesianBoundaryConstraint(MPMConstraintBase):
         The position of the boundary along the specified component.
     model
         The simulation model.
+    location
+        Where the constraint acts on the particle: at its "center", at the face given by faceID ("face"), or at the
+        vertex given by vertexID ("vertex").
+    faceID
+        The face if location is "face"; face IDs start (Abaqus convention) at 1.
+    vertexID
+        The vertex if location is "vertex".
+    velocity
+        The velocity of the boundary along the constrained component.
     """
 
     #: Carries nothing from one increment to the next.
@@ -79,7 +85,7 @@ class ParticleLagrangianContactCartesianBoundaryConstraint(MPMConstraintBase):
             elif location == "vertex":
                 if vertexID is None:
                     raise ValueError("vertexID must be specified when location is 'vertex'.")
-                constraintLocation = particle.getVertexCoordinates(vertexID)
+                constraintLocation = particle.getVertexCoordinates()[vertexID]
             return constraintLocation
 
         self._getConstraintLocation = _getConstraintLocation
