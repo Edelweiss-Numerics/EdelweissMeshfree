@@ -39,6 +39,7 @@ import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 from edelweissfe.constraints.base.constraintbase import ConstraintBase
 from edelweissfe.numerics.dofmanager import DofManager, DofVector
+from edelweissfe.numerics.systemmatrixassembly import VIJSystemMatrixAssembly
 from edelweissfe.outputmanagers.base.outputmanagerbase import OutputManagerBase
 from edelweissfe.stepactions.base.arclengthcontrollerbase import ArcLengthControllerBase
 from edelweissfe.stepactions.base.dirichletbase import DirichletBase
@@ -49,7 +50,6 @@ from edelweissfe.utils.fieldoutput import FieldOutputController
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.mpmmanagers.base.mpmmanagerbase import MPMManagerBase
 from edelweissmeshfree.numerics.predictors.basepredictor import BasePredictor
-from edelweissmeshfree.numerics.systemmatrixcontribution import VIJContribution
 from edelweissmeshfree.particlemanagers.base.baseparticlemanager import (
     BaseParticleManager,
 )
@@ -474,8 +474,7 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
         if arcLengthController is None:
             return super()._createNewtonCache(theDofManager)
 
-        K_VIJ = theDofManager.constructVIJSystemMatrix()
-        csrGenerator = self._makeCachedCOOToCSRGenerator(K_VIJ)
+        csrGenerator = self._makeCachedCOOToCSRGenerator(theDofManager)
         dU = theDofManager.constructDofVector()
         Rhs_ = np.tile(theDofManager.constructDofVector(), (2, 1)).T  # 2 RHSs
         F = theDofManager.constructDofVector()
@@ -483,11 +482,8 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
         PExt = theDofManager.constructDofVector()
         PExt_0 = theDofManager.constructDofVector()
         PExt_f = theDofManager.constructDofVector()
-        K_VIJ_0 = theDofManager.constructVIJSystemMatrix()
-        K_VIJ_f = theDofManager.constructVIJSystemMatrix()
-
         newtonCache = (
-            VIJContribution(K_VIJ, csrGenerator),
+            VIJSystemMatrixAssembly(csrGenerator, theDofManager, 1),
             csrGenerator,
             dU,
             Rhs_,
@@ -496,8 +492,8 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
             PExt,
             PExt_0,
             PExt_f,
-            VIJContribution(K_VIJ_0, csrGenerator),
-            VIJContribution(K_VIJ_f, csrGenerator),
+            VIJSystemMatrixAssembly(csrGenerator, theDofManager, 1),
+            VIJSystemMatrixAssembly(csrGenerator, theDofManager, 1),
         )
 
         # this cache carries three VIJ matrices and no direct-to-CSR assembler; cleared explicitly so

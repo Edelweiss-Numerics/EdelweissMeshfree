@@ -3,12 +3,17 @@ from typing import Iterable
 
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
-from edelweissfe.numerics.csrgeneratorv2 import CSRGenerator, DirectCSRAssembler
+from edelweissfe.numerics.csrgeneratorv2 import CSRGenerator
 from edelweissfe.numerics.dofmanager import DofManager, DofVector, VIJSystemMatrix
 from edelweissfe.numerics.parallelizationutilities import (
     getNumberOfThreads,
     getThreadPool,
     isFreeThreadingSupported,
+)
+from edelweissfe.numerics.systemmatrixassembly import (
+    DirectCSRSystemMatrixAssembly,
+    SystemMatrixAssembly,
+    VIJSystemMatrixAssembly,
 )
 from edelweissfe.sets.nodeset import NodeSet
 from edelweissfe.solvers.base.parallelelementcomputation import chunked_iterable
@@ -20,12 +25,6 @@ from numpy import ndarray
 from scipy.sparse import csr_matrix
 
 from edelweissmeshfree.models.mpmmodel import MPMModel
-from edelweissmeshfree.numerics.systemmatrixcontribution import (
-    DirectCSRContribution,
-    SystemMatrixContributionBase,
-    VIJContribution,
-    VIJPattern,
-)
 from edelweissmeshfree.particles.base.baseparticle import BaseParticle
 from edelweissmeshfree.solvers.base.nonlinearsolverbase import BaseNonlinearSolver
 
@@ -63,7 +62,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         U_np: DofVector,
         dU: DofVector,
         P: DofVector,
-        K: SystemMatrixContributionBase,
+        K: SystemMatrixAssembly,
         timeStep: TimeStep,
         theDofManager: DofManager,
     ):
@@ -424,7 +423,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         dU: DofVector,
         P: DofVector,
         F: DofVector,
-        K: SystemMatrixContributionBase,
+        K: SystemMatrixAssembly,
         time: float,
         dT: float,
         theDofManager: DofManager,
@@ -467,7 +466,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         dU: DofVector,
         P: DofVector,
         F: DofVector,
-        K: SystemMatrixContributionBase,
+        K: SystemMatrixAssembly,
         time: float,
         dT: float,
         theDofManager: DofManager,
@@ -513,7 +512,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         dU: DofVector,
         P: DofVector,
         F: DofVector,
-        K: SystemMatrixContributionBase,
+        K: SystemMatrixAssembly,
         time: float,
         dT: float,
         theDofManager: DofManager,
@@ -557,7 +556,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         dU: DofVector,
         P: DofVector,
         F: DofVector,
-        K: SystemMatrixContributionBase,
+        K: SystemMatrixAssembly,
         time: float,
         dT: float,
         theDofManager: DofManager,
@@ -621,7 +620,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         U_np: DofVector,
         dU: DofVector,
         P: DofVector,
-        K: SystemMatrixContributionBase,
+        K: SystemMatrixAssembly,
         timeStep: TimeStep,
     ):
         """Evaluate all active constraints: each adds its residual contribution and its tangent, see
@@ -664,58 +663,32 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         return CSRGenerator(systemMatrix, patternOnly)
 
     @performancetiming.timeit("instancing direct csr assembler")
-    def _makeDirectCSRAssembler(self, systemMatrix, csrGenerator, theDofManager):
-        """Build the direct-to-CSR assembler and register every entity that contributes a block.
-
-        The offset map is derived from the pattern ``csrGenerator`` already holds, so there is one
-        definition of the sparsity and the two assembly paths cannot drift. Registration uses the very
-        offsets the DofManager records for the VIJ layout, which is what makes the two paths comparable
-        entity by entity -- and it registers *all* higher-order entities, not just the particles,
-        because every contributor has to be able to scatter if the staging array is to go away.
+    def _makeDirectCSRAssembly(self, csrGenerator, theDofManager: DofManager) -> DirectCSRSystemMatrixAssembly:
+        """Build the direct-to-CSR assembly on the pattern ``csrGenerator`` holds, with every entity that contributes
+        a block registered (see EdelweissFE's
+        :class:`~edelweissfe.numerics.systemmatrixassembly.DirectCSRSystemMatrixAssembly`), and keep its scatter and
+        entity numbering for the compiled particle kernel.
 
         Parameters
         ----------
-        systemMatrix
-            Supplies the I/J index arrays: either a ``VIJSystemMatrix`` or a :class:`VIJPattern`.
         csrGenerator
             The generator whose pattern is borrowed.
         theDofManager
-            The DofManager instance, whose ``idcsOfHigherOrderEntitiesInVIJ`` is both the entity list
-            and each entity's offset into the VIJ ordering.
+            The DofManager instance, whose ``idcsOfHigherOrderEntitiesInVIJ`` is both the entity list and each
+            entity's offset into the VIJ ordering.
 
         Returns
         -------
-        DirectCSRAssembler
-            The registered assembler.
+        DirectCSRSystemMatrixAssembly
+            The assembly, one CSR copy per thread of the compiled kernels (or ``directCSRNumBuffers``).
         """
 
-        entities = list(theDofManager.idcsOfHigherOrderEntitiesInVIJ.keys())
-
-        # The scatter addresses a dense nDof x nDof column-major block. Every meshfree entity lays its
-        # contribution out that way, but constraints are free to declare a sparse custom pattern, and
-        # such an entity would be silently misassembled rather than obviously broken -- so check here,
-        # once, rather than trusting it.
-        sparse = [e for e in entities if e.getVIJContributionSize() != e.nDof**2]
-        if sparse:
-            raise NotImplementedError(
-                "the direct-to-CSR assembler cannot register {:} of {:} entities, e.g. {:}, because "
-                "they contribute a sparse custom VIJ pattern rather than a dense nDof x nDof block. A "
-                "per-entry scatter variant is needed for those.".format(
-                    len(sparse), len(entities), type(sparse[0]).__name__
-                )
-            )
-
-        assembler = DirectCSRAssembler(csrGenerator, systemMatrix, self.numThreads)
+        K = DirectCSRSystemMatrixAssembly(csrGenerator, theDofManager, self.numThreads)
         if self.directCSRNumBuffers > 0:
-            assembler.setNumBuffers(self.directCSRNumBuffers)
-        assembler.registerEntities(
-            np.array([theDofManager.idcsOfHigherOrderEntitiesInVIJ[e] for e in entities], dtype=np.int64),
-            np.array([e.nDof for e in entities], dtype=np.intc),
-        )
-
-        self._directCSREntityIds = {e: i for i, e in enumerate(entities)}
-
-        return assembler
+            K.assembler.setNumBuffers(self.directCSRNumBuffers)
+        self._directCSRAssembler = K.assembler
+        self._directCSREntityIds = K.entityIds
+        return K
 
     @performancetiming.timeit("creation newton cache")
     def _createNewtonCache(self, theDofManager):
@@ -756,35 +729,27 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
                 )
 
             # No staging array is built at all -- that array is 12.84 GiB at 43,350 DOF and skipping
-            # it is the entire point. CSRGenerator and the assembler need only I/J/nDof, which
-            # VIJPattern supplies from the DofManager's own arrays.
-            pattern = VIJPattern(theDofManager)
-
+            # it is the entire point. CSRGenerator and the assembler need only I/J/nDof, which the
+            # DofManager supplies from its own arrays.
             # Pattern only: the assembler borrows indptr/indices and nothing else, so the gather map is
             # never built. That halves the build's sort array (16 bytes per pair down to 8, the largest
             # allocation in the whole solve) and removes the 32-bit cap on the pair count, which is the
             # measured ceiling on model size -- it bites at ~50,000 DOF with a third of the machine in
             # use. The generator keeps the pattern and refuses to gather; nothing here asks it to.
-            csrGenerator = self._makeCachedCOOToCSRGenerator(pattern, patternOnly=True)
+            csrGenerator = self._makeCachedCOOToCSRGenerator(theDofManager, patternOnly=True)
             self._csrGenerator = csrGenerator
-            assembler = self._makeDirectCSRAssembler(pattern, csrGenerator, theDofManager)
-            self._directCSRAssembler = assembler
-
-            K = DirectCSRContribution(assembler, self._directCSREntityIds)
+            K = self._makeDirectCSRAssembly(csrGenerator, theDofManager)
         else:
-            K_VIJ = theDofManager.constructVIJSystemMatrix()
-            csrGenerator = self._makeCachedCOOToCSRGenerator(K_VIJ)
+            csrGenerator = self._makeCachedCOOToCSRGenerator(theDofManager)
 
             # kept reachable so the assembly benchmark can time the production gather itself rather
             # than a stand-in for it; same lifetime as the pattern, like the assembler below
             self._csrGenerator = csrGenerator
 
-            self._directCSRAssembler = None
-            self._directCSREntityIds = None
             if self.verifyDirectCSRAssembly or self.timeDirectCSRAssembly:
-                self._directCSRAssembler = self._makeDirectCSRAssembler(K_VIJ, csrGenerator, theDofManager)
+                self._makeDirectCSRAssembly(csrGenerator, theDofManager)
 
-            K = VIJContribution(K_VIJ, csrGenerator)
+            K = VIJSystemMatrixAssembly(csrGenerator, theDofManager, 1)
 
         dU = theDofManager.constructDofVector()
         Rhs = theDofManager.constructDofVector()

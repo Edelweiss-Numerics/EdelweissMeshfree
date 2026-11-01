@@ -40,8 +40,13 @@ That is the whole change. What it does:
   distributed loads -- writes into a small reused scratch block that is then scattered.
 
 None of the contributors themselves changed. They ask the same question they always did (*"give me the
-block for this entity"*); only what sits behind that request differs, via
-:class:`~edelweissmeshfree.numerics.systemmatrixcontribution.SystemMatrixContributionBase`.
+block for this entity"*); only what sits behind that request differs, via EdelweissFE's
+:class:`~edelweissfe.numerics.systemmatrixassembly.SystemMatrixAssembly`.
+
+An :class:`~edelweissmeshfree.models.mpmmodel.MPMModel` solved by EdelweissFE's implicit solvers selects the path
+with their option ``systemMatrixAssembly`` (``vij`` or ``direct``); the elements, cells and particles are then
+computed in the solver's own loop, on its threads, and every thread scatters into a CSR copy of its own (see
+EdelweissFE's *System matrix assembly* page).
 
 What it is worth
 ----------------
@@ -173,17 +178,12 @@ peak to sit well above it. If a run dies of memory, look at the setup phase befo
 Limitations
 -----------
 
-- **Only dense contributions.** The scatter addresses a dense ``nDof x nDof`` column-major block. Every
-  meshfree entity lays its contribution out that way, but a constraint is free to declare a sparse
-  custom VIJ pattern; such an entity raises ``NotImplementedError`` at registration rather than being
-  silently misassembled.
-- **The arc-length solver is not supported.** It forms more than one matrix (a reference-load
+- **EdelweissMeshfree's own arc-length solver is not supported.** It forms more than one matrix (a reference-load
   stiffness) and combines them by array arithmetic, which a path that accumulates into a single CSR copy
   cannot express. It stays on the staging path and says so.
 - **The non-particle contributors are assembled sequentially.** They are under 2% of the runtime, so
-  this is deliberate; a threaded caller reaching
-  :class:`~edelweissmeshfree.numerics.systemmatrixcontribution.DirectCSRContribution` raises rather than
-  racing.
+  this is deliberate; they write through the blocks of worker 0 of
+  :class:`~edelweissfe.numerics.systemmatrixassembly.DirectCSRSystemMatrixAssembly`.
 - **The assembly diagnostics need the staging path**, since they compare against it. Requesting them
   together with ``useDirectCSRAssembly`` raises.
 
@@ -218,9 +218,4 @@ Three switches on the parallel Marmot solver, all off by default:
 Reference
 ---------
 
-``SystemMatrixContribution`` classes
-------------------------------------
-
-.. automodule:: edelweissmeshfree.numerics.systemmatrixcontribution
-   :members:
-   :private-members:
+The assembly classes are EdelweissFE's, in :mod:`edelweissfe.numerics.systemmatrixassembly`.
