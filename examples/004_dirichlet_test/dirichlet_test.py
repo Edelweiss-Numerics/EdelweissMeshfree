@@ -197,19 +197,19 @@ def run_sim():
             activeNodeFields["displacement"]["dU"][:] = shift
             dofManager.writeNodeFieldToDofVector(dUActiveCells, activeNodeFields["displacement"], "dU")
 
-            idcsTop = dofManager.idcsOfFieldsOnNodeSetsInDofVector["displacement"][
-                reducedNodeSets[mpmModel.nodeSets["rectangular_grid_top"]]
-            ]
+            idcsTop, _ = dofManager.locateFieldOnNodeSet(
+                "displacement", reducedNodeSets[mpmModel.nodeSets["rectangular_grid_top"]]
+            )
             dUActiveCells[idcsTop[1::2]] = 0.0
 
-            idcsBottom = dofManager.idcsOfFieldsOnNodeSetsInDofVector["displacement"][
-                reducedNodeSets[mpmModel.nodeSets["rectangular_grid_bottom"]]
-            ]
+            idcsBottom, _ = dofManager.locateFieldOnNodeSet(
+                "displacement", reducedNodeSets[mpmModel.nodeSets["rectangular_grid_bottom"]]
+            )
             dUActiveCells[idcsBottom[1::2]] = 0.0
 
-            idcsRight = dofManager.idcsOfFieldsOnNodeSetsInDofVector["displacement"][
-                reducedNodeSets[mpmModel.nodeSets["rectangular_grid_right"]]
-            ]
+            idcsRight, _ = dofManager.locateFieldOnNodeSet(
+                "displacement", reducedNodeSets[mpmModel.nodeSets["rectangular_grid_right"]]
+            )
             dUActiveCells[idcsRight] = 0.0
 
             dofManager.writeDofVectorToNodeField(dUActiveCells, activeNodeFields["displacement"], "dU")
