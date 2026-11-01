@@ -47,6 +47,8 @@ from edelweissfe.variables.fieldvariable import FieldVariable
 from prettytable import PrettyTable
 
 from edelweissmeshfree.fields.nodefield import MPMNodeField
+from edelweissmeshfree.models.mpmequationsystemlayout import MPMEquationSystemLayout
+from edelweissmeshfree.numerics.dofmanager import MPMDofManager
 from edelweissmeshfree.sets.cellelementset import CellElementSet
 from edelweissmeshfree.sets.cellset import CellSet
 from edelweissmeshfree.sets.materialpointset import MaterialPointSet
@@ -78,6 +80,13 @@ class MPMModel(FEModel):
         self.meshfreeKernelFunctions = {}  #: The collection of MeshfreeKernelFunctions in the present model.
         self.particleKernelDomains = {}  #: The collection of ParticleKernelDomains in the present model.
         self.vertexSets = {}  #: The collection of VertexSets for per particle in the present model.
+        #: The managers that assign the material points to the cells they lie in, see :meth:`updateConnectivity`.
+        self.mpmManagers = []
+        #: The managers that assign the particles to the kernel functions they reach, see :meth:`updateConnectivity`.
+        self.particleManagers = []
+        #: The variationally consistent integration managers, which correct the particles' test functions after every
+        #: update of the connectivity, see :meth:`updateConnectivity`.
+        self.vciManagers = []
 
         super().__init__(dimension)
 
@@ -258,6 +267,120 @@ class MPMModel(FEModel):
 
         return theNodeFields
 
+    def updateConnectivity(self) -> bool:
+        """Bring the coupling of the degrees of freedom up to date with the converged state, before an increment; see
+        :meth:`~edelweissfe.models.femodel.FEModel.updateConnectivity`. Called by EdelweissFE's solvers at the start
+        of every increment and of every retry after a cutback.
+
+        First the managers assign the material points to the cells they lie in (:attr:`mpmManagers`) and the particles
+        to the kernel functions they reach (:attr:`particleManagers`), each from its converged state: a failed attempt
+        may have left a trial state behind. Then the constraints follow, which couple the nodes the managers have just
+        assigned. Finally, the test functions of the particles are corrected for the new connectivity
+        (:attr:`vciManagers`).
+
+        A change of the active domain is a change of the coupling, not of the mesh: no node is created or moved, so the
+        solver rebuilds its equation system, but does not re-equilibrate.
+
+        Returns
+        -------
+        bool
+            True if a coupling changed, so that the equation system has to be rebuilt.
+        """
+
+        connectivityChanged = False
+
+        if self.mpmManagers:
+            # The arguments are those of the converged state; no material point reads them here.
+            for materialPoint in self.materialPoints.values():
+                materialPoint.prepareYourself(self.time, 0.0)
+            for mpmManager in self.mpmManagers:
+                connectivityChanged |= mpmManager.updateConnectivity()
+
+        if self.particleManagers:
+            for particle in self.particles.values():
+                particle.prepareYourself(self.time, 0.0)
+            for particleManager in self.particleManagers:
+                connectivityChanged |= particleManager.updateConnectivity()
+
+        connectivityChanged |= super().updateConnectivity()
+
+        for vciManager in self.vciManagers:
+            vciManager.computeVCICorrections()
+
+        return connectivityChanged
+
+    def buildEquationSystem(self, withSystemMatrix: bool = True) -> MPMEquationSystemLayout:
+        """Lay out the equation system of the model on its active domain; see
+        :meth:`~edelweissfe.models.femodel.FEModel.buildEquationSystem` and :class:`MPMEquationSystemLayout`.
+
+        The active domain consists of the cells that hold material points, the nodes these cells and the particles'
+        kernel functions reach, and the finite elements and cell elements with their nodes. Its degrees of freedom are
+        numbered on the active nodes; the model's node sets are located on their nodes in the active domain. The
+        elements the solver computes are the finite elements, the active cells, the cell elements and the particles.
+
+        Parameters
+        ----------
+        withSystemMatrix
+            False for an explicit solver, which assembles no system matrix.
+
+        Returns
+        -------
+        MPMEquationSystemLayout
+            The layout of the equation system.
+        """
+
+        activeCells = self.activeCellsOf(self.mpmManagers)
+        nodesWithPersistentFieldValues, _, activeNodeFields, activeNodeSets = self.assembleActiveDomain(activeCells)
+        constraints = self.activeConstraints()
+
+        dofManager = MPMDofManager(
+            activeNodeFields.values(),
+            [scalarVariable for constraint in constraints for scalarVariable in constraint.scalarVariables],
+            elements=self.elements.values(),
+            constraints=constraints,
+            nodeSets=self.nodeSets.values(),
+            cells=activeCells,
+            cellElements=self.cellElements.values(),
+            particles=self.particles.values(),
+            initializeVIJPattern=withSystemMatrix,
+            determiningIndexToHostObjectMappping=withSystemMatrix,
+        )
+
+        return MPMEquationSystemLayout(
+            self,
+            dofManager,
+            [*self.elements.values(), *activeCells, *self.cellElements.values(), *self.particles.values()],
+            activeCells,
+            nodesWithPersistentFieldValues,
+            activeNodeFields,
+            self._reducedToActiveDomain(activeCells, activeNodeFields, activeNodeSets),
+        )
+
+    @staticmethod
+    def activeCellsOf(mpmManagers: list) -> list:
+        """The cells that are active in any of the MPM managers.
+
+        Cells define no ``__hash__``, so a set of them iterates in an address-dependent order that differs between runs.
+        The order of the active cells fixes their blocks in the system matrix and the order in which their
+        contributions are summed, so the cells are sorted by their unique number.
+
+        Parameters
+        ----------
+        mpmManagers
+            The MPM managers.
+
+        Returns
+        -------
+        list
+            The active cells, each once, sorted by cell number.
+        """
+
+        activeCells = set()
+        for mpmManager in mpmManagers:
+            activeCells.update(mpmManager.getActiveCells())
+
+        return sorted(activeCells, key=lambda cell: cell.cellNumber)
+
     def getActiveSubModel(self):
         """
         For many applications only a part of the model is active.
@@ -271,14 +394,36 @@ class MPMModel(FEModel):
             The active sub model.
         """
 
-        activeCells = {cell.number: cell for mp in self.materialPoints.values() for cell in mp.cells}
+        activeCells = sorted(
+            {cell for mp in self.materialPoints.values() for cell in mp.cells}, key=lambda cell: cell.cellNumber
+        )
 
         _, _, reducedNodeFields, reducedNodeSets = self.assembleActiveDomain(activeCells)
 
+        return self._reducedToActiveDomain(activeCells, reducedNodeFields, reducedNodeSets)
+
+    def _reducedToActiveDomain(self, activeCells: list, activeNodeFields: dict, activeNodeSets: dict):
+        """A shallow copy of the model, reduced to its active domain: its cells, node fields and node sets.
+
+        Parameters
+        ----------
+        activeCells
+            The active cells.
+        activeNodeFields
+            The node fields on the active nodes.
+        activeNodeSets
+            The node sets reduced onto the active nodes.
+
+        Returns
+        -------
+        MPMModel
+            The reduced model.
+        """
+
         activeModel = copy.copy(self)
-        activeModel.nodeSets = reducedNodeSets
-        activeModel.nodeFields = reducedNodeFields
-        activeModel.cells = activeCells
+        activeModel.nodeSets = activeNodeSets
+        activeModel.nodeFields = activeNodeFields
+        activeModel.cells = {cell.cellNumber: cell for cell in activeCells}
 
         return activeModel
 

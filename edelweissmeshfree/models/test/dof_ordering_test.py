@@ -125,8 +125,10 @@ def test_solver_active_domain_assembly_does_not_diverge_from_the_model():
 
 
 class _CellStub:
-    def __init__(self, number, nodes):
-        self.number = number
+    """What the active sub model asks of a cell: its number, as real cells name it, and its nodes."""
+
+    def __init__(self, cellNumber, nodes):
+        self.cellNumber = cellNumber
         self.nodes = nodes
 
 
