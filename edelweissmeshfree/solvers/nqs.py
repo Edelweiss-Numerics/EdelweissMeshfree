@@ -590,7 +590,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                     raise ReachedMaxIterations("Reached max. iterations in current increment, cutting back")
 
             if not quasi_Newton:
-                K_CSR = K.toCSR(useInPlace=False)
+                K_CSR = K.assembledMatrix().copy()
                 if iterationOptions["fall back to quasi Newton after allowed residual growths"]:
                     if iterationCounter == 0:
                         K_CSR_elastic = K_CSR.copy()
