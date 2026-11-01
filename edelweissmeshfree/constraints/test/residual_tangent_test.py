@@ -226,6 +226,13 @@ CONSTRAINTS = {
         lambda model: ParticleLagrangianContactCartesianBoundaryConstraint("c", PARTICLES[0], 0, 0.1, model),
         lambda constraint: _gapState(constraint, 0, 0.05, 2.0),
     ),
+    # the boundary at x = 0.05 left of the particle's first vertex at x = 0.1; penetrating by 0.03
+    "ParticleLagrangianContactCartesianBoundaryConstraint at a vertex in contact": (
+        lambda model: ParticleLagrangianContactCartesianBoundaryConstraint(
+            "c", PARTICLES[0], 0, 0.05, model, location="vertex", vertexID=0
+        ),
+        lambda constraint: _gapState(constraint, 0, -0.08, 2.0),
+    ),
     # the boundary at y = 0.75 above the particle at y = 0.65, penetrating by 0.05
     "ParticlePenaltyContactCartesianBoundaryConstraint": (
         lambda model: ParticlePenaltyContactCartesianBoundaryConstraint(
@@ -328,6 +335,25 @@ def test_lagrangian_dirichlet_is_met_by_a_translation_by_the_prescribed_incremen
     # the multipliers are ordered point by point, and within a point component by component
     np.testing.assert_array_equal(constraint.reactionForce, multipliers.reshape(nPoints, 2).sum(axis=0))
     np.testing.assert_allclose(P[:nU].reshape(-1, 2).sum(axis=0), constraint.reactionForce, rtol=1e-13)
+
+
+def test_lagrangian_cartesian_boundary_at_a_vertex_measures_the_gap_at_the_vertex(model):
+    """The boundary at x = 0.05 lies 0.05 left of the particle's first vertex, and 0.15 left of its center. Moved by
+    0.08 to the left, the vertex has penetrated the boundary by 0.03, which the constraint adds to the row of its
+    multiplier; the center would not have reached it."""
+
+    constraint = _connected(
+        _withMultipliers(
+            ParticleLagrangianContactCartesianBoundaryConstraint(
+                "c", PARTICLES[0], 0, 0.05, model, location="vertex", vertexID=0
+            )
+        )
+    )
+    dU = _gapState(constraint, 0, -0.08, 2.0)
+
+    P, _ = residualContributionAndTangent(constraint, dU, dU, TIMESTEP)
+
+    assert P[-1] == pytest.approx(0.03, rel=1e-12)
 
 
 def test_penalty_surface_contact_at_the_center_measures_the_penetration_at_the_center(model):
