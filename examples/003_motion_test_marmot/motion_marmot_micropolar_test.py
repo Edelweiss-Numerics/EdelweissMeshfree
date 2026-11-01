@@ -61,7 +61,8 @@ def run_sim():
 
     mpmModel = MPMModel(dimension)
 
-    linearElasticMaterial = {"material": "LINEARELASTIC", "properties": np.array([30000.0, 0.3])}
+    # E, nu, density (zero density: this test has no inertia)
+    linearElasticMaterial = {"material": "LINEARELASTIC/HUGHES-WINGET", "properties": np.array([30000.0, 0.3, 0.0])}
 
     rectangulargridgenerator.generateModelData(
         mpmModel,
@@ -73,7 +74,7 @@ def run_sim():
         nX=40,
         nY=20,
         cellProvider="LagrangianMarmotCell",
-        cellType="Displacement/SmallStrain/Quad4",
+        cellType="Displacement/Quad4",
     )
     rectangularmpgenerator.generateModelData(
         mpmModel,
@@ -85,7 +86,7 @@ def run_sim():
         nX=3,
         nY=3,
         mpProvider="marmot",
-        mpType="Displacement/SmallStrain/PlaneStrain",
+        mpType="Displacement/PlaneStrain",
         material=linearElasticMaterial,
     )
 
@@ -118,9 +119,9 @@ def run_sim():
         "stress",
     )
     fieldOutputController.addPerMaterialPointFieldOutput(
-        "strain",
+        "deformation gradient",
         allMPs,
-        "strain",
+        "deformation gradient",
     )
 
     fieldOutputController.initializeJob()
@@ -130,7 +131,7 @@ def run_sim():
     ensightOutput.createPerNodeOutput(fieldOutputController.fieldOutputs["dU"])
     ensightOutput.createPerNodeOutput(fieldOutputController.fieldOutputs["displacement"])
     ensightOutput.createPerNodeOutput(fieldOutputController.fieldOutputs["stress"])
-    ensightOutput.createPerNodeOutput(fieldOutputController.fieldOutputs["strain"])
+    ensightOutput.createPerNodeOutput(fieldOutputController.fieldOutputs["deformation gradient"])
 
     ensightOutput.initializeJob()
 
@@ -179,6 +180,11 @@ def run_sim():
 
             activeNodeFields["displacement"]["dU"][:] = shift
             dofManager.writeNodeFieldToDofVector(dofVector, activeNodeFields["displacement"], "dU")
+
+            # a new increment begins: the material points reset their displacement increment, which the cells
+            # then accumulate (the order of the solvers: prepare, interpolate, compute)
+            for mp in allMPs:
+                mp.prepareYourself(time, i)
 
             for c in activeCells:
                 dUCell = dofVector[c]
