@@ -32,6 +32,8 @@ tangent ``K = dP/dU``.
   ``P`` of the wrong sign fails this check as surely as a wrong ``K``.
 - A constraint for explicit analyses only has no tangent; its residual contribution is compared with that of its
   implicit counterpart in the same state, which the check above covers.
+- The check above holds at whatever point of a particle a constraint acts. A constraint that acts at a point the user
+  names -- the center of the particle, or one of its vertices -- is also checked to measure its condition there.
 - Every constraint is restartable: it declares the state it carries, here none.
 
 The particles, cells and material points are stand-ins with fixed shape functions, so that no Marmot is needed.
@@ -244,6 +246,19 @@ CONSTRAINTS = {
         ),
         None,
     ),
+    # a circle of radius 0.08 around a point next to the particle's center: the center lies inside it by 0.026, at the
+    # start of the increment
+    "ParticlePenaltyContactImplicitSurfaceConstraint at the center": (
+        lambda model: ParticlePenaltyContactImplicitSurfaceConstraint(
+            "c",
+            PARTICLES[2],
+            *_circle(PARTICLES[2].center + (0.05, 0.02), 0.08),
+            model,
+            location="center",
+            penaltyParameter=PENALTY,
+        ),
+        lambda constraint: np.zeros(constraint.nDof),
+    ),
 }
 
 
@@ -313,6 +328,28 @@ def test_lagrangian_dirichlet_is_met_by_a_translation_by_the_prescribed_incremen
     # the multipliers are ordered point by point, and within a point component by component
     np.testing.assert_array_equal(constraint.reactionForce, multipliers.reshape(nPoints, 2).sum(axis=0))
     np.testing.assert_allclose(P[:nU].reshape(-1, 2).sum(axis=0), constraint.reactionForce, rtol=1e-13)
+
+
+def test_penalty_surface_contact_at_the_center_measures_the_penetration_at_the_center(model):
+    """A circle of radius 0.08 around a point next to the particle's center contains the center, but none of the
+    vertices. At the start of an increment the center lies inside it by the radius less its distance from the center
+    of the circle, and the constraint's residual contribution sums to the penalty force, penalty x depth, against the
+    outward normal at the center."""
+
+    particle = PARTICLES[2]
+    circleCenter, radius = particle.center + (0.05, 0.02), 0.08
+    constraint = _connected(
+        ParticlePenaltyContactImplicitSurfaceConstraint(
+            "c", particle, *_circle(circleCenter, radius), model, location="center", penaltyParameter=PENALTY
+        )
+    )
+
+    zero = np.zeros(constraint.nDof)
+    P, _ = residualContributionAndTangent(constraint, zero, zero, TIMESTEP)
+
+    distance = np.linalg.norm(particle.center - circleCenter)
+    outwardNormal = (particle.center - circleCenter) / distance
+    np.testing.assert_allclose(P.reshape(-1, 2).sum(axis=0), -PENALTY * (radius - distance) * outwardNormal, rtol=1e-12)
 
 
 def _movedParticle(center) -> ParticleStandIn:
