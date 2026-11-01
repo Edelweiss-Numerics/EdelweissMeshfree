@@ -273,7 +273,8 @@ class BaseNonlinearSolver:
         key = (dirichlet, theDofManager, reducedNodeSet, tuple(dirichlet.components))
         indices = cache.get(key)
         if indices is None:
-            fieldIndices = theDofManager.idcsOfFieldsOnNodeSetsInDofVector[dirichlet.field][reducedNodeSet]
+            # every node of the reduced set is active, so all of them are located
+            fieldIndices, _ = theDofManager.locateFieldOnNodeSet(dirichlet.field, reducedNodeSet)
 
             indices = cache[key] = fieldIndices.reshape((-1, dirichlet.fieldSize))[:, dirichlet.components].flatten()
 

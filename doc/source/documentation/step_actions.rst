@@ -84,12 +84,9 @@ distributed load.
 Arclength control
 -----------------
 
-``ArclengthControllerBase`` class
-*********************************
-
-.. automodule:: edelweissmeshfree.stepactions.base.arclengthcontrollerbase
-   :members:
-   :private-members:
+The arc length controllers are EdelweissFE's
+(:class:`~edelweissfe.stepactions.base.arclengthcontrollerbase.ArcLengthControllerBase`), so that EdelweissFE's arc
+length solver ``NISTPArcLength`` takes them by their name.
 
 ``Indirect control`` class
 **************************
