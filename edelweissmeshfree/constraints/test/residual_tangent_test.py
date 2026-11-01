@@ -52,6 +52,9 @@ from edelweissmeshfree.constraints.explicit.particlepenaltyrigidbodycontactexpli
 from edelweissmeshfree.constraints.particlelagrangiancartesianboundary import (
     ParticleLagrangianContactCartesianBoundaryConstraint,
 )
+from edelweissmeshfree.constraints.particlelagrangiandirichlet import (
+    ParticleLagrangianDirichlet,
+)
 from edelweissmeshfree.constraints.particlelagrangianequalvalue import (
     ParticleLagrangianEqualValueConstraint,
 )
@@ -195,6 +198,14 @@ CONSTRAINTS = {
         lambda model: ParticleLagrangianWeakDirichlet("c", PARTICLES[0], FIELD, {1: 0.03}, model, "face", faceID=2),
         None,
     ),
+    "ParticleLagrangianDirichlet": (
+        lambda model: ParticleLagrangianDirichlet("c", model, PARTICLES[:3], FIELD, {0: 0.1, 1: -0.05}),
+        None,
+    ),
+    "ParticleLagrangianDirichlet at vertices": (
+        lambda model: ParticleLagrangianDirichlet("c", model, PARTICLES[1:], FIELD, {1: 0.02}, constrain=[0, 2]),
+        None,
+    ),
     "ParticleLagrangianEqualValueConstraint": (
         lambda model: ParticleLagrangianEqualValueConstraint("c", PARTICLES[0], [0, 1], PARTICLES[3], FIELD, model),
         None,
@@ -272,6 +283,36 @@ def test_a_constraint_carries_no_state_between_increments(name, model):
 
     assert constraint.getRestartData() == {}
     constraint.setRestartData({})
+
+
+def test_lagrangian_dirichlet_is_met_by_a_translation_by_the_prescribed_increment(model):
+    """Moving every node by the share of the prescribed increment that falls into the increment moves every point of
+    the particles by it, as the shape functions are a partition of unity: the constraint is met at every point. The
+    tangent is symmetric, as the constraint stems from the potential ``sum(lambda g)``. The reaction force sums the
+    multipliers per component, and balances the force the constraint exerts on the nodes."""
+
+    prescribedStepDelta = {0: 0.1, 1: -0.05}
+    constraint = _connected(
+        _withMultipliers(
+            ParticleLagrangianDirichlet("c", model, PARTICLES[1:], FIELD, prescribedStepDelta, constrain=[0, 2])
+        )
+    )
+
+    nU = 2 * len(constraint.nodes)
+    nPoints = len(PARTICLES[1:]) * 2
+    multipliers = 1.0 + np.arange(nPoints * len(prescribedStepDelta))
+    dU = np.zeros(constraint.nDof)
+    for i, prescribedComponent in prescribedStepDelta.items():
+        dU[i:nU:2] = prescribedComponent * TIMESTEP.stepProgressIncrement
+    dU[nU:] = multipliers
+
+    P, K = residualContributionAndTangent(constraint, dU, dU, TIMESTEP)
+
+    np.testing.assert_allclose(P[nU:], 0.0, atol=1e-15)
+    np.testing.assert_array_equal(K, K.T)
+    # the multipliers are ordered point by point, and within a point component by component
+    np.testing.assert_array_equal(constraint.reactionForce, multipliers.reshape(nPoints, 2).sum(axis=0))
+    np.testing.assert_allclose(P[:nU].reshape(-1, 2).sum(axis=0), constraint.reactionForce, rtol=1e-13)
 
 
 def _movedParticle(center) -> ParticleStandIn:
