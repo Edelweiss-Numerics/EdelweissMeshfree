@@ -14,15 +14,19 @@ from edelweissmeshfree.particles.base.baseparticle import BaseParticle
 
 
 class ParticlePenaltyCartesianBoundaryConstraintExplicit(MPMExplicitConstraintBase):
-    """
+    r"""
     This class implements a Penalty contact boundary constraint for EXPLICIT simulations.
     It prevents a particle from penetrating a defined boundary surface by applying
     penalty forces directly to the grid nodes.
 
     The constraint is applied based on the current position of the particle relative to the boundary.
-    If penetration is detected:
-        F_penalty = -k * g * n
-    where g is penetration depth, k is penalty parameter, n is normal.
+    If penetration is detected, the penalty force is
+
+    .. math::
+
+        \boldsymbol{F}_{\mathrm{penalty}} = -k\, g\, \boldsymbol{n},
+
+    where :math:`g` is the penetration depth, :math:`k` the penalty parameter and :math:`\boldsymbol{n}` the normal.
 
     Parameters
     ----------

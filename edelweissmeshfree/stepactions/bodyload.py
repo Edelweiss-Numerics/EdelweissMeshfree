@@ -41,29 +41,30 @@ from edelweissmeshfree.stepactions.base.mpmbodyloadbase import MPMBodyLoadBase
 
 
 class BodyLoad(MPMBodyLoadBase):
-    def __init__(self, name, model, journal, cells, bodyLoadType: str, loadVector, **kwargs):
-        """
-        This is a classical body load for MPM models.
+    """
+    This is a classical body load for MPM models.
 
-        Parameters
-        ----------
-        name : str
-            Name of the distributed load.
-        model : MPMModel
-            The MPM model tree.
-        journal : Journal
-            The journal to write messages to.
-        cells: CellSet
-            The cells to apply the distributed load to.
-        bodyLoadType: str
-            The type of the body load, e.g., "gravity".
-        loadVector : np.ndarray
-            The load vector to apply to the particles.
-        **kwargs
-            Additional keyword arguments. The following are supported:
-            - f_t : Callable[[float], float]
-                The amplitude function of the distributed load.
-        """
+    Parameters
+    ----------
+    name : str
+        Name of the distributed load.
+    model : MPMModel
+        The MPM model tree.
+    journal : Journal
+        The journal to write messages to.
+    cells: CellSet
+        The cells to apply the distributed load to.
+    bodyLoadType: str
+        The type of the body load, e.g., "gravity".
+    loadVector : np.ndarray
+        The load vector to apply to the particles.
+    **kwargs
+        Additional keyword arguments. The following are supported:
+        - f_t : Callable[[float], float]
+            The amplitude function of the distributed load.
+    """
+
+    def __init__(self, name, model, journal, cells, bodyLoadType: str, loadVector, **kwargs):
         self.name = name
 
         self._loadVector = loadVector
