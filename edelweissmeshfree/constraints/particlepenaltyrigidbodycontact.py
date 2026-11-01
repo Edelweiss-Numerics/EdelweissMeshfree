@@ -17,10 +17,29 @@ class ParticlePenaltyContactImplicitSurfaceConstraint(MPMConstraintBase):
 
     Parameters
     ----------
+    name
+        The name of this constraint.
+    particle
+        The particle to which the constraint is applied.
     implicit_function : function
         Returns signed distance. Convention: Negative = Inside (Penetration).
     gradient_function : function
         Returns gradient vector. Convention: Points OUTWARD (Normal).
+    model
+        The MPM model instance.
+    location
+        Where the constraint acts on the particle: at its "center", at the faces given by faceIDs ("face"), or at the
+        vertices given by vertexIDs ("vertex").
+    faceIDs
+        The face ID(s) if location is "face"; face IDs start (Abaqus convention) at 1.
+    vertexIDs
+        The vertex ID(s) if location is "vertex".
+    penaltyParameter
+        The penalty stiffness parameter.
+    doProximityCheck
+        If True, the constraint is only active while one of its points is close to the surface.
+    proximityFactor
+        How close, as a multiple of the particle's characteristic length.
     """
 
     #: Carries nothing from one increment to the next.
@@ -52,7 +71,7 @@ class ParticlePenaltyContactImplicitSurfaceConstraint(MPMConstraintBase):
 
         def _getConstraintLocations():
             if location == "center":
-                [constraintLocation] = particle.getCenterCoordinates()
+                constraintLocation = [particle.getCenterCoordinates()]
             elif location == "face":
                 if faceIDs is None:
                     raise ValueError("faceID must be specified when location is 'face'.")
