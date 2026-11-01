@@ -96,13 +96,6 @@ The base classes
    :members:
    :private-members:
 
-``ParticleLagrangianDirichlet`` constraint class
--------------------------------------------------
-
-.. automodule:: edelweissmeshfree.constraints.particlelagrangiandirichlet
-   :members:
-   :private-members:
-
 ``ParticleLagrangianEqualValue`` constraint class
 --------------------------------------------------
 

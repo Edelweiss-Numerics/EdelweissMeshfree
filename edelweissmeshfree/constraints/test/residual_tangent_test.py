@@ -58,9 +58,6 @@ from edelweissmeshfree.constraints.explicit.particlepenaltyrigidbodycontactexpli
 from edelweissmeshfree.constraints.particlelagrangiancartesianboundary import (
     ParticleLagrangianContactCartesianBoundaryConstraint,
 )
-from edelweissmeshfree.constraints.particlelagrangiandirichlet import (
-    ParticleLagrangianDirichlet,
-)
 from edelweissmeshfree.constraints.particlelagrangianequalvalue import (
     ParticleLagrangianEqualValueConstraint,
 )
@@ -202,12 +199,8 @@ CONSTRAINTS = {
         lambda model: ParticleLagrangianWeakDirichlet("c", PARTICLES[0], FIELD, {1: 0.03}, model, "face", faceID=2),
         None,
     ),
-    "ParticleLagrangianDirichlet": (
-        lambda model: ParticleLagrangianDirichlet("c", model, PARTICLES[:3], FIELD, {0: 0.1, 1: -0.05}),
-        None,
-    ),
-    "ParticleLagrangianDirichlet at vertices": (
-        lambda model: ParticleLagrangianDirichlet("c", model, PARTICLES[1:], FIELD, {1: 0.02}, constrain=[0, 2]),
+    "ParticleLagrangianWeakDirichlet at a vertex": (
+        lambda model: ParticleLagrangianWeakDirichlet("c", PARTICLES[1], FIELD, {1: 0.02}, model, "vertex", vertexID=2),
         None,
     ),
     "ParticleLagrangianEqualValueConstraint": (
@@ -309,22 +302,21 @@ def test_a_constraint_carries_no_state_between_increments(name, model):
     constraint.setRestartData({})
 
 
-def test_lagrangian_dirichlet_is_met_by_a_translation_by_the_prescribed_increment(model):
+def test_lagrangian_weak_dirichlet_at_a_vertex_is_met_by_a_translation_by_the_prescribed_increment(model):
     """Moving every node by the share of the prescribed increment that falls into the increment moves every point of
-    the particles by it, as the shape functions are a partition of unity: the constraint is met at every point. The
-    tangent is symmetric, as the constraint stems from the potential ``sum(lambda g)``. The reaction force sums the
+    the particle by it, as the shape functions are a partition of unity: the constraint is met at the vertex. The
+    tangent is symmetric, as the constraint stems from the potential ``sum(lambda g)``. The reaction force holds the
     multipliers per component, and balances the force the constraint exerts on the nodes."""
 
     prescribedStepDelta = {0: 0.1, 1: -0.05}
     constraint = _connected(
         _withMultipliers(
-            ParticleLagrangianDirichlet("c", model, PARTICLES[1:], FIELD, prescribedStepDelta, constrain=[0, 2])
+            ParticleLagrangianWeakDirichlet("c", PARTICLES[1], FIELD, prescribedStepDelta, model, "vertex", vertexID=2)
         )
     )
 
     nU = 2 * len(constraint.nodes)
-    nPoints = len(PARTICLES[1:]) * 2
-    multipliers = 1.0 + np.arange(nPoints * len(prescribedStepDelta))
+    multipliers = np.array([1.0, 2.0])
     dU = np.zeros(constraint.nDof)
     for i, prescribedComponent in prescribedStepDelta.items():
         dU[i:nU:2] = prescribedComponent * TIMESTEP.stepProgressIncrement
@@ -334,9 +326,36 @@ def test_lagrangian_dirichlet_is_met_by_a_translation_by_the_prescribed_incremen
 
     np.testing.assert_allclose(P[nU:], 0.0, atol=1e-15)
     np.testing.assert_array_equal(K, K.T)
-    # the multipliers are ordered point by point, and within a point component by component
-    np.testing.assert_array_equal(constraint.reactionForce, multipliers.reshape(nPoints, 2).sum(axis=0))
+    # the multipliers are ordered as the components in prescribedStepDelta
+    np.testing.assert_array_equal(constraint.reactionForce, multipliers)
     np.testing.assert_allclose(P[:nU].reshape(-1, 2).sum(axis=0), constraint.reactionForce, rtol=1e-13)
+
+
+def test_lagrangian_weak_dirichlet_at_a_vertex_measures_the_field_at_the_vertex(model):
+    """With the nodes moved unevenly, the field differs from point to point of the particle: the constraint adds to the
+    row of its multiplier the field interpolated at the vertex, less the prescribed increment, not the field at the
+    center."""
+
+    particle = PARTICLES[1]
+    constraint = _connected(
+        _withMultipliers(ParticleLagrangianWeakDirichlet("c", particle, FIELD, {0: 0.1}, model, "vertex", vertexID=2))
+    )
+
+    nodes = list(constraint.nodes)
+    dU = np.zeros(constraint.nDof)
+    dU[0 : 2 * len(nodes) : 2] = [0.1 * node.coordinates[0] ** 2 + 0.05 * node.coordinates[1] for node in nodes]
+
+    P, _ = residualContributionAndTangent(constraint, dU, dU, TIMESTEP)
+
+    nodalValues = {node: dU[2 * k] for k, node in enumerate(nodes)}
+    atVertex = particle.getInterpolationVector(particle.vertices[2]) @ [
+        nodalValues[kf.node] for kf in particle.kernelFunctions
+    ]
+    atCenter = particle.getInterpolationVector(particle.center) @ [
+        nodalValues[kf.node] for kf in particle.kernelFunctions
+    ]
+    assert atVertex != pytest.approx(atCenter, rel=1e-3), "the check is vacuous if the field is even"
+    assert P[-1] == pytest.approx(atVertex - 0.1 * TIMESTEP.stepProgressIncrement, rel=1e-12)
 
 
 def test_lagrangian_cartesian_boundary_at_a_vertex_measures_the_gap_at_the_vertex(model):
