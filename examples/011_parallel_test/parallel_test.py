@@ -31,6 +31,10 @@ import numpy as np
 import pytest
 from edelweissfe.config.linsolve import getLinSolverByName
 from edelweissfe.journal.journal import Journal
+from edelweissfe.solvers.nonlinearimplicitstaticparallel import NISTParallel
+from edelweissfe.stepactions.dirichlet import StepAction as DirichletStepAction
+from edelweissfe.steps.adaptivestep import AdaptiveStep
+from edelweissfe.steps.stepmanager import StepActionCollection
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 from edelweissfe.utils.exceptions import StepFailed
 
@@ -45,12 +49,25 @@ from edelweissmeshfree.mpmmanagers.smartmpmmanager import SmartMaterialPointMana
 from edelweissmeshfree.outputmanagers.ensight import (
     OutputManager as EnsightOutputManager,
 )
+from edelweissmeshfree.solvers.meshfreeconvergencecriterion import (
+    jobInfoWithMeshfreeTolerances,
+    meshfreeCriterionOptions,
+)
 from edelweissmeshfree.solvers.nqsmarmotparallel import NQSParallelForMarmot
 from edelweissmeshfree.stepactions.dirichlet import Dirichlet
 
 
 @performancetiming.timeit("simulation")
-def run_sim():
+def run_sim(withEdelweissFESolver: bool = False):
+    """Solve the example with the deprecated meshfree solver, or with EdelweissFE's NISTParallel, which solves the same
+    model.
+
+    Parameters
+    ----------
+    withEdelweissFESolver
+        Solve with EdelweissFE's NISTParallel, set up from Python with the convergence criterion of the deprecated
+        solver, and with EdelweissFE's Dirichlet boundary condition on the node set of the grid.
+    """
     dimension = 2
 
     journal = Journal()
@@ -166,19 +183,55 @@ def run_sim():
     linearSolver = getLinSolverByName("pardiso", {})
 
     try:
-        nonlinearSolver.solveStep(
-            adaptiveTimeStepper,
-            linearSolver,
-            mpmModel,
-            fieldOutputController,
-            mpmManagers=[mpmManager],
-            dirichlets=[
-                dirichletLeft,
-            ],
-            constraints=weakDirichlets,
-            outputManagers=outputManagers,
-            userIterationOptions=iterationOptions,
-        )
+        if withEdelweissFESolver:
+            # The model holds its manager and constraints; the boundary condition is EdelweissFE's, a step action of
+            # the step: it prescribes the nodes of the grid's left edge that lie in the active domain.
+            mpmModel.mpmManagers.append(mpmManager)
+            for constraint in weakDirichlets:
+                mpmModel.constraints[constraint.name] = constraint
+            stepActions = StepActionCollection()
+            stepActions["dirichlet"]["left"] = DirichletStepAction(
+                "left",
+                mpmModel.nodeSets["rectangular_grid_left"],
+                "displacement",
+                {0: 0.0, 1: 0.0},
+                mpmModel,
+                journal,
+            )
+
+            jobInfo = jobInfoWithMeshfreeTolerances()
+            step = AdaptiveStep(
+                0,
+                mpmModel,
+                fieldOutputController,
+                journal,
+                jobInfo,
+                NISTParallel(jobInfo, journal, linsolver="pardiso", **meshfreeCriterionOptions),
+                [],
+                stepActions,
+                startInc=1e-1,
+                maxInc=1e-1,
+                minInc=1e-3,
+                maxNumInc=10,
+                maxIter=iterationOptions["max. iterations"],
+                criticalIter=iterationOptions["critical iterations"],
+                maxGrowIter=iterationOptions["allowed residual growths"],
+            )
+            step.solve()
+        else:
+            nonlinearSolver.solveStep(
+                adaptiveTimeStepper,
+                linearSolver,
+                mpmModel,
+                fieldOutputController,
+                mpmManagers=[mpmManager],
+                dirichlets=[
+                    dirichletLeft,
+                ],
+                constraints=weakDirichlets,
+                outputManagers=outputManagers,
+                userIterationOptions=iterationOptions,
+            )
 
     except StepFailed as e:
         journal.errorMessage(str(e), "StepFailed")
@@ -191,7 +244,8 @@ def run_sim():
         prettytable.min_table_width = journal.linewidth
         journal.printPrettyTable(prettytable, "Summary")
 
-    np.savetxt("U.csv", fieldOutputController.fieldOutputs["displacement"].getLastResult())
+    if not withEdelweissFESolver:
+        np.savetxt("U.csv", fieldOutputController.fieldOutputs["displacement"].getLastResult())
 
     return mpmModel
 
@@ -210,6 +264,16 @@ def test_sim(assert_gold):
     except ValueError as e:
         pytest.skip(str(e))
         return
+
+    res = np.array([mp.getResultArray("displacement") for mp in mpmModel.materialPoints.values()])
+    gold = np.loadtxt("gold.csv")
+
+    assert_gold(res, gold)
+
+
+def test_sim_with_edelweissfe_solver(assert_gold):
+    """The same model, solved by EdelweissFE's NISTParallel with the convergence criterion of the deprecated solver."""
+    mpmModel = run_sim(withEdelweissFESolver=True)
 
     res = np.array([mp.getResultArray("displacement") for mp in mpmModel.materialPoints.values()])
     gold = np.loadtxt("gold.csv")
