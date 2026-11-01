@@ -35,12 +35,13 @@
 #  ---------------------------------------------------------------------
 """A strip of RKPM particles, held at its left end and moved at its right end, with Lagrange multipliers.
 
-ParticleLagrangianDirichlet constrains all particles of an end at once: on the left end the bottom left vertex of every
-particle, on the right end the center of every particle. ParticleLagrangianWeakDirichlet writes the same constraint
-equations one particle and one point at a time, so the two give an independent check of each other: the strip must
-deform alike, and the ends must carry the same reaction forces. Nothing else acts on the strip, so the reaction forces
-of the two ends balance.
+One ParticleLagrangianWeakDirichlet per particle constrains the ends: on the left end the bottom left vertex of every
+particle, on the right end the center of every particle. Nothing else acts on the strip, so the reaction forces of the
+two ends -- the sums of the multipliers of their constraints -- balance. The displacements of the particles and the
+reaction forces are compared with the gold files.
 """
+
+import argparse
 
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
@@ -49,9 +50,6 @@ from edelweissfe.config.linsolve import getLinSolverByName
 from edelweissfe.journal.journal import Journal
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 
-from edelweissmeshfree.constraints.particlelagrangiandirichlet import (
-    ParticleLagrangianDirichlet,
-)
 from edelweissmeshfree.constraints.particlelagrangianweakdirichlet import (
     ParticleLagrangianWeakDirichletOnParticleSetFactory,
 )
@@ -84,32 +82,8 @@ LEFT = {0: 0.0, 1: 0.0}
 RIGHT = {0: 0.4, 1: -0.2}
 
 
-def constrainWithParticleLagrangianDirichlet(model: MPMModel) -> tuple[list, list]:
-    """One constraint per end.
-
-    Parameters
-    ----------
-    model
-        The model with the particles.
-
-    Returns
-    -------
-    tuple[list, list]
-        The constraints of the left end, and those of the right end.
-    """
-
-    left = ParticleLagrangianDirichlet(
-        "left", model, model.particleSets["rectangular_grid_left"], "displacement", LEFT, constrain=[0]
-    )
-    right = ParticleLagrangianDirichlet(
-        "right", model, model.particleSets["rectangular_grid_right"], "displacement", RIGHT
-    )
-
-    return [left], [right]
-
-
-def constrainWithParticleLagrangianWeakDirichlet(model: MPMModel) -> tuple[list, list]:
-    """The same constraints, one per particle and point.
+def constrainEnds(model: MPMModel) -> tuple[list, list]:
+    """One constraint per particle of an end: at the bottom left vertex on the left end, at the center on the right end.
 
     Parameters
     ----------
@@ -132,13 +106,8 @@ def constrainWithParticleLagrangianWeakDirichlet(model: MPMModel) -> tuple[list,
     return list(left.values()), list(right.values())
 
 
-def run_sim(constrainEnds) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def run_sim() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Deform the strip.
-
-    Parameters
-    ----------
-    constrainEnds
-        Creates the constraints of the two ends, see :func:`constrainWithParticleLagrangianDirichlet`.
 
     Returns
     -------
@@ -280,20 +249,24 @@ def test_sim(assert_gold):
 
     warnings.filterwarnings("ignore")
 
-    displacement, leftReaction, rightReaction = run_sim(constrainWithParticleLagrangianDirichlet)
-    referenceDisplacement, referenceLeftReaction, referenceRightReaction = run_sim(
-        constrainWithParticleLagrangianWeakDirichlet
-    )
-
-    # the same equations, with the forces of the constrained points summed in another order
-    assert_gold(displacement, referenceDisplacement, rtol=1e-10, atol=1e-12)
-    assert_gold(leftReaction, referenceLeftReaction, rtol=1e-10, atol=0.0)
-    assert_gold(rightReaction, referenceRightReaction, rtol=1e-10, atol=0.0)
+    displacement, leftReaction, rightReaction = run_sim()
 
     # only the two ends act on the strip: their reactions balance, to the tolerance of the Newton iterations
+    assert np.linalg.norm(rightReaction) > 0.0, "the balance is vacuous without a reaction"
     assert_gold(leftReaction, -rightReaction, rtol=1e-6, atol=0.0)
+
+    assert_gold(displacement, np.loadtxt("gold.csv"), atol=1e-8)
+    assert_gold(np.array([leftReaction, rightReaction]), np.loadtxt("gold_reactions.csv"), rtol=1e-6, atol=0.0)
 
 
 if __name__ == "__main__":
-    displacement, leftReaction, rightReaction = run_sim(constrainWithParticleLagrangianDirichlet)
+    displacement, leftReaction, rightReaction = run_sim()
     print("reaction forces: left end {:}, right end {:}".format(leftReaction, rightReaction))
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--create-gold", dest="create_gold", action="store_true", help="create the gold files.")
+    args = parser.parse_args()
+
+    if args.create_gold:
+        np.savetxt("gold.csv", displacement.flatten())
+        np.savetxt("gold_reactions.csv", np.array([leftReaction, rightReaction]))
