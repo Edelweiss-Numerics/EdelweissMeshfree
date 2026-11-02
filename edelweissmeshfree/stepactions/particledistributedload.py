@@ -100,7 +100,8 @@ class ParticleDistributedLoad(ParticleDistributedLoadBase):
 
     @property
     def particles(self) -> ParticleSet:
-        return self._particles
+        """The particles the load acts on, over all faces of its surface."""
+        return ParticleSet(self.name, [p for pSet in self._particleSurface.values() for p in pSet])
 
     @property
     def loadType(self) -> str:
