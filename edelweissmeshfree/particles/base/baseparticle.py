@@ -507,20 +507,21 @@ class BaseParticle(BaseNodeCouplingEntity):
 
     @abstractmethod
     def getRestartData(self) -> np.ndarray:
-        """Get the restart data in  form of a numpy array.
+        """The state of the last accepted increment, for a restart checkpoint. A particle is updated-Lagrangian: its
+        position and shape follow from this state.
 
         Returns
         -------
         np.ndarray
-            The restart data.
+            The state.
         """
 
     @abstractmethod
     def readRestartData(self, restartData: np.ndarray):
-        """Set the restart data.
+        """Restore the state :meth:`getRestartData` returned, and with it the position and the shape.
 
         Parameters
         ----------
         restartData
-            The restart data.
+            The state.
         """
