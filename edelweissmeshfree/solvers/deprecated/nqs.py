@@ -290,10 +290,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                     # cells and particles are volatile and start every rebuild at zero.
                     if activeNodesWithPersistentFieldValues:
                         for field in model.nodeFields.values():
-                            if "U" in field:
-                                theDofManager.writeNodeFieldToDofVector(
-                                    U, field, "U", activeNodesWithPersistentFieldValues
-                                )
+                            theDofManager.writeNodeFieldToDofVector(U, field, "U", activeNodesWithPersistentFieldValues)
 
                     self.journal.message(
                         "resulting equation system has a size of {:}".format(theDofManager.nDof),
