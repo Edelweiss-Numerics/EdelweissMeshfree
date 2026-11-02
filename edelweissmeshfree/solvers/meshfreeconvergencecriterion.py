@@ -74,9 +74,15 @@ meshfreeCriterionOptions = {
 }
 
 
-def jobInfoWithMeshfreeTolerances() -> dict:
+def jobInfoWithMeshfreeTolerances(**tolerances: float) -> dict:
     """The ``jobInfo`` of an EdelweissFE solver with EdelweissMeshfree's tolerances for every field. The scalar
     variables, which EdelweissMeshfree's solvers did not check, keep EdelweissFE's tolerances.
+
+    Parameters
+    ----------
+    **tolerances
+        Tolerances that replace those of :data:`meshfreeFieldTolerances` for every field, by their names in the
+        ``jobInfo``, e.g. ``fluxResidualTolerance=5e-3``.
 
     Returns
     -------
@@ -84,10 +90,18 @@ def jobInfoWithMeshfreeTolerances() -> dict:
         The job information.
     """
 
+    unknown = set(tolerances) - set(meshfreeFieldTolerances)
+    if unknown:
+        raise ValueError(
+            "no such tolerance: {:}; the tolerances are {:}".format(
+                ", ".join(sorted(unknown)), ", ".join(meshfreeFieldTolerances)
+            )
+        )
+
     jobInfo = loadConfiguration({})
 
     # new dictionaries: the defaults that loadConfiguration hands out are EdelweissFE's own
-    for name, tolerance in meshfreeFieldTolerances.items():
+    for name, tolerance in (meshfreeFieldTolerances | tolerances).items():
         jobInfo[name] = {
             field: (default if field == "scalar variables" else tolerance) for field, default in jobInfo[name].items()
         }

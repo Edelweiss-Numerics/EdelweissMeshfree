@@ -39,6 +39,7 @@ from collections import deque
 
 import edelweissfe.utils.performancetiming as performancetiming
 import h5py
+import numpy as np
 from edelweissfe.constraints.base.constraintbase import ConstraintBase
 from edelweissfe.journal.journal import Journal
 from edelweissfe.numerics.dofmanager import DofManager, DofVector
@@ -107,35 +108,6 @@ class BaseNonlinearSolver:
     #: subclasses call ``super().__init__()``.
     _dirichletIndicesCache = None
 
-    #: Number of threads used by threaded assembly kernels. Parallel solvers shadow this with an
-    #: instance attribute; the sequential default of one keeps the base solvers meaningful.
-    numThreads = 1
-
-    #: Assemble particle contributions straight into CSR, bypassing the VIJ staging array. Off by
-    #: default: the VIJ path remains the reference until the direct path has been measured.
-    useDirectCSRAssembly = False
-
-    #: Run *both* assembly paths per iteration and compare the resulting CSR data. Diagnostic only,
-    #: and roughly twice the assembly cost -- the point is that the comparison happens against a
-    #: fully prepared model inside the real solver, which a standalone harness cannot provide.
-    verifyDirectCSRAssembly = False
-
-    #: Benchmark both assembly paths against each other, per iteration, on identical state. Diagnostic
-    #: only; the solve continues on the VIJ path so no result changes.
-    timeDirectCSRAssembly = False
-
-    #: The CSR generator for the current connectivity, or None. Reachable so the benchmark can time
-    #: the production gather.
-    _csrGenerator = None
-
-    #: The :class:`DirectCSRAssembler` for the current connectivity, or None. Rebuilt whenever the
-    #: Newton cache is, since its offset map has exactly the lifetime of the CSR pattern.
-    _directCSRAssembler = None
-
-    #: Maps each registered entity to its index in the assembler's map. Keyed by entity rather than
-    #: inferred from iteration order, so a reordering of the active set cannot silently misaddress.
-    _directCSREntityIds = None
-
     def __init__(self, journal: Journal):
         self.journal = journal
 
@@ -173,7 +145,6 @@ class BaseNonlinearSolver:
         timeStep: TimeStep,
         R: DofVector,
         dirichlets: list[DirichletBase],
-        reducedNodeSets,
         theDofManager: DofManager,
     ):
         """Apply the dirichlet bcs on the residual vector
@@ -187,8 +158,6 @@ class BaseNonlinearSolver:
             The residual vector of the global equation system to be modified.
         dirichlets
             The list of dirichlet boundary conditions.
-        activeNodeSets
-            The sets with active nodes only.
         theDofManager
             The DofManager instance.
 
@@ -199,10 +168,8 @@ class BaseNonlinearSolver:
         """
 
         for dirichlet in dirichlets:
-            dirichletNodes = reducedNodeSets[dirichlet.nSet]
-            R[self._findDirichletIndices(theDofManager, dirichlet, dirichletNodes)] = dirichlet.getPrescribedIncrement(
-                timeStep, dirichletNodes
-            ).flatten()
+            dofIndices, nodePositions = self._locateDirichlet(theDofManager, dirichlet)
+            R[dofIndices] = dirichlet.getPrescribedIncrement(timeStep)[nodePositions].flatten()
 
         return R
 
@@ -253,26 +220,58 @@ class BaseNonlinearSolver:
         for action in actions:
             action.applyAtIncrementStart(model, timeStep)
 
-    def _findDirichletIndices(self, theDofManager, dirichlet, reducedNodeSet):
-        # The result is fully determined by the boundary condition, its (mutable)
-        # components, the current DofManager, and the reduced node set, so it is
-        # memoized. It is requested multiple times per Newton iteration (residual
-        # zeroing and system matrix modification), but only changes when the
-        # equation system is rebuilt or the boundary condition is updated between
-        # steps.
+    def _findDirichletIndices(self, theDofManager: DofManager, dirichlet: DirichletBase) -> np.ndarray:
+        """The DOF indices a Dirichlet boundary condition prescribes, node after node, see :meth:`_locateDirichlet`.
+
+        Parameters
+        ----------
+        theDofManager
+            The DofManager instance.
+        dirichlet
+            The boundary condition.
+
+        Returns
+        -------
+        np.ndarray
+            The prescribed DOF indices.
+        """
+
+        return self._locateDirichlet(theDofManager, dirichlet)[0]
+
+    def _locateDirichlet(self, theDofManager: DofManager, dirichlet: DirichletBase) -> tuple[np.ndarray, np.ndarray]:
+        """Where a Dirichlet boundary condition acts in the equation system: the DOF indices of its prescribed
+        components on the nodes of its node set that lie in the active domain, and the positions of these nodes in
+        the set, which select the rows of
+        :meth:`~edelweissfe.stepactions.base.dirichletbase.DirichletBase.getPrescribedIncrement`.
+
+        Memoized: the result is requested several times per Newton iteration (residual and system matrix), but
+        changes only when the equation system is rebuilt or the boundary condition is updated between steps.
+
+        Parameters
+        ----------
+        theDofManager
+            The DofManager instance.
+        dirichlet
+            The boundary condition.
+
+        Returns
+        -------
+        tuple[np.ndarray, np.ndarray]
+            The prescribed DOF indices, and the positions of their nodes in the node set.
+        """
+
         cache = self._dirichletIndicesCache
         if cache is None:
             cache = self._dirichletIndicesCache = {}
 
-        key = (dirichlet, theDofManager, reducedNodeSet, tuple(dirichlet.components))
-        indices = cache.get(key)
-        if indices is None:
-            # every node of the reduced set is active, so all of them are located
-            fieldIndices, _ = theDofManager.locateFieldOnNodeSet(dirichlet.field, reducedNodeSet)
+        key = (dirichlet, theDofManager, tuple(dirichlet.components))
+        located = cache.get(key)
+        if located is None:
+            fieldIndices, nodePositions = theDofManager.locateFieldOnNodeSet(dirichlet.field, dirichlet.nSet)
+            dofIndices = fieldIndices.reshape((-1, dirichlet.fieldSize))[:, dirichlet.components].flatten()
+            located = cache[key] = (dofIndices, nodePositions)
 
-            indices = cache[key] = fieldIndices.reshape((-1, dirichlet.fieldSize))[:, dirichlet.components].flatten()
-
-        return indices
+        return located
 
     @performancetiming.timeit("assembly active domain")
     def _assembleActiveDomain(self, activeCells, model: MPMModel) -> tuple[NodeSet, NodeSet, dict, dict]:

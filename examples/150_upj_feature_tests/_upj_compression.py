@@ -166,7 +166,7 @@ from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
 from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
     MarmotParticleWrapper,
 )
-from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
+from edelweissmeshfree.solvers.deprecated.nqs import NonlinearQuasistaticSolver
 
 _EXAMPLE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -697,7 +697,7 @@ def run_sim(
 
     try:
         if control == "indirect":
-            from edelweissmeshfree.solvers.nqsmparclength import (
+            from edelweissmeshfree.solvers.deprecated.nqsmparclength import (
                 NonlinearQuasistaticMarmotArcLengthSolver,
             )
 

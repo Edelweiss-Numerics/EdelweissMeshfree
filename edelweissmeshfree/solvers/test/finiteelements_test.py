@@ -24,8 +24,8 @@
 #  The full text of the license can be found in the file LICENSE.md at
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
-"""The quasi-static solver evaluates the finite elements of a meshfree model, and their nodes carry their total
-solution from one step to the next.
+"""The deprecated quasi-static solver evaluates the finite elements of a meshfree model, and their nodes carry their
+total solution from one step to the next.
 
 A strip of plane strain quadrilaterals (EdelweissFE's linear elastic ``CPE4``), one element high, is stretched along x
 in two steps, by the same amount in each: the left end is held in x, and its bottom node in y as well, the right end is
@@ -38,6 +38,7 @@ the second step alone, half of them.
 import numpy as np
 from edelweissfe.config.linsolve import getLinSolverByName
 from edelweissfe.journal.journal import Journal
+from edelweissfe.stepactions.dirichlet import StepAction as Dirichlet
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 
 from edelweissmeshfree.fieldoutput.fieldoutput import MPMFieldOutputController
@@ -47,8 +48,7 @@ from edelweissmeshfree.models.test._finiteelementstrip import (
     YOUNGS_MODULUS,
     addFiniteElementStrip,
 )
-from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
-from edelweissmeshfree.stepactions.dirichlet import Dirichlet
+from edelweissmeshfree.solvers.deprecated.nqs import NonlinearQuasistaticSolver
 
 NUMBER_OF_ELEMENTS = 4
 STRETCH_PER_STEP = 0.01

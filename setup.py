@@ -39,11 +39,9 @@ from os.path import expanduser, join
 
 import numpy
 from Cython.Build import build_ext, cythonize
-from edelweissfe.numerics import get_include as _fe_numerics_include
 from edelweissfe.utils.extensionbuild import (
     compile_flags,
     get_arch_flags,
-    link_flags,
     native_prefix,
     runtime_library_dirs,
 )
@@ -135,27 +133,6 @@ extensions += [
 
 extensions += [
     MarmotExtension("edelweissmeshfree/materialpoints/marmotmaterialpoint/mp.pyx"),
-]
-
-extensions += [
-    Extension(
-        "*",
-        sources=[
-            "edelweissmeshfree/solvers/base/parallelization.pyx",
-        ],
-        # _fe_numerics_include() supplies _csrcore.h, whose CSRDirectAssembler::scatterBlock is called
-        # from inside the particle prange. Declaring the C++ class here rather than reimplementing the
-        # addressing against raw memoryviews keeps the scatter to a single implementation.
-        include_dirs=[
-            join(marmot_dir, "include"),
-            join(marmot_dir, "include", "eigen3"),
-            numpy.get_include(),
-            _fe_numerics_include(),
-        ],
-        language="c++",
-        extra_compile_args=compile_flags(openmp=True, arch=arch_flags, gcc_only=["-Wno-maybe-uninitialized"]),
-        extra_link_args=link_flags(openmp=True),
-    )
 ]
 
 extensions += [
