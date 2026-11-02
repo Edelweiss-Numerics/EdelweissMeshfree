@@ -155,29 +155,6 @@ def run_sim():
     # We need this model to create the dof manager
     theModel.particleKernelDomains["my_all_with_all"] = theParticleKernelDomain
 
-    # constraintsLeft = []
-    # i = 0
-    # for particle in theModel.particleSets["rectangular_grid_left"]:
-    #    constraintsLeft.append(
-    #        ParticleLagrangianWeakDirichletOnParticleSetFactory(
-    #            f"left_{i}", [particle], "displacement", {0: 0}, theModel, location="vertex", vertexID=[0, 1]
-    #        )
-    #    )
-    #    i += 1
-    # constraintsBottom = []
-    # i = 0
-    # for particle in theModel.particleSets["rectangular_grid_bottom"]:
-    #    constraintsBottom.append(
-    #        ParticleLagrangianWeakDirichletOnParticleSetFactory(
-    #            f"bottom_{i}", [particle], "displacement", {1: 0}, theModel, location="vertex", vertexID=[1, 2]
-    #        )
-    #    )
-    #    i += 1
-
-    # for c in constraintsLeft:
-    #    theModel.constraints.update(c)
-    # for c in constraintsBottom:
-    #    theModel.constraints.update(c)
     dirichletLeft = ParticleLagrangianWeakDirichletOnParticleSetFactory(
         "left", theModel.particleSets["rectangular_grid_left"], "displacement", {0: 0}, theModel, location="center"
     )
@@ -187,7 +164,6 @@ def run_sim():
 
     theModel.constraints.update(dirichletLeft)
     theModel.constraints.update(dirichletBottom)
-
     theModel.prepareYourself(theJournal)
     # =====================================================================
     #                      SET INITIAL STRESS STATE
@@ -269,47 +245,6 @@ def run_sim():
         loadVector=np.array([-100]),
         f_t=lambda t: 1.0,
     )
-    # pressure_right = ParticleDistributedLoad(
-    #    name="pressure_right",
-    #    model=theModel,
-    #    journal=theJournal,
-    #    particles=theModel.particleSets["rectangular_grid_right"],
-    #    distributedLoadType="pressure",
-    #    loadVector=np.array([-100]),
-    #    surfaceID=2,
-    #    f_t=lambda t: 1.0,
-    # )
-
-    # =====================================================================
-    #                      CWF CORRECTION
-    # =====================================================================
-    surfaceCWF = EntityBasedSurface(
-        name="surfacePressure",
-        faceToEntities={
-            4: list(theModel.particleSets["rectangular_grid_left"]),
-            1: list(theModel.particleSets["rectangular_grid_bottom"]),
-        },
-    )
-
-    cwf_left_bottom = ParticleDistributedLoad(
-        name="cwf_dirichlet",
-        model=theModel,
-        journal=theJournal,
-        particleSurface=surfaceCWF,
-        distributedLoadType="cwfcorrection",
-        loadVector=np.array([0]),
-        f_t=lambda t: 1.0,
-    )
-    # cwf_bottom = ParticleDistributedLoad(
-    #    name="cwf_bottom",
-    #    model=theModel,
-    #    journal=theJournal,
-    #    particles=theModel.particleSets["rectangular_grid_bottom"],
-    #    distributedLoadType="cwfcorrection",
-    #    loadVector=np.array([0]),
-    #    surfaceID=1,
-    #    f_t=lambda t: 1.0,
-    # )
 
     incSize = 1e-1
     adaptiveTimeStepper = AdaptiveTimeStepper(0.0, 1.0, incSize, incSize, incSize / 1, 50, theJournal)
@@ -353,8 +288,7 @@ def run_sim():
             particleManagers=[theParticleManager],
             constraints=theModel.constraints.values(),
             userIterationOptions=iterationOptions,
-            # particleDistributedLoads=[pressure_top, pressure_right],
-            particleDistributedLoads=[pressure_top_right, cwf_left_bottom],
+            particleDistributedLoads=[pressure_top_right],
             vciManagers=[vciManager],
         )
 
@@ -381,7 +315,14 @@ def change_test_dir(request, monkeypatch):
     monkeypatch.chdir(request.fspath.dirname)
 
 
-def test_sim():
+def test_sim(assert_gold):
+    """A geostatic initial stress balanced by a pressure on the top and right faces, without the weak-form correction.
+
+    The meshfree test functions do not vanish on the left and bottom faces, where the displacement is constrained
+    weakly. Without the weak-form correction of example 126 on these faces, the weak form lacks the boundary term
+    of the initial stress there, and the particles deform. The result is reproducible to round-off for any number
+    of threads, so the tolerance is relative to the largest displacement and close to round-off.
+    """
 
     # disable plots and suppress warnings
     import matplotlib
@@ -397,7 +338,7 @@ def test_sim():
 
     gold = np.loadtxt("gold.csv")
 
-    assert np.isclose(np.copy(res.flatten() - gold.flatten()), 0.0, rtol=1e-12).all()
+    assert_gold(res, gold, rtol=1e-10, atol=1e-10 * np.abs(gold).max())
 
 
 if __name__ == "__main__":

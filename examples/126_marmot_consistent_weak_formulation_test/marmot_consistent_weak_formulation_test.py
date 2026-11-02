@@ -34,8 +34,6 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 
-import argparse
-
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 import pytest
@@ -82,6 +80,12 @@ from edelweissmeshfree.stepactions.particledistributedload import (
 # )
 
 
+# The square block, its Young's modulus, and the pressure that balances the initial stress.
+blockLength = 10.0
+youngsModulus = 3000.0
+pressure = 100.0
+
+
 def run_sim():
     dimension = 2
 
@@ -98,8 +102,8 @@ def run_sim():
 
     x0 = 0
     y0 = 0
-    height = 10
-    length = 10
+    height = blockLength
+    length = blockLength
     nX = 10
     nY = 10
     # Not a multiple of the particle spacing: the kernel functions sit on the particle centers, and with a
@@ -121,7 +125,7 @@ def run_sim():
     # We need a dummy material for the material point
     theMaterial = {
         "material": "GMDamagedShearNeoHooke",
-        "properties": np.array([3000.0, 0.2, 1, 0.1, 0.2, 1.4999, 1.0]),
+        "properties": np.array([youngsModulus, 0.2, 1, 0.1, 0.2, 1.4999, 1.0]),
     }
 
     def TheParticleFactory(number, vertexCoordinates, volume):
@@ -155,6 +159,29 @@ def run_sim():
     # We need this model to create the dof manager
     theModel.particleKernelDomains["my_all_with_all"] = theParticleKernelDomain
 
+    # constraintsLeft = []
+    # i = 0
+    # for particle in theModel.particleSets["rectangular_grid_left"]:
+    #    constraintsLeft.append(
+    #        ParticleLagrangianWeakDirichletOnParticleSetFactory(
+    #            f"left_{i}", [particle], "displacement", {0: 0}, theModel, location="vertex", vertexID=[0, 1]
+    #        )
+    #    )
+    #    i += 1
+    # constraintsBottom = []
+    # i = 0
+    # for particle in theModel.particleSets["rectangular_grid_bottom"]:
+    #    constraintsBottom.append(
+    #        ParticleLagrangianWeakDirichletOnParticleSetFactory(
+    #            f"bottom_{i}", [particle], "displacement", {1: 0}, theModel, location="vertex", vertexID=[1, 2]
+    #        )
+    #    )
+    #    i += 1
+
+    # for c in constraintsLeft:
+    #    theModel.constraints.update(c)
+    # for c in constraintsBottom:
+    #    theModel.constraints.update(c)
     dirichletLeft = ParticleLagrangianWeakDirichletOnParticleSetFactory(
         "left", theModel.particleSets["rectangular_grid_left"], "displacement", {0: 0}, theModel, location="center"
     )
@@ -164,13 +191,14 @@ def run_sim():
 
     theModel.constraints.update(dirichletLeft)
     theModel.constraints.update(dirichletBottom)
+
     theModel.prepareYourself(theJournal)
     # =====================================================================
     #                      SET INITIAL STRESS STATE
     # =====================================================================
 
     for particle in theModel.particles.values():
-        particle.setInitialCondition("geostaticstress", -100)
+        particle.setInitialCondition("geostaticstress", -pressure)
 
     theJournal.printPrettyTable(theModel.makePrettyTableSummary(), "summary")
 
@@ -242,9 +270,50 @@ def run_sim():
         journal=theJournal,
         particleSurface=surfacePressure,
         distributedLoadType="pressure",
-        loadVector=np.array([-100]),
+        loadVector=np.array([-pressure]),
         f_t=lambda t: 1.0,
     )
+    # pressure_right = ParticleDistributedLoad(
+    #    name="pressure_right",
+    #    model=theModel,
+    #    journal=theJournal,
+    #    particles=theModel.particleSets["rectangular_grid_right"],
+    #    distributedLoadType="pressure",
+    #    loadVector=np.array([-100]),
+    #    surfaceID=2,
+    #    f_t=lambda t: 1.0,
+    # )
+
+    # =====================================================================
+    #                      CWF CORRECTION
+    # =====================================================================
+    surfaceCWF = EntityBasedSurface(
+        name="surfacePressure",
+        faceToEntities={
+            4: list(theModel.particleSets["rectangular_grid_left"]),
+            1: list(theModel.particleSets["rectangular_grid_bottom"]),
+        },
+    )
+
+    cwf_left_bottom = ParticleDistributedLoad(
+        name="cwf_dirichlet",
+        model=theModel,
+        journal=theJournal,
+        particleSurface=surfaceCWF,
+        distributedLoadType="cwfcorrection",
+        loadVector=np.array([0]),
+        f_t=lambda t: 1.0,
+    )
+    # cwf_bottom = ParticleDistributedLoad(
+    #    name="cwf_bottom",
+    #    model=theModel,
+    #    journal=theJournal,
+    #    particles=theModel.particleSets["rectangular_grid_bottom"],
+    #    distributedLoadType="cwfcorrection",
+    #    loadVector=np.array([0]),
+    #    surfaceID=1,
+    #    f_t=lambda t: 1.0,
+    # )
 
     incSize = 1e-1
     adaptiveTimeStepper = AdaptiveTimeStepper(0.0, 1.0, incSize, incSize, incSize / 1, 50, theJournal)
@@ -288,7 +357,8 @@ def run_sim():
             particleManagers=[theParticleManager],
             constraints=theModel.constraints.values(),
             userIterationOptions=iterationOptions,
-            particleDistributedLoads=[pressure_top_right],
+            # particleDistributedLoads=[pressure_top, pressure_right],
+            particleDistributedLoads=[pressure_top_right, cwf_left_bottom],
             vciManagers=[vciManager],
         )
 
@@ -315,7 +385,15 @@ def change_test_dir(request, monkeypatch):
     monkeypatch.chdir(request.fspath.dirname)
 
 
-def test_sim():
+def test_sim(assert_gold):
+    """A geostatic initial stress balanced by a pressure on the top and right faces, with the weak-form correction.
+
+    The weak-form correction on the left and bottom faces, where the displacement is constrained weakly, supplies
+    the boundary term of the initial stress that the meshfree test functions see there (example 125 omits it).
+    The initial stress is then in equilibrium with the pressure, and the particles must not move: the expected
+    displacement is zero, measured against the displacement scale pressure * length / Young's modulus of the
+    block.
+    """
 
     # disable plots and suppress warnings
     import matplotlib
@@ -329,18 +407,10 @@ def test_sim():
 
     res = fieldOutputController.fieldOutputs["displacement"].getLastResult()
 
-    gold = np.loadtxt("gold.csv")
+    displacementScale = pressure * blockLength / youngsModulus
 
-    assert np.isclose(np.copy(res.flatten() - gold.flatten()), 0.0, rtol=1e-12).all()
+    assert_gold(res, np.zeros_like(res), rtol=0.0, atol=1e-10 * displacementScale)
 
 
 if __name__ == "__main__":
-    theModel, fieldOutputController = run_sim()
-    res = fieldOutputController.fieldOutputs["displacement"].getLastResult()
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--create-gold", dest="create_gold", action="store_true", help="create the gold file.")
-    args = parser.parse_args()
-
-    if args.create_gold:
-        np.savetxt("gold.csv", res.flatten())
+    run_sim()

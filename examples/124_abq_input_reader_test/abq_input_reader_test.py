@@ -370,7 +370,14 @@ def change_test_dir(request, monkeypatch):
     monkeypatch.chdir(request.fspath.dirname)
 
 
-def test_sim():
+def test_sim(assert_gold):
+    """Particles and kernel functions from an Abaqus input file, loaded by a pressure on two of its surfaces.
+
+    The pressure acts on the faces S1 and S3 of the boundary particles, and the SQCNIxSDI particle evaluates its
+    test functions on the loaded face, like the load vector and the VCI boundary term. The result is reproducible
+    to round-off for any number of threads, so the tolerance is relative to the largest displacement and close to
+    round-off.
+    """
 
     # disable plots and suppress warnings
     import matplotlib
@@ -386,7 +393,7 @@ def test_sim():
 
     gold = np.loadtxt("gold.csv")
 
-    assert np.isclose(res.flatten(), gold.flatten(), rtol=1e-12).all()
+    assert_gold(res, gold, rtol=1e-10, atol=1e-10 * np.abs(gold).max())
 
 
 if __name__ == "__main__":
