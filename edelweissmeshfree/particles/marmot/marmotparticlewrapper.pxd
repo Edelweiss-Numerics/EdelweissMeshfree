@@ -46,6 +46,7 @@ from edelweissmeshfree.materialpoints.marmotmaterialpoint.mp cimport (
 )
 from edelweissmeshfree.meshfree.approximations.marmot.marmotmeshfreeapproximation cimport (
     MarmotMeshfreeApproximation,
+    MarmotMeshfreeApproximationWrapper,
 )
 from edelweissmeshfree.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunction cimport (
     MarmotMeshfreeKernelFunction,
@@ -181,7 +182,8 @@ cdef class MarmotParticleWrapper:
 
     cdef MarmotParticle* _marmotParticle
 
-    cdef MarmotMeshfreeApproximation* _marmotMeshfreeApproximation
+    # the approximation the Marmot particle refers to, held so that it lives as long as the particle
+    cdef MarmotMeshfreeApproximationWrapper _approximation
 
     cdef np.ndarray materialProperties
     cdef double[::1] materialPropertiesView
