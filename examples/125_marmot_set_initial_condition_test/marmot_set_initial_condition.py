@@ -238,7 +238,7 @@ def run_sim():
         journal=theJournal,
         particleSurface=surfacePressure,
         distributedLoadType="pressure",
-        loadVector=np.array([-100]),
+        loadVector=np.array([100]),
         f_t=lambda t: 1.0,
     )
 

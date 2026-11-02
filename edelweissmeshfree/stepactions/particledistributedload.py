@@ -63,7 +63,8 @@ class ParticleDistributedLoad(ParticleDistributedLoadBase):
     distributedLoadType : str
         The type of the distributed load, e.g., "pressure".
     loadVector : np.ndarray
-        The load vector to apply to the particles.
+        The load vector to apply to the particles; for "pressure", the pressure, which pushes on the face (against its
+        outward normal) when positive, as for the finite elements.
     **kwargs
         Additional keyword arguments. The following are supported:
         - f_t : Callable[[float], float]

@@ -457,7 +457,7 @@ def run_sim(
                 journal=theJournal,
                 particleSurface=surfaceTop,
                 distributedLoadType="pressure",
-                loadVector=np.array([fy]),  # reference stress scale -> lambda is O(1)
+                loadVector=np.array([-fy]),  # reference stress scale -> lambda is O(1)
             )
         )
 

@@ -178,7 +178,7 @@ def run_sim(particleSize, supportRadius, continuityOrder, completenessOrder):
         theJournal,
         theModel.surfaces["rectangular_grid_top"],
         "pressure",
-        np.array([1.0]),
+        np.array([-1.0]),
     )
 
     import sympy as sp
@@ -190,7 +190,7 @@ def run_sim(particleSize, supportRadius, continuityOrder, completenessOrder):
         theJournal,
         EntityBasedSurface("rightTop", {2: theModel.particleSets["rectangular_grid_rightTop"]}),
         "pressure",
-        np.array([-10.0 * nY / 80]),
+        np.array([10.0 * nY / 80]),
         f_t=sp.lambdify(
             sp.symbols("t"),
             sp.sympify("Heaviside(t)"),

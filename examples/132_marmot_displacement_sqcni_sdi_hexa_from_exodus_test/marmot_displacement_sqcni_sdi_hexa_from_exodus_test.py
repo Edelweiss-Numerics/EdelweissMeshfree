@@ -234,7 +234,7 @@ def run_sim():
     #     theJournal,
     #     theModel.surfaces["mesh_particles_sideset_load"],
     #     "pressure",
-    #     np.array([-1e3]),
+    #     np.array([1e3]),
     # )
 
     from edelweissmeshfree.solvers.deprecated.predictors.quadraticpredictor import (
