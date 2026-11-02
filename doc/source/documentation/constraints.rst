@@ -124,6 +124,16 @@ The base classes
    :members:
    :private-members:
 
+``ParticleFiniteElementMortarTie`` constraint class
+---------------------------------------------------
+
+Ties an RKPM domain to a finite element domain, see :doc:`coupled_rkpm_fe`. Its tangent is checked by central
+differences in ``edelweissmeshfree/constraints/test/mortar_tie_test.py``, together with the integrals it stands for.
+
+.. automodule:: edelweissmeshfree.constraints.particlefiniteelementmortartie
+   :members:
+   :private-members:
+
 Constraints for explicit analyses
 ---------------------------------
 
