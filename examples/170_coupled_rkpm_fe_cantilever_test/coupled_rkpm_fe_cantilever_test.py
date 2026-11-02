@@ -500,7 +500,8 @@ def test_finite_element_and_kernel_nodes_share_one_equation_system():
         for i, traction in enumerate(constraint.scalarVariables):
             traction.value = 1.0 + i
 
-    U = layout.writeSolutionToDofVector(dofManager.constructDofVector())
+    U = dofManager.constructDofVector()
+    layout.readStateFromModel(U)
     for node in elementNodes:
         np.testing.assert_array_equal(U[dofsOf(node)], [node.label, -node.label])
     for node in kernelNodes:
