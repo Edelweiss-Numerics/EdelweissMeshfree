@@ -258,7 +258,10 @@ def run_sim(
     )
 
     nonlinearSolver = NonlinearQuasistaticSolver(theJournal)
-    iterationOptions = nonlinearSolver.validOptions.copy()
+    # Only the options that differ from the solver defaults; the per-field dicts are new dicts of this simulation.
+    # (Writing into the per-field dicts of a copy of NonlinearQuasistaticSolver.validOptions would change the
+    # defaults of the class, and with them every later simulation in the same Python process.)
+    iterationOptions = dict()
 
     iterationOptions["max. iterations"] = 15
     iterationOptions["critical iterations"] = 3
@@ -266,16 +269,12 @@ def run_sim(
 
     iterationOptions["default relative flux residual tolerance alt."] = 5e-2
     iterationOptions["default absolute field correction tolerance"] = 1e10
-    iterationOptions["spec. relative flux residual tolerances"]["nonlocal damage"] = 1e10
-    iterationOptions["spec. absolute flux residual tolerances"]["nonlocal damage"] = 1e10
-    iterationOptions["spec. relative flux residual tolerances"]["micro rotation"] = 1e10
-    iterationOptions["spec. absolute flux residual tolerances"]["micro rotation"] = 1e10
-    iterationOptions["spec. relative field correction tolerances"]["nonlocal damage"] = 1e10
-    iterationOptions["spec. absolute field correction tolerances"]["nonlocal damage"] = 1e10
-    # iterationOptions["spec. relative flux residual tolerances"]["nonlocal damage"] = 1e10
-    # iterationOptions["spec. absolute flux residual tolerances"]["nonlocal damage"] = 1e10
-    iterationOptions["spec. relative field correction tolerances"]["micro rotation"] = 1e10
-    iterationOptions["spec. absolute field correction tolerances"]["micro rotation"] = 1e10
+
+    looseTolerances = {"nonlocal damage": 1e10, "micro rotation": 1e10}
+    iterationOptions["spec. relative flux residual tolerances"] = dict(looseTolerances)
+    iterationOptions["spec. absolute flux residual tolerances"] = dict(looseTolerances)
+    iterationOptions["spec. relative field correction tolerances"] = dict(looseTolerances)
+    iterationOptions["spec. absolute field correction tolerances"] = dict(looseTolerances)
 
     linearSolver = getLinSolverByName("pardiso", {})
 
