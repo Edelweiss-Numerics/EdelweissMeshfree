@@ -216,32 +216,37 @@ cdef class MarmotParticleWrapper:
 
 
     def updatePhysicsExplicit(self,
-                                     double[::1] dUc,
-
-                                     double timeNew,
-                                     double dTime, ) :
-        """Evaluate residual for given time, field, and field increment."""
+                              double[::1] dUc,
+                              double timeNew,
+                              double dTime, ):
+        """Take the solution increment; see
+        :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.updatePhysicsExplicit`. A failure in Marmot
+        requests a cutback, as in :meth:`computeKernels`."""
 
         self._initializeStateVarsTemp()
-        self._marmotParticle.updatePhysicsExplicit(&dUc[0], timeNew, dTime)
+        try:
+            self._marmotParticle.updatePhysicsExplicit(&dUc[0], timeNew, dTime)
+        except (RuntimeError, ValueError) as e:
+            raise CutbackRequest(str(e), 0.5)
 
     def computePhysicsKernelsExplicit(self,
-                                     double[::1] Pc ) :
-        """Evaluate residual for given time, field, and field increment."""
+                                      double[::1] Pc ):
+        """Add the internal force of the current state; see
+        :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.computePhysicsKernelsExplicit`."""
 
         self._marmotParticle.computePhysicsKernelsExplicit(&Pc[0])
 
-    def computeLumpedInertia(self, double[::1] mLumped ) :
-        """Compute the lumped mass matrix for the particle."""
+    def computeLumpedInertia(self, double[::1] mLumped ):
+        """Add the lumped mass; see
+        :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedInertia`."""
 
         self._marmotParticle.computeLumpedInertia(&mLumped[0])
 
-    def computeLumpedMomentum(self, double[::1] mLumped ) :
-        """Compute the lumped mass matrix for the particle."""
+    def computeLumpedMomentum(self, double[::1] mLumped ):
+        """Add the lumped momentum; see
+        :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedMomentum`."""
 
         self._marmotParticle.computeLumpedMomentum(&mLumped[0])
-
-
 
     cpdef void _initializeStateVarsTemp(self, ) nogil:
         self._stateVarsTemp[:] = self._stateVars
@@ -266,17 +271,6 @@ cdef class MarmotParticleWrapper:
                                double dTime):
 
         self._marmotParticle.computeDistributedLoad( self._supportedDistributedLoads[loadType.upper()], surfaceID, &load[0], &Pc[0], &Kc[0], timeNew, dTime)
-
-    def computeDistributedLoadExplicit(self,
-                               str loadType,
-                               int surfaceID,
-                               double[::1] load,
-                               double[::1] Pc,
-                               double timeNew,
-                               double dTime):
-
-        self._marmotParticle.computeDistributedLoadExplicit( self._supportedDistributedLoads[loadType.upper()], surfaceID, &load[0], &Pc[0], timeNew, dTime)
-
 
     def getInterpolationVector(self, double[::1] coordinates) -> np.ndarray:
         cdef np.ndarray N = np.zeros(len(self._nodes))

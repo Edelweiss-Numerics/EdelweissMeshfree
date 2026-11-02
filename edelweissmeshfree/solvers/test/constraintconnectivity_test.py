@@ -24,8 +24,8 @@
 #  The full text of the license can be found in the file LICENSE.md at
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
-"""The connectivity update of the constraints in the solvers of EdelweissMeshfree answers only once every constraint
-is up to date.
+"""The connectivity update of the constraints in the deprecated solvers answers only once every constraint is up to
+date.
 
 In a particle simulation there is one constraint per particle, and the update spreads the constraints in chunks over
 the threads. ``Executor.map`` hands out the answers of the chunks lazily, so reducing them directly with ``any`` would
@@ -36,8 +36,8 @@ is asked for: a chunk that the update does not wait for is never run, so the tes
 
 from edelweissfe.journal.journal import Journal
 
-from edelweissmeshfree.solvers.base import nonlinearsolverbase
-from edelweissmeshfree.solvers.base.nonlinearsolverbase import BaseNonlinearSolver
+from edelweissmeshfree.solvers.deprecated import nonlinearsolverbase
+from edelweissmeshfree.solvers.deprecated.nonlinearsolverbase import BaseNonlinearSolver
 
 NUMBER_OF_THREADS = 4
 #: Enough constraints for the update to spread them over the threads.

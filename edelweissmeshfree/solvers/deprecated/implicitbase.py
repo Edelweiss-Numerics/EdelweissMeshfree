@@ -24,7 +24,7 @@ from scipy.sparse import csr_matrix
 
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.particles.base.baseparticle import BaseParticle
-from edelweissmeshfree.solvers.base.nonlinearsolverbase import BaseNonlinearSolver
+from edelweissmeshfree.solvers.deprecated.nonlinearsolverbase import BaseNonlinearSolver
 
 
 class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
