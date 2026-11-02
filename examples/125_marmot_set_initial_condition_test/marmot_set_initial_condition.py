@@ -102,7 +102,11 @@ def run_sim():
     length = 10
     nX = 10
     nY = 10
-    supportRadius = 2
+    # Not a multiple of the particle spacing: the kernel functions sit on the particle centers, and with a
+    # multiple, particle centers lie exactly on the support boundaries of other kernel functions. There, the
+    # support test of the VCI correction decides by round-off whether a particle takes part in the
+    # correction of that kernel function, and the result depends on the order of floating-point operations.
+    supportRadius = 2.5
 
     def theMeshfreeKernelFunctionFactory(node):
         return MarmotMeshfreeKernelFunctionWrapper(node, "BSplineBoxed", supportRadius=supportRadius, continuityOrder=3)
