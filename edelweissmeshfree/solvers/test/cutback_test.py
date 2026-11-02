@@ -137,8 +137,6 @@ def _compressOneCell(solve):
     )
 
     model.prepareYourself(journal)
-    model.nodeFields["displacement"].createFieldValueEntry("dU")
-    model.nodeFields["nonlocal damage"].createFieldValueEntry("dU")
 
     mpmManager = SimpleMaterialPointManager(model.cellSets["all"], model.materialPointSets["all"])
 

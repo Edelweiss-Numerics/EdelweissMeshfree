@@ -127,8 +127,6 @@ def run_sim(materialName):
     )
 
     mpmModel.prepareYourself(journal)
-    mpmModel.nodeFields["displacement"].createFieldValueEntry("dU")
-    mpmModel.nodeFields["nonlocal damage"].createFieldValueEntry("dU")
 
     allCells = mpmModel.cellSets["all"]
     allMPs = mpmModel.materialPointSets["all"]
