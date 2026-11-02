@@ -40,6 +40,7 @@ import numpy as np
 import pytest
 from edelweissfe.config.linsolve import getLinSolverByName
 from edelweissfe.journal.journal import Journal
+from edelweissfe.stepactions.dirichlet import StepAction as Dirichlet
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 
 from edelweissmeshfree.constraints.penaltyequalvalue import PenaltyEqualValue
@@ -53,11 +54,10 @@ from edelweissmeshfree.mpmmanagers.smartmpmmanager import SmartMaterialPointMana
 from edelweissmeshfree.outputmanagers.ensight import (
     OutputManager as EnsightOutputManager,
 )
-from edelweissmeshfree.solvers.nqsmparclength import (
+from edelweissmeshfree.solvers.deprecated.nqsmparclength import (
     NonlinearQuasistaticMarmotArcLengthSolver,
 )
 from edelweissmeshfree.stepactions.bodyload import BodyLoad
-from edelweissmeshfree.stepactions.dirichlet import Dirichlet
 from edelweissmeshfree.stepactions.distributedload import (
     MaterialPointPointWiseDistributedLoad,
 )

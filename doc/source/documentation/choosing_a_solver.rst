@@ -1,14 +1,152 @@
+Choosing a solver
+=================
+
+The nonlinear solver
+--------------------
+
+An :class:`~edelweissmeshfree.models.mpmmodel.MPMModel` is solved by EdelweissFE's implicit static solvers, as a finite
+element model is: the solver asks the model what its equation system is made of (see EdelweissFE's documentation, *What
+the solver asks the model*), and the model answers with its active domain.
+
+.. list-table::
+    :width: 100%
+    :widths: 25 75
+    :header-rows: 1
+
+    * - Solver
+      - Use it for
+    * - ``NIST``
+      - a quasi-static step; the elements, cells and particles are computed one after the other
+    * - ``NISTParallel``
+      - the same, with the elements, cells, particles and material points computed on all threads
+        (``OMP_NUM_THREADS``)
+    * - ``NISTPArcLength``
+      - a quasi-static step under arc length control, e.g. past a limit point; the controller is a step action, named by
+        the solver option ``arcLengthController``
+
+A simulation is set up from Python as any EdelweissFE step. The model holds what defines its connectivity -- the
+managers that assign material points to cells (``mpmManagers``) and particles to kernel functions
+(``particleManagers``), the managers of the variationally consistent integration (``vciManagers``), and the
+constraints. The step holds the loads, the Dirichlet boundary conditions and the arc length controller, by type:
+
+.. code-block:: python
+
+    from edelweissfe.solvers.nonlinearimplicitstaticparallel import NISTParallel
+    from edelweissfe.steps.adaptivestep import AdaptiveStep
+    from edelweissfe.steps.stepmanager import StepActionCollection
+
+    from edelweissmeshfree.solvers.meshfreeconvergencecriterion import (
+        jobInfoWithMeshfreeTolerances,
+        meshfreeCriterionOptions,
+    )
+
+    model.particleManagers.append(particleManager)
+    model.vciManagers.append(vciManager)
+    for constraint in constraints:
+        model.constraints[constraint.name] = constraint
+
+    stepActions = StepActionCollection()
+    stepActions["distributedload"][pressure.name] = pressure
+
+    jobInfo = jobInfoWithMeshfreeTolerances()
+    solver = NISTParallel(jobInfo, journal, linsolver="pardiso", **meshfreeCriterionOptions)
+    step = AdaptiveStep(
+        0, model, fieldOutputController, journal, jobInfo, solver, outputManagers, stepActions,
+        startInc=0.1, maxInc=0.1, minInc=1e-3, maxNumInc=100, maxIter=15, criticalIter=5, maxGrowIter=10,
+    )
+    step.solve()
+
+``jobInfoWithMeshfreeTolerances`` and ``meshfreeCriterionOptions`` set the convergence criterion of EdelweissMeshfree's
+former solvers (see :mod:`~edelweissmeshfree.solvers.meshfreeconvergencecriterion`); tolerances that differ are passed
+by name, e.g. ``jobInfoWithMeshfreeTolerances(fluxResidualTolerance=5e-3)``. The settings of the former solvers map
+onto EdelweissFE's as follows:
+
+.. list-table::
+    :width: 100%
+    :widths: 45 55
+    :header-rows: 1
+
+    * - Former solver
+      - EdelweissFE
+    * - ``max. iterations``, ``critical iterations``, ``allowed residual growths``
+      - step options ``maxIter``, ``criticalIter``, ``maxGrowIter``
+    * - ``failed increment cutback factor``
+      - step option ``cutbackFactor``
+    * - the time stepper
+      - step options ``startInc``, ``maxInc``, ``minInc``, ``maxNumInc``, ``increaseFactor``; a time stepper without the
+        zero increment: ``makeZeroIncrementFirst=False``
+    * - relative and absolute tolerances
+      - the tolerances of ``jobInfoWithMeshfreeTolerances``
+    * - ``predictor=QuadraticPredictor()`` (or ``LinearPredictor()``)
+      - solver options ``extrapolation="quadratic"`` (``"linear"``), ``retryWithoutExtrapolation=True``,
+        ``extrapolateAcrossConnectivityChange=True``
+    * - ``line search``, ``line search after n iterations``, ``line search every n iterations``, ``line search alphas``
+      - solver options ``lineSearch``, ``lineSearchAfterIterations``, ``lineSearchEveryIterations``,
+        ``lineSearchStepLengths``
+    * - ``fall back to quasi Newton after allowed residual growths``
+      - solver option ``fallBackToQuasiNewton``
+    * - a linear solver instance
+      - solver option ``linsolver``: a type with its defaults, or a definition in ``jobInfo["linearSolvers"]``
+        (see the worked configuration below)
+    * - ``useDirectCSRAssembly``
+      - solver option ``systemMatrixAssembly="direct"`` (see :doc:`assembly`)
+    * - ``restartWriteInterval``, ``readRestart``
+      - EdelweissFE's restart checkpoints, see below
+
+**Restart.** EdelweissFE's restart output manager writes a checkpoint of the converged state; an ``MPMModel`` adds the
+state of its material points and particles, from which their positions follow (see
+:meth:`~edelweissmeshfree.models.mpmmodel.MPMModel.writeRestart`). The output manager writes the state of every output
+manager, which it finds in ``model.outputManagers``. A resumed run builds the model as the checkpointed run did,
+restores its state, and continues the step:
+
+.. code-block:: python
+
+    from edelweissfe.outputmanagers.restart import OutputManager as RestartOutputManager
+    from edelweissfe.outputmanagers.restart import RestartOutputManagerSchema
+    from edelweissfe.utils.checkpoint import ResumeCheckpoint
+
+    restartOutput = RestartOutputManager(
+        "restart", model, fieldOutputController, journal, None,
+        configuration=RestartOutputManagerSchema(writeInterval=1, baseName="restart"),
+    )
+    outputManagers = [ensightOutput, restartOutput]
+    model.outputManagers = {outputManager.name: outputManager for outputManager in outputManagers}
+
+    # in the resumed run, right after model.prepareYourself(journal):
+    resumeCheckpoint = ResumeCheckpoint("restart_1.h5")
+    resumeCheckpoint.restoreModel(model, journal)
+    # ... set up the step as before, then
+    step.solve(resumeCheckpoint)
+
+**Differences to the former solvers.** The same settings give the same Newton iterations; a few things are different
+by design:
+
+- The reaction forces ``P`` at the nodes are those of the elements, cells and particles; the former solvers added the
+  forces of the constraints.
+- A constraint that couples the same degree of freedom more than once adds every contribution to it; the former
+  solvers kept only one of them.
+- A cell, particle or material point whose material fails in Marmot asks for the increment to be cut back to half its
+  size, as an EdelweissFE element does, and the step cuts back by the larger of this and ``cutbackFactor``; the former
+  solvers always cut back by their own factor.
+- A step that reaches ``maxNumInc`` ends there, and the simulation continues; the former solvers reported a failed
+  incrementation. A step that cannot reduce its increment any further raises ``StepFailed``.
+- The quadratic extrapolation is the parabola through the last three accepted states; the former quadratic predictor
+  was not exact.
+- The scalar variables, e.g. Lagrange multipliers, are checked for convergence with EdelweissFE's tolerances.
+
+The former solvers are kept, deprecated, in :mod:`edelweissmeshfree.solvers.deprecated`.
+
 Choosing a linear solver
-========================
+------------------------
 
 Every Newton iteration of an implicit meshfree simulation spends most of its time in one linear solve,
 so the choice of linear solver and its settings usually matters more than anything else you can tune.
-This page collects what has been **measured** on RKPM problems, what turned out not to matter, and how
+This section collects what has been **measured** on RKPM problems, what turned out not to matter, and how
 to find out for your own model.
 
 .. warning::
 
-   Every number on this page was measured on one problem class: a **Taylor-bar impact, RS-SNNI x SDI
+   Every number in this section was measured on one problem class: a **Taylor-bar impact, RS-SNNI x SDI
    RKPM discretisation, support scaling factor 2.2**, between 15,120 and 120,960 degrees of freedom,
    on deformed post-impact states with active penalty contact.
 
@@ -17,7 +155,7 @@ to find out for your own model.
    so treat a figure from a different discretisation as a hypothesis to re-measure.
 
 Start here
-----------
+**********
 
 .. list-table:: A first choice
     :width: 100%
@@ -34,10 +172,10 @@ Start here
       - ``blockamg``
       - AMG's iteration count is mesh independent here; a direct factorisation is not
     * - above ~50,000 DOF
-      - ``blockamg``, and ``useDirectCSRAssembly`` on the solver
+      - ``blockamg``, and ``systemMatrixAssembly="direct"`` on the solver
       - the staging assembly path cannot build its gather map beyond ~2.15e9 COO pairs
     * - memory bound rather than time bound
-      - ``blockamg`` + ``useDirectCSRAssembly``
+      - ``blockamg`` + ``systemMatrixAssembly="direct"``
       - a direct factorisation's fill-in is the one term that has never been bounded here
 
 The crossover near 40,000 DOF is a measured property of this problem class, not a general rule. Below
@@ -45,7 +183,7 @@ it, PARDISO with symbolic reuse beat every iterative configuration tried; above 
 cost grows as roughly ``dof**1.4`` while AMG's grows about linearly.
 
 The direct solver
------------------
+*****************
 
 ``reuseSymbolicFactorization``
     **Always turn this on** for a Newton sequence. The sparsity pattern is identical across the
@@ -60,7 +198,7 @@ Threading
 .. _rkpm-operator-properties:
 
 The operator is the thing
--------------------------
+*************************
 
 Before tuning a preconditioner it is worth knowing what the RKPM operator looks like, because it does
 not resemble the sparse operators AMG was designed for. Measured at 43,350 DOF:
@@ -101,7 +239,7 @@ bigger lever than the solver -- but note that the support radius is an accuracy 
 one: the solution changes with it.
 
 Settings that matter
---------------------
+********************
 
 ``hierarchyDropTol`` -- the largest single win
 """"""""""""""""""""""""""""""""""""""""""""""
@@ -224,7 +362,7 @@ At 70,800 DOF it also pushed the Newton loop from 5 iterations to 8: looser line
 inner iterations and paid for them with more outer ones. Measure it on your problem before enabling it.
 
 Settings measured to do nothing
--------------------------------
+*******************************
 
 These were each tested at 43,350 and 70,800 DOF against the shipped configuration. They are recorded so
 that time is not spent on them again.
@@ -258,7 +396,7 @@ that time is not spent on them again.
         this preconditioner is insensitive to near-null-space fidelity.
 
 Where the time actually goes
-----------------------------
+****************************
 
 Only about a quarter to three quarters of the linear solve is the Krylov iteration, depending on the
 support radius. At support 1.8, with iteration counts low, the split was:
@@ -293,7 +431,7 @@ If your iteration counts are low, do not assume the Krylov loop is where your ti
 ``blockamg:`` entries in the performance table before optimising anything.
 
 Memory, and what limits problem size
-------------------------------------
+************************************
 
 For large models the binding constraint is usually memory, and usually a *transient* rather than the
 steady state:
@@ -315,7 +453,7 @@ steady state:
 
 Practical consequences:
 
-- **Use** ``useDirectCSRAssembly`` **above ~50,000 DOF.** It is not only faster; the staging assembly
+- **Use** ``systemMatrixAssembly="direct"`` **above ~50,000 DOF.** It is not only faster; the staging assembly
   path stores an int32 index per COO pair and therefore cannot build its gather map beyond 2.15e9 pairs,
   which this problem class reaches at about 50,000 DOF -- with only a third of a 187 GB machine in use.
 - Assembly cost and memory then scale **linearly** in DOF, measured over a 2.8x range.
@@ -324,7 +462,7 @@ Practical consequences:
   solve itself occupies.
 
 Diagnosing a slow solve
------------------------
+***********************
 
 **Read the per-solve log lines.** ``blockamg`` prints one line per solve with its outer iteration
 count, whether the hierarchy was refreshed or reused, the tolerance it was given, and the time taken. A
@@ -342,7 +480,7 @@ writes the matrix and right-hand side of any solve exceeding a given iteration c
 analysis. That is how the operator table above was produced.
 
 Pitfalls when measuring
------------------------
+***********************
 
 Four traps, each of which produced a wrong conclusion before being caught.
 
@@ -366,24 +504,37 @@ solve at support 1.8 and 5.8% at support 2.2, because the Krylov loop's share of
 different in the two cases.
 
 A worked configuration
-----------------------
+**********************
 
 For an RKPM impact problem above the crossover, on the deformed states where the work actually happens:
 
 .. code-block:: python
 
-    from edelweissfe.config.linsolve import getLinSolverByName
+    from edelweissfe.config import registry
+    from edelweissfe.config.linsolve import LinearSolverDefinition
+    from edelweissfe.utils.schema import buildSchemaFromOptions
 
-    linearSolver = getLinSolverByName(
-        "blockamg",
-        {
-            "tolerance": 1e-4,  # fixed; note this bypasses Eisenstat--Walker forcing entirely
-            "symmetric": False,  # the reverse sweep is a wasted V-cycle for a single field
-            "dropTolerance": 1e-4,  # ~1.8x on the linear solve; verify on your own operator first
-        },
+    blockamg, blockamgSchema = registry.lookup("linsolver", "blockamg")
+    jobInfo["linearSolvers"] = {
+        "amg": LinearSolverDefinition(
+            blockamg,
+            buildSchemaFromOptions(
+                blockamgSchema,
+                {
+                    "tolerance": 1e-4,  # fixed; note this bypasses Eisenstat--Walker forcing entirely
+                    "symmetric": False,  # the reverse sweep is a wasted V-cycle for a single field
+                    "dropTolerance": 1e-4,  # ~1.8x on the linear solve; verify on your own operator first
+                },
+            ),
+        )
+    }
+
+    solver = NISTParallel(
+        jobInfo,
+        journal,
+        linsolver="amg",
+        **meshfreeCriterionOptions | {"systemMatrixAssembly": "direct"},  # required above ~50,000 DOF
     )
-
-    nonlinearSolver.useDirectCSRAssembly = True   # required above ~50,000 DOF
 
 Then check three things in the performance table before tuning further: the share of the linear solve
 that is actually ``blockamg: outer GMRES``, the outer iteration counts on the *late* Newton iterations of

@@ -225,7 +225,6 @@ def run_sim():
         0.0, tMax, incSize, incSize, incSize / 1e8, 101, theJournal, increaseFactor=1.5
     )
 
-    # nonlinearSolver = NQSParallelForMarmot(theJournal)
     nonlinearSolver = ExplicitMultiphysicsSolver(theJournal)
 
     # for each particle, set velocity in y direction to -0.1

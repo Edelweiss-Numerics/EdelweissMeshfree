@@ -34,6 +34,7 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 import gc
+import warnings
 from collections.abc import Callable
 
 import edelweissfe.utils.performancetiming as performancetiming
@@ -58,12 +59,14 @@ from prettytable import PrettyTable
 
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.mpmmanagers.base.mpmmanagerbase import MPMManagerBase
-from edelweissmeshfree.numerics.predictors.basepredictor import BasePredictor
 from edelweissmeshfree.particlemanagers.base.baseparticlemanager import (
     BaseParticleManager,
 )
-from edelweissmeshfree.solvers.base.implicitbase import BaseNonlinearImplicitSolver
 from edelweissmeshfree.solvers.base.nonlinearsolverbase import RestartHistoryManager
+from edelweissmeshfree.solvers.deprecated.implicitbase import (
+    BaseNonlinearImplicitSolver,
+)
+from edelweissmeshfree.solvers.deprecated.predictors.basepredictor import BasePredictor
 from edelweissmeshfree.stepactions.base.mpmbodyloadbase import MPMBodyLoadBase
 from edelweissmeshfree.stepactions.base.mpmdistributedloadbase import (
     MPMDistributedLoadBase,
@@ -74,8 +77,12 @@ from edelweissmeshfree.stepactions.particledistributedload import (
 
 
 class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
-    """This is the serial nonlinear implicit quasi static solver.
+    """This is the nonlinear implicit quasi static solver of EdelweissMeshfree.
 
+    .. deprecated::
+        Use EdelweissFE's :class:`~edelweissfe.solvers.nonlinearimplicitstatic.NIST` or
+        :class:`~edelweissfe.solvers.nonlinearimplicitstaticparallel.NISTParallel`, which solve an
+        :class:`~edelweissmeshfree.models.mpmmodel.MPMModel` (see :mod:`edelweissmeshfree.solvers.deprecated`).
 
     Parameters
     ----------
@@ -84,6 +91,9 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
     """
 
     identification = "MPM-NQS-Solver"
+
+    #: The EdelweissFE solver that replaces this one, named in the deprecation warning.
+    replacedBy = "EdelweissFE's NIST or NISTParallel"
 
     validOptions = {
         "max. iterations": 10,
@@ -111,6 +121,13 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
     }
 
     def __init__(self, journal: Journal):
+        warnings.warn(
+            "{:} is deprecated, use {:} instead (see edelweissmeshfree.solvers.deprecated)".format(
+                type(self).__name__, self.replacedBy
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
         super().__init__(journal)
 
     @performancetiming.timeit("solve step")
@@ -323,7 +340,6 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                                 bodyLoads,
                                 distributedLoads,
                                 particleDistributedLoads,
-                                reducedNodeSets,
                                 elements,
                                 U,
                                 activeCells,
@@ -431,7 +447,6 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
         bodyLoads: list,
         distributedLoads: list,
         particleDistributedLoads: list,
-        reducedNodeSets: list,
         elements: list,
         Un: DofVector,
         activeCells: list,
@@ -457,8 +472,6 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
             The list of bodyload StepActions.
         distributedLoads
             The list of distributed load StepActions.
-        activeNodeSets
-            The list of (reduced) active NodeSets.
         elements
             The finite elements.
         Un
@@ -520,7 +533,6 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                 bodyLoads,
                 distributedLoads,
                 particleDistributedLoads,
-                reducedNodeSets,
                 elements,
                 Un,
                 activeCells,
@@ -539,10 +551,10 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
             )
 
             if iterationCounter == 0 and dirichlets:
-                Rhs = self._applyDirichlet(timeStep, Rhs, dirichlets, reducedNodeSets, theDofManager)
+                Rhs = self._applyDirichlet(timeStep, Rhs, dirichlets, theDofManager)
             else:
                 for dirichlet in dirichlets:
-                    Rhs[self._findDirichletIndices(theDofManager, dirichlet, reducedNodeSets[dirichlet.nSet])] = 0.0
+                    Rhs[self._findDirichletIndices(theDofManager, dirichlet)] = 0.0
 
                 incrementResidualHistory = self._computeResiduals(
                     Rhs, ddU, dU, F, incrementResidualHistory, theDofManager
@@ -597,7 +609,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
             else:
                 K_CSR = K_CSR_elastic.copy()
 
-            K_CSR = self._applyDirichletKCsr(K_CSR, dirichlets, theDofManager, reducedNodeSets)
+            K_CSR = self._applyDirichletKCsr(K_CSR, dirichlets, theDofManager)
 
             ddU = self._linearSolve(K_CSR, Rhs, linearSolver)
 
@@ -619,7 +631,6 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                         bodyLoads,
                         distributedLoads,
                         particleDistributedLoads,
-                        reducedNodeSets,
                         elements,
                         Un,
                         activeCells,
@@ -637,9 +648,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                         F,
                     )
                     for dirichlet in dirichlets:
-                        Rhs_[self._findDirichletIndices(theDofManager, dirichlet, reducedNodeSets[dirichlet.nSet])] = (
-                            0.0
-                        )
+                        Rhs_[self._findDirichletIndices(theDofManager, dirichlet)] = 0.0
 
                     return Rhs_
 
@@ -664,7 +673,6 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
         bodyLoads: list,
         distributedLoads: list,
         particleDistributedLoads: list,
-        reducedNodeSets: list,
         elements: list,
         Un: DofVector,
         activeCells: list,

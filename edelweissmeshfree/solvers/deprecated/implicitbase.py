@@ -11,11 +11,9 @@ from edelweissfe.numerics.parallelizationutilities import (
     isFreeThreadingSupported,
 )
 from edelweissfe.numerics.systemmatrixassembly import (
-    DirectCSRSystemMatrixAssembly,
     SystemMatrixAssembly,
     VIJSystemMatrixAssembly,
 )
-from edelweissfe.sets.nodeset import NodeSet
 from edelweissfe.solvers.base.parallelelementcomputation import chunked_iterable
 from edelweissfe.stepactions.base.dirichletbase import DirichletBase
 from edelweissfe.stepactions.base.loadbase import LoadBase
@@ -38,7 +36,6 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         bodyLoads: list,
         distributedLoads: list,
         particleDistributedLoads: list,
-        reducedNodeSets: list,
         elements: list,
         Un: DofVector,
         activeCells: list,
@@ -97,7 +94,6 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         K: VIJSystemMatrix,
         dirichlets: list[DirichletBase],
         theDofManager: DofManager,
-        reducedNodeSets: dict[NodeSet, NodeSet],
     ) -> VIJSystemMatrix:
         """Apply the dirichlet bcs on the global stiffness matrix
         Is called by solveStep() before solving the global system.
@@ -118,17 +114,12 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
 
         if dirichlets:
             for dirichlet in dirichlets:
-                reducedNodeSet = reducedNodeSets[dirichlet.nSet]
-                for row in self._findDirichletIndices(theDofManager, dirichlet, reducedNodeSet):  # dirichlet.indices:
+                for row in self._findDirichletIndices(theDofManager, dirichlet):
                     K.data[K.indptr[row] : K.indptr[row + 1]] = 0.0
 
             # K[row, row] = 1.0 @ once, faster than within the loop above:
             diag = K.diagonal()
-            diag[
-                np.concatenate(
-                    [self._findDirichletIndices(theDofManager, d, reducedNodeSets[d.nSet]) for d in dirichlets]
-                )
-            ] = 1.0
+            diag[np.concatenate([self._findDirichletIndices(theDofManager, d) for d in dirichlets])] = 1.0
             K.setdiag(diag)
 
             # NOTE: the zeroed off-diagonals are deliberately kept as explicitly stored zeros.
@@ -648,46 +639,6 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
                 c.computeKernels(U_np[c], dU[c], Pc, Kc, timeStep)
                 P[c] += Pc
 
-    @performancetiming.timeit("instancing csr generator")
-    def _makeCachedCOOToCSRGenerator(self, systemMatrix, patternOnly: bool = False):
-        """Build the CSR pattern, and the gather map unless only the pattern is wanted.
-
-        Parameters
-        ----------
-        systemMatrix
-            Supplies the I/J index arrays and nDof.
-        patternOnly
-            Skip the gather map. Halves the build's sort array and removes the 32-bit cap on the pair
-            count, which is what actually limits the model size -- see ``CSRCore``'s constructor.
-        """
-        return CSRGenerator(systemMatrix, patternOnly)
-
-    @performancetiming.timeit("instancing direct csr assembler")
-    def _makeDirectCSRAssembly(self, csrGenerator, theDofManager: DofManager) -> DirectCSRSystemMatrixAssembly:
-        """Build the direct-to-CSR assembly on the pattern ``csrGenerator`` holds, with every entity that contributes
-        a block registered (see EdelweissFE's
-        :class:`~edelweissfe.numerics.systemmatrixassembly.DirectCSRSystemMatrixAssembly`), and keep its scatter and
-        entity numbering for the compiled particle kernel.
-
-        Parameters
-        ----------
-        csrGenerator
-            The generator whose pattern is borrowed.
-        theDofManager
-            The DofManager instance, whose ``idcsOfHigherOrderEntitiesInVIJ`` is both the entity list and each
-            entity's offset into the VIJ ordering.
-
-        Returns
-        -------
-        DirectCSRSystemMatrixAssembly
-            The assembly, for as many threads as the compiled kernels use.
-        """
-
-        K = DirectCSRSystemMatrixAssembly(csrGenerator, theDofManager, self.numThreads)
-        self._directCSRAssembler = K.assembler
-        self._directCSREntityIds = K.entityIds
-        return K
-
     @performancetiming.timeit("creation newton cache")
     def _createNewtonCache(self, theDofManager):
         """Create expensive objects, which may be reused if the global system does not change.
@@ -695,8 +646,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         Parameters
         ----------
         theDofManager
-            The DofManager instance. The direct-to-CSR assembler takes its entity list from it, since it
-            is the only place that knows all of them.
+            The DofManager instance.
 
         Returns
         -------
@@ -704,50 +654,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             The collection of expensive objects.
         """
 
-        # Release the previous connectivity's pattern and assembler *before* building the new ones.
-        # nqs.py drops its own reference to the cache when the active domain changes, but these two
-        # attributes are otherwise only overwritten at the end of this method -- so the old objects stay
-        # alive for the whole of the new build, and both are large. At 120,960 DOF the old assembler
-        # alone is the offset map, the old generator the CSR pattern, and the new build's own transient is the
-        # I/J arrays plus the sort keys; holding all of it at once is what made a spin-up peak at
-        # 161.43 GiB where a single increment needs 100.34. Nothing is lost by releasing early: a
-        # connectivity change renumbers the DOFs, which makes the old pattern meaningless.
-        #
-        # This fires on most increments, not rarely -- 22 rebuilds in 38 increments at 120,960 DOF.
-        self._csrGenerator = None
-        self._directCSRAssembler = None
-        self._directCSREntityIds = None
-
-        if self.useDirectCSRAssembly:
-            if self.verifyDirectCSRAssembly or self.timeDirectCSRAssembly:
-                raise ValueError(
-                    "verifyDirectCSRAssembly / timeDirectCSRAssembly compare the direct path against "
-                    "the VIJ path and therefore need the staging array, which useDirectCSRAssembly "
-                    "does not build. Run the diagnostics with useDirectCSRAssembly off."
-                )
-
-            # No staging array is built at all -- that array is 12.84 GiB at 43,350 DOF and skipping
-            # it is the entire point. CSRGenerator and the assembler need only I/J/nDof, which the
-            # DofManager supplies from its own arrays.
-            # Pattern only: the assembler borrows indptr/indices and nothing else, so the gather map is
-            # never built. That halves the build's sort array (16 bytes per pair down to 8, the largest
-            # allocation in the whole solve) and removes the 32-bit cap on the pair count, which is the
-            # measured ceiling on model size -- it bites at ~50,000 DOF with a third of the machine in
-            # use. The generator keeps the pattern and refuses to gather; nothing here asks it to.
-            csrGenerator = self._makeCachedCOOToCSRGenerator(theDofManager, patternOnly=True)
-            self._csrGenerator = csrGenerator
-            K = self._makeDirectCSRAssembly(csrGenerator, theDofManager)
-        else:
-            csrGenerator = self._makeCachedCOOToCSRGenerator(theDofManager)
-
-            # kept reachable so the assembly benchmark can time the production gather itself rather
-            # than a stand-in for it; same lifetime as the pattern, like the assembler below
-            self._csrGenerator = csrGenerator
-
-            if self.verifyDirectCSRAssembly or self.timeDirectCSRAssembly:
-                self._makeDirectCSRAssembly(csrGenerator, theDofManager)
-
-            K = VIJSystemMatrixAssembly(csrGenerator, theDofManager, 1)
+        csrGenerator = CSRGenerator(theDofManager)
+        K = VIJSystemMatrixAssembly(csrGenerator, theDofManager, 1)
 
         dU = theDofManager.constructDofVector()
         Rhs = theDofManager.constructDofVector()
