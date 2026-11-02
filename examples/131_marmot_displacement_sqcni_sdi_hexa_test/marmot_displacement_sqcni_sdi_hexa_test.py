@@ -228,7 +228,7 @@ def run_sim():
         theJournal,
         theModel.surfaces["box_grid_top"],
         "pressure",
-        np.array([-2e1]),
+        np.array([2e1]),
     )
 
     from edelweissmeshfree.solvers.deprecated.predictors.quadraticpredictor import (

@@ -224,7 +224,7 @@ def run_sim():
         theJournal,
         theModel.surfaces["rectangular_grid_top"],
         "pressure",
-        np.array([-2]),
+        np.array([2]),
     )
 
     try:

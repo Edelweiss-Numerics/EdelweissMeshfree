@@ -316,7 +316,7 @@ def run_sim(
         journal=theJournal,
         particleSurface=surfacePressure,
         distributedLoadType="pressure",
-        loadVector=np.array([-10]),
+        loadVector=np.array([10]),
         # surfaceID=1,
         f_t=lambda t: t,
     )
@@ -326,7 +326,7 @@ def run_sim(
     #    journal=theJournal,
     #    particles=theModel.particleSets[f"{name}__s_top_S3"],
     #    distributedLoadType="pressure",
-    #    loadVector=np.array([-10]),
+    #    loadVector=np.array([10]),
     #    surfaceID=3,
     #    f_t=lambda t: t,
     # )
