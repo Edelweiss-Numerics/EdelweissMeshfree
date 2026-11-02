@@ -42,8 +42,12 @@ displacement, and the acceleration is the net force divided by a lumped mass,
 
 .. math::
 
-    \\boldsymbol{v}_{n+1/2} = \\boldsymbol{v}_{n-1/2} + \\Delta t\\, \\boldsymbol{M}^{-1} \\boldsymbol{P}_n, \\qquad
-    \\Delta \\boldsymbol{u}_{n+1} = \\Delta t\\, \\boldsymbol{v}_{n+1/2}.
+    \\boldsymbol{v}_{n+1/2} = \\boldsymbol{v}_{n-1/2}
+        + \\tfrac{1}{2} \\left( \\Delta t_{n+1} + \\Delta t_n \\right) \\boldsymbol{M}^{-1} \\boldsymbol{P}_n, \\qquad
+    \\Delta \\boldsymbol{u}_{n+1} = \\Delta t_{n+1}\\, \\boldsymbol{v}_{n+1/2},
+
+with :math:`\\Delta t_0 = 0`: the first increment of motion starts from the velocity at rest,
+:math:`\\boldsymbol{v}_{1/2} = \\boldsymbol{v}_0 + \\tfrac{1}{2} \\Delta t_1 \\boldsymbol{M}^{-1} \\boldsymbol{P}_0`.
 
 What differs is the discretization it is applied to. NED integrates nodes that carry their total solution on a fixed
 mesh, and an element advances its state and returns its force in one call. The kernel functions of an RKPM model move
@@ -278,7 +282,11 @@ class MeshfreeExplicitDynamic(NonlinearSolverBase):
         dU[:] = 0.0
         if dT != 0.0:
             with performancetiming.timeit("kinematic update"):
-                self._V += self._Minv * self._P * dT
+                # The velocity lives at the half increments, the force at the full ones, so the velocity advances by
+                # the time between two half increments. The first increment of motion starts from the velocity at
+                # rest, a full increment earlier: it advances by half an increment (the previous one counts zero).
+                previousTimeIncrement = self.prevTimeStep.timeIncrement if self.prevTimeStep is not None else 0.0
+                self._V += self._Minv * self._P * (0.5 * (dT + previousTimeIncrement))
                 np.multiply(self._V, dT, out=dU)
 
         self.applyStepActionsAtIncrementStart(model, timeStep, step.actions)
