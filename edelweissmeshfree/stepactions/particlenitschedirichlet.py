@@ -85,6 +85,9 @@ class ParticleNitscheDirichlet(ParticleDistributedLoadBase):
         Amplitude function of the prescribed value over step progress (default linear).
     """
 
+    #: The prescribed value reached by the steps before, this step's increment, and whether it is idle.
+    checkpointedState = {"_gAtStepStart": np.ndarray, "_delta": np.ndarray, "_idle": bool}
+
     def __init__(
         self,
         name: str,

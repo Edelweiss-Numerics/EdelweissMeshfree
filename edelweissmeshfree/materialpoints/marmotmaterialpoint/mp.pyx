@@ -136,6 +136,17 @@ cdef class MarmotMaterialPointWrapper:
     cpdef void _initializeStateVarsTemp(self, ) nogil:
         self._stateVarsTemp[:] = self._stateVars
 
+    def getRestartData(self,):
+        """The state of the last accepted increment; the position of the material point follows from it."""
+
+        return np.asarray(self._stateVars).copy()
+
+    def readRestartData(self, data):
+        """Restore the state :meth:`getRestartData` returned, and with it the position."""
+
+        np.asarray(self._stateVars)[:] = data[:]
+        self._initializeStateVarsTemp()
+
     def getResultArray(self, result:str, getPersistentView:bool=True):
         """Get the array of a result, possibly as a persistent view which is continiously
         updated by the underlying MarmotMaterialPoint."""

@@ -126,3 +126,9 @@ class MaterialPoint(MaterialPointBase):
 
     def computeYourself(self, timeTotal: float, dT: float):
         pass
+
+    def getRestartData(self) -> np.ndarray:
+        return self._displacement.copy()
+
+    def readRestartData(self, restartData: np.ndarray):
+        self._displacement[:] = restartData

@@ -172,6 +172,15 @@ class PythonMaterialPoint(MaterialPointBase):
         self._strain[:] = self._strain_temp
         self._stress[:] = self._stress_temp
 
+    def getRestartData(self) -> np.ndarray:
+        """The displacement, strain and stress of the last accepted increment."""
+        return np.concatenate((self._displacement, self._strain, self._stress))
+
+    def readRestartData(self, restartData: np.ndarray):
+        """Restore the displacement, strain and stress :meth:`getRestartData` returned."""
+        self._displacement[:], self._strain[:], self._stress[:] = np.split(np.asarray(restartData), (2, 6))
+        self.resetToLastValidStateAndPosition()
+
     def resetToLastValidStateAndPosition(self):
         """Reset to the last converged state."""
         self._displacement_temp[:] = self._displacement
