@@ -64,6 +64,11 @@ class ParticleMortarWeakDirichlet(MPMConstraintBase):
 
     is smooth by construction: no alternating point forces, no pressure checkerboard.
 
+    The field values u_i(x_q) are increments on the current configuration, and ubar_i is the share of the step's
+    prescribed increment that falls into the current increment, so the condition is one on increments. The multipliers
+    lambda_ik are totals: the traction that balances the total stresses of the particles, read from ``U_np``, where it
+    continues from the last converged increment.
+
     Parameters
     ----------
     name
@@ -80,7 +85,7 @@ class ParticleMortarWeakDirichlet(MPMConstraintBase):
         Highest polynomial order of the multiplier field per constrained component.
     """
 
-    #: Carries nothing from one increment to the next.
+    #: The multipliers are scalar variables of the model, which the model's checkpoint holds.
     checkpointedState = {}
 
     def __init__(
@@ -176,9 +181,11 @@ class ParticleMortarWeakDirichlet(MPMConstraintBase):
         return xi, w
 
     def computeKernels(self, U_np: np.ndarray, dU: np.ndarray, P: np.ndarray, K: np.ndarray, timeStep: TimeStep):
+        # the nodal field values come first, the multipliers last; the nodal values are increments, the multipliers
+        # totals
         nL = self._nLagrangianMultipliers
         dU_U = dU[:-nL]
-        dU_L = dU[-nL:]
+        multipliers = U_np[-nL:]
         P_U = P[:-nL]
         P_L = P[-nL:]
 
@@ -211,22 +218,22 @@ class ParticleMortarWeakDirichlet(MPMConstraintBase):
 
             for k in range(self._nModes):
                 lag = comp * self._nModes + k
-                dL_l = dU_L[lag]
+                multiplier = multipliers[lag]
 
                 wPk = w * P_legendre[k]
-                g_l = wPk @ gap_q
-                dg_l_dU = wPk @ B
+                g = wPk @ gap_q
+                dg_dU = wPk @ B
 
-                P_U_i += dL_l * dg_l_dU
-                P_L[lag] += g_l
+                P_U_i += multiplier * dg_dU
+                P_L[lag] += g
 
-                K_UL_j[:, lag] += dg_l_dU
-                K_LU_j[lag, :] += dg_l_dU
+                K_UL_j[:, lag] += dg_dU
+                K_LU_j[lag, :] += dg_dU
 
                 if k == 0:
                     # P_0 = 1: the zeroth multiplier is the resultant of the (normalized)
                     # traction distribution
-                    self.reactionForce[i] += dL_l
+                    self.reactionForce[i] += multiplier
 
 
 def ParticleMortarWeakDirichletOnParticleSetFactory(

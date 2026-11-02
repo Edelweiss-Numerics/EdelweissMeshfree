@@ -45,8 +45,12 @@ class ParticleLagrangianWeakDirichlet(MPMConstraintBase):
         \mathbf{K}_{\lambda_i U_i} \mathrel{+}= \boldsymbol{N}(\boldsymbol{x}_c)^T,
 
     so that it acts on the particle with the point force :math:`-\lambda_i` at :math:`\boldsymbol{x}_c`. The tangent is
-    symmetric, as the constraint stems from the potential :math:`\sum_i \lambda_i g_i`. ``reactionForce`` holds, per
-    component of the field, the multiplier: the force with which the particle acts on the constraint.
+    symmetric, as the constraint stems from the potential :math:`\sum_i \lambda_i g_i`.
+
+    The condition :math:`g_i` is one on increments, the multiplier :math:`\lambda_i` is a total: the point force that
+    balances the total stress of the particle, read from ``U_np``, where it continues from the last converged
+    increment. ``reactionForce`` holds, per component of the field, the multiplier: the force with which the particle
+    acts on the constraint.
 
     The multipliers are ordered as the components in ``prescribedStepDelta``.
 
@@ -71,7 +75,7 @@ class ParticleLagrangianWeakDirichlet(MPMConstraintBase):
         The vertex that is constrained, if ``location`` is ``"vertex"``.
     """
 
-    #: Carries nothing from one increment to the next: the multipliers are unknowns of every increment.
+    #: The multipliers are scalar variables of the model, which the model's checkpoint holds.
     checkpointedState = {}
 
     def __init__(
@@ -174,10 +178,11 @@ class ParticleLagrangianWeakDirichlet(MPMConstraintBase):
         return particle.getVertexCoordinates()[self._vertexID]
 
     def computeKernels(self, U_np: np.ndarray, dU: np.ndarray, P: np.ndarray, K: np.ndarray, timeStep: TimeStep):
-        # the nodal field values come first, the multipliers last
+        # the nodal field values come first, the multipliers last; the nodal values are increments, the multipliers
+        # totals
         nU = len(self._nodes) * self._fieldSize
         dU_U = dU[:nU]
-        multipliers = dU[nU:]
+        multipliers = U_np[nU:]
         P_U = P[:nU]
         P_L = P[nU:]
 

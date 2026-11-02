@@ -31,7 +31,10 @@ class MPMConstraintBase(ConstraintBase):
       (empty if it carries none), so that a restart can restore it.
 
     The nodal values of the particles and of the cells are increments on the current configuration, so the
-    constraints here read ``dU``, the increment since the last converged state, and leave ``U_np`` unused.
+    constraints here read them from ``dU``, the increment since the last converged state. A Lagrange multiplier, in
+    contrast, is a force or a traction, which balances the total stresses of the particles or elements: it is a
+    total value, read from ``U_np``, where the solver continues it from the last converged increment. The model holds
+    the multipliers as its scalar variables, and its checkpoint holds them with it.
 
     A constraint that acts only in an explicit analysis, with forces and without a tangent, derives from
     :class:`~edelweissmeshfree.constraints.base.mpmexplicitconstraintbase.MPMExplicitConstraintBase` instead.

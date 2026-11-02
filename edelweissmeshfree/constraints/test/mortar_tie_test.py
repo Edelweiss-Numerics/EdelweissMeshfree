@@ -37,6 +37,7 @@
 two particles to its right, whose stand-in shape functions are a partition of unity (see ``_residualtangent``):
 
 - its tangent is the derivative of its residual contribution;
+- it reads the increments at the nodes, from ``dU``, and the tractions as totals, from ``U_np``;
 - the derivatives of the gap are the integrals they stand for: the edge mass matrix on the finite element side, and,
   as the shape functions on both sides sum to one, row sums that are the integrals of the edge shape functions;
 - a translation of both sides by the same increment leaves no gap, and a common traction is transmitted with equal
@@ -58,7 +59,11 @@ from edelweissfe.variables.scalarvariable import ScalarVariable
 from edelweissmeshfree.constraints.particlefiniteelementmortartie import (
     ParticleFiniteElementMortarTie,
 )
-from edelweissmeshfree.constraints.test._residualtangent import ParticleStandIn
+from edelweissmeshfree.constraints.test._residualtangent import (
+    ParticleStandIn,
+    assertIncrementsAtNodesAndTotalMultipliersAreRead,
+    stateInAnIncrement,
+)
 from edelweissmeshfree.fields.nodefield import MPMNodeField
 from edelweissmeshfree.models.mpmmodel import MPMModel
 
@@ -104,14 +109,24 @@ def tie():
     return _tie(*_model())
 
 
-def test_the_tangent_is_the_derivative_of_the_residual_contribution(tie):
-    dU = 0.02 * np.random.default_rng(20261102).standard_normal(tie.nDof)
+def _randomState(tie) -> tuple[np.ndarray, np.ndarray]:
+    """``U_np`` and ``dU`` of random increments at the nodes and random total tractions."""
 
-    P, K = residualContributionAndTangent(tie, dU, dU, TIMESTEP)
-    dP_dU = finiteDifferenceTangent(tie, dU, dU, TIMESTEP)
+    return stateInAnIncrement(tie, 0.02 * np.random.default_rng(20261102).standard_normal(tie.nDof), 20261103)
+
+
+def test_the_tangent_is_the_derivative_of_the_residual_contribution(tie):
+    U_np, dU = _randomState(tie)
+
+    P, K = residualContributionAndTangent(tie, U_np, dU, TIMESTEP)
+    dP_dU = finiteDifferenceTangent(tie, U_np, dU, TIMESTEP)
 
     assert np.abs(K).max() > 0.0
     np.testing.assert_allclose(K, dP_dU, rtol=1e-6, atol=1e-6 * np.abs(K).max())
+
+
+def test_the_tie_reads_increments_at_the_nodes_and_total_tractions(tie):
+    assertIncrementsAtNodesAndTotalMultipliersAreRead(tie, *_randomState(tie), TIMESTEP)
 
 
 def test_the_derivatives_of_the_gap_are_the_integrals_over_the_interface(tie):
@@ -137,8 +152,9 @@ def test_a_common_translation_leaves_no_gap_and_a_common_traction_is_balanced(ti
     state = np.zeros(tie.nDof)
     state[: 2 * nNodes] = np.tile(translation, nNodes)
     state[2 * nNodes :] = np.tile(traction, 5)
+    U_np, dU = stateInAnIncrement(tie, state, 1)
 
-    P, _ = residualContributionAndTangent(tie, state, state, TIMESTEP)
+    P, _ = residualContributionAndTangent(tie, U_np, dU, TIMESTEP)
     forcesOnNodes = P[: 2 * nNodes].reshape(-1, 2)
 
     np.testing.assert_allclose(P[2 * nNodes :], 0.0, atol=1e-15)
