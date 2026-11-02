@@ -92,6 +92,12 @@ onto EdelweissFE's as follows:
       - solver option ``systemMatrixAssembly="direct"`` (see :doc:`assembly`)
     * - ``restartWriteInterval``, ``readRestart``
       - EdelweissFE's restart checkpoints, see below
+    * - ``allowFallBackToRestart``, ``numberOfRestartsToStore``
+      - step option ``maxCheckpointFallbacks``, which also bounds the number of fallbacks, with a restart output
+        (its ``numberOfFilesToKeep``)
+    * - ``skipZeroIncrements``
+      - a time stepper without the zero increment: ``makeZeroIncrementFirst=False``; EdelweissFE's implicit dynamic
+        solver skips a zero-length increment by itself
 
 **Restart.** EdelweissFE's restart output manager writes a checkpoint of the converged state; an ``MPMModel`` adds the
 state of its material points and particles, from which their positions follow (see
