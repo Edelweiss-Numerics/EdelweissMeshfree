@@ -134,6 +134,68 @@ by design:
 
 The former solvers are kept, deprecated, in :mod:`edelweissmeshfree.solvers.deprecated`.
 
+Explicit dynamics
+-----------------
+
+An RKPM model in explicit dynamics is solved by
+:class:`~edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic`, an EdelweissFE solver built into an
+EdelweissFE step like the implicit ones. It integrates particles only; finite elements, material points, cell elements
+and constraints with Lagrange multipliers are refused.
+
+.. code-block:: python
+
+    from edelweissfe.steps.adaptivestep import AdaptiveStep
+    from edelweissfe.steps.stepmanager import StepActionCollection
+
+    from edelweissmeshfree.solvers.meshfreeexplicitdynamic import MeshfreeExplicitDynamic
+
+    model.particleManagers.append(particleManager)
+    stepActions = StepActionCollection()
+    stepActions["distributedload"][pressure.name] = pressure
+
+    step = AdaptiveStep(
+        0, model, fieldOutputController, journal, {}, MeshfreeExplicitDynamic({}, journal), outputManagers, stepActions,
+        stepLength=tMax, startInc=increment, maxInc=increment, minInc=increment, maxNumInc=1000,
+    )
+    step.solve()
+
+Why it is not EdelweissFE's explicit solver ``NED``
+***************************************************
+
+Both integrate with the same leapfrog: the velocity half an increment behind the displacement, divided by a lumped mass,
+the first increment of motion a half step. They differ in what they integrate. ``NED`` advances nodes that carry their
+total solution on a fixed mesh: an element advances its state and returns its force in one call, the lumped mass is
+assembled once per mesh, and a stable increment follows from the element wave speeds. The kernel functions of an RKPM
+model move with its particles, and the state lives in the particles. Every increment therefore
+
+1. advances the particles on the kernel functions they were assigned at its start,
+2. lets the model assign them to the kernel functions they reach now, and
+3. evaluates the internal forces, the lumped mass and the momentum on the new kernel functions.
+
+The lumped mass is assembled anew in every increment, and the nodal values are coefficients of the current kernel
+functions. ``NED``'s stable increment, damping, multi-point constraints, Dirichlet conditions by prescribed velocity and
+energy balance need what particles do not provide, so the increment is chosen by the step.
+
+What to know
+************
+
+- **The zero increment.** The first increment of a step must be the zero increment (the default of a step): it
+  evaluates the forces at rest and projects the initial velocity from the particles' momentum.
+- **The velocity.** It is carried from increment to increment while the equation system numbers the same nodes, which
+  holds when the particle managers bond the kernel functions to the particles. Otherwise, and in every increment with
+  the option ``projectVelocityEveryIncrement=True``, it is projected from the particles' momentum, which dissipates more.
+- **The equation system.** When the active nodes cannot change (bonded kernel functions, no material point managers),
+  a change of the connectivity only locates the changed particles and the constraints anew; otherwise the equation
+  system is rebuilt.
+- **Nodes without mass.** A kernel function that the particles reach only where it vanishes has no positive lumped
+  mass; its node has no equation of motion and keeps a zero velocity.
+- **A particle that cannot take an increment** ends the step with ``StepFailed``: the increment is set by stability,
+  not by convergence, so it is not cut back.
+- **Pressure.** A particle pressure is assembled as in implicit runs: a positive pressure pulls along the outward
+  normal of the face.
+- **Restart** works as for the implicit solvers (see above); the checkpoint carries the half-step velocity, the net
+  force and the lumped mass.
+
 Choosing a linear solver
 ------------------------
 
