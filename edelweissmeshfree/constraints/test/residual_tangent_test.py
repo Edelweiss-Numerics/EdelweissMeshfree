@@ -30,6 +30,9 @@ tangent ``K = dP/dU``.
 - Every constraint that adds a tangent is checked by central differences of its own residual contribution, at a state
   where every switch (contact or not, a multiplier in tension or not) stays on one side under the perturbation. This
   catches a wrong ``K``, and a ``P`` whose sign alone is wrong; a ``P`` and a ``K`` negated together pass it.
+- Every constraint reads the nodal values as increments, from ``dU``, and its multipliers, if any, as totals, from
+  ``U_np``. The states of the checks come from an increment that starts from a converged state that is not zero, so
+  that reading the wrong one shows.
 - A constraint for explicit analyses only has no tangent; its residual contribution is compared with that of its
   implicit counterpart in the same state, which the check above covers.
 - The check above holds at whatever point of a particle a constraint acts. A constraint that acts at a point the user
@@ -88,6 +91,8 @@ from edelweissmeshfree.constraints.test._residualtangent import (
     CellStandIn,
     MaterialPointStandIn,
     ParticleStandIn,
+    assertIncrementsAtNodesAndTotalMultipliersAreRead,
+    stateInAnIncrement,
 )
 from edelweissmeshfree.models.mpmmodel import MPMModel
 
@@ -163,7 +168,8 @@ def _circle(center, radius):
     return distance, gradient
 
 
-#: name -> (a function building the connected constraint from the model, a function giving the state dU)
+#: name -> (a function building the connected constraint from the model, a function giving the state: the increments
+#: at the nodes, followed by the totals of the multipliers)
 CONSTRAINTS = {
     "PenaltyWeakDirichlet": (
         lambda model: PenaltyWeakDirichlet("c", model, MATERIAL_POINTS, FIELD, {0: 0.1, 1: -0.05}, PENALTY),
@@ -265,38 +271,50 @@ CONSTRAINTS = {
 
 
 def _gapState(constraint, component: int, displacement: float, multiplier: float) -> np.ndarray:
-    """A state in which every node moves by ``displacement`` in the constrained ``component``, with the multiplier
-    (if any) at ``multiplier``."""
+    """A state in which every node moves by the increment ``displacement`` in the constrained ``component``, with the
+    multiplier (if any) at the total ``multiplier``."""
 
     nNodes = len(constraint.nodes)
-    dU = np.zeros(constraint.nDof)
-    dU[component : 2 * nNodes : 2] = displacement
+    state = np.zeros(constraint.nDof)
+    state[component : 2 * nNodes : 2] = displacement
     if constraint.nDof > 2 * nNodes:
-        dU[2 * nNodes :] = multiplier
-    return dU
+        state[2 * nNodes :] = multiplier
+    return state
 
 
 def _build(name, model):
+    """The connected constraint, and ``U_np`` and ``dU`` of its state."""
+
     build, state = CONSTRAINTS[name]
     constraint = _connected(_withMultipliers(build(model)))
-    dU = state(constraint) if state else 0.02 * np.random.default_rng(len(name)).standard_normal(constraint.nDof)
-    return constraint, dU
+    seed = len(name)
+    incrementsAndMultipliers = (
+        state(constraint) if state else 0.02 * np.random.default_rng(seed).standard_normal(constraint.nDof)
+    )
+    return constraint, *stateInAnIncrement(constraint, incrementsAndMultipliers, seed + 1)
 
 
 @pytest.mark.parametrize("name", CONSTRAINTS)
 def test_the_tangent_is_the_derivative_of_the_residual_contribution(name, model):
-    constraint, dU = _build(name, model)
+    constraint, U_np, dU = _build(name, model)
 
-    P, K = residualContributionAndTangent(constraint, dU, dU, TIMESTEP)
-    dP_dU = finiteDifferenceTangent(constraint, dU, dU, TIMESTEP)
+    P, K = residualContributionAndTangent(constraint, U_np, dU, TIMESTEP)
+    dP_dU = finiteDifferenceTangent(constraint, U_np, dU, TIMESTEP)
 
     assert np.abs(K).max() > 0.0, "the check is vacuous without a tangent"
     np.testing.assert_allclose(K, dP_dU, rtol=1e-6, atol=1e-6 * np.abs(K).max())
 
 
 @pytest.mark.parametrize("name", CONSTRAINTS)
+def test_a_constraint_reads_increments_at_the_nodes_and_total_multipliers(name, model):
+    constraint, U_np, dU = _build(name, model)
+
+    assertIncrementsAtNodesAndTotalMultipliersAreRead(constraint, U_np, dU, TIMESTEP)
+
+
+@pytest.mark.parametrize("name", CONSTRAINTS)
 def test_a_constraint_carries_no_state_between_increments(name, model):
-    constraint, _ = _build(name, model)
+    constraint, *_ = _build(name, model)
 
     assert constraint.getRestartData() == {}
     constraint.setRestartData({})
@@ -306,7 +324,7 @@ def test_lagrangian_weak_dirichlet_at_a_vertex_is_met_by_a_translation_by_the_pr
     """Moving every node by the share of the prescribed increment that falls into the increment moves every point of
     the particle by it, as the shape functions are a partition of unity: the constraint is met at the vertex. The
     tangent is symmetric, as the constraint stems from the potential ``sum(lambda g)``. The reaction force holds the
-    multipliers per component, and balances the force the constraint exerts on the nodes."""
+    multipliers -- the totals -- per component, and balances the force the constraint exerts on the nodes."""
 
     prescribedStepDelta = {0: 0.1, 1: -0.05}
     constraint = _connected(
@@ -317,12 +335,13 @@ def test_lagrangian_weak_dirichlet_at_a_vertex_is_met_by_a_translation_by_the_pr
 
     nU = 2 * len(constraint.nodes)
     multipliers = np.array([1.0, 2.0])
-    dU = np.zeros(constraint.nDof)
+    state = np.zeros(constraint.nDof)
     for i, prescribedComponent in prescribedStepDelta.items():
-        dU[i:nU:2] = prescribedComponent * TIMESTEP.stepProgressIncrement
-    dU[nU:] = multipliers
+        state[i:nU:2] = prescribedComponent * TIMESTEP.stepProgressIncrement
+    state[nU:] = multipliers
+    U_np, dU = stateInAnIncrement(constraint, state, 1)
 
-    P, K = residualContributionAndTangent(constraint, dU, dU, TIMESTEP)
+    P, K = residualContributionAndTangent(constraint, U_np, dU, TIMESTEP)
 
     np.testing.assert_allclose(P[nU:], 0.0, atol=1e-15)
     np.testing.assert_array_equal(K, K.T)
@@ -342,10 +361,11 @@ def test_lagrangian_weak_dirichlet_at_a_vertex_measures_the_field_at_the_vertex(
     )
 
     nodes = list(constraint.nodes)
-    dU = np.zeros(constraint.nDof)
-    dU[0 : 2 * len(nodes) : 2] = [0.1 * node.coordinates[0] ** 2 + 0.05 * node.coordinates[1] for node in nodes]
+    state = np.zeros(constraint.nDof)
+    state[0 : 2 * len(nodes) : 2] = [0.1 * node.coordinates[0] ** 2 + 0.05 * node.coordinates[1] for node in nodes]
+    U_np, dU = stateInAnIncrement(constraint, state, 1)
 
-    P, _ = residualContributionAndTangent(constraint, dU, dU, TIMESTEP)
+    P, _ = residualContributionAndTangent(constraint, U_np, dU, TIMESTEP)
 
     nodalValues = {node: dU[2 * k] for k, node in enumerate(nodes)}
     atVertex = particle.getInterpolationVector(particle.vertices[2]) @ [
@@ -370,9 +390,9 @@ def test_lagrangian_cartesian_boundary_at_a_vertex_measures_the_gap_at_the_verte
             )
         )
     )
-    dU = _gapState(constraint, 0, -0.08, 2.0)
+    U_np, dU = stateInAnIncrement(constraint, _gapState(constraint, 0, -0.08, 2.0), 1)
 
-    P, _ = residualContributionAndTangent(constraint, dU, dU, TIMESTEP)
+    P, _ = residualContributionAndTangent(constraint, U_np, dU, TIMESTEP)
 
     assert P[-1] == pytest.approx(0.03, rel=1e-12)
 
