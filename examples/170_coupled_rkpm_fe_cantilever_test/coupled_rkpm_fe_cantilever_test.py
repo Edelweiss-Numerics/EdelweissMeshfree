@@ -256,8 +256,6 @@ def buildCoupledModel(journal: Journal, elementSize: float, particleSize: float)
 
     model.prepareYourself(journal)
     # besides the solution U, the model receives the increment dU and the reaction P of every converged increment
-    model.nodeFields["displacement"].createFieldValueEntry("dU")
-    model.nodeFields["displacement"].createFieldValueEntry("P")
 
     return model
 
@@ -447,8 +445,6 @@ def run_finite_element_reference(size: float):
     addFiniteElementBeam(model, journal, "beam", 0.0, length, size)
     model.nodeSets["all"] = NodeSet("all", model.nodes.values())
     model.prepareYourself(journal)
-    model.nodeFields["displacement"].createFieldValueEntry("U")
-    model.nodeFields["displacement"].createFieldValueEntry("P")
 
     solve(
         model, model.nodeSets["beam_left"], model.nodeSets["beam_right"], FieldOutputController(model, journal), journal

@@ -206,10 +206,6 @@ class MPMModel(FEModel):
 
         super().prepareYourself(journal)
 
-        # TODO move this to EdelweissFE
-        for field in self.nodeFields.values():
-            field.createFieldValueEntry("U")
-
     def advanceToTime(self, time: float):
         """Accept the current state of the model and sub instances, and
         set the new time.

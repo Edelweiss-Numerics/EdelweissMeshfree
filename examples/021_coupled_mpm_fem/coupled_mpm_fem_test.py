@@ -129,9 +129,6 @@ def run_sim():
 
     mpmModel.prepareYourself(journal)
 
-    mpmModel.nodeFields["displacement"].createFieldValueEntry("dU")
-    mpmModel.nodeFields["displacement"].createFieldValueEntry("U")
-
     cellElements = mpmModel.cellElementSets["all"]
     mpmCells = mpmModel.cellSets["all"]
     cellMPs = mpmModel.materialPointSets["mpmPoints_all"]

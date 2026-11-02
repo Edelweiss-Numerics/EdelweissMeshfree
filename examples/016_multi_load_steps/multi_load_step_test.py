@@ -107,7 +107,6 @@ def run_sim(logFile=None):
     )
 
     mpmModel.prepareYourself(journal)
-    mpmModel.nodeFields["displacement"].createFieldValueEntry("dU")
 
     journal.printPrettyTable(mpmModel.makePrettyTableSummary(), "Model summary")
 

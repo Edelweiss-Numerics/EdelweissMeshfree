@@ -84,9 +84,6 @@ def run_sim():
     mpmModel.sections["theSection"] = planeSec
 
     mpmModel.prepareYourself(journal)
-    mpmModel.nodeFields["displacement"].createFieldValueEntry("dU")
-    mpmModel.nodeFields["displacement"].createFieldValueEntry("U")
-    mpmModel.nodeFields["displacement"].createFieldValueEntry("P")
 
     journal.printSeperationLine()
 

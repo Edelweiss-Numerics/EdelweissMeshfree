@@ -94,7 +94,6 @@ def run_sim():
     )
 
     mpmModel.prepareYourself(journal)
-    mpmModel.nodeFields["displacement"].createFieldValueEntry("dU")
 
     allCells = mpmModel.cellSets["all"]
     allMPs = mpmModel.materialPointSets["all"]
@@ -168,7 +167,6 @@ def run_sim():
                     nodeField.name: MPMNodeField(nodeField.name, nodeField.dimension, activeNodes)
                     for nodeField in mpmModel.nodeFields.values()
                 }
-                activeNodeFields["displacement"].createFieldValueEntry("dU")
 
                 scalarVariables = []
                 elements = []
@@ -226,7 +224,7 @@ def run_sim():
             for mp in allMPs:
                 mp.computeYourself(time, i)
 
-            mpmModel.nodeFields["displacement"].copyEntriesFromOther(activeNodeFields["displacement"])
+            mpmModel.nodeFields["displacement"].copyEntriesFromOther(activeNodeFields["displacement"], ["dU"])
 
             mpmModel.advanceToTime(time)
 
