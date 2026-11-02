@@ -85,6 +85,20 @@ class BaseParticleManager(ABC):
             The particles whose kernel functions changed during the last connectivity update.
         """
 
+    @property
+    def kernelFunctionsAreBondedToParticles(self) -> bool:
+        """Whether every kernel function is bonded to a particle and moves with it. A bonded kernel function always
+        covers its own particle, so the set of nodes the particles reach cannot change, only which particle reaches
+        which node. By default False, which is always safe: a solver then assumes the nodes may change.
+
+        Returns
+        -------
+        bool
+            True if the kernel functions are bonded to the particles.
+        """
+
+        return False
+
     @abstractmethod
     def signalizeKernelFunctionUpdate(
         self,

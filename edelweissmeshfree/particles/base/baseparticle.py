@@ -328,21 +328,21 @@ class BaseParticle(BaseNodeCouplingEntity):
         """
 
     @abstractmethod
-    def computePhysicsKernelsExplicit(
+    def updatePhysicsExplicit(
         self,
         dU: np.ndarray,
-        P: np.ndarray,
         timeTotal: float,
         dTime: float,
     ):
-        """Evaluate the kernel residual and stiffness for given time based for all assigned MaterialPoints.
+        """Explicit dynamics: take the solution increment on the kernel functions currently assigned, i.e. update the
+        state and the position of the particle, and its velocity and acceleration; see
+        :class:`~edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic`. A particle that cannot
+        take the increment requests a cutback (:class:`~edelweissfe.utils.exceptions.CutbackRequest`).
 
         Parameters
         ----------
         dU
-            The current solution increment.
-        P
-            The external load vector to be defined.
+            The solution increment.
         timeTotal
             The current total time.
         dTime
@@ -350,56 +350,17 @@ class BaseParticle(BaseNodeCouplingEntity):
         """
 
     @abstractmethod
-    def computeBodyLoadExplicit(
+    def computePhysicsKernelsExplicit(
         self,
-        loadType: str,
-        load: np.ndarray,
         P: np.ndarray,
-        timeTotal: float,
-        dTime: float,
     ):
-        """Compute bulk loads (body loads) for given time based for all assigned MaterialPoints.
+        """Explicit dynamics: add the internal force of the current state, on the kernel functions currently
+        assigned, to the residual contribution; no tangent.
 
         Parameters
         ----------
-        loadType
-            The type of load to be computed (e.g., 'bodyforce')
-        load
-            The float (vector) describing the load.
         P
-            The external load vector to be defined.
-        timeTotal
-            The current total time.
-        dTime
-            The time increment.
-        """
-
-    @abstractmethod
-    def computeDistributedLoadExplicit(
-        self,
-        loadType: str,
-        surfaceID: int,
-        load: np.ndarray,
-        P: np.ndarray,
-        timeTotal: float,
-        dTime: float,
-    ):
-        """Compute distributed (surface) a for given time based for a specific assigned material point.
-
-        Parameters
-        ----------
-        loadType
-            The type of load to be computed (e.g., 'pressure')
-        surfaceID
-            The ID describing the surface of the material point.
-        load
-            The float (vector) describing the load.
-        P
-            The external load vector to be defined.
-        timeTotal
-            The current total time.
-        dTime
-            The time increment.
+            The residual contribution to augment.
         """
 
     @abstractmethod
@@ -407,12 +368,26 @@ class BaseParticle(BaseNodeCouplingEntity):
         self,
         M: np.ndarray,
     ):
-        """Compute the lumped mass matrix for explicit time integration.
+        """Explicit dynamics: add the lumped mass of the particle, on the kernel functions currently assigned.
 
         Parameters
         ----------
         M
-            The mass matrix to be defined.
+            The lumped mass to augment, one entry per degree of freedom.
+        """
+
+    @abstractmethod
+    def computeLumpedMomentum(
+        self,
+        momentum: np.ndarray,
+    ):
+        """Explicit dynamics: add the lumped momentum of the particle, on the kernel functions currently assigned,
+        from which a solver projects the velocity of the nodes.
+
+        Parameters
+        ----------
+        momentum
+            The lumped momentum to augment, one entry per degree of freedom.
         """
 
     @abstractmethod

@@ -305,6 +305,25 @@ class MPMModel(FEModel):
 
         return connectivityChanged
 
+    @property
+    def activeNodesAreFixed(self) -> bool:
+        """Whether a change of the connectivity leaves the nodes of the active domain as they are, so that an equation
+        system can follow it by locating the changed particles and the constraints anew
+        (:meth:`~edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.relocateParticlesAndConstraints`)
+        instead of being rebuilt: without MPM managers, whose cells become active and inactive, and with every particle
+        manager bonding its kernel functions to the particles, so that a kernel function always covers its own
+        particle.
+
+        Returns
+        -------
+        bool
+            True if the active nodes cannot change.
+        """
+
+        return not self.mpmManagers and all(
+            particleManager.kernelFunctionsAreBondedToParticles for particleManager in self.particleManagers
+        )
+
     def buildEquationSystem(self, withSystemMatrix: bool = True) -> MPMEquationSystemLayout:
         """Lay out the equation system of the model on its active domain; see
         :meth:`~edelweissfe.models.femodel.FEModel.buildEquationSystem` and :class:`MPMEquationSystemLayout`.

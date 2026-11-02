@@ -35,7 +35,8 @@
 #  ---------------------------------------------------------------------
 
 """What the equation system of a material point or RKPM model is made of: the answer an
-:class:`~edelweissmeshfree.models.mpmmodel.MPMModel` gives EdelweissFE's implicit solvers whenever they (re)build
+:class:`~edelweissmeshfree.models.mpmmodel.MPMModel` gives EdelweissFE's implicit solvers and
+:class:`~edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic` whenever they (re)build
 their equation system, see :meth:`~edelweissmeshfree.models.mpmmodel.MPMModel.buildEquationSystem`."""
 
 from collections.abc import Callable
@@ -100,6 +101,42 @@ class MPMEquationSystemLayout(EquationSystemLayout):
         self.materialPoints = list(model.materialPoints.values())
         #: The active cells and the cell elements, which interpolate the solution to the material points they hold.
         self.cellsInterpolatingToMaterialPoints = activeCells + list(model.cellElements.values())
+
+    def numbersTheSameNodesAs(self, other: "MPMEquationSystemLayout") -> bool:
+        """Whether this layout numbers the same nodes, with the same fields, in the same order as another one, so that
+        a vector of the other layout means the same here, entry by entry.
+
+        Parameters
+        ----------
+        other
+            The other layout.
+
+        Returns
+        -------
+        bool
+            True if the numbering of the nodes is the same.
+        """
+
+        def numbering(layout):
+            return [(name, list(nodeField.nodes)) for name, nodeField in layout.activeNodeFields.items()]
+
+        return self.dofManager.nDof == other.dofManager.nDof and numbering(self) == numbering(other)
+
+    def relocateParticlesAndConstraints(self):
+        """Follow a change of the connectivity that leaves the active nodes as they are (see
+        :attr:`~edelweissmeshfree.models.mpmmodel.MPMModel.activeNodesAreFixed`): the numbering of the nodes stands, so
+        only the particles whose kernel functions changed, and the active constraints, are located anew in the DOF
+        vector. That is what rebuilding would give, at a fraction of its cost.
+        """
+
+        self.dofManager.updateParticles(
+            [
+                particle
+                for particleManager in self.model.particleManagers
+                for particle in particleManager.particlesWithChangedKernelFunctions
+            ]
+        )
+        self.dofManager.updateConstraints(self.model.activeConstraints())
 
     def writeSolutionToDofVector(self, U: DofVector) -> DofVector:
         """Write the solution the model carries from increment to increment into the solution vector of a (re)built

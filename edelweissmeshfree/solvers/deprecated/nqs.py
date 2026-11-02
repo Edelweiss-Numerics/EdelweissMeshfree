@@ -62,9 +62,11 @@ from edelweissmeshfree.mpmmanagers.base.mpmmanagerbase import MPMManagerBase
 from edelweissmeshfree.particlemanagers.base.baseparticlemanager import (
     BaseParticleManager,
 )
-from edelweissmeshfree.solvers.base.nonlinearsolverbase import RestartHistoryManager
 from edelweissmeshfree.solvers.deprecated.implicitbase import (
     BaseNonlinearImplicitSolver,
+)
+from edelweissmeshfree.solvers.deprecated.nonlinearsolverbase import (
+    RestartHistoryManager,
 )
 from edelweissmeshfree.solvers.deprecated.predictors.basepredictor import BasePredictor
 from edelweissmeshfree.stepactions.base.mpmbodyloadbase import MPMBodyLoadBase

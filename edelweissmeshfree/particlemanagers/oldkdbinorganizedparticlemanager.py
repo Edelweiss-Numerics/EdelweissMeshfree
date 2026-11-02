@@ -197,6 +197,19 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
         self.signalizeKernelFunctionUpdate()
 
     @property
+    def kernelFunctionsAreBondedToParticles(self) -> bool:
+        """Whether the kernel functions are bonded to the particles; see
+        :attr:`~edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager.kernelFunctionsAreBondedToParticles`.
+
+        Returns
+        -------
+        bool
+            The ``bondParticlesToKernelFunctions`` this manager was created with.
+        """
+
+        return self._bondParticlesToKernelFunctions
+
+    @property
     def particlesWithChangedKernelFunctions(self) -> list:
         """Every particle, conservatively.
 
