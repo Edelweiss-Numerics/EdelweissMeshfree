@@ -43,8 +43,8 @@ from libcpp.vector cimport vector
 import numpy as np
 
 
-cdef extern from "Marmot/MarmotMeshfreeKernelFunction.h" namespace "Marmot::Meshfree":
-    cdef cppclass MarmotMeshfreeKernelFunction nogil:
+cdef extern from "Marmot/MarmotMeshfreeKernelFunction.h":
+    cdef cppclass MarmotMeshfreeKernelFunction "Marmot::Discretizations::Meshfree::KernelFunction" nogil:
         # MarmotMeshfreeKernelFunction(const double *coord, int dim, double supportRadius, int continuityOrder, int completeOrder)
 
         double computeKernelFunction( const double *coord)
@@ -55,12 +55,12 @@ cdef extern from "Marmot/MarmotMeshfreeKernelFunction.h" namespace "Marmot::Mesh
 
         void moveTo ( const double *coordinates )
 
-cdef extern from "Marmot/MarmotMeshfreeKernelFunctionBSpline2ndOrderBoxed.h" namespace "Marmot::Meshfree":
-    cdef cppclass MarmotMeshfreeKernelFunctionBSpline2ndOrderBoxed nogil:
+cdef extern from "Marmot/MarmotMeshfreeKernelFunctionBSpline2ndOrderBoxed.h":
+    cdef cppclass MarmotMeshfreeKernelFunctionBSpline2ndOrderBoxed "Marmot::Discretizations::Meshfree::KernelFunctionBSpline2ndOrderBoxed" nogil:
         MarmotMeshfreeKernelFunctionBSpline2ndOrderBoxed(double *coord, int dim, double supportRadius)
 
-cdef extern from "Marmot/MarmotMeshfreeKernelFunctionBSpline3rdOrderBoxed.h" namespace "Marmot::Meshfree":
-    cdef cppclass MarmotMeshfreeKernelFunctionBSpline3rdOrderBoxed nogil:
+cdef extern from "Marmot/MarmotMeshfreeKernelFunctionBSpline3rdOrderBoxed.h":
+    cdef cppclass MarmotMeshfreeKernelFunctionBSpline3rdOrderBoxed "Marmot::Discretizations::Meshfree::KernelFunctionBSpline3rdOrderBoxed" nogil:
         MarmotMeshfreeKernelFunctionBSpline3rdOrderBoxed(double *coord, int dim, double supportRadius)
 
 
