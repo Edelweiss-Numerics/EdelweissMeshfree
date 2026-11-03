@@ -524,7 +524,7 @@ def test_finite_element_and_kernel_nodes_share_one_equation_system(tmp_path):
         np.testing.assert_array_equal(U[dofsOf(node)], 0.0)
     np.testing.assert_array_equal(U[tractionDofs], tractionDofs)
 
-    # the results of the increment, written to every node; a static solver leaves the velocity as it is
+    # the results of the increment, written to every node; passed no velocity, the layout leaves it as it is
     displacement["V"][:] = -1.0
     increment = dofManager.constructDofVector()
     increment[:] = np.arange(dofManager.nDof)
@@ -538,6 +538,12 @@ def test_finite_element_and_kernel_nodes_share_one_equation_system(tmp_path):
     for constraint in model.constraints.values():
         for traction in constraint.scalarVariables:
             assert traction.value == dofManager.idcsOfScalarVariablesInDofVector[traction]
+
+    # the state a quasi-static solver accepts is at rest, on every node
+    displacement["A"][:] = -1.0
+    layout.writeZeroVelocityAndAccelerationToModel()
+    np.testing.assert_array_equal(displacement["V"], 0.0)
+    np.testing.assert_array_equal(displacement["A"], 0.0)
 
     held = {entry: np.array(displacement[entry]) for entry in displacement.ENTRIES}
 
