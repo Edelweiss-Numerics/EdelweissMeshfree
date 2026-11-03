@@ -191,9 +191,16 @@ What to know
 
 - **The zero increment.** The first increment of a step must be the zero increment (the default of a step): it
   evaluates the forces at rest and projects the initial velocity from the particles' momentum.
-- **The velocity.** It is carried from increment to increment while the equation system numbers the same nodes, which
-  holds when the particle managers bond the kernel functions to the particles. Otherwise, and in every increment with
-  the option ``projectVelocityEveryIncrement=True``, it is projected from the particles' momentum, which dissipates more.
+- **The velocity** of the kernel functions' nodes is the model's: it is written to the entry ``V`` of the node fields
+  at acceptance, and read back by node whenever the equation system is rebuilt. A node keeps its velocity while the
+  active nodes change around it, and a node that has just become active starts at rest. With the option
+  ``projectVelocityEveryIncrement=True``, it is projected from the particles' momentum in every increment instead,
+  which dissipates more.
+- **The node field results** (see EdelweissFE's "Node field results"): ``dU`` is the increment on the kernel functions
+  it was taken on, ``P`` the internal force with the inertial force, :math:`\boldsymbol{f}_\mathrm{int} +
+  \boldsymbol{M} \boldsymbol{a}`, and ``V`` the half-step velocity, as in ``NED``; ``U`` is zero, since the nodes of
+  the kernel functions carry no total solution. ``P`` and ``V`` are written on the kernel functions the increment ends
+  on, ``dU`` on those it started on: a node that left the active domain in that increment keeps its ``dU``.
 - **The equation system.** When the active nodes cannot change (bonded kernel functions, no material point managers),
   a change of the connectivity only locates the changed particles and the constraints anew; otherwise the equation
   system is rebuilt.
@@ -203,8 +210,8 @@ What to know
   not by convergence, so it is not cut back.
 - **Pressure.** A particle pressure is assembled as in implicit runs: as for the finite elements, a positive pressure
   pushes on the face, against its outward normal.
-- **Restart** works as for the implicit solvers (see above); the checkpoint carries the half-step velocity, the net
-  force and the lumped mass.
+- **Restart** works as for the implicit solvers (see above): the model's checkpoint carries the half-step velocity,
+  the solver's the net force and the lumped mass.
 
 Choosing a linear solver
 ------------------------
