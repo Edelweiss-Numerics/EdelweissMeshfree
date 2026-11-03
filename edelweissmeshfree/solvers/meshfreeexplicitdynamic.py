@@ -38,16 +38,17 @@
 
 The scheme is the leapfrog of EdelweissFE's
 :class:`~edelweissfe.solvers.nonlinearexplicitdynamic.NED`: the velocity is staggered half an increment behind the
-displacement, and the acceleration is the net force divided by a lumped mass,
+displacement, and the acceleration is the net force :math:`\\boldsymbol{f}` (external minus internal, with the loads and
+constraints) divided by a lumped mass,
 
 .. math::
 
     \\boldsymbol{v}_{n+1/2} = \\boldsymbol{v}_{n-1/2}
-        + \\tfrac{1}{2} \\left( \\Delta t_{n+1} + \\Delta t_n \\right) \\boldsymbol{M}^{-1} \\boldsymbol{P}_n, \\qquad
+        + \\tfrac{1}{2} \\left( \\Delta t_{n+1} + \\Delta t_n \\right) \\boldsymbol{M}^{-1} \\boldsymbol{f}_n, \\qquad
     \\Delta \\boldsymbol{u}_{n+1} = \\Delta t_{n+1}\\, \\boldsymbol{v}_{n+1/2},
 
 with :math:`\\Delta t_0 = 0`: the first increment of motion starts from the velocity at rest,
-:math:`\\boldsymbol{v}_{1/2} = \\boldsymbol{v}_0 + \\tfrac{1}{2} \\Delta t_1 \\boldsymbol{M}^{-1} \\boldsymbol{P}_0`.
+:math:`\\boldsymbol{v}_{1/2} = \\boldsymbol{v}_0 + \\tfrac{1}{2} \\Delta t_1 \\boldsymbol{M}^{-1} \\boldsymbol{f}_0`.
 
 What differs is the discretization it is applied to. NED integrates nodes that carry their total solution on a fixed
 mesh, and an element advances its state and returns its force in one call. The kernel functions of an RKPM model move
@@ -61,15 +62,27 @@ with its particles, and the state lives in the particles (updated Lagrangian), s
    lumped momentum, and the loads and constraints their forces, at the configuration just accepted.
 
 The lumped mass is therefore assembled anew in every increment, and the nodal values are coefficients of the current
-kernel functions. The velocity coefficients are carried from one increment to the next while the equation system
-numbers the same nodes, which holds whenever the kernel functions are bonded to the particles; otherwise, and in every
-increment if the option ``projectVelocityEveryIncrement`` says so, they are projected from the particles' momentum,
+kernel functions. The velocity is the state the next increment starts from, so the model owns it, as it owns the
+velocity of a finite element model (see EdelweissFE's documentation page *Node field results*): the velocity of every
+node of the kernel functions is written to the entry ``V`` of the node fields at acceptance, and read back by node
+whenever the equation system is rebuilt. A node keeps its velocity while the active nodes change around it, and a node
+whose kernel function has just become active starts at rest. If the option ``projectVelocityEveryIncrement`` says so,
+the velocity is instead projected from the particles' momentum in every increment,
 :math:`\\boldsymbol{v} = \\boldsymbol{M}^{-1} \\boldsymbol{p}`.
+
+At acceptance, the results reach the model in two parts, each through the layout of the equation system that holds
+them: the increment ``dU`` (and the velocity it was taken with) on the kernel functions of its start, before
+reconnecting; the force ``P`` and the velocity the next increment starts from on the kernel functions of its end.
+``V`` is the staggered velocity :math:`\\boldsymbol{v}_{n+1/2}`, as in NED. ``P`` is the internal force with the
+inertial force, :math:`\\boldsymbol{f}_\\mathrm{int} + \\boldsymbol{M} \\boldsymbol{a}_n`, where
+:math:`\\boldsymbol{a}_n = \\boldsymbol{M}^{-1} \\boldsymbol{f}_n` is the acceleration of the scheme: at a node with
+mass, this is the force of the loads and constraints. The solution ``U`` of the kernel functions' nodes is zero: they
+carry no total solution.
 
 The time increment is the step's: particles report no critical time step. The first increment of a step must be the
 zero increment, which evaluates the forces at rest and projects the initial velocity from the particles' momentum, so
-that the first increment of motion starts from both. A resumed step continues from the velocity, force and mass of
-its checkpoint instead.
+that the first increment of motion starts from both. A resumed step continues from the velocity of the model and the
+net force and inverse mass of its checkpoint instead.
 """
 
 from copy import deepcopy
@@ -131,13 +144,12 @@ class MeshfreeExplicitDynamic(NonlinearSolverBase):
         "projectVelocityEveryIncrement": False,
     }
 
-    #: The state an increment starts from, which cannot be recomputed from the model: the last increment of motion
-    #: (its size enters the velocity update), and the velocity, the net force and the inverse lumped mass of the
-    #: configuration last accepted.
+    #: The state an increment starts from that lives within one equation system, and so is not the model's: the last
+    #: increment of motion (its size enters the velocity update), and the net force and the inverse lumped mass of the
+    #: configuration last accepted. The velocity is the model's (entry ``V`` of its node fields).
     checkpointedState = {
         "prevTimeStep": TimeStep,
-        "_V": np.ndarray,
-        "_P": np.ndarray,
+        "_netForce": np.ndarray,
         "_Minv": np.ndarray,
     }
 
@@ -152,8 +164,9 @@ class MeshfreeExplicitDynamic(NonlinearSolverBase):
         self._layout = None
         #: The velocity, staggered half an increment behind the displacement.
         self._V = None
-        #: The net force, external minus internal, at the configuration last accepted.
-        self._P = None
+        #: The net force, external minus internal, at the configuration last accepted; None before the first
+        #: evaluation of a step.
+        self._netForce = None
         #: The inverse of the lumped mass at the configuration last accepted; zero where the mass is not positive.
         self._Minv = None
         #: The increment of the solution.
@@ -235,12 +248,13 @@ class MeshfreeExplicitDynamic(NonlinearSolverBase):
 
         self.prevTimeStep = None
         self._layout = None
-        self._V = self._P = self._Minv = None
+        self._V = self._netForce = self._Minv = None
         self._particles = list(model.particles.values())
 
     def prepareIncrement(self, step, model: MPMModel, isRetry: bool):
-        """Build the equation system at the start of the step; afterwards it follows the particles in
-        :meth:`acceptIncrement`. A resumed step takes over the velocity, force and inverse mass of its checkpoint.
+        """Build the equation system at the start of the step, with the velocity of the model; afterwards it follows
+        the particles in :meth:`acceptIncrement`. A resumed step takes over the net force and inverse mass of its
+        checkpoint.
 
         Parameters
         ----------
@@ -258,16 +272,15 @@ class MeshfreeExplicitDynamic(NonlinearSolverBase):
         model.updateConnectivity()
         self._adoptLayout(model.buildEquationSystem(withSystemMatrix=False))
 
-        if self._V is not None:
+        if self._netForce is not None:
             # resumed: the checkpoint holds the vectors of the equation system just rebuilt from the same state
             dofManager = self._layout.dofManager
-            if len(self._V) != dofManager.nDof:
+            if len(self._netForce) != dofManager.nDof:
                 raise ValueError(
-                    "The checkpoint holds a velocity of {:} entries, but the equation system rebuilt from the "
-                    "resumed model has {:}.".format(len(self._V), dofManager.nDof)
+                    "The checkpoint holds a net force of {:} entries, but the equation system rebuilt from the "
+                    "resumed model has {:}.".format(len(self._netForce), dofManager.nDof)
                 )
-            self._V = self._asDofVector(self._V)
-            self._P = self._asDofVector(self._P)
+            self._netForce = self._asDofVector(self._netForce)
             self._Minv = self._asDofVector(self._Minv)
 
     def attemptIncrement(self, step, model: MPMModel, timeStep: TimeStep):
@@ -292,7 +305,7 @@ class MeshfreeExplicitDynamic(NonlinearSolverBase):
 
         dT = timeStep.timeIncrement
 
-        if self._P is None and dT != 0.0:
+        if self._netForce is None and dT != 0.0:
             raise ValueError(
                 "The first increment of a step must be the zero increment for {:}, which evaluates the forces at rest "
                 "and projects the initial velocity, before anything moves.".format(self.identification)
@@ -306,7 +319,7 @@ class MeshfreeExplicitDynamic(NonlinearSolverBase):
                 # the time between two half increments. The first increment of motion starts from the velocity at
                 # rest, a full increment earlier: it advances by half an increment (the previous one counts zero).
                 previousTimeIncrement = self.prevTimeStep.timeIncrement if self.prevTimeStep is not None else 0.0
-                self._V += self._Minv * self._P * (0.5 * (dT + previousTimeIncrement))
+                self._V += self._Minv * self._netForce * (0.5 * (dT + previousTimeIncrement))
                 np.multiply(self._V, dT, out=dU)
 
         self.applyStepActionsAtIncrementStart(model, timeStep, step.actions)
@@ -329,6 +342,9 @@ class MeshfreeExplicitDynamic(NonlinearSolverBase):
     def acceptIncrement(self, step, model: MPMModel, timeStep: TimeStep):
         """Accept the advanced particles, reconnect, and evaluate on the new kernel functions what the next increment
         starts from: the net force, the inverse lumped mass and, when due, the velocity projected from the momentum.
+        The results reach the model in two parts, see the module documentation: the increment and its velocity before
+        reconnecting, through the layout they were computed on; the force and the velocity the next increment starts
+        from after evaluating, through the layout of the new kernel functions.
 
         Parameters
         ----------
@@ -348,13 +364,19 @@ class MeshfreeExplicitDynamic(NonlinearSolverBase):
         with performancetiming.timeit("accept state"):
             model.advanceToTime(timeStep.totalTime)
 
-        nodesRenumbered = self._reconnect(model)
+        with performancetiming.timeit("write results to nodes"):
+            self._layout.writeResultsToModel(self._noSolution(), self._dU, None, V=self._V)
 
-        P, Minv, momentum = self._evaluate(model, step, timeStep)
-        self._P, self._Minv = P, Minv
+        self._reconnect(model)
 
-        if self._V is None or nodesRenumbered or self.options["projectVelocityEveryIncrement"]:
-            self._V = momentum * Minv
+        firstEvaluationOfStep = self._netForce is None
+        self._netForce, self._Minv, momentum, internalAndInertialForce = self._evaluate(model, step, timeStep)
+
+        if firstEvaluationOfStep or self.options["projectVelocityEveryIncrement"]:
+            self._V = momentum * self._Minv
+
+        with performancetiming.timeit("write results to nodes"):
+            self._layout.writeResultsToModel(self._noSolution(), None, internalAndInertialForce, V=self._V)
 
     def endStep(self, step, model: MPMModel):
         """Nothing to finish.
@@ -373,41 +395,32 @@ class MeshfreeExplicitDynamic(NonlinearSolverBase):
         raise NotImplementedError(f"{self.identification} solves an increment in attemptIncrement.")
 
     @performancetiming.timeit("reconnect")
-    def _reconnect(self, model: MPMModel) -> bool:
+    def _reconnect(self, model: MPMModel):
         """Assign the particles to the kernel functions they reach now, and let the equation system follow: if the
         model's active nodes cannot change (:attr:`~edelweissmeshfree.models.mpmmodel.MPMModel.activeNodesAreFixed`),
-        only the particles that changed and the constraints are located anew; otherwise the equation system is
-        rebuilt. The velocity is carried over if the nodes are numbered as before.
+        only the particles that changed and the constraints are located anew, and the velocity stays as it is;
+        otherwise the equation system is rebuilt, and reads the velocity of its nodes from the model.
 
         Parameters
         ----------
         model
             The model.
-
-        Returns
-        -------
-        bool
-            True if the equation system numbers other nodes than before, so that the velocity has to be projected.
         """
 
         if not model.updateConnectivity():
-            return False
-
-        layout = self._layout
+            return
 
         if model.activeNodesAreFixed:
-            layout.relocateParticlesAndConstraints()
-            self._adoptLayout(layout)
-            return False
+            self._layout.relocateParticlesAndConstraints()
+            self._dU = self._layout.dofManager.constructDofVector()
+            self._V = self._asDofVector(self._V)
+            return
 
-        rebuilt = model.buildEquationSystem(withSystemMatrix=False)
-        nodesRenumbered = not rebuilt.numbersTheSameNodesAs(layout)
-        self._adoptLayout(rebuilt)
-        return nodesRenumbered
+        self._adoptLayout(model.buildEquationSystem(withSystemMatrix=False))
 
     def _adoptLayout(self, layout):
-        """Work on the given layout: vectors sized and located by its DOF manager, the velocity carried over by index
-        while the size stands.
+        """Work on a (re)built layout: vectors sized and located by its DOF manager, and the velocity of its nodes read
+        from the model, by node.
 
         Parameters
         ----------
@@ -418,8 +431,23 @@ class MeshfreeExplicitDynamic(NonlinearSolverBase):
         self._layout = layout
         self.theDofManager = layout.dofManager
         self._dU = layout.dofManager.constructDofVector()
-        if self._V is not None and len(self._V) == layout.dofManager.nDof:
-            self._V = self._asDofVector(self._V)
+        self._V = layout.dofManager.constructDofVector()
+        self._V[:] = 0.0
+        layout.readStateFromModel(self._noSolution(), V=self._V)
+
+    def _noSolution(self) -> DofVector:
+        """The solution of the current equation system: zero, since the nodes of the kernel functions carry no total
+        solution (they move with the particles), and this solver integrates nothing else.
+
+        Returns
+        -------
+        DofVector
+            The zero vector.
+        """
+
+        noSolution = self._layout.dofManager.constructDofVector()
+        noSolution[:] = 0.0
+        return noSolution
 
     def _asDofVector(self, values: np.ndarray) -> DofVector:
         """A vector of the current equation system holding the given values.
@@ -456,8 +484,10 @@ class MeshfreeExplicitDynamic(NonlinearSolverBase):
 
         Returns
         -------
-        tuple[DofVector, DofVector, DofVector]
-            The net force, the inverse lumped mass (zero where the mass is not positive) and the lumped momentum.
+        tuple[DofVector, DofVector, DofVector, DofVector]
+            The net force, the inverse lumped mass (zero where the mass is not positive), the lumped momentum, and the
+            internal force with the inertial force, :math:`\\boldsymbol{f}_\\mathrm{int} + \\boldsymbol{M}
+            \\boldsymbol{a}`, the result ``P`` the model receives.
         """
 
         dofManager = self._layout.dofManager
@@ -482,10 +512,12 @@ class MeshfreeExplicitDynamic(NonlinearSolverBase):
         scatterM.assembleInto(M)
         scatterMomentum.assembleInto(momentum)
 
+        internalForce = dofManager.constructDofVector()
+        internalForce[:] = R
+
         # The configuration is accepted: no increment is left, and the nodes of the kernel functions carry no total
-        # solution (they move with the particles). Loads and constraints evaluate at the particles' positions.
-        noSolution = dofManager.constructDofVector()
-        noSolution[:] = 0.0
+        # solution. Loads and constraints evaluate at the particles' positions.
+        noSolution = self._noSolution()
         R, _ = self.assembleLoads(self.collectLoads(step.actions), noSolution, noSolution, R, None, timeStep)
         R = self.assembleConstraintForces(model.constraints, noSolution, noSolution, R, timeStep)
 
@@ -499,4 +531,8 @@ class MeshfreeExplicitDynamic(NonlinearSolverBase):
         hasInertia = M > 0.0
         Minv[hasInertia] = 1.0 / M[hasInertia]
 
-        return P, Minv, momentum
+        acceleration = Minv * P
+        internalAndInertialForce = dofManager.constructDofVector()
+        internalAndInertialForce[:] = internalForce + M * acceleration
+
+        return P, Minv, momentum, internalAndInertialForce

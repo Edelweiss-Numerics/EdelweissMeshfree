@@ -16,12 +16,14 @@ two kinds of nodes hold different things:
 - the nodes of the finite elements carry their **total** displacement from increment to increment, as in any finite
   element model;
 - the nodes of the kernel functions carry the **coefficients of one increment**: RKPM is updated-Lagrangian, the
-  kernel functions move with their particles, and the state lives in the particles. A rebuilt equation system starts
-  them at zero.
+  kernel functions move with their particles, and the state lives in the particles. Every increment starts them at
+  zero.
 
 :class:`~edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout` passes the solution between the
-model and the solver's vectors accordingly. The model writes back the solution ``U``, the increment ``dU`` and the
-reaction ``P`` of every node (see EdelweissFE's "Node field results" for the meaning of these entries).
+model and the solver's vectors accordingly. At acceptance, it writes the solution ``U``, the increment ``dU`` and the
+reaction ``P`` straight to the model's node fields, by node: ``U`` is the total displacement at the nodes of the finite
+elements and zero at the nodes of the kernel functions, whose meaningful value is ``dU``; every node outside the active
+domain holds zero (see EdelweissFE's "Node field results" for the meaning of these entries).
 
 The tie between the two domains
 -------------------------------

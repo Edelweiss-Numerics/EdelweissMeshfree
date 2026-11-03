@@ -56,8 +56,11 @@ class MPMEquationSystemLayout(EquationSystemLayout):
     increment to increment, as in a finite element model. The nodes of the grid and of the kernel functions do not: the
     material point method and RKPM are incremental on the current configuration -- the cells are reset after every
     increment, and the kernel functions move with their particles, while the state lives in the material points and
-    particles. Their nodal values are the coefficients of one increment, and start every rebuilt equation system at
-    zero.
+    particles. Their nodal values are the coefficients of one increment: every increment starts them at zero, so that
+    their solution ``U`` is zero, and their increment ``dU`` is their meaningful nodal value.
+
+    The model's node fields are written straight, by node: on the nodes of the active domain from the vectors of the
+    equation system, zero on all other nodes.
 
     Parameters
     ----------
@@ -73,8 +76,8 @@ class MPMEquationSystemLayout(EquationSystemLayout):
     nodesWithPersistentFieldValues
         The nodes that carry their total solution from increment to increment: those of the finite elements and of
         the cell elements.
-    activeNodeFields
-        The node fields on the nodes of the active domain, which the DOF manager numbers.
+    nodesWithVolatileFieldValues
+        The nodes of the active cells and of the particles' kernel functions.
     modelForLinearSolver
         The model reduced to its active domain, for the linear solver.
     """
@@ -86,7 +89,7 @@ class MPMEquationSystemLayout(EquationSystemLayout):
         elements: list,
         activeCells: list,
         nodesWithPersistentFieldValues: NodeSet,
-        activeNodeFields: dict,
+        nodesWithVolatileFieldValues: NodeSet,
         modelForLinearSolver,
     ):
         super().__init__(model, dofManager, elements)
@@ -94,33 +97,22 @@ class MPMEquationSystemLayout(EquationSystemLayout):
         self.activeCells = activeCells
         #: The nodes that carry their total solution from increment to increment.
         self.nodesWithPersistentFieldValues = nodesWithPersistentFieldValues
-        #: The node fields on the nodes of the active domain.
-        self.activeNodeFields = activeNodeFields
+        #: The nodes of the active domain whose degrees of freedom are the coefficients of one increment: those of
+        #: the grid and of the kernel functions that no finite element or cell element shares.
+        self.incrementalNodes = NodeSet(
+            "incremental nodes of the active domain",
+            [node for node in nodesWithVolatileFieldValues if node not in nodesWithPersistentFieldValues],
+        )
+        #: The nodes of the active domain, on which the equation system writes the model's node fields.
+        self.activeNodes = NodeSet(
+            "nodes of the active domain",
+            sorted(set(nodesWithPersistentFieldValues) | set(nodesWithVolatileFieldValues), key=lambda n: n.label),
+        )
         self.modelForLinearSolver = modelForLinearSolver
         #: The material points of the model, a list the solver hands out in chunks.
         self.materialPoints = list(model.materialPoints.values())
         #: The active cells and the cell elements, which interpolate the solution to the material points they hold.
         self.cellsInterpolatingToMaterialPoints = activeCells + list(model.cellElements.values())
-
-    def numbersTheSameNodesAs(self, other: "MPMEquationSystemLayout") -> bool:
-        """Whether this layout numbers the same nodes, with the same fields, in the same order as another one, so that
-        a vector of the other layout means the same here, entry by entry.
-
-        Parameters
-        ----------
-        other
-            The other layout.
-
-        Returns
-        -------
-        bool
-            True if the numbering of the nodes is the same.
-        """
-
-        def numbering(layout):
-            return [(name, list(nodeField.nodes)) for name, nodeField in layout.activeNodeFields.items()]
-
-        return self.dofManager.nDof == other.dofManager.nDof and numbering(self) == numbering(other)
 
     def relocateParticlesAndConstraints(self):
         """Follow a change of the connectivity that leaves the active nodes as they are (see
@@ -140,122 +132,66 @@ class MPMEquationSystemLayout(EquationSystemLayout):
 
     def readStateFromModel(self, U: DofVector, V: DofVector = None, A: DofVector = None, dynamicFields: list = None):
         """Read the state the model carries from increment to increment into the vectors of a (re)built equation
-        system: the entry ``U`` of the node fields at the nodes of finite elements and cell elements, and the values of
-        the scalar variables. The nodes of the grid and of the kernel functions start at zero; see
-        :class:`MPMEquationSystemLayout`.
+        system: the entry ``U`` of the node fields at the nodes that carry their total solution (those of finite
+        elements and cell elements), the values of the scalar variables, and, for a solver that integrates in time,
+        the entries ``V`` and ``A`` at every node of the active domain. The solution of the incremental nodes starts at
+        zero; their velocity is that of the node, carried by node from one equation system to the next: a node keeps
+        it when the active domain changes around it, and a node that has just become active is at rest.
 
         Parameters
         ----------
         U
             The solution vector of the equation system, zero, overwritten.
         V
-            The velocity vector of a solver that integrates in time; not supported, must be None.
+            The velocity vector of the equation system, zero, overwritten; None if the solver has none.
         A
-            The acceleration vector of a solver that integrates in time; not supported, must be None.
+            The acceleration vector of the equation system, zero, overwritten; None if the solver has none.
         dynamicFields
-            The names of the fields whose velocity and acceleration are read; unused.
-
-        Raises
-        ------
-        NotImplementedError
-            If a velocity or an acceleration is to be read.
+            The names of the fields whose velocity and acceleration are read; None for every field.
         """
-
-        self._refuseVelocityAndAcceleration(V, A)
 
         if self.nodesWithPersistentFieldValues:
             for nodeField in self.model.nodeFields.values():
                 self.dofManager.writeNodeFieldToDofVector(U, nodeField, "U", self.nodesWithPersistentFieldValues)
-
         self.dofManager.writeScalarVariablesToDofVector(U)
 
-    def writeResultsToModel(
-        self,
-        U: DofVector,
-        dU: DofVector,
-        P: DofVector,
-        V: DofVector = None,
-        A: DofVector = None,
-        dynamicFields: list = None,
-    ):
-        """Write the results of an accepted increment to the model: the solution ``U``, its increment ``dU`` and the
-        internal force ``P`` to the node fields of the active domain, from there to the node fields of the model, whose
-        nodes outside the active domain get zero, and the solution to the scalar variables.
+        for nodeField in self._nodeFieldsWithVelocity(dynamicFields):
+            if V is not None:
+                self.dofManager.writeNodeFieldToDofVector(V, nodeField, "V", self.activeNodes)
+            if A is not None:
+                self.dofManager.writeNodeFieldToDofVector(A, nodeField, "A", self.activeNodes)
+
+    def zeroIncrementalCoefficients(self, U: DofVector):
+        """Set the degrees of freedom of the incremental nodes (:attr:`incrementalNodes`) to zero in the solution
+        vector of a converged increment: their solution is the coefficients of one increment, and the next increment
+        starts them at zero.
 
         Parameters
         ----------
         U
-            The solution.
-        dU
-            The increment of the solution.
-        P
-            The internal force, the sum of the elements', cells' and particles' residual contributions.
-        V
-            The velocity of a solver that integrates in time; not supported, must be None.
-        A
-            The acceleration of a solver that integrates in time; not supported, must be None.
-        dynamicFields
-            The names of the fields whose velocity and acceleration are written; unused.
-
-        Raises
-        ------
-        NotImplementedError
-            If a velocity or an acceleration is to be written.
+            The solution vector of the converged increment, modified in place.
         """
 
-        self._refuseVelocityAndAcceleration(V, A)
+        for fieldName in self.dofManager.fields:
+            indices, _ = self.dofManager.locateFieldOnNodeSet(fieldName, self.incrementalNodes)
+            U[indices] = 0.0
 
-        for activeNodeField in self.activeNodeFields.values():
-            self.dofManager.writeDofVectorToNodeField(U, activeNodeField, "U")
-            self.dofManager.writeDofVectorToNodeField(P, activeNodeField, "P")
-            self.dofManager.writeDofVectorToNodeField(dU, activeNodeField, "dU")
-            self.model.nodeFields[activeNodeField.name].copyEntriesFromOther(activeNodeField)
-
-        self.dofManager.writeDofVectorToScalarVariables(U)
-
-    def writeVelocityAndAccelerationToModel(self, V: DofVector, A: DofVector, dynamicFields: list = None):
-        """Not supported: EdelweissFE's solvers do not integrate a meshfree model in time.
+    def writeEntryOfNodeField(self, dofVector: DofVector, nodeField, entry: str):
+        """Write a vector of the equation system to one entry of one node field of the model, by node: on the nodes of
+        the active domain, and zero on all other nodes of the model.
 
         Parameters
         ----------
-        V
-            The velocity; must be None.
-        A
-            The acceleration; must be None.
-        dynamicFields
-            The names of the fields whose velocity and acceleration are written; unused.
-
-        Raises
-        ------
-        NotImplementedError
-            If a velocity or an acceleration is to be written.
+        dofVector
+            The vector of the equation system.
+        nodeField
+            The node field of the model.
+        entry
+            The entry.
         """
 
-        self._refuseVelocityAndAcceleration(V, A)
-
-    @staticmethod
-    def _refuseVelocityAndAcceleration(V: DofVector | None, A: DofVector | None):
-        """Refuse a velocity or an acceleration: the velocity and the acceleration of a meshfree model do not pass
-        through this layout.
-
-        Parameters
-        ----------
-        V
-            The velocity, or None.
-        A
-            The acceleration, or None.
-
-        Raises
-        ------
-        NotImplementedError
-            If either is given.
-        """
-
-        if V is not None or A is not None:
-            raise NotImplementedError(
-                "the velocity and the acceleration of a meshfree model do not pass through its equation system "
-                "layout: EdelweissFE's dynamic solvers do not integrate a meshfree model in time"
-            )
+        nodeField[entry][:] = 0.0
+        self.dofManager.writeDofVectorToNodeField(dofVector, nodeField, entry, self.activeNodes)
 
     def updateMaterialPoints(self, dU: DofVector, timeStep: TimeStep, forEachChunk: Callable[[list, Callable], None]):
         """Update the material points with the trial solution increment, before the solver computes the cells, which
