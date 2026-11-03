@@ -23,9 +23,15 @@ the solver asks the model*), and the model answers with its active domain.
     * - ``NISTPArcLength``
       - a quasi-static step under arc length control, e.g. past a limit point; the controller is a step action, named by
         the solver option ``arcLengthController``
+    * - ``NID``
+      - an implicit dynamic step (Newmark-beta) of an RKPM model, also coupled with finite elements; see
+        `Implicit dynamics`_
+    * - ``NIDParallel``
+      - the same, computed on all threads
 
 The state a quasi-static step accepts is at rest: the velocity ``V`` and the acceleration ``A`` of every node are zero
-(see EdelweissFE's "Node field results").
+(see EdelweissFE's "Node field results"). A quasi-static solver gives the particles the Newmark parameters zero at the
+start of every step, so they carry no inertia, whatever they were given before.
 
 A simulation is set up from Python as any EdelweissFE step. The model holds what defines its connectivity -- the
 managers that assign material points to cells (``mpmManagers``) and particles to kernel functions
@@ -103,6 +109,9 @@ onto EdelweissFE's as follows:
         solver, a time stepper without the zero increment (``makeZeroIncrementFirst=False``). Neither applies to
         ``MeshfreeExplicitDynamic``: its step starts with the zero increment, which evaluates the forces of the
         configuration the step starts from, and takes its velocity (see `Explicit dynamics`_)
+    * - ``particle.setProperty("newmark-beta beta", ...)`` and ``"newmark-beta gamma"`` under a quasi-static solver
+      - the solver ``NID`` with its options ``newmarkBeta``, ``newmarkGamma`` (see `Implicit dynamics`_); the
+        implicit solvers set the particles' Newmark parameters themselves
 
 **Restart.** EdelweissFE's restart output manager writes a checkpoint of the converged state; an ``MPMModel`` adds the
 state of its material points and particles, from which their positions follow (see
@@ -144,6 +153,63 @@ by design:
 - The scalar variables, e.g. Lagrange multipliers, are checked for convergence with EdelweissFE's tolerances.
 
 The former solvers are kept, deprecated, in :mod:`edelweissmeshfree.solvers.deprecated`.
+
+Implicit dynamics
+-----------------
+
+An RKPM model, alone or coupled with finite elements (see :doc:`coupled_rkpm_fe`), is solved in implicit dynamics by
+EdelweissFE's ``NID`` (or ``NIDParallel``), with the Newmark-beta scheme: the solver options ``newmarkBeta`` and
+``newmarkGamma`` (default :math:`1/4, 1/2`, the average acceleration rule) are the one source of the parameters, which
+the solver passes on to the particles at the start of every step. The nodes of the finite elements are integrated by
+the solver with their consistent mass. Where the inertia of the particles is integrated, the solver option
+``meshfreeInertia`` selects:
+
+.. code-block:: python
+
+    from edelweissfe.solvers.nonlinearimplicitdynamic import NonlinearImplicitDynamic
+
+    solver = NonlinearImplicitDynamic(
+        jobInfo, journal, linsolver="pardiso", newmarkBeta=0.25, newmarkGamma=0.5, meshfreeInertia="particles",
+        **meshfreeCriterionOptions,
+    )
+
+.. list-table::
+    :width: 100%
+    :widths: 15 45 40
+    :header-rows: 1
+
+    * - ``meshfreeInertia``
+      - What integrates the particles' inertia
+      - What to know
+    * - ``particles`` (default)
+      - Each particle, at its own evaluation points, with the solver's :math:`\beta, \gamma`: its inertial force
+        :math:`\rho_0 V_0 T_A \boldsymbol{a}` is part of its residual, and its velocity and acceleration are part of
+        its state (and of a restart checkpoint). Nothing is projected between particles and nodes; the inertia sits
+        where the state lives.
+      - The particles start from the acceleration in their state, zero at first, not from equilibrium: a load applied
+        suddenly at the start enters at first order in time. The kinetic energy and momentum ``NID`` reports cover the
+        nodes of the finite elements only. With VCI, the particles' mass :math:`\sum_p \rho_0 V_0 T_A N_B` is not
+        symmetric, so the discrete energy is not exactly conserved.
+    * - ``nodes``
+      - ``NID``, at the nodes of the kernel functions, with the particles' lumped mass (the one the explicit solver
+        divides by, assembled anew in every increment, since the particles move); the particles are quasi-static.
+        The velocity and the acceleration of these nodes are the model's ``V`` and ``A``, carried by node from one
+        increment to the next; a node that has just become active starts at rest, and a node without positive mass is
+        quasi-static.
+      - The error of the explicit solver: the nodal velocity and acceleration are coefficients of the kernel functions
+        of the increment they were computed on, and lose that meaning when the support of the particles changes.
+        The acceleration at the start of a step is computed from equilibrium, for these nodes as for every node.
+
+In both, ``P`` is the internal force with the inertial force (see EdelweissFE's "Node field results"): the particles'
+own in ``particles``, the solver's at the nodes in ``nodes``. The zero increment before the first increment of a step
+is skipped, with the state kept: nothing moves in zero time (a zero-length increment adds no inertia in the particles
+either, see Marmot's documentation of the particles). Models of the material point method are refused: material
+points carry no inertia of their own, and the background grid is reset in every increment.
+
+Examples 118, 119 (a sudden pressure on a cantilever) and 123 (a projectile hitting a plate) run on ``NID`` with
+``particles``. Example 180 checks both modes against the period of a cantilever of finite elements and of the
+Euler-Bernoulli beam, example 170 against the dynamic response of a finite element cantilever, across the ties of a
+coupled model.
 
 Explicit dynamics
 -----------------

@@ -40,7 +40,7 @@ import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 import pytest
 from edelweissfe.journal.journal import Journal
-from edelweissfe.solvers.nonlinearimplicitstatic import NIST
+from edelweissfe.solvers.nonlinearimplicitdynamic import NonlinearImplicitDynamic
 from edelweissfe.steps.adaptivestep import AdaptiveStep
 from edelweissfe.steps.stepmanager import StepActionCollection
 from edelweissfe.utils.exceptions import StepFailed
@@ -213,10 +213,6 @@ def run_sim(no_limit=False):
         name="projectile",
     )
 
-    for particle in theModel.particles.values():
-        particle.setProperty("newmark-beta beta", 0.28)
-        particle.setProperty("newmark-beta gamma", 0.53)
-
     # let's create the particle kernel domain
     theParticleKernelDomain = ParticleKernelDomain(
         list(theModel.particles.values()), list(theModel.meshfreeKernelFunctions.values())
@@ -326,14 +322,17 @@ def run_sim(no_limit=False):
     jobInfo = jobInfoWithMeshfreeTolerances(
         fluxResidualTolerance=5e-3, absoluteFluxResidualTolerance=1e-12, fieldCorrectionTolerance=1e-9
     )
-    solver = NIST(
+    # The particles integrate their inertia themselves (meshfreeInertia=particles, the default), with the solver's
+    # Newmark parameters; the projectile starts with its velocity, from the acceleration zero.
+    solver = NonlinearImplicitDynamic(
         jobInfo,
         theJournal,
         linsolver="pardiso",
+        newmarkBeta=0.28,
+        newmarkGamma=0.53,
         **meshfreeCriterionOptions
         | {"lineSearch": True, "lineSearchAfterIterations": 4, "lineSearchEveryIterations": 3},
     )
-    # The particles integrate their motion in time themselves, which an increment of size zero cannot be.
     incSize = 5e-2
     step = AdaptiveStep(
         0,
@@ -347,13 +346,13 @@ def run_sim(no_limit=False):
         startInc=incSize,
         maxInc=incSize,
         minInc=incSize / 1e8,
-        # the test stops after eleven increments; run the script with --no-limit to go to the end of the step
-        maxNumInc=11 if not no_limit else 10000,
+        # the test stops after the zero increment and twelve increments of motion; run the script with --no-limit to
+        # go to the end of the step
+        maxNumInc=12 if not no_limit else 10000,
         maxIter=13,
         criticalIter=7,
         maxGrowIter=4,
         increaseFactor=1.5,
-        makeZeroIncrementFirst=False,
     )
 
     for p in theModel.particleSets["projectile_all"]:
