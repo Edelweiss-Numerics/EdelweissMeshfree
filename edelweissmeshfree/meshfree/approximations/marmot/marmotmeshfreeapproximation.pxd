@@ -45,8 +45,8 @@ from edelweissmeshfree.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunct
 )
 
 
-cdef extern from "Marmot/MarmotMeshfreeApproximation.h" namespace "Marmot::Meshfree":
-    cdef cppclass MarmotMeshfreeApproximation nogil:
+cdef extern from "Marmot/MarmotMeshfreeApproximation.h":
+    cdef cppclass MarmotMeshfreeApproximation "Marmot::Discretizations::Meshfree::Approximation" nogil:
         void computeShapeFunctions(const double* coord,
                                    const vector[ const MarmotMeshfreeKernelFunction* ]& kernelFunctions,
                                    double* shapeFunctionValues ) const
@@ -56,12 +56,12 @@ cdef extern from "Marmot/MarmotMeshfreeApproximation.h" namespace "Marmot::Meshf
                                                double* shapeFunctionValues,
                                                double* shapeFunctionGradients ) const
 
-cdef extern from "Marmot/MarmotMeshfreeReproducingKernelApproximation.h" namespace "Marmot::Meshfree":
-    cdef cppclass MarmotMeshfreeReproducingKernelApproximation nogil:
+cdef extern from "Marmot/MarmotMeshfreeReproducingKernelApproximation.h":
+    cdef cppclass MarmotMeshfreeReproducingKernelApproximation "Marmot::Discretizations::Meshfree::ReproducingKernelApproximation" nogil:
         MarmotMeshfreeReproducingKernelApproximation(int dim, int completenessOrder)
 
-cdef extern from "Marmot/MarmotMeshfreeReproducingKernelApproximationImplicit.h" namespace "Marmot::Meshfree":
-    cdef cppclass MarmotMeshfreeReproducingKernelApproximationImplicit nogil:
+cdef extern from "Marmot/MarmotMeshfreeReproducingKernelApproximationImplicit.h":
+    cdef cppclass MarmotMeshfreeReproducingKernelApproximationImplicit "Marmot::Discretizations::Meshfree::ReproducingKernelApproximationImplicit" nogil:
         MarmotMeshfreeReproducingKernelApproximationImplicit(int dim, int completenessOrder)
 
 
