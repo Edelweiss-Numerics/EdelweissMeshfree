@@ -57,6 +57,7 @@ reproduce its tip reaction and its deflection line, up to the discretization err
 """
 
 import argparse
+from collections.abc import Callable
 
 import edelweissfe.utils.performancetiming as performancetiming
 import h5py
@@ -70,8 +71,10 @@ from edelweissfe.models.femodel import FEModel
 from edelweissfe.sections.plane import PlaneSectionSchema
 from edelweissfe.sections.plane import Section as PlaneSection
 from edelweissfe.sets.nodeset import NodeSet
+from edelweissfe.solvers.nonlinearimplicitdynamicparallel import NIDParallel
 from edelweissfe.solvers.nonlinearimplicitstaticparallel import NISTParallel
 from edelweissfe.stepactions.dirichlet import StepAction as Dirichlet
+from edelweissfe.stepactions.nodeforces import StepAction as NodeForces
 from edelweissfe.steps.adaptivestep import AdaptiveStep
 from edelweissfe.steps.stepmanager import StepActionCollection
 from edelweissfe.utils.fieldoutput import FieldOutputController
@@ -305,6 +308,98 @@ def solve(model: FEModel, clampedNodes: NodeSet, tipNodes: NodeSet, fieldOutputC
         step.solve()
     finally:
         fieldOutputController.finalizeJob()
+
+
+#: The dynamic step: a small force on the tip, applied suddenly; its static deflection is about a thousandth of the
+#: length, so the response is linear. About one and a half periods of the first bending mode, forty increments each.
+tipForce = 2.75e-4
+dynamicTimeIncrement = 0.47
+dynamicIncrements = 60
+
+
+def solveDynamically(
+    model: FEModel, clampedNodes: NodeSet, tipNodes: NodeSet, fieldOutputController, journal: Journal, options: dict
+):
+    """Clamp the left end, load the right end suddenly, and solve the dynamic step with ``NIDParallel``, the average
+    acceleration rule, from rest.
+
+    Parameters
+    ----------
+    model
+        The model.
+    clampedNodes
+        The finite element nodes at the left end.
+    tipNodes
+        The finite element nodes at the right end.
+    fieldOutputController
+        The field output controller of the model.
+    journal
+        The journal.
+    options
+        The options of the solver, besides the Newmark parameters and the linear solver.
+    """
+
+    stepActions = StepActionCollection()
+    stepActions["dirichlet"]["clamped"] = Dirichlet(
+        "clamped", clampedNodes, "displacement", {0: 0.0, 1: 0.0}, model, journal
+    )
+    stepActions["nodeforces"]["tip"] = NodeForces(
+        "tip", tipNodes, "displacement", np.array([0.0, -tipForce / len(tipNodes)]), model, journal, f_t=lambda t: 1.0
+    )
+
+    stepLength = dynamicTimeIncrement * dynamicIncrements
+    jobInfo = loadConfiguration({})
+    step = AdaptiveStep(
+        0,
+        model,
+        fieldOutputController,
+        journal,
+        jobInfo,
+        NIDParallel(jobInfo, journal, linsolver="pardiso", newmarkBeta=0.25, newmarkGamma=0.5, **options),
+        [],
+        stepActions,
+        stepLength=stepLength,
+        startInc=1.0 / dynamicIncrements,
+        maxInc=1.0 / dynamicIncrements,
+        minInc=1.0 / dynamicIncrements,
+        maxNumInc=2 * dynamicIncrements,
+    )
+
+    fieldOutputController.initializeJob()
+    try:
+        step.solve()
+    finally:
+        fieldOutputController.finalizeJob()
+
+
+def tipDeflectionHistory(
+    model: FEModel, tipNodes: NodeSet, fieldOutputController, solve: Callable
+) -> tuple[np.ndarray, np.ndarray]:
+    """Solve a model with a field output of the mean deflection of its tip nodes, and return its history.
+
+    Parameters
+    ----------
+    model
+        The model.
+    tipNodes
+        The finite element nodes at the right end.
+    fieldOutputController
+        The field output controller of the model.
+    solve
+        Solves the model, called with its field output controller.
+
+    Returns
+    -------
+    tuple[np.ndarray, np.ndarray]
+        The times and the tip deflections.
+    """
+
+    fieldOutputController.addPerNodeFieldOutput(
+        "tip", model.nodeFields["displacement"].subset(tipNodes), "U", saveHistory=True, f_x=lambda x: np.mean(x[:, 1])
+    )
+    solve(fieldOutputController)
+    tip = fieldOutputController.fieldOutputs["tip"]
+    return np.asarray(tip.getTimeHistory()), np.asarray(tip.getResultHistory()).ravel()
 
 
 def finiteElementNodes(model: FEModel) -> list:
@@ -590,6 +685,52 @@ def test_sim(assert_gold):
     assert reaction == pytest.approx(referenceReaction, rel=1e-2)
     for line in (finiteElementLine, particleLine):
         np.testing.assert_allclose(line[:, 1], referenceDeflection(line[:, 0]), atol=2e-3 * abs(tipDeflection))
+
+
+@pytest.mark.parametrize("inertia", ["entities", "nodes"])
+def test_the_dynamic_coupled_cantilever_follows_the_finite_element_cantilever(inertia):
+    """The independent check of implicit dynamics across the ties: the coupled cantilever under a sudden tip force,
+    with the particles integrating their own inertia or with ``NID`` integrating it at the nodes, against the
+    cantilever of finite elements only under the same force. The tip deflection follows the same history, up to the
+    discretization error of the RKPM part."""
+
+    journal = Journal()
+    reference = FEModel(2)
+    addFiniteElementBeam(reference, journal, "beam", 0.0, length, defaultElementSize)
+    reference.nodeSets["all"] = NodeSet("all", reference.nodes.values())
+    reference.prepareYourself(journal)
+    _, referenceTip = tipDeflectionHistory(
+        reference,
+        reference.nodeSets["beam_right"],
+        FieldOutputController(reference, journal),
+        lambda fieldOutputs: solveDynamically(
+            reference, reference.nodeSets["beam_left"], reference.nodeSets["beam_right"], fieldOutputs, journal, {}
+        ),
+    )
+
+    model = buildCoupledModel(journal, defaultElementSize, defaultParticleSize)
+    _, tip = tipDeflectionHistory(
+        model,
+        model.nodeSets["feRight_right"],
+        MPMFieldOutputController(model, journal),
+        lambda fieldOutputs: solveDynamically(
+            model,
+            model.nodeSets["feLeft_left"],
+            model.nodeSets["feRight_right"],
+            fieldOutputs,
+            journal,
+            {"inertia": inertia},
+        ),
+    )
+
+    amplitude = np.max(np.abs(referenceTip))
+    # it swings through about one and a half periods: to twice the static deflection in the first half, back to rest
+    # after one period
+    firstHalf = referenceTip[: len(referenceTip) // 2]
+    assert 0 < np.argmin(firstHalf) < len(firstHalf) - 1
+    assert np.max(referenceTip[len(referenceTip) // 2 :]) > -0.1 * amplitude
+    # refined to half the element and particle sizes, the difference falls from 0.8 % to 0.2 % of the amplitude
+    assert np.max(np.abs(tip - referenceTip)) < 2e-2 * amplitude
 
 
 if __name__ == "__main__":
