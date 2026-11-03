@@ -113,6 +113,8 @@ class MPMEquationSystemLayout(EquationSystemLayout):
         self.modelForLinearSolver = modelForLinearSolver
         #: The material points of the model, a list the solver hands out in chunks.
         self.materialPoints = list(model.materialPoints.values())
+        #: The particles of the model, a list the solver hands out in chunks.
+        self.particles = list(model.particles.values())
         #: The active cells and the cell elements, which interpolate the solution to the material points they hold.
         self.cellsInterpolatingToMaterialPoints = activeCells + list(model.cellElements.values())
 
@@ -186,6 +188,69 @@ class MPMEquationSystemLayout(EquationSystemLayout):
 
         nodeField[entry][:] = 0.0
         self.dofManager.writeDofVectorToNodeField(dofVector, nodeField, entry, self.activeNodes)
+
+    def dofsWithNodalInertia(self, fieldNames: list) -> np.ndarray:
+        """The degrees of freedom of the given fields whose inertia is that of the nodes: those of the nodes that carry
+        their total solution, i.e. of the finite elements (and cell elements), whose mass the elements assemble. The
+        nodes of the kernel functions are left out: the particles carry the state, and with it the inertia, which they
+        integrate themselves, or which a solver lumps to these nodes (see :meth:`assembleLumpedMassOfEntitiesWithOwnInertia`).
+
+        Parameters
+        ----------
+        fieldNames
+            The names of the fields.
+
+        Returns
+        -------
+        np.ndarray
+            The indices of the degrees of freedom in the vectors of the equation system, sorted.
+        """
+
+        isWithNodalInertia = np.zeros(self.dofManager.nDof, dtype=bool)
+        if self.nodesWithPersistentFieldValues:
+            for fieldName in fieldNames:
+                indices, _ = self.dofManager.locateFieldOnNodeSet(fieldName, self.nodesWithPersistentFieldValues)
+                isWithNodalInertia[indices] = True
+
+        return np.flatnonzero(isWithNodalInertia)
+
+    def assembleLumpedMassOfEntitiesWithOwnInertia(
+        self, forEachChunk: Callable[[list, Callable], None]
+    ) -> DofVector | None:
+        """The lumped mass of the particles at the nodes of their current kernel functions,
+        :math:`m_A = \\sum_p \\rho_0\\, V_{0,p}\\, T_A(\\boldsymbol{x}_p)`, as each particle reports it
+        (``computeLumpedInertia``), summed over the particles; see
+        :meth:`~edelweissfe.models.equationsystemlayout.EquationSystemLayout.assembleLumpedMassOfEntitiesWithOwnInertia`. The one
+        assembly of this mass: the explicit solver divides by it, the implicit dynamic solver adds it to the mass of
+        the nodes when it integrates the particles' inertia there.
+
+        Parameters
+        ----------
+        forEachChunk
+            The solver's loop over chunks of independent entities: the particles are evaluated in it, each into its own
+            part of a scatter vector.
+
+        Returns
+        -------
+        DofVector | None
+            The lumped mass, one value per degree of freedom; None if the model has no particles.
+        """
+
+        if not self.particles:
+            return None
+
+        M = self.dofManager.constructDofVector()
+        M[:] = 0.0
+        scatterM = M.createScatterVector()
+
+        def assemble(particles):
+            for particle in particles:
+                particle.computeLumpedInertia(scatterM[particle])
+
+        forEachChunk(self.particles, assemble)
+        scatterM.assembleInto(M)
+
+        return M
 
     def carriersOfTheMotion(self) -> set[str]:
         """Where the model holds the motion of its particles; see

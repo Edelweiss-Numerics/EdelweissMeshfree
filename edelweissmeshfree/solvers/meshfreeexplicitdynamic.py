@@ -529,8 +529,10 @@ class MeshfreeExplicitDynamic(NonlinearSolverBase):
     def _evaluate(
         self, model: MPMModel, step, timeStep: TimeStep
     ) -> tuple[DofVector, DofVector, DofVector, DofVector, DofVector, DofVector]:
-        """Evaluate at the configuration just accepted: the particles' internal forces, lumped masses and lumped
-        momenta, on all threads, then the loads and constraints. All of them add residual contributions (an internal
+        """Evaluate at the configuration just accepted: the particles' internal forces and lumped momenta, on all
+        threads, their lumped mass (see
+        :meth:`~edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.assembleLumpedMassOfEntitiesWithOwnInertia`),
+        then the loads and constraints. All of them add residual contributions (an internal
         force, the negative of an external one), and the net force is their negative.
 
         Parameters
@@ -553,25 +555,24 @@ class MeshfreeExplicitDynamic(NonlinearSolverBase):
 
         dofManager = self._layout.dofManager
         R = dofManager.constructDofVector()
-        M = dofManager.constructDofVector()
         momentum = dofManager.constructDofVector()
-        R[:] = M[:] = momentum[:] = 0.0
+        R[:] = momentum[:] = 0.0
 
         scatterR = R.createScatterVector()
-        scatterM = M.createScatterVector()
         scatterMomentum = momentum.createScatterVector()
 
         def evaluate(particles):
             for particle in particles:
                 particle.computePhysicsKernelsExplicit(scatterR[particle])
-                particle.computeLumpedInertia(scatterM[particle])
                 particle.computeLumpedMomentum(scatterMomentum[particle])
 
         mapChunksInParallel(self._particles, evaluate)
 
         scatterR.assembleInto(R)
-        scatterM.assembleInto(M)
         scatterMomentum.assembleInto(momentum)
+
+        # the one assembly of the particles' lumped mass, which the implicit dynamic solver uses as well
+        M = self._layout.assembleLumpedMassOfEntitiesWithOwnInertia(mapChunksInParallel)
 
         internalForce = dofManager.constructDofVector()
         internalForce[:] = R
