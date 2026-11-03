@@ -35,9 +35,9 @@ import numpy as np
 from edelweissmeshfree.cells.marmotcell.marmotcell cimport MarmotCell, MarmotCellWrapper
 
 
-cdef extern from "Marmot/MarmotMPMLibrary.h" namespace "MarmotLibrary" nogil:
+cdef extern from "Marmot/MarmotMPMLibrary.h" nogil:
 
-    cdef cppclass MarmotCellElementFactory:
+    cdef cppclass MarmotCellElementFactory "Marmot::Registry::CellElementFactory":
         @staticmethod
         MarmotCellElement* createCellElement(const string& cellElementName,
                                int cellElementNumber,
@@ -47,11 +47,11 @@ cdef extern from "Marmot/MarmotMPMLibrary.h" namespace "MarmotLibrary" nogil:
                                 int quadratureOrder) except +ValueError
 
 cdef extern from "Marmot/MarmotMaterialPoint.h" nogil:
-    cdef cppclass MarmotMaterialPoint:
+    cdef cppclass MarmotMaterialPoint "Marmot::Discretizations::MaterialPoints::MaterialPoint":
         pass
 
 cdef extern from "Marmot/MarmotCellElement.h":
-    cdef cppclass MarmotCellElement(MarmotCell) nogil:
+    cdef cppclass MarmotCellElement "Marmot::Discretizations::Cells::CellElement"(MarmotCell) nogil:
         pass
 
         int getNMaterialPoints()

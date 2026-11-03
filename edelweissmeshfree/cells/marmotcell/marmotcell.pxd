@@ -41,9 +41,9 @@ from libcpp.vector cimport vector
 import numpy as np
 
 
-cdef extern from "Marmot/MarmotMPMLibrary.h" namespace "MarmotLibrary" nogil:
+cdef extern from "Marmot/MarmotMPMLibrary.h" nogil:
 
-    cdef cppclass MarmotCellFactory:
+    cdef cppclass MarmotCellFactory "Marmot::Registry::CellFactory":
         @staticmethod
         MarmotCell* createCell(const string& cellName,
                                int cellNumber,
@@ -60,11 +60,11 @@ cdef extern from "Marmot/MarmotMPMLibrary.h" namespace "MarmotLibrary" nogil:
 
 cdef extern from "Marmot/MarmotMaterialPoint.h" nogil:
 
-    cdef cppclass MarmotMaterialPoint:
+    cdef cppclass MarmotMaterialPoint "Marmot::Discretizations::MaterialPoints::MaterialPoint":
         pass
 
 cdef extern from "Marmot/MarmotCell.h":
-    cdef cppclass MarmotCell nogil:
+    cdef cppclass MarmotCell "Marmot::Discretizations::Cells::Cell" nogil:
 
         const vector[vector[string]]& getNodeFields()
 
