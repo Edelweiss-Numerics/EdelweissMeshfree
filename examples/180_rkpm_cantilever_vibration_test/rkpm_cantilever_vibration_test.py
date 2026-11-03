@@ -70,6 +70,7 @@ from edelweissfe.sections.plane import PlaneSectionSchema
 from edelweissfe.sections.plane import Section as PlaneSection
 from edelweissfe.sets.nodeset import NodeSet
 from edelweissfe.solvers.nonlinearimplicitdynamic import NonlinearImplicitDynamic
+from edelweissfe.solvers.nonlinearimplicitstatic import NIST
 from edelweissfe.stepactions.dirichlet import StepAction as Dirichlet
 from edelweissfe.stepactions.distributedload import StepAction as DistributedLoad
 from edelweissfe.steps.adaptivestep import AdaptiveStep
@@ -231,23 +232,26 @@ def solveDynamically(model, stepActions: dict, fieldOutputController, journal: J
         fieldOutputController.finalizeJob()
 
 
-def run_rkpm(particleSize: float, meshfreeInertia: str) -> tuple[np.ndarray, np.ndarray]:
-    """The RKPM cantilever: its tip deflection over time.
+def buildRkpmCantilever(
+    particleSize: float, journal: Journal, clampPenalty: float = penaltyParameter
+) -> tuple[MPMModel, dict, MPMFieldOutputController]:
+    """The RKPM cantilever, clamped and loaded, with a field output of the mean deflection of its tip particles.
 
     Parameters
     ----------
     particleSize
         The size of the particles.
-    meshfreeInertia
-        Where the particles' inertia is integrated, ``particles`` or ``nodes``.
+    journal
+        The journal.
+    clampPenalty
+        The penalty parameter of the clamp.
 
     Returns
     -------
-    tuple[np.ndarray, np.ndarray]
-        The times, and the mean deflection of the particles at the tip.
+    tuple[MPMModel, dict, MPMFieldOutputController]
+        The prepared model, the step actions with the load, and the field output controller.
     """
 
-    journal = Journal()
     dimension = 2
     model = MPMModel(dimension)
 
@@ -287,7 +291,7 @@ def run_rkpm(particleSize: float, meshfreeInertia: str) -> tuple[np.ndarray, np.
 
     # the clamp holds the left face of the particles at the left end: their vertices 0 and 3
     clamp = ParticlePenaltyWeakDirichlet(
-        "clamp", model, model.particleSets["beam_left"], "displacement", {0: 0, 1: 0}, penaltyParameter, [0, 3]
+        "clamp", model, model.particleSets["beam_left"], "displacement", {0: 0, 1: 0}, clampPenalty, [0, 3]
     )
     model.constraints[clamp.name] = clamp
 
@@ -309,6 +313,28 @@ def run_rkpm(particleSize: float, meshfreeInertia: str) -> tuple[np.ndarray, np.
     fieldOutputController.addPerParticleFieldOutput(
         "tip", model.particleSets["beam_right"], "displacement", saveHistory=True, f_x=lambda x: np.mean(x[:, 1])
     )
+
+    return model, stepActions, fieldOutputController
+
+
+def run_rkpm(particleSize: float, meshfreeInertia: str) -> tuple[np.ndarray, np.ndarray]:
+    """The RKPM cantilever: its tip deflection over time.
+
+    Parameters
+    ----------
+    particleSize
+        The size of the particles.
+    meshfreeInertia
+        Where the particles' inertia is integrated, ``particles`` or ``nodes``.
+
+    Returns
+    -------
+    tuple[np.ndarray, np.ndarray]
+        The times, and the mean deflection of the particles at the tip.
+    """
+
+    journal = Journal()
+    model, stepActions, fieldOutputController = buildRkpmCantilever(particleSize, journal)
 
     solveDynamically(
         model,
@@ -383,6 +409,96 @@ def run_finite_elements(elementSize: float) -> tuple[np.ndarray, np.ndarray]:
 
     tip = fieldOutputController.fieldOutputs["tip"]
     return np.asarray(tip.getTimeHistory()), np.asarray(tip.getResultHistory()).ravel()
+
+
+def particleSpeeds(model: MPMModel) -> tuple[float, float]:
+    """The largest velocity and acceleration of the particles, in the state they carry.
+
+    Parameters
+    ----------
+    model
+        The model.
+
+    Returns
+    -------
+    tuple[float, float]
+        The largest absolute velocity and acceleration component.
+    """
+
+    return (
+        max(np.max(np.abs(particle.getResultArray("velocity"))) for particle in model.particles.values()),
+        max(np.max(np.abs(particle.getResultArray("acceleration"))) for particle in model.particles.values()),
+    )
+
+
+def test_a_quasi_static_step_leaves_the_particles_at_rest():
+    """NID, NIST, NID with the particles integrating their own inertia. The first dynamic step ends a quarter period
+    after the load was applied, near the static deflection with the largest velocity. The quasi-static step holds the
+    load: it finds the static deflection, and the particles it accepts are at rest. The second dynamic step starts from
+    there, at rest in equilibrium, and stays at the static deflection. Had the quasi-static step kept the particles'
+    velocity, the cantilever would swing about the static deflection by about that deflection.
+
+    At a constant load, the tip still creeps a little from increment to increment, in a quasi-static step as in a
+    dynamic one: the clamp is a penalty on the increment of the clamped particles' faces, so every increment starts
+    with the clamp's reaction unbalanced and re-establishes it by a give of reaction / penalty, which accumulates. Over
+    the second step, a quasi-static continuation creeps by 6e-3 of the static deflection with the penalty of the period
+    tests and by 1.6e-4 with the penalty here, the dynamic step by less (2.5e-3 and 7.7e-5). A velocity left by the
+    first dynamic step would make it swing by about the static deflection."""
+
+    journal = Journal()
+    model, stepActions, fieldOutputController = buildRkpmCantilever(0.25, journal, clampPenalty=1e10)
+    timeIncrement = eulerBernoulliPeriod() / incrementsPerPeriod
+    quarterPeriod = incrementsPerPeriod // 4 * timeIncrement
+    jobInfo = jobInfoWithMeshfreeTolerances(fluxResidualTolerance=1e-8, fieldCorrectionTolerance=1e-12)
+
+    def solveStep(number: int, solver, stepLength: float, increment: float):
+        AdaptiveStep(
+            number,
+            model,
+            fieldOutputController,
+            journal,
+            jobInfo,
+            solver,
+            [],
+            stepActions,
+            stepLength=stepLength,
+            startInc=increment / stepLength,
+            maxInc=increment / stepLength,
+            minInc=increment / stepLength,
+            maxNumInc=100,
+            maxIter=15,
+        ).solve()
+
+    def dynamicSolver():
+        return NonlinearImplicitDynamic(
+            jobInfo, journal, newmarkBeta=0.25, newmarkGamma=0.5, **meshfreeCriterionOptions | {"linsolver": "pardiso"}
+        )
+
+    fieldOutputController.initializeJob()
+    try:
+        solveStep(0, dynamicSolver(), quarterPeriod, timeIncrement)
+        velocityAfterTheFirstDynamicStep, _ = particleSpeeds(model)
+
+        solveStep(1, NIST(jobInfo, journal, **meshfreeCriterionOptions | {"linsolver": "pardiso"}), 1.0, 0.5)
+        speedsAfterTheQuasiStaticStep = particleSpeeds(model)
+        staticDeflection = fieldOutputController.fieldOutputs["tip"].getLastResult()
+
+        nBeforeTheSecondDynamicStep = len(fieldOutputController.fieldOutputs["tip"].getTimeHistory())
+        solveStep(2, dynamicSolver(), quarterPeriod, timeIncrement)
+        speedsAfterTheSecondDynamicStep = particleSpeeds(model)
+    finally:
+        fieldOutputController.finalizeJob()
+
+    secondDynamicStep = np.asarray(fieldOutputController.fieldOutputs["tip"].getResultHistory()).ravel()[
+        nBeforeTheSecondDynamicStep:
+    ]
+
+    assert velocityAfterTheFirstDynamicStep > 0.0
+    assert speedsAfterTheQuasiStaticStep == (0.0, 0.0)
+    assert staticDeflection < 0.0
+    assert len(secondDynamicStep) >= incrementsPerPeriod // 4
+    np.testing.assert_allclose(secondDynamicStep, staticDeflection, rtol=1e-3)
+    assert max(speedsAfterTheSecondDynamicStep) < 1e-2 * velocityAfterTheFirstDynamicStep
 
 
 @pytest.fixture(autouse=True)
