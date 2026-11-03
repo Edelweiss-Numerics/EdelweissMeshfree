@@ -226,6 +226,37 @@ class MPMModel(FEModel):
 
         return super().advanceToTime(time)
 
+    def setNewmarkParametersOfEntities(self, beta: float, gamma: float):
+        """Give the particles the Newmark parameters of the solver, at the start of every step of an implicit solver;
+        see :meth:`~edelweissfe.models.femodel.FEModel.setNewmarkParametersOfEntities`. Each particle integrates the
+        Newmark scheme at its own evaluation points, with its velocity and acceleration in its state; with
+        :math:`\\beta = \\gamma = 0`, which every quasi-static solver passes, it carries no inertia. A particle without
+        the properties ``newmark-beta beta`` and ``newmark-beta gamma`` has no inertia to integrate: it is accepted by a
+        quasi-static solver, and refused by a dynamic one.
+
+        Parameters
+        ----------
+        beta
+            The Newmark parameter :math:`\\beta`; 0 for no inertia.
+        gamma
+            The Newmark parameter :math:`\\gamma`; 0 for no inertia.
+
+        Raises
+        ------
+        ValueError
+            If a particle without Newmark parameters is to integrate its inertia.
+        """
+
+        for particle in self.particles.values():
+            if "newmark-beta beta" in particle.propertyNames:
+                particle.setProperty("newmark-beta beta", beta)
+                particle.setProperty("newmark-beta gamma", gamma)
+            elif beta != 0.0 or gamma != 0.0:
+                raise ValueError(
+                    "Particle {:} has no Newmark parameters, so it cannot integrate its inertia in time; solve the model "
+                    "with a quasi-static solver.".format(particle.number)
+                )
+
     def goToPreviousTimeStep(self):
 
         for p in self.particles.values():
