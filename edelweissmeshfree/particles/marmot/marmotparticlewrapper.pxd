@@ -53,12 +53,12 @@ from edelweissmeshfree.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunct
 
 
 cdef extern from "Marmot/MarmotUtils.h":
-    cdef struct StateView:
+    cdef struct StateView "Marmot::Utilities::StateView":
         double *stateLocation
         int stateSize
 
-cdef extern from "Marmot/MarmotParticleLibrary.h" namespace "MarmotLibrary" nogil:
-    cdef cppclass MarmotParticleFactory:
+cdef extern from "Marmot/MarmotParticleLibrary.h" nogil:
+    cdef cppclass MarmotParticleFactory "Marmot::Registry::ParticleFactory":
         @staticmethod
         MarmotParticle* createParticle(const string& particleName,
                                int particleNumber,
@@ -70,8 +70,8 @@ cdef extern from "Marmot/MarmotParticleLibrary.h" namespace "MarmotLibrary" nogi
                                int sizeMaterialProperties,
                                const MarmotMeshfreeApproximation& approximation) except +ValueError
 
-cdef extern from "Marmot/MarmotParticle.h" namespace "Marmot::Meshfree":
-    cdef cppclass MarmotParticle nogil:
+cdef extern from "Marmot/MarmotParticle.h":
+    cdef cppclass MarmotParticle "Marmot::Discretizations::Meshfree::Particle" nogil:
 
         const vector[string]& getFields()
 

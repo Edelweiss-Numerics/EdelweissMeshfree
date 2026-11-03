@@ -30,8 +30,8 @@ import argparse
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 import pytest
+from edelweissfe.config.linsolve import getLinSolverByName
 from edelweissfe.journal.journal import Journal
-from edelweissfe.linsolve.pardiso.pardiso import pardisoSolve
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 from edelweissfe.utils.exceptions import StepFailed
 
@@ -233,16 +233,10 @@ def run_sim(no_limit=False):
 
     ensightOutput = EnsightOutputManager("ensight", theModel, fieldOutputController, theJournal, None)
     ensightOutput.minDTForOutput = 1e-3
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["slab acceleration"], create="perElement", name="acceleration"
-    )
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["slab velocity"], create="perElement", name="velocity"
-    )
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["vertex displacements"],
-        create="perNode",
-        name="vertex displacements",
+    ensightOutput.createPerElementOutput(fieldOutputController.fieldOutputs["slab acceleration"], name="acceleration")
+    ensightOutput.createPerElementOutput(fieldOutputController.fieldOutputs["slab velocity"], name="velocity")
+    ensightOutput.createPerNodeOutput(
+        fieldOutputController.fieldOutputs["vertex displacements"], name="vertex displacements"
     )
     ensightOutput.initializeJob()
 
@@ -262,7 +256,7 @@ def run_sim(no_limit=False):
     iterationOptions["default absolute flux residual tolerance"] = 1e-12
     iterationOptions["default absolute field correction tolerance"] = 1e-9
 
-    linearSolver = pardisoSolve
+    linearSolver = getLinSolverByName("pardiso", {})
 
     try:
         nonlinearSolver.solveStep(

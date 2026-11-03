@@ -89,7 +89,13 @@ class PenaltyWeakDirichlet(MPMConstraintBase):
 
     def updateConnectivity(self, model):
         nodes = {
-            n: i for i, n in enumerate(set(n for mp in self._constrainedMPs for c in mp.assignedCells for n in c.nodes))
+            n: i
+            for i, n in enumerate(
+                sorted(
+                    set(n for mp in self._constrainedMPs for c in mp.assignedCells for n in c.nodes),
+                    key=lambda n: n.label,
+                )
+            )
         }
 
         hasChanged = False

@@ -83,4 +83,4 @@ class LinearPredictor(BasePredictor):
         self._dU_n = dU.copy()
         self._deltaT_n = timeStep.timeIncrement
         if self._arcLength:
-            self._dLambda_n = dLambda.copy()
+            self._dLambda_n = dLambda if dLambda is not None else 0.0

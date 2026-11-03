@@ -3,9 +3,14 @@ name: Documentation
 on:
   push:
     branches: [master]
+  pull_request:
 
 permissions:
   contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -14,80 +19,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Mambaforge
-        uses: conda-incubator/setup-miniconda@v3
-        with:
-          use-mamba: true
-          miniforge-variant: Miniforge3
-          miniforge-version: latest
-          activate-environment: anaconda-client-env
-
-      - name: Install conda packages
-        shell: bash -l {0}
-        run: |
-          git clone https://github.com/Edelweiss-Numerics/EdelweissFE.git
-          mamba install --file EdelweissFE/conda_requirements.txt
-
-      - name: Install Eigen
-        shell: bash -l {0}
-        run: |
-          git clone --branch 3.4.0 https://gitlab.com/libeigen/eigen.git
-          cd eigen
-          mkdir build
-          cd build
-          cmake -DBUILD_TESTING=OFF -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DINCLUDE_INSTALL_DIR=$CONDA_PREFIX/include ..
-          make install
-          cd ../..
-
-      - name: Install Autodiff
-        shell: bash -l {0}
-        run: |
-          git clone --branch v1.1.0 https://github.com/autodiff/autodiff.git
-          cd autodiff
-          mkdir build
-          cd build
-          cmake -DAUTODIFF_BUILD_TESTS=OFF -DAUTODIFF_BUILD_PYTHON=OFF -DAUTODIFF_BUILD_EXAMPLES=OFF -DAUTODIFF_BUILD_DOCS=OFF -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX ..
-          make install
-          cd ../..
-
-      - name: Install Fastor
-        shell: bash -l {0}
-        run: |
-          git clone https://github.com/romeric/Fastor.git
-          cd Fastor
-          cmake -DBUILD_TESTING=OFF -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX .
-          make install
-          cd ..
-
-      - name: Install Marmot
-        shell: bash -l {0}
-        run: |
-          git clone "https://github.com/MAteRialMOdelingToolbox/Marmot.git"
-          git clone "https://github.com/BOKU-CMP-MEC-MAT/MarmotMeshfreeCore.git" ./Marmot/modules/core/MarmotMeshfreeCore
-          mkdir ./Marmot/build
-          cd ./Marmot/build
-          cmake -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX ..
-          make install
-          cd ../..
-
-      - name: Install EdelweissFE
-        shell: bash -l {0}
-        run: |
-          cd EdelweissFE
-          pip install .
-          cd ..
-
-      - name: Build EdelweissMeshfree
-        shell: bash -l {0}
-        run: |
-          pip install .
+      - uses: ./.github/actions/setup-stack
 
       - name: Build Sphinx documentation
-        shell: bash -l {0}
+        shell: bash -leo pipefail {0}
         run: |
           sphinx-build ./doc/source/ ./docs -b html
 
+      - name: Upload documentation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation
+          path: ./docs
+
       - name: Deploy
+        if: github.ref == 'refs/heads/master'
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}

@@ -39,8 +39,8 @@ import argparse
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 import pytest
+from edelweissfe.config.linsolve import getLinSolverByName
 from edelweissfe.journal.journal import Journal
-from edelweissfe.linsolve.pardiso.pardiso import pardisoSolve
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 from edelweissfe.utils.exceptions import StepFailed
 
@@ -232,14 +232,9 @@ def run_sim(particleSize, supportRadius, continuityOrder, completenessOrder):
     fieldOutputController.initializeJob()
 
     ensightOutput = EnsightOutputManager(exportName, theModel, fieldOutputController, theJournal, None)
-    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["displacement"], create="perElement")
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["vertex displacements"],
-        create="perNode",
-    )
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["deformation gradient"], create="perElement"
-    )
+    ensightOutput.createPerElementOutput(fieldOutputController.fieldOutputs["displacement"])
+    ensightOutput.createPerNodeOutput(fieldOutputController.fieldOutputs["vertex displacements"])
+    ensightOutput.createPerElementOutput(fieldOutputController.fieldOutputs["deformation gradient"])
     ensightOutput.initializeJob()
 
     incSize = 5e-1
@@ -253,7 +248,7 @@ def run_sim(particleSize, supportRadius, continuityOrder, completenessOrder):
     iterationOptions["critical iterations"] = 7
     iterationOptions["allowed residual growths"] = 10
 
-    linearSolver = pardisoSolve
+    linearSolver = getLinSolverByName("pardiso", {})
 
     from edelweissmeshfree.meshfree.vci import (
         BoundaryParticleDefinition,

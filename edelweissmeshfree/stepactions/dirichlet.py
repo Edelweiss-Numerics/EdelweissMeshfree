@@ -93,13 +93,18 @@ class Dirichlet(DirichletBase):
         else:
             self._amplitude = lambda x: x
 
-    def getDelta(self, timeStep: TimeStep, nodes):
+    def getPrescribedIncrement(self, timeStep: TimeStep, nodes=None) -> np.ndarray:
+        if nodes is None:
+            nodes = self.nSet
         if self.active:
-            delta = np.tile(self._delta, len(nodes))
+            delta = np.tile(self._delta, (len(nodes), 1))
 
             return delta * (
                 self._amplitude(timeStep.stepProgress)
                 - (self._amplitude(timeStep.stepProgress - timeStep.stepProgressIncrement))
             )
         else:
-            return np.tile(np.zeros_like(self._delta), len(nodes))
+            return np.tile(np.zeros_like(self._delta), (len(nodes), 1))
+
+    def getDelta(self, timeStep: TimeStep, nodes=None):
+        return self.getPrescribedIncrement(timeStep, nodes)

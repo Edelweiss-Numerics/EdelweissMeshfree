@@ -108,8 +108,8 @@ cdef class MarmotParticleWrapper:
                                                                                        nMaterialProperties,
                                                                                        self._marmotMeshfreeApproximation[0],
                                                                                        )
-        except ValueError:
-            raise NotImplementedError("Failed to create instance of MarmotParticle {:}.".format(particleType))
+        except ValueError as e:
+            raise NotImplementedError("Failed to create instance of MarmotParticle {:}: {:}".format(particleType, e)) from e
 
         self._nStateVars =           self._marmotParticle.getNumberOfRequiredStateVars()
 
@@ -204,7 +204,6 @@ cdef class MarmotParticleWrapper:
 
         self._initializeStateVarsTemp()
         self._marmotParticle.computePhysicsKernels(&dUc[0], &Pc[0], &Kc[0], timeNew, dTime)
-
 
 
     def updatePhysicsExplicit(self,
@@ -389,6 +388,10 @@ cdef class MarmotParticleWrapper:
     def getVIJContributionSize(self) -> int:
         """Return the number of entries this entity contributes to the VIJ (COO) system matrix."""
         return self.nDof**2
+
+    def shapeVIJContribution(self, flat_view: np.ndarray) -> np.ndarray:
+        """Keep the view flat for Cython 1-D memoryview compatibility."""
+        return flat_view
 
     def initializeVIJContribution(self, idcs: np.ndarray, I_: np.ndarray, J_: np.ndarray, offset: int) -> None:
         """Initialize the I and J arrays for the VIJ (COO) system matrix assembly. """

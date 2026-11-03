@@ -84,6 +84,14 @@ cdef class MarmotMeshfreeKernelFunctionWrapper:
     def center(self) -> np.ndarray:
         return self._center
 
+    @property
+    def hasBoxSupport(self) -> bool:
+        # Every kernel type this wrapper can construct is a boxed B-spline: the kernel is a tensor
+        # product of 1D B-splines about the center, each positive exactly on (-supportRadius,
+        # supportRadius), so the support is the strict interior of the bounding box reported by
+        # getBoundingBox(). Any future non-boxed kernel type must return False here.
+        return True
+
     def moveTo(self, double[::1] coordinates):
         self._marmotMeshfreeKernelFunction.moveTo(&coordinates[0])
 

@@ -39,8 +39,8 @@ import argparse
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 import pytest
+from edelweissfe.config.linsolve import getLinSolverByName
 from edelweissfe.journal.journal import Journal
-from edelweissfe.linsolve.pardiso.pardiso import pardisoSolve
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 from edelweissfe.utils.exceptions import StepFailed
 
@@ -78,7 +78,7 @@ from edelweissmeshfree.solvers.nqsmarmotparallel import NQSParallelForMarmot
 # )
 
 
-def run_sim():
+def run_sim(useDirectCSRAssembly=False):
     dimension = 2
 
     # set nump linewidth to 200:
@@ -166,10 +166,8 @@ def run_sim():
     fieldOutputController.initializeJob()
 
     ensightOutput = EnsightOutputManager("ensight", theModel, fieldOutputController, theJournal, None)
-    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["displacement"], create="perElement")
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["deformation gradient"], create="perElement"
-    )
+    ensightOutput.createPerElementOutput(fieldOutputController.fieldOutputs["displacement"])
+    ensightOutput.createPerElementOutput(fieldOutputController.fieldOutputs["deformation gradient"])
     ensightOutput.initializeJob()
 
     dirichletLeft = ParticlePenaltyWeakDirichlet(
@@ -189,6 +187,7 @@ def run_sim():
 
     nonlinearSolver = NQSParallelForMarmot(theJournal)
     # nonlinearSolver = NonlinearQuasistaticSolver(theJournal)
+    nonlinearSolver.useDirectCSRAssembly = useDirectCSRAssembly
 
     iterationOptions = dict()
 
@@ -196,7 +195,7 @@ def run_sim():
     iterationOptions["critical iterations"] = 3
     iterationOptions["allowed residual growths"] = 10
 
-    linearSolver = pardisoSolve
+    linearSolver = getLinSolverByName("pardiso", {})
 
     try:
         nonlinearSolver.solveStep(
@@ -250,6 +249,27 @@ def test_sim(assert_gold):
     gold = np.loadtxt("gold.csv")
 
     # assert np.isclose(lastStiffness, gold).all()
+    assert_gold(res, gold)
+
+
+def test_sim_direct_csr_assembly(assert_gold):
+    """The direct-to-CSR assembly path must reproduce the VIJ path's result exactly on a real,
+    multi-increment nonlinear (finite-strain, damaged) solve -- not just agree on a single
+    diagnostic comparison inside one iteration. Same model, same gold file as test_sim."""
+
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import warnings
+
+    warnings.filterwarnings("ignore")
+
+    theModel, fieldOutputController = run_sim(useDirectCSRAssembly=True)
+
+    res = fieldOutputController.fieldOutputs["displacement"].getLastResult()
+
+    gold = np.loadtxt("gold.csv")
+
     assert_gold(res, gold)
 
 

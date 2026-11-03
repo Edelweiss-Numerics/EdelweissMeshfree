@@ -147,7 +147,7 @@ def run_sim():
     )
 
     ensightOutput = EnsightOutputManager("ensight", theModel, fieldOutputController, theJournal, None)
-    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["displacement"], create="perNode")
+    ensightOutput.createPerNodeOutput(fieldOutputController.fieldOutputs["displacement"])
     ensightOutput.initializeJob()
 
     nSteps = 12

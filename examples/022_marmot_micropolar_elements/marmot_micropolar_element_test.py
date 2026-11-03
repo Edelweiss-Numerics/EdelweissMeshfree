@@ -29,8 +29,8 @@ import argparse
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 import pytest
+from edelweissfe.config.linsolve import getLinSolverByName
 from edelweissfe.journal.journal import Journal
-from edelweissfe.linsolve.pardiso.pardiso import pardisoSolve
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 
 from edelweissmeshfree.fieldoutput.fieldoutput import MPMFieldOutputController
@@ -60,28 +60,26 @@ def run_sim():
 
     mpmModel.materials["gmp"] = gmNeoHookean
 
-    from edelweissfe.generators.planerectquad import generateModelData
+    from edelweissfe.generators.planerectquad import Generator, PlaneRectQuadSchema
 
-    mpmModel = generateModelData(
-        {
-            "data": [
-                "x0=0.0",
-                "l=100.0",
-                "y0=0.0",
-                "h=100.0",
-                "nX= 10",
-                "nY= 10",
-                "elProvider=marmot",
-                "elType=GMCPE8RUL",
-            ]
-        },
+    Generator(
+        "planeRect",
         mpmModel,
         journal,
+        configuration=PlaneRectQuadSchema(
+            x0=0.0, length=100.0, y0=0.0, h=100.0, nX=10, nY=10, elProvider="marmot", elType="GMCPE8RUL"
+        ),
     )
 
-    from edelweissfe.sections.plane import Section
+    from edelweissfe.sections.plane import PlaneSectionSchema, Section
 
-    planeSec = Section("theSection", ["planeRect_all"], "gmp", mpmModel, thickness=1.0)
+    planeSec = Section(
+        "theSection",
+        mpmModel,
+        mpmModel.materials["gmp"],
+        [mpmModel.elementSets["planeRect_all"]],
+        configuration=PlaneSectionSchema(thickness=1.0),
+    )
 
     mpmModel.sections["theSection"] = planeSec
 
@@ -141,7 +139,7 @@ def run_sim():
     iterationOptions["critical iterations"] = 10
     iterationOptions["allowed residual growths"] = 3
 
-    linearSolver = pardisoSolve
+    linearSolver = getLinSolverByName("pardiso", {})
 
     try:
         nonlinearSolver.solveStep(

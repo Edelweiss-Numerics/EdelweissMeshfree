@@ -116,8 +116,8 @@ def run_sim():
 
     ensightOutput = EnsightOutputManager("ensight", mpmModel, fieldOutputController, journal, None)
 
-    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["dU"], create="perNode")
-    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["displacement"], create="perNode")
+    ensightOutput.createPerNodeOutput(fieldOutputController.fieldOutputs["dU"])
+    ensightOutput.createPerNodeOutput(fieldOutputController.fieldOutputs["displacement"])
 
     ensightOutput.initializeJob()
 

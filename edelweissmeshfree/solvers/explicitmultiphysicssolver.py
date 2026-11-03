@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import concurrent.futures
 from typing import Iterable
 
 import edelweissfe.utils.performancetiming as performancetiming
@@ -8,8 +7,10 @@ from edelweissfe.journal.journal import Journal
 from edelweissfe.numerics.dofmanager import DofManager, DofVector
 from edelweissfe.numerics.parallelizationutilities import (
     getNumberOfThreads,
+    getThreadPool,
     isFreeThreadingSupported,
 )
+from edelweissfe.solvers.base.parallelelementcomputation import chunked_iterable
 from edelweissfe.timesteppers.timestep import TimeStep
 from edelweissfe.utils.exceptions import StepFailed
 from edelweissfe.utils.fieldoutput import FieldOutputController
@@ -122,23 +123,39 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
 
         restartHistoryManager = RestartHistoryManager(restartBaseName, numberOfRestartsToStore)
 
-        if not timeStepper.doesZeroIncrement():
-            raise ValueError("The first time increment must be zero for explicit time integration.")
+        # Central differencing needs the accelerations at the start of the step before anything has
+        # moved, which is what the zero increment is for. A restart does not need one: it brings the
+        # half-step velocity with it, so there is nothing left to establish.
+        isRestarted = self._restartWasRead
+
+        if not isRestarted and timeStepper.proposeTimeStep().timeIncrement != 0.0:
+            raise ValueError(
+                "The first time increment must be zero for explicit time integration, so that the "
+                "initial accelerations can be evaluated before anything moves."
+            )
 
         particles = list(model.particles.values())
         constraints = list(model.constraints.values())
 
+        discretizationIsInitialized = False
+
         try:
-            for timeStep in timeStepper.generateTimeStep():
+            while not timeStepper.isFinished():
+                timeStep = timeStepper.proposeTimeStep()
                 dT = timeStep.timeIncrement
                 self.journal.message(
                     f"Step {timeStep.number}: Time {timeStep.totalTime:.6e}, dt {dT:.6e}", self.identification
                 )
 
-                if dT == 0.0:
-                    # +----------------+
-                    # | zero increment |
-                    # +----------------+
+                if not discretizationIsInitialized:
+                    # +--------------------------------------------------+
+                    # | first increment of this step: build the system   |
+                    # +--------------------------------------------------+
+                    # On a fresh start this is the zero increment, and the half-step velocity is
+                    # projected from the particles' momentum. On a restart the first increment is an
+                    # ordinary one, and the half-step velocity comes back from the restart file --
+                    # projecting it again would quietly re-do the momentum reinitialisation and make
+                    # the continued run more dissipative than the one it continues.
                     self._updateModelConnectivity(
                         list(), particles, constraints, model, timeStep, list(), particleManagers
                     )
@@ -155,9 +172,15 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
                         particles, activeConstraints, particleDistributedLoads, P_Int, P_Ext, M, momentum, timeStep
                     )
                     M_inv = np.reciprocal(M)
-                    v_np_one_half[:] = momentum * M_inv
 
-                else:
+                    if isRestarted:
+                        v_np_one_half[:] = self._restoreHalfStepVelocity(len(v_np_one_half))
+                    else:
+                        v_np_one_half[:] = momentum * M_inv
+
+                    discretizationIsInitialized = True
+
+                if dT != 0.0:
                     # +---------------------+
                     # | any other increment |
                     # +---------------------+
@@ -198,7 +221,15 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
                     activeConstraints = [c for c in constraints if c.active]
 
                     if shallowUpdateOfDofManager:
-                        self._updateDofManager(theDofManager, activeConstraints, particles)
+                        # The mapping of a particle into the dof vector follows from its kernel
+                        # functions, so only the particles whose kernel functions changed need a new
+                        # one. A connectivity change reported by a constraint alone leaves every
+                        # particle mapping valid, and then this list is empty.
+                        self._updateDofManager(
+                            theDofManager,
+                            activeConstraints,
+                            self._getParticlesWithChangedKernelFunctions(particleManagers),
+                        )
                     else:
                         theDofManager = self._instanceDofManager(model, activeConstraints, particles)
 
@@ -224,11 +255,13 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
                 if reinitializationOfVelocitiesFromMomentum:
                     v_np_one_half = momentum * M_inv
 
+                timeStepper.acceptTimeStep(timeStep)
+
                 self._finalizeIncrementOutput(fieldOutputController, outputManagers)
 
                 if restartWriteInterval and timeStep.number % restartWriteInterval == 0:
                     fn = restartHistoryManager.getNextRestartFileName()
-                    self._writeRestart(model, timeStepper, fn)
+                    self._writeRestart(model, timeStepper, fn, solverState={"halfStepVelocity": np.copy(v_np_one_half)})
                     restartHistoryManager.append(fn)
 
         except StepFailed:
@@ -272,27 +305,25 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
         scatter_M = M.createScatterVector()
         scatter_Mv = Mv.createScatterVector()
 
-        def computeParticleWorker(particle: BaseParticle):
-            """
-            Worker function to compute physics kernels for a single particle.
+        # Process a CHUNK of particles per task, not just one, to keep the per-task
+        # dispatch overhead negligible compared to the actual particle computation.
+        def computeParticlesWorker(particleChunk):
+            for particle in particleChunk:
+                PP = scatter_P[particle]
+                MP = scatter_M[particle]
+                MVP = scatter_Mv[particle]
 
-            Parameters
-            ----------
-            particle
-                The particle to be processed.
-            """
-            PP = scatter_P[particle]
-            MP = scatter_M[particle]
-            MVP = scatter_Mv[particle]
-
-            particle.computePhysicsKernelsExplicit(PP)
-            particle.computeLumpedInertia(MP)
-            particle.computeLumpedMomentum(MVP)
+                particle.computePhysicsKernelsExplicit(PP)
+                particle.computeLumpedInertia(MP)
+                particle.computeLumpedMomentum(MVP)
 
         numThreads = getNumberOfThreads() if isFreeThreadingSupported() else 1
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=numThreads) as executor:
-            executor.map(computeParticleWorker, particles)
+        chunkSize = max(1, len(particles) // (numThreads * 4))
+        chunks = chunked_iterable(particles, chunkSize)
+
+        executor = getThreadPool(numThreads)
+        list(executor.map(computeParticlesWorker, chunks))
 
         scatter_P.assembleInto(P)
         scatter_M.assembleInto(M)
@@ -325,22 +356,20 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
 
         particles = list(particles)  # Ensure we have a list
 
-        def computeParticleWorker(particle: BaseParticle):
-            """
-            Worker function to compute physics kernels for a single particle.
-
-            Parameters
-            ----------
-            particle
-                The particle to be processed.
-            """
-            dUP = dU[particle]
-            particle.updatePhysicsExplicit(dUP, time, dT)
+        # Process a CHUNK of particles per task, not just one, to keep the per-task
+        # dispatch overhead negligible compared to the actual particle computation.
+        def computeParticlesWorker(particleChunk):
+            for particle in particleChunk:
+                dUP = dU[particle]
+                particle.updatePhysicsExplicit(dUP, time, dT)
 
         numThreads = getNumberOfThreads() if isFreeThreadingSupported() else 1
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=numThreads) as executor:
-            results = executor.map(computeParticleWorker, particles)
+        chunkSize = max(1, len(particles) // (numThreads * 4))
+        chunks = chunked_iterable(particles, chunkSize)
+
+        executor = getThreadPool(numThreads)
+        results = executor.map(computeParticlesWorker, chunks)
 
         for r in results:
             pass  # Check for exceptions raised in worker threads
@@ -478,6 +507,37 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
                 c.applyConstraint(Pc, timeStep)
                 P[c] += Pc
 
+    def _restoreHalfStepVelocity(self, expectedNumberOfDofs: int) -> np.ndarray:
+        """Take the half-step velocity out of the restart file that was read.
+
+        Parameters
+        ----------
+        expectedNumberOfDofs
+            The size the restored vector must have, i.e. the size of the dof vector rebuilt from the
+            restarted model.
+
+        Returns
+        -------
+        np.ndarray
+            The restored half-step velocity.
+        """
+
+        if "halfStepVelocity" not in self._restoredSolverState:
+            raise ValueError(
+                "The restart file carries no half-step velocity, so this run cannot be continued "
+                "faithfully. It was most likely written before explicit restarts carried solver state."
+            )
+
+        halfStepVelocity = self._restoredSolverState["halfStepVelocity"]
+
+        if len(halfStepVelocity) != expectedNumberOfDofs:
+            raise ValueError(
+                "The restored half-step velocity has {:} entries but the rebuilt dof vector has {:}. "
+                "The restart file does not belong to this model.".format(len(halfStepVelocity), expectedNumberOfDofs)
+            )
+
+        return halfStepVelocity
+
     @performancetiming.timeit("updating dof structure")
     def _updateDofManager(self, theDofManager, constraints: list, particles: list):
         """
@@ -490,11 +550,34 @@ class ExplicitMultiphysicsSolver(BaseNonlinearSolver):
         constraints
             The list of constraints to be evaluated.
         particles
-            The list of particles to be evaluated.
+            The particles whose mapping into the dof vector has to be recomputed. Passing only the
+            particles that actually changed is what keeps this cheap; see
+            :meth:`~edelweissmeshfree.numerics.dofmanager.MPMDofManager.updateParticles` for the
+            condition under which that is sound.
         """
 
         theDofManager.updateParticles(particles)
         theDofManager.updateConstraints(constraints)
+
+    def _getParticlesWithChangedKernelFunctions(self, particleManagers: list[BaseParticleManager]) -> list:
+        """Collect the particles whose kernel functions changed in the last connectivity update.
+
+        Parameters
+        ----------
+        particleManagers
+            The particle managers that were asked to update their connectivity.
+
+        Returns
+        -------
+        list
+            The particles reported as changed, across all managers.
+        """
+
+        particlesWithChangedKernelFunctions = []
+        for manager in particleManagers:
+            particlesWithChangedKernelFunctions += manager.particlesWithChangedKernelFunctions
+
+        return particlesWithChangedKernelFunctions
 
     @performancetiming.timeit("instance dof structure")
     def _instanceDofManager(self, model: MPMModel, constraints: list, particles: list) -> DofManager:

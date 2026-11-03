@@ -39,8 +39,8 @@ import argparse
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 import pytest
+from edelweissfe.config.linsolve import getLinSolverByName
 from edelweissfe.journal.journal import Journal
-from edelweissfe.linsolve.pardiso.pardiso import pardisoSolve
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 from edelweissfe.utils.exceptions import StepFailed
 
@@ -288,29 +288,17 @@ def run_sim(no_limit=False):
 
     ensightOutput = EnsightOutputManager("ensight", theModel, fieldOutputController, theJournal, None)
     ensightOutput.minDTForOutput = 1e-3
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["plate acceleration"], create="perElement", name="acceleration"
+    ensightOutput.createPerElementOutput(fieldOutputController.fieldOutputs["plate acceleration"], name="acceleration")
+    ensightOutput.createPerElementOutput(
+        fieldOutputController.fieldOutputs["particle acceleration"], name="acceleration"
     )
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["particle acceleration"],
-        create="perElement",
-        name="acceleration",
+    ensightOutput.createPerElementOutput(fieldOutputController.fieldOutputs["plate velocity"], name="velocity")
+    ensightOutput.createPerElementOutput(fieldOutputController.fieldOutputs["particle velocity"], name="velocity")
+    ensightOutput.createPerNodeOutput(
+        fieldOutputController.fieldOutputs["plate vertex displacements"], name="vertex displacements"
     )
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["plate velocity"], create="perElement", name="velocity"
-    )
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["particle velocity"], create="perElement", name="velocity"
-    )
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["plate vertex displacements"],
-        create="perNode",
-        name="vertex displacements",
-    )
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["projectile vertex displacements"],
-        create="perNode",
-        name="vertex displacements",
+    ensightOutput.createPerNodeOutput(
+        fieldOutputController.fieldOutputs["projectile vertex displacements"], name="vertex displacements"
     )
     ensightOutput.initializeJob()
 
@@ -355,7 +343,7 @@ def run_sim(no_limit=False):
     iterationOptions["line search every n iterations"] = 3
     # iterationOptions["fall back to quasi Newton after n residual growths"] = False
 
-    linearSolver = pardisoSolve
+    linearSolver = getLinSolverByName("pardiso", {})
 
     for p in theModel.particleSets["projectile_all"]:
         v = p.getResultArray("velocity")

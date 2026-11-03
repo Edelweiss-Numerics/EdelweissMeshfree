@@ -38,8 +38,8 @@ import argparse
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 import pytest
+from edelweissfe.config.linsolve import getLinSolverByName
 from edelweissfe.journal.journal import Journal
-from edelweissfe.linsolve.pardiso.pardiso import pardisoSolve
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 
 from edelweissmeshfree.constraints.penaltyequalvalue import PenaltyEqualValue
@@ -140,10 +140,8 @@ def run_sim(logFile=None):
         "ensight", mpmModel, fieldOutputController, journal, None, exportCellSetParts=False
     )
 
-    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["displacement"], create="perNode")
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["deformation gradient"], create="perNode"
-    )
+    ensightOutput.createPerNodeOutput(fieldOutputController.fieldOutputs["displacement"])
+    ensightOutput.createPerNodeOutput(fieldOutputController.fieldOutputs["deformation gradient"])
     ensightOutput.initializeJob()
 
     outputManagers = [
@@ -197,7 +195,7 @@ def run_sim(logFile=None):
 
     iterationOptions = dict()
 
-    linearSolver = pardisoSolve
+    linearSolver = getLinSolverByName("pardiso", {})
 
     mprightTop = list(mpmModel.materialPointSets["rectangular_grid_rightTop"])[0]
     mpleftTop = list(mpmModel.materialPointSets["rectangular_grid_leftTop"])[0]
@@ -222,7 +220,7 @@ def run_sim(logFile=None):
 
         prettytable = performancetiming.makePrettyTable()
         journal.printPrettyTable(prettytable, "Summary Step 1")
-        performancetiming.times.clear()
+        performancetiming.reset()
 
         distance_y = (mpleftTop.getCenterCoordinates() - mprightTop.getCenterCoordinates())[1]
 

@@ -85,6 +85,22 @@ class BaseMeshfreeKernelFunction(ABC):
             The center of the kernel function.
         """
 
+    @property
+    @abstractmethod
+    def hasBoxSupport(self) -> bool:
+        """Whether the support of the kernel function is exactly its axis-aligned bounding box.
+
+        For such kernel functions a coordinate lies in the support if and only if it lies strictly
+        inside the bounding box, which lets callers replace a per-candidate support query by a
+        vectorised box test. Kernel functions whose support is a subset of their bounding box
+        (a sphere, for instance) must return False.
+
+        Returns
+        -------
+        bool
+            True if the support coincides with the strict interior of the bounding box.
+        """
+
     @abstractmethod
     def getCurrentBoundingBox(self) -> tuple[np.ndarray, np.ndarray]:
         """Get the bounding box of the kernel function.

@@ -99,7 +99,12 @@ class PenaltyConstrainMP2Node(MPMConstraintBase):
             True if the connectivity has changed, False otherwise.
         """
 
-        nodes = {n: i for i, n in enumerate(set(n for c in self._slaveMP.assignedCells for n in c.nodes))}
+        nodes = {
+            n: i
+            for i, n in enumerate(
+                sorted(set(n for c in self._slaveMP.assignedCells for n in c.nodes), key=lambda n: n.label)
+            )
+        }
 
         hasChanged = False
         if nodes != self._slaveNodes:

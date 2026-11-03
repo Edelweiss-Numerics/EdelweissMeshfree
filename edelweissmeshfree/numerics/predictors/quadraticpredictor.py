@@ -121,4 +121,4 @@ class QuadraticPredictor(BasePredictor):
         self._deltaT_n = timeStep.timeIncrement
         if self._arcLength:
             self._dLambda_n_minus_1 = self._dLambda_n
-            self._dLambda_n = dLambda.copy()
+            self._dLambda_n = dLambda if dLambda is not None else 0.0

@@ -38,8 +38,8 @@ import argparse
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 import pytest
+from edelweissfe.config.linsolve import getLinSolverByName
 from edelweissfe.journal.journal import Journal
-from edelweissfe.linsolve.pardiso.pardiso import pardisoSolve
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 from edelweissfe.utils.exceptions import StepFailed
 
@@ -129,10 +129,10 @@ def run_sim():
 
     ensightOutput = EnsightOutputManager("ensight", mpmModel, fieldOutputController, journal, None)
 
-    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["dU"], create="perNode")
-    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["displacement"], create="perNode")
-    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["stress"], create="perNode")
-    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["strain"], create="perNode")
+    ensightOutput.createPerNodeOutput(fieldOutputController.fieldOutputs["dU"])
+    ensightOutput.createPerNodeOutput(fieldOutputController.fieldOutputs["displacement"])
+    ensightOutput.createPerNodeOutput(fieldOutputController.fieldOutputs["stress"])
+    ensightOutput.createPerNodeOutput(fieldOutputController.fieldOutputs["strain"])
 
     ensightOutput.initializeJob()
 
@@ -180,7 +180,7 @@ def run_sim():
     iterationOptions["critical iterations"] = 3
     iterationOptions["allowed residual growths"] = 3
 
-    linearSolver = pardisoSolve
+    linearSolver = getLinSolverByName("pardiso", {})
 
     try:
         nonlinearSolver.solveStep(

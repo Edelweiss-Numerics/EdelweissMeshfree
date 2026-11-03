@@ -42,20 +42,17 @@ import numpy as np
 
 
 cdef extern from "Marmot/MarmotUtils.h":
-    cdef struct StateView:
+    cdef struct StateView "Marmot::Utilities::StateView":
         double *stateLocation
         int stateSize
 
 cdef extern from "Marmot/MarmotElementProperty.h":
-    cdef cppclass MarmotElementProperty nogil:
-        pass
-
-    cdef cppclass MarmotMaterialSection(MarmotElementProperty) nogil:
+    cdef cppclass MarmotMaterialSection "Marmot::Discretizations::MaterialSection" nogil:
         MarmotMaterialSection(const string materialName, const double* materialProperties, int nMaterialProperties)
 
-cdef extern from "Marmot/MarmotMPMLibrary.h" namespace "MarmotLibrary" nogil:
+cdef extern from "Marmot/MarmotMPMLibrary.h" nogil:
 
-    cdef cppclass MarmotMaterialPointFactory:
+    cdef cppclass MarmotMaterialPointFactory "Marmot::Registry::MaterialPointFactory":
         @staticmethod
         MarmotMaterialPoint* createMaterialPoint(const string& materialPointName,
                                                  int materialPointNumber,
@@ -66,7 +63,7 @@ cdef extern from "Marmot/MarmotMPMLibrary.h" namespace "MarmotLibrary" nogil:
 
 
 cdef extern from "Marmot/MarmotMaterialPoint.h":
-    cdef cppclass MarmotMaterialPoint nogil:
+    cdef cppclass MarmotMaterialPoint "Marmot::Discretizations::MaterialPoints::MaterialPoint" nogil:
 
         int getNumberOfRequiredStateVars()
 

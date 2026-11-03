@@ -39,8 +39,8 @@ import argparse
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 import pytest
+from edelweissfe.config.linsolve import getLinSolverByName
 from edelweissfe.journal.journal import Journal
-from edelweissfe.linsolve.pardiso.pardiso import pardisoSolve
 from edelweissfe.surfaces.entitybasedsurface import EntityBasedSurface
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 
@@ -235,16 +235,11 @@ def run_sim(
     # =====================================================================
 
     ensightOutput = EnsightOutputManager(outputName, theModel, fieldOutputController, theJournal, None)
-    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["displacement"], create="perElement")
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["vertex displacements"],
-        create="perNode",
-    )
-    ensightOutput.updateDefinition(
-        fieldOutput=fieldOutputController.fieldOutputs["deformation gradient"], create="perElement"
-    )
-    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["stress"], create="perElement")
-    ensightOutput.updateDefinition(fieldOutput=fieldOutputController.fieldOutputs["microrotation"], create="perElement")
+    ensightOutput.createPerElementOutput(fieldOutputController.fieldOutputs["displacement"])
+    ensightOutput.createPerNodeOutput(fieldOutputController.fieldOutputs["vertex displacements"])
+    ensightOutput.createPerElementOutput(fieldOutputController.fieldOutputs["deformation gradient"])
+    ensightOutput.createPerElementOutput(fieldOutputController.fieldOutputs["stress"])
+    ensightOutput.createPerElementOutput(fieldOutputController.fieldOutputs["microrotation"])
     ensightOutput.initializeJob()
 
     # =====================================================================
@@ -282,7 +277,7 @@ def run_sim(
     iterationOptions["spec. relative field correction tolerances"]["micro rotation"] = 1e10
     iterationOptions["spec. absolute field correction tolerances"]["micro rotation"] = 1e10
 
-    linearSolver = pardisoSolve
+    linearSolver = getLinSolverByName("pardiso", {})
 
     from edelweissmeshfree.meshfree.vci import (
         BoundaryParticleDefinition,
@@ -358,7 +353,7 @@ def run_sim(
 
         prettytable = performancetiming.makePrettyTable()
         theJournal.printPrettyTable(prettytable, "Summary Step 1")
-        performancetiming.times.clear()
+        performancetiming.reset()
 
     finally:
         fieldOutputController.finalizeJob()

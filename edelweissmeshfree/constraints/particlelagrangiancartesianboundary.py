@@ -129,7 +129,10 @@ class ParticleLagrangianContactCartesianBoundaryConstraint(MPMConstraintBase):
         self._lagrangianMultipliers = scalarVariables
 
     def updateConnectivity(self, model):
-        nodes = {n: i for i, n in enumerate(set(kf.node for kf in self._particle.kernelFunctions))}
+        nodes = {
+            n: i
+            for i, n in enumerate(sorted(set(kf.node for kf in self._particle.kernelFunctions), key=lambda n: n.label))
+        }
 
         hasChanged = False
         if nodes != self._nodes:

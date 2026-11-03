@@ -96,8 +96,8 @@ cdef class LagrangianMarmotCellWrapper(MarmotCellWrapper):
 
         try:
             self._marmotCell = MarmotCellFactory.createCell( cellType.encode('utf-8'), self._cellNumber, &self._nodeCoordinates[0,0], self._nodeCoordinates.size)
-        except ValueError:
-            raise NotImplementedError("Marmot cell {:} not found in library.".format(cellType))
+        except ValueError as e:
+            raise NotImplementedError("Failed to create instance of Marmot cell {:}: {:}".format(cellType, e)) from e
 
     def __dealloc__(self):
         if isinstance(self, LagrangianMarmotCellWrapper):

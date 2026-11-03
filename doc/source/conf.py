@@ -1,5 +1,3 @@
-from docutils import nodes
-
 # Configuration file for the Sphinx documentation builder.
 #
 # For the full list of built-in configuration values, see the documentation:
@@ -11,7 +9,7 @@ from docutils import nodes
 project = "EdelweissMeshfree"
 copyright = "2024, Matthias Neuner"
 authors = ["Matthias Neuner", "Thomas Mader"]
-release = "v25.08"
+release = "v26.11"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -30,7 +28,11 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.autosectionlabel",
     "numpydoc",
+    "sphinxcontrib.bibtex",
 ]
+
+bibtex_bibfiles = ["publications.bib"]
+bibtex_default_style = "unsrt"
 
 templates_path = ["_templates"]
 exclude_patterns = []
@@ -69,13 +71,3 @@ try:
 except ImportError:
     pass
 
-
-def doi_role(name, rawtext, text, lineno, inliner, options={}, content=[]):
-    # rendered = nodes.Text(text)
-    uri = "http://dx.doi.org/" + text
-    ref = nodes.reference(rawtext, text, refuri=uri)
-    return [nodes.literal("", "", ref)], []
-
-
-def setup(app):
-    app.add_role("doi", doi_role)
