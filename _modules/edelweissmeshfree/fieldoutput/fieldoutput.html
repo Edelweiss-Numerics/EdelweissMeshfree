@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>edelweissmeshfree.fieldoutput.fieldoutput &mdash; EdelweissMeshfree v25.08 documentation</title>
+  <title>edelweissmeshfree.fieldoutput.fieldoutput &mdash; EdelweissMeshfree v26.11 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css?v=1d735308" />
@@ -13,9 +13,9 @@
   
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=83aae4bb"></script>
-      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/documentation_options.js?v=57c4c7c7"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -44,7 +44,7 @@
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../gallery.html">Gallery</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../references.html">References</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../documentation/index.html">Documentation</a></li>
 </ul>
 
@@ -82,7 +82,7 @@
 <span class="c1"># | |__| (_| |  __/ |\ V  V /  __/ \__ \__ \</span>
 <span class="c1"># |_____\__,_|\___|_| \_/\_/_\___|_|___/___/</span>
 <span class="c1"># |  \/  | ___  ___| |__  / _|_ __ ___  ___</span>
-<span class="c1"># | |\/| |/ _ \/ __| &#39;_ \| |_| &#39;__/ _ \/ _ \</span>
+<span class="c1"># | |\/| |/ _ \/ __| '_ \| |_| '__/ _ \/ _ \</span>
 <span class="c1"># | |  | |  __/\__ \ | | |  _| | |  __/  __/</span>
 <span class="c1"># |_|  |_|\___||___/_| |_|_| |_|  \___|\___|</span>
 <span class="c1">#</span>
@@ -123,7 +123,7 @@
 <div class="viewcode-block" id="MaterialPointFieldOutput">
 <a class="viewcode-back" href="../../../documentation/field_output.html#edelweissmeshfree.fieldoutput.fieldoutput.MaterialPointFieldOutput">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">MaterialPointFieldOutput</span><span class="p">(</span><span class="n">_FieldOutputBase</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    A FieldOutput for material points.</span>
 
 <span class="sd">    Parameters</span>
@@ -148,7 +148,7 @@
 <span class="sd">        The function to apply to the exported results.</span>
 <span class="sd">    reshape_to_dimensions</span>
 <span class="sd">        If the result should be reshaped to certain dimensions (e.g. for tensor results).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -173,14 +173,14 @@
 <div class="viewcode-block" id="MaterialPointFieldOutput.updateResults">
 <a class="viewcode-back" href="../../../documentation/field_output.html#edelweissmeshfree.fieldoutput.fieldoutput.MaterialPointFieldOutput.updateResults">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">updateResults</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">MPMModel</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update the field output.</span>
+<span class="w">        </span><span class="sd">"""Update the field output.</span>
 <span class="sd">        Will use the current solution and reaction vector if result is a nodal result.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        model</span>
 <span class="sd">            The model tree.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpResultCollector</span><span class="o">.</span><span class="n">getCurrentResults</span><span class="p">()</span>
 
@@ -192,7 +192,7 @@
 <div class="viewcode-block" id="ParticleFieldOutput">
 <a class="viewcode-back" href="../../../documentation/field_output.html#edelweissmeshfree.fieldoutput.fieldoutput.ParticleFieldOutput">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ParticleFieldOutput</span><span class="p">(</span><span class="n">_FieldOutputBase</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    A FieldOutput for material points.</span>
 
 <span class="sd">    Parameters</span>
@@ -217,7 +217,7 @@
 <span class="sd">        The function to apply to the exported results.</span>
 <span class="sd">    reshape_to_dimensions</span>
 <span class="sd">        If the result should be reshaped to certain dimensions (e.g. for tensor results).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -242,14 +242,14 @@
 <div class="viewcode-block" id="ParticleFieldOutput.updateResults">
 <a class="viewcode-back" href="../../../documentation/field_output.html#edelweissmeshfree.fieldoutput.fieldoutput.ParticleFieldOutput.updateResults">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">updateResults</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">MPMModel</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update the field output.</span>
+<span class="w">        </span><span class="sd">"""Update the field output.</span>
 <span class="sd">        Will use the current solution and reaction vector if result is a nodal result.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        model</span>
 <span class="sd">            The model tree.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pResultCollector</span><span class="o">.</span><span class="n">getCurrentResults</span><span class="p">()</span>
 
@@ -261,9 +261,9 @@
 <div class="viewcode-block" id="MPMFieldOutputController">
 <a class="viewcode-back" href="../../../documentation/field_output.html#edelweissmeshfree.fieldoutput.fieldoutput.MPMFieldOutputController">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">MPMFieldOutputController</span><span class="p">(</span><span class="n">FieldOutputController</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    The central module for managing field outputs, which can be used by output managers.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -281,7 +281,7 @@
         <span class="n">fExport_x</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">reshape_to_dimensions</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        name</span>
@@ -300,9 +300,9 @@
 <span class="sd">            The function to apply to the exported results.</span>
 <span class="sd">        reshape_to_dimensions</span>
 <span class="sd">            If the result should be reshaped to certain dimensions (e.g. for tensor results).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fieldOutputs</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;FieldOutput </span><span class="si">{:}</span><span class="s2"> already exists!&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">"FieldOutput </span><span class="si">{:}</span><span class="s2"> already exists!"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">result</span><span class="p">:</span>
             <span class="n">result</span> <span class="o">=</span> <span class="n">name</span>

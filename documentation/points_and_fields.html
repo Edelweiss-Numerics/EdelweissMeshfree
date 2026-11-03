@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Points and fields &mdash; EdelweissMeshfree v25.08 documentation</title>
+  <title>Points and fields &mdash; EdelweissMeshfree v26.11 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=1d735308" />
@@ -14,9 +14,9 @@
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=83aae4bb"></script>
-      <script src="../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/documentation_options.js?v=57c4c7c7"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -47,7 +47,7 @@
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../gallery.html">Gallery</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../references.html">References</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">Documentation</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="organization.html">Code organization</a></li>
 <li class="toctree-l2"><a class="reference internal" href="models.html">Models</a></li>
@@ -55,6 +55,8 @@
 <li class="toctree-l2"><a class="reference internal" href="cellelements.html">Cellelements</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mpm/material_points.html">Material Points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="solvers.html">Solvers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="choosing_a_solver.html">Choosing a linear solver</a></li>
+<li class="toctree-l2"><a class="reference internal" href="assembly.html">System matrix assembly</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mpm/material_point_managers.html">Material Point Managers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="model_generators.html">Model generators</a></li>
 <li class="toctree-l2"><a class="reference internal" href="particles.html">Particles</a></li>
@@ -78,6 +80,7 @@
 <li class="toctree-l2"><a class="reference internal" href="constraints.html">Constraints</a></li>
 <li class="toctree-l2"><a class="reference internal" href="numeric_tools.html">Numerical tools</a></li>
 <li class="toctree-l2"><a class="reference internal" href="output_managers.html">Output managers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="configuration.html">Configuration and Libraries</a></li>
 </ul>
 </li>
 </ul>
@@ -113,7 +116,7 @@
 <span id="points"></span><h2>Points<a class="headerlink" href="#module-edelweissmeshfree.points.gridnode" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="edelweissmeshfree.points.gridnode.GridNode">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.points.gridnode.</span></span><span class="sig-name descname"><span class="pre">GridNode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coordinates</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/points/gridnode.html#GridNode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.points.gridnode.GridNode" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.points.gridnode.</span></span><span class="sig-name descname"><span class="pre">GridNode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coordinates</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/points/gridnode.html#GridNode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.points.gridnode.GridNode" title="Link to this definition"></a></dt>
 <dd><p>A basic gridnode.
 It has a label, a spatial position, and may be associated with an arbitrary number of fields.</p>
 <dl class="field-list simple">
@@ -131,7 +134,7 @@ It has a label, a spatial position, and may be associated with an arbitrary numb
 <span id="fields"></span><h2>Fields<a class="headerlink" href="#module-edelweissmeshfree.fields.nodefield" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="edelweissmeshfree.fields.nodefield.MPMNodeField">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.fields.nodefield.</span></span><span class="sig-name descname"><span class="pre">MPMNodeField</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/fields/nodefield.html#MPMNodeField"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.fields.nodefield.MPMNodeField" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.fields.nodefield.</span></span><span class="sig-name descname"><span class="pre">MPMNodeField</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/fields/nodefield.html#MPMNodeField"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.fields.nodefield.MPMNodeField" title="Link to this definition"></a></dt>
 <dd><p class="rubric">Methods</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
@@ -143,6 +146,12 @@ It has a label, a spatial position, and may be associated with an arbitrary numb
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">createFieldValueEntry</span></code>(name)</p></td>
 <td><p>Add an empty entry with given name for the field, e.g, 'U' or 'P' for flux or effort entries.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">indexOfNode</span></code>(node)</p></td>
+<td><p>The row index of a node's entries within this field's value arrays.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">resize</span></code>(nodes)</p></td>
+<td><p>Resize this NodeField in-place for a new list of associated nodes, preserving values for every node identity present both before and after the resize (e.g. AMR-retained nodes keep their converged state; new nodes get a zeroed entry until a caller fills it in, e.g. with an interpolated warm start).</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">subset</span></code>(subset)</p></td>
 <td><p>Get a view on a subset of the field.</p></td>
@@ -153,7 +162,7 @@ It has a label, a spatial position, and may be associated with an arbitrary numb
 
 <dl class="py class">
 <dt class="sig sig-object py" id="edelweissmeshfree.fields.nodefield.MPMNodeFieldSubset">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.fields.nodefield.</span></span><span class="sig-name descname"><span class="pre">MPMNodeFieldSubset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/fields/nodefield.html#MPMNodeFieldSubset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.fields.nodefield.MPMNodeFieldSubset" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.fields.nodefield.</span></span><span class="sig-name descname"><span class="pre">MPMNodeFieldSubset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/fields/nodefield.html#MPMNodeFieldSubset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.fields.nodefield.MPMNodeFieldSubset" title="Link to this definition"></a></dt>
 <dd><p class="rubric">Methods</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
@@ -165,6 +174,12 @@ It has a label, a spatial position, and may be associated with an arbitrary numb
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">createFieldValueEntry</span></code>(name)</p></td>
 <td><p>Add an empty entry with given name for the field, e.g, 'U' or 'P' for flux or effort entries.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">indexOfNode</span></code>(node)</p></td>
+<td><p>The row index of a node's entries within this field's value arrays.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">resize</span></code>(nodes)</p></td>
+<td><p>Resize this NodeField in-place for a new list of associated nodes, preserving values for every node identity present both before and after the resize (e.g. AMR-retained nodes keep their converged state; new nodes get a zeroed entry until a caller fills it in, e.g. with an interpolated warm start).</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">subset</span></code>(subset)</p></td>
 <td><p>Get a view on a subset of the field.</p></td>

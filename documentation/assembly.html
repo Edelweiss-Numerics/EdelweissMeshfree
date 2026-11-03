@@ -1,0 +1,625 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>System matrix assembly &mdash; EdelweissMeshfree v26.11 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=1d735308" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=57c4c7c7"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Material Point Managers" href="mpm/material_point_managers.html" />
+    <link rel="prev" title="Choosing a linear solver" href="choosing_a_solver.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            EdelweissMeshfree
+              <img src="../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../gallery.html">Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="organization.html">Code organization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html">Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cells.html">Cells</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cellelements.html">Cellelements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpm/material_points.html">Material Points</a></li>
+<li class="toctree-l2"><a class="reference internal" href="solvers.html">Solvers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="choosing_a_solver.html">Choosing a linear solver</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">System matrix assembly</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#why-assembly-is-a-memory-problem">Why assembly is a memory problem</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#switching-it-on">Switching it on</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#what-it-is-worth">What it is worth</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#it-is-also-required-above-about-50-000-dof">It is also required above about 50,000 DOF</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#private-copies-and-reproducibility">Private copies, and reproducibility</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#where-the-memory-ceiling-actually-is">Where the memory ceiling actually is</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#limitations">Limitations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#diagnostics">Diagnostics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#reference">Reference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-edelweissmeshfree.numerics.systemmatrixcontribution"><code class="docutils literal notranslate"><span class="pre">SystemMatrixContribution</span></code> classes</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.numerics.systemmatrixcontribution.DirectCSRContribution"><code class="docutils literal notranslate"><span class="pre">DirectCSRContribution</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.numerics.systemmatrixcontribution.SystemMatrixContributionBase"><code class="docutils literal notranslate"><span class="pre">SystemMatrixContributionBase</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.numerics.systemmatrixcontribution.VIJContribution"><code class="docutils literal notranslate"><span class="pre">VIJContribution</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.numerics.systemmatrixcontribution.VIJPattern"><code class="docutils literal notranslate"><span class="pre">VIJPattern</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="mpm/material_point_managers.html">Material Point Managers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="model_generators.html">Model generators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="particles.html">Particles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="particle_managers.html">Particle managers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="points_and_fields.html">Points and fields</a></li>
+<li class="toctree-l2"><a class="reference internal" href="field_output.html">Field output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshfree.html">Meshfree utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sets.html">Sets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="step_actions.html">Step actions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="constraints.html">Constraints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="numeric_tools.html">Numerical tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="output_managers.html">Output managers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="configuration.html">Configuration and Libraries</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">EdelweissMeshfree</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Documentation</a></li>
+      <li class="breadcrumb-item active">System matrix assembly</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/documentation/assembly.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="system-matrix-assembly">
+<h1>System matrix assembly<a class="headerlink" href="#system-matrix-assembly" title="Link to this heading"></a></h1>
+<p>For a meshfree simulation the assembly is not a minor cost, and it is usually what decides how large a
+model will fit in memory. This page explains the two available assembly paths, how to switch, what each
+costs, and where the ceiling actually sits.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The figures below were measured on one problem class – a Taylor-bar impact, RS-SNNI x SDI RKPM
+discretisation, support scaling factor 2.2, between 15,120 and 120,960 degrees of freedom, on
+deformed post-impact states. They are evidence, not constants.</p>
+</div>
+<section id="why-assembly-is-a-memory-problem">
+<h2>Why assembly is a memory problem<a class="headerlink" href="#why-assembly-is-a-memory-problem" title="Link to this heading"></a></h2>
+<p>Every particle contributes a dense block over its own neighbours, and those blocks overlap heavily. The
+long-standing path writes each block into its own slice of one <strong>VIJ staging array</strong>, then sums the
+duplicates into CSR afterwards. At 43,350 DOF that means <strong>1.72e9 stored contributions for a 71.2 M
+entry matrix</strong> – about 24 duplicates per entry – so the staging array is 12.84 GiB and its gather map
+a further 6.42 GiB, to produce a 0.53 GiB result.</p>
+<p>The alternative is to give every contribution its destination in advance and <em>scatter</em> it straight into
+CSR. Then no staging array exists at all. The machinery lives in EdelweissFE – see its
+<em>System matrix assembly</em> page for the addressing, the offset map and the C++ core; this page is about
+using it from a meshfree simulation.</p>
+</section>
+<section id="switching-it-on">
+<h2>Switching it on<a class="headerlink" href="#switching-it-on" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">nonlinearSolver</span><span class="o">.</span><span class="n">useDirectCSRAssembly</span> <span class="o">=</span> <span class="kc">True</span>
+</pre></div>
+</div>
+<p>That is the whole change. What it does:</p>
+<ul class="simple">
+<li><p>no VIJ staging array is allocated,</p></li>
+<li><p>the particle kernel scatters each block through the offset map from inside its own <code class="docutils literal notranslate"><span class="pre">prange</span></code>,</p></li>
+<li><p>every other contributor – cells, elements, cell elements, constraints, body loads, cell and particle
+distributed loads – writes into a small reused scratch block that is then scattered.</p></li>
+</ul>
+<p>None of the contributors themselves changed. They ask the same question they always did (<em>“give me the
+block for this entity”</em>); only what sits behind that request differs, via
+<a class="reference internal" href="#edelweissmeshfree.numerics.systemmatrixcontribution.SystemMatrixContributionBase" title="edelweissmeshfree.numerics.systemmatrixcontribution.SystemMatrixContributionBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">SystemMatrixContributionBase</span></code></a>.</p>
+</section>
+<section id="what-it-is-worth">
+<h2>What it is worth<a class="headerlink" href="#what-it-is-worth" title="Link to this heading"></a></h2>
+<p>At 43,350 DOF, one restarted increment, 16 threads:</p>
+<table class="docutils align-default" style="width: 100%">
+<colgroup>
+<col style="width: 47.4%" />
+<col style="width: 26.3%" />
+<col style="width: 26.3%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"></th>
+<th class="head"><p>staging path</p></th>
+<th class="head"><p>direct path</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">compute</span> <span class="pre">system</span></code> per Newton iteration</p></td>
+<td><p>5.221 s</p></td>
+<td><p><strong>4.244 s</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p>gather / reduce per iteration</p></td>
+<td><p>1.335 s</p></td>
+<td><p><strong>0.466 s</strong></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">solve</span> <span class="pre">step</span></code></p></td>
+<td><p>127.28 s</p></td>
+<td><p><strong>116.70 s</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>peak resident memory</strong></p></td>
+<td><p>60.23 GiB</p></td>
+<td><p><strong>34.59 GiB</strong></p></td>
+</tr>
+<tr class="row-even"><td><p>memory during the solve</p></td>
+<td><p>41.61 GiB</p></td>
+<td><p><strong>25.83 GiB</strong></p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>1.23x on the assembly, 1.09x on the whole solve step, 1.74x on peak memory.</strong> And measured across a
+2.8x range in problem size, assembly cost and memory both scale <strong>linearly</strong> in DOF
+(<code class="docutils literal notranslate"><span class="pre">dof**0.97</span></code> from 43,350 to 70,800, <code class="docutils literal notranslate"><span class="pre">dof**1.06</span></code> from 70,800 to 120,960).</p>
+<p>The result is unchanged to round-off. Verified against a <em>control pair</em> rather than against zero: two
+runs of the staging path differ from each other by 2.2e-16 in the exported reaction force, and the
+direct path differs from the staging path by <strong>the same 2.2e-16</strong>. In other words it is as close to the
+reference as the reference is to itself.</p>
+</section>
+<section id="it-is-also-required-above-about-50-000-dof">
+<h2>It is also required above about 50,000 DOF<a class="headerlink" href="#it-is-also-required-above-about-50-000-dof" title="Link to this heading"></a></h2>
+<p>The staging path stores a 32-bit index per COO pair in its gather map, so it cannot build that map
+beyond <code class="docutils literal notranslate"><span class="pre">INT32_MAX</span></code> = 2.15e9 pairs. For this problem class that limit is reached at roughly <strong>50,000
+DOF – with only a third of a 187 GB machine in use</strong>. It is not a memory limit; it is a counter limit,
+and it applies to the staging path only.</p>
+<table class="docutils align-default" id="id1" style="width: 100%">
+<caption><span class="caption-text">Measured feasibility</span><a class="headerlink" href="#id1" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+<col style="width: 35.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>grid</p></th>
+<th class="head"><p>DOF</p></th>
+<th class="head"><p>COO pairs</p></th>
+<th class="head"><p>staging path</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>17 x 17 x 50</p></td>
+<td><p>43,350</p></td>
+<td><p>1.5e9</p></td>
+<td><p>works</p></td>
+</tr>
+<tr class="row-odd"><td><p>18 x 18 x 51</p></td>
+<td><p>49,572</p></td>
+<td><p>1.8e9</p></td>
+<td><p>works, near the limit</p></td>
+</tr>
+<tr class="row-even"><td><p>19 x 19 x 56</p></td>
+<td><p>60,648</p></td>
+<td><p>2.2e9</p></td>
+<td><p><strong>raises</strong> <code class="docutils literal notranslate"><span class="pre">OverflowError</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>24 x 24 x 70</p></td>
+<td><p>120,960</p></td>
+<td><p>4.6e9</p></td>
+<td><p>impossible</p></td>
+</tr>
+</tbody>
+</table>
+<p>So above ~50,000 DOF the direct path is not an optimisation, it is the only path. 120,960 DOF runs on the
+direct path at 126.77 GiB peak.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The feasibility probe <code class="docutils literal notranslate"><span class="pre">dof_envelope.py</span></code> builds the <em>undeformed</em> connectivity and undercounts pairs
+by about 13.5% against a deformed state, because deformation grows the neighbour lists. Scale its
+numbers up before judging whether a grid will survive a whole simulation.</p>
+</div>
+</section>
+<section id="private-copies-and-reproducibility">
+<h2>Private copies, and reproducibility<a class="headerlink" href="#private-copies-and-reproducibility" title="Link to this heading"></a></h2>
+<p>Threads need somewhere to accumulate. By default each gets its own copy of the CSR data, which is
+synchronisation-free and keeps the summation order fixed, so results are bit-reproducible. That costs
+<code class="docutils literal notranslate"><span class="pre">numThreads</span> <span class="pre">x</span> <span class="pre">nnz</span> <span class="pre">x</span> <span class="pre">8</span></code> bytes. <code class="docutils literal notranslate"><span class="pre">directCSRNumBuffers</span></code> reduces the count, down to <code class="docutils literal notranslate"><span class="pre">1</span></code> for a fully
+atomic scatter.</p>
+<p>Measured at 43,350 DOF on 16 threads: 16 copies cost 11.72 GiB and 3.43 s; one copy costs 3.76 GiB and
+3.83 s, i.e. <strong>11.8% slower for 3.1x less memory</strong>. The intermediate setting of 4 is not worth having –
+it pays 10.2 of those 11.8 percentage points for only part of the saving, because the cost is the atomic
+instruction rather than contention.</p>
+<p><strong>Keep the default unless memory is genuinely binding.</strong> Atomics make the summation order depend on
+thread interleaving, so re-running a simulation no longer reproduces the previous run bit-for-bit. Given
+that peak memory is usually set by something other than the assembly (below), the saving often buys
+nothing while the reproducibility loss is real.</p>
+</section>
+<section id="where-the-memory-ceiling-actually-is">
+<h2>Where the memory ceiling actually is<a class="headerlink" href="#where-the-memory-ceiling-actually-is" title="Link to this heading"></a></h2>
+<p>Once the staging array is gone, peak memory is dominated by <strong>transients that have nothing to do with
+the solve</strong>:</p>
+<table class="docutils align-default" id="id2" style="width: 100%">
+<caption><span class="caption-text">at 120,960 DOF</span><a class="headerlink" href="#id2" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 50.0%" />
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"></th>
+<th class="head"><p>peak</p></th>
+<th class="head"><p>during the solve</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>single increment</p></td>
+<td><p>100.34 GiB</p></td>
+<td><p>88.89 GiB</p></td>
+</tr>
+<tr class="row-odd"><td><p>multi-increment run</p></td>
+<td><p>126.77 GiB</p></td>
+<td><p>~97 GiB</p></td>
+</tr>
+</tbody>
+</table>
+<p>The gap is the CSR pattern construction, and rebuilding the pattern and assembler whenever the
+connectivity changes – which happens on most increments (22 rebuilds in 38 increments at this size).
+Both are one-off costs per pattern, not per iteration.</p>
+<p>Practical consequence: <strong>size a machine for the peak, not for what the solve occupies</strong>, and expect the
+peak to sit well above it. If a run dies of memory, look at the setup phase before suspecting the solve.</p>
+</section>
+<section id="limitations">
+<h2>Limitations<a class="headerlink" href="#limitations" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Only dense contributions.</strong> The scatter addresses a dense <code class="docutils literal notranslate"><span class="pre">nDof</span> <span class="pre">x</span> <span class="pre">nDof</span></code> column-major block. Every
+meshfree entity lays its contribution out that way, but a constraint is free to declare a sparse
+custom VIJ pattern; such an entity raises <code class="docutils literal notranslate"><span class="pre">NotImplementedError</span></code> at registration rather than being
+silently misassembled.</p></li>
+<li><p><strong>The arc-length solver is not supported.</strong> It forms more than one matrix (a reference-load
+stiffness) and combines them by array arithmetic, which a path that accumulates into a single CSR copy
+cannot express. It stays on the staging path and says so.</p></li>
+<li><p><strong>The non-particle contributors are assembled sequentially.</strong> They are under 2% of the runtime, so
+this is deliberate; a threaded caller reaching
+<a class="reference internal" href="#edelweissmeshfree.numerics.systemmatrixcontribution.DirectCSRContribution" title="edelweissmeshfree.numerics.systemmatrixcontribution.DirectCSRContribution"><code class="xref py py-class docutils literal notranslate"><span class="pre">DirectCSRContribution</span></code></a> raises rather than
+racing.</p></li>
+<li><p><strong>The assembly diagnostics need the staging path</strong>, since they compare against it. Requesting them
+together with <code class="docutils literal notranslate"><span class="pre">useDirectCSRAssembly</span></code> raises.</p></li>
+</ul>
+</section>
+<section id="diagnostics">
+<h2>Diagnostics<a class="headerlink" href="#diagnostics" title="Link to this heading"></a></h2>
+<p>Three switches on the parallel Marmot solver, all off by default:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">verifyDirectCSRAssembly</span></code></dt><dd><p>Assemble the particles several ways on identical state and cross-check. Reports an addressing check
+on identical values, a re-evaluation noise floor, and the fused kernel on 16 and on 1 thread. The
+fused result is judged against the <em>measured</em> noise floor rather than against zero – which is what
+allows it to stay meaningful when atomics make the floor non-zero. Costs about 4x the particle
+assembly; the solve itself continues on the staging path, so no result changes.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">timeDirectCSRAssembly</span></code></dt><dd><p>Time both paths component by component, in the same process, on the same increment, alternating
+which goes first. Also prints a term-by-term memory table for both paths with the C++ accounting as
+a cross-check on the arithmetic.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">directCSRBufferSweep</span></code></dt><dd><p>Time several private-copy counts in turn, e.g. <code class="docutils literal notranslate"><span class="pre">(16,</span> <span class="pre">4,</span> <span class="pre">1)</span></code>, on the same state – so the
+memory/speed trade is measured rather than argued.</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Two traps when measuring this. Restart from a checkpoint and run <strong>one</strong> increment; and check that
+the restart took before quoting anything – the exported reaction force should have one row, at the
+checkpoint’s time. Also note that the increment counter is tested <em>after</em> an increment is yielded, so
+a maximum of <code class="docutils literal notranslate"><span class="pre">N</span></code> runs the checkpoint’s increment <em>and</em> the next one.</p>
+</div>
+</section>
+<section id="reference">
+<h2>Reference<a class="headerlink" href="#reference" title="Link to this heading"></a></h2>
+</section>
+<section id="module-edelweissmeshfree.numerics.systemmatrixcontribution">
+<span id="systemmatrixcontribution-classes"></span><h2><code class="docutils literal notranslate"><span class="pre">SystemMatrixContribution</span></code> classes<a class="headerlink" href="#module-edelweissmeshfree.numerics.systemmatrixcontribution" title="Link to this heading"></a></h2>
+<p>Where entities write their stiffness contribution, and how it becomes a CSR matrix.</p>
+<p>Two implementations of one interface, so the solvers do not have to know which is in use:</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#edelweissmeshfree.numerics.systemmatrixcontribution.VIJContribution" title="edelweissmeshfree.numerics.systemmatrixcontribution.VIJContribution"><code class="xref py py-class docutils literal notranslate"><span class="pre">VIJContribution</span></code></a></dt><dd><p>Stage into a <code class="docutils literal notranslate"><span class="pre">sizeVIJ</span></code>-long value array, then gather duplicates into CSR. The long-standing
+behaviour.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.numerics.systemmatrixcontribution.DirectCSRContribution" title="edelweissmeshfree.numerics.systemmatrixcontribution.DirectCSRContribution"><code class="xref py py-class docutils literal notranslate"><span class="pre">DirectCSRContribution</span></code></a></dt><dd><p>Scatter each entity’s block straight into CSR, with no value array at all. That array and its
+gather map are the dominant memory cost of a meshfree assembly – 19.53 GiB of the 20.33 GiB the
+VIJ path spends at 43,350 DOF – and the DOF ceiling is set by memory, not by assembly time.</p>
+</dd>
+</dl>
+<p>The interface is deliberately the one the contributors already used: <code class="docutils literal notranslate"><span class="pre">K[entity]</span></code> hands back the
+array an entity writes its block into. What differs is what happens afterwards. The VIJ array <em>is</em>
+the accumulator, so nothing has to happen; the direct path has to push the block through the offset
+map, which <a class="reference internal" href="#edelweissmeshfree.numerics.systemmatrixcontribution.DirectCSRContribution.flush" title="edelweissmeshfree.numerics.systemmatrixcontribution.DirectCSRContribution.flush"><code class="xref py py-meth docutils literal notranslate"><span class="pre">DirectCSRContribution.flush()</span></code></a> does.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.systemmatrixcontribution.DirectCSRContribution">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.numerics.systemmatrixcontribution.</span></span><span class="sig-name descname"><span class="pre">DirectCSRContribution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">assembler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">entityIds</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/numerics/systemmatrixcontribution.html#DirectCSRContribution"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.numerics.systemmatrixcontribution.DirectCSRContribution" title="Link to this definition"></a></dt>
+<dd><p>Scatter each entity’s block straight into CSR, with no staging array.</p>
+<p>One scratch block is reused for every entity, so this holds kilobytes where the VIJ path holds
+gigabytes. It is handed out by <code class="xref py py-meth docutils literal notranslate"><span class="pre">__getitem__()</span></code> and committed by <a class="reference internal" href="#edelweissmeshfree.numerics.systemmatrixcontribution.DirectCSRContribution.flush" title="edelweissmeshfree.numerics.systemmatrixcontribution.DirectCSRContribution.flush"><code class="xref py py-meth docutils literal notranslate"><span class="pre">flush()</span></code></a>, and because
+handing out a <em>new</em> block flushes the previous one, a caller cannot forget to commit – only the
+last block of an assembly needs <a class="reference internal" href="#edelweissmeshfree.numerics.systemmatrixcontribution.DirectCSRContribution.flush" title="edelweissmeshfree.numerics.systemmatrixcontribution.DirectCSRContribution.flush"><code class="xref py py-meth docutils literal notranslate"><span class="pre">flush()</span></code></a>, and <a class="reference internal" href="#edelweissmeshfree.numerics.systemmatrixcontribution.DirectCSRContribution.toCSR" title="edelweissmeshfree.numerics.systemmatrixcontribution.DirectCSRContribution.toCSR"><code class="xref py py-meth docutils literal notranslate"><span class="pre">toCSR()</span></code></a> does that itself.</p>
+<p><strong>Zeroed, not accumulated.</strong> Where the VIJ array let two contributors for the same entity
+accumulate in the same slab, each gets a freshly zeroed block here and each block is scattered
+separately. The sum in CSR is the same, because no contributor reads what another wrote – every
+one of them either adds to or overwrites a block it was given. Anything that starts <em>reading</em> its
+block would need this revisited.</p>
+<p><strong>Single-threaded.</strong> Everything routed through here (cells, elements, constraints, loads) is
+evaluated sequentially and is under 2% of the runtime. The threaded particle kernels do not come
+through here at all: they call <code class="docutils literal notranslate"><span class="pre">scatterBlock</span></code> from inside their own <code class="docutils literal notranslate"><span class="pre">prange</span></code>, with a real
+thread id and a per-thread scratch block. A threaded caller reaching this class would need a
+thread-to-buffer mapping to stay race-free, so <code class="xref py py-meth docutils literal notranslate"><span class="pre">__getitem__()</span></code> refuses rather than guessing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>assembler</strong> – The <code class="docutils literal notranslate"><span class="pre">DirectCSRAssembler</span></code> to scatter into. Every entity that will be handed out must already
+be registered with it.</p></li>
+<li><p><strong>entityIds</strong> (<em>dict</em>) – Maps each entity to its index in the assembler’s registration order.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Attributes<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>vijArray</strong></dt><dd></dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.systemmatrixcontribution.DirectCSRContribution.beginAssembly" title="edelweissmeshfree.numerics.systemmatrixcontribution.DirectCSRContribution.beginAssembly"><code class="xref py py-obj docutils literal notranslate"><span class="pre">beginAssembly</span></code></a>()</p></td>
+<td><p>Start a fresh assembly, discarding everything accumulated so far.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.systemmatrixcontribution.DirectCSRContribution.flush" title="edelweissmeshfree.numerics.systemmatrixcontribution.DirectCSRContribution.flush"><code class="xref py py-obj docutils literal notranslate"><span class="pre">flush</span></code></a>()</p></td>
+<td><p>Commit anything handed out by <code class="xref py py-meth docutils literal notranslate"><span class="pre">__getitem__()</span></code> but not yet in the matrix.</p></td>
+</tr>
+</tbody>
+</table>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><strong>toCSR</strong></p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.systemmatrixcontribution.DirectCSRContribution.beginAssembly">
+<span class="sig-name descname"><span class="pre">beginAssembly</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/numerics/systemmatrixcontribution.html#DirectCSRContribution.beginAssembly"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.numerics.systemmatrixcontribution.DirectCSRContribution.beginAssembly" title="Link to this definition"></a></dt>
+<dd><p>Start a fresh assembly, discarding everything accumulated so far.</p>
+<p>Also drops any block handed out but not yet committed: if an assembly was abandoned (a
+quasi-Newton iteration takes the previous matrix and never asks for this one), its last
+block must not leak into the next one.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.systemmatrixcontribution.DirectCSRContribution.flush">
+<span class="sig-name descname"><span class="pre">flush</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/numerics/systemmatrixcontribution.html#DirectCSRContribution.flush"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.numerics.systemmatrixcontribution.DirectCSRContribution.flush" title="Link to this definition"></a></dt>
+<dd><p>Commit anything handed out by <code class="xref py py-meth docutils literal notranslate"><span class="pre">__getitem__()</span></code> but not yet in the matrix.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.systemmatrixcontribution.DirectCSRContribution.toCSR">
+<span class="sig-name descname"><span class="pre">toCSR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">useInPlace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/numerics/systemmatrixcontribution.html#DirectCSRContribution.toCSR"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.numerics.systemmatrixcontribution.DirectCSRContribution.toCSR" title="Link to this definition"></a></dt>
+<dd><p>Return the assembled matrix in CSR format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>useInPlace</strong> (<em>bool</em>) – Return the internal, reused CSR matrix rather than an independent copy. Only safe if the
+caller does not retain it across the next assembly.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.systemmatrixcontribution.SystemMatrixContributionBase">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.numerics.systemmatrixcontribution.</span></span><span class="sig-name descname"><span class="pre">SystemMatrixContributionBase</span></span><a class="reference internal" href="../_modules/edelweissmeshfree/numerics/systemmatrixcontribution.html#SystemMatrixContributionBase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.numerics.systemmatrixcontribution.SystemMatrixContributionBase" title="Link to this definition"></a></dt>
+<dd><p>Interface between an entity that has computed a stiffness block and the global matrix.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.systemmatrixcontribution.SystemMatrixContributionBase.vijArray">
+<span class="sig-name descname"><span class="pre">vijArray</span></span><a class="headerlink" href="#edelweissmeshfree.numerics.systemmatrixcontribution.SystemMatrixContributionBase.vijArray" title="Link to this definition"></a></dt>
+<dd><p>The staging value array, for the code that genuinely needs it – the threaded Marmot kernels
+take it directly, and the assembly diagnostics compare against it. <code class="docutils literal notranslate"><span class="pre">None</span></code> on any path that
+has no such array, which is how a caller tells the two apart without a type test.</p>
+</dd></dl>
+
+<dl class="field-list simple">
+<dt class="field-odd">Attributes<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>vijArray</strong></dt><dd></dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.systemmatrixcontribution.SystemMatrixContributionBase.beginAssembly" title="edelweissmeshfree.numerics.systemmatrixcontribution.SystemMatrixContributionBase.beginAssembly"><code class="xref py py-obj docutils literal notranslate"><span class="pre">beginAssembly</span></code></a>()</p></td>
+<td><p>Start a fresh assembly, discarding everything accumulated so far.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.systemmatrixcontribution.SystemMatrixContributionBase.flush" title="edelweissmeshfree.numerics.systemmatrixcontribution.SystemMatrixContributionBase.flush"><code class="xref py py-obj docutils literal notranslate"><span class="pre">flush</span></code></a>()</p></td>
+<td><p>Commit anything handed out by <code class="xref py py-meth docutils literal notranslate"><span class="pre">__getitem__()</span></code> but not yet in the matrix.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.systemmatrixcontribution.SystemMatrixContributionBase.toCSR" title="edelweissmeshfree.numerics.systemmatrixcontribution.SystemMatrixContributionBase.toCSR"><code class="xref py py-obj docutils literal notranslate"><span class="pre">toCSR</span></code></a>([useInPlace])</p></td>
+<td><p>Return the assembled matrix in CSR format.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.systemmatrixcontribution.SystemMatrixContributionBase.beginAssembly">
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">beginAssembly</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/numerics/systemmatrixcontribution.html#SystemMatrixContributionBase.beginAssembly"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.numerics.systemmatrixcontribution.SystemMatrixContributionBase.beginAssembly" title="Link to this definition"></a></dt>
+<dd><p>Start a fresh assembly, discarding everything accumulated so far.</p>
+<p>Also drops any block handed out but not yet committed: if an assembly was abandoned (a
+quasi-Newton iteration takes the previous matrix and never asks for this one), its last
+block must not leak into the next one.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.systemmatrixcontribution.SystemMatrixContributionBase.flush">
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">flush</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/numerics/systemmatrixcontribution.html#SystemMatrixContributionBase.flush"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.numerics.systemmatrixcontribution.SystemMatrixContributionBase.flush" title="Link to this definition"></a></dt>
+<dd><p>Commit anything handed out by <code class="xref py py-meth docutils literal notranslate"><span class="pre">__getitem__()</span></code> but not yet in the matrix.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.systemmatrixcontribution.SystemMatrixContributionBase.toCSR">
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">toCSR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">useInPlace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/numerics/systemmatrixcontribution.html#SystemMatrixContributionBase.toCSR"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.numerics.systemmatrixcontribution.SystemMatrixContributionBase.toCSR" title="Link to this definition"></a></dt>
+<dd><p>Return the assembled matrix in CSR format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>useInPlace</strong> (<em>bool</em>) – Return the internal, reused CSR matrix rather than an independent copy. Only safe if the
+caller does not retain it across the next assembly.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.systemmatrixcontribution.VIJContribution">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.numerics.systemmatrixcontribution.</span></span><span class="sig-name descname"><span class="pre">VIJContribution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vijArray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">csrGenerator</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/numerics/systemmatrixcontribution.html#VIJContribution"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.numerics.systemmatrixcontribution.VIJContribution" title="Link to this definition"></a></dt>
+<dd><p>Stage contributions in a VIJ (COO) value array, then gather duplicates into CSR.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>vijArray</strong> – The <code class="docutils literal notranslate"><span class="pre">VIJSystemMatrix</span></code> to stage into.</p></li>
+<li><p><strong>csrGenerator</strong> – The generator holding the sparsity pattern and the gather map.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Attributes<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>vijArray</strong></dt><dd></dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.systemmatrixcontribution.VIJContribution.beginAssembly" title="edelweissmeshfree.numerics.systemmatrixcontribution.VIJContribution.beginAssembly"><code class="xref py py-obj docutils literal notranslate"><span class="pre">beginAssembly</span></code></a>()</p></td>
+<td><p>Start a fresh assembly, discarding everything accumulated so far.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.systemmatrixcontribution.VIJContribution.flush" title="edelweissmeshfree.numerics.systemmatrixcontribution.VIJContribution.flush"><code class="xref py py-obj docutils literal notranslate"><span class="pre">flush</span></code></a>()</p></td>
+<td><p>Commit anything handed out by <code class="xref py py-meth docutils literal notranslate"><span class="pre">__getitem__()</span></code> but not yet in the matrix.</p></td>
+</tr>
+</tbody>
+</table>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><strong>toCSR</strong></p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.systemmatrixcontribution.VIJContribution.beginAssembly">
+<span class="sig-name descname"><span class="pre">beginAssembly</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/numerics/systemmatrixcontribution.html#VIJContribution.beginAssembly"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.numerics.systemmatrixcontribution.VIJContribution.beginAssembly" title="Link to this definition"></a></dt>
+<dd><p>Start a fresh assembly, discarding everything accumulated so far.</p>
+<p>Also drops any block handed out but not yet committed: if an assembly was abandoned (a
+quasi-Newton iteration takes the previous matrix and never asks for this one), its last
+block must not leak into the next one.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.systemmatrixcontribution.VIJContribution.flush">
+<span class="sig-name descname"><span class="pre">flush</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/numerics/systemmatrixcontribution.html#VIJContribution.flush"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.numerics.systemmatrixcontribution.VIJContribution.flush" title="Link to this definition"></a></dt>
+<dd><p>Commit anything handed out by <code class="xref py py-meth docutils literal notranslate"><span class="pre">__getitem__()</span></code> but not yet in the matrix.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.systemmatrixcontribution.VIJContribution.toCSR">
+<span class="sig-name descname"><span class="pre">toCSR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">useInPlace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/numerics/systemmatrixcontribution.html#VIJContribution.toCSR"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.numerics.systemmatrixcontribution.VIJContribution.toCSR" title="Link to this definition"></a></dt>
+<dd><p>Return the assembled matrix in CSR format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>useInPlace</strong> (<em>bool</em>) – Return the internal, reused CSR matrix rather than an independent copy. Only safe if the
+caller does not retain it across the next assembly.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.systemmatrixcontribution.VIJPattern">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.numerics.systemmatrixcontribution.</span></span><span class="sig-name descname"><span class="pre">VIJPattern</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">theDofManager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/numerics/systemmatrixcontribution.html#VIJPattern"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.numerics.systemmatrixcontribution.VIJPattern" title="Link to this definition"></a></dt>
+<dd><p>The VIJ index pattern, without the value array that normally carries it.</p>
+<p><code class="docutils literal notranslate"><span class="pre">CSRGenerator</span></code> and <code class="docutils literal notranslate"><span class="pre">DirectCSRAssembler</span></code> need only <code class="docutils literal notranslate"><span class="pre">I</span></code>, <code class="docutils literal notranslate"><span class="pre">J</span></code> and <code class="docutils literal notranslate"><span class="pre">nDof</span></code> from a system
+matrix. The direct path has no value array to take them from – allocating one would defeat the
+point, at 12.84 GiB for 43,350 DOF – so it passes this instead. The index arrays are the
+DofManager’s own; they are referenced, not copied.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>theDofManager</strong> – The DofManager holding the pattern.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="choosing_a_solver.html" class="btn btn-neutral float-left" title="Choosing a linear solver" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="mpm/material_point_managers.html" class="btn btn-neutral float-right" title="Material Point Managers" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Matthias Neuner.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

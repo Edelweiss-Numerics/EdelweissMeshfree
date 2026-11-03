@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>edelweissmeshfree.cells.base.cell &mdash; EdelweissMeshfree v25.08 documentation</title>
+  <title>edelweissmeshfree.cells.base.cell &mdash; EdelweissMeshfree v26.11 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/custom.css?v=1d735308" />
@@ -13,9 +13,9 @@
   
       <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../../_static/documentation_options.js?v=83aae4bb"></script>
-      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../../_static/documentation_options.js?v=57c4c7c7"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" /> 
@@ -44,7 +44,7 @@
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../../introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../gallery.html">Gallery</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../references.html">References</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../documentation/index.html">Documentation</a></li>
 </ul>
 
@@ -82,7 +82,7 @@
 <span class="c1"># | |__| (_| |  __/ |\ V  V /  __/ \__ \__ \</span>
 <span class="c1"># |_____\__,_|\___|_| \_/\_/_\___|_|___/___/</span>
 <span class="c1"># |  \/  | ___  ___| |__  / _|_ __ ___  ___</span>
-<span class="c1"># | |\/| |/ _ \/ __| &#39;_ \| |_| &#39;__/ _ \/ _ \</span>
+<span class="c1"># | |\/| |/ _ \/ __| '_ \| |_| '__/ _ \/ _ \</span>
 <span class="c1"># | |  | |  __/\__ \ | | |  _| | |  __/  __/</span>
 <span class="c1"># |_|  |_|\___||___/_| |_|_| |_|  \___|\___|</span>
 <span class="c1">#</span>
@@ -108,7 +108,7 @@
 <span class="c1">#  The full text of the license can be found in the file LICENSE.md at</span>
 <span class="c1">#  the top level directory of EdelweissMeshfree.</span>
 <span class="c1">#  ---------------------------------------------------------------------</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="sd">Cells represent the basic building blocks of the MPM grid. They are used to</span>
 <span class="sd">compute the material point kernels and to interpolate the field solutions back</span>
 <span class="sd">to the material points. Cells are used to compute the residual and stiffness</span>
@@ -116,7 +116,7 @@
 
 <span class="sd">Implementing your own cells can be done easily by subclassing from</span>
 <span class="sd">the abstract base class :class:`~CellBase`.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
 
@@ -132,7 +132,7 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">CellBase</span><span class="p">(</span><span class="n">ABC</span><span class="p">,</span> <span class="n">VIJEntityBase</span><span class="p">):</span>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cellType</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">cellNumber</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">nodes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Node</span><span class="p">]):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;MPM cells in EdelweissMPM should be derived from this</span>
+<span class="w">        </span><span class="sd">"""MPM cells in EdelweissMPM should be derived from this</span>
 <span class="sd">        base class in order to follow the general interface.</span>
 
 <span class="sd">        EdelweissMPM expects the layout of the internal and external load vectors, P, PExt, (and the stiffness)</span>
@@ -156,55 +156,55 @@
 <span class="sd">            A unique integer label used for all kinds of purposes.</span>
 <span class="sd">        nodes</span>
 <span class="sd">            The list of Nodes assigned to this cell.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
     <span class="nd">@property</span>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">cellNumber</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;The unique number of this cell&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""The unique number of this cell"""</span>
 
     <span class="nd">@property</span>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">nNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;The list of nodes this cell holds&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""The list of nodes this cell holds"""</span>
 
     <span class="nd">@property</span>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">nDof</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;The total number of degrees of freedom this cell has&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""The total number of degrees of freedom this cell has"""</span>
 
     <span class="nd">@property</span>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">fields</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;The list of fields per grid nodes.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""The list of fields per grid nodes."""</span>
 
     <span class="nd">@property</span>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">dofIndicesPermutation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;The permutation pattern for the residual vector and the stiffness matrix to</span>
-<span class="sd">        aggregate all entries in order to resemble the defined fields nodewise.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""The permutation pattern for the residual vector and the stiffness matrix to</span>
+<span class="sd">        aggregate all entries in order to resemble the defined fields nodewise."""</span>
 
     <span class="nd">@property</span>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">ensightType</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;The shape of the element in Ensight Gold notation.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""The shape of the element in Ensight Gold notation."""</span>
 
     <span class="nd">@property</span>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">assignedMaterialPoints</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">MaterialPointBase</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;The shape of the element in Ensight Gold notation.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""The shape of the element in Ensight Gold notation."""</span>
 
 <div class="viewcode-block" id="CellBase.assignMaterialPoints">
 <a class="viewcode-back" href="../../../../documentation/cells.html#edelweissmeshfree.cells.base.cell.CellBase.assignMaterialPoints">[docs]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">assignMaterialPoints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">materialPoints</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">MaterialPointBase</span><span class="p">]):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Assign a list of material points which are currently residing within the cell.</span>
+<span class="w">        </span><span class="sd">"""Assign a list of material points which are currently residing within the cell.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        materialPoints</span>
 <span class="sd">            The list of material points to be assigned.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div>
+<span class="sd">        """</span></div>
 
 
 <div class="viewcode-block" id="CellBase.interpolateSolutionContributionToMaterialPoints">
@@ -214,14 +214,14 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">dU</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Interpolate field solutions to the assigned MaterialPoints.</span>
+<span class="w">        </span><span class="sd">"""Interpolate field solutions to the assigned MaterialPoints.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        dU</span>
 <span class="sd">            The current solution vector contribution increment for all fields.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span></div>
+<span class="sd">        """</span></div>
 
 
 <div class="viewcode-block" id="CellBase.computeMaterialPointKernels">
@@ -235,7 +235,7 @@
         <span class="n">timeTotal</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
         <span class="n">dTime</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluate the kernel residual and stiffness for given time based for all assigned MaterialPoints.</span>
+<span class="w">        </span><span class="sd">"""Evaluate the kernel residual and stiffness for given time based for all assigned MaterialPoints.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -249,7 +249,7 @@
 <span class="sd">            The current total time.</span>
 <span class="sd">        dTime</span>
 <span class="sd">            The time increment.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div>
+<span class="sd">        """</span></div>
 
 
 <div class="viewcode-block" id="CellBase.computeBodyLoad">
@@ -264,12 +264,12 @@
         <span class="n">timeTotal</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
         <span class="n">dTime</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute bulk loads (body loads) for given time based for all assigned MaterialPoints.</span>
+<span class="w">        </span><span class="sd">"""Compute bulk loads (body loads) for given time based for all assigned MaterialPoints.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        loadType</span>
-<span class="sd">            The type of load to be computed (e.g., &#39;bodyforce&#39;)</span>
+<span class="sd">            The type of load to be computed (e.g., 'bodyforce')</span>
 <span class="sd">        load</span>
 <span class="sd">            The float (vector) describing the load.</span>
 <span class="sd">        P</span>
@@ -280,7 +280,7 @@
 <span class="sd">            The current total time.</span>
 <span class="sd">        dTime</span>
 <span class="sd">            The time increment.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div>
+<span class="sd">        """</span></div>
 
 
 <div class="viewcode-block" id="CellBase.computeDistributedLoad">
@@ -297,12 +297,12 @@
         <span class="n">timeTotal</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
         <span class="n">dTime</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute distributed (surface) a for given time based for a specific assigned material point.</span>
+<span class="w">        </span><span class="sd">"""Compute distributed (surface) a for given time based for a specific assigned material point.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        loadType</span>
-<span class="sd">            The type of load to be computed (e.g., &#39;pressure&#39;)</span>
+<span class="sd">            The type of load to be computed (e.g., 'pressure')</span>
 <span class="sd">        surfaceID</span>
 <span class="sd">            The ID describing the surface of the material point.</span>
 <span class="sd">        materialPoint</span>
@@ -317,33 +317,33 @@
 <span class="sd">            The current total time.</span>
 <span class="sd">        dTime</span>
 <span class="sd">            The time increment.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div>
+<span class="sd">        """</span></div>
 
 
 <div class="viewcode-block" id="CellBase.getCoordinatesAtCenter">
 <a class="viewcode-back" href="../../../../documentation/cells.html#edelweissmeshfree.cells.base.cell.CellBase.getCoordinatesAtCenter">[docs]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">getCoordinatesAtCenter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the underlying MarmotElement centroid coordinates.</span>
+<span class="w">        </span><span class="sd">"""Compute the underlying MarmotElement centroid coordinates.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        np.ndarray</span>
-<span class="sd">            The cells&#39;s central coordinates.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div>
+<span class="sd">            The cells's central coordinates.</span>
+<span class="sd">        """</span></div>
 
 
 <div class="viewcode-block" id="CellBase.isCoordinateInCell">
 <a class="viewcode-back" href="../../../../documentation/cells.html#edelweissmeshfree.cells.base.cell.CellBase.isCoordinateInCell">[docs]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">isCoordinateInCell</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coordinate</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if a given coordinate is located within this cell.</span>
+<span class="w">        </span><span class="sd">"""Check if a given coordinate is located within this cell.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        bool</span>
 <span class="sd">            The truth value if this coordinate is located in the cell.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div>
+<span class="sd">        """</span></div>
 
 
 <div class="viewcode-block" id="CellBase.getBoundingBox">
@@ -352,26 +352,26 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">getBoundingBox</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the bounding box min. and max. of a cell</span>
+<span class="w">        </span><span class="sd">"""Get the bounding box min. and max. of a cell</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        tuple</span>
 <span class="sd">                The tuple containing the min. and max. coordinates of the bounding box.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div>
+<span class="sd">        """</span></div>
 
 
 <div class="viewcode-block" id="CellBase.getInterpolationVector">
 <a class="viewcode-back" href="../../../../documentation/cells.html#edelweissmeshfree.cells.base.cell.CellBase.getInterpolationVector">[docs]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">getInterpolationVector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coordinate</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the interpolation vector for a given global coordinate.</span>
+<span class="w">        </span><span class="sd">"""Get the interpolation vector for a given global coordinate.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        np.ndarray</span>
 <span class="sd">            The interpolation vector for all nodes.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div>
+<span class="sd">        """</span></div>
 </div>
 
 </pre></div>

@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Material Points &mdash; EdelweissMeshfree v25.08 documentation</title>
+  <title>Material Points &mdash; EdelweissMeshfree v26.11 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=1d735308" />
@@ -14,10 +14,10 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=83aae4bb"></script>
-      <script src="../../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
-      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      <script src="../../_static/documentation_options.js?v=57c4c7c7"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -48,7 +48,7 @@
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../gallery.html">Gallery</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../references.html">References</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../index.html">Documentation</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../organization.html">Code organization</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../models.html">Models</a></li>
@@ -83,6 +83,8 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../solvers.html">Solvers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../choosing_a_solver.html">Choosing a linear solver</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../assembly.html">System matrix assembly</a></li>
 <li class="toctree-l2"><a class="reference internal" href="material_point_managers.html">Material Point Managers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../model_generators.html">Model generators</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../particles.html">Particles</a></li>
@@ -95,6 +97,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../constraints.html">Constraints</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../numeric_tools.html">Numerical tools</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../output_managers.html">Output managers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../configuration.html">Configuration and Libraries</a></li>
 </ul>
 </li>
 </ul>
@@ -132,7 +135,7 @@ at a specific location in space and time. Material points are used to compute th
 and to transfer the material properties to the grid.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.materialpoints.base.mp.</span></span><span class="sig-name descname"><span class="pre">MaterialPointBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">formulation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coordinates</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">volume</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">material</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/materialpoints/base/mp.html#MaterialPointBase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.materialpoints.base.mp.</span></span><span class="sig-name descname"><span class="pre">MaterialPointBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">formulation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coordinates</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">volume</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">material</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/materialpoints/base/mp.html#MaterialPointBase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase" title="Link to this definition"></a></dt>
 <dd><p>A basic material point class. If you want to implement a new material point, you should inherit from this class.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -197,13 +200,13 @@ and to transfer the material properties to the grid.</p>
 </table>
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.acceptStateAndPosition">
-<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">acceptStateAndPosition</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/materialpoints/base/mp.html#MaterialPointBase.acceptStateAndPosition"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.acceptStateAndPosition" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">acceptStateAndPosition</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/materialpoints/base/mp.html#MaterialPointBase.acceptStateAndPosition"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.acceptStateAndPosition" title="Link to this definition"></a></dt>
 <dd><p>Accept the computed state (in nonlinear iteration schemes) and the position.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.assignCells">
-<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">assignCells</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cells</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/materialpoints/base/mp.html#MaterialPointBase.assignCells"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.assignCells" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">assignCells</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cells</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/materialpoints/base/mp.html#MaterialPointBase.assignCells"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.assignCells" title="Link to this definition"></a></dt>
 <dd><p>Assign the list of cells in which the material point is currently residing.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -214,7 +217,7 @@ and to transfer the material properties to the grid.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.computeYourself">
-<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">computeYourself</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeTotal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dT</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/materialpoints/base/mp.html#MaterialPointBase.computeYourself"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.computeYourself" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">computeYourself</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeTotal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dT</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/materialpoints/base/mp.html#MaterialPointBase.computeYourself"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.computeYourself" title="Link to this definition"></a></dt>
 <dd><p>Compute the current material response.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -228,7 +231,7 @@ and to transfer the material properties to the grid.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getCenterCoordinates">
-<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">getCenterCoordinates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/materialpoints/base/mp.html#MaterialPointBase.getCenterCoordinates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getCenterCoordinates" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">getCenterCoordinates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/materialpoints/base/mp.html#MaterialPointBase.getCenterCoordinates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getCenterCoordinates" title="Link to this definition"></a></dt>
 <dd><p>The location of the material point is defined by the coordinates of it’s center.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -242,7 +245,7 @@ and to transfer the material properties to the grid.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getResultArray">
-<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">getResultArray</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">getPersistentView</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/materialpoints/base/mp.html#MaterialPointBase.getResultArray"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getResultArray" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">getResultArray</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">getPersistentView</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/materialpoints/base/mp.html#MaterialPointBase.getResultArray"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getResultArray" title="Link to this definition"></a></dt>
 <dd><p>Get the array of a result, possibly as a persistent view which is continiously
 updated by a MaterialPoint.</p>
 <dl class="field-list simple">
@@ -263,7 +266,7 @@ updated by a MaterialPoint.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getVertexCoordinates">
-<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">getVertexCoordinates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/materialpoints/base/mp.html#MaterialPointBase.getVertexCoordinates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getVertexCoordinates" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">getVertexCoordinates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/materialpoints/base/mp.html#MaterialPointBase.getVertexCoordinates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getVertexCoordinates" title="Link to this definition"></a></dt>
 <dd><p>A material point’s shape is defined by an arbitrary number of vertices.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -277,7 +280,7 @@ updated by a MaterialPoint.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getVolume">
-<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">getVolume</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/materialpoints/base/mp.html#MaterialPointBase.getVolume"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getVolume" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">getVolume</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/materialpoints/base/mp.html#MaterialPointBase.getVolume"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getVolume" title="Link to this definition"></a></dt>
 <dd><p>A material point has distinct volume, which may change during a simulation.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -291,13 +294,13 @@ updated by a MaterialPoint.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.initializeYourself">
-<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">initializeYourself</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/materialpoints/base/mp.html#MaterialPointBase.initializeYourself"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.initializeYourself" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">initializeYourself</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/materialpoints/base/mp.html#MaterialPointBase.initializeYourself"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.initializeYourself" title="Link to this definition"></a></dt>
 <dd><p>Initalize the mateiral point to be ready for computing.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.prepareTimestep">
-<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">prepareTimestep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeTotal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dT</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/materialpoints/base/mp.html#MaterialPointBase.prepareTimestep"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.prepareTimestep" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">prepareTimestep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeTotal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dT</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/materialpoints/base/mp.html#MaterialPointBase.prepareTimestep"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.prepareTimestep" title="Link to this definition"></a></dt>
 <dd><p>Prepare a new time step, i.e., before interpolation from the grid takes place.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -311,7 +314,7 @@ updated by a MaterialPoint.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.setInitialCondition">
-<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">setInitialCondition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stateType</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/materialpoints/base/mp.html#MaterialPointBase.setInitialCondition"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.setInitialCondition" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">setInitialCondition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stateType</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/materialpoints/base/mp.html#MaterialPointBase.setInitialCondition"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.setInitialCondition" title="Link to this definition"></a></dt>
 <dd><p>Assign initial conditions.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -325,7 +328,7 @@ updated by a MaterialPoint.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.setMaterial">
-<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">setMaterial</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">materialName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">materialProperties</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/materialpoints/base/mp.html#MaterialPointBase.setMaterial"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.setMaterial" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">setMaterial</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">materialName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">materialProperties</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/materialpoints/base/mp.html#MaterialPointBase.setMaterial"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.setMaterial" title="Link to this definition"></a></dt>
 <dd><p>Assign a material and material properties.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -339,7 +342,7 @@ updated by a MaterialPoint.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.setProperties">
-<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">setProperties</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">propertyName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elementProperties</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/materialpoints/base/mp.html#MaterialPointBase.setProperties"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.setProperties" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">setProperties</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">propertyName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elementProperties</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/materialpoints/base/mp.html#MaterialPointBase.setProperties"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.setProperties" title="Link to this definition"></a></dt>
 <dd><p>Assign a set of properties to the element.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -353,19 +356,19 @@ updated by a MaterialPoint.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.assignedCells">
-<em class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">assignedCells</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">set</span></em><a class="headerlink" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.assignedCells" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">assignedCells</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">set</span></span><a class="headerlink" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.assignedCells" title="Link to this definition"></a></dt>
 <dd><p>The list of currently assigned cells.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.ensightType">
-<em class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ensightType</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.ensightType" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">ensightType</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.ensightType" title="Link to this definition"></a></dt>
 <dd><p>The shape of the materialpoint in Ensight Gold notation.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.number">
-<em class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">number</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.number" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">number</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.number" title="Link to this definition"></a></dt>
 <dd><p>The unique label (ID) of this material point.</p>
 </dd></dl>
 
@@ -382,7 +385,7 @@ for 2D plane strain problems. The constitutive tangent is computed from
 Young’s modulus and Poisson’s ratio.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.</span></span><span class="sig-name descname"><span class="pre">PythonMaterialPoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">formulation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coordinates</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">volume</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">material</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/materialpoints/pythonmaterialpoint/mp.html#PythonMaterialPoint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.</span></span><span class="sig-name descname"><span class="pre">PythonMaterialPoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">formulation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coordinates</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">volume</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">material</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/materialpoints/pythonmaterialpoint/mp.html#PythonMaterialPoint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint" title="Link to this definition"></a></dt>
 <dd><p>A pure Python material point with linear elastic constitutive behavior.</p>
 <p>Supports 2D plane strain problems with Voigt notation:
 [sigma_xx, sigma_yy, sigma_zz, sigma_xy] for stress,
@@ -661,19 +664,19 @@ Young’s modulus and Poisson’s ratio.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.assignedCells">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">assignedCells</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.assignedCells" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">assignedCells</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.assignedCells" title="Link to this definition"></a></dt>
 <dd><p>The list of currently assigned cells.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.ensightType">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ensightType</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.ensightType" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">ensightType</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.ensightType" title="Link to this definition"></a></dt>
 <dd><p>The shape of the materialpoint in Ensight Gold notation.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.number">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">number</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.number" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">number</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.number" title="Link to this definition"></a></dt>
 <dd><p>The unique label (ID) of this material point.</p>
 </dd></dl>
 

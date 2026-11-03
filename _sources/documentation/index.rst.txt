@@ -10,6 +10,8 @@ Documentation
    cellelements
    mpm/material_points
    solvers
+   choosing_a_solver
+   assembly
    mpm/material_point_managers
    model_generators
    particles
@@ -22,3 +24,4 @@ Documentation
    constraints
    numeric_tools
    output_managers
+   configuration

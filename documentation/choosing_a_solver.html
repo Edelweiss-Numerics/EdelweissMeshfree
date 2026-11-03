@@ -1,0 +1,576 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Choosing a linear solver &mdash; EdelweissMeshfree v26.11 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=1d735308" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=57c4c7c7"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="System matrix assembly" href="assembly.html" />
+    <link rel="prev" title="Solvers" href="solvers.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            EdelweissMeshfree
+              <img src="../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../gallery.html">Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="organization.html">Code organization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html">Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cells.html">Cells</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cellelements.html">Cellelements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpm/material_points.html">Material Points</a></li>
+<li class="toctree-l2"><a class="reference internal" href="solvers.html">Solvers</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Choosing a linear solver</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#start-here">Start here</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-direct-solver">The direct solver</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-operator-is-the-thing">The operator is the thing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#settings-that-matter">Settings that matter</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#hierarchydroptol-the-largest-single-win"><code class="docutils literal notranslate"><span class="pre">hierarchyDropTol</span></code> – the largest single win</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#symmetric"><code class="docutils literal notranslate"><span class="pre">symmetric</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#outertol-versus-adaptive-forcing"><code class="docutils literal notranslate"><span class="pre">outerTol</span></code> versus adaptive forcing</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#settings-measured-to-do-nothing">Settings measured to do nothing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#where-the-time-actually-goes">Where the time actually goes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#memory-and-what-limits-problem-size">Memory, and what limits problem size</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#diagnosing-a-slow-solve">Diagnosing a slow solve</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pitfalls-when-measuring">Pitfalls when measuring</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#a-worked-configuration">A worked configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="assembly.html">System matrix assembly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpm/material_point_managers.html">Material Point Managers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="model_generators.html">Model generators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="particles.html">Particles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="particle_managers.html">Particle managers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="points_and_fields.html">Points and fields</a></li>
+<li class="toctree-l2"><a class="reference internal" href="field_output.html">Field output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshfree.html">Meshfree utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sets.html">Sets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="step_actions.html">Step actions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="constraints.html">Constraints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="numeric_tools.html">Numerical tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="output_managers.html">Output managers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="configuration.html">Configuration and Libraries</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">EdelweissMeshfree</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Documentation</a></li>
+      <li class="breadcrumb-item active">Choosing a linear solver</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/documentation/choosing_a_solver.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="choosing-a-linear-solver">
+<h1>Choosing a linear solver<a class="headerlink" href="#choosing-a-linear-solver" title="Link to this heading"></a></h1>
+<p>Every Newton iteration of an implicit meshfree simulation spends most of its time in one linear solve,
+so the choice of linear solver and its settings usually matters more than anything else you can tune.
+This page collects what has been <strong>measured</strong> on RKPM problems, what turned out not to matter, and how
+to find out for your own model.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Every number on this page was measured on one problem class: a <strong>Taylor-bar impact, RS-SNNI x SDI
+RKPM discretisation, support scaling factor 2.2</strong>, between 15,120 and 120,960 degrees of freedom,
+on deformed post-impact states with active penalty contact.</p>
+<p>They are reported as evidence, not as universal constants. The support radius in particular changes
+this solver’s behaviour more than anything else (see <a class="reference internal" href="#rkpm-operator-properties"><span class="std std-ref">the operator</span></a>),
+so treat a figure from a different discretisation as a hypothesis to re-measure.</p>
+</div>
+<section id="start-here">
+<h2>Start here<a class="headerlink" href="#start-here" title="Link to this heading"></a></h2>
+<table class="docutils align-default" id="id1" style="width: 100%">
+<caption><span class="caption-text">A first choice</span><a class="headerlink" href="#id1" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 30.0%" />
+<col style="width: 40.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Situation</p></th>
+<th class="head"><p>Use</p></th>
+<th class="head"><p>Why</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>below ~40,000 DOF</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">pardiso</span></code> with <code class="docutils literal notranslate"><span class="pre">reuseSymbolicFactorization=True</span></code></p></td>
+<td><p>a direct factorisation still wins, and symbolic reuse is worth 3x on its own</p></td>
+</tr>
+<tr class="row-odd"><td><p>above ~40,000 DOF</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">blockamg</span></code></p></td>
+<td><p>AMG’s iteration count is mesh independent here; a direct factorisation is not</p></td>
+</tr>
+<tr class="row-even"><td><p>above ~50,000 DOF</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">blockamg</span></code>, and <code class="docutils literal notranslate"><span class="pre">useDirectCSRAssembly</span></code> on the solver</p></td>
+<td><p>the staging assembly path cannot build its gather map beyond ~2.15e9 COO pairs</p></td>
+</tr>
+<tr class="row-odd"><td><p>memory bound rather than time bound</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">blockamg</span></code> + <code class="docutils literal notranslate"><span class="pre">useDirectCSRAssembly</span></code></p></td>
+<td><p>a direct factorisation’s fill-in is the one term that has never been bounded here</p></td>
+</tr>
+</tbody>
+</table>
+<p>The crossover near 40,000 DOF is a measured property of this problem class, not a general rule. Below
+it, PARDISO with symbolic reuse beat every iterative configuration tried; above it, the direct solver’s
+cost grows as roughly <code class="docutils literal notranslate"><span class="pre">dof**1.4</span></code> while AMG’s grows about linearly.</p>
+</section>
+<section id="the-direct-solver">
+<h2>The direct solver<a class="headerlink" href="#the-direct-solver" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">reuseSymbolicFactorization</span></code></dt><dd><p><strong>Always turn this on</strong> for a Newton sequence. The sparsity pattern is identical across the
+iterations of one increment, so the reordering and symbolic factorisation (PARDISO phase 11) can be
+computed once instead of per solve. Measured: <strong>3.0-3.2x faster</strong> overall, with solutions deviating
+by 1e-13 – phase 11 was 29 s of a 41 s linear solve before, and one call instead of twelve after.</p>
+</dd>
+<dt>Threading</dt><dd><p>The direct solve saturates at about <strong>8 MKL threads</strong>: 2.9x at 16 threads, and nothing further at
+36. Do not size a machine for a direct solver on thread count alone.</p>
+</dd>
+</dl>
+</section>
+<section id="the-operator-is-the-thing">
+<span id="rkpm-operator-properties"></span><h2>The operator is the thing<a class="headerlink" href="#the-operator-is-the-thing" title="Link to this heading"></a></h2>
+<p>Before tuning a preconditioner it is worth knowing what the RKPM operator looks like, because it does
+not resemble the sparse operators AMG was designed for. Measured at 43,350 DOF:</p>
+<table class="docutils align-default" style="width: 100%">
+<colgroup>
+<col style="width: 45.0%" />
+<col style="width: 55.0%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>stored entries per row</p></td>
+<td><p>~1643 (max 2925)</p></td>
+</tr>
+<tr class="row-even"><td><p>structural density</p></td>
+<td><p>3.79%</p></td>
+</tr>
+<tr class="row-odd"><td><p>symmetry</p></td>
+<td><p>exact, <code class="docutils literal notranslate"><span class="pre">||A</span> <span class="pre">-</span> <span class="pre">A^T||_max</span> <span class="pre">/</span> <span class="pre">||A||_max</span></code> = 9.1e-15</p></td>
+</tr>
+<tr class="row-even"><td><p>diagonal spread</p></td>
+<td><p>only 52.8x (min 1.15e4, max 6.09e5)</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>median off-diagonal, relative to</strong> <code class="docutils literal notranslate"><span class="pre">sqrt(|a_ii|</span> <span class="pre">a_jj|)</span></code></p></td>
+<td><p><strong>1.29e-06</strong></p></td>
+</tr>
+<tr class="row-even"><td><p>off-diagonals that are exactly zero</p></td>
+<td><p>2.59%</p></td>
+</tr>
+</tbody>
+</table>
+<p>Two consequences follow, and both are counter-intuitive.</p>
+<p><strong>Penalty contact is not the problem.</strong> A diagonal spread of 52.8x is mild, and only 44 rows sit above
+the 99.9% quantile. Contact stiffness does not create the decades of scale separation that would confuse
+a strength-of-connection criterion – which is consistent with <code class="docutils literal notranslate"><span class="pre">eps_strong</span></code> having no measurable effect
+(below).</p>
+<p><strong>The operator is numerically far sparser than it is structurally.</strong> The typical stored entry is a
+millionth of the diagonal. Smoothed aggregation therefore weighs ~1643 candidates per row where a
+handful matter, and the Galerkin product carries the rest down to every coarse level. This is the single
+most useful thing to know about tuning AMG here, and it is what <code class="docutils literal notranslate"><span class="pre">hierarchyDropTol</span></code> exploits.</p>
+<p><strong>The support radius dominates.</strong> The same preconditioner configuration needed <strong>17 outer iterations at
+support 1.8 and 108.5 at support 2.2</strong>. If iteration counts are unacceptable, the discretisation is a
+bigger lever than the solver – but note that the support radius is an accuracy decision, not a free
+one: the solution changes with it.</p>
+</section>
+<section id="settings-that-matter">
+<h2>Settings that matter<a class="headerlink" href="#settings-that-matter" title="Link to this heading"></a></h2>
+<section id="hierarchydroptol-the-largest-single-win">
+<h3><code class="docutils literal notranslate"><span class="pre">hierarchyDropTol</span></code> – the largest single win<a class="headerlink" href="#hierarchydroptol-the-largest-single-win" title="Link to this heading"></a></h3>
+<p>Builds each AMG hierarchy from a copy of the matrix with off-diagonal <code class="docutils literal notranslate"><span class="pre">a_ij</span></code> dropped where
+<code class="docutils literal notranslate"><span class="pre">|a_ij|</span> <span class="pre">&lt;</span> <span class="pre">hierarchyDropTol</span> <span class="pre">*</span> <span class="pre">sqrt(|a_ii|</span> <span class="pre">|a_jj|)</span></code>. Only the <em>preconditioner</em> is sparsified: the
+operator the Krylov method applies, and therefore the residual it drives to zero, is untouched. <strong>A
+preconditioner change cannot move the converged solution beyond the outer tolerance</strong> – it can only
+change how many iterations reaching it takes.</p>
+<p>Measured at 70,800 DOF over 3 increments and 35 solves:</p>
+<table class="docutils align-default" style="width: 100%">
+<colgroup>
+<col style="width: 12.0%" />
+<col style="width: 20.0%" />
+<col style="width: 16.0%" />
+<col style="width: 18.0%" />
+<col style="width: 18.0%" />
+<col style="width: 16.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p><code class="docutils literal notranslate"><span class="pre">tol</span></code></p></th>
+<th class="head"><p>nnz for the hierarchy</p></th>
+<th class="head"><p>iters / solve</p></th>
+<th class="head"><p>GMRES s / iter</p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">linear</span> <span class="pre">solve</span></code></p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">solve</span> <span class="pre">step</span></code></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>off</p></td>
+<td><p>122.8 M</p></td>
+<td><p>131</p></td>
+<td><p>0.0626</p></td>
+<td><p>377.16 s</p></td>
+<td><p>889.76 s</p></td>
+</tr>
+<tr class="row-odd"><td><p>1e-6</p></td>
+<td><p>48.7 M (39.7%)</p></td>
+<td><p>133</p></td>
+<td><p>0.0408</p></td>
+<td><p>295.37 s</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>1e-5</p></td>
+<td><p>36.1 M (29.4%)</p></td>
+<td><p>128</p></td>
+<td><p>0.0356</p></td>
+<td><p>269.07 s</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>1e-4</p></td>
+<td><p>24.5 M (19.9%)</p></td>
+<td><p>124</p></td>
+<td><p>0.0320</p></td>
+<td><p>239.81 s</p></td>
+<td><p>736.56 s</p></td>
+</tr>
+<tr class="row-even"><td><p>1e-3</p></td>
+<td><p>13.1 M (10.7%)</p></td>
+<td><p>132</p></td>
+<td><p>0.0276</p></td>
+<td><p>230.22 s</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>1e-2</p></td>
+<td><p>5.25 M (4.3%)</p></td>
+<td><p>129</p></td>
+<td><p>0.0241</p></td>
+<td><p>208.50 s</p></td>
+<td><p>713.70 s</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>1.81x on the linear solve and 1.25x on the whole solve step</strong>, with every configuration converging the
+same increments with the same single cutback.</p>
+<p>The important column is <em>iterations per solve</em>: 131, 133, 128, 124, 132, 129. <strong>Flat across four orders
+of magnitude</strong>, while retaining as little as 4.3% of the entries. The discarded entries were never
+carrying preconditioning information, and the entire gain is cost per iteration (2.60x cheaper). Do not
+expect faster convergence from this – expect cheaper iterations.</p>
+<p>The default is <code class="docutils literal notranslate"><span class="pre">0.0</span></code> (off) for two honest reasons: the sweep never found the point where quality
+breaks, so the safe end of the range is unknown; and it has been measured on one operator at one support
+radius. <code class="docutils literal notranslate"><span class="pre">1e-4</span></code> has the most margin on either side for this problem class.</p>
+<p>Plain truncation is what to use. The standard refinement – lumping each dropped entry onto the diagonal
+so row sums are preserved exactly – was implemented and measured, and is neutral at best and 8.1% slower
+at <code class="docutils literal notranslate"><span class="pre">1e-2</span></code>; see <code class="docutils literal notranslate"><span class="pre">hierarchyDropLumping</span></code> in the table below. Three independent results now point the same
+way on this operator (the rigid-body nullspace is inert, <code class="docutils literal notranslate"><span class="pre">eps_strong</span></code> does nothing, and lumping does
+nothing): <strong>near-null-space and strength-of-connection fidelity are not what limits this preconditioner.</strong>
+What limited it was the cost of applying a hierarchy built from a numerically dense operator, which is
+what the truncation fixes.</p>
+<p>The criterion is scale invariant, and symmetric in <code class="docutils literal notranslate"><span class="pre">(i,</span> <span class="pre">j)</span></code> for a symmetric matrix, so the sparsified
+block stays symmetric as smoothed aggregation and the Chebyshev smoother both require. The diagonal is
+always kept, so no row can be emptied – the sparsest configuration above still leaves 35 off-diagonals
+in the emptiest row.</p>
+</section>
+<section id="symmetric">
+<h3><code class="docutils literal notranslate"><span class="pre">symmetric</span></code><a class="headerlink" href="#symmetric" title="Link to this heading"></a></h3>
+<p>Set <code class="docutils literal notranslate"><span class="pre">symmetric=False</span></code> for a single-field problem. With one field the reverse block sweep is applied to
+identical input and returns an identical result, so it is a wasted AMG V-cycle per outer iteration.</p>
+</section>
+<section id="outertol-versus-adaptive-forcing">
+<h3><code class="docutils literal notranslate"><span class="pre">outerTol</span></code> versus adaptive forcing<a class="headerlink" href="#outertol-versus-adaptive-forcing" title="Link to this heading"></a></h3>
+<p>This one has a trap in it. <code class="docutils literal notranslate"><span class="pre">outerTol</span></code> is <code class="docutils literal notranslate"><span class="pre">None</span></code> by default, which selects Eisenstat–Walker forcing
+with <code class="docutils literal notranslate"><span class="pre">etaMin</span></code>/<code class="docutils literal notranslate"><span class="pre">etaMax</span></code>. <strong>Passing a number for</strong> <code class="docutils literal notranslate"><span class="pre">outerTol</span></code> <strong>bypasses forcing entirely</strong> – the
+tolerance is then fixed at that value on every solve and <code class="docutils literal notranslate"><span class="pre">etaMax</span></code> has no effect whatsoever.</p>
+<p>Forcing was tested against a fixed <code class="docutils literal notranslate"><span class="pre">1e-4</span></code> with <code class="docutils literal notranslate"><span class="pre">etaMax=1e-2</span></code>, and it is <strong>not</strong> a reliable win:</p>
+<table class="docutils align-default" style="width: 100%">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 35.0%" />
+<col style="width: 35.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>problem size</p></th>
+<th class="head"><p>outer iterations</p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">linear</span> <span class="pre">solve</span></code></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>43,350 DOF</p></td>
+<td><p>-6%</p></td>
+<td><p>+3%</p></td>
+</tr>
+<tr class="row-odd"><td><p>70,800 DOF</p></td>
+<td><p><strong>+65%</strong></p></td>
+<td><p><strong>+61%</strong></p></td>
+</tr>
+<tr class="row-even"><td><p>120,960 DOF</p></td>
+<td><p>-16%</p></td>
+<td><p>-13%</p></td>
+</tr>
+</tbody>
+</table>
+<p>At 70,800 DOF it also pushed the Newton loop from 5 iterations to 8: looser linear solves bought fewer
+inner iterations and paid for them with more outer ones. Measure it on your problem before enabling it.</p>
+</section>
+</section>
+<section id="settings-measured-to-do-nothing">
+<h2>Settings measured to do nothing<a class="headerlink" href="#settings-measured-to-do-nothing" title="Link to this heading"></a></h2>
+<p>These were each tested at 43,350 and 70,800 DOF against the shipped configuration. They are recorded so
+that time is not spent on them again.</p>
+<table class="docutils align-default" style="width: 100%">
+<colgroup>
+<col style="width: 28.0%" />
+<col style="width: 72.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Setting</p></th>
+<th class="head"><p>Result</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">useRigidBodyNullspace=False</span></code></p></td>
+<td><p><strong>Bit-identical</strong> results – reaction forces agreeing to all 16 digits. Inert on this operator.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">sweeps=2</span></code></p></td>
+<td><p><strong>Bit-identical</strong> results, at <strong>55-67% more time</strong>. For one field the block sweep reapplies the
+same AMG to the same input, so extra sweeps are pure cost.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">eps_strong</span></code> 0.04 / 0.25</p></td>
+<td><p>Reaches AMGCL (the results do change) but gives no benefit: 629 / 628 / 607 outer iterations at
+43,350 DOF for 0.04 / 0.10 / 0.25, and 696 / 673 / 744 at 70,800.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">hierarchyStalenessFactor=1.0</span></code> (eager refresh)</p></td>
+<td><p>Iteration counts change by under 1.5% and cost 12% more time. Hierarchy staleness is not what
+makes these solves expensive: in the baseline, refreshed and reused solves have near-identical
+median iteration counts.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">hierarchyDropLumping=True</span></code></p></td>
+<td><p>Neutral at <code class="docutils literal notranslate"><span class="pre">hierarchyDropTol=1e-4</span></code> (-0.08%) and <strong>8.1% slower</strong> at <code class="docutils literal notranslate"><span class="pre">1e-2</span></code>. This is the AMG
+literature’s preferred filtering construction – lumping each dropped entry onto the diagonal
+preserves row sums exactly, and it verifiably does so here (relative row-sum error 4.65e-02
+truncated against 3.11e-15 lumped at <code class="docutils literal notranslate"><span class="pre">1e-2</span></code>). It simply buys nothing on this operator: outer
+GMRES time is unchanged, so convergence is identical, and the whole penalty is the extra pass
+itself, +32% on the hierarchy build. Consistent with <code class="docutils literal notranslate"><span class="pre">useRigidBodyNullspace</span></code> being inert –
+this preconditioner is insensitive to near-null-space fidelity.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="where-the-time-actually-goes">
+<h2>Where the time actually goes<a class="headerlink" href="#where-the-time-actually-goes" title="Link to this heading"></a></h2>
+<p>Only about a quarter to three quarters of the linear solve is the Krylov iteration, depending on the
+support radius. At support 1.8, with iteration counts low, the split was:</p>
+<table class="docutils align-default" style="width: 100%">
+<colgroup>
+<col style="width: 45.0%" />
+<col style="width: 25.0%" />
+<col style="width: 30.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Component</p></th>
+<th class="head"><p>s / solve</p></th>
+<th class="head"><p>share</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>equilibration</p></td>
+<td><p>0.24356</p></td>
+<td><p>35%</p></td>
+</tr>
+<tr class="row-odd"><td><p>outer GMRES</p></td>
+<td><p>0.18928</p></td>
+<td><p>27%</p></td>
+</tr>
+<tr class="row-even"><td><p>hierarchy build</p></td>
+<td><p>0.13960</p></td>
+<td><p>20%</p></td>
+</tr>
+<tr class="row-odd"><td><p>off-diagonal split</p></td>
+<td><p>0.08398</p></td>
+<td><p>12%</p></td>
+</tr>
+</tbody>
+</table>
+<p>Two of those have since been addressed. The <strong>off-diagonal split is now skipped automatically for a
+single field</strong> – it used to copy the whole matrix into a dictionary that stayed empty, worth 5.8% of the
+linear solve at 70,800 DOF. <strong>Equilibration is now the largest non-Krylov cost</strong> and is recomputed on
+every solve.</p>
+<p>If your iteration counts are low, do not assume the Krylov loop is where your time is. Read the
+<code class="docutils literal notranslate"><span class="pre">blockamg:</span></code> entries in the performance table before optimising anything.</p>
+</section>
+<section id="memory-and-what-limits-problem-size">
+<h2>Memory, and what limits problem size<a class="headerlink" href="#memory-and-what-limits-problem-size" title="Link to this heading"></a></h2>
+<p>For large models the binding constraint is usually memory, and usually a <em>transient</em> rather than the
+steady state:</p>
+<table class="docutils align-default" style="width: 100%">
+<colgroup>
+<col style="width: 40.0%" />
+<col style="width: 30.0%" />
+<col style="width: 30.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>at 120,960 DOF</p></th>
+<th class="head"><p>peak</p></th>
+<th class="head"><p>during the solve</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>single increment</p></td>
+<td><p>100.34 GiB</p></td>
+<td><p>88.89 GiB</p></td>
+</tr>
+<tr class="row-odd"><td><p>multi-increment run</p></td>
+<td><p>126.77 GiB</p></td>
+<td><p>~97 GiB</p></td>
+</tr>
+</tbody>
+</table>
+<p>Practical consequences:</p>
+<ul class="simple">
+<li><p><strong>Use</strong> <code class="docutils literal notranslate"><span class="pre">useDirectCSRAssembly</span></code> <strong>above ~50,000 DOF.</strong> It is not only faster; the staging assembly
+path stores an int32 index per COO pair and therefore cannot build its gather map beyond 2.15e9 pairs,
+which this problem class reaches at about 50,000 DOF – with only a third of a 187 GB machine in use.</p></li>
+<li><p>Assembly cost and memory then scale <strong>linearly</strong> in DOF, measured over a 2.8x range.</p></li>
+<li><p>Peak memory is set by setup transients (pattern construction, and rebuilding on a connectivity change),
+not by the assembly or the solve. Size a machine for the peak, and expect it to be well above what the
+solve itself occupies.</p></li>
+</ul>
+</section>
+<section id="diagnosing-a-slow-solve">
+<h2>Diagnosing a slow solve<a class="headerlink" href="#diagnosing-a-slow-solve" title="Link to this heading"></a></h2>
+<p><strong>Read the per-solve log lines.</strong> <code class="docutils literal notranslate"><span class="pre">blockamg</span></code> prints one line per solve with its outer iteration
+count, whether the hierarchy was refreshed or reused, the tolerance it was given, and the time taken. A
+warning is emitted above <code class="docutils literal notranslate"><span class="pre">warnOuterIterations</span></code> outer iterations.</p>
+<p><strong>Pair each solve with the residual it was asked to reduce.</strong> Iteration counts vary strongly <em>within</em> an
+increment – from single digits early to several hundred late – so a mean over an increment hides the
+structure. This matters: an early attempt to characterise AMG at large DOF concluded it was degrading
+with problem size, when in fact the expensive solves were simply the late-Newton ones, present in the same
+proportion at every size. The iterations-against-residual curves at 43,350 and 120,960 DOF lie on top of
+each other.</p>
+<p><strong>Capture the hard systems.</strong> <code class="docutils literal notranslate"><span class="pre">dumpOnDegradationDir</span></code> together with <code class="docutils literal notranslate"><span class="pre">dumpOnDegradationThreshold</span></code>
+writes the matrix and right-hand side of any solve exceeding a given iteration count, for offline
+analysis. That is how the operator table above was produced.</p>
+</section>
+<section id="pitfalls-when-measuring">
+<h2>Pitfalls when measuring<a class="headerlink" href="#pitfalls-when-measuring" title="Link to this heading"></a></h2>
+<p>Four traps, each of which produced a wrong conclusion before being caught.</p>
+<p><strong>Divide iteration totals by the number of solves.</strong> Two configurations rarely take the same number of
+Newton iterations, so summed outer-iteration counts are not comparable. A drop-tolerance sweep initially
+appeared to reduce iterations by 10%; per solve it was flat.</p>
+<p><strong>Establish a noise floor, and match it to what you are varying.</strong> For this problem class at 70,800 DOF:
+two runs of the <em>same binary</em> differ by <strong>0.13%</strong> in outer iterations and <strong>9.8e-13</strong> in the exported
+reaction force. Two <em>different builds</em> of nominally equivalent code differ by about <strong>2%</strong> in iteration
+count. So a floor measured by rerunning one binary does not license conclusions about a code change, and
+neither floor is the right comparator for a <em>preconditioner</em> change, where the Newton path necessarily
+differs.</p>
+<p><strong>A preconditioner change cannot be validated by comparing solutions.</strong> It changes the iterate path by
+construction. What must hold is that every increment still meets the same convergence criterion, and that
+the cutback count does not grow.</p>
+<p><strong>Do not trust a percentage measured in another regime.</strong> The off-diagonal split was 12% of the linear
+solve at support 1.8 and 5.8% at support 2.2, because the Krylov loop’s share of the total is completely
+different in the two cases.</p>
+</section>
+<section id="a-worked-configuration">
+<h2>A worked configuration<a class="headerlink" href="#a-worked-configuration" title="Link to this heading"></a></h2>
+<p>For an RKPM impact problem above the crossover, on the deformed states where the work actually happens:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.config.linsolve</span><span class="w"> </span><span class="kn">import</span> <span class="n">getLinSolverByName</span>
+
+<span class="n">linearSolver</span> <span class="o">=</span> <span class="n">getLinSolverByName</span><span class="p">(</span>
+    <span class="s2">"blockamg"</span><span class="p">,</span>
+    <span class="p">{</span>
+        <span class="s2">"tolerance"</span><span class="p">:</span> <span class="mf">1e-4</span><span class="p">,</span>  <span class="c1"># fixed; note this bypasses Eisenstat--Walker forcing entirely</span>
+        <span class="s2">"symmetric"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>  <span class="c1"># the reverse sweep is a wasted V-cycle for a single field</span>
+        <span class="s2">"dropTolerance"</span><span class="p">:</span> <span class="mf">1e-4</span><span class="p">,</span>  <span class="c1"># ~1.8x on the linear solve; verify on your own operator first</span>
+    <span class="p">},</span>
+<span class="p">)</span>
+
+<span class="n">nonlinearSolver</span><span class="o">.</span><span class="n">useDirectCSRAssembly</span> <span class="o">=</span> <span class="kc">True</span>   <span class="c1"># required above ~50,000 DOF</span>
+</pre></div>
+</div>
+<p>Then check three things in the performance table before tuning further: the share of the linear solve
+that is actually <code class="docutils literal notranslate"><span class="pre">blockamg:</span> <span class="pre">outer</span> <span class="pre">GMRES</span></code>, the outer iteration counts on the <em>late</em> Newton iterations of
+an increment, and whether peak memory is being set by a setup transient rather than by the solve.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="solvers.html" class="btn btn-neutral float-left" title="Solvers" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="assembly.html" class="btn btn-neutral float-right" title="System matrix assembly" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Matthias Neuner.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

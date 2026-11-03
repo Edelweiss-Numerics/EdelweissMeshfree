@@ -1,0 +1,643 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>edelweissmeshfree.solvers.nqsmparclength &mdash; EdelweissMeshfree v26.11 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css?v=1d735308" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=57c4c7c7"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            EdelweissMeshfree
+              <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gallery.html">Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation/index.html">Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">EdelweissMeshfree</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">edelweissmeshfree.solvers.nqsmparclength</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for edelweissmeshfree.solvers.nqsmparclength</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1">#  ---------------------------------------------------------------------</span>
+<span class="c1">#</span>
+<span class="c1">#  _____    _      _              _</span>
+<span class="c1"># | ____|__| | ___| |_      _____(_)___ ___</span>
+<span class="c1"># |  _| / _` |/ _ \ \ \ /\ / / _ \ / __/ __|</span>
+<span class="c1"># | |__| (_| |  __/ |\ V  V /  __/ \__ \__ \</span>
+<span class="c1"># |_____\__,_|\___|_| \_/\_/_\___|_|___/___/</span>
+<span class="c1"># |  \/  | ___  ___| |__  / _|_ __ ___  ___</span>
+<span class="c1"># | |\/| |/ _ \/ __| '_ \| |_| '__/ _ \/ _ \</span>
+<span class="c1"># | |  | |  __/\__ \ | | |  _| | |  __/  __/</span>
+<span class="c1"># |_|  |_|\___||___/_| |_|_| |_|  \___|\___|</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1">#  Unit of Strength of Materials and Structural Analysis</span>
+<span class="c1">#  University of Innsbruck,</span>
+<span class="c1">#</span>
+<span class="c1">#  Research Group for Computational Mechanics of Materials</span>
+<span class="c1">#  Institute of Structural Engineering, BOKU University, Vienna</span>
+<span class="c1">#</span>
+<span class="c1">#  2023 - today</span>
+<span class="c1">#</span>
+<span class="c1">#  Matthias Neuner |  matthias.neuner@boku.ac.at</span>
+<span class="c1">#  Thomas Mader    |  thomas.mader@bokut.ac.at</span>
+<span class="c1">#</span>
+<span class="c1">#  This file is part of EdelweissMeshfree.</span>
+<span class="c1">#</span>
+<span class="c1">#  This library is free software; you can redistribute it and/or</span>
+<span class="c1">#  modify it under the terms of the GNU Lesser General Public</span>
+<span class="c1">#  License as published by the Free Software Foundation; either</span>
+<span class="c1">#  version 2.1 of the License, or (at your option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1">#  The full text of the license can be found in the file LICENSE.md at</span>
+<span class="c1">#  the top level directory of EdelweissMeshfree.</span>
+<span class="c1">#  ---------------------------------------------------------------------</span>
+
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">edelweissfe.utils.performancetiming</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">performancetiming</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.constraints.base.constraintbase</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConstraintBase</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.numerics.dofmanager</span><span class="w"> </span><span class="kn">import</span> <span class="n">DofManager</span><span class="p">,</span> <span class="n">DofVector</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.outputmanagers.base.outputmanagerbase</span><span class="w"> </span><span class="kn">import</span> <span class="n">OutputManagerBase</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.stepactions.base.dirichletbase</span><span class="w"> </span><span class="kn">import</span> <span class="n">DirichletBase</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.timesteppers.timestep</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeStep</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.utils.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">DivergingSolution</span><span class="p">,</span> <span class="n">ReachedMaxIterations</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.utils.fieldoutput</span><span class="w"> </span><span class="kn">import</span> <span class="n">FieldOutputController</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.models.mpmmodel</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPMModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.mpmmanagers.base.mpmmanagerbase</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPMManagerBase</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.numerics.predictors.basepredictor</span><span class="w"> </span><span class="kn">import</span> <span class="n">BasePredictor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.numerics.systemmatrixcontribution</span><span class="w"> </span><span class="kn">import</span> <span class="n">VIJContribution</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.particlemanagers.base.baseparticlemanager</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BaseParticleManager</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.solvers.nqsmarmotparallel</span><span class="w"> </span><span class="kn">import</span> <span class="n">NQSParallelForMarmot</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.stepactions.base.arclengthcontrollerbase</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ArcLengthControllerBase</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.stepactions.base.mpmbodyloadbase</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPMBodyLoadBase</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.stepactions.base.mpmdistributedloadbase</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">MPMDistributedLoadBase</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.stepactions.particledistributedload</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ParticleDistributedLoad</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="NonlinearQuasistaticMarmotArcLengthSolver">
+<a class="viewcode-back" href="../../../documentation/solvers.html#edelweissmeshfree.solvers.nqsmparclength.NonlinearQuasistaticMarmotArcLengthSolver">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">NonlinearQuasistaticMarmotArcLengthSolver</span><span class="p">(</span><span class="n">NQSParallelForMarmot</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""This is the serial nonlinear implicit quasi static solver.</span>
+
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    journal</span>
+<span class="sd">        The journal instance for logging.</span>
+<span class="sd">    """</span>
+
+    <span class="n">identification</span> <span class="o">=</span> <span class="s2">"MPM-NQS-ArcLength"</span>
+
+<div class="viewcode-block" id="NonlinearQuasistaticMarmotArcLengthSolver.solveStep">
+<a class="viewcode-back" href="../../../documentation/solvers.html#edelweissmeshfree.solvers.nqsmparclength.NonlinearQuasistaticMarmotArcLengthSolver.solveStep">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">solveStep</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">timeStepper</span><span class="p">,</span>
+        <span class="n">linearSolver</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="n">MPMModel</span><span class="p">,</span>
+        <span class="n">fieldOutputController</span><span class="p">:</span> <span class="n">FieldOutputController</span><span class="p">,</span>
+        <span class="n">arcLengthController</span><span class="p">:</span> <span class="n">ArcLengthControllerBase</span><span class="p">,</span>
+        <span class="n">mpmManagers</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">MPMManagerBase</span><span class="p">]</span> <span class="o">=</span> <span class="p">[],</span>
+        <span class="n">particleManagers</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">BaseParticleManager</span><span class="p">]</span> <span class="o">=</span> <span class="p">[],</span>
+        <span class="n">dirichlets</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">DirichletBase</span><span class="p">]</span> <span class="o">=</span> <span class="p">[],</span>
+        <span class="n">bodyLoads</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">MPMBodyLoadBase</span><span class="p">]</span> <span class="o">=</span> <span class="p">[],</span>
+        <span class="n">distributedLoads</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">MPMDistributedLoadBase</span><span class="p">]</span> <span class="o">=</span> <span class="p">[],</span>
+        <span class="n">particleDistributedLoads</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ParticleDistributedLoad</span><span class="p">]</span> <span class="o">=</span> <span class="p">[],</span>
+        <span class="n">constraints</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ConstraintBase</span><span class="p">]</span> <span class="o">=</span> <span class="p">[],</span>
+        <span class="n">outputManagers</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">OutputManagerBase</span><span class="p">]</span> <span class="o">=</span> <span class="p">[],</span>
+        <span class="n">userIterationOptions</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{},</span>
+        <span class="n">vciManagers</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[],</span>
+        <span class="n">restartWriteInterval</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="n">allowFallBackToRestart</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">numberOfRestartsToStore</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+        <span class="n">restartBaseName</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"restart"</span><span class="p">,</span>
+        <span class="n">predictor</span><span class="p">:</span> <span class="n">BasePredictor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="n">MPMModel</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""Public interface to solve for a step.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        timeStepper</span>
+<span class="sd">            The time stepper instance.</span>
+<span class="sd">        linearSolver</span>
+<span class="sd">            The linear solver instance.</span>
+<span class="sd">        model</span>
+<span class="sd">            The MPMModel instance.</span>
+<span class="sd">        fieldOutputController</span>
+<span class="sd">            The field output controller instance.</span>
+<span class="sd">        arcLengthController</span>
+<span class="sd">            The arc length controller instance.</span>
+<span class="sd">        mpmManagers</span>
+<span class="sd">            The list of MPMManagerBase instances.</span>
+<span class="sd">        particleManagers</span>
+<span class="sd">            The list of BaseParticleManager instances.</span>
+<span class="sd">        dirichlets</span>
+<span class="sd">            The list of DirichletBase instances.</span>
+<span class="sd">        bodyLoads</span>
+<span class="sd">            The list of MPMBodyLoadBase instances.</span>
+<span class="sd">        distributedLoads</span>
+<span class="sd">            The list of MPMDistributedLoadBase instances.</span>
+<span class="sd">        constraints</span>
+<span class="sd">            The list of ConstraintBase instances.</span>
+<span class="sd">        outputManagers</span>
+<span class="sd">            The list of OutputManagerBase instances.</span>
+<span class="sd">        userIterationOptions</span>
+<span class="sd">            The user specified iteration options.</span>
+<span class="sd">        vciManagers</span>
+<span class="sd">            The list of VCIManagerBase instances.</span>
+<span class="sd">        restartInterval</span>
+<span class="sd">            The interval to write restart files.</span>
+<span class="sd">        fallBackToLastRestart</span>
+<span class="sd">            The flag to allow falling back to the last restart.</span>
+<span class="sd">        restartBaseName</span>
+<span class="sd">            The base name for the restart.</span>
+<span class="sd">        predictor</span>
+<span class="sd">            The predictor instance to be used for making predictions on the next solution increment.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple[bool, MPMModel]</span>
+<span class="sd">            The tuple containing:</span>
+<span class="sd">                - the truth value of success.</span>
+<span class="sd">                - the updated MPMModel.</span>
+<span class="sd">        """</span>
+
+        <span class="k">if</span> <span class="s2">"arc length parameter"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">additionalParameters</span><span class="p">:</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">additionalParameters</span><span class="p">[</span><span class="s2">"arc length parameter"</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_arcLengthController</span> <span class="o">=</span> <span class="n">arcLengthController</span>
+
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">solveStep</span><span class="p">(</span>
+            <span class="n">timeStepper</span><span class="p">,</span>
+            <span class="n">linearSolver</span><span class="p">,</span>
+            <span class="n">model</span><span class="p">,</span>
+            <span class="n">fieldOutputController</span><span class="p">,</span>
+            <span class="n">mpmManagers</span><span class="o">=</span><span class="n">mpmManagers</span><span class="p">,</span>
+            <span class="n">particleManagers</span><span class="o">=</span><span class="n">particleManagers</span><span class="p">,</span>
+            <span class="n">dirichlets</span><span class="o">=</span><span class="n">dirichlets</span><span class="p">,</span>
+            <span class="n">bodyLoads</span><span class="o">=</span><span class="n">bodyLoads</span><span class="p">,</span>
+            <span class="n">distributedLoads</span><span class="o">=</span><span class="n">distributedLoads</span><span class="p">,</span>
+            <span class="n">particleDistributedLoads</span><span class="o">=</span><span class="n">particleDistributedLoads</span><span class="p">,</span>
+            <span class="n">constraints</span><span class="o">=</span><span class="n">constraints</span><span class="p">,</span>
+            <span class="n">outputManagers</span><span class="o">=</span><span class="n">outputManagers</span><span class="p">,</span>
+            <span class="n">userIterationOptions</span><span class="o">=</span><span class="n">userIterationOptions</span><span class="p">,</span>
+            <span class="n">vciManagers</span><span class="o">=</span><span class="n">vciManagers</span><span class="p">,</span>
+            <span class="n">restartWriteInterval</span><span class="o">=</span><span class="n">restartWriteInterval</span><span class="p">,</span>
+            <span class="n">allowFallBackToRestart</span><span class="o">=</span><span class="n">allowFallBackToRestart</span><span class="p">,</span>
+            <span class="n">numberOfRestartsToStore</span><span class="o">=</span><span class="n">numberOfRestartsToStore</span><span class="p">,</span>
+            <span class="n">restartBaseName</span><span class="o">=</span><span class="n">restartBaseName</span><span class="p">,</span>
+            <span class="n">predictor</span><span class="o">=</span><span class="n">predictor</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="NonlinearQuasistaticMarmotArcLengthSolver._newtonSolve">
+<a class="viewcode-back" href="../../../documentation/solvers.html#edelweissmeshfree.solvers.nqsmparclength.NonlinearQuasistaticMarmotArcLengthSolver._newtonSolve">[docs]</a>
+    <span class="nd">@performancetiming</span><span class="o">.</span><span class="n">timeit</span><span class="p">(</span><span class="s2">"newton iteration"</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_newtonSolve</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">dirichlets</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+        <span class="n">bodyLoads</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+        <span class="n">distributedLoads</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+        <span class="n">particleDistributedLoads</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+        <span class="n">reducedNodeSets</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+        <span class="n">elements</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+        <span class="n">Un</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span>
+        <span class="n">activeCells</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+        <span class="n">cellElements</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+        <span class="n">materialPoints</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+        <span class="n">particles</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+        <span class="n">constraints</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+        <span class="n">theDofManager</span><span class="p">:</span> <span class="n">DofManager</span><span class="p">,</span>
+        <span class="n">linearSolver</span><span class="p">,</span>
+        <span class="n">iterationOptions</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+        <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="n">MPMModel</span><span class="p">,</span>
+        <span class="n">newtonCache</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
+        <span class="n">dUGuess</span><span class="p">:</span> <span class="n">DofVector</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">dLambdaGuess</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">predictor</span><span class="p">:</span> <span class="n">BasePredictor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">DofVector</span><span class="p">,</span> <span class="n">DofVector</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""Standard Newton-Raphson scheme to solve for an increment.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dirichlets</span>
+<span class="sd">            The list of dirichlet StepActions.</span>
+<span class="sd">        bodyLoads</span>
+<span class="sd">            The list of bodyload StepActions.</span>
+<span class="sd">        distributedLoads</span>
+<span class="sd">            The list of distributed load StepActions.</span>
+<span class="sd">        activeNodeSets</span>
+<span class="sd">            The list of (reduced) active NodeSets.</span>
+<span class="sd">        activeCells</span>
+<span class="sd">            The list of active cells.</span>
+<span class="sd">        materialPoints</span>
+<span class="sd">            The list of material points.</span>
+<span class="sd">        constraints</span>
+<span class="sd">            The list of constraints.</span>
+<span class="sd">        theDofManager</span>
+<span class="sd">            The DofManager instance for the current active model.</span>
+<span class="sd">        linearSolver</span>
+<span class="sd">            The instance of the linear solver to be used.</span>
+<span class="sd">        iterationOptions</span>
+<span class="sd">            The specified options controlling the Newton cycle.</span>
+<span class="sd">        timeStep</span>
+<span class="sd">            The current time increment.</span>
+<span class="sd">        model</span>
+<span class="sd">            The full MPMModel instance.</span>
+<span class="sd">        newtonCache</span>
+<span class="sd">            An arbitrary cache of (expensive) objects, which may be reused across time steps as long as the global system does not change.</span>
+<span class="sd">            If the system changes, the newtonCache is set to None.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple[DofVector,DofVector,dict, object]</span>
+<span class="sd">            A tuple containing:</span>
+<span class="sd">                - the new solution increment vector.</span>
+<span class="sd">                - the current internal load vector.</span>
+<span class="sd">                - the increment residual history of the Newton cycle.</span>
+<span class="sd">                - the newton cache which may be resused if the system does not change.</span>
+<span class="sd">        """</span>
+
+        <span class="n">arcLengthController</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_arcLengthController</span>
+
+        <span class="k">if</span> <span class="n">arcLengthController</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_newtonSolve</span><span class="p">(</span>
+                <span class="n">dirichlets</span><span class="p">,</span>
+                <span class="n">bodyLoads</span><span class="p">,</span>
+                <span class="n">distributedLoads</span><span class="p">,</span>
+                <span class="n">particleDistributedLoads</span><span class="p">,</span>
+                <span class="n">reducedNodeSets</span><span class="p">,</span>
+                <span class="n">elements</span><span class="p">,</span>
+                <span class="n">Un</span><span class="p">,</span>
+                <span class="n">activeCells</span><span class="p">,</span>
+                <span class="n">cellElements</span><span class="p">,</span>
+                <span class="n">materialPoints</span><span class="p">,</span>
+                <span class="n">particles</span><span class="p">,</span>
+                <span class="n">constraints</span><span class="p">,</span>
+                <span class="n">theDofManager</span><span class="p">,</span>
+                <span class="n">linearSolver</span><span class="p">,</span>
+                <span class="n">iterationOptions</span><span class="p">,</span>
+                <span class="n">timeStep</span><span class="p">,</span>
+                <span class="n">model</span><span class="p">,</span>
+                <span class="n">newtonCache</span><span class="p">,</span>
+                <span class="n">dUGuess</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="n">iterationCounter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">incrementResidualHistory</span> <span class="o">=</span> <span class="p">{</span><span class="n">field</span><span class="p">:</span> <span class="nb">list</span><span class="p">()</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">idcsOfFieldsInDofVector</span><span class="p">}</span>
+
+        <span class="n">nAllowedResidualGrowths</span> <span class="o">=</span> <span class="n">iterationOptions</span><span class="p">[</span><span class="s2">"allowed residual growths"</span><span class="p">]</span>
+
+        <span class="c1"># if not newtonCache:</span>
+        <span class="c1">#     newtonCache = self._createArcLengthNewtonCache(theDofManager)</span>
+        <span class="n">K</span><span class="p">,</span> <span class="n">csrGenerator</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">Rhs_</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">PInt</span><span class="p">,</span> <span class="n">PExt</span><span class="p">,</span> <span class="n">PExt_0</span><span class="p">,</span> <span class="n">PExt_f</span><span class="p">,</span> <span class="n">K_0</span><span class="p">,</span> <span class="n">K_f</span> <span class="o">=</span> <span class="n">newtonCache</span>
+
+        <span class="c1"># The contributors write through the contribution objects; the arc-length combination of the</span>
+        <span class="c1"># dead and reference load stiffnesses is array arithmetic and needs the arrays underneath. This</span>
+        <span class="c1"># solver is therefore VIJ-only, which is why _createNewtonCache below builds three staging</span>
+        <span class="c1"># arrays and no direct-to-CSR assembler.</span>
+        <span class="n">K_VIJ</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">vijArray</span>
+        <span class="n">K_VIJ_0</span> <span class="o">=</span> <span class="n">K_0</span><span class="o">.</span><span class="n">vijArray</span>
+        <span class="n">K_VIJ_f</span> <span class="o">=</span> <span class="n">K_f</span><span class="o">.</span><span class="n">vijArray</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dUGuess</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="n">dU_temp</span><span class="p">,</span> <span class="n">dLambda_temp</span> <span class="o">=</span> <span class="n">dUGuess</span>
+            <span class="n">dU</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">dU_temp</span> <span class="k">if</span> <span class="n">dU_temp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mf">0.0</span>
+            <span class="n">dLambda</span> <span class="o">=</span> <span class="n">dLambda_temp</span> <span class="k">if</span> <span class="n">dLambda_temp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mf">0.0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dU</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">dUGuess</span> <span class="k">if</span> <span class="n">dUGuess</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mf">0.0</span>
+            <span class="n">dLambda</span> <span class="o">=</span> <span class="n">dLambdaGuess</span> <span class="k">if</span> <span class="n">dLambdaGuess</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mf">0.0</span>
+
+        <span class="n">Rhs_0</span> <span class="o">=</span> <span class="n">Rhs_</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">Rhs_f</span> <span class="o">=</span> <span class="n">Rhs_</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">ddU</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="n">Lambda</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">additionalParameters</span><span class="p">[</span><span class="s2">"arc length parameter"</span><span class="p">]</span>
+        <span class="n">ddLambda</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+        <span class="n">referenceTimeStep</span> <span class="o">=</span> <span class="n">TimeStep</span><span class="p">(</span><span class="n">timeStep</span><span class="o">.</span><span class="n">number</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">zeroTimeStep</span> <span class="o">=</span> <span class="n">TimeStep</span><span class="p">(</span><span class="n">timeStep</span><span class="o">.</span><span class="n">number</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_applyStepActionsAtIncrementStart</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">dirichlets</span> <span class="o">+</span> <span class="n">bodyLoads</span><span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">_assembleArcLengthSystem</span><span class="p">(</span><span class="n">dU</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span> <span class="n">dLambda</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">"""Assemble PInt/K and the dead + reference external loads for the current</span>
+<span class="sd">            iterate and write the arc-length residuals into Rhs_0/Rhs_f (in place, using</span>
+<span class="sd">            the newtonCache arrays). Factored out of the iteration loop so the line</span>
+<span class="sd">            search can evaluate trial states -- the loop head re-assembles at the</span>
+<span class="sd">            accepted iterate afterwards, exactly like the base solver's line search."""</span>
+            <span class="k">nonlocal</span> <span class="n">PExt_0</span><span class="p">,</span> <span class="n">PExt_f</span><span class="p">,</span> <span class="n">K_0</span><span class="p">,</span> <span class="n">K_f</span><span class="p">,</span> <span class="n">K_VIJ_f</span>
+
+            <span class="n">PInt</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">K_VIJ</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">F</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">PExt_0</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">PExt_f</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">K_VIJ_f</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">K_VIJ_0</span><span class="p">[:]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_prepareMaterialPoints</span><span class="p">(</span><span class="n">materialPoints</span><span class="p">,</span> <span class="n">timeStep</span><span class="o">.</span><span class="n">totalTime</span><span class="p">,</span> <span class="n">timeStep</span><span class="o">.</span><span class="n">timeIncrement</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_interpolateFieldsToMaterialPoints</span><span class="p">(</span><span class="n">activeCells</span><span class="p">,</span> <span class="n">dU</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_interpolateFieldsToMaterialPoints</span><span class="p">(</span><span class="n">elements</span><span class="p">,</span> <span class="n">dU</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_computeMaterialPoints</span><span class="p">(</span><span class="n">materialPoints</span><span class="p">,</span> <span class="n">timeStep</span><span class="o">.</span><span class="n">totalTime</span><span class="p">,</span> <span class="n">timeStep</span><span class="o">.</span><span class="n">timeIncrement</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_computeCells</span><span class="p">(</span><span class="n">activeCells</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">PInt</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">timeStep</span><span class="o">.</span><span class="n">totalTime</span><span class="p">,</span> <span class="n">timeStep</span><span class="o">.</span><span class="n">timeIncrement</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_computeElements</span><span class="p">(</span>
+                <span class="n">elements</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">Un</span><span class="p">,</span> <span class="n">PInt</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">timeStep</span><span class="o">.</span><span class="n">totalTime</span><span class="p">,</span> <span class="n">timeStep</span><span class="o">.</span><span class="n">timeIncrement</span><span class="p">,</span> <span class="n">theDofManager</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_computeParticles</span><span class="p">(</span><span class="n">particles</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">PInt</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">timeStep</span><span class="o">.</span><span class="n">totalTime</span><span class="p">,</span> <span class="n">timeStep</span><span class="o">.</span><span class="n">timeIncrement</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_computeConstraints</span><span class="p">(</span><span class="n">constraints</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">PInt</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">)</span>
+
+            <span class="n">PExt_0</span><span class="p">,</span> <span class="n">K_0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_computeBodyLoads</span><span class="p">(</span><span class="n">bodyLoads</span><span class="p">,</span> <span class="n">PExt_0</span><span class="p">,</span> <span class="n">K_0</span><span class="p">,</span> <span class="n">zeroTimeStep</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">,</span> <span class="n">activeCells</span><span class="p">)</span>
+            <span class="n">PExt_0</span><span class="p">,</span> <span class="n">K_0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_computeCellDistributedLoads</span><span class="p">(</span><span class="n">distributedLoads</span><span class="p">,</span> <span class="n">PExt_0</span><span class="p">,</span> <span class="n">K_0</span><span class="p">,</span> <span class="n">zeroTimeStep</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">)</span>
+            <span class="n">PExt_0</span><span class="p">,</span> <span class="n">K_0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_computeParticleDistributedLoads</span><span class="p">(</span>
+                <span class="n">particleDistributedLoads</span><span class="p">,</span> <span class="n">PExt_0</span><span class="p">,</span> <span class="n">K_0</span><span class="p">,</span> <span class="n">zeroTimeStep</span><span class="p">,</span> <span class="n">theDofManager</span>
+            <span class="p">)</span>
+
+            <span class="n">PExt_f</span><span class="p">,</span> <span class="n">K_f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_computeBodyLoads</span><span class="p">(</span><span class="n">bodyLoads</span><span class="p">,</span> <span class="n">PExt_f</span><span class="p">,</span> <span class="n">K_f</span><span class="p">,</span> <span class="n">referenceTimeStep</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">,</span> <span class="n">activeCells</span><span class="p">)</span>
+            <span class="n">PExt_f</span><span class="p">,</span> <span class="n">K_f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_computeCellDistributedLoads</span><span class="p">(</span>
+                <span class="n">distributedLoads</span><span class="p">,</span> <span class="n">PExt_f</span><span class="p">,</span> <span class="n">K_f</span><span class="p">,</span> <span class="n">referenceTimeStep</span><span class="p">,</span> <span class="n">theDofManager</span>
+            <span class="p">)</span>
+            <span class="n">PExt_f</span><span class="p">,</span> <span class="n">K_f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_computeParticleDistributedLoads</span><span class="p">(</span>
+                <span class="n">particleDistributedLoads</span><span class="p">,</span> <span class="n">PExt_f</span><span class="p">,</span> <span class="n">K_f</span><span class="p">,</span> <span class="n">referenceTimeStep</span><span class="p">,</span> <span class="n">theDofManager</span>
+            <span class="p">)</span>
+
+            <span class="n">PExt_f</span> <span class="o">-=</span> <span class="n">PExt_0</span>  <span class="c1"># and subtract the dead part, since we are only interested in the homogeneous linear part</span>
+            <span class="n">K_VIJ_f</span> <span class="o">-=</span> <span class="n">K_VIJ_0</span>
+
+            <span class="c1"># Dead and Reference load ..</span>
+            <span class="n">Rhs_0</span><span class="p">[:]</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="n">PExt_0</span> <span class="o">+</span> <span class="p">(</span><span class="n">Lambda</span> <span class="o">+</span> <span class="n">dLambda</span><span class="p">)</span> <span class="o">*</span> <span class="n">PExt_f</span> <span class="o">+</span> <span class="n">PInt</span><span class="p">)</span>
+            <span class="n">Rhs_f</span><span class="p">[:]</span> <span class="o">=</span> <span class="o">-</span><span class="n">PExt_f</span>
+
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">_assembleArcLengthSystem</span><span class="p">(</span><span class="n">dU</span><span class="p">,</span> <span class="n">dLambda</span><span class="p">)</span>
+
+            <span class="c1"># add stiffness contribution</span>
+            <span class="n">K_VIJ</span><span class="p">[:]</span> <span class="o">+=</span> <span class="n">K_VIJ_0</span>
+            <span class="n">K_VIJ</span><span class="p">[:]</span> <span class="o">+=</span> <span class="p">(</span><span class="n">Lambda</span> <span class="o">+</span> <span class="n">dLambda</span><span class="p">)</span> <span class="o">*</span> <span class="n">K_VIJ_f</span>
+
+            <span class="n">Rhs_f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_applyDirichlet</span><span class="p">(</span><span class="n">referenceTimeStep</span><span class="p">,</span> <span class="n">Rhs_f</span><span class="p">,</span> <span class="n">dirichlets</span><span class="p">,</span> <span class="n">reducedNodeSets</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">iterationCounter</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">dirichlets</span><span class="p">:</span>
+                <span class="n">Rhs_0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_applyDirichlet</span><span class="p">(</span><span class="n">timeStep</span><span class="p">,</span> <span class="n">Rhs_0</span><span class="p">,</span> <span class="n">dirichlets</span><span class="p">,</span> <span class="n">reducedNodeSets</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">dirichlet</span> <span class="ow">in</span> <span class="n">dirichlets</span><span class="p">:</span>
+                    <span class="n">Rhs_0</span><span class="p">[</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_findDirichletIndices</span><span class="p">(</span>
+                            <span class="n">theDofManager</span><span class="p">,</span> <span class="n">dirichlet</span><span class="p">,</span> <span class="n">reducedNodeSet</span><span class="o">=</span><span class="n">reducedNodeSets</span><span class="p">[</span><span class="n">dirichlet</span><span class="o">.</span><span class="n">nSet</span><span class="p">]</span>
+                        <span class="p">)</span>
+                    <span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+                <span class="n">incrementResidualHistory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_computeResiduals</span><span class="p">(</span>
+                    <span class="n">Rhs_0</span><span class="p">,</span> <span class="n">ddU</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">incrementResidualHistory</span><span class="p">,</span> <span class="n">theDofManager</span>
+                <span class="p">)</span>
+
+                <span class="n">incrementResidualHistory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_checkConvergence</span><span class="p">(</span>
+                    <span class="n">iterationCounter</span><span class="p">,</span> <span class="n">incrementResidualHistory</span><span class="p">,</span> <span class="n">iterationOptions</span>
+                <span class="p">)</span>
+
+                <span class="n">iterationMessageTemplate</span> <span class="o">=</span> <span class="s2">"</span><span class="si">{:11.2e}{:1}{:11.2e}{:1}</span><span class="s2"> "</span>
+                <span class="n">iterationMessage</span> <span class="o">=</span> <span class="s2">""</span>
+
+                <span class="n">converged</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">for</span> <span class="n">field</span><span class="p">,</span> <span class="n">residuals</span> <span class="ow">in</span> <span class="n">incrementResidualHistory</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+
+                    <span class="n">convergedFlux</span> <span class="o">=</span> <span class="n">residuals</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s2">"converged flux"</span><span class="p">]</span>
+                    <span class="n">convergedCorrection</span> <span class="o">=</span> <span class="n">residuals</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s2">"converged correction"</span><span class="p">]</span>
+                    <span class="n">converged</span> <span class="o">=</span> <span class="n">converged</span> <span class="ow">and</span> <span class="n">convergedCorrection</span> <span class="ow">and</span> <span class="n">convergedFlux</span>
+
+                    <span class="n">iterationMessage</span> <span class="o">+=</span> <span class="n">iterationMessageTemplate</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">residuals</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s2">"absolute flux residual"</span><span class="p">],</span>
+                        <span class="s2">"✓"</span> <span class="k">if</span> <span class="n">convergedFlux</span> <span class="k">else</span> <span class="s2">" "</span><span class="p">,</span>
+                        <span class="n">residuals</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s2">"absolute correction"</span><span class="p">],</span>
+                        <span class="s2">"✓"</span> <span class="k">if</span> <span class="n">convergedCorrection</span> <span class="k">else</span> <span class="s2">" "</span><span class="p">,</span>
+                    <span class="p">)</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span><span class="n">iterationMessage</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">converged</span><span class="p">:</span>
+                    <span class="k">break</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_checkDivergingSolution</span><span class="p">(</span><span class="n">incrementResidualHistory</span><span class="p">,</span> <span class="n">nAllowedResidualGrowths</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_printResidualOutlierNodes</span><span class="p">(</span><span class="n">incrementResidualHistory</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">DivergingSolution</span><span class="p">(</span><span class="s2">"Residual grew </span><span class="si">{:}</span><span class="s2"> times, cutting back"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">nAllowedResidualGrowths</span><span class="p">))</span>
+
+                <span class="k">if</span> <span class="n">iterationCounter</span> <span class="o">==</span> <span class="n">iterationOptions</span><span class="p">[</span><span class="s2">"max. iterations"</span><span class="p">]:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_printResidualOutlierNodes</span><span class="p">(</span><span class="n">incrementResidualHistory</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">ReachedMaxIterations</span><span class="p">(</span><span class="s2">"Reached max. iterations in current increment, cutting back"</span><span class="p">)</span>
+
+            <span class="n">K_CSR</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_VIJtoCSR</span><span class="p">(</span><span class="n">K_VIJ</span><span class="p">,</span> <span class="n">csrGenerator</span><span class="p">,</span> <span class="n">useInPlace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">K_CSR</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_applyDirichletKCsr</span><span class="p">(</span><span class="n">K_CSR</span><span class="p">,</span> <span class="n">dirichlets</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">,</span> <span class="n">reducedNodeSets</span><span class="p">)</span>
+
+            <span class="c1"># solve 2 eq. systems at once:</span>
+            <span class="n">ddU_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_linearSolve</span><span class="p">(</span><span class="n">K_CSR</span><span class="p">,</span> <span class="n">Rhs_</span><span class="p">,</span> <span class="n">linearSolver</span><span class="p">)</span>
+            <span class="c1"># q_0 = K⁻¹ * -(  Pext_0  + dLambda * Pext_Ref + PInt  )</span>
+            <span class="c1"># q_f = K⁻¹ * -(  Pext_Ref  )</span>
+            <span class="n">ddU_0</span><span class="p">,</span> <span class="n">ddU_f</span> <span class="o">=</span> <span class="n">ddU_</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">ddU_</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+
+            <span class="c1"># compute the increment of the load parameter. Method depends on the employed arc length controller</span>
+            <span class="n">ddLambda</span> <span class="o">=</span> <span class="n">arcLengthController</span><span class="o">.</span><span class="n">computeDDLambda</span><span class="p">(</span><span class="n">dU</span><span class="p">,</span> <span class="n">ddU_0</span><span class="p">,</span> <span class="n">ddU_f</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">)</span>
+
+            <span class="c1"># assemble total solution</span>
+            <span class="n">ddU</span> <span class="o">=</span> <span class="n">ddU_0</span> <span class="o">+</span> <span class="n">ddLambda</span> <span class="o">*</span> <span class="n">ddU_f</span>
+
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">iterationOptions</span><span class="p">[</span><span class="s2">"line search"</span><span class="p">]</span>
+                <span class="ow">and</span> <span class="n">iterationCounter</span> <span class="o">&gt;</span> <span class="n">iterationOptions</span><span class="p">[</span><span class="s2">"line search after n iterations"</span><span class="p">]</span>
+                <span class="ow">and</span> <span class="n">iterationCounter</span> <span class="o">%</span> <span class="n">iterationOptions</span><span class="p">[</span><span class="s2">"line search every n iterations"</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span>
+            <span class="p">):</span>
+                <span class="c1"># The arc-length step is the PAIR (ddU, ddLambda); damp both with the SAME</span>
+                <span class="c1"># step length so the trial stays on the current Newton direction (the</span>
+                <span class="c1"># controller's linearized constraint is then under-corrected by the same</span>
+                <span class="c1"># factor and re-enforced next iteration). _quadraticLineSearch varies</span>
+                <span class="c1"># ddU * alpha only, so recover alpha from the trial vector -- it is an</span>
+                <span class="c1"># exact scalar multiple of ddU -- to scale dLambda consistently.</span>
+                <span class="n">alphas</span> <span class="o">=</span> <span class="n">iterationOptions</span><span class="p">[</span><span class="s2">"line search alphas"</span><span class="p">]</span>
+                <span class="n">ddU_dot</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">ddU</span> <span class="o">@</span> <span class="n">ddU</span><span class="p">)</span>
+
+                <span class="k">def</span><span class="w"> </span><span class="nf">_arcResidualCallback</span><span class="p">(</span><span class="n">ddU_linesearch</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DofVector</span><span class="p">:</span>
+                    <span class="n">alpha</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">ddU_linesearch</span> <span class="o">@</span> <span class="n">ddU</span><span class="p">)</span> <span class="o">/</span> <span class="n">ddU_dot</span> <span class="k">if</span> <span class="n">ddU_dot</span> <span class="o">&gt;</span> <span class="mf">0.0</span> <span class="k">else</span> <span class="mf">0.0</span>
+                    <span class="n">_assembleArcLengthSystem</span><span class="p">(</span><span class="n">dU</span> <span class="o">+</span> <span class="n">ddU_linesearch</span><span class="p">,</span> <span class="n">dLambda</span> <span class="o">+</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">ddLambda</span><span class="p">)</span>
+                    <span class="n">Rhs_trial</span> <span class="o">=</span> <span class="n">Rhs_0</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                    <span class="k">for</span> <span class="n">dirichlet</span> <span class="ow">in</span> <span class="n">dirichlets</span><span class="p">:</span>
+                        <span class="n">Rhs_trial</span><span class="p">[</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_findDirichletIndices</span><span class="p">(</span>
+                                <span class="n">theDofManager</span><span class="p">,</span> <span class="n">dirichlet</span><span class="p">,</span> <span class="n">reducedNodeSet</span><span class="o">=</span><span class="n">reducedNodeSets</span><span class="p">[</span><span class="n">dirichlet</span><span class="o">.</span><span class="n">nSet</span><span class="p">]</span>
+                            <span class="p">)</span>
+                        <span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+                    <span class="k">return</span> <span class="n">Rhs_trial</span>
+
+                <span class="n">ddU_new</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_quadraticLineSearch</span><span class="p">(</span><span class="n">_arcResidualCallback</span><span class="p">,</span> <span class="n">ddU</span><span class="p">,</span> <span class="n">alphas</span><span class="p">)</span>
+                <span class="n">ddLambda</span> <span class="o">*=</span> <span class="nb">float</span><span class="p">(</span><span class="n">ddU_new</span> <span class="o">@</span> <span class="n">ddU</span><span class="p">)</span> <span class="o">/</span> <span class="n">ddU_dot</span> <span class="k">if</span> <span class="n">ddU_dot</span> <span class="o">&gt;</span> <span class="mf">0.0</span> <span class="k">else</span> <span class="mf">0.0</span>
+                <span class="n">ddU</span> <span class="o">=</span> <span class="n">ddU_new</span>
+
+            <span class="n">dU</span> <span class="o">+=</span> <span class="n">ddU</span>
+            <span class="n">dLambda</span> <span class="o">+=</span> <span class="n">ddLambda</span>
+
+            <span class="n">iterationCounter</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">iterationHistory</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">"iterations"</span><span class="p">:</span> <span class="n">iterationCounter</span><span class="p">,</span>
+            <span class="s2">"incrementResidualHistory"</span><span class="p">:</span> <span class="n">incrementResidualHistory</span><span class="p">,</span>
+            <span class="s2">"dLambda"</span><span class="p">:</span> <span class="n">dLambda</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="n">model</span><span class="o">.</span><span class="n">additionalParameters</span><span class="p">[</span><span class="s2">"arc length parameter"</span><span class="p">]</span> <span class="o">=</span> <span class="n">Lambda</span> <span class="o">+</span> <span class="n">dLambda</span>
+
+        <span class="k">if</span> <span class="n">predictor</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">dU</span><span class="p">,</span> <span class="n">dLambda</span><span class="p">,</span> <span class="n">PInt</span><span class="p">,</span> <span class="n">iterationHistory</span><span class="p">,</span> <span class="n">newtonCache</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">dU</span><span class="p">,</span> <span class="n">PInt</span><span class="p">,</span> <span class="n">iterationHistory</span><span class="p">,</span> <span class="n">newtonCache</span></div>
+
+
+<div class="viewcode-block" id="NonlinearQuasistaticMarmotArcLengthSolver._createNewtonCache">
+<a class="viewcode-back" href="../../../documentation/solvers.html#edelweissmeshfree.solvers.nqsmparclength.NonlinearQuasistaticMarmotArcLengthSolver._createNewtonCache">[docs]</a>
+    <span class="nd">@performancetiming</span><span class="o">.</span><span class="n">timeit</span><span class="p">(</span><span class="s2">"creation newton cache"</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_createNewtonCache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">:</span> <span class="n">DofManager</span><span class="p">,</span> <span class="n">particles</span><span class="o">=</span><span class="p">())</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Create expensive objects, which may be reused if the global system does not change.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        theDofManager</span>
+<span class="sd">            The DofManager instance.</span>
+<span class="sd">        particles</span>
+<span class="sd">            The particles to register with the direct-to-CSR assembler, if one is in use. Forwarded</span>
+<span class="sd">            to the base implementation; the arc-length cache below builds no assembler of its own.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple</span>
+<span class="sd">            The collection of expensive objects.</span>
+<span class="sd">        """</span>
+        <span class="n">arcLengthController</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_arcLengthController</span>
+
+        <span class="k">if</span> <span class="n">arcLengthController</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_createNewtonCache</span><span class="p">(</span><span class="n">theDofManager</span><span class="p">,</span> <span class="n">particles</span><span class="p">)</span>
+
+        <span class="n">K_VIJ</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructVIJSystemMatrix</span><span class="p">()</span>
+        <span class="n">csrGenerator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_makeCachedCOOToCSRGenerator</span><span class="p">(</span><span class="n">K_VIJ</span><span class="p">)</span>
+        <span class="n">dU</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+        <span class="n">Rhs_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">theDofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">(),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>  <span class="c1"># 2 RHSs</span>
+        <span class="n">F</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+        <span class="n">PInt</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+        <span class="n">PExt</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+        <span class="n">PExt_0</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+        <span class="n">PExt_f</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+        <span class="n">K_VIJ_0</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructVIJSystemMatrix</span><span class="p">()</span>
+        <span class="n">K_VIJ_f</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructVIJSystemMatrix</span><span class="p">()</span>
+
+        <span class="n">newtonCache</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">VIJContribution</span><span class="p">(</span><span class="n">K_VIJ</span><span class="p">,</span> <span class="n">csrGenerator</span><span class="p">),</span>
+            <span class="n">csrGenerator</span><span class="p">,</span>
+            <span class="n">dU</span><span class="p">,</span>
+            <span class="n">Rhs_</span><span class="p">,</span>
+            <span class="n">F</span><span class="p">,</span>
+            <span class="n">PInt</span><span class="p">,</span>
+            <span class="n">PExt</span><span class="p">,</span>
+            <span class="n">PExt_0</span><span class="p">,</span>
+            <span class="n">PExt_f</span><span class="p">,</span>
+            <span class="n">VIJContribution</span><span class="p">(</span><span class="n">K_VIJ_0</span><span class="p">,</span> <span class="n">csrGenerator</span><span class="p">),</span>
+            <span class="n">VIJContribution</span><span class="p">(</span><span class="n">K_VIJ_f</span><span class="p">,</span> <span class="n">csrGenerator</span><span class="p">),</span>
+        <span class="p">)</span>
+
+        <span class="c1"># this cache carries three VIJ matrices and no direct-to-CSR assembler; cleared explicitly so</span>
+        <span class="c1"># a stale one from a previous connectivity cannot be reached from the arc-length path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_directCSRAssembler</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_directCSREntityIds</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">return</span> <span class="n">newtonCache</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_updatePredictorHistory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">predictor</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">iterationHistory</span><span class="p">):</span>
+        <span class="n">dLambda</span> <span class="o">=</span> <span class="n">iterationHistory</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"dLambda"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">if</span> <span class="n">iterationHistory</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="n">predictor</span><span class="o">.</span><span class="n">updateHistory</span><span class="p">(</span><span class="n">dU</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">dLambda</span><span class="o">=</span><span class="n">dLambda</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Matthias Neuner.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Solvers &mdash; EdelweissMeshfree v25.08 documentation</title>
+  <title>Solvers &mdash; EdelweissMeshfree v26.11 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=1d735308" />
@@ -14,13 +14,13 @@
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=83aae4bb"></script>
-      <script src="../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/documentation_options.js?v=57c4c7c7"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Material Point Managers" href="mpm/material_point_managers.html" />
+    <link rel="next" title="Choosing a linear solver" href="choosing_a_solver.html" />
     <link rel="prev" title="Material Points" href="mpm/material_points.html" /> 
 </head>
 
@@ -47,7 +47,7 @@
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../gallery.html">Gallery</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../references.html">References</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">Documentation</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="organization.html">Code organization</a></li>
 <li class="toctree-l2"><a class="reference internal" href="models.html">Models</a></li>
@@ -55,11 +55,22 @@
 <li class="toctree-l2"><a class="reference internal" href="cellelements.html">Cellelements</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mpm/material_points.html">Material Points</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Solvers</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#nonlinearquasistaticsolver-class"><code class="docutils literal notranslate"><span class="pre">NonlinearQuasistaticSolver</span></code> class</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#nqsparallelformarmot-class"><code class="docutils literal notranslate"><span class="pre">NQSParallelForMarmot</span></code> class</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#nonlinearquasistaticmarmotparallelarclengthsolver-class"><code class="docutils literal notranslate"><span class="pre">NonlinearQuasistaticMarmotParallelArcLengthSolver</span></code> class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-edelweissmeshfree.solvers.nqs"><code class="docutils literal notranslate"><span class="pre">NonlinearQuasistaticSolver</span></code> class</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.solvers.nqs.NonlinearQuasistaticSolver"><code class="docutils literal notranslate"><span class="pre">NonlinearQuasistaticSolver</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="#module-edelweissmeshfree.solvers.nqsmarmotparallel"><code class="docutils literal notranslate"><span class="pre">NQSParallelForMarmot</span></code> class</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot"><code class="docutils literal notranslate"><span class="pre">NQSParallelForMarmot</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-edelweissmeshfree.solvers.nqsmparclength"><code class="docutils literal notranslate"><span class="pre">NonlinearQuasistaticMarmotParallelArcLengthSolver</span></code> class</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.solvers.nqsmparclength.NonlinearQuasistaticMarmotArcLengthSolver"><code class="docutils literal notranslate"><span class="pre">NonlinearQuasistaticMarmotArcLengthSolver</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="choosing_a_solver.html">Choosing a linear solver</a></li>
+<li class="toctree-l2"><a class="reference internal" href="assembly.html">System matrix assembly</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mpm/material_point_managers.html">Material Point Managers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="model_generators.html">Model generators</a></li>
 <li class="toctree-l2"><a class="reference internal" href="particles.html">Particles</a></li>
@@ -72,6 +83,7 @@
 <li class="toctree-l2"><a class="reference internal" href="constraints.html">Constraints</a></li>
 <li class="toctree-l2"><a class="reference internal" href="numeric_tools.html">Numerical tools</a></li>
 <li class="toctree-l2"><a class="reference internal" href="output_managers.html">Output managers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="configuration.html">Configuration and Libraries</a></li>
 </ul>
 </li>
 </ul>
@@ -103,14 +115,629 @@
              
   <section id="solvers">
 <h1>Solvers<a class="headerlink" href="#solvers" title="Link to this heading"></a></h1>
-<section id="nonlinearquasistaticsolver-class">
-<h2><code class="docutils literal notranslate"><span class="pre">NonlinearQuasistaticSolver</span></code> class<a class="headerlink" href="#nonlinearquasistaticsolver-class" title="Link to this heading"></a></h2>
+<section id="module-edelweissmeshfree.solvers.nqs">
+<span id="nonlinearquasistaticsolver-class"></span><h2><code class="docutils literal notranslate"><span class="pre">NonlinearQuasistaticSolver</span></code> class<a class="headerlink" href="#module-edelweissmeshfree.solvers.nqs" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.solvers.nqs.NonlinearQuasistaticSolver">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.solvers.nqs.</span></span><span class="sig-name descname"><span class="pre">NonlinearQuasistaticSolver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">journal</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/solvers/nqs.html#NonlinearQuasistaticSolver"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.solvers.nqs.NonlinearQuasistaticSolver" title="Link to this definition"></a></dt>
+<dd><p>This is the serial nonlinear implicit quasi static solver.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>journal</strong> (<em>Journal</em>) – The journal instance for logging.</p>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">readRestart</span></code>(restartFile, timeStepper, model)</p></td>
+<td><p>Read a restart file.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.solvers.nqs.NonlinearQuasistaticSolver.solveStep" title="edelweissmeshfree.solvers.nqs.NonlinearQuasistaticSolver.solveStep"><code class="xref py py-obj docutils literal notranslate"><span class="pre">solveStep</span></code></a>(timeStepper, linearSolver, model, ...)</p></td>
+<td><p>Public interface to solve for a step.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.solvers.nqs.NonlinearQuasistaticSolver._computeSystem">
+<span class="sig-name descname"><span class="pre">_computeSystem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dirichlets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bodyLoads</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distributedLoads</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">particleDistributedLoads</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reducedNodeSets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elements</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Un</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activeCells</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cellElements</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">materialPoints</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">particles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constraints</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theDofManager</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Rhs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">K</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">PInt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">PExt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">F</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/solvers/nqs.html#NonlinearQuasistaticSolver._computeSystem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.solvers.nqs.NonlinearQuasistaticSolver._computeSystem" title="Link to this definition"></a></dt>
+<dd><p>Compute the global residual vector and the global stiffness matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dirichlets</strong> (<em>list</em><em>[</em><em>DirichletBase</em><em>]</em>)</p></li>
+<li><p><strong>bodyLoads</strong> (<em>list</em>)</p></li>
+<li><p><strong>distributedLoads</strong> (<em>list</em>)</p></li>
+<li><p><strong>particleDistributedLoads</strong> (<em>list</em>)</p></li>
+<li><p><strong>reducedNodeSets</strong> (<em>list</em>)</p></li>
+<li><p><strong>elements</strong> (<em>list</em>)</p></li>
+<li><p><strong>Un</strong> (<em>DofVector</em>)</p></li>
+<li><p><strong>activeCells</strong> (<em>list</em>)</p></li>
+<li><p><strong>cellElements</strong> (<em>list</em>)</p></li>
+<li><p><strong>materialPoints</strong> (<em>list</em>)</p></li>
+<li><p><strong>particles</strong> (<em>list</em>)</p></li>
+<li><p><strong>constraints</strong> (<em>list</em>)</p></li>
+<li><p><strong>timeStep</strong> (<em>TimeStep</em>)</p></li>
+<li><p><strong>theDofManager</strong> (<em>DofManager</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.solvers.nqs.NonlinearQuasistaticSolver._newtonSolve">
+<span class="sig-name descname"><span class="pre">_newtonSolve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dirichlets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bodyLoads</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distributedLoads</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">particleDistributedLoads</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reducedNodeSets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elements</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Un</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activeCells</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cellElements</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">materialPoints</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">particles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constraints</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theDofManager</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linearSolver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iterationOptions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">newtonCache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initialGuess</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/solvers/nqs.html#NonlinearQuasistaticSolver._newtonSolve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.solvers.nqs.NonlinearQuasistaticSolver._newtonSolve" title="Link to this definition"></a></dt>
+<dd><p>Standard Newton-Raphson scheme to solve for an increment.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dirichlets</strong> (<em>list</em><em>[</em><em>DirichletBase</em><em>]</em>) – The list of dirichlet StepActions.</p></li>
+<li><p><strong>bodyLoads</strong> (<em>list</em>) – The list of bodyload StepActions.</p></li>
+<li><p><strong>distributedLoads</strong> (<em>list</em>) – The list of distributed load StepActions.</p></li>
+<li><p><strong>activeNodeSets</strong> – The list of (reduced) active NodeSets.</p></li>
+<li><p><strong>elements</strong> (<em>list</em>) – The list of elements.</p></li>
+<li><p><strong>Un</strong> (<em>DofVector</em>) – The old solution vector.</p></li>
+<li><p><strong>activeCells</strong> (<em>list</em>) – The list of active cells.</p></li>
+<li><p><strong>cellElements</strong> (<em>list</em>) – The list of cell elements.</p></li>
+<li><p><strong>materialPoints</strong> (<em>list</em>) – The list of material points.</p></li>
+<li><p><strong>particles</strong> (<em>list</em>) – The list of particles.</p></li>
+<li><p><strong>constraints</strong> (<em>list</em>) – The list of constraints.</p></li>
+<li><p><strong>theDofManager</strong> (<em>DofManager</em>) – The DofManager instance for the current active model.</p></li>
+<li><p><strong>linearSolver</strong> – The instance of the linear solver to be used.</p></li>
+<li><p><strong>iterationOptions</strong> (<em>dict</em>) – The specified options controlling the Newton cycle.</p></li>
+<li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The current time increment.</p></li>
+<li><p><strong>model</strong> (<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel"><em>MPMModel</em></a>) – The full MPMModel instance.</p></li>
+<li><p><strong>newtonCache</strong> (<em>tuple</em>) – An arbitrary cache of (expensive) objects, which may be reused across time steps as long as the global system does not change.
+If the system changes, the newtonCache is set to None.</p></li>
+<li><p><strong>initialGuess</strong> (<em>DofVector</em>) – An initial guess DofVector for the Newton scheme, e.g., obtained using extrapolation.</p></li>
+<li><p><strong>particleDistributedLoads</strong> (<em>list</em>)</p></li>
+<li><p><strong>reducedNodeSets</strong> (<em>list</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>A tuple containing:</dt><dd><ul class="simple">
+<li><p>the new solution increment vector.</p></li>
+<li><p>the current internal load vector.</p></li>
+<li><p>the increment residual history of the Newton cycle.</p></li>
+<li><p>a cache of expensive objects which may be reused.</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[DofVector,DofVector,dict, tuple]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.solvers.nqs.NonlinearQuasistaticSolver._quadraticLineSearch">
+<span class="sig-name descname"><span class="pre">_quadraticLineSearch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">computeResidual</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ddU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alphas</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/solvers/nqs.html#NonlinearQuasistaticSolver._quadraticLineSearch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.solvers.nqs.NonlinearQuasistaticSolver._quadraticLineSearch" title="Link to this definition"></a></dt>
+<dd><p>Perform a quadratic line search to determine an optimal step length.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>computeSystem</strong> – A callback function to compute the system residual for a given solution increment.</p></li>
+<li><p><strong>ddU</strong> (<em>DofVector</em>) – The current solution increment vector.</p></li>
+<li><p><strong>alphas</strong> (<em>list</em>) – The list of alpha values to be tried.</p></li>
+<li><p><strong>computeResidual</strong> (<em>Callable</em><em>[</em><em>[</em><em>DofVector</em><em>]</em><em>, </em><em>DofVector</em><em>]</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The updated solution increment vector after line search.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>DofVector</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.solvers.nqs.NonlinearQuasistaticSolver.solveStep">
+<span class="sig-name descname"><span class="pre">solveStep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeStepper</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linearSolver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fieldOutputController</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mpmManagers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">particleManagers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dirichlets</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bodyLoads</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distributedLoads</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">particleDistributedLoads</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constraints</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputManagers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">userIterationOptions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vciManagers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">restartWriteInterval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allowFallBackToRestart</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numberOfRestartsToStore</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">restartBaseName</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'restart'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predictor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skipZeroIncrements</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/solvers/nqs.html#NonlinearQuasistaticSolver.solveStep"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.solvers.nqs.NonlinearQuasistaticSolver.solveStep" title="Link to this definition"></a></dt>
+<dd><p>Public interface to solve for a step.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>timeStepper</strong> – The timeStepper instance.</p></li>
+<li><p><strong>linearSolver</strong> – The linear solver instance to be used.</p></li>
+<li><p><strong>mpmManagers</strong> (<em>list</em><em>[</em><a class="reference internal" href="mpm/material_point_managers.html#edelweissmeshfree.mpmmanagers.base.mpmmanagerbase.MPMManagerBase" title="edelweissmeshfree.mpmmanagers.base.mpmmanagerbase.MPMManagerBase"><em>MPMManagerBase</em></a><em>]</em>) – The list of MPMManagerBase instances.</p></li>
+<li><p><strong>dirichlets</strong> (<em>list</em><em>[</em><em>DirichletBase</em><em>]</em>) – The list of dirichlet StepActions.</p></li>
+<li><p><strong>bodyLoads</strong> (<em>list</em><em>[</em><a class="reference internal" href="step_actions.html#edelweissmeshfree.stepactions.base.mpmbodyloadbase.MPMBodyLoadBase" title="edelweissmeshfree.stepactions.base.mpmbodyloadbase.MPMBodyLoadBase"><em>MPMBodyLoadBase</em></a><em>]</em>) – The list of bodyload StepActions.</p></li>
+<li><p><strong>distributedLoads</strong> (<em>list</em><em>[</em><a class="reference internal" href="step_actions.html#edelweissmeshfree.stepactions.base.mpmdistributedloadbase.MPMDistributedLoadBase" title="edelweissmeshfree.stepactions.base.mpmdistributedloadbase.MPMDistributedLoadBase"><em>MPMDistributedLoadBase</em></a><em>]</em>) – The list of distributed load StepActions.</p></li>
+<li><p><strong>particleDistributedLoads</strong> (<em>list</em><em>[</em><a class="reference internal" href="step_actions.html#edelweissmeshfree.stepactions.particledistributedload.ParticleDistributedLoad" title="edelweissmeshfree.stepactions.particledistributedload.ParticleDistributedLoad"><em>ParticleDistributedLoad</em></a><em>]</em>) – The list of particle distributed load StepActions.</p></li>
+<li><p><strong>constraints</strong> (<em>list</em><em>[</em><em>ConstraintBase</em><em>]</em>) – The list of constraints.</p></li>
+<li><p><strong>model</strong> (<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel"><em>MPMModel</em></a>) – The full MPMModel instance.</p></li>
+<li><p><strong>fieldOutputController</strong> (<em>FieldOutputController</em>) – The field output controller.</p></li>
+<li><p><strong>outputmanagers</strong> – The list of OutputManagerBase instances.</p></li>
+<li><p><strong>userIterationOptions</strong> (<em>dict</em>) – The dict controlling the Newton cycle(s).</p></li>
+<li><p><strong>vciManagers</strong> (<em>list</em>) – The list of VariationallyConsistentIntegrationManager instances.</p></li>
+<li><p><strong>restartWriteInterval</strong> (<em>int</em>) – The interval at which restart files are written.</p></li>
+<li><p><strong>allowFallBackToRestart</strong> (<em>bool</em>) – The flag to allow a fallback to restart files in case time incrementation fails.</p></li>
+<li><p><strong>numberOfRestartsToStore</strong> – The number of restart files to store.</p></li>
+<li><p><strong>restartBaseName</strong> (<em>str</em>) – The base name of the restart files.</p></li>
+<li><p><strong>extrapolator</strong> – The extrapolator instance to be used for making predctions on the next solution increment.</p></li>
+<li><p><strong>skipZeroIncrements</strong> (<em>bool</em>) – Don’t perform an actual solve if the time increment is zero. This is useful for
+problems with dynamic effects where the first increment(s) may be zero and cannot be correctly solved.</p></li>
+<li><p><strong>particleManagers</strong> (<em>list</em><em>[</em><a class="reference internal" href="particle_managers.html#edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager" title="edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager"><em>BaseParticleManager</em></a><em>]</em>)</p></li>
+<li><p><strong>outputManagers</strong> (<em>list</em><em>[</em><em>OutputManagerBase</em><em>]</em>)</p></li>
+<li><p><strong>predictor</strong> (<a class="reference internal" href="numeric_tools.html#edelweissmeshfree.numerics.predictors.basepredictor.BasePredictor" title="edelweissmeshfree.numerics.predictors.basepredictor.BasePredictor"><em>BasePredictor</em></a>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>The tuple containing:</dt><dd><ul class="simple">
+<li><p>the truth value of success.</p></li>
+<li><p>the updated MPMModel.</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[bool, <a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel">MPMModel</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
-<section id="nqsparallelformarmot-class">
-<h2><code class="docutils literal notranslate"><span class="pre">NQSParallelForMarmot</span></code> class<a class="headerlink" href="#nqsparallelformarmot-class" title="Link to this heading"></a></h2>
+<section id="module-edelweissmeshfree.solvers.nqsmarmotparallel">
+<span id="nqsparallelformarmot-class"></span><h2><code class="docutils literal notranslate"><span class="pre">NQSParallelForMarmot</span></code> class<a class="headerlink" href="#module-edelweissmeshfree.solvers.nqsmarmotparallel" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.solvers.nqsmarmotparallel.</span></span><span class="sig-name descname"><span class="pre">NQSParallelForMarmot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">journal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verifyDirectCSRAssembly</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeDirectCSRAssembly</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/solvers/nqsmarmotparallel.html#NQSParallelForMarmot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot" title="Link to this definition"></a></dt>
+<dd><p>This is a parallel implemenntation of the NonlinearQuasistaticSolver.
+It only works with MarmotCells and MarmotElements, as it directly accesses and exploits
+the background Marmot C++ objects.</p>
+<p>It uses Cython/OpenMP for evaluation those MarmotCells and MarmotMaterialPoints in a prange loop,
+allowing to bypass the GIL and get decent performance.</p>
+<p>The number of threads for the OpenMP loop is determined based on the cpu count,
+or (higher priority) based on the environment variable OMP_NUM_THREADS.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>journal</strong> (<em>Journal</em>) – The Journal instance for loggin purposes.</p></li>
+<li><p><strong>verifyDirectCSRAssembly</strong> (<em>bool</em>) – If True, every iteration assembles the particle contributions <em>twice</em> – once through the
+VIJ staging array, which stays the path the solve actually uses, and once straight into CSR
+– and compares the two results. Diagnostic only, and it roughly doubles the particle
+assembly cost. See <a class="reference internal" href="#edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._computeParticlesAndVerifyDirectCSR" title="edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._computeParticlesAndVerifyDirectCSR"><code class="xref py py-meth docutils literal notranslate"><span class="pre">_computeParticlesAndVerifyDirectCSR()</span></code></a>.</p></li>
+<li><p><strong>timeDirectCSRAssembly</strong> (<em>bool</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">readRestart</span></code>(restartFile, timeStepper, model)</p></td>
+<td><p>Read a restart file.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">solveStep</span></code>(timeStepper, linearSolver, model, ...)</p></td>
+<td><p>Public interface to solve for a step.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._computeCells">
+<span class="sig-name descname"><span class="pre">_computeCells</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">activeCells_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">P</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">F</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">K</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dT</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theDofManager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/solvers/nqsmarmotparallel.html#NQSParallelForMarmot._computeCells"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._computeCells" title="Link to this definition"></a></dt>
+<dd><p>Evaluate all cells.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>activeCells</strong> – The list of (active) cells to be evaluated.</p></li>
+<li><p><strong>dU</strong> (<em>DofVector</em>) – The current global solution increment vector.</p></li>
+<li><p><strong>P</strong> (<em>DofVector</em>) – The current global flux vector.</p></li>
+<li><p><strong>F</strong> (<em>DofVector</em>) – The accumulated nodal fluxes vector.</p></li>
+<li><p><strong>K</strong> – Where each entity writes its stiffness contribution.</p></li>
+<li><p><strong>time</strong> (<em>float</em>) – The current time.</p></li>
+<li><p><strong>dT</strong> (<em>float</em>) – The increment of time.</p></li>
+<li><p><strong>theDofManager</strong> (<em>DofManager</em>) – The DofManager instance.</p></li>
+<li><p><strong>activeCells_</strong> (<em>list</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._computeMaterialPoints">
+<span class="sig-name descname"><span class="pre">_computeMaterialPoints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">materialPoints_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dT</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/solvers/nqsmarmotparallel.html#NQSParallelForMarmot._computeMaterialPoints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._computeMaterialPoints" title="Link to this definition"></a></dt>
+<dd><p>Evaluate all material points’ physics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>materialPonts</strong> – The list material points to  evaluated.</p></li>
+<li><p><strong>time</strong> (<em>float</em>) – The current time.</p></li>
+<li><p><strong>dT</strong> (<em>float</em>) – The increment of time.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._computeParticles">
+<span class="sig-name descname"><span class="pre">_computeParticles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">particles_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">P</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">F</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">K</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dT</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theDofManager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/solvers/nqsmarmotparallel.html#NQSParallelForMarmot._computeParticles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._computeParticles" title="Link to this definition"></a></dt>
+<dd><p>Evaluate all particles.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>particles</strong> – The list of particles to be evaluated.</p></li>
+<li><p><strong>dU</strong> (<em>DofVector</em>) – The current global solution increment vector.</p></li>
+<li><p><strong>P</strong> (<em>DofVector</em>) – The current global flux vector.</p></li>
+<li><p><strong>F</strong> (<em>DofVector</em>) – The accumulated nodal fluxes vector.</p></li>
+<li><p><strong>K</strong> – Where each entity writes its stiffness contribution.</p></li>
+<li><p><strong>time</strong> (<em>float</em>) – The current time.</p></li>
+<li><p><strong>dT</strong> (<em>float</em>) – The increment of time.</p></li>
+<li><p><strong>theDofManager</strong> (<em>DofManager</em>) – The DofManager instance.</p></li>
+<li><p><strong>particles_</strong> (<em>list</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._computeParticlesAndTimeDirectCSR">
+<span class="sig-name descname"><span class="pre">_computeParticlesAndTimeDirectCSR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">particles_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">P</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">F</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">K_VIJ</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dT</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theDofManager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/solvers/nqsmarmotparallel.html#NQSParallelForMarmot._computeParticlesAndTimeDirectCSR"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._computeParticlesAndTimeDirectCSR" title="Link to this definition"></a></dt>
+<dd><p>Benchmark the two assembly paths against each other on identical state.</p>
+<p>Both paths are timed component by component, every repeat, in the same process and on the
+same increment, with the order alternated between repeats. That is deliberate: an earlier
+attempt at this comparison used a separate harness which sliced blocks out of the VIJ array
+with numpy, and the resulting 3.83 GB of streaming inverted the ranking of the two. Timing
+both paths side by side against the state the solver actually has removes the harness from
+the comparison entirely.</p>
+<p>The components, and why each belongs to the path it is charged to:</p>
+<dl class="simple">
+<dt>VIJ path</dt><dd><p><code class="docutils literal notranslate"><span class="pre">zero</span></code> the whole staging array must be cleared every iteration, and particles are what
+make it large, so the memset is charged here rather than treated as overhead.
+<code class="docutils literal notranslate"><span class="pre">eval</span></code> the particle loop, writing each block into its slab.
+<code class="docutils literal notranslate"><span class="pre">gather</span></code> <code class="docutils literal notranslate"><span class="pre">CSRGenerator.updateCSR</span></code>, the production gather.</p>
+</dd>
+<dt>direct path</dt><dd><p><code class="docutils literal notranslate"><span class="pre">begin</span></code> clearing the private CSR buffers.
+<code class="docutils literal notranslate"><span class="pre">eval</span></code> the particle loop, writing into a cached scratch block and scattering it.
+<code class="docutils literal notranslate"><span class="pre">reduce</span></code> summing the private buffers.</p>
+</dd>
+</dl>
+<p>Medians are reported, with the spread, because the scatter was previously measured varying by
++-18% run to run – wide enough that a single sample cannot support a ratio.</p>
+<p>The solve continues on the VIJ path: K_VIJ is restored to its pre-benchmark contents and the
+production evaluation is run last, so the increment is unaffected apart from taking longer.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>particles_</strong> (<em>list</em>)</p></li>
+<li><p><strong>dU</strong> (<em>DofVector</em>)</p></li>
+<li><p><strong>P</strong> (<em>DofVector</em>)</p></li>
+<li><p><strong>F</strong> (<em>DofVector</em>)</p></li>
+<li><p><strong>K_VIJ</strong> (<em>VIJSystemMatrix</em>)</p></li>
+<li><p><strong>time</strong> (<em>float</em>)</p></li>
+<li><p><strong>dT</strong> (<em>float</em>)</p></li>
+<li><p><strong>theDofManager</strong> (<em>DofManager</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._computeParticlesAndVerifyDirectCSR">
+<span class="sig-name descname"><span class="pre">_computeParticlesAndVerifyDirectCSR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">particles_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">P</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">F</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">K_VIJ</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dT</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theDofManager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/solvers/nqsmarmotparallel.html#NQSParallelForMarmot._computeParticlesAndVerifyDirectCSR"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._computeParticlesAndVerifyDirectCSR" title="Link to this definition"></a></dt>
+<dd><p>Assemble the particles several ways on identical state, and cross-check the results.</p>
+<p>Why this lives in the solver rather than in a unit test: evaluating a particle needs a fully
+prepared model – kernel supports resolved, shape functions reconstructed, state variables
+allocated – and hand-building that state is how three earlier attempts died, each one
+segfaulting inside Marmot’s shape-function evaluation. Decisively, the <em>existing</em> VIJ kernel
+segfaults identically in the same harness, which places the fault in the harness. Running
+here instead means the comparison sees exactly the state the production path sees.</p>
+<p>Three comparisons, because one alone cannot separate an addressing bug from evaluation noise:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">scatter</span></code></dt><dd><p>The blocks the VIJ path just produced, pushed through <code class="xref py py-meth docutils literal notranslate"><span class="pre">scatterBlock()</span></code> entity by
+entity, against the same blocks pushed through <code class="docutils literal notranslate"><span class="pre">assembleFromVIJ</span></code>. Identical numbers
+through the identical offset map, so this isolates the addressing from any physics noise
+– it is the test of the entity registration and of the block layout. It agrees to
+<em>rounding</em>, not bit-for-bit: the two sum the same contributions in different orders
+(entity by entity on one thread, versus pair order across sixteen), so a difference at
+the 1e-16 relative level is expected and a difference above it is an addressing error.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">noise</span></code></dt><dd><p>The VIJ kernel run a <em>second</em> time on the same state, against its own first result. This
+is the floor: re-evaluating a particle is not guaranteed to reproduce bit-for-bit, and
+without measuring that floor there is no way to read the third number.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">fused</span></code></dt><dd><p>The direct-to-CSR kernel, against the first VIJ result. It re-evaluates the physics, so
+it can only ever be as good as <code class="docutils literal notranslate"><span class="pre">noise</span></code>. Judged against that floor, not against zero.</p>
+</dd>
+</dl>
+<p>A wrong row, column or transposition in the fused scatter shows up as an O(1) relative
+difference, which no amount of evaluation noise can disguise.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>particles</strong> – The particles to be evaluated.</p></li>
+<li><p><strong>dU</strong> (<em>DofVector</em>) – The current global solution increment vector.</p></li>
+<li><p><strong>P</strong> (<em>DofVector</em>) – The current global flux vector.</p></li>
+<li><p><strong>F</strong> (<em>DofVector</em>) – The accumulated nodal fluxes vector.</p></li>
+<li><p><strong>K_VIJ</strong> (<em>VIJSystemMatrix</em>) – The global system matrix in VIJ (COO) format.</p></li>
+<li><p><strong>time</strong> (<em>float</em>) – The current time.</p></li>
+<li><p><strong>dT</strong> (<em>float</em>) – The increment of time.</p></li>
+<li><p><strong>theDofManager</strong> (<em>DofManager</em>) – The DofManager instance.</p></li>
+<li><p><strong>particles_</strong> (<em>list</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._computeParticlesIntoCSR">
+<span class="sig-name descname"><span class="pre">_computeParticlesIntoCSR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">particles_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">P</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">F</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dT</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theDofManager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/solvers/nqsmarmotparallel.html#NQSParallelForMarmot._computeParticlesIntoCSR"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._computeParticlesIntoCSR" title="Link to this definition"></a></dt>
+<dd><p>Evaluate the particles straight into the CSR data, with no staging array involved.</p>
+<p>The production form of what the cross-check in <a class="reference internal" href="#edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._computeParticlesAndVerifyDirectCSR" title="edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._computeParticlesAndVerifyDirectCSR"><code class="xref py py-meth docutils literal notranslate"><span class="pre">_computeParticlesAndVerifyDirectCSR()</span></code></a>
+validated and the benchmark in <a class="reference internal" href="#edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._computeParticlesAndTimeDirectCSR" title="edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._computeParticlesAndTimeDirectCSR"><code class="xref py py-meth docutils literal notranslate"><span class="pre">_computeParticlesAndTimeDirectCSR()</span></code></a> timed. Each thread
+writes its block into a small reused scratch buffer and scatters it through the offset map, so
+nothing has to clear or re-read a multi-gigabyte array.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>particles_</strong> (<em>list</em>)</p></li>
+<li><p><strong>dU</strong> (<em>DofVector</em>)</p></li>
+<li><p><strong>P</strong> (<em>DofVector</em>)</p></li>
+<li><p><strong>F</strong> (<em>DofVector</em>)</p></li>
+<li><p><strong>time</strong> (<em>float</em>)</p></li>
+<li><p><strong>dT</strong> (<em>float</em>)</p></li>
+<li><p><strong>theDofManager</strong> (<em>DofManager</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._reportAssemblyMemory">
+<span class="sig-name descname"><span class="pre">_reportAssemblyMemory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">K_VIJ</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memoryOfBufferCount</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/solvers/nqsmarmotparallel.html#NQSParallelForMarmot._reportAssemblyMemory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._reportAssemblyMemory" title="Link to this definition"></a></dt>
+<dd><p>Report what each assembly path actually costs in memory, term by term.</p>
+<p>The memory balance is the point of the direct path – the DOF ceiling is set by it, not by
+the assembly time – and it has been misreported twice, so this prints every term rather
+than a single ratio.</p>
+<p>The terms are grouped by who pays for them:</p>
+<dl class="simple">
+<dt>common</dt><dd><p><code class="docutils literal notranslate"><span class="pre">I</span></code>/<code class="docutils literal notranslate"><span class="pre">J</span></code> (the DofManager’s COO index arrays, needed by both paths – the direct path
+to build its offset map, the VIJ path to gather), and the CSR matrix itself
+(<code class="docutils literal notranslate"><span class="pre">indptr</span></code>, <code class="docutils literal notranslate"><span class="pre">indices</span></code>, <code class="docutils literal notranslate"><span class="pre">data</span></code>), which is the output of either path.</p>
+</dd>
+<dt>VIJ only</dt><dd><p>the <code class="docutils literal notranslate"><span class="pre">sizeVIJ</span></code> value array, plus the gather map <code class="docutils literal notranslate"><span class="pre">gather_sources</span></code> (int32 per COO pair)
+and <code class="docutils literal notranslate"><span class="pre">assembly_ptr</span></code> (int32 per nnz).</p>
+</dd>
+<dt>direct only</dt><dd><p>the <code class="docutils literal notranslate"><span class="pre">offsets</span></code> map (uint16 per COO pair), the private CSR copies
+(<code class="docutils literal notranslate"><span class="pre">nBuffers</span> <span class="pre">*</span> <span class="pre">nnz</span> <span class="pre">*</span> <span class="pre">8</span></code>) and <code class="docutils literal notranslate"><span class="pre">entityRows</span></code>. Reported once per buffer count, because
+that term is the whole reason the buffer count is a knob.</p>
+</dd>
+</dl>
+<p>The totals reported by the C++ cores (<code class="docutils literal notranslate"><span class="pre">CSRGenerator.memoryBytes</span></code> and
+<code class="docutils literal notranslate"><span class="pre">DirectCSRAssembler.memoryBytes</span></code>) are printed as a cross-check on the per-term arithmetic,
+so a term that is wrong here shows up as a mismatch rather than propagating silently.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>K_VIJ</strong> (<em>VIJSystemMatrix</em>) – The VIJ system matrix, for the value and index array sizes.</p></li>
+<li><p><strong>memoryOfBufferCount</strong> (<em>dict</em>) – <code class="docutils literal notranslate"><span class="pre">DirectCSRAssembler.memoryBytes</span></code> for each buffer count that was configured.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._reportDirectCSRDifference">
+<span class="sig-name descname"><span class="pre">_reportDirectCSRDifference</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">candidate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nWorst</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/solvers/nqsmarmotparallel.html#NQSParallelForMarmot._reportDirectCSRDifference"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._reportDirectCSRDifference" title="Link to this definition"></a></dt>
+<dd><p>Report how a candidate array differs from a reference, entry by entry.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>label</strong> – Name of the quantity, for the log line.</p></li>
+<li><p><strong>reference</strong> – The values the VIJ path produced.</p></li>
+<li><p><strong>candidate</strong> – The values the direct-to-CSR path produced.</p></li>
+<li><p><strong>nWorst</strong> (<em>int</em>) – How many of the largest relative differences to list.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot.directCSRBufferSweep">
+<span class="sig-name descname"><span class="pre">directCSRBufferSweep</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">()</span></span><a class="headerlink" href="#edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot.directCSRBufferSweep" title="Link to this definition"></a></dt>
+<dd><p>Private-buffer counts to time in turn, e.g. <code class="docutils literal notranslate"><span class="pre">(16,</span> <span class="pre">4,</span> <span class="pre">1)</span></code>. Empty means time only whatever the
+assembler is currently configured with. Sweeping here rather than across separate runs keeps
+every configuration on the same state, the same increment and the same process – and lets one
+offset map serve all of them, since only the buffers are reallocated.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot.directCSRDiagnostics">
+<span class="sig-name descname"><span class="pre">directCSRDiagnostics</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></span><a class="headerlink" href="#edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot.directCSRDiagnostics" title="Link to this definition"></a></dt>
+<dd><p>how many entries differ and by how much.
+The distinction that matters is a handful of entries off by O(1) – a structural bug – versus
+every entry off by a little, which points at the arithmetic instead.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Emit a per-entry breakdown of any disagreement</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot.directCSRNoiseFactor">
+<span class="sig-name descname"><span class="pre">directCSRNoiseFactor</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4.0</span></span><a class="headerlink" href="#edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot.directCSRNoiseFactor" title="Link to this definition"></a></dt>
+<dd><p>How far above the measured re-evaluation noise floor the fused path may land before it counts
+as a real disagreement. Re-evaluating a particle is not bit-reproducible, so the fused kernel
+– which re-evaluates – can only be held to that floor, not to zero. Its <em>addressing</em> is
+pinned separately and exactly by the <code class="docutils literal notranslate"><span class="pre">scatter</span></code> comparison, which involves no re-evaluation.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot.directCSRScatterTolerance">
+<span class="sig-name descname"><span class="pre">directCSRScatterTolerance</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1e-13</span></span><a class="headerlink" href="#edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot.directCSRScatterTolerance" title="Link to this definition"></a></dt>
+<dd><p>Relative agreement demanded of the <code class="docutils literal notranslate"><span class="pre">scatter</span></code> comparison, which sums identical values in two
+different orders. Rounding on a reduction of this size lands near 1e-16; anything at 1e-13 or
+above is a misaddressed row, column or transposition rather than accumulated error.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot.directCSRTimingRepeats">
+<span class="sig-name descname"><span class="pre">directCSRTimingRepeats</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">5</span></span><a class="headerlink" href="#edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot.directCSRTimingRepeats" title="Link to this definition"></a></dt>
+<dd><p>Repeats per iteration in the assembly benchmark. Both paths are run every repeat and the
+order is alternated, so a warm-up or a drifting machine biases neither.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot.directCSRVerificationTolerance">
+<span class="sig-name descname"><span class="pre">directCSRVerificationTolerance</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1e-12</span></span><a class="headerlink" href="#edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot.directCSRVerificationTolerance" title="Link to this definition"></a></dt>
+<dd><p>Floor below which a relative difference between assembly paths is not interpreted at all.</p>
+</dd></dl>
+
+</dd></dl>
+
 </section>
-<section id="nonlinearquasistaticmarmotparallelarclengthsolver-class">
-<h2><code class="docutils literal notranslate"><span class="pre">NonlinearQuasistaticMarmotParallelArcLengthSolver</span></code> class<a class="headerlink" href="#nonlinearquasistaticmarmotparallelarclengthsolver-class" title="Link to this heading"></a></h2>
+<section id="module-edelweissmeshfree.solvers.nqsmparclength">
+<span id="nonlinearquasistaticmarmotparallelarclengthsolver-class"></span><h2><code class="docutils literal notranslate"><span class="pre">NonlinearQuasistaticMarmotParallelArcLengthSolver</span></code> class<a class="headerlink" href="#module-edelweissmeshfree.solvers.nqsmparclength" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.solvers.nqsmparclength.NonlinearQuasistaticMarmotArcLengthSolver">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.solvers.nqsmparclength.</span></span><span class="sig-name descname"><span class="pre">NonlinearQuasistaticMarmotArcLengthSolver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">journal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verifyDirectCSRAssembly</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeDirectCSRAssembly</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/solvers/nqsmparclength.html#NonlinearQuasistaticMarmotArcLengthSolver"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.solvers.nqsmparclength.NonlinearQuasistaticMarmotArcLengthSolver" title="Link to this definition"></a></dt>
+<dd><p>This is the serial nonlinear implicit quasi static solver.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>journal</strong> (<em>Journal</em>) – The journal instance for logging.</p></li>
+<li><p><strong>verifyDirectCSRAssembly</strong> (<em>bool</em>)</p></li>
+<li><p><strong>timeDirectCSRAssembly</strong> (<em>bool</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">readRestart</span></code>(restartFile, timeStepper, model)</p></td>
+<td><p>Read a restart file.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.solvers.nqsmparclength.NonlinearQuasistaticMarmotArcLengthSolver.solveStep" title="edelweissmeshfree.solvers.nqsmparclength.NonlinearQuasistaticMarmotArcLengthSolver.solveStep"><code class="xref py py-obj docutils literal notranslate"><span class="pre">solveStep</span></code></a>(timeStepper, linearSolver, model, ...)</p></td>
+<td><p>Public interface to solve for a step.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.solvers.nqsmparclength.NonlinearQuasistaticMarmotArcLengthSolver._createNewtonCache">
+<span class="sig-name descname"><span class="pre">_createNewtonCache</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">theDofManager</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">particles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/solvers/nqsmparclength.html#NonlinearQuasistaticMarmotArcLengthSolver._createNewtonCache"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.solvers.nqsmparclength.NonlinearQuasistaticMarmotArcLengthSolver._createNewtonCache" title="Link to this definition"></a></dt>
+<dd><p>Create expensive objects, which may be reused if the global system does not change.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>theDofManager</strong> (<em>DofManager</em>) – The DofManager instance.</p></li>
+<li><p><strong>particles</strong> – The particles to register with the direct-to-CSR assembler, if one is in use. Forwarded
+to the base implementation; the arc-length cache below builds no assembler of its own.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The collection of expensive objects.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.solvers.nqsmparclength.NonlinearQuasistaticMarmotArcLengthSolver._newtonSolve">
+<span class="sig-name descname"><span class="pre">_newtonSolve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dirichlets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bodyLoads</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distributedLoads</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">particleDistributedLoads</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reducedNodeSets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elements</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Un</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activeCells</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cellElements</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">materialPoints</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">particles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constraints</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theDofManager</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linearSolver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iterationOptions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">newtonCache</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dUGuess</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dLambdaGuess</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predictor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/solvers/nqsmparclength.html#NonlinearQuasistaticMarmotArcLengthSolver._newtonSolve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.solvers.nqsmparclength.NonlinearQuasistaticMarmotArcLengthSolver._newtonSolve" title="Link to this definition"></a></dt>
+<dd><p>Standard Newton-Raphson scheme to solve for an increment.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dirichlets</strong> (<em>list</em>) – The list of dirichlet StepActions.</p></li>
+<li><p><strong>bodyLoads</strong> (<em>list</em>) – The list of bodyload StepActions.</p></li>
+<li><p><strong>distributedLoads</strong> (<em>list</em>) – The list of distributed load StepActions.</p></li>
+<li><p><strong>activeNodeSets</strong> – The list of (reduced) active NodeSets.</p></li>
+<li><p><strong>activeCells</strong> (<em>list</em>) – The list of active cells.</p></li>
+<li><p><strong>materialPoints</strong> (<em>list</em>) – The list of material points.</p></li>
+<li><p><strong>constraints</strong> (<em>list</em>) – The list of constraints.</p></li>
+<li><p><strong>theDofManager</strong> (<em>DofManager</em>) – The DofManager instance for the current active model.</p></li>
+<li><p><strong>linearSolver</strong> – The instance of the linear solver to be used.</p></li>
+<li><p><strong>iterationOptions</strong> (<em>dict</em>) – The specified options controlling the Newton cycle.</p></li>
+<li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The current time increment.</p></li>
+<li><p><strong>model</strong> (<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel"><em>MPMModel</em></a>) – The full MPMModel instance.</p></li>
+<li><p><strong>newtonCache</strong> (<em>tuple</em>) – An arbitrary cache of (expensive) objects, which may be reused across time steps as long as the global system does not change.
+If the system changes, the newtonCache is set to None.</p></li>
+<li><p><strong>particleDistributedLoads</strong> (<em>list</em>)</p></li>
+<li><p><strong>reducedNodeSets</strong> (<em>list</em>)</p></li>
+<li><p><strong>elements</strong> (<em>list</em>)</p></li>
+<li><p><strong>Un</strong> (<em>DofVector</em>)</p></li>
+<li><p><strong>cellElements</strong> (<em>list</em>)</p></li>
+<li><p><strong>particles</strong> (<em>list</em>)</p></li>
+<li><p><strong>dUGuess</strong> (<em>DofVector</em>)</p></li>
+<li><p><strong>dLambdaGuess</strong> (<em>float</em>)</p></li>
+<li><p><strong>predictor</strong> (<a class="reference internal" href="numeric_tools.html#edelweissmeshfree.numerics.predictors.basepredictor.BasePredictor" title="edelweissmeshfree.numerics.predictors.basepredictor.BasePredictor"><em>BasePredictor</em></a>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>A tuple containing:</dt><dd><ul class="simple">
+<li><p>the new solution increment vector.</p></li>
+<li><p>the current internal load vector.</p></li>
+<li><p>the increment residual history of the Newton cycle.</p></li>
+<li><p>the newton cache which may be resused if the system does not change.</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[DofVector,DofVector,dict, object]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.solvers.nqsmparclength.NonlinearQuasistaticMarmotArcLengthSolver.solveStep">
+<span class="sig-name descname"><span class="pre">solveStep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeStepper</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linearSolver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fieldOutputController</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arcLengthController</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mpmManagers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">particleManagers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dirichlets</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bodyLoads</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distributedLoads</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">particleDistributedLoads</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constraints</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputManagers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">userIterationOptions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vciManagers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">restartWriteInterval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allowFallBackToRestart</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numberOfRestartsToStore</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">restartBaseName</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'restart'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predictor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/solvers/nqsmparclength.html#NonlinearQuasistaticMarmotArcLengthSolver.solveStep"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.solvers.nqsmparclength.NonlinearQuasistaticMarmotArcLengthSolver.solveStep" title="Link to this definition"></a></dt>
+<dd><p>Public interface to solve for a step.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>timeStepper</strong> – The time stepper instance.</p></li>
+<li><p><strong>linearSolver</strong> – The linear solver instance.</p></li>
+<li><p><strong>model</strong> (<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel"><em>MPMModel</em></a>) – The MPMModel instance.</p></li>
+<li><p><strong>fieldOutputController</strong> (<em>FieldOutputController</em>) – The field output controller instance.</p></li>
+<li><p><strong>arcLengthController</strong> (<a class="reference internal" href="step_actions.html#edelweissmeshfree.stepactions.base.arclengthcontrollerbase.ArcLengthControllerBase" title="edelweissmeshfree.stepactions.base.arclengthcontrollerbase.ArcLengthControllerBase"><em>ArcLengthControllerBase</em></a>) – The arc length controller instance.</p></li>
+<li><p><strong>mpmManagers</strong> (<em>list</em><em>[</em><a class="reference internal" href="mpm/material_point_managers.html#edelweissmeshfree.mpmmanagers.base.mpmmanagerbase.MPMManagerBase" title="edelweissmeshfree.mpmmanagers.base.mpmmanagerbase.MPMManagerBase"><em>MPMManagerBase</em></a><em>]</em>) – The list of MPMManagerBase instances.</p></li>
+<li><p><strong>particleManagers</strong> (<em>list</em><em>[</em><a class="reference internal" href="particle_managers.html#edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager" title="edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager"><em>BaseParticleManager</em></a><em>]</em>) – The list of BaseParticleManager instances.</p></li>
+<li><p><strong>dirichlets</strong> (<em>list</em><em>[</em><em>DirichletBase</em><em>]</em>) – The list of DirichletBase instances.</p></li>
+<li><p><strong>bodyLoads</strong> (<em>list</em><em>[</em><a class="reference internal" href="step_actions.html#edelweissmeshfree.stepactions.base.mpmbodyloadbase.MPMBodyLoadBase" title="edelweissmeshfree.stepactions.base.mpmbodyloadbase.MPMBodyLoadBase"><em>MPMBodyLoadBase</em></a><em>]</em>) – The list of MPMBodyLoadBase instances.</p></li>
+<li><p><strong>distributedLoads</strong> (<em>list</em><em>[</em><a class="reference internal" href="step_actions.html#edelweissmeshfree.stepactions.base.mpmdistributedloadbase.MPMDistributedLoadBase" title="edelweissmeshfree.stepactions.base.mpmdistributedloadbase.MPMDistributedLoadBase"><em>MPMDistributedLoadBase</em></a><em>]</em>) – The list of MPMDistributedLoadBase instances.</p></li>
+<li><p><strong>constraints</strong> (<em>list</em><em>[</em><em>ConstraintBase</em><em>]</em>) – The list of ConstraintBase instances.</p></li>
+<li><p><strong>outputManagers</strong> (<em>list</em><em>[</em><em>OutputManagerBase</em><em>]</em>) – The list of OutputManagerBase instances.</p></li>
+<li><p><strong>userIterationOptions</strong> (<em>dict</em>) – The user specified iteration options.</p></li>
+<li><p><strong>vciManagers</strong> (<em>list</em>) – The list of VCIManagerBase instances.</p></li>
+<li><p><strong>restartInterval</strong> – The interval to write restart files.</p></li>
+<li><p><strong>fallBackToLastRestart</strong> – The flag to allow falling back to the last restart.</p></li>
+<li><p><strong>restartBaseName</strong> (<em>str</em>) – The base name for the restart.</p></li>
+<li><p><strong>predictor</strong> (<a class="reference internal" href="numeric_tools.html#edelweissmeshfree.numerics.predictors.basepredictor.BasePredictor" title="edelweissmeshfree.numerics.predictors.basepredictor.BasePredictor"><em>BasePredictor</em></a>) – The predictor instance to be used for making predictions on the next solution increment.</p></li>
+<li><p><strong>particleDistributedLoads</strong> (<em>list</em><em>[</em><a class="reference internal" href="step_actions.html#edelweissmeshfree.stepactions.particledistributedload.ParticleDistributedLoad" title="edelweissmeshfree.stepactions.particledistributedload.ParticleDistributedLoad"><em>ParticleDistributedLoad</em></a><em>]</em>)</p></li>
+<li><p><strong>restartWriteInterval</strong> (<em>int</em>)</p></li>
+<li><p><strong>allowFallBackToRestart</strong> (<em>bool</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>The tuple containing:</dt><dd><ul class="simple">
+<li><p>the truth value of success.</p></li>
+<li><p>the updated MPMModel.</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[bool, <a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel">MPMModel</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 </section>
 
@@ -119,7 +746,7 @@
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="mpm/material_points.html" class="btn btn-neutral float-left" title="Material Points" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="mpm/material_point_managers.html" class="btn btn-neutral float-right" title="Material Point Managers" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="choosing_a_solver.html" class="btn btn-neutral float-right" title="Choosing a linear solver" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

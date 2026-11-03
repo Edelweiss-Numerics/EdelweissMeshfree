@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction &mdash; EdelweissMeshfree v25.08 documentation</title>
+  <title>edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction &mdash; EdelweissMeshfree v26.11 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../../../_static/css/custom.css?v=1d735308" />
@@ -13,9 +13,9 @@
   
       <script src="../../../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../../../_static/documentation_options.js?v=83aae4bb"></script>
-      <script src="../../../../../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../../../_static/documentation_options.js?v=57c4c7c7"></script>
+      <script src="../../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../../search.html" /> 
@@ -44,7 +44,7 @@
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../gallery.html">Gallery</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../../references.html">References</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../documentation/index.html">Documentation</a></li>
 </ul>
 
@@ -82,7 +82,7 @@
 <span class="c1"># | |__| (_| |  __/ |\ V  V /  __/ \__ \__ \</span>
 <span class="c1"># |_____\__,_|\___|_| \_/\_/_\___|_|___/___/</span>
 <span class="c1"># |  \/  | ___  ___| |__  / _|_ __ ___  ___</span>
-<span class="c1"># | |\/| |/ _ \/ __| &#39;_ \| |_| &#39;__/ _ \/ _ \</span>
+<span class="c1"># | |\/| |/ _ \/ __| '_ \| |_| '__/ _ \/ _ \</span>
 <span class="c1"># | |  | |  __/\__ \ | | |  _| | |  __/  __/</span>
 <span class="c1"># |_|  |_|\___||___/_| |_|_| |_|  \___|\___|</span>
 <span class="c1">#</span>
@@ -108,10 +108,10 @@
 <span class="c1">#  The full text of the license can be found in the file LICENSE.md at</span>
 <span class="c1">#  the top level directory of EdelweissMeshfree.</span>
 <span class="c1">#  ---------------------------------------------------------------------</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="sd">Meshfree kernelfunctions are one of the core ingredients in meshfree methods.</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
 
@@ -122,64 +122,80 @@
 <div class="viewcode-block" id="BaseMeshfreeKernelFunction">
 <a class="viewcode-back" href="../../../../../documentation/meshfree.html#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">BaseMeshfreeKernelFunction</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for meshfree kernel functions.</span>
+<span class="w">    </span><span class="sd">"""Base class for meshfree kernel functions.</span>
 <span class="sd">    Shape functions are used to interpolate field solutions from the nodes to arbitrary points in the domain.</span>
 <span class="sd">    Furthermore, they are the link between the material points and the nodes in meshfree methods.</span>
 
 <span class="sd">    Each kernel function should be derived from this base class in order to follow the general interface.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="nd">@property</span>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">node</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Node</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the node of the kernel function.</span>
+<span class="w">        </span><span class="sd">"""Get the node of the kernel function.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        Node</span>
 <span class="sd">            The node of the kernel function.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
     <span class="nd">@property</span>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">center</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the center of the kernel function.</span>
+<span class="w">        </span><span class="sd">"""Get the center of the kernel function.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        np.ndarray</span>
 <span class="sd">            The center of the kernel function.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
     <span class="nd">@property</span>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">updateCenter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">center</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the center of the kernel function.</span>
+<span class="w">        </span><span class="sd">"""Set the center of the kernel function.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        center</span>
 <span class="sd">            The center of the kernel function.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">hasBoxSupport</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Whether the support of the kernel function is exactly its axis-aligned bounding box.</span>
+
+<span class="sd">        For such kernel functions a coordinate lies in the support if and only if it lies strictly</span>
+<span class="sd">        inside the bounding box, which lets callers replace a per-candidate support query by a</span>
+<span class="sd">        vectorised box test. Kernel functions whose support is a subset of their bounding box</span>
+<span class="sd">        (a sphere, for instance) must return False.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">            True if the support coincides with the strict interior of the bounding box.</span>
+<span class="sd">        """</span>
 
 <div class="viewcode-block" id="BaseMeshfreeKernelFunction.getCurrentBoundingBox">
 <a class="viewcode-back" href="../../../../../documentation/meshfree.html#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.getCurrentBoundingBox">[docs]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">getCurrentBoundingBox</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the bounding box of the kernel function.</span>
+<span class="w">        </span><span class="sd">"""Get the bounding box of the kernel function.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        tuple[np.ndarray, np.ndarray]</span>
 <span class="sd">            The bounding box of the kernel function.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div>
+<span class="sd">        """</span></div>
 
 
 <div class="viewcode-block" id="BaseMeshfreeKernelFunction.isCoordinateInCurrentSupport">
 <a class="viewcode-back" href="../../../../../documentation/meshfree.html#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.isCoordinateInCurrentSupport">[docs]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">isCoordinateInCurrentSupport</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if the given coordinates are in the support of the kernel function.</span>
+<span class="w">        </span><span class="sd">"""Check if the given coordinates are in the support of the kernel function.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -190,14 +206,14 @@
 <span class="sd">        -------</span>
 <span class="sd">        bool</span>
 <span class="sd">            True if the coordinates are in the support of the kernel function, False otherwise.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div>
+<span class="sd">        """</span></div>
 
 
 <div class="viewcode-block" id="BaseMeshfreeKernelFunction.isAnyCoordinateInSupport">
 <a class="viewcode-back" href="../../../../../documentation/meshfree.html#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.isAnyCoordinateInSupport">[docs]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">isAnyCoordinateInSupport</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if any of the given coordinates are in the support of the kernel function.</span>
+<span class="w">        </span><span class="sd">"""Check if any of the given coordinates are in the support of the kernel function.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -208,7 +224,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        bool</span>
 <span class="sd">            True if any of the coordinates are in the support of the kernel function, False otherwise.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div>
+<span class="sd">        """</span></div>
 </div>
 
 </pre></div>

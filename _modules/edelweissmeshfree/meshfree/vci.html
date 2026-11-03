@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>edelweissmeshfree.meshfree.vci &mdash; EdelweissMeshfree v25.08 documentation</title>
+  <title>edelweissmeshfree.meshfree.vci &mdash; EdelweissMeshfree v26.11 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css?v=1d735308" />
@@ -13,9 +13,9 @@
   
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=83aae4bb"></script>
-      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/documentation_options.js?v=57c4c7c7"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -44,7 +44,7 @@
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../gallery.html">Gallery</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../references.html">References</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../documentation/index.html">Documentation</a></li>
 </ul>
 
@@ -82,7 +82,7 @@
 <span class="c1"># | |__| (_| |  __/ |\ V  V /  __/ \__ \__ \</span>
 <span class="c1"># |_____\__,_|\___|_| \_/\_/_\___|_|___/___/</span>
 <span class="c1"># |  \/  | ___  ___| |__  / _|_ __ ___  ___</span>
-<span class="c1"># | |\/| |/ _ \/ __| &#39;_ \| |_| &#39;__/ _ \/ _ \</span>
+<span class="c1"># | |\/| |/ _ \/ __| '_ \| |_| '__/ _ \/ _ \</span>
 <span class="c1"># | |  | |  __/\__ \ | | |  _| | |  __/  __/</span>
 <span class="c1"># |_|  |_|\___||___/_| |_|_| |_|  \___|\___|</span>
 <span class="c1">#</span>
@@ -108,7 +108,7 @@
 <span class="c1">#  The full text of the license can be found in the file LICENSE.md at</span>
 <span class="c1">#  the top level directory of EdelweissMeshfree.</span>
 <span class="c1">#  ---------------------------------------------------------------------</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="sd">Variationally Consistent Integration is a concept by Chen, Hillman and Ruter (2013) to ensure Galerkin exactness of meshfree methods</span>
 <span class="sd">by employing a Petrov-Galerkin formulation.</span>
 
@@ -119,7 +119,7 @@
 <span class="sd">The correction cannot be computed locally (i.e., for each particle during the weak form computation), as it requires</span>
 <span class="sd">global volume and boundary integrals.</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
@@ -142,7 +142,7 @@
 <div class="viewcode-block" id="VariationallyConsistentIntegrationManager">
 <a class="viewcode-back" href="../../../documentation/meshfree.html#edelweissmeshfree.meshfree.vci.VariationallyConsistentIntegrationManager">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">VariationallyConsistentIntegrationManager</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A class to describe the potential interaction between a set of particles and a set of kernel kernel functions.</span>
+<span class="w">    </span><span class="sd">"""A class to describe the potential interaction between a set of particles and a set of kernel kernel functions.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -154,7 +154,7 @@
 <span class="sd">        The list of particle boundary definitions used for the boundary integrals.</span>
 <span class="sd">    nDim</span>
 <span class="sd">        The number of dimensions of the problem (e.g., 2D or 3D).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -180,10 +180,10 @@
 
         <span class="n">nTestFunctions</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">global_testFunction_indices</span><span class="p">)</span>
 
-        <span class="c1"># print(&quot;Kernel function indices: &quot;, kfIndices)</span>
+        <span class="c1"># print("Kernel function indices: ", kfIndices)</span>
         <span class="c1"># sizeResiduals = nShape * self._nVCIConstraints * self._nDim # for integrals/residuals in total (global)</span>
 
-        <span class="c1"># for computing the particles&#39; contributions to the integrals, we employ a larger vector,</span>
+        <span class="c1"># for computing the particles' contributions to the integrals, we employ a larger vector,</span>
         <span class="c1"># which contains the contributions of all particles for each kernel function</span>
         <span class="n">size_gather_for_testFunctions</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_particles</span><span class="p">:</span>
@@ -252,10 +252,10 @@
                 <span class="n">Psi_PGrad_Integral</span><span class="p">[</span><span class="n">gather_TestFunction_indices_to_global</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">+=</span> <span class="n">gather_Psi_PGrad_Integral</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
                 <span class="n">mMatrices</span><span class="p">[</span><span class="n">gather_TestFunction_indices_to_global</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">+=</span> <span class="n">gather_mMatrices</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
 
-            <span class="c1"># print(&quot;Boundary integrals: &quot;, boundaryIntegrals)</span>
-            <span class="c1"># print(&quot;Volume integrals: &quot;, volumeIntegrals)</span>
-            <span class="c1"># print(&quot;Diff: &quot;, volumeIntegrals - boundaryIntegrals)</span>
-            <span class="c1"># print(&quot;Kernel localization integrals: &quot;, kernelLocalizationIntegrals)</span>
+            <span class="c1"># print("Boundary integrals: ", boundaryIntegrals)</span>
+            <span class="c1"># print("Volume integrals: ", volumeIntegrals)</span>
+            <span class="c1"># print("Diff: ", volumeIntegrals - boundaryIntegrals)</span>
+            <span class="c1"># print("Kernel localization integrals: ", kernelLocalizationIntegrals)</span>
 
             <span class="c1"># now we can compute the correction terms</span>
             <span class="c1"># residual = Psi_P_BoundaryIntegral - PsiGrad_P_Integral - Psi_PGrad_Integral</span>
@@ -264,13 +264,13 @@
             <span class="c1"># print(residual.reshape( (nTestFunctions, -1)))</span>
             <span class="c1"># print max abs of residual</span>
             <span class="c1"># max_residual = np.max(np.abs(residual))</span>
-            <span class="c1"># print(&quot;Max residual: &quot;, max_residual)</span>
+            <span class="c1"># print("Max residual: ", max_residual)</span>
 
             <span class="c1"># print(mMatrices.flatten())</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nVCIConstraints</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">eta_AjC</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-                    <span class="s2">&quot;ACD,AjD-&gt;AjC&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">reciprocal</span><span class="p">(</span><span class="n">mMatrices</span><span class="p">),</span> <span class="p">(</span><span class="n">Psi_P_BoundaryIntegral</span> <span class="o">-</span> <span class="n">PsiGrad_P_Integral</span><span class="p">)</span>
+                    <span class="s2">"ACD,AjD-&gt;AjC"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">reciprocal</span><span class="p">(</span><span class="n">mMatrices</span><span class="p">),</span> <span class="p">(</span><span class="n">Psi_P_BoundaryIntegral</span> <span class="o">-</span> <span class="n">PsiGrad_P_Integral</span><span class="p">)</span>
                 <span class="p">)</span>
 
             <span class="k">else</span><span class="p">:</span>
@@ -278,8 +278,14 @@
                 <span class="n">eta_AjC</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">residuals</span><span class="p">)</span>
 
                 <span class="k">for</span> <span class="n">A</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nTestFunctions</span><span class="p">):</span>
-                    <span class="c1"># eta_jC = M_A_CD^-1 * residuals_A_jC</span>
-                    <span class="n">eta_AjC</span><span class="p">[</span><span class="n">A</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">mMatrices</span><span class="p">[</span><span class="n">A</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:],</span> <span class="n">residuals</span><span class="p">[</span><span class="n">A</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+                    <span class="c1"># eta_jC = M_A_CD^-1 * residuals_A_jC.</span>
+                    <span class="c1"># The truncated pseudo-inverse equals the exact solve for</span>
+                    <span class="c1"># well-conditioned M, but caps the correction on (nearly)</span>
+                    <span class="c1"># degenerate constraint directions: on strongly distorted</span>
+                    <span class="c1"># kernel supports the higher-order moment matrix can become</span>
+                    <span class="c1"># near-singular, and a plain solve then blows up eta (NaN in</span>
+                    <span class="c1"># the first residual after the correction).</span>
+                    <span class="n">eta_AjC</span><span class="p">[</span><span class="n">A</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">pinv</span><span class="p">(</span><span class="n">mMatrices</span><span class="p">[</span><span class="n">A</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:],</span> <span class="n">rcond</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">)</span> <span class="o">@</span> <span class="n">residuals</span><span class="p">[</span><span class="n">A</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
 
             <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_particles</span><span class="p">:</span>
                 <span class="n">particle_testFunction_block_in_gather</span> <span class="o">=</span> <span class="n">particles_testFunction_blocks_in_gather</span><span class="p">[</span><span class="n">p</span><span class="p">]</span>

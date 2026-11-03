@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>edelweissmeshfree.stepactions.indirectcontrol &mdash; EdelweissMeshfree v25.08 documentation</title>
+  <title>edelweissmeshfree.stepactions.indirectcontrol &mdash; EdelweissMeshfree v26.11 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css?v=1d735308" />
@@ -13,9 +13,9 @@
   
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=83aae4bb"></script>
-      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/documentation_options.js?v=57c4c7c7"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -44,7 +44,7 @@
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../gallery.html">Gallery</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../references.html">References</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../documentation/index.html">Documentation</a></li>
 </ul>
 
@@ -82,7 +82,7 @@
 <span class="c1"># | |__| (_| |  __/ |\ V  V /  __/ \__ \__ \</span>
 <span class="c1"># |_____\__,_|\___|_| \_/\_/_\___|_|___/___/</span>
 <span class="c1"># |  \/  | ___  ___| |__  / _|_ __ ___  ___</span>
-<span class="c1"># | |\/| |/ _ \/ __| &#39;_ \| |_| &#39;__/ _ \/ _ \</span>
+<span class="c1"># | |\/| |/ _ \/ __| '_ \| |_| '__/ _ \/ _ \</span>
 <span class="c1"># | |  | |  __/\__ \ | | |  _| | |  __/  __/</span>
 <span class="c1"># |_|  |_|\___||___/_| |_|_| |_|  \___|\___|</span>
 <span class="c1">#</span>
@@ -126,9 +126,9 @@
 <div class="viewcode-block" id="IndirectControl">
 <a class="viewcode-back" href="../../../documentation/step_actions.html#edelweissmeshfree.stepactions.indirectcontrol.IndirectControl">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">IndirectControl</span><span class="p">(</span><span class="n">ArcLengthControllerBase</span><span class="p">):</span>
-    <span class="n">identification</span> <span class="o">=</span> <span class="s2">&quot;IndirectControl&quot;</span>
+    <span class="n">identification</span> <span class="o">=</span> <span class="s2">"IndirectControl"</span>
 
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;This class represent an ArcLengthControllerBase compatible</span>
+<span class="w">    </span><span class="sd">"""This class represent an ArcLengthControllerBase compatible</span>
 <span class="sd">    module for indirect (displacement) controlled simulations.</span>
 
 <span class="sd">    Parameters</span>
@@ -147,7 +147,7 @@
 <span class="sd">        The field for which the arc length parameter is computed.</span>
 <span class="sd">    journal</span>
 <span class="sd">        The journal instance for logging purposes.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -175,7 +175,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">computeDDLambda</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">dU</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span> <span class="n">ddU_0</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span> <span class="n">ddU_f</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">,</span> <span class="n">dofManager</span><span class="p">:</span> <span class="n">DofManager</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        This method is called by an arc length solver for computing the</span>
 <span class="sd">        correction to the arc length parameter.</span>
 
@@ -196,7 +196,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        float</span>
 <span class="sd">            The computed correction to the arc length parameter.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="n">mpIndices</span> <span class="o">=</span> <span class="p">[</span>
             <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>

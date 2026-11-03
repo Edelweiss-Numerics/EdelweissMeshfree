@@ -1,0 +1,402 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>edelweissmeshfree.constraints.particlelagrangiancartesianboundary &mdash; EdelweissMeshfree v26.11 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css?v=1d735308" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=57c4c7c7"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            EdelweissMeshfree
+              <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gallery.html">Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation/index.html">Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">EdelweissMeshfree</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">edelweissmeshfree.constraints.particlelagrangiancartesianboundary</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for edelweissmeshfree.constraints.particlelagrangiancartesianboundary</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.config.phenomena</span><span class="w"> </span><span class="kn">import</span> <span class="n">getFieldSize</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.surfaces.entitybasedsurface</span><span class="w"> </span><span class="kn">import</span> <span class="n">EntityBasedSurface</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.timesteppers.timestep</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeStep</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.variables.scalarvariable</span><span class="w"> </span><span class="kn">import</span> <span class="n">ScalarVariable</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.constraints.base.mpmconstraintbase</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPMConstraintBase</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.models.mpmmodel</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPMModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.particles.base.baseparticle</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseParticle</span>
+
+
+<div class="viewcode-block" id="ParticleLagrangianContactCartesianBoundaryConstraint">
+<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlelagrangiancartesianboundary.ParticleLagrangianContactCartesianBoundaryConstraint">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ParticleLagrangianContactCartesianBoundaryConstraint</span><span class="p">(</span><span class="n">MPMConstraintBase</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    This class implements a Lagrangian contact boundary constraint.</span>
+<span class="sd">    It prevents a particle from penetrating a defined boundary surface.</span>
+<span class="sd">    The constraint is applied using Lagrange multipliers to enforce the contact condition.</span>
+<span class="sd">    Only cartesian planes are supported as boundary surfaces.</span>
+
+<span class="sd">    The constraint equation is defined as:</span>
+<span class="sd">        g = n . (x - x_boundary) &lt;= 0</span>
+<span class="sd">    where n is the orientation of boundary, x is the particle position, and x_boundary is the boundary position.</span>
+
+<span class="sd">    The orientation is determined based on the initial position of the particle relative to the boundary.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    name : str</span>
+<span class="sd">        Name of the constraint.</span>
+<span class="sd">    particle : BaseParticle</span>
+<span class="sd">        The particle to which the constraint is applied.</span>
+<span class="sd">    location:</span>
+<span class="sd">        Either "center", "face" or "vertex. For face or vertex, the IDs need</span>
+<span class="sd">        to be specified in the particle definition. Note that faceIDs start (Abaqus-convention) at 1.</span>
+<span class="sd">    component : int</span>
+<span class="sd">        The component (0 for x, 1 for y, 2 for z) of</span>
+<span class="sd">        the displacement field that is constrained.</span>
+<span class="sd">    boundaryPosition : float</span>
+<span class="sd">        The position of the boundary along the specified component.</span>
+<span class="sd">    model</span>
+<span class="sd">        The simulation model.</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">particle</span><span class="p">:</span> <span class="n">BaseParticle</span><span class="p">,</span>
+        <span class="n">component</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">boundaryPosition</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">,</span>
+        <span class="n">location</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"center"</span><span class="p">,</span>
+        <span class="n">faceID</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">vertexID</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">velocity</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_field</span> <span class="o">=</span> <span class="s2">"displacement"</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span> <span class="o">=</span> <span class="n">getFieldSize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_field</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">domainSize</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_component</span> <span class="o">=</span> <span class="n">component</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reactionForce</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+        <span class="c1"># determine normal direction:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_boundaryPosition</span> <span class="o">=</span> <span class="n">boundaryPosition</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">_getConstraintLocation</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">location</span> <span class="o">==</span> <span class="s2">"center"</span><span class="p">:</span>
+                <span class="n">constraintLocation</span> <span class="o">=</span> <span class="n">particle</span><span class="o">.</span><span class="n">getCenterCoordinates</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="n">location</span> <span class="o">==</span> <span class="s2">"face"</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">faceID</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"faceID must be specified when location is 'face'."</span><span class="p">)</span>
+                <span class="n">constraintLocation</span> <span class="o">=</span> <span class="n">particle</span><span class="o">.</span><span class="n">getFaceCoordinates</span><span class="p">(</span><span class="n">faceID</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">location</span> <span class="o">==</span> <span class="s2">"vertex"</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">vertexID</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"vertexID must be specified when location is 'vertex'."</span><span class="p">)</span>
+                <span class="n">constraintLocation</span> <span class="o">=</span> <span class="n">particle</span><span class="o">.</span><span class="n">getVertexCoordinates</span><span class="p">(</span><span class="n">vertexID</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">constraintLocation</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_getConstraintLocation</span> <span class="o">=</span> <span class="n">_getConstraintLocation</span>
+
+        <span class="n">domainSize</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">domainSize</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_particle_coordinate_j</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getConstraintLocation</span><span class="p">()[</span><span class="n">component</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_particle</span> <span class="o">=</span> <span class="n">particle</span>
+
+        <span class="k">if</span> <span class="n">component</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">component</span> <span class="o">&gt;=</span> <span class="n">domainSize</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Component </span><span class="si">{</span><span class="n">component</span><span class="si">}</span><span class="s2"> is out of bounds for domain size </span><span class="si">{</span><span class="n">domainSize</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_orientation</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="k">if</span> <span class="n">boundaryPosition</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_particle_coordinate_j</span> <span class="k">else</span> <span class="o">-</span><span class="mf">1.0</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_velocity</span> <span class="o">=</span> <span class="n">velocity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_contactCurrentlyActive</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fieldsOnNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_field</span><span class="p">,</span>
+            <span class="p">]</span>
+        <span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">nDof</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">scalarVariables</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lagrangianMultipliers</span>
+
+<div class="viewcode-block" id="ParticleLagrangianContactCartesianBoundaryConstraint.getNumberOfAdditionalNeededScalarVariables">
+<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlelagrangiancartesianboundary.ParticleLagrangianContactCartesianBoundaryConstraint.getNumberOfAdditionalNeededScalarVariables">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getNumberOfAdditionalNeededScalarVariables</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span></div>
+
+
+<div class="viewcode-block" id="ParticleLagrangianContactCartesianBoundaryConstraint.assignAdditionalScalarVariables">
+<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlelagrangiancartesianboundary.ParticleLagrangianContactCartesianBoundaryConstraint.assignAdditionalScalarVariables">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">assignAdditionalScalarVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scalarVariables</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ScalarVariable</span><span class="p">]):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lagrangianMultipliers</span> <span class="o">=</span> <span class="n">scalarVariables</span></div>
+
+
+<div class="viewcode-block" id="ParticleLagrangianContactCartesianBoundaryConstraint.updateConnectivity">
+<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlelagrangiancartesianboundary.ParticleLagrangianContactCartesianBoundaryConstraint.updateConnectivity">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">updateConnectivity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+        <span class="n">nodes</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">n</span><span class="p">:</span> <span class="n">i</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">kf</span><span class="o">.</span><span class="n">node</span> <span class="k">for</span> <span class="n">kf</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_particle</span><span class="o">.</span><span class="n">kernelFunctions</span><span class="p">),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="n">n</span><span class="o">.</span><span class="n">label</span><span class="p">))</span>
+        <span class="p">}</span>
+
+        <span class="n">hasChanged</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">nodes</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="p">:</span>
+            <span class="n">hasChanged</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span> <span class="o">=</span> <span class="n">nodes</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_particle_coordinate_j</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getConstraintLocation</span><span class="p">()[</span><span class="bp">self</span><span class="o">.</span><span class="n">_component</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">hasChanged</span></div>
+
+
+<div class="viewcode-block" id="ParticleLagrangianContactCartesianBoundaryConstraint.applyConstraint">
+<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlelagrangiancartesianboundary.ParticleLagrangianContactCartesianBoundaryConstraint.applyConstraint">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">applyConstraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dU_</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">PExt</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">V</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">):</span>
+
+        <span class="n">dU_U</span> <span class="o">=</span> <span class="n">dU_</span><span class="p">[:</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span><span class="p">]</span>
+        <span class="n">dU_L</span> <span class="o">=</span> <span class="n">dU_</span><span class="p">[</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span> <span class="p">:]</span>
+        <span class="n">PExt_U</span> <span class="o">=</span> <span class="n">PExt</span><span class="p">[:</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span><span class="p">]</span>
+        <span class="n">PExt_L</span> <span class="o">=</span> <span class="n">PExt</span><span class="p">[</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span> <span class="p">:]</span>
+
+        <span class="n">K</span> <span class="o">=</span> <span class="n">V</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">nDof</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nDof</span><span class="p">))</span>
+
+        <span class="n">K_UL</span> <span class="o">=</span> <span class="n">K</span><span class="p">[:</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span><span class="p">,</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span> <span class="p">:]</span>
+        <span class="n">K_LU</span> <span class="o">=</span> <span class="n">K</span><span class="p">[</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span> <span class="p">:,</span> <span class="p">:</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span><span class="p">]</span>
+        <span class="n">K_LL</span> <span class="o">=</span> <span class="n">K</span><span class="p">[</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span> <span class="p">:,</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span> <span class="p">:]</span>
+
+        <span class="c1"># lag is the index of the lagrangian multiplier</span>
+        <span class="c1"># i is the component of the field being constrained</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_component</span>
+        <span class="n">lag</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="n">P_U_i</span> <span class="o">=</span> <span class="n">PExt_U</span><span class="p">[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span>
+        <span class="n">dU_U_j</span> <span class="o">=</span> <span class="n">dU_U</span><span class="p">[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span>
+
+        <span class="n">K_UL_j</span> <span class="o">=</span> <span class="n">K_UL</span><span class="p">[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">K_LU_j</span> <span class="o">=</span> <span class="n">K_LU</span><span class="p">[:,</span> <span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span>
+
+        <span class="n">dL_l</span> <span class="o">=</span> <span class="n">dU_L</span><span class="p">[</span><span class="n">lag</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reactionForce</span> <span class="o">=</span> <span class="n">dL_l</span>
+
+        <span class="n">N</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_particle</span><span class="o">.</span><span class="n">getInterpolationVector</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_getConstraintLocation</span><span class="p">())</span>
+
+        <span class="n">nodeIdcs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="p">[</span><span class="n">kf</span><span class="o">.</span><span class="n">node</span><span class="p">]</span> <span class="k">for</span> <span class="n">kf</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_particle</span><span class="o">.</span><span class="n">kernelFunctions</span><span class="p">]</span>
+
+        <span class="n">deltaU_j</span> <span class="o">=</span> <span class="n">N</span> <span class="o">@</span> <span class="n">dU_U_j</span><span class="p">[</span><span class="n">nodeIdcs</span><span class="p">]</span>
+
+        <span class="n">g_l</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_orientation</span> <span class="o">*</span> <span class="p">(</span>
+            <span class="n">deltaU_j</span> <span class="o">-</span> <span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_particle_coordinate_j</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_boundaryPosition</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_velocity</span> <span class="o">*</span> <span class="n">timeStep</span><span class="o">.</span><span class="n">stepProgress</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="n">gap_tol</span> <span class="o">=</span> <span class="mf">1e-13</span>
+        <span class="n">tensile_threshhold</span> <span class="o">=</span> <span class="mf">1e-13</span>
+
+        <span class="n">is_penetrating</span> <span class="o">=</span> <span class="n">g_l</span> <span class="o">&gt;=</span> <span class="o">-</span><span class="n">gap_tol</span>
+
+        <span class="n">is_in_tension</span> <span class="o">=</span> <span class="p">(</span><span class="n">dL_l</span><span class="p">)</span> <span class="o">&lt;</span> <span class="o">-</span><span class="n">tensile_threshhold</span>
+
+        <span class="n">should_be_active</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_penetrating</span> <span class="ow">or</span> <span class="n">is_in_tension</span><span class="p">:</span>
+            <span class="n">should_be_active</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">should_be_active</span><span class="p">:</span>
+            <span class="c1"># contact not active, but we need to ensure that no force is transferred</span>
+            <span class="n">PExt_L</span><span class="p">[</span><span class="n">lag</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dL_l</span>
+            <span class="n">K_LL</span><span class="p">[</span><span class="n">lag</span><span class="p">,</span> <span class="n">lag</span><span class="p">]</span> <span class="o">+=</span> <span class="mf">1.0</span>
+
+            <span class="k">return</span>
+
+        <span class="n">dg_l_dU_j</span> <span class="o">=</span> <span class="n">N</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_orientation</span>
+
+        <span class="n">P_U_i</span><span class="p">[</span><span class="n">nodeIdcs</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dL_l</span> <span class="o">*</span> <span class="n">dg_l_dU_j</span>
+        <span class="n">PExt_L</span><span class="p">[</span><span class="n">lag</span><span class="p">]</span> <span class="o">+=</span> <span class="n">g_l</span>
+
+        <span class="n">K_UL_j</span><span class="p">[</span><span class="n">nodeIdcs</span><span class="p">,</span> <span class="n">lag</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dg_l_dU_j</span>
+        <span class="n">K_LU_j</span><span class="p">[</span><span class="n">lag</span><span class="p">,</span> <span class="n">nodeIdcs</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dg_l_dU_j</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_contactCurrentlyActive</span> <span class="o">=</span> <span class="kc">True</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ParticleLagrangianContactCartesianBoundaryConstraintFactory">
+<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlelagrangiancartesianboundary.ParticleLagrangianContactCartesianBoundaryConstraintFactory">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ParticleLagrangianContactCartesianBoundaryConstraintFactory</span><span class="p">(</span>
+    <span class="n">baseName</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">boundaryPosition</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">component</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">particleCollection</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">BaseParticle</span><span class="p">]</span> <span class="o">|</span> <span class="n">EntityBasedSurface</span><span class="p">,</span>
+    <span class="n">field</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">model</span><span class="p">:</span> <span class="n">MPMModel</span><span class="p">,</span>
+    <span class="n">location</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"center"</span><span class="p">,</span>
+    <span class="n">faceID</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">vertexID</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Factory function to create ParticleLagrangianWeakDirichlet constraints on a collection of particles.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    baseName</span>
+<span class="sd">        The base name for the constraints.</span>
+<span class="sd">    boundaryPosition</span>
+<span class="sd">        The position of the boundary along the specified component.</span>
+<span class="sd">    component</span>
+<span class="sd">        The component (0 for x, 1 for y, 2 for z) of the boundary normal.</span>
+<span class="sd">    particleCollection</span>
+<span class="sd">        An iterable collection of particles or an EntityBasedSurface.</span>
+<span class="sd">    field</span>
+<span class="sd">        The field to be constrained.</span>
+<span class="sd">    model</span>
+<span class="sd">        The MPMModel instance.</span>
+<span class="sd">    location</span>
+<span class="sd">        The location on the particle to apply the constraint. Can be "center", "face", or "vertex".</span>
+<span class="sd">    faceID</span>
+<span class="sd">        The face ID if location is "face" and if particleCollection is not an EntityBasedSurface.</span>
+<span class="sd">    vertexID</span>
+<span class="sd">        The vertex ID if location is "vertex".</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        A dictionary mapping constraint names to ParticleLagrangianWeakDirichlet instances.</span>
+<span class="sd">    """</span>
+
+    <span class="n">constraints</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">particleCollection</span><span class="p">,</span> <span class="n">EntityBasedSurface</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">faceID</span><span class="p">,</span> <span class="n">particles</span> <span class="ow">in</span> <span class="n">particleCollection</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">particles</span><span class="p">):</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">baseName</span><span class="si">}</span><span class="s2">_face</span><span class="si">{</span><span class="n">faceID</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">"</span>
+                <span class="n">constraint</span> <span class="o">=</span> <span class="n">ParticleLagrangianContactCartesianBoundaryConstraint</span><span class="p">(</span>
+                    <span class="n">name</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">component</span><span class="p">,</span> <span class="n">boundaryPosition</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="s2">"face"</span><span class="p">,</span> <span class="n">faceID</span><span class="o">=</span><span class="n">faceID</span>
+                <span class="p">)</span>
+                <span class="n">constraints</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">constraint</span>
+        <span class="k">return</span> <span class="n">constraints</span>
+
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">particleCollection</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">):</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">particleCollection</span><span class="p">):</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">baseName</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">"</span>
+            <span class="n">constraint</span> <span class="o">=</span> <span class="n">ParticleLagrangianContactCartesianBoundaryConstraint</span><span class="p">(</span>
+                <span class="n">name</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">component</span><span class="p">,</span> <span class="n">boundaryPosition</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">location</span><span class="p">,</span> <span class="n">faceID</span><span class="p">,</span> <span class="n">vertexID</span>
+            <span class="p">)</span>
+            <span class="n">constraints</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">constraint</span>
+
+        <span class="k">return</span> <span class="n">constraints</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"particleCollection must be a list of particles or an EntityBasedSurface."</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Matthias Neuner.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

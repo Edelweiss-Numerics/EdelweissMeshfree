@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>edelweissmeshfree.models.mpmmodel &mdash; EdelweissMeshfree v25.08 documentation</title>
+  <title>edelweissmeshfree.models.mpmmodel &mdash; EdelweissMeshfree v26.11 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css?v=1d735308" />
@@ -13,9 +13,9 @@
   
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=83aae4bb"></script>
-      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/documentation_options.js?v=57c4c7c7"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -44,7 +44,7 @@
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../gallery.html">Gallery</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../references.html">References</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../documentation/index.html">Documentation</a></li>
 </ul>
 
@@ -82,7 +82,7 @@
 <span class="c1"># | |__| (_| |  __/ |\ V  V /  __/ \__ \__ \</span>
 <span class="c1"># |_____\__,_|\___|_| \_/\_/_\___|_|___/___/</span>
 <span class="c1"># |  \/  | ___  ___| |__  / _|_ __ ___  ___</span>
-<span class="c1"># | |\/| |/ _ \/ __| &#39;_ \| |_| &#39;__/ _ \/ _ \</span>
+<span class="c1"># | |\/| |/ _ \/ __| '_ \| |_| '__/ _ \/ _ \</span>
 <span class="c1"># | |  | |  __/\__ \ | | |  _| | |  __/  __/</span>
 <span class="c1"># |_|  |_|\___||___/_| |_|_| |_|  \___|\___|</span>
 <span class="c1">#</span>
@@ -131,7 +131,7 @@
 <div class="viewcode-block" id="MPMModel">
 <a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">MPMModel</span><span class="p">(</span><span class="n">FEModel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is is a standard mpm model tree.</span>
+<span class="w">    </span><span class="sd">"""This is is a standard mpm model tree.</span>
 <span class="sd">    It takes care of the correct number of variables,</span>
 <span class="sd">    for nodes and scalar degrees of freedom, and it manages the fields.</span>
 
@@ -139,9 +139,9 @@
 <span class="sd">    ----------</span>
 <span class="sd">    dimension</span>
 <span class="sd">        The dimension of the model.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="n">identification</span> <span class="o">=</span> <span class="s2">&quot;MPMModel&quot;</span>
+    <span class="n">identification</span> <span class="o">=</span> <span class="s2">"MPMModel"</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dimension</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cells</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1">#: The collection of Cells in the present model.</span>
@@ -163,9 +163,9 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_populateNodeFieldVariablesFromCells</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates FieldVariables on Nodes depending on the all</span>
+<span class="w">        </span><span class="sd">"""Creates FieldVariables on Nodes depending on the all</span>
 <span class="sd">        MaterialPointCells .</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
             <span class="k">for</span> <span class="n">node</span><span class="p">,</span> <span class="n">nodeFields</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">nodes</span><span class="p">,</span> <span class="n">cell</span><span class="o">.</span><span class="n">fields</span><span class="p">):</span>
                 <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">nodeFields</span><span class="p">:</span>
@@ -178,9 +178,9 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_populateNodeFieldVariablesFromCellElements</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates FieldVariables on Nodes depending on the all</span>
+<span class="w">        </span><span class="sd">"""Creates FieldVariables on Nodes depending on the all</span>
 <span class="sd">        MaterialPointCells .</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">for</span> <span class="n">cellElement</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cellElements</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
             <span class="k">for</span> <span class="n">node</span><span class="p">,</span> <span class="n">nodeFields</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">cellElement</span><span class="o">.</span><span class="n">nodes</span><span class="p">,</span> <span class="n">cellElement</span><span class="o">.</span><span class="n">fields</span><span class="p">):</span>
                 <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">nodeFields</span><span class="p">:</span>
@@ -193,18 +193,18 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_populateNodeFieldVariablesFromParticleKernelDomains</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates FieldVariables on Nodes depending on the all defined particle-kernel interactions.</span>
+<span class="w">        </span><span class="sd">"""Creates FieldVariables on Nodes depending on the all defined particle-kernel interactions.</span>
 <span class="sd">        For particles and kernels, the situation is a bit more complicated compared to elements or cells:</span>
 <span class="sd">        Unlike for elements or cells, there is no direct connection between a particle and a node.</span>
 <span class="sd">        Hence, the fields on the nodes are not necessarily known at the beginning of simulation.</span>
 
 <span class="sd">        For this reason, we force the user to tell us which particles (which have fields) are interacting with which kernelfunctions during the simulation.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="k">for</span> <span class="n">particleKernelInteraction</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">particleKernelDomains</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
             <span class="n">theFields</span> <span class="o">=</span> <span class="n">particleKernelInteraction</span><span class="o">.</span><span class="n">particles</span><span class="p">[</span>
                 <span class="mi">0</span>
-            <span class="p">]</span><span class="o">.</span><span class="n">baseFields</span>  <span class="c1"># TODO: We assume that all particles have the same fields; let&#39;s change this later</span>
+            <span class="p">]</span><span class="o">.</span><span class="n">baseFields</span>  <span class="c1"># TODO: We assume that all particles have the same fields; let's change this later</span>
             <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">theFields</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">kf</span> <span class="ow">in</span> <span class="n">particleKernelInteraction</span><span class="o">.</span><span class="n">meshfreeKernelFunctions</span><span class="p">:</span>
                     <span class="k">if</span> <span class="n">field</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kf</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">fields</span><span class="p">:</span>
@@ -214,21 +214,21 @@
 <div class="viewcode-block" id="MPMModel._prepareVariablesAndFields">
 <a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel._prepareVariablesAndFields">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_prepareVariablesAndFields</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">journal</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Prepare all variables and fields for a simulation.</span>
+<span class="w">        </span><span class="sd">"""Prepare all variables and fields for a simulation.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        journal</span>
 <span class="sd">            The journal instance.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="p">:</span>
-            <span class="n">journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span><span class="s2">&quot;Activating fields on Nodes from Cells&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">)</span>
+            <span class="n">journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span><span class="s2">"Activating fields on Nodes from Cells"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_populateNodeFieldVariablesFromCells</span><span class="p">()</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cellElements</span><span class="p">:</span>
-            <span class="n">journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span><span class="s2">&quot;Activating fields on Nodes from CellElements&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">)</span>
+            <span class="n">journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span><span class="s2">"Activating fields on Nodes from CellElements"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_populateNodeFieldVariablesFromCellElements</span><span class="p">()</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">particleKernelDomains</span><span class="p">:</span>
-            <span class="n">journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span><span class="s2">&quot;Activating fields on Nodes from Particles&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">)</span>
+            <span class="n">journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span><span class="s2">"Activating fields on Nodes from Particles"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_populateNodeFieldVariablesFromParticleKernelDomains</span><span class="p">()</span>
 
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_prepareVariablesAndFields</span><span class="p">(</span><span class="n">journal</span><span class="p">)</span></div>
@@ -237,7 +237,7 @@
 <div class="viewcode-block" id="MPMModel._prepareMaterialPoints">
 <a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel._prepareMaterialPoints">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_prepareMaterialPoints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">journal</span><span class="p">:</span> <span class="n">Journal</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Prepare elements for a simulation.</span>
+<span class="w">        </span><span class="sd">"""Prepare elements for a simulation.</span>
 <span class="sd">        In detail, sections are assigned.</span>
 
 
@@ -245,7 +245,7 @@
 <span class="sd">        ----------</span>
 <span class="sd">        journal</span>
 <span class="sd">            The journal instance.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">for</span> <span class="n">section</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sections</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
             <span class="n">section</span><span class="o">.</span><span class="n">assignSectionPropertiesToModel</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
@@ -256,7 +256,7 @@
 <div class="viewcode-block" id="MPMModel._prepareParticles">
 <a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel._prepareParticles">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_prepareParticles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">journal</span><span class="p">:</span> <span class="n">Journal</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Prepare elements for a simulation.</span>
+<span class="w">        </span><span class="sd">"""Prepare elements for a simulation.</span>
 <span class="sd">        In detail, sections are assigned.</span>
 
 
@@ -264,7 +264,7 @@
 <span class="sd">        ----------</span>
 <span class="sd">        journal</span>
 <span class="sd">            The journal instance.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># for section in self.sections.values():</span>
         <span class="c1">#     section.assignSectionPropertiesToModel(self)</span>
 
@@ -275,7 +275,7 @@
 <div class="viewcode-block" id="MPMModel.prepareYourself">
 <a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.prepareYourself">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">prepareYourself</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">journal</span><span class="p">:</span> <span class="n">Journal</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Prepare the model for a simulation.</span>
+<span class="w">        </span><span class="sd">"""Prepare the model for a simulation.</span>
 <span class="sd">        Creates the variables, bundles the fields,</span>
 <span class="sd">        and initializes elements.</span>
 
@@ -284,14 +284,14 @@
 <span class="sd">        ----------</span>
 <span class="sd">        journal</span>
 <span class="sd">            The journal instance.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">nodeSets</span><span class="p">[</span><span class="s2">&quot;all&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">NodeSet</span><span class="p">(</span><span class="s2">&quot;all&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">elementSets</span><span class="p">[</span><span class="s2">&quot;all&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ElementSet</span><span class="p">(</span><span class="s2">&quot;all&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">materialPointSets</span><span class="p">[</span><span class="s2">&quot;all&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">MaterialPointSet</span><span class="p">(</span><span class="s2">&quot;all&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">materialPoints</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">cellSets</span><span class="p">[</span><span class="s2">&quot;all&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">CellSet</span><span class="p">(</span><span class="s2">&quot;all&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">cellElementSets</span><span class="p">[</span><span class="s2">&quot;all&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">CellElementSet</span><span class="p">(</span><span class="s2">&quot;all&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cellElements</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">particleSets</span><span class="p">[</span><span class="s2">&quot;all&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ParticleSet</span><span class="p">(</span><span class="s2">&quot;all&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nodeSets</span><span class="p">[</span><span class="s2">"all"</span><span class="p">]</span> <span class="o">=</span> <span class="n">NodeSet</span><span class="p">(</span><span class="s2">"all"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">elementSets</span><span class="p">[</span><span class="s2">"all"</span><span class="p">]</span> <span class="o">=</span> <span class="n">ElementSet</span><span class="p">(</span><span class="s2">"all"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">materialPointSets</span><span class="p">[</span><span class="s2">"all"</span><span class="p">]</span> <span class="o">=</span> <span class="n">MaterialPointSet</span><span class="p">(</span><span class="s2">"all"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">materialPoints</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cellSets</span><span class="p">[</span><span class="s2">"all"</span><span class="p">]</span> <span class="o">=</span> <span class="n">CellSet</span><span class="p">(</span><span class="s2">"all"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cellElementSets</span><span class="p">[</span><span class="s2">"all"</span><span class="p">]</span> <span class="o">=</span> <span class="n">CellElementSet</span><span class="p">(</span><span class="s2">"all"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cellElements</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">particleSets</span><span class="p">[</span><span class="s2">"all"</span><span class="p">]</span> <span class="o">=</span> <span class="n">ParticleSet</span><span class="p">(</span><span class="s2">"all"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_prepareMaterialPoints</span><span class="p">(</span><span class="n">journal</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_prepareParticles</span><span class="p">(</span><span class="n">journal</span><span class="p">)</span>
@@ -300,20 +300,20 @@
 
         <span class="c1"># TODO move this to EdelweissFE</span>
         <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodeFields</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-            <span class="n">field</span><span class="o">.</span><span class="n">createFieldValueEntry</span><span class="p">(</span><span class="s2">&quot;U&quot;</span><span class="p">)</span></div>
+            <span class="n">field</span><span class="o">.</span><span class="n">createFieldValueEntry</span><span class="p">(</span><span class="s2">"U"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="MPMModel.advanceToTime">
 <a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.advanceToTime">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">advanceToTime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Accept the current state of the model and sub instances, and</span>
+<span class="w">        </span><span class="sd">"""Accept the current state of the model and sub instances, and</span>
 <span class="sd">        set the new time.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        time</span>
 <span class="sd">            The new time.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="k">for</span> <span class="n">mp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">materialPoints</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
             <span class="n">mp</span><span class="o">.</span><span class="n">acceptStateAndPosition</span><span class="p">()</span>
@@ -336,7 +336,7 @@
 <div class="viewcode-block" id="MPMModel._createNodeFieldsFromNodes">
 <a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel._createNodeFieldsFromNodes">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_createNodeFieldsFromNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">nodeSets</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">MPMNodeField</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Bundle nodal FieldVariables together in contiguous NodeFields.</span>
+<span class="w">        </span><span class="sd">"""Bundle nodal FieldVariables together in contiguous NodeFields.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -348,7 +348,7 @@
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        dict[str,NodeField]</span>
-<span class="sd">            The dictionary containing the NodeField instances for every active field.&quot;&quot;&quot;</span>
+<span class="sd">            The dictionary containing the NodeField instances for every active field."""</span>
 
         <span class="n">domainSize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">domainSize</span>
 
@@ -365,7 +365,7 @@
 <div class="viewcode-block" id="MPMModel.getActiveSubModel">
 <a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.getActiveSubModel">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">getActiveSubModel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        For many applications only a part of the model is active.</span>
 <span class="sd">        For instance, in MPM simulations only cells occupied by material points are active.</span>
 <span class="sd">        In order to create a numerical model, we need to know which part of the model is active, and which is not.</span>
@@ -375,17 +375,51 @@
 <span class="sd">        -------</span>
 <span class="sd">        MPMModel</span>
 <span class="sd">            The active sub model.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="n">activeModel</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+<span class="sd">        """</span>
 
         <span class="n">activeCells</span> <span class="o">=</span> <span class="p">{</span><span class="n">cell</span><span class="o">.</span><span class="n">number</span><span class="p">:</span> <span class="n">cell</span> <span class="k">for</span> <span class="n">mp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">materialPoints</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="n">mp</span><span class="o">.</span><span class="n">cells</span><span class="p">}</span>
+
+        <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">reducedNodeFields</span><span class="p">,</span> <span class="n">reducedNodeSets</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembleActiveDomain</span><span class="p">(</span><span class="n">activeCells</span><span class="p">)</span>
+
+        <span class="n">activeModel</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">activeModel</span><span class="o">.</span><span class="n">nodeSets</span> <span class="o">=</span> <span class="n">reducedNodeSets</span>
+        <span class="n">activeModel</span><span class="o">.</span><span class="n">nodeFields</span> <span class="o">=</span> <span class="n">reducedNodeFields</span>
+        <span class="n">activeModel</span><span class="o">.</span><span class="n">cells</span> <span class="o">=</span> <span class="n">activeCells</span>
+
+        <span class="k">return</span> <span class="n">activeModel</span></div>
+
+
+<div class="viewcode-block" id="MPMModel.assembleActiveDomain">
+<a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.assembleActiveDomain">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">assembleActiveDomain</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">activeCells</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">NodeSet</span><span class="p">,</span> <span class="n">NodeSet</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""Gather the active Nodes, and the NodeFields and NodeSets reduced onto them.</span>
+
+<span class="sd">        The single implementation of this; :meth:`getActiveSubModel` wraps it into a reduced model,</span>
+<span class="sd">        and the meshfree solvers call it directly (they already know their active cells, which need</span>
+<span class="sd">        not agree with the cells reachable from ``self.materialPoints``).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        activeCells</span>
+<span class="sd">            The currently active cells, as determined by the caller.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple</span>
+<span class="sd">            The tuple containing:</span>
+<span class="sd">                - The NodeSet of active Nodes with persistent field values (FEM).</span>
+<span class="sd">                - The NodeSet of active Nodes with volatile field values (MPM).</span>
+<span class="sd">                - The dict of NodeFields on the active Nodes.</span>
+<span class="sd">                - The dict of NodeSets reduced onto the active Nodes.</span>
+<span class="sd">        """</span>
+
+        <span class="n">cells</span> <span class="o">=</span> <span class="n">activeCells</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">activeCells</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="n">activeCells</span>
 
         <span class="n">activeNodesWithPersistentFieldValues</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span>
             <span class="n">n</span> <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">element</span><span class="o">.</span><span class="n">nodes</span>
         <span class="p">)</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">n</span> <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cellElements</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">element</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span>
 
-        <span class="n">activeNodesWithVolatileFieldValues</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">n</span> <span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="n">activeCells</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">cell</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span>
+        <span class="n">activeNodesWithVolatileFieldValues</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">n</span> <span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="n">cells</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">cell</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span>
 
         <span class="n">activeNodesWithVolatileFieldValues</span> <span class="o">|=</span> <span class="nb">set</span><span class="p">(</span>
             <span class="n">kf</span><span class="o">.</span><span class="n">node</span> <span class="k">for</span> <span class="n">particle</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">for</span> <span class="n">kf</span> <span class="ow">in</span> <span class="n">particle</span><span class="o">.</span><span class="n">kernelFunctions</span>
@@ -393,12 +427,20 @@
 
         <span class="n">activeNodes</span> <span class="o">=</span> <span class="n">activeNodesWithVolatileFieldValues</span> <span class="o">|</span> <span class="n">activeNodesWithPersistentFieldValues</span>
 
-        <span class="n">activeNodes</span> <span class="o">=</span> <span class="n">NodeSet</span><span class="p">(</span><span class="s2">&quot;activeNodes&quot;</span><span class="p">,</span> <span class="n">activeNodes</span><span class="p">)</span>
+        <span class="c1"># Node defines no __hash__, so a plain set of Node objects iterates in an address-dependent</span>
+        <span class="c1"># order that differs between runs. DofManager assigns DOF indices strictly in</span>
+        <span class="c1"># nodeField.nodes order, so leaving this unsorted made the global sparsity pattern</span>
+        <span class="c1"># irreproducible -- and with it direct-solver fill-in and AMG aggregation, i.e. solve times</span>
+        <span class="c1"># and iteration counts. Labels are unique, so sorting on them pins the numbering down</span>
+        <span class="c1"># without changing which nodes are active. Guarded by dof_ordering_test.py.</span>
+        <span class="n">activeNodes</span> <span class="o">=</span> <span class="n">NodeSet</span><span class="p">(</span><span class="s2">"activeNodes"</span><span class="p">,</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">activeNodes</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="n">n</span><span class="o">.</span><span class="n">label</span><span class="p">))</span>
         <span class="n">activeNodesWithPersistentFieldValues</span> <span class="o">=</span> <span class="n">NodeSet</span><span class="p">(</span>
-            <span class="s2">&quot;activeNodesWithPersistentFieldvalues&quot;</span><span class="p">,</span> <span class="n">activeNodesWithPersistentFieldValues</span>
+            <span class="s2">"activeNodesWithPersistentFieldvalues"</span><span class="p">,</span>
+            <span class="nb">sorted</span><span class="p">(</span><span class="n">activeNodesWithPersistentFieldValues</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="n">n</span><span class="o">.</span><span class="n">label</span><span class="p">),</span>
         <span class="p">)</span>
         <span class="n">activeNodesWithVolatileFieldValues</span> <span class="o">=</span> <span class="n">NodeSet</span><span class="p">(</span>
-            <span class="s2">&quot;activeNodesWithVolatileFieldValues&quot;</span><span class="p">,</span> <span class="n">activeNodesWithVolatileFieldValues</span>
+            <span class="s2">"activeNodesWithVolatileFieldValues"</span><span class="p">,</span>
+            <span class="nb">sorted</span><span class="p">(</span><span class="n">activeNodesWithVolatileFieldValues</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="n">n</span><span class="o">.</span><span class="n">label</span><span class="p">),</span>
         <span class="p">)</span>
 
         <span class="n">reducedNodeFields</span> <span class="o">=</span> <span class="p">{</span>
@@ -407,49 +449,51 @@
         <span class="p">}</span>
 
         <span class="n">reducedNodeSets</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">nodeSet</span><span class="p">:</span> <span class="n">NodeSet</span><span class="p">(</span><span class="n">nodeSet</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">set</span><span class="p">(</span><span class="n">activeNodes</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">nodeSet</span><span class="p">))</span> <span class="k">for</span> <span class="n">nodeSet</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodeSets</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+            <span class="n">nodeSet</span><span class="p">:</span> <span class="n">NodeSet</span><span class="p">(</span><span class="n">nodeSet</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">activeNodes</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">nodeSet</span><span class="p">),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="n">n</span><span class="o">.</span><span class="n">label</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">nodeSet</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodeSets</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
         <span class="p">}</span>
 
-        <span class="n">activeModel</span><span class="o">.</span><span class="n">nodeSets</span> <span class="o">=</span> <span class="n">reducedNodeSets</span>
-        <span class="n">activeModel</span><span class="o">.</span><span class="n">nodeFields</span> <span class="o">=</span> <span class="n">reducedNodeFields</span>
-        <span class="n">activeModel</span><span class="o">.</span><span class="n">cells</span> <span class="o">=</span> <span class="n">activeCells</span>
-
-        <span class="k">return</span> <span class="n">activeModel</span></div>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">activeNodesWithPersistentFieldValues</span><span class="p">,</span>
+            <span class="n">activeNodesWithVolatileFieldValues</span><span class="p">,</span>
+            <span class="n">reducedNodeFields</span><span class="p">,</span>
+            <span class="n">reducedNodeSets</span><span class="p">,</span>
+        <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="MPMModel.makePrettyTableSummary">
 <a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.makePrettyTableSummary">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">makePrettyTableSummary</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a pretty table with a summary of the model properties.&quot;&quot;&quot;</span>
-        <span class="n">prettytable</span> <span class="o">=</span> <span class="n">PrettyTable</span><span class="p">((</span><span class="s2">&quot;model property&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+<span class="w">        </span><span class="sd">"""Create a pretty table with a summary of the model properties."""</span>
+        <span class="n">prettytable</span> <span class="o">=</span> <span class="n">PrettyTable</span><span class="p">((</span><span class="s2">"model property"</span><span class="p">,</span> <span class="s2">""</span><span class="p">))</span>
 
-        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">&quot;domain dim.&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">domainSize</span><span class="p">))</span>
-        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">&quot;time&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">time</span><span class="p">))</span>
-        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">&quot;nodes&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">)))</span>
-        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">&quot;elements&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">elements</span><span class="p">)))</span>
-        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">&quot;node sets&quot;</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodeSets</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
-        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">&quot;node fields&quot;</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodeFields</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
-        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">&quot;element sets&quot;</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">elementSets</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
-        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">&quot;sections&quot;</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sections</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
-        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">&quot;surfaces&quot;</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surfaces</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
-        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">&quot;constraints&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">constraints</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
-        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">&quot;constraint sets&quot;</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">constraintSets</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
-        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">&quot;materials&quot;</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">materials</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
-        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">&quot;analytical fields&quot;</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">analyticalFields</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
-        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">&quot;scalar vars.&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scalarVariables</span><span class="p">)))</span>
-        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">&quot;material points&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">materialPoints</span><span class="p">)))</span>
-        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">&quot;cells&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="p">)))</span>
-        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">&quot;cell elements&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cellElements</span><span class="p">)))</span>
-        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">&quot;material point sets&quot;</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">materialPointSets</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
-        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">&quot;cell sets&quot;</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cellSets</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
-        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">&quot;cell element sets&quot;</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cellElementSets</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
-        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">&quot;particles&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="p">)))</span>
-        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">&quot;particle sets&quot;</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">particleSets</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
-        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">&quot;meshfree kernel functions&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">meshfreeKernelFunctions</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
-        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">&quot;particle kernel domains&quot;</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">particleKernelDomains</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
+        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">"domain dim."</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">domainSize</span><span class="p">))</span>
+        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">"time"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">time</span><span class="p">))</span>
+        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">"nodes"</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">)))</span>
+        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">"elements"</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">elements</span><span class="p">)))</span>
+        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">"node sets"</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodeSets</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
+        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">"node fields"</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodeFields</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
+        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">"element sets"</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">elementSets</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
+        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">"sections"</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sections</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
+        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">"surfaces"</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surfaces</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
+        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">"constraints"</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">constraints</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
+        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">"constraint sets"</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">constraintSets</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
+        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">"materials"</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">materials</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
+        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">"analytical fields"</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">analyticalFields</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
+        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">"scalar vars."</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scalarVariables</span><span class="p">)))</span>
+        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">"material points"</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">materialPoints</span><span class="p">)))</span>
+        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">"cells"</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="p">)))</span>
+        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">"cell elements"</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cellElements</span><span class="p">)))</span>
+        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">"material point sets"</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">materialPointSets</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
+        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">"cell sets"</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cellSets</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
+        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">"cell element sets"</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cellElementSets</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
+        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">"particles"</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="p">)))</span>
+        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">"particle sets"</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">particleSets</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
+        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">"meshfree kernel functions"</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">meshfreeKernelFunctions</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
+        <span class="n">prettytable</span><span class="o">.</span><span class="n">add_row</span><span class="p">((</span><span class="s2">"particle kernel domains"</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">particleKernelDomains</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
 
-        <span class="n">prettytable</span><span class="o">.</span><span class="n">min_width</span><span class="p">[</span><span class="s2">&quot;model property&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">80</span>
-        <span class="n">prettytable</span><span class="o">.</span><span class="n">align</span> <span class="o">=</span> <span class="s2">&quot;l&quot;</span>
+        <span class="n">prettytable</span><span class="o">.</span><span class="n">min_width</span><span class="p">[</span><span class="s2">"model property"</span><span class="p">]</span> <span class="o">=</span> <span class="mi">80</span>
+        <span class="n">prettytable</span><span class="o">.</span><span class="n">align</span> <span class="o">=</span> <span class="s2">"l"</span>
 
         <span class="k">return</span> <span class="n">prettytable</span></div>
 
@@ -457,35 +501,35 @@
 <div class="viewcode-block" id="MPMModel.writeRestart">
 <a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.writeRestart">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">writeRestart</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">restartFile</span><span class="p">:</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write the current state of the model to a restart file.</span>
+<span class="w">        </span><span class="sd">"""Write the current state of the model to a restart file.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        fileName</span>
 <span class="sd">            The name of the restart file.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">writeRestart</span><span class="p">(</span><span class="n">restartFile</span><span class="p">)</span>
 
         <span class="n">f</span> <span class="o">=</span> <span class="n">restartFile</span>
 
         <span class="c1"># particles</span>
-        <span class="n">f</span><span class="o">.</span><span class="n">create_group</span><span class="p">(</span><span class="s2">&quot;particles&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">create_group</span><span class="p">(</span><span class="s2">"particles"</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
             <span class="n">theData</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">getRestartData</span><span class="p">()</span>
-            <span class="n">f</span><span class="p">[</span><span class="s2">&quot;particles&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">number</span><span class="p">),</span> <span class="n">data</span><span class="o">=</span><span class="n">theData</span><span class="p">)</span></div>
+            <span class="n">f</span><span class="p">[</span><span class="s2">"particles"</span><span class="p">]</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">number</span><span class="p">),</span> <span class="n">data</span><span class="o">=</span><span class="n">theData</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="MPMModel.readRestart">
 <a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.readRestart">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">readRestart</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">restartFile</span><span class="p">:</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read the state of the model from a restart file.</span>
+<span class="w">        </span><span class="sd">"""Read the state of the model from a restart file.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        fileName</span>
 <span class="sd">            The name of the restart file.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">readRestart</span><span class="p">(</span><span class="n">restartFile</span><span class="p">)</span>
 
@@ -493,7 +537,7 @@
 
         <span class="c1"># particles</span>
         <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-            <span class="n">theData</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="s2">&quot;particles&quot;</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">number</span><span class="p">)]</span>
+            <span class="n">theData</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="s2">"particles"</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">number</span><span class="p">)]</span>
             <span class="n">p</span><span class="o">.</span><span class="n">readRestartData</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">theData</span><span class="p">))</span></div>
 </div>
 

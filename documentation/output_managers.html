@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Output managers &mdash; EdelweissMeshfree v25.08 documentation</title>
+  <title>Output managers &mdash; EdelweissMeshfree v26.11 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=1d735308" />
@@ -14,12 +14,13 @@
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=83aae4bb"></script>
-      <script src="../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/documentation_options.js?v=57c4c7c7"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Configuration and Libraries" href="configuration.html" />
     <link rel="prev" title="Numerical tools" href="numeric_tools.html" /> 
 </head>
 
@@ -46,7 +47,7 @@
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../gallery.html">Gallery</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../references.html">References</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">Documentation</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="organization.html">Code organization</a></li>
 <li class="toctree-l2"><a class="reference internal" href="models.html">Models</a></li>
@@ -54,6 +55,8 @@
 <li class="toctree-l2"><a class="reference internal" href="cellelements.html">Cellelements</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mpm/material_points.html">Material Points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="solvers.html">Solvers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="choosing_a_solver.html">Choosing a linear solver</a></li>
+<li class="toctree-l2"><a class="reference internal" href="assembly.html">System matrix assembly</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mpm/material_point_managers.html">Material Point Managers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="model_generators.html">Model generators</a></li>
 <li class="toctree-l2"><a class="reference internal" href="particles.html">Particles</a></li>
@@ -65,7 +68,18 @@
 <li class="toctree-l2"><a class="reference internal" href="step_actions.html">Step actions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="constraints.html">Constraints</a></li>
 <li class="toctree-l2"><a class="reference internal" href="numeric_tools.html">Numerical tools</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Output managers</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Output managers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#edelweissmeshfree.outputmanagers.ensight.OutputManager"><code class="docutils literal notranslate"><span class="pre">OutputManager</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.outputmanagers.ensight.OutputManager._getTargetPartForFieldOutput"><code class="docutils literal notranslate"><span class="pre">OutputManager._getTargetPartForFieldOutput()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.outputmanagers.ensight.OutputManager.identification"><code class="docutils literal notranslate"><span class="pre">OutputManager.identification</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#edelweissmeshfree.outputmanagers.ensight.createUnstructuredPartFromCellSet"><code class="docutils literal notranslate"><span class="pre">createUnstructuredPartFromCellSet()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#edelweissmeshfree.outputmanagers.ensight.createUnstructuredPartFromMaterialPointSet"><code class="docutils literal notranslate"><span class="pre">createUnstructuredPartFromMaterialPointSet()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#edelweissmeshfree.outputmanagers.ensight.createUnstructuredPartFromParticleSet"><code class="docutils literal notranslate"><span class="pre">createUnstructuredPartFromParticleSet()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="configuration.html">Configuration and Libraries</a></li>
 </ul>
 </li>
 </ul>
@@ -95,8 +109,179 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="output-managers">
-<h1>Output managers<a class="headerlink" href="#output-managers" title="Link to this heading"></a></h1>
+  <section id="module-edelweissmeshfree.outputmanagers.ensight">
+<span id="output-managers"></span><h1>Output managers<a class="headerlink" href="#module-edelweissmeshfree.outputmanagers.ensight" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.outputmanagers.ensight.OutputManager">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.outputmanagers.ensight.</span></span><span class="sig-name descname"><span class="pre">OutputManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fieldOutputController</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">journal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotter</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">exportCellSetParts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exportCellElementSetParts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exportMPSetParts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exportParticleSetParts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">configuration</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">EnsightSchema(perNode=(),</span> <span class="pre">perElement=(),</span> <span class="pre">configurations=(),</span> <span class="pre">intermediateSaveInterval=None,</span> <span class="pre">minDTForOutput=None)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/outputmanagers/ensight.html#OutputManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.outputmanagers.ensight.OutputManager" title="Link to this definition"></a></dt>
+<dd><p>Constructible standalone, with no parser involvement. Options arrive as an
+already-validated, already-typed schema instance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – The name of this output manager.</p></li>
+<li><p><strong>model</strong> – The model tree.</p></li>
+<li><p><strong>fieldOutputController</strong> – The field output controller instance.</p></li>
+<li><p><strong>journal</strong> – The journal instance for logging.</p></li>
+<li><p><strong>plotter</strong> – The plotter instance.</p></li>
+<li><p><strong>configuration</strong> (<em>EnsightSchema</em>) – The options this output manager accepts, including its <code class="docutils literal notranslate"><span class="pre">&gt;&gt;perNode</span></code>, <code class="docutils literal notranslate"><span class="pre">&gt;&gt;perElement</span></code>
+and <code class="docutils literal notranslate"><span class="pre">&gt;&gt;configuration</span></code> blocks.</p></li>
+<li><p><strong>exportCellSetParts</strong> (<em>bool</em>)</p></li>
+<li><p><strong>exportCellElementSetParts</strong> (<em>bool</em>)</p></li>
+<li><p><strong>exportMPSetParts</strong> (<em>bool</em>)</p></li>
+<li><p><strong>exportParticleSetParts</strong> (<em>bool</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Attributes<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>checkpointedState</strong></dt><dd></dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyOptionsOverride</span></code>(fieldValues)</p></td>
+<td><p>Adjust the running export's intermediate-save interval and/or minimum output spacing.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">createPerElementOutput</span></code>(fieldOutput[, part, ...])</p></td>
+<td><p>Create a per element output job.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">createPerNodeOutput</span></code>(fieldOutput[, part, ...])</p></td>
+<td><p>Create a per node output job.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">finalizeFailedIncrement</span></code>(**kwargs)</p></td>
+<td><p>Finalize the output at the end of a time increment.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">finalizeIncrement</span></code>(**kwargs)</p></td>
+<td><p>Finalize the output at the end of a time increment.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">finalizeJob</span></code>()</p></td>
+<td><p>Finalize the output at the end of a job.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">finalizeStep</span></code>()</p></td>
+<td><p>Finalize the output the end of a step.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getRestartData</span></code>()</p></td>
+<td><p>This export's transient-sequence bookkeeping: each Ensight time/file set's history of already-written time values (flattened CSR-style, since sets can have different lengths), which geometry trends have ever been written (name -&gt; time/file set number -- unlike variable trends, which get (re-)registered on every write regardless of mesh change and so self-heal on resume, a geometry trend is only (re-)registered when the mesh actually changes; a resumed run whose mesh happens to be already stable would otherwise never re-register it, leaving the <code class="docutils literal notranslate"><span class="pre">.case</span></code> file's <code class="docutils literal notranslate"><span class="pre">GEOMETRY</span></code> section without its <code class="docutils literal notranslate"><span class="pre">model:</span></code> line even though the geometry file itself exists on disk from before the resume), plus the mesh signature and <code class="docutils literal notranslate"><span class="pre">timeAtLastOutput</span></code> used to decide whether to write a fresh geometry chunk / throttle output.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">initializeJob</span></code>()</p></td>
+<td><p>Initalize the output manager at the beginning of a step.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">initializeStep</span></code>(step)</p></td>
+<td><p>Initalize the output manager at the beginning of a step.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">schema</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setRestartData</span></code>(data)</p></td>
+<td><p>Restore this export's transient-sequence bookkeeping from a restart checkpoint written by <code class="xref py py-meth docutils literal notranslate"><span class="pre">getRestartData()</span></code>, so the next chunk written continues the existing sequence (correct file numbering, correct <code class="docutils literal notranslate"><span class="pre">.case</span></code> step list) instead of starting a fresh one.</p></td>
+</tr>
+</tbody>
+</table>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><strong>writeOutput</strong></p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.outputmanagers.ensight.OutputManager._getTargetPartForFieldOutput">
+<span class="sig-name descname"><span class="pre">_getTargetPartForFieldOutput</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fieldOutput</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/outputmanagers/ensight.html#OutputManager._getTargetPartForFieldOutput"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.outputmanagers.ensight.OutputManager._getTargetPartForFieldOutput" title="Link to this definition"></a></dt>
+<dd><p>Determine depending on the specified input,
+for which Part the result should be written.
+If no input is specified, the associated set of the :class:<a href="#id1"><span class="problematic" id="id2">`</span></a>FieldOutput is taken.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>fieldOutput</strong> – The :class:<a href="#id3"><span class="problematic" id="id4">`</span></a>FieldOutput which contains the result</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The identified part.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>EnsightStructuredPart</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.outputmanagers.ensight.OutputManager.identification">
+<span class="sig-name descname"><span class="pre">identification</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'Ensight</span> <span class="pre">Export'</span></span><a class="headerlink" href="#edelweissmeshfree.outputmanagers.ensight.OutputManager.identification" title="Link to this definition"></a></dt>
+<dd><p>The output manager for the Ensight export.
+This class is responsible for the creation of the Ensight parts</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – The name of the output manager.</p></li>
+<li><p><strong>model</strong> – The model to which the output manager is attached.</p></li>
+<li><p><strong>fieldOutputController</strong> – The field output controller.</p></li>
+<li><p><strong>journal</strong> – The journal instance for logging purposes.</p></li>
+<li><p><strong>plotter</strong> – The plotter instance for plotting purposes.</p></li>
+<li><p><strong>exportCellSetParts</strong> – Whether to export cell set parts.</p></li>
+<li><p><strong>exportCellElementSetParts</strong> – Whether to export cell element set parts.</p></li>
+<li><p><strong>exportMPSetParts</strong> – Whether to export material point set parts.</p></li>
+<li><p><strong>exportParticleSetParts</strong> – Whether to export particle set parts.</p></li>
+<li><p><strong>configuration</strong> – The options this output manager accepts, forwarded verbatim to the FE base class – see
+<code class="xref py py-class docutils literal notranslate"><span class="pre">EnsightSchema</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edelweissmeshfree.outputmanagers.ensight.createUnstructuredPartFromCellSet">
+<span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.outputmanagers.ensight.</span></span><span class="sig-name descname"><span class="pre">createUnstructuredPartFromCellSet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cellPartName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cells</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">partID</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/outputmanagers/ensight.html#createUnstructuredPartFromCellSet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.outputmanagers.ensight.createUnstructuredPartFromCellSet" title="Link to this definition"></a></dt>
+<dd><p>Determines the cell and node list for an Ensightpart from an
+cell set. The reduced, unique node set is generated, as well as
+the cell to node index mapping for the ensight part.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cellSet</strong> – The list of cells defining this part.</p></li>
+<li><p><strong>partID</strong> (<em>int</em>) – The id of this part.</p></li>
+<li><p><strong>cells</strong> (<em>list</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edelweissmeshfree.outputmanagers.ensight.createUnstructuredPartFromMaterialPointSet">
+<span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.outputmanagers.ensight.</span></span><span class="sig-name descname"><span class="pre">createUnstructuredPartFromMaterialPointSet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mpPartName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">partID</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/outputmanagers/ensight.html#createUnstructuredPartFromMaterialPointSet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.outputmanagers.ensight.createUnstructuredPartFromMaterialPointSet" title="Link to this definition"></a></dt>
+<dd><p>Determines the mp and node list for an Ensightpart from an
+mp set. The reduced, unique node set is generated, as well as
+the mp to node index mapping for the ensight part.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mpSet</strong> – The list of mps defining this part.</p></li>
+<li><p><strong>partID</strong> (<em>int</em>) – The id of this part.</p></li>
+<li><p><strong>mps</strong> (<em>list</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edelweissmeshfree.outputmanagers.ensight.createUnstructuredPartFromParticleSet">
+<span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.outputmanagers.ensight.</span></span><span class="sig-name descname"><span class="pre">createUnstructuredPartFromParticleSet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pPartName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">particles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">partID</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/outputmanagers/ensight.html#createUnstructuredPartFromParticleSet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.outputmanagers.ensight.createUnstructuredPartFromParticleSet" title="Link to this definition"></a></dt>
+<dd><p>Determines the mp and node list for an Ensightpart from an
+mp set. The reduced, unique node set is generated, as well as
+the mp to node index mapping for the ensight part.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mpSet</strong> – The list of mps defining this part.</p></li>
+<li><p><strong>partID</strong> (<em>int</em>) – The id of this part.</p></li>
+<li><p><strong>particles</strong> (<em>list</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 
 
@@ -104,6 +289,7 @@
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="numeric_tools.html" class="btn btn-neutral float-left" title="Numerical tools" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="configuration.html" class="btn btn-neutral float-right" title="Configuration and Libraries" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

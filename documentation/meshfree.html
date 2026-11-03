@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Meshfree utilities &mdash; EdelweissMeshfree v25.08 documentation</title>
+  <title>Meshfree utilities &mdash; EdelweissMeshfree v26.11 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=1d735308" />
@@ -14,9 +14,9 @@
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=83aae4bb"></script>
-      <script src="../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/documentation_options.js?v=57c4c7c7"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -47,7 +47,7 @@
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../gallery.html">Gallery</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../references.html">References</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">Documentation</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="organization.html">Code organization</a></li>
 <li class="toctree-l2"><a class="reference internal" href="models.html">Models</a></li>
@@ -55,6 +55,8 @@
 <li class="toctree-l2"><a class="reference internal" href="cellelements.html">Cellelements</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mpm/material_points.html">Material Points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="solvers.html">Solvers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="choosing_a_solver.html">Choosing a linear solver</a></li>
+<li class="toctree-l2"><a class="reference internal" href="assembly.html">System matrix assembly</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mpm/material_point_managers.html">Material Point Managers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="model_generators.html">Model generators</a></li>
 <li class="toctree-l2"><a class="reference internal" href="particles.html">Particles</a></li>
@@ -83,6 +85,7 @@
 <li class="toctree-l2"><a class="reference internal" href="constraints.html">Constraints</a></li>
 <li class="toctree-l2"><a class="reference internal" href="numeric_tools.html">Numerical tools</a></li>
 <li class="toctree-l2"><a class="reference internal" href="output_managers.html">Output managers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="configuration.html">Configuration and Libraries</a></li>
 </ul>
 </li>
 </ul>
@@ -118,7 +121,7 @@
 <span id="approximation-base"></span><h2>Approximation base<a class="headerlink" href="#module-edelweissmeshfree.meshfree.approximations.base.basemeshfreeapproximation" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="edelweissmeshfree.meshfree.approximations.base.basemeshfreeapproximation.BaseMeshfreeApproximation">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.meshfree.approximations.base.basemeshfreeapproximation.</span></span><span class="sig-name descname"><span class="pre">BaseMeshfreeApproximation</span></span><a class="reference internal" href="../_modules/edelweissmeshfree/meshfree/approximations/base/basemeshfreeapproximation.html#BaseMeshfreeApproximation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.meshfree.approximations.base.basemeshfreeapproximation.BaseMeshfreeApproximation" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.meshfree.approximations.base.basemeshfreeapproximation.</span></span><span class="sig-name descname"><span class="pre">BaseMeshfreeApproximation</span></span><a class="reference internal" href="../_modules/edelweissmeshfree/meshfree/approximations/base/basemeshfreeapproximation.html#BaseMeshfreeApproximation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.meshfree.approximations.base.basemeshfreeapproximation.BaseMeshfreeApproximation" title="Link to this definition"></a></dt>
 <dd><p>Base class for meshfree approximations.</p>
 <p>In meshfree methods (MLS, RKPM), based on a finite number of kernel (RKPM) or weight (MLS) functions, an approximations can be computed at any point in the domain. This class provides the interface for the computation of such approximations.</p>
 <p class="rubric">Methods</p>
@@ -131,7 +134,7 @@
 </table>
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.meshfree.approximations.base.basemeshfreeapproximation.BaseMeshfreeApproximation.computeShapeFunctionValues">
-<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">computeShapeFunctionValues</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coordinates</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernelfunctions</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/meshfree/approximations/base/basemeshfreeapproximation.html#BaseMeshfreeApproximation.computeShapeFunctionValues"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.meshfree.approximations.base.basemeshfreeapproximation.BaseMeshfreeApproximation.computeShapeFunctionValues" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">computeShapeFunctionValues</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coordinates</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernelfunctions</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/meshfree/approximations/base/basemeshfreeapproximation.html#BaseMeshfreeApproximation.computeShapeFunctionValues"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.meshfree.approximations.base.basemeshfreeapproximation.BaseMeshfreeApproximation.computeShapeFunctionValues" title="Link to this definition"></a></dt>
 <dd><p>Compute the shape function values at the given coordinates.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -157,7 +160,7 @@
 <p>Meshfree kernelfunctions are one of the core ingredients in meshfree methods.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.</span></span><span class="sig-name descname"><span class="pre">BaseMeshfreeKernelFunction</span></span><a class="reference internal" href="../_modules/edelweissmeshfree/meshfree/kernelfunctions/base/basemeshfreekernelfunction.html#BaseMeshfreeKernelFunction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.</span></span><span class="sig-name descname"><span class="pre">BaseMeshfreeKernelFunction</span></span><a class="reference internal" href="../_modules/edelweissmeshfree/meshfree/kernelfunctions/base/basemeshfreekernelfunction.html#BaseMeshfreeKernelFunction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction" title="Link to this definition"></a></dt>
 <dd><p>Base class for meshfree kernel functions.
 Shape functions are used to interpolate field solutions from the nodes to arbitrary points in the domain.
 Furthermore, they are the link between the material points and the nodes in meshfree methods.</p>
@@ -166,6 +169,8 @@ Furthermore, they are the link between the material points and the nodes in mesh
 <dt class="field-odd">Attributes<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
 <dt><a class="reference internal" href="#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.center" title="edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.center"><code class="xref py py-obj docutils literal notranslate"><span class="pre">center</span></code></a></dt><dd><p>Get the center of the kernel function.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.hasBoxSupport" title="edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.hasBoxSupport"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hasBoxSupport</span></code></a></dt><dd><p>Whether the support of the kernel function is exactly its axis-aligned bounding box.</p>
 </dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.node" title="edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.node"><code class="xref py py-obj docutils literal notranslate"><span class="pre">node</span></code></a></dt><dd><p>Get the node of the kernel function.</p>
 </dd>
@@ -190,7 +195,7 @@ Furthermore, they are the link between the material points and the nodes in mesh
 </table>
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.getCurrentBoundingBox">
-<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">getCurrentBoundingBox</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/meshfree/kernelfunctions/base/basemeshfreekernelfunction.html#BaseMeshfreeKernelFunction.getCurrentBoundingBox"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.getCurrentBoundingBox" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">getCurrentBoundingBox</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/meshfree/kernelfunctions/base/basemeshfreekernelfunction.html#BaseMeshfreeKernelFunction.getCurrentBoundingBox"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.getCurrentBoundingBox" title="Link to this definition"></a></dt>
 <dd><p>Get the bounding box of the kernel function.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -204,7 +209,7 @@ Furthermore, they are the link between the material points and the nodes in mesh
 
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.isAnyCoordinateInSupport">
-<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">isAnyCoordinateInSupport</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/meshfree/kernelfunctions/base/basemeshfreekernelfunction.html#BaseMeshfreeKernelFunction.isAnyCoordinateInSupport"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.isAnyCoordinateInSupport" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">isAnyCoordinateInSupport</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/meshfree/kernelfunctions/base/basemeshfreekernelfunction.html#BaseMeshfreeKernelFunction.isAnyCoordinateInSupport"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.isAnyCoordinateInSupport" title="Link to this definition"></a></dt>
 <dd><p>Check if any of the given coordinates are in the support of the kernel function.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -221,7 +226,7 @@ Furthermore, they are the link between the material points and the nodes in mesh
 
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.isCoordinateInCurrentSupport">
-<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">isCoordinateInCurrentSupport</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/meshfree/kernelfunctions/base/basemeshfreekernelfunction.html#BaseMeshfreeKernelFunction.isCoordinateInCurrentSupport"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.isCoordinateInCurrentSupport" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">isCoordinateInCurrentSupport</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/meshfree/kernelfunctions/base/basemeshfreekernelfunction.html#BaseMeshfreeKernelFunction.isCoordinateInCurrentSupport"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.isCoordinateInCurrentSupport" title="Link to this definition"></a></dt>
 <dd><p>Check if the given coordinates are in the support of the kernel function.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -238,7 +243,7 @@ Furthermore, they are the link between the material points and the nodes in mesh
 
 <dl class="py property">
 <dt class="sig sig-object py" id="edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.center">
-<em class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">center</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span></em><a class="headerlink" href="#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.center" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">center</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span></span><a class="headerlink" href="#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.center" title="Link to this definition"></a></dt>
 <dd><p>Get the center of the kernel function.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -251,8 +256,26 @@ Furthermore, they are the link between the material points and the nodes in mesh
 </dd></dl>
 
 <dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.hasBoxSupport">
+<span class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">hasBoxSupport</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><a class="headerlink" href="#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.hasBoxSupport" title="Link to this definition"></a></dt>
+<dd><p>Whether the support of the kernel function is exactly its axis-aligned bounding box.</p>
+<p>For such kernel functions a coordinate lies in the support if and only if it lies strictly
+inside the bounding box, which lets callers replace a per-candidate support query by a
+vectorised box test. Kernel functions whose support is a subset of their bounding box
+(a sphere, for instance) must return False.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if the support coincides with the strict interior of the bounding box.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
 <dt class="sig sig-object py" id="edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.node">
-<em class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">node</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Node</span></em><a class="headerlink" href="#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.node" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">node</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Node</span></span><a class="headerlink" href="#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.node" title="Link to this definition"></a></dt>
 <dd><p>Get the node of the kernel function.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -266,7 +289,7 @@ Furthermore, they are the link between the material points and the nodes in mesh
 
 <dl class="py property">
 <dt class="sig sig-object py" id="edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.updateCenter">
-<em class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">updateCenter</span></span><a class="headerlink" href="#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.updateCenter" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">updateCenter</span></span><a class="headerlink" href="#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.updateCenter" title="Link to this definition"></a></dt>
 <dd><p>Set the center of the kernel function.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -289,7 +312,7 @@ For certain simulations, not all particles should interact with all kernel funct
 <p>Hence, we designate possible interactions between particles and kernel functions by the ParticleKernelDomain class.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="edelweissmeshfree.meshfree.particlekerneldomain.ParticleKernelDomain">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.meshfree.particlekerneldomain.</span></span><span class="sig-name descname"><span class="pre">ParticleKernelDomain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">particles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meshfreeKernelFunctions</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/meshfree/particlekerneldomain.html#ParticleKernelDomain"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.meshfree.particlekerneldomain.ParticleKernelDomain" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.meshfree.particlekerneldomain.</span></span><span class="sig-name descname"><span class="pre">ParticleKernelDomain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">particles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meshfreeKernelFunctions</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/meshfree/particlekerneldomain.html#ParticleKernelDomain"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.meshfree.particlekerneldomain.ParticleKernelDomain" title="Link to this definition"></a></dt>
 <dd><p>A class to describe the potential interaction between a set of particles and a set of kernel kernel functions.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -317,7 +340,7 @@ The correction cannot be computed locally (i.e., for each particle during the we
 global volume and boundary integrals.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="edelweissmeshfree.meshfree.vci.VariationallyConsistentIntegrationManager">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.meshfree.vci.</span></span><span class="sig-name descname"><span class="pre">VariationallyConsistentIntegrationManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">particles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meshfreeKernelFunctions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">particleBoundaryDefinitions</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/meshfree/vci.html#VariationallyConsistentIntegrationManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.meshfree.vci.VariationallyConsistentIntegrationManager" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.meshfree.vci.</span></span><span class="sig-name descname"><span class="pre">VariationallyConsistentIntegrationManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">particles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meshfreeKernelFunctions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">particleBoundaryDefinitions</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/meshfree/vci.html#VariationallyConsistentIntegrationManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.meshfree.vci.VariationallyConsistentIntegrationManager" title="Link to this definition"></a></dt>
 <dd><p>A class to describe the potential interaction between a set of particles and a set of kernel kernel functions.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>

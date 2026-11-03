@@ -1,0 +1,883 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>edelweissmeshfree.solvers.nqsmarmotparallel &mdash; EdelweissMeshfree v26.11 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css?v=1d735308" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=57c4c7c7"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            EdelweissMeshfree
+              <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gallery.html">Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation/index.html">Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">EdelweissMeshfree</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">edelweissmeshfree.solvers.nqsmarmotparallel</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for edelweissmeshfree.solvers.nqsmarmotparallel</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1">#  ---------------------------------------------------------------------</span>
+<span class="c1">#</span>
+<span class="c1">#  _____    _      _              _</span>
+<span class="c1"># | ____|__| | ___| |_      _____(_)___ ___</span>
+<span class="c1"># |  _| / _` |/ _ \ \ \ /\ / / _ \ / __/ __|</span>
+<span class="c1"># | |__| (_| |  __/ |\ V  V /  __/ \__ \__ \</span>
+<span class="c1"># |_____\__,_|\___|_| \_/\_/_\___|_|___/___/</span>
+<span class="c1"># |  \/  | ___  ___| |__  / _|_ __ ___  ___</span>
+<span class="c1"># | |\/| |/ _ \/ __| '_ \| |_| '__/ _ \/ _ \</span>
+<span class="c1"># | |  | |  __/\__ \ | | |  _| | |  __/  __/</span>
+<span class="c1"># |_|  |_|\___||___/_| |_|_| |_|  \___|\___|</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1">#  Unit of Strength of Materials and Structural Analysis</span>
+<span class="c1">#  University of Innsbruck,</span>
+<span class="c1">#</span>
+<span class="c1">#  Research Group for Computational Mechanics of Materials</span>
+<span class="c1">#  Institute of Structural Engineering, BOKU University, Vienna</span>
+<span class="c1">#</span>
+<span class="c1">#  2023 - today</span>
+<span class="c1">#</span>
+<span class="c1">#  Matthias Neuner |  matthias.neuner@boku.ac.at</span>
+<span class="c1">#  Thomas Mader    |  thomas.mader@bokut.ac.at</span>
+<span class="c1">#</span>
+<span class="c1">#  This file is part of EdelweissMeshfree.</span>
+<span class="c1">#</span>
+<span class="c1">#  This library is free software; you can redistribute it and/or</span>
+<span class="c1">#  modify it under the terms of the GNU Lesser General Public</span>
+<span class="c1">#  License as published by the Free Software Foundation; either</span>
+<span class="c1">#  version 2.1 of the License, or (at your option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1">#  The full text of the license can be found in the file LICENSE.md at</span>
+<span class="c1">#  the top level directory of EdelweissMeshfree.</span>
+<span class="c1">#  ---------------------------------------------------------------------</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">multiprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">cpu_count</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">time</span><span class="w"> </span><span class="kn">import</span> <span class="n">perf_counter</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">edelweissfe.utils.performancetiming</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">performancetiming</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.journal.journal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Journal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.numerics.dofmanager</span><span class="w"> </span><span class="kn">import</span> <span class="n">DofManager</span><span class="p">,</span> <span class="n">DofVector</span><span class="p">,</span> <span class="n">VIJSystemMatrix</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.solvers.base.parallelization</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">computeMarmotCellsInParallel</span><span class="p">,</span>
+    <span class="n">computeMarmotMaterialPointsInParallel</span><span class="p">,</span>
+    <span class="n">computeMarmotParticlesInParallel</span><span class="p">,</span>
+    <span class="n">computeMarmotParticlesIntoCSR</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.solvers.nqs</span><span class="w"> </span><span class="kn">import</span> <span class="n">NonlinearQuasistaticSolver</span>
+
+
+<div class="viewcode-block" id="NQSParallelForMarmot">
+<a class="viewcode-back" href="../../../documentation/solvers.html#edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">NQSParallelForMarmot</span><span class="p">(</span><span class="n">NonlinearQuasistaticSolver</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""This is a parallel implemenntation of the NonlinearQuasistaticSolver.</span>
+<span class="sd">    It only works with MarmotCells and MarmotElements, as it directly accesses and exploits</span>
+<span class="sd">    the background Marmot C++ objects.</span>
+
+<span class="sd">    It uses Cython/OpenMP for evaluation those MarmotCells and MarmotMaterialPoints in a prange loop,</span>
+<span class="sd">    allowing to bypass the GIL and get decent performance.</span>
+
+<span class="sd">    The number of threads for the OpenMP loop is determined based on the cpu count,</span>
+<span class="sd">    or (higher priority) based on the environment variable OMP_NUM_THREADS.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    journal</span>
+<span class="sd">        The Journal instance for loggin purposes.</span>
+<span class="sd">    verifyDirectCSRAssembly</span>
+<span class="sd">        If True, every iteration assembles the particle contributions *twice* -- once through the</span>
+<span class="sd">        VIJ staging array, which stays the path the solve actually uses, and once straight into CSR</span>
+<span class="sd">        -- and compares the two results. Diagnostic only, and it roughly doubles the particle</span>
+<span class="sd">        assembly cost. See :meth:`_computeParticlesAndVerifyDirectCSR`.</span>
+<span class="sd">    """</span>
+
+    <span class="n">identification</span> <span class="o">=</span> <span class="s2">"NQSParallelForMarmot"</span>
+
+    <span class="c1">#: Emit a per-entry breakdown of any disagreement: how many entries differ and by how much.</span>
+    <span class="c1">#: The distinction that matters is a handful of entries off by O(1) -- a structural bug -- versus</span>
+    <span class="c1">#: every entry off by a little, which points at the arithmetic instead.</span>
+    <span class="n">directCSRDiagnostics</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="c1">#: Floor below which a relative difference between assembly paths is not interpreted at all.</span>
+    <span class="n">directCSRVerificationTolerance</span> <span class="o">=</span> <span class="mf">1e-12</span>
+
+    <span class="c1">#: Relative agreement demanded of the ``scatter`` comparison, which sums identical values in two</span>
+    <span class="c1">#: different orders. Rounding on a reduction of this size lands near 1e-16; anything at 1e-13 or</span>
+    <span class="c1">#: above is a misaddressed row, column or transposition rather than accumulated error.</span>
+    <span class="n">directCSRScatterTolerance</span> <span class="o">=</span> <span class="mf">1e-13</span>
+
+    <span class="c1">#: How far above the measured re-evaluation noise floor the fused path may land before it counts</span>
+    <span class="c1">#: as a real disagreement. Re-evaluating a particle is not bit-reproducible, so the fused kernel</span>
+    <span class="c1">#: -- which re-evaluates -- can only be held to that floor, not to zero. Its *addressing* is</span>
+    <span class="c1">#: pinned separately and exactly by the ``scatter`` comparison, which involves no re-evaluation.</span>
+    <span class="n">directCSRNoiseFactor</span> <span class="o">=</span> <span class="mf">4.0</span>
+
+    <span class="c1">#: Repeats per iteration in the assembly benchmark. Both paths are run every repeat and the</span>
+    <span class="c1">#: order is alternated, so a warm-up or a drifting machine biases neither.</span>
+    <span class="n">directCSRTimingRepeats</span> <span class="o">=</span> <span class="mi">5</span>
+
+    <span class="c1">#: Private-buffer counts to time in turn, e.g. ``(16, 4, 1)``. Empty means time only whatever the</span>
+    <span class="c1">#: assembler is currently configured with. Sweeping here rather than across separate runs keeps</span>
+    <span class="c1">#: every configuration on the same state, the same increment and the same process -- and lets one</span>
+    <span class="c1">#: offset map serve all of them, since only the buffers are reallocated.</span>
+    <span class="n">directCSRBufferSweep</span> <span class="o">=</span> <span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">journal</span><span class="p">:</span> <span class="n">Journal</span><span class="p">,</span>
+        <span class="n">verifyDirectCSRAssembly</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">timeDirectCSRAssembly</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">numThreads</span> <span class="o">=</span> <span class="n">cpu_count</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="s2">"OMP_NUM_THREADS"</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">numThreads</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"OMP_NUM_THREADS"</span><span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">verifyDirectCSRAssembly</span> <span class="o">=</span> <span class="n">verifyDirectCSRAssembly</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timeDirectCSRAssembly</span> <span class="o">=</span> <span class="n">timeDirectCSRAssembly</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">journal</span><span class="p">)</span>
+
+<div class="viewcode-block" id="NQSParallelForMarmot._computeMaterialPoints">
+<a class="viewcode-back" href="../../../documentation/solvers.html#edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._computeMaterialPoints">[docs]</a>
+    <span class="nd">@performancetiming</span><span class="o">.</span><span class="n">timeit</span><span class="p">(</span><span class="s2">"computation material points"</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_computeMaterialPoints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">materialPoints_</span><span class="p">,</span> <span class="n">time</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">dT</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">computeMarmotMaterialPointsInParallel</span><span class="p">(</span><span class="n">materialPoints_</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">dT</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">numThreads</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="NQSParallelForMarmot._computeCells">
+<a class="viewcode-back" href="../../../documentation/solvers.html#edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._computeCells">[docs]</a>
+    <span class="nd">@performancetiming</span><span class="o">.</span><span class="n">timeit</span><span class="p">(</span><span class="s2">"computation active cells"</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_computeCells</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">activeCells_</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+        <span class="n">dU</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span>
+        <span class="n">P</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span>
+        <span class="n">F</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span>
+        <span class="n">K</span><span class="p">,</span>
+        <span class="n">time</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">dT</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">theDofManager</span><span class="p">:</span> <span class="n">DofManager</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="k">if</span> <span class="n">K</span><span class="o">.</span><span class="n">vijArray</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># The threaded Marmot cell kernel writes into a slab of the staging array, which the</span>
+            <span class="c1"># direct path does not have. Fall back to the base class's sequential loop, which goes</span>
+            <span class="c1"># through the contribution object: cells are ~0.0002 s of a 3.4 s assembly here, so the</span>
+            <span class="c1"># threading is not worth a second kernel.</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_computeCells</span><span class="p">(</span><span class="n">activeCells_</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">dT</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">computeMarmotCellsInParallel</span><span class="p">(</span>
+            <span class="n">activeCells_</span><span class="p">,</span>
+            <span class="n">dU</span><span class="p">,</span>
+            <span class="n">P</span><span class="p">,</span>
+            <span class="n">F</span><span class="p">,</span>
+            <span class="n">K</span><span class="o">.</span><span class="n">vijArray</span><span class="p">,</span>
+            <span class="n">time</span><span class="p">,</span>
+            <span class="n">dT</span><span class="p">,</span>
+            <span class="n">theDofManager</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">numThreads</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="NQSParallelForMarmot._computeParticles">
+<a class="viewcode-back" href="../../../documentation/solvers.html#edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._computeParticles">[docs]</a>
+    <span class="nd">@performancetiming</span><span class="o">.</span><span class="n">timeit</span><span class="p">(</span><span class="s2">"computation particles"</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_computeParticles</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">particles_</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+        <span class="n">dU</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span>
+        <span class="n">P</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span>
+        <span class="n">F</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span>
+        <span class="n">K</span><span class="p">,</span>
+        <span class="n">time</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">dT</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">theDofManager</span><span class="p">:</span> <span class="n">DofManager</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="k">if</span> <span class="n">K</span><span class="o">.</span><span class="n">vijArray</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_computeParticlesIntoCSR</span><span class="p">(</span><span class="n">particles_</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">dT</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verifyDirectCSRAssembly</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_computeParticlesAndVerifyDirectCSR</span><span class="p">(</span><span class="n">particles_</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">K</span><span class="o">.</span><span class="n">vijArray</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">dT</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">timeDirectCSRAssembly</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_computeParticlesAndTimeDirectCSR</span><span class="p">(</span><span class="n">particles_</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">K</span><span class="o">.</span><span class="n">vijArray</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">dT</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">computeMarmotParticlesInParallel</span><span class="p">(</span>
+            <span class="n">particles_</span><span class="p">,</span>
+            <span class="n">dU</span><span class="p">,</span>
+            <span class="n">P</span><span class="p">,</span>
+            <span class="n">F</span><span class="p">,</span>
+            <span class="n">K</span><span class="o">.</span><span class="n">vijArray</span><span class="p">,</span>
+            <span class="n">time</span><span class="p">,</span>
+            <span class="n">dT</span><span class="p">,</span>
+            <span class="n">theDofManager</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">numThreads</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="NQSParallelForMarmot._computeParticlesIntoCSR">
+<a class="viewcode-back" href="../../../documentation/solvers.html#edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._computeParticlesIntoCSR">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_computeParticlesIntoCSR</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">particles_</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+        <span class="n">dU</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span>
+        <span class="n">P</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span>
+        <span class="n">F</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span>
+        <span class="n">time</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">dT</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">theDofManager</span><span class="p">:</span> <span class="n">DofManager</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Evaluate the particles straight into the CSR data, with no staging array involved.</span>
+
+<span class="sd">        The production form of what the cross-check in :meth:`_computeParticlesAndVerifyDirectCSR`</span>
+<span class="sd">        validated and the benchmark in :meth:`_computeParticlesAndTimeDirectCSR` timed. Each thread</span>
+<span class="sd">        writes its block into a small reused scratch buffer and scatters it through the offset map, so</span>
+<span class="sd">        nothing has to clear or re-read a multi-gigabyte array.</span>
+<span class="sd">        """</span>
+
+        <span class="n">assembler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_directCSRAssembler</span>
+        <span class="n">entityIds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">_directCSREntityIds</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">particles_</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">intc</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">computeMarmotParticlesIntoCSR</span><span class="p">(</span>
+            <span class="n">particles_</span><span class="p">,</span>
+            <span class="n">dU</span><span class="p">,</span>
+            <span class="n">P</span><span class="p">,</span>
+            <span class="n">F</span><span class="p">,</span>
+            <span class="n">entityIds</span><span class="p">,</span>
+            <span class="n">assembler</span><span class="o">.</span><span class="n">corePointer</span><span class="p">,</span>
+            <span class="n">time</span><span class="p">,</span>
+            <span class="n">dT</span><span class="p">,</span>
+            <span class="n">theDofManager</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">numThreads</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="NQSParallelForMarmot._computeParticlesAndVerifyDirectCSR">
+<a class="viewcode-back" href="../../../documentation/solvers.html#edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._computeParticlesAndVerifyDirectCSR">[docs]</a>
+    <span class="nd">@performancetiming</span><span class="o">.</span><span class="n">timeit</span><span class="p">(</span><span class="s2">"verification direct csr"</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_computeParticlesAndVerifyDirectCSR</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">particles_</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+        <span class="n">dU</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span>
+        <span class="n">P</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span>
+        <span class="n">F</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span>
+        <span class="n">K_VIJ</span><span class="p">:</span> <span class="n">VIJSystemMatrix</span><span class="p">,</span>
+        <span class="n">time</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">dT</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">theDofManager</span><span class="p">:</span> <span class="n">DofManager</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Assemble the particles several ways on identical state, and cross-check the results.</span>
+
+<span class="sd">        Why this lives in the solver rather than in a unit test: evaluating a particle needs a fully</span>
+<span class="sd">        prepared model -- kernel supports resolved, shape functions reconstructed, state variables</span>
+<span class="sd">        allocated -- and hand-building that state is how three earlier attempts died, each one</span>
+<span class="sd">        segfaulting inside Marmot's shape-function evaluation. Decisively, the *existing* VIJ kernel</span>
+<span class="sd">        segfaults identically in the same harness, which places the fault in the harness. Running</span>
+<span class="sd">        here instead means the comparison sees exactly the state the production path sees.</span>
+
+<span class="sd">        Three comparisons, because one alone cannot separate an addressing bug from evaluation noise:</span>
+
+<span class="sd">        ``scatter``</span>
+<span class="sd">            The blocks the VIJ path just produced, pushed through :meth:`scatterBlock` entity by</span>
+<span class="sd">            entity, against the same blocks pushed through ``assembleFromVIJ``. Identical numbers</span>
+<span class="sd">            through the identical offset map, so this isolates the addressing from any physics noise</span>
+<span class="sd">            -- it is the test of the entity registration and of the block layout. It agrees to</span>
+<span class="sd">            *rounding*, not bit-for-bit: the two sum the same contributions in different orders</span>
+<span class="sd">            (entity by entity on one thread, versus pair order across sixteen), so a difference at</span>
+<span class="sd">            the 1e-16 relative level is expected and a difference above it is an addressing error.</span>
+<span class="sd">        ``noise``</span>
+<span class="sd">            The VIJ kernel run a *second* time on the same state, against its own first result. This</span>
+<span class="sd">            is the floor: re-evaluating a particle is not guaranteed to reproduce bit-for-bit, and</span>
+<span class="sd">            without measuring that floor there is no way to read the third number.</span>
+<span class="sd">        ``fused``</span>
+<span class="sd">            The direct-to-CSR kernel, against the first VIJ result. It re-evaluates the physics, so</span>
+<span class="sd">            it can only ever be as good as ``noise``. Judged against that floor, not against zero.</span>
+
+<span class="sd">        A wrong row, column or transposition in the fused scatter shows up as an O(1) relative</span>
+<span class="sd">        difference, which no amount of evaluation noise can disguise.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        particles_</span>
+<span class="sd">            The particles to be evaluated.</span>
+<span class="sd">        dU</span>
+<span class="sd">            The current global solution increment vector.</span>
+<span class="sd">        P</span>
+<span class="sd">            The current global flux vector.</span>
+<span class="sd">        F</span>
+<span class="sd">            The accumulated nodal fluxes vector.</span>
+<span class="sd">        K_VIJ</span>
+<span class="sd">            The global system matrix in VIJ (COO) format.</span>
+<span class="sd">        time</span>
+<span class="sd">            The current time.</span>
+<span class="sd">        dT</span>
+<span class="sd">            The increment of time.</span>
+<span class="sd">        theDofManager</span>
+<span class="sd">            The DofManager instance.</span>
+<span class="sd">        """</span>
+
+        <span class="n">assembler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_directCSRAssembler</span>
+        <span class="n">particles</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">particles_</span><span class="p">)</span>
+        <span class="n">entityIds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">_directCSREntityIds</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">particles</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">intc</span><span class="p">)</span>
+
+        <span class="n">VBefore</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">K_VIJ</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">PBefore</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">P</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># ---- evaluation 1: the production path, untouched -------------------------------------</span>
+        <span class="n">computeMarmotParticlesInParallel</span><span class="p">(</span><span class="n">particles_</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">K_VIJ</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">dT</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">numThreads</span><span class="p">)</span>
+
+        <span class="c1"># cells and elements may have written before us, so the particle contribution is the delta</span>
+        <span class="n">VParticles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ascontiguousarray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">K_VIJ</span><span class="p">)</span> <span class="o">-</span> <span class="n">VBefore</span><span class="p">)</span>
+        <span class="n">PParticles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">P</span><span class="p">)</span> <span class="o">-</span> <span class="n">PBefore</span>
+
+        <span class="n">staged</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">assembler</span><span class="o">.</span><span class="n">assembleFromVIJ</span><span class="p">(</span><span class="n">VParticles</span><span class="p">)</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># ---- comparison "scatter": same values, entity-by-entity through scatterBlock ----------</span>
+        <span class="n">assembler</span><span class="o">.</span><span class="n">beginAssembly</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">particle</span> <span class="ow">in</span> <span class="n">particles</span><span class="p">:</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">idcsOfHigherOrderEntitiesInVIJ</span><span class="p">[</span><span class="n">particle</span><span class="p">]</span>
+            <span class="n">nDof</span> <span class="o">=</span> <span class="n">particle</span><span class="o">.</span><span class="n">nDof</span>
+            <span class="n">assembler</span><span class="o">.</span><span class="n">scatterBlock</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_directCSREntityIds</span><span class="p">[</span><span class="n">particle</span><span class="p">],</span> <span class="n">VParticles</span><span class="p">[</span><span class="n">start</span> <span class="p">:</span> <span class="n">start</span> <span class="o">+</span> <span class="n">nDof</span> <span class="o">*</span> <span class="n">nDof</span><span class="p">])</span>
+        <span class="n">scattered</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">assembler</span><span class="o">.</span><span class="n">reduce</span><span class="p">()</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">errScatter</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">scattered</span> <span class="o">-</span> <span class="n">staged</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+
+        <span class="c1"># ---- comparison "noise": the same kernel, evaluated a second time ----------------------</span>
+        <span class="n">VSecond</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructVIJSystemMatrix</span><span class="p">()</span>
+        <span class="n">VSecond</span><span class="p">[:]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">PSecond</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+        <span class="n">FSecond</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+        <span class="n">computeMarmotParticlesInParallel</span><span class="p">(</span>
+            <span class="n">particles_</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">PSecond</span><span class="p">,</span> <span class="n">FSecond</span><span class="p">,</span> <span class="n">VSecond</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">dT</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">numThreads</span>
+        <span class="p">)</span>
+        <span class="n">noise</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">assembler</span><span class="o">.</span><span class="n">assembleFromVIJ</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ascontiguousarray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">VSecond</span><span class="p">)))</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># ---- comparison "fused": the direct-to-CSR kernel ---------------------------------------</span>
+        <span class="n">PFused</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+        <span class="n">FFused</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+        <span class="n">assembler</span><span class="o">.</span><span class="n">beginAssembly</span><span class="p">()</span>
+        <span class="n">computeMarmotParticlesIntoCSR</span><span class="p">(</span>
+            <span class="n">particles_</span><span class="p">,</span>
+            <span class="n">dU</span><span class="p">,</span>
+            <span class="n">PFused</span><span class="p">,</span>
+            <span class="n">FFused</span><span class="p">,</span>
+            <span class="n">entityIds</span><span class="p">,</span>
+            <span class="n">assembler</span><span class="o">.</span><span class="n">corePointer</span><span class="p">,</span>
+            <span class="n">time</span><span class="p">,</span>
+            <span class="n">dT</span><span class="p">,</span>
+            <span class="n">theDofManager</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">numThreads</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">fused</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">assembler</span><span class="o">.</span><span class="n">reduce</span><span class="p">()</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># ---- comparison "fused1": the same kernel on one thread -------------------------------</span>
+        <span class="c1"># Discriminates a threading or privatisation fault from a fault in the scratch buffer: if one</span>
+        <span class="c1"># thread reproduces the VIJ result and sixteen do not, the loop is at fault, not the buffer.</span>
+        <span class="n">PFused1</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+        <span class="n">FFused1</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+        <span class="n">assembler</span><span class="o">.</span><span class="n">beginAssembly</span><span class="p">()</span>
+        <span class="n">computeMarmotParticlesIntoCSR</span><span class="p">(</span>
+            <span class="n">particles_</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">PFused1</span><span class="p">,</span> <span class="n">FFused1</span><span class="p">,</span> <span class="n">entityIds</span><span class="p">,</span> <span class="n">assembler</span><span class="o">.</span><span class="n">corePointer</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">dT</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">,</span> <span class="mi">1</span>
+        <span class="p">)</span>
+        <span class="n">fused1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">assembler</span><span class="o">.</span><span class="n">reduce</span><span class="p">()</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">scaleK</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">staged</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="n">relScatter</span> <span class="o">=</span> <span class="n">errScatter</span> <span class="o">/</span> <span class="n">scaleK</span>
+        <span class="n">relNoise</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">noise</span> <span class="o">-</span> <span class="n">staged</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">/</span> <span class="n">scaleK</span>
+        <span class="n">relFused</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">fused</span> <span class="o">-</span> <span class="n">staged</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">/</span> <span class="n">scaleK</span>
+
+        <span class="n">scaleP</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">PParticles</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="n">relNoiseP</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">PSecond</span><span class="p">)</span> <span class="o">-</span> <span class="n">PParticles</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">/</span> <span class="n">scaleP</span>
+        <span class="n">relFusedP</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">PFused</span><span class="p">)</span> <span class="o">-</span> <span class="n">PParticles</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">/</span> <span class="n">scaleP</span>
+
+        <span class="c1"># one comparison per line: the journal wraps, and a single line wide enough to hold all six</span>
+        <span class="c1"># numbers loses its tail exactly when the numbers matter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span>
+            <span class="s2">"direct CSR check: </span><span class="si">{:}</span><span class="s2"> nnz, |K| </span><span class="si">{:.3e}</span><span class="s2">, |P| </span><span class="si">{:.3e}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fused</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">scaleK</span><span class="p">,</span> <span class="n">scaleP</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">,</span>
+            <span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span>
+            <span class="s2">"  scatter: K rel </span><span class="si">{:.3e}</span><span class="s2"> (addressing, expected ~1e-16)"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">relScatter</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">,</span>
+            <span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span>
+            <span class="s2">"  noise  : K rel </span><span class="si">{:.3e}</span><span class="s2">, P rel </span><span class="si">{:.3e}</span><span class="s2"> (re-evaluation floor)"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">relNoise</span><span class="p">,</span> <span class="n">relNoiseP</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">,</span>
+            <span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span>
+            <span class="s2">"  fused  : K rel </span><span class="si">{:.3e}</span><span class="s2">, P rel </span><span class="si">{:.3e}</span><span class="s2"> (</span><span class="si">{:}</span><span class="s2"> threads)"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">relFused</span><span class="p">,</span> <span class="n">relFusedP</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">numThreads</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">,</span>
+            <span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span>
+            <span class="s2">"  fused1 : K rel </span><span class="si">{:.3e}</span><span class="s2">, P rel </span><span class="si">{:.3e}</span><span class="s2"> (1 thread)"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">fused1</span> <span class="o">-</span> <span class="n">staged</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">/</span> <span class="n">scaleK</span><span class="p">,</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">PFused1</span><span class="p">)</span> <span class="o">-</span> <span class="n">PParticles</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">/</span> <span class="n">scaleP</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">,</span>
+            <span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">directCSRDiagnostics</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_reportDirectCSRDifference</span><span class="p">(</span><span class="s2">"K"</span><span class="p">,</span> <span class="n">staged</span><span class="p">,</span> <span class="n">fused</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_reportDirectCSRDifference</span><span class="p">(</span><span class="s2">"P"</span><span class="p">,</span> <span class="n">PParticles</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">PFused</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">relScatter</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">directCSRScatterTolerance</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s2">"direct CSR scatter disagrees with assembleFromVIJ on identical values: rel </span><span class="si">{:.3e}</span><span class="s2">."</span>
+                <span class="s2">" Both sum the same contributions, so this is an addressing error."</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">relScatter</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="c1"># judged against the re-evaluation floor, with an absolute tolerance for the case where</span>
+        <span class="c1"># re-evaluation happens to be exact and the floor is therefore zero</span>
+        <span class="n">limitK</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">directCSRVerificationTolerance</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">directCSRNoiseFactor</span> <span class="o">*</span> <span class="n">relNoise</span><span class="p">)</span>
+        <span class="n">limitP</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">directCSRVerificationTolerance</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">directCSRNoiseFactor</span> <span class="o">*</span> <span class="n">relNoiseP</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">relFused</span> <span class="o">&gt;</span> <span class="n">limitK</span> <span class="ow">or</span> <span class="n">relFusedP</span> <span class="o">&gt;</span> <span class="n">limitP</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s2">"direct CSR assembly exceeds the re-evaluation noise floor: K rel </span><span class="si">{:.3e}</span><span class="s2"> (limit"</span>
+                <span class="s2">" </span><span class="si">{:.3e}</span><span class="s2">), P rel </span><span class="si">{:.3e}</span><span class="s2"> (limit </span><span class="si">{:.3e}</span><span class="s2">)"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">relFused</span><span class="p">,</span> <span class="n">limitK</span><span class="p">,</span> <span class="n">relFusedP</span><span class="p">,</span> <span class="n">limitP</span><span class="p">)</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="NQSParallelForMarmot._reportDirectCSRDifference">
+<a class="viewcode-back" href="../../../documentation/solvers.html#edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._reportDirectCSRDifference">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_reportDirectCSRDifference</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">reference</span><span class="p">,</span> <span class="n">candidate</span><span class="p">,</span> <span class="n">nWorst</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Report how a candidate array differs from a reference, entry by entry.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        label</span>
+<span class="sd">            Name of the quantity, for the log line.</span>
+<span class="sd">        reference</span>
+<span class="sd">            The values the VIJ path produced.</span>
+<span class="sd">        candidate</span>
+<span class="sd">            The values the direct-to-CSR path produced.</span>
+<span class="sd">        nWorst</span>
+<span class="sd">            How many of the largest relative differences to list.</span>
+<span class="sd">        """</span>
+
+        <span class="n">reference</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">reference</span><span class="p">)</span>
+        <span class="n">candidate</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">candidate</span><span class="p">)</span>
+
+        <span class="n">diff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">candidate</span> <span class="o">-</span> <span class="n">reference</span><span class="p">)</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">reference</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">candidate</span><span class="p">))</span>
+        <span class="n">rel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="n">diff</span><span class="p">,</span> <span class="n">scale</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">diff</span><span class="p">),</span> <span class="n">where</span><span class="o">=</span><span class="n">scale</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">)</span>
+
+        <span class="n">nDiffering</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">rel</span> <span class="o">&gt;</span> <span class="mf">1e-14</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span>
+            <span class="s2">"  </span><span class="si">{:}</span><span class="s2"> diag: </span><span class="si">{:}</span><span class="s2">/</span><span class="si">{:}</span><span class="s2"> entries differ, </span><span class="si">{:.4f}</span><span class="s2">% "</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">label</span><span class="p">,</span> <span class="n">nDiffering</span><span class="p">,</span> <span class="n">rel</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mf">100.0</span> <span class="o">*</span> <span class="n">nDiffering</span> <span class="o">/</span> <span class="n">rel</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">,</span>
+            <span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">nDiffering</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">rel</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="n">nWorst</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span>
+                <span class="s2">"    [</span><span class="si">{:}</span><span class="s2">] ref </span><span class="si">{: .8e}</span><span class="s2"> cand </span><span class="si">{: .8e}</span><span class="s2"> rel </span><span class="si">{:.3e}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">reference</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">candidate</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">rel</span><span class="p">[</span><span class="n">k</span><span class="p">]),</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">,</span>
+                <span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="NQSParallelForMarmot._reportAssemblyMemory">
+<a class="viewcode-back" href="../../../documentation/solvers.html#edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._reportAssemblyMemory">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_reportAssemblyMemory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">K_VIJ</span><span class="p">:</span> <span class="n">VIJSystemMatrix</span><span class="p">,</span> <span class="n">memoryOfBufferCount</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Report what each assembly path actually costs in memory, term by term.</span>
+
+<span class="sd">        The memory balance is the point of the direct path -- the DOF ceiling is set by it, not by</span>
+<span class="sd">        the assembly time -- and it has been misreported twice, so this prints every term rather</span>
+<span class="sd">        than a single ratio.</span>
+
+<span class="sd">        The terms are grouped by who pays for them:</span>
+
+<span class="sd">        common</span>
+<span class="sd">            ``I``/``J`` (the DofManager's COO index arrays, needed by both paths -- the direct path</span>
+<span class="sd">            to build its offset map, the VIJ path to gather), and the CSR matrix itself</span>
+<span class="sd">            (``indptr``, ``indices``, ``data``), which is the output of either path.</span>
+<span class="sd">        VIJ only</span>
+<span class="sd">            the ``sizeVIJ`` value array, plus the gather map ``gather_sources`` (int32 per COO pair)</span>
+<span class="sd">            and ``assembly_ptr`` (int32 per nnz).</span>
+<span class="sd">        direct only</span>
+<span class="sd">            the ``offsets`` map (uint16 per COO pair), the private CSR copies</span>
+<span class="sd">            (``nBuffers * nnz * 8``) and ``entityRows``. Reported once per buffer count, because</span>
+<span class="sd">            that term is the whole reason the buffer count is a knob.</span>
+
+<span class="sd">        The totals reported by the C++ cores (``CSRGenerator.memoryBytes`` and</span>
+<span class="sd">        ``DirectCSRAssembler.memoryBytes``) are printed as a cross-check on the per-term arithmetic,</span>
+<span class="sd">        so a term that is wrong here shows up as a mismatch rather than propagating silently.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        K_VIJ</span>
+<span class="sd">            The VIJ system matrix, for the value and index array sizes.</span>
+<span class="sd">        memoryOfBufferCount</span>
+<span class="sd">            ``DirectCSRAssembler.memoryBytes`` for each buffer count that was configured.</span>
+<span class="sd">        """</span>
+
+        <span class="n">gib</span> <span class="o">=</span> <span class="mf">1024.0</span><span class="o">**</span><span class="mi">3</span>
+        <span class="n">generator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_csrGenerator</span>
+
+        <span class="n">nPairs</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">K_VIJ</span><span class="p">)</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+        <span class="n">nnz</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">generator</span><span class="o">.</span><span class="n">nnz</span><span class="p">)</span>
+        <span class="n">nDof</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">K_VIJ</span><span class="o">.</span><span class="n">nDof</span><span class="p">)</span>
+
+        <span class="n">bIJ</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">K_VIJ</span><span class="o">.</span><span class="n">I</span><span class="p">)</span><span class="o">.</span><span class="n">nbytes</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">K_VIJ</span><span class="o">.</span><span class="n">J</span><span class="p">)</span><span class="o">.</span><span class="n">nbytes</span><span class="p">)</span>
+        <span class="n">bIndptr</span> <span class="o">=</span> <span class="nb">float</span><span class="p">((</span><span class="n">nDof</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="mi">4</span><span class="p">)</span>
+        <span class="n">bIndices</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">nnz</span> <span class="o">*</span> <span class="mi">4</span><span class="p">)</span>
+        <span class="n">bData</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">nnz</span> <span class="o">*</span> <span class="mi">8</span><span class="p">)</span>
+
+        <span class="n">bV</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">K_VIJ</span><span class="p">)</span><span class="o">.</span><span class="n">nbytes</span><span class="p">)</span>
+        <span class="n">bGatherSources</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">nPairs</span> <span class="o">*</span> <span class="mi">4</span><span class="p">)</span>
+        <span class="n">bAssemblyPtr</span> <span class="o">=</span> <span class="nb">float</span><span class="p">((</span><span class="n">nnz</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="mi">4</span><span class="p">)</span>
+
+        <span class="n">bOffsets</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">nPairs</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span>
+
+        <span class="n">bCommon</span> <span class="o">=</span> <span class="n">bIJ</span> <span class="o">+</span> <span class="n">bIndptr</span> <span class="o">+</span> <span class="n">bIndices</span> <span class="o">+</span> <span class="n">bData</span>
+        <span class="n">bVIJOnly</span> <span class="o">=</span> <span class="n">bV</span> <span class="o">+</span> <span class="n">bGatherSources</span> <span class="o">+</span> <span class="n">bAssemblyPtr</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span>
+            <span class="s2">"  memory: </span><span class="si">{:.3e}</span><span class="s2"> COO pairs, </span><span class="si">{:,}</span><span class="s2"> nnz (</span><span class="si">{:.0f}</span><span class="s2"> per row), </span><span class="si">{:}</span><span class="s2"> DOF, </span><span class="si">{:}</span><span class="s2"> threads"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="nb">float</span><span class="p">(</span><span class="n">nPairs</span><span class="p">),</span> <span class="n">nnz</span><span class="p">,</span> <span class="n">nnz</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">nDof</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">nDof</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">numThreads</span>
+            <span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">,</span>
+            <span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">group</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="p">(</span>
+            <span class="p">(</span><span class="s2">"common"</span><span class="p">,</span> <span class="s2">"I + J (int32 per pair)      "</span><span class="p">,</span> <span class="n">bIJ</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">"common"</span><span class="p">,</span> <span class="s2">"CSR indptr + indices        "</span><span class="p">,</span> <span class="n">bIndptr</span> <span class="o">+</span> <span class="n">bIndices</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">"common"</span><span class="p">,</span> <span class="s2">"CSR data                    "</span><span class="p">,</span> <span class="n">bData</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">"VIJ   "</span><span class="p">,</span> <span class="s2">"V staging array             "</span><span class="p">,</span> <span class="n">bV</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">"VIJ   "</span><span class="p">,</span> <span class="s2">"gather_sources (int32/pair) "</span><span class="p">,</span> <span class="n">bGatherSources</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">"VIJ   "</span><span class="p">,</span> <span class="s2">"assembly_ptr (int32/nnz)    "</span><span class="p">,</span> <span class="n">bAssemblyPtr</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">"direct"</span><span class="p">,</span> <span class="s2">"offsets (uint16/pair)       "</span><span class="p">,</span> <span class="n">bOffsets</span><span class="p">),</span>
+        <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span>
+                <span class="s2">"    </span><span class="si">{:}</span><span class="s2"> </span><span class="si">{:}</span><span class="s2"> </span><span class="si">{:8.2f}</span><span class="s2"> GiB"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">value</span> <span class="o">/</span> <span class="n">gib</span><span class="p">),</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">,</span>
+                <span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="c1"># cross-check the per-term arithmetic above against the generator's own accounting</span>
+        <span class="n">genTotal</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">generator</span><span class="o">.</span><span class="n">memoryBytes</span><span class="p">)</span>
+        <span class="n">genTerms</span> <span class="o">=</span> <span class="n">bIndptr</span> <span class="o">+</span> <span class="n">bIndices</span> <span class="o">+</span> <span class="n">bGatherSources</span> <span class="o">+</span> <span class="n">bAssemblyPtr</span> <span class="o">+</span> <span class="n">bData</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span>
+            <span class="s2">"    cross-check  CSRGenerator.memoryBytes </span><span class="si">{:8.2f}</span><span class="s2"> GiB vs terms </span><span class="si">{:8.2f}</span><span class="s2"> GiB"</span>
+            <span class="s2">"   (delta </span><span class="si">{:+.0f}</span><span class="s2"> B)"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">genTotal</span> <span class="o">/</span> <span class="n">gib</span><span class="p">,</span> <span class="n">genTerms</span> <span class="o">/</span> <span class="n">gib</span><span class="p">,</span> <span class="n">genTotal</span> <span class="o">-</span> <span class="n">genTerms</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">,</span>
+            <span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">vijPath</span> <span class="o">=</span> <span class="n">bCommon</span> <span class="o">+</span> <span class="n">bVIJOnly</span>
+        <span class="n">assemblyVIJ</span> <span class="o">=</span> <span class="n">genTotal</span> <span class="o">+</span> <span class="n">bV</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span>
+            <span class="s2">"    VIJ path  total </span><span class="si">{:8.2f}</span><span class="s2"> GiB   assembly-only, excl. I/J </span><span class="si">{:8.2f}</span><span class="s2"> GiB"</span>
+            <span class="s2">"   exclusive terms </span><span class="si">{:8.2f}</span><span class="s2"> GiB"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">vijPath</span> <span class="o">/</span> <span class="n">gib</span><span class="p">,</span> <span class="n">assemblyVIJ</span> <span class="o">/</span> <span class="n">gib</span><span class="p">,</span> <span class="n">bVIJOnly</span> <span class="o">/</span> <span class="n">gib</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">,</span>
+            <span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">nb</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">memoryOfBufferCount</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+            <span class="n">asmBytes</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">memoryOfBufferCount</span><span class="p">[</span><span class="n">nb</span><span class="p">])</span>
+            <span class="n">bPriv</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">nb</span><span class="p">)</span> <span class="o">*</span> <span class="n">nnz</span> <span class="o">*</span> <span class="mf">8.0</span>
+            <span class="c1"># residual against the assembler's own total: entityRows plus the small per-entity tables</span>
+            <span class="n">bEntity</span> <span class="o">=</span> <span class="n">asmBytes</span> <span class="o">-</span> <span class="n">bOffsets</span> <span class="o">-</span> <span class="n">bPriv</span>
+            <span class="n">directPath</span> <span class="o">=</span> <span class="n">bCommon</span> <span class="o">+</span> <span class="n">asmBytes</span>
+            <span class="n">assemblyDirect</span> <span class="o">=</span> <span class="n">asmBytes</span> <span class="o">+</span> <span class="n">bIndptr</span> <span class="o">+</span> <span class="n">bIndices</span> <span class="o">+</span> <span class="n">bData</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span>
+                <span class="s2">"    direct, </span><span class="si">{:2d}</span><span class="s2"> buffer(s): private copies </span><span class="si">{:8.2f}</span><span class="s2"> GiB, entityRows </span><span class="si">{:5.2f}</span><span class="s2"> GiB"</span>
+                <span class="s2">" -&gt; total </span><span class="si">{:8.2f}</span><span class="s2"> GiB   assembly-only </span><span class="si">{:8.2f}</span><span class="s2"> GiB   exclusive </span><span class="si">{:8.2f}</span><span class="s2"> GiB"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">nb</span><span class="p">,</span> <span class="n">bPriv</span> <span class="o">/</span> <span class="n">gib</span><span class="p">,</span> <span class="n">bEntity</span> <span class="o">/</span> <span class="n">gib</span><span class="p">,</span> <span class="n">directPath</span> <span class="o">/</span> <span class="n">gib</span><span class="p">,</span> <span class="n">assemblyDirect</span> <span class="o">/</span> <span class="n">gib</span><span class="p">,</span> <span class="n">asmBytes</span> <span class="o">/</span> <span class="n">gib</span>
+                <span class="p">),</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">,</span>
+                <span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span>
+                <span class="s2">"                          ratios vs VIJ: total </span><span class="si">{:.2f}</span><span class="s2">x   assembly-only </span><span class="si">{:.2f}</span><span class="s2">x"</span>
+                <span class="s2">"   exclusive </span><span class="si">{:.2f}</span><span class="s2">x   (private copies are </span><span class="si">{:.0%}</span><span class="s2"> of the direct path)"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">vijPath</span> <span class="o">/</span> <span class="n">directPath</span><span class="p">,</span>
+                    <span class="n">assemblyVIJ</span> <span class="o">/</span> <span class="n">assemblyDirect</span><span class="p">,</span>
+                    <span class="n">bVIJOnly</span> <span class="o">/</span> <span class="n">asmBytes</span><span class="p">,</span>
+                    <span class="n">bPriv</span> <span class="o">/</span> <span class="n">asmBytes</span><span class="p">,</span>
+                <span class="p">),</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">,</span>
+                <span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="NQSParallelForMarmot._computeParticlesAndTimeDirectCSR">
+<a class="viewcode-back" href="../../../documentation/solvers.html#edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._computeParticlesAndTimeDirectCSR">[docs]</a>
+    <span class="nd">@performancetiming</span><span class="o">.</span><span class="n">timeit</span><span class="p">(</span><span class="s2">"benchmark direct csr"</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_computeParticlesAndTimeDirectCSR</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">particles_</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+        <span class="n">dU</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span>
+        <span class="n">P</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span>
+        <span class="n">F</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span>
+        <span class="n">K_VIJ</span><span class="p">:</span> <span class="n">VIJSystemMatrix</span><span class="p">,</span>
+        <span class="n">time</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">dT</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">theDofManager</span><span class="p">:</span> <span class="n">DofManager</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Benchmark the two assembly paths against each other on identical state.</span>
+
+<span class="sd">        Both paths are timed component by component, every repeat, in the same process and on the</span>
+<span class="sd">        same increment, with the order alternated between repeats. That is deliberate: an earlier</span>
+<span class="sd">        attempt at this comparison used a separate harness which sliced blocks out of the VIJ array</span>
+<span class="sd">        with numpy, and the resulting 3.83 GB of streaming inverted the ranking of the two. Timing</span>
+<span class="sd">        both paths side by side against the state the solver actually has removes the harness from</span>
+<span class="sd">        the comparison entirely.</span>
+
+<span class="sd">        The components, and why each belongs to the path it is charged to:</span>
+
+<span class="sd">        VIJ path</span>
+<span class="sd">            ``zero`` the whole staging array must be cleared every iteration, and particles are what</span>
+<span class="sd">            make it large, so the memset is charged here rather than treated as overhead.</span>
+<span class="sd">            ``eval`` the particle loop, writing each block into its slab.</span>
+<span class="sd">            ``gather`` ``CSRGenerator.updateCSR``, the production gather.</span>
+
+<span class="sd">        direct path</span>
+<span class="sd">            ``begin`` clearing the private CSR buffers.</span>
+<span class="sd">            ``eval`` the particle loop, writing into a cached scratch block and scattering it.</span>
+<span class="sd">            ``reduce`` summing the private buffers.</span>
+
+<span class="sd">        Medians are reported, with the spread, because the scatter was previously measured varying by</span>
+<span class="sd">        +-18% run to run -- wide enough that a single sample cannot support a ratio.</span>
+
+<span class="sd">        The solve continues on the VIJ path: K_VIJ is restored to its pre-benchmark contents and the</span>
+<span class="sd">        production evaluation is run last, so the increment is unaffected apart from taking longer.</span>
+<span class="sd">        """</span>
+
+        <span class="n">assembler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_directCSRAssembler</span>
+        <span class="n">particles</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">particles_</span><span class="p">)</span>
+        <span class="n">entityIds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">_directCSREntityIds</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">particles</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">intc</span><span class="p">)</span>
+
+        <span class="c1"># cells and elements may already have contributed, and the benchmark clears the array</span>
+        <span class="n">VBefore</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">K_VIJ</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">PDiscard</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+        <span class="n">FDiscard</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+
+        <span class="n">bufferCounts</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">nb</span><span class="p">)</span> <span class="k">for</span> <span class="n">nb</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">directCSRBufferSweep</span><span class="p">]</span> <span class="ow">or</span> <span class="p">[</span><span class="n">assembler</span><span class="o">.</span><span class="n">numBuffers</span><span class="p">]</span>
+        <span class="n">originalNumBuffers</span> <span class="o">=</span> <span class="n">assembler</span><span class="o">.</span><span class="n">numBuffers</span>
+
+        <span class="n">samples</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"zero"</span><span class="p">,</span> <span class="s2">"vijEval"</span><span class="p">,</span> <span class="s2">"gather"</span><span class="p">)}</span>
+        <span class="k">for</span> <span class="n">nb</span> <span class="ow">in</span> <span class="n">bufferCounts</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"begin"</span><span class="p">,</span> <span class="s2">"fusedEval"</span><span class="p">,</span> <span class="s2">"reduce"</span><span class="p">):</span>
+                <span class="n">samples</span><span class="p">[(</span><span class="n">nb</span><span class="p">,</span> <span class="n">k</span><span class="p">)]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">memoryOfBufferCount</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">timeVIJ</span><span class="p">():</span>
+            <span class="n">t0</span> <span class="o">=</span> <span class="n">perf_counter</span><span class="p">()</span>
+            <span class="n">K_VIJ</span><span class="p">[:]</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="n">t1</span> <span class="o">=</span> <span class="n">perf_counter</span><span class="p">()</span>
+            <span class="n">computeMarmotParticlesInParallel</span><span class="p">(</span>
+                <span class="n">particles_</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">PDiscard</span><span class="p">,</span> <span class="n">FDiscard</span><span class="p">,</span> <span class="n">K_VIJ</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">dT</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">numThreads</span>
+            <span class="p">)</span>
+            <span class="n">t2</span> <span class="o">=</span> <span class="n">perf_counter</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_VIJtoCSR</span><span class="p">(</span><span class="n">K_VIJ</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_csrGenerator</span><span class="p">,</span> <span class="n">useInPlace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">t3</span> <span class="o">=</span> <span class="n">perf_counter</span><span class="p">()</span>
+            <span class="n">samples</span><span class="p">[</span><span class="s2">"zero"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t1</span> <span class="o">-</span> <span class="n">t0</span><span class="p">)</span>
+            <span class="n">samples</span><span class="p">[</span><span class="s2">"vijEval"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t2</span> <span class="o">-</span> <span class="n">t1</span><span class="p">)</span>
+            <span class="n">samples</span><span class="p">[</span><span class="s2">"gather"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t3</span> <span class="o">-</span> <span class="n">t2</span><span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">timeFused</span><span class="p">(</span><span class="n">nb</span><span class="p">):</span>
+            <span class="n">t0</span> <span class="o">=</span> <span class="n">perf_counter</span><span class="p">()</span>
+            <span class="n">assembler</span><span class="o">.</span><span class="n">beginAssembly</span><span class="p">()</span>
+            <span class="n">t1</span> <span class="o">=</span> <span class="n">perf_counter</span><span class="p">()</span>
+            <span class="n">computeMarmotParticlesIntoCSR</span><span class="p">(</span>
+                <span class="n">particles_</span><span class="p">,</span>
+                <span class="n">dU</span><span class="p">,</span>
+                <span class="n">PDiscard</span><span class="p">,</span>
+                <span class="n">FDiscard</span><span class="p">,</span>
+                <span class="n">entityIds</span><span class="p">,</span>
+                <span class="n">assembler</span><span class="o">.</span><span class="n">corePointer</span><span class="p">,</span>
+                <span class="n">time</span><span class="p">,</span>
+                <span class="n">dT</span><span class="p">,</span>
+                <span class="n">theDofManager</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">numThreads</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">t2</span> <span class="o">=</span> <span class="n">perf_counter</span><span class="p">()</span>
+            <span class="n">assembler</span><span class="o">.</span><span class="n">reduce</span><span class="p">()</span>
+            <span class="n">t3</span> <span class="o">=</span> <span class="n">perf_counter</span><span class="p">()</span>
+            <span class="n">samples</span><span class="p">[(</span><span class="n">nb</span><span class="p">,</span> <span class="s2">"begin"</span><span class="p">)]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t1</span> <span class="o">-</span> <span class="n">t0</span><span class="p">)</span>
+            <span class="n">samples</span><span class="p">[(</span><span class="n">nb</span><span class="p">,</span> <span class="s2">"fusedEval"</span><span class="p">)]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t2</span> <span class="o">-</span> <span class="n">t1</span><span class="p">)</span>
+            <span class="n">samples</span><span class="p">[(</span><span class="n">nb</span><span class="p">,</span> <span class="s2">"reduce"</span><span class="p">)]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t3</span> <span class="o">-</span> <span class="n">t2</span><span class="p">)</span>
+
+        <span class="c1"># The buffer count is set once per configuration rather than per repeat: setNumBuffers</span>
+        <span class="c1"># reallocates, and at this size that allocation would otherwise dominate what is being timed.</span>
+        <span class="k">for</span> <span class="n">nb</span> <span class="ow">in</span> <span class="n">bufferCounts</span><span class="p">:</span>
+            <span class="n">assembler</span><span class="o">.</span><span class="n">setNumBuffers</span><span class="p">(</span><span class="n">nb</span><span class="p">)</span>
+            <span class="n">memoryOfBufferCount</span><span class="p">[</span><span class="n">nb</span><span class="p">]</span> <span class="o">=</span> <span class="n">assembler</span><span class="o">.</span><span class="n">memoryBytes</span>
+            <span class="k">for</span> <span class="n">repeat</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">directCSRTimingRepeats</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">repeat</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">timeVIJ</span><span class="p">()</span>
+                    <span class="n">timeFused</span><span class="p">(</span><span class="n">nb</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">timeFused</span><span class="p">(</span><span class="n">nb</span><span class="p">)</span>
+                    <span class="n">timeVIJ</span><span class="p">()</span>
+        <span class="n">assembler</span><span class="o">.</span><span class="n">setNumBuffers</span><span class="p">(</span><span class="n">originalNumBuffers</span><span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">med</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="n">key</span><span class="p">]))</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">spread</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="k">return</span> <span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">-</span> <span class="nb">min</span><span class="p">(</span><span class="n">v</span><span class="p">))</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">0.0</span> <span class="k">else</span> <span class="mf">0.0</span>
+
+        <span class="n">vijTotal</span> <span class="o">=</span> <span class="n">med</span><span class="p">(</span><span class="s2">"zero"</span><span class="p">)</span> <span class="o">+</span> <span class="n">med</span><span class="p">(</span><span class="s2">"vijEval"</span><span class="p">)</span> <span class="o">+</span> <span class="n">med</span><span class="p">(</span><span class="s2">"gather"</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span>
+            <span class="s2">"assembly benchmark, </span><span class="si">{:}</span><span class="s2"> repeats, </span><span class="si">{:}</span><span class="s2"> threads, </span><span class="si">{:}</span><span class="s2"> particles, buffer counts </span><span class="si">{:}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">directCSRTimingRepeats</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">numThreads</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">particles</span><span class="p">),</span> <span class="n">bufferCounts</span>
+            <span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">,</span>
+            <span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_reportAssemblyMemory</span><span class="p">(</span><span class="n">K_VIJ</span><span class="p">,</span> <span class="n">memoryOfBufferCount</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span>
+            <span class="p">(</span><span class="s2">"VIJ   zero  "</span><span class="p">,</span> <span class="s2">"zero"</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">"VIJ   eval  "</span><span class="p">,</span> <span class="s2">"vijEval"</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">"VIJ   gather"</span><span class="p">,</span> <span class="s2">"gather"</span><span class="p">),</span>
+        <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span>
+                <span class="s2">"  </span><span class="si">{:}</span><span class="s2"> </span><span class="si">{:8.4f}</span><span class="s2"> s  (spread </span><span class="si">{:5.1%}</span><span class="s2">)"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">med</span><span class="p">(</span><span class="n">key</span><span class="p">),</span> <span class="n">spread</span><span class="p">(</span><span class="n">key</span><span class="p">)),</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">,</span>
+                <span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span>
+            <span class="s2">"  TOTAL  VIJ </span><span class="si">{:8.4f}</span><span class="s2"> s"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">vijTotal</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">,</span>
+            <span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">nb</span> <span class="ow">in</span> <span class="n">bufferCounts</span><span class="p">:</span>
+            <span class="n">fusedTotal</span> <span class="o">=</span> <span class="n">med</span><span class="p">((</span><span class="n">nb</span><span class="p">,</span> <span class="s2">"begin"</span><span class="p">))</span> <span class="o">+</span> <span class="n">med</span><span class="p">((</span><span class="n">nb</span><span class="p">,</span> <span class="s2">"fusedEval"</span><span class="p">))</span> <span class="o">+</span> <span class="n">med</span><span class="p">((</span><span class="n">nb</span><span class="p">,</span> <span class="s2">"reduce"</span><span class="p">))</span>
+            <span class="n">mode</span> <span class="o">=</span> <span class="s2">"privatised"</span> <span class="k">if</span> <span class="n">nb</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">numThreads</span> <span class="k">else</span> <span class="p">(</span><span class="s2">"atomic"</span> <span class="k">if</span> <span class="n">nb</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="s2">"shared"</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span>
+                <span class="s2">"  direct, </span><span class="si">{:2d}</span><span class="s2"> buffer(s) [</span><span class="si">{:10s}</span><span class="s2">]  begin </span><span class="si">{:7.4f}</span><span class="s2">  eval </span><span class="si">{:7.4f}</span><span class="s2">  reduce </span><span class="si">{:7.4f}</span><span class="s2">"</span>
+                <span class="s2">"  (spread </span><span class="si">{:4.1%}</span><span class="s2">/</span><span class="si">{:4.1%}</span><span class="s2">/</span><span class="si">{:4.1%}</span><span class="s2">)"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">nb</span><span class="p">,</span>
+                    <span class="n">mode</span><span class="p">,</span>
+                    <span class="n">med</span><span class="p">((</span><span class="n">nb</span><span class="p">,</span> <span class="s2">"begin"</span><span class="p">)),</span>
+                    <span class="n">med</span><span class="p">((</span><span class="n">nb</span><span class="p">,</span> <span class="s2">"fusedEval"</span><span class="p">)),</span>
+                    <span class="n">med</span><span class="p">((</span><span class="n">nb</span><span class="p">,</span> <span class="s2">"reduce"</span><span class="p">)),</span>
+                    <span class="n">spread</span><span class="p">((</span><span class="n">nb</span><span class="p">,</span> <span class="s2">"begin"</span><span class="p">)),</span>
+                    <span class="n">spread</span><span class="p">((</span><span class="n">nb</span><span class="p">,</span> <span class="s2">"fusedEval"</span><span class="p">)),</span>
+                    <span class="n">spread</span><span class="p">((</span><span class="n">nb</span><span class="p">,</span> <span class="s2">"reduce"</span><span class="p">)),</span>
+                <span class="p">),</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">,</span>
+                <span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span>
+                <span class="s2">"  TOTAL  direct, </span><span class="si">{:2d}</span><span class="s2"> buffer(s) </span><span class="si">{:8.4f}</span><span class="s2"> s   speedup vs VIJ </span><span class="si">{:.3f}</span><span class="s2">x"</span>
+                <span class="s2">"   assembler </span><span class="si">{:6.2f}</span><span class="s2"> GiB"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">nb</span><span class="p">,</span>
+                    <span class="n">fusedTotal</span><span class="p">,</span>
+                    <span class="n">vijTotal</span> <span class="o">/</span> <span class="n">fusedTotal</span> <span class="k">if</span> <span class="n">fusedTotal</span> <span class="o">&gt;</span> <span class="mf">0.0</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="s2">"nan"</span><span class="p">),</span>
+                    <span class="n">memoryOfBufferCount</span><span class="p">[</span><span class="n">nb</span><span class="p">]</span> <span class="o">/</span> <span class="mf">1024.0</span><span class="o">**</span><span class="mi">3</span><span class="p">,</span>
+                <span class="p">),</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">,</span>
+                <span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="c1"># restore what the benchmark clobbered, then do the real evaluation</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">K_VIJ</span><span class="p">)[:]</span> <span class="o">=</span> <span class="n">VBefore</span>
+        <span class="k">return</span> <span class="n">computeMarmotParticlesInParallel</span><span class="p">(</span><span class="n">particles_</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">K_VIJ</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">dT</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">numThreads</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Matthias Neuner.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

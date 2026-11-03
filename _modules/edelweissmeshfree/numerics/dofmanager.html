@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>edelweissmeshfree.numerics.dofmanager &mdash; EdelweissMeshfree v25.08 documentation</title>
+  <title>edelweissmeshfree.numerics.dofmanager &mdash; EdelweissMeshfree v26.11 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css?v=1d735308" />
@@ -13,9 +13,9 @@
   
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=83aae4bb"></script>
-      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/documentation_options.js?v=57c4c7c7"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -44,7 +44,7 @@
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../gallery.html">Gallery</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../references.html">References</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../documentation/index.html">Documentation</a></li>
 </ul>
 
@@ -82,7 +82,7 @@
 <span class="c1"># | |__| (_| |  __/ |\ V  V /  __/ \__ \__ \</span>
 <span class="c1"># |_____\__,_|\___|_| \_/\_/_\___|_|___/___/</span>
 <span class="c1"># |  \/  | ___  ___| |__  / _|_ __ ___  ___</span>
-<span class="c1"># | |\/| |/ _ \/ __| &#39;_ \| |_| &#39;__/ _ \/ _ \</span>
+<span class="c1"># | |\/| |/ _ \/ __| '_ \| |_| '__/ _ \/ _ \</span>
 <span class="c1"># | |  | |  __/\__ \ | | |  _| | |  __/  __/</span>
 <span class="c1"># |_|  |_|\___||___/_| |_|_| |_|  \___|\___|</span>
 <span class="c1">#</span>
@@ -119,7 +119,7 @@
 <div class="viewcode-block" id="MPMDofManager">
 <a class="viewcode-back" href="../../../documentation/numeric_tools.html#edelweissmeshfree.numerics.dofmanager.MPMDofManager">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">MPMDofManager</span><span class="p">(</span><span class="n">DofManager</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A DofManager class for the Material Point Method.</span>
+<span class="w">    </span><span class="sd">"""A DofManager class for the Material Point Method.</span>
 <span class="sd">    Derived from DofManager, it is used to manage the degrees of freedom of the model</span>
 <span class="sd">    and to provide the necessary information for the assembly of the global system matrix.</span>
 
@@ -143,7 +143,7 @@
 <span class="sd">        The list of particles (RKPM).</span>
 <span class="sd">    initializeVIJPattern : bool</span>
 <span class="sd">        A flag indicating whether the VIJ pattern should be initialized.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -224,7 +224,7 @@
 <div class="viewcode-block" id="MPMDofManager._gatherCellsInformation">
 <a class="viewcode-back" href="../../../documentation/numeric_tools.html#edelweissmeshfree.numerics.dofmanager.MPMDofManager._gatherCellsInformation">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_gatherCellsInformation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entities</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generates some auxiliary information,</span>
+<span class="w">        </span><span class="sd">"""Generates some auxiliary information,</span>
 <span class="sd">        which may be required by some modules of EdelweissFE.</span>
 
 <span class="sd">        Parameters</span>
@@ -240,7 +240,7 @@
 <span class="sd">                - number of accumulated system matrix sizes.</span>
 <span class="sd">                - the number of  acummulated fluxes Σ_entities Σ_nodes ( nDof (field) ) for Abaqus-like convergence tests.</span>
 <span class="sd">                - largest occuring number of dofs on any element.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gatherElementsInformation</span><span class="p">(</span><span class="n">entities</span><span class="p">)</span></div>
 
@@ -248,14 +248,14 @@
 <div class="viewcode-block" id="MPMDofManager._locateCellsInDofVector">
 <a class="viewcode-back" href="../../../documentation/numeric_tools.html#edelweissmeshfree.numerics.dofmanager.MPMDofManager._locateCellsInDofVector">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_locateCellsInDofVector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cells</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a dictionary containing the location (indices) of each cell</span>
+<span class="w">        </span><span class="sd">"""Creates a dictionary containing the location (indices) of each cell</span>
 <span class="sd">        within the DofVector structure.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        dict</span>
 <span class="sd">            A dictionary containing the location mapping.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="n">idcsOfCellsInDofVector</span> <span class="o">=</span> <span class="p">{}</span>
 
@@ -279,7 +279,7 @@
 <div class="viewcode-block" id="MPMDofManager._locateParticlesInDofVector">
 <a class="viewcode-back" href="../../../documentation/numeric_tools.html#edelweissmeshfree.numerics.dofmanager.MPMDofManager._locateParticlesInDofVector">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_locateParticlesInDofVector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">particles</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a dictionary containing the location (indices) of each particle</span>
+<span class="w">        </span><span class="sd">"""Creates a dictionary containing the location (indices) of each particle</span>
 <span class="sd">        within the DofVector structure.</span>
 
 <span class="sd">        In contrast to elements, cells and cell elements, particles have an identical set of fields</span>
@@ -293,7 +293,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        dict</span>
 <span class="sd">            A dictionary containing the location mapping.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locateNodeCouplingEntitiesInDofVector</span><span class="p">(</span><span class="n">particles</span><span class="p">)</span></div>
 
@@ -301,29 +301,40 @@
 <div class="viewcode-block" id="MPMDofManager.updateParticles">
 <a class="viewcode-back" href="../../../documentation/numeric_tools.html#edelweissmeshfree.numerics.dofmanager.MPMDofManager.updateParticles">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">updateParticles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">particles</span><span class="p">:</span> <span class="nb">list</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Updates the connectivity mapping for particles without rebuilding</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Updates the connectivity mapping for the given particles without rebuilding</span>
 <span class="sd">        the entire DofManager structure.</span>
+
+<span class="sd">        Only the mappings of the particles passed in are recomputed; the mappings of all other</span>
+<span class="sd">        particles are left as they are. That is what makes it worth passing just the particles whose</span>
+<span class="sd">        kernel functions actually changed, which is usually a small fraction of the model.</span>
+
+<span class="sd">        It is also why this method may only be used while the global degree-of-freedom numbering</span>
+<span class="sd">        stays put: an untouched particle keeps the indices it was given earlier, so those indices</span>
+<span class="sd">        have to still mean the same thing. Whenever the numbering itself changes, the DofManager has</span>
+<span class="sd">        to be rebuilt from scratch instead.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        particles : list</span>
-<span class="sd">            The list of particles to update.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            The particles whose mapping is to be recomputed.</span>
+<span class="sd">        """</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">particles</span><span class="p">:</span>
             <span class="k">return</span>
 
         <span class="n">particles</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">particles</span><span class="p">)</span>  <span class="c1"># Ensure we have a list for iteration</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfParticlesInDofVector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locateParticlesInDofVector</span><span class="p">(</span><span class="n">particles</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfHigherOrderEntitiesInDofVector</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">idcsOfParticlesInDofVector</span><span class="p">)</span></div>
+        <span class="n">relocatedParticles</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locateParticlesInDofVector</span><span class="p">(</span><span class="n">particles</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfParticlesInDofVector</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">relocatedParticles</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfHigherOrderEntitiesInDofVector</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">relocatedParticles</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="MPMDofManager.updateConstraints">
 <a class="viewcode-back" href="../../../documentation/numeric_tools.html#edelweissmeshfree.numerics.dofmanager.MPMDofManager.updateConstraints">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">updateConstraints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">constraints</span><span class="p">:</span> <span class="nb">list</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Updates the connectivity mapping for constraints in a serial loop.</span>
 <span class="sd">        Reuses global index maps to avoid re-instancing the manager.</span>
 
@@ -331,7 +342,7 @@
 <span class="sd">        ----------</span>
 <span class="sd">        constraints : list</span>
 <span class="sd">            The list of constraints to be considered.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">constraints</span><span class="p">:</span>
             <span class="k">return</span>
 

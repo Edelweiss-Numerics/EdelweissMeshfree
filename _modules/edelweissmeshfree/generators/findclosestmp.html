@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>edelweissmeshfree.generators.findclosestmp &mdash; EdelweissMeshfree v25.08 documentation</title>
+  <title>edelweissmeshfree.generators.findclosestmp &mdash; EdelweissMeshfree v26.11 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css?v=1d735308" />
@@ -13,9 +13,9 @@
   
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=83aae4bb"></script>
-      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/documentation_options.js?v=57c4c7c7"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -44,7 +44,7 @@
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../gallery.html">Gallery</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../references.html">References</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../documentation/index.html">Documentation</a></li>
 </ul>
 
@@ -82,7 +82,7 @@
 <span class="c1"># | |__| (_| |  __/ |\ V  V /  __/ \__ \__ \</span>
 <span class="c1"># |_____\__,_|\___|_| \_/\_/_\___|_|___/___/</span>
 <span class="c1"># |  \/  | ___  ___| |__  / _|_ __ ___  ___</span>
-<span class="c1"># | |\/| |/ _ \/ __| &#39;_ \| |_| &#39;__/ _ \/ _ \</span>
+<span class="c1"># | |\/| |/ _ \/ __| '_ \| |_| '__/ _ \/ _ \</span>
 <span class="c1"># | |  | |  __/\__ \ | | |  _| | |  __/  __/</span>
 <span class="c1"># |_|  |_|\___||___/_| |_|_| |_|  \___|\___|</span>
 <span class="c1">#</span>
@@ -119,7 +119,7 @@
 <div class="viewcode-block" id="generateModelData">
 <a class="viewcode-back" href="../../../documentation/model_generators.html#edelweissmeshfree.generators.findclosestmp.generateModelData">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">generateModelData</span><span class="p">(</span><span class="n">mpmModel</span><span class="p">:</span> <span class="n">MPMModel</span><span class="p">,</span> <span class="n">journal</span><span class="p">:</span> <span class="n">Journal</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">storeIn</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find the mateiral point closest to a given coordinate and store it in a material point set in the model.</span>
+<span class="w">    </span><span class="sd">"""Find the mateiral point closest to a given coordinate and store it in a material point set in the model.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -136,7 +136,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    MPMModel</span>
 <span class="sd">        The updated model.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">allCoords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="n">mp</span><span class="o">.</span><span class="n">getCenterCoordinates</span><span class="p">()</span> <span class="k">for</span> <span class="n">mp</span> <span class="ow">in</span> <span class="n">mpmModel</span><span class="o">.</span><span class="n">materialPoints</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span>
 
@@ -147,10 +147,10 @@
     <span class="n">mpmModel</span><span class="o">.</span><span class="n">materialPointSets</span><span class="p">[</span><span class="n">storeIn</span><span class="p">]</span> <span class="o">=</span> <span class="n">MaterialPointSet</span><span class="p">(</span><span class="n">storeIn</span><span class="p">,</span> <span class="p">[</span><span class="n">closestMP</span><span class="p">])</span>
 
     <span class="n">journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span>
-        <span class="s2">&quot;Material point &#39;</span><span class="si">{:}</span><span class="s2">&#39; (</span><span class="si">{:}</span><span class="s2">) at </span><span class="si">{:}</span><span class="s2"> is closest to </span><span class="si">{:}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="s2">"Material point '</span><span class="si">{:}</span><span class="s2">' (</span><span class="si">{:}</span><span class="s2">) at </span><span class="si">{:}</span><span class="s2"> is closest to </span><span class="si">{:}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="n">storeIn</span><span class="p">,</span> <span class="n">closestMP</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="n">closestMP</span><span class="o">.</span><span class="n">getCenterCoordinates</span><span class="p">(),</span> <span class="n">coordinates</span>
         <span class="p">),</span>
-        <span class="s2">&quot;findClosestMP&quot;</span><span class="p">,</span>
+        <span class="s2">"findClosestMP"</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">mpmModel</span></div>

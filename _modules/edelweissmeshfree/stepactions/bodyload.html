@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>edelweissmeshfree.stepactions.bodyload &mdash; EdelweissMeshfree v25.08 documentation</title>
+  <title>edelweissmeshfree.stepactions.bodyload &mdash; EdelweissMeshfree v26.11 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css?v=1d735308" />
@@ -13,9 +13,9 @@
   
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=83aae4bb"></script>
-      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/documentation_options.js?v=57c4c7c7"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -44,7 +44,7 @@
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../gallery.html">Gallery</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../references.html">References</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../documentation/index.html">Documentation</a></li>
 </ul>
 
@@ -82,7 +82,7 @@
 <span class="c1"># | |__| (_| |  __/ |\ V  V /  __/ \__ \__ \</span>
 <span class="c1"># |_____\__,_|\___|_| \_/\_/_\___|_|___/___/</span>
 <span class="c1"># |  \/  | ___  ___| |__  / _|_ __ ___  ___</span>
-<span class="c1"># | |\/| |/ _ \/ __| &#39;_ \| |_| &#39;__/ _ \/ _ \</span>
+<span class="c1"># | |\/| |/ _ \/ __| '_ \| |_| '__/ _ \/ _ \</span>
 <span class="c1"># | |  | |  __/\__ \ | | |  _| | |  __/  __/</span>
 <span class="c1"># |_|  |_|\___||___/_| |_|_| |_|  \___|\___|</span>
 <span class="c1">#</span>
@@ -119,7 +119,7 @@
 <a class="viewcode-back" href="../../../documentation/step_actions.html#edelweissmeshfree.stepactions.bodyload.BodyLoad">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">BodyLoad</span><span class="p">(</span><span class="n">MPMBodyLoadBase</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">journal</span><span class="p">,</span> <span class="n">cells</span><span class="p">,</span> <span class="n">bodyLoadType</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">loadVector</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        This is a classical body load for MPM models.</span>
 
 <span class="sd">        Parameters</span>
@@ -133,14 +133,14 @@
 <span class="sd">        cells: CellSet</span>
 <span class="sd">            The cells to apply the distributed load to.</span>
 <span class="sd">        bodyLoadType: str</span>
-<span class="sd">            The type of the body load, e.g., &quot;gravity&quot;.</span>
+<span class="sd">            The type of the body load, e.g., "gravity".</span>
 <span class="sd">        loadVector : np.ndarray</span>
 <span class="sd">            The load vector to apply to the particles.</span>
 <span class="sd">        **kwargs</span>
 <span class="sd">            Additional keyword arguments. The following are supported:</span>
 <span class="sd">            - f_t : Callable[[float], float]</span>
 <span class="sd">                The amplitude function of the distributed load.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_loadVector</span> <span class="o">=</span> <span class="n">loadVector</span>
@@ -149,11 +149,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_cells</span> <span class="o">=</span> <span class="n">cells</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_loadVector</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">model</span><span class="o">.</span><span class="n">domainSize</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;BodyForce </span><span class="si">{:}</span><span class="s2">: load vector has wrong dimension!&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">"BodyForce </span><span class="si">{:}</span><span class="s2">: load vector has wrong dimension!"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_delta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loadVector</span>
-        <span class="k">if</span> <span class="s2">&quot;f_t&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_amplitude</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;f_t&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s2">"f_t"</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_amplitude</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">"f_t"</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_amplitude</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span>
 
@@ -175,7 +175,7 @@
                 <span class="c1"># standard case</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_loadAtStepStart</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delta</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_amplitude</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># set the &#39;actual&#39; increment manually, e.g. for arc length method</span>
+                <span class="c1"># set the 'actual' increment manually, e.g. for arc length method</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_loadAtStepStart</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delta</span> <span class="o">*</span> <span class="n">stepMagnitude</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">_delta</span> <span class="o">=</span> <span class="mi">0</span>
