@@ -23,7 +23,7 @@ EdelweissMeshfree aims to be...
 
    introduction
    gallery
-   references
+   publications
    documentation/index
 
 Execute a simulation

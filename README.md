@@ -1,4 +1,4 @@
-<!-- [![documentation](https://github.com/EdelweissMPM/EdelweissMPM/actions/workflows/sphinx.yml/badge.svg)](https://edelweissfe.github.io/EdelweissMPM) -->
+[![documentation](https://github.com/Edelweiss-Numerics/EdelweissMeshfree/actions/workflows/sphinx.yml/badge.svg)](https://edelweiss-numerics.github.io/EdelweissMeshfree)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![DOI](https://zenodo.org/badge/1095513890.svg)](https://doi.org/10.5281/zenodo.21113586)
 
@@ -11,7 +11,7 @@
 </p>
 <p align="center"><em>Implicit RKPM simulation of a borehole breakout using a gradient-enhanced micropolar damage–plasticity constitutive model.</em></p>
 
-<!-- See the [documentation](https://edelweissfe.github.io/EdelweissMPM). -->
+See the [documentation](https://edelweiss-numerics.github.io/EdelweissMeshfree).
 
 **EdelweissMeshfree** provides at an easy-to-understand yet efficient implementation of meshfree numerical methods for solving partial differential equations. The current release includes implementations of the **Material Point Method (MPM)** and the **Reproducing Kernel Particle Method (RKPM)**.
 

@@ -1,7 +1,8 @@
 {
   "title": "EdelweissMeshfree: A light-weight, platform-independent, parallel meshfree module for EdelweissFE",
-  "description": "EdelweissMeshfree provides a light-weight, platform-independent, parallel meshfree module for EdelweissFE. It implements reproducing kernel particle methods (RKPM) and material point methods (MPM) with integration of Marmot elements, cells, material points, and particles.",
+  "description": "EdelweissMeshfree provides a light-weight, platform-independent, parallel meshfree module for EdelweissFE. It implements reproducing kernel particle methods (RKPM) and material point methods (MPM) with integration of Marmot elements, cells, material points, and particles. Documentation: https://edelweiss-numerics.github.io/EdelweissMeshfree/.",
   "upload_type": "software",
+  "version": "v26.11",
   "language": "eng",
   "access_right": "open",
   "license": "lgpl-2.1-or-later",
@@ -36,8 +37,16 @@
   ],
   "related_identifiers": [
     {
+      "identifier": "https://github.com/Edelweiss-Numerics/EdelweissMeshfree/releases/tag/v26.11",
+      "relation": "isSupplementTo"
+    },
+    {
       "identifier": "https://github.com/Edelweiss-Numerics/EdelweissMeshfree",
       "relation": "isAlternateIdentifier"
+    },
+    {
+      "identifier": "https://edelweiss-numerics.github.io/EdelweissMeshfree",
+      "relation": "isDocumentedBy"
     }
   ]
 }
