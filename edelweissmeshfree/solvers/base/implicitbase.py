@@ -1097,7 +1097,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         """
 
         # Imported lazily: useDirectCSRAssembly is off by default, and the EdelweissFE-side
-        # DirectCSRAssembler this wraps has not landed on next_v26.11 yet (it lives on the unmerged
+        # DirectCSRAssembler this wraps has not landed on master yet (it lives on the unmerged
         # feat/direct-csr-assembly branch) -- a module-level import would break every solver that
         # never touches this path.
         from edelweissfe.numerics.csrgeneratorv2 import DirectCSRAssembler
