@@ -129,23 +129,13 @@ direct path at 126.77 GiB peak.
    by about 13.5% against a deformed state, because deformation grows the neighbour lists. Scale its
    numbers up before judging whether a grid will survive a whole simulation.
 
-Private copies, and reproducibility
------------------------------------
+One CSR array, and reproducibility
+----------------------------------
 
-Threads need somewhere to accumulate. By default each gets its own copy of the CSR data, which is
-synchronisation-free and keeps the summation order fixed, so results are bit-reproducible. That costs
-``numThreads x nnz x 8`` bytes. ``directCSRNumBuffers`` reduces the count, down to ``1`` for a fully
-atomic scatter.
-
-Measured at 43,350 DOF on 16 threads: 16 copies cost 11.72 GiB and 3.43 s; one copy costs 3.76 GiB and
-3.83 s, i.e. **11.8% slower for 3.1x less memory**. The intermediate setting of 4 is not worth having --
-it pays 10.2 of those 11.8 percentage points for only part of the saving, because the cost is the atomic
-instruction rather than contention.
-
-**Keep the default unless memory is genuinely binding.** Atomics make the summation order depend on
-thread interleaving, so re-running a simulation no longer reproduces the previous run bit-for-bit. Given
-that peak memory is usually set by something other than the assembly (below), the saving often buys
-nothing while the reproducibility loss is real.
+All threads of the particle kernel scatter into the one CSR data array of the matrix, every addition
+atomic (see EdelweissFE's page on the system matrix assembly); per thread there is only a scratch block. The
+order in which the threads add to an entry depends on their timing, so re-running a simulation with more
+than one thread reproduces the previous run to round-off, not bit for bit.
 
 Where the memory ceiling actually is
 ------------------------------------
@@ -179,7 +169,7 @@ Limitations
 -----------
 
 - **EdelweissMeshfree's own arc-length solver is not supported.** It forms more than one matrix (a reference-load
-  stiffness) and combines them by array arithmetic, which a path that accumulates into a single CSR copy
+  stiffness) and combines them by array arithmetic, which a path that accumulates into a single CSR matrix
   cannot express. It stays on the staging path and says so.
 - **The non-particle contributors are assembled sequentially.** They are under 2% of the runtime, so
   this is deliberate; they write through the blocks of worker 0 of
@@ -190,7 +180,7 @@ Limitations
 Diagnostics
 -----------
 
-Three switches on the parallel Marmot solver, all off by default:
+Two switches on the parallel Marmot solver, both off by default:
 
 ``verifyDirectCSRAssembly``
     Assemble the particles several ways on identical state and cross-check. Reports an addressing check
@@ -203,10 +193,6 @@ Three switches on the parallel Marmot solver, all off by default:
     Time both paths component by component, in the same process, on the same increment, alternating
     which goes first. Also prints a term-by-term memory table for both paths with the C++ accounting as
     a cross-check on the arithmetic.
-
-``directCSRBufferSweep``
-    Time several private-copy counts in turn, e.g. ``(16, 4, 1)``, on the same state -- so the
-    memory/speed trade is measured rather than argued.
 
 .. note::
 

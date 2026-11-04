@@ -442,7 +442,7 @@ def computeMarmotParticlesIntoCSR(
                                                     time,
                                                     dT)
 
-            # race-free: each thread scatters into its own private CSR copy
+            # the additions to the CSR data are atomic; threadID selects this thread's row scratch
             assembler.scatterBlock(threadID, entityIds[i], &Ke[threadID, 0])
 
         for i in range(nActiveParticles):
