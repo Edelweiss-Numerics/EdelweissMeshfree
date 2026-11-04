@@ -680,12 +680,10 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         Returns
         -------
         DirectCSRSystemMatrixAssembly
-            The assembly, one CSR copy per thread of the compiled kernels (or ``directCSRNumBuffers``).
+            The assembly, for as many threads as the compiled kernels use.
         """
 
         K = DirectCSRSystemMatrixAssembly(csrGenerator, theDofManager, self.numThreads)
-        if self.directCSRNumBuffers > 0:
-            K.assembler.setNumBuffers(self.directCSRNumBuffers)
         self._directCSRAssembler = K.assembler
         self._directCSREntityIds = K.entityIds
         return K
@@ -710,7 +708,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         # nqs.py drops its own reference to the cache when the active domain changes, but these two
         # attributes are otherwise only overwritten at the end of this method -- so the old objects stay
         # alive for the whole of the new build, and both are large. At 120,960 DOF the old assembler
-        # alone is the private CSR copies plus the offset map, and the new build's own transient is the
+        # alone is the offset map, the old generator the CSR pattern, and the new build's own transient is the
         # I/J arrays plus the sort keys; holding all of it at once is what made a spin-up peak at
         # 161.43 GiB where a single increment needs 100.34. Nothing is lost by releasing early: a
         # connectivity change renumbers the DOFs, which makes the old pattern meaningless.
