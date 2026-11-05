@@ -64,8 +64,6 @@ class MPMDofManager(DofManager):
         A list of cell elements.
     particles : list
         The list of particles (RKPM).
-    initializeVIJPattern : bool
-        A flag indicating whether the VIJ pattern should be initialized.
     """
 
     def __init__(
@@ -78,9 +76,7 @@ class MPMDofManager(DofManager):
         cells: list = [],
         cellElements: list = [],
         particles: list = [],
-        initializeVIJPattern: bool = True,
         initializeAccumulatedNodalFluxesFieldwise: bool = True,
-        determiningIndexToHostObjectMappping: bool = True,
     ):
 
         super().__init__(
@@ -89,9 +85,7 @@ class MPMDofManager(DofManager):
             elements,
             constraints,
             nodeSets,
-            initializeVIJPattern=False,
             initializeAccumulatedNodalFluxesFieldwise=initializeAccumulatedNodalFluxesFieldwise,
-            determiningIndexToHostObjectMappping=determiningIndexToHostObjectMappping,
         )
 
         (
@@ -130,9 +124,6 @@ class MPMDofManager(DofManager):
         self.idcsOfHigherOrderEntitiesInDofVector |= self.idcsOfCellsInDofVector
         self.idcsOfHigherOrderEntitiesInDofVector |= self.idcsOfCellElementsInDofVector
         self.idcsOfHigherOrderEntitiesInDofVector |= self.idcsOfParticlesInDofVector
-
-        if initializeVIJPattern:
-            self.I, self.J, self.vijSliceOfEntity = self._initializeVIJPattern()
 
     def _gatherCellsInformation(self, entities: list) -> tuple[int, dict, int]:
         """Generates some auxiliary information,
