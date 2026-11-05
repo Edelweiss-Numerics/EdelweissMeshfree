@@ -46,13 +46,13 @@ the abstract base class :class:`~CellBase`.
 from abc import ABC, abstractmethod
 
 import numpy as np
-from edelweissfe.numerics.vijentitybase import VIJEntityBase
+from edelweissfe.numerics.systemmatrixcontributor import SystemMatrixContributorBase
 from edelweissfe.points.node import Node
 
 from edelweissmeshfree.materialpoints.base.mp import MaterialPointBase
 
 
-class CellBase(ABC, VIJEntityBase):
+class CellBase(ABC, SystemMatrixContributorBase):
     """MPM cells in EdelweissMPM should be derived from this
     base class in order to follow the general interface.
 
