@@ -12,12 +12,19 @@ Why assembly is a memory problem
 
 Every particle contributes a dense block over the kernel functions in its support, and the supports of neighbouring
 particles overlap heavily, so many blocks add to the same entry of the matrix. The default path, ``vij``, writes each
-block into its own slice of one **VIJ staging array**, and sums the duplicates into CSR afterwards. The staging array
-and its gather map therefore grow with the number of contributions, not with the number of entries of the matrix:
-with a large support, they are many times larger than the matrix they produce.
+block into its own slice of one **VIJ staging array**, with the global row and column of every value, and sums the
+duplicates into CSR afterwards. The staging array, its row and column indices and its gather map therefore grow with
+the number of contributions, not with the number of entries of the matrix: with a large support, they are many times
+larger than the matrix they produce.
 
-The other path, ``direct``, gives every contribution its destination in the CSR matrix in advance, and scatters it
-there. No staging array exists at all.
+The other path, ``direct``, derives the CSR pattern from the DOF lists of the cells and particles themselves, gives
+every contribution its destination in the CSR matrix in advance, and scatters it there. Neither a staging array nor
+the row and column indices of the contributions exist at all.
+
+A cell or a particle couples all its degrees of freedom: its block is the dense ``nDof x nDof`` matrix, column-major,
+in its own DOF numbering (EdelweissFE's
+:class:`~edelweissfe.numerics.systemmatrixcontributor.SystemMatrixContributorBase`). The Marmot cells and particles,
+extension types outside that base class, declare it themselves.
 
 Switching it on
 ---------------
