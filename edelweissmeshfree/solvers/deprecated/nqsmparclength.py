@@ -487,8 +487,8 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NonlinearQuasistaticSolver):
             PExt,
             PExt_0,
             PExt_f,
-            theDofManager.constructVIJSystemMatrix(),
-            theDofManager.constructVIJSystemMatrix(),
+            K.constructVIJSystemMatrix(),
+            K.constructVIJSystemMatrix(),
         )
 
         return newtonCache

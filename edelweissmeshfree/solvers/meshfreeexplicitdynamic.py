@@ -288,7 +288,7 @@ class MeshfreeExplicitDynamic(NonlinearSolverBase):
             return
 
         model.updateConnectivity()
-        self._adoptLayout(model.buildEquationSystem(withSystemMatrix=False))
+        self._adoptLayout(model.buildEquationSystem())
 
         if self._netForce is not None:
             # resumed: the checkpoint holds the vectors of the equation system just rebuilt from the same state
@@ -463,7 +463,7 @@ class MeshfreeExplicitDynamic(NonlinearSolverBase):
             self._V = self._asDofVector(self._V)
             return
 
-        self._adoptLayout(model.buildEquationSystem(withSystemMatrix=False))
+        self._adoptLayout(model.buildEquationSystem())
 
     def _adoptLayout(self, layout):
         """Work on a (re)built layout: vectors sized and located by its DOF manager, and the velocity of its nodes read
