@@ -3,7 +3,6 @@ from typing import Iterable
 
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
-from edelweissfe.numerics.csrgeneratorv2 import CSRGenerator
 from edelweissfe.numerics.dofmanager import DofManager, DofVector, VIJSystemMatrix
 from edelweissfe.numerics.parallelizationutilities import (
     getNumberOfThreads,
@@ -654,8 +653,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             The collection of expensive objects.
         """
 
-        csrGenerator = CSRGenerator(theDofManager)
-        K = VIJSystemMatrixAssembly(csrGenerator, theDofManager, 1)
+        K = VIJSystemMatrixAssembly(theDofManager, 1)
+        csrGenerator = K.csrGenerator
 
         dU = theDofManager.constructDofVector()
         Rhs = theDofManager.constructDofVector()
