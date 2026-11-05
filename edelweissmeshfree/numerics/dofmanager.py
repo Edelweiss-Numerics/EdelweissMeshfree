@@ -96,21 +96,18 @@ class MPMDofManager(DofManager):
 
         (
             self.accumulatedCellNDof,
-            self._accumulatedCellVIJSize,
             self._nAccumulatedNodalFluxesFieldwiseFromCells,
             self.largestNumberOfCellNDof,
         ) = self._gatherCellsInformation(cells)
 
         (
             self.accumulatedCellElementNDof,
-            self._accumulatedCellElementVIJSize,
             self._nAccumulatedNodalFluxesFieldwiseFromCellElements,
             self.largestNumberOfCellElementNDof,
         ) = self._gatherCellsInformation(cellElements)
 
         (
             self.accumulatedParticleNDof,
-            self._accumulatedParticleVIJSize,
             self._nAccumulatedNodalFluxesFieldwiseFromParticles,
             self.largestNumberOfParticleNDof,
         ) = self._gatherCellsInformation(particles)
@@ -135,16 +132,9 @@ class MPMDofManager(DofManager):
         self.idcsOfHigherOrderEntitiesInDofVector |= self.idcsOfParticlesInDofVector
 
         if initializeVIJPattern:
-            self._sizeVIJ = (
-                self._accumulatedElementVIJSize
-                + self._accumulatedConstraintVIJSize
-                + self._accumulatedCellVIJSize
-                + self._accumulatedCellElementVIJSize
-                + self._accumulatedParticleVIJSize
-            )
-            self.I, self.J, self.idcsOfHigherOrderEntitiesInVIJ = self._initializeVIJPattern()
+            self.I, self.J, self.vijSliceOfEntity = self._initializeVIJPattern()
 
-    def _gatherCellsInformation(self, entities: list) -> tuple[int, int, int, int]:
+    def _gatherCellsInformation(self, entities: list) -> tuple[int, dict, int]:
         """Generates some auxiliary information,
         which may be required by some modules of EdelweissFE.
 
@@ -155,10 +145,9 @@ class MPMDofManager(DofManager):
 
         Returns
         -------
-        tuple[int,int]
+        tuple[int, dict, int]
             The tuple of
                 - number of accumulated elemental degrees of freedom.
-                - number of accumulated system matrix sizes.
                 - the number of  acummulated fluxes Σ_entities Σ_nodes ( nDof (field) ) for Abaqus-like convergence tests.
                 - largest occuring number of dofs on any element.
         """
