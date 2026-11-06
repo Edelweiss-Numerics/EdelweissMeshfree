@@ -24,89 +24,16 @@
 #  The full text of the license can be found in the file LICENSE.md at
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
-"""Helpers for checking the rule every constraint follows: it adds a residual contribution ``P`` and the tangent
-``K = dP/dU`` (see the EdelweissFE solver documentation, "The residual and the tangent").
+"""Helpers for checking the constraints of EdelweissMeshfree against the rule every constraint follows: it adds a
+residual contribution ``P`` and the tangent ``K = dP/dU`` (see the EdelweissFE solver documentation, "The residual and
+the tangent").
 
-Because ``K`` must be the derivative of what is added to ``P``, comparing it with central differences of ``P`` checks
-both at once: a wrong tangent and a ``P`` of the wrong sign each show up as a mismatch. The same idea as EdelweissFE's
-``tests/_residualtangent.py``, for the constraints of EdelweissMeshfree, together with stand-ins for the particles,
-cells and material points they act on, so that a check needs no Marmot.
+The check itself is EdelweissFE's, :mod:`edelweissfe.utils.residualtangentcheck`. This module adds what the
+constraints of EdelweissMeshfree need besides: stand-ins for the particles, cells and material points they act on, so
+that a check needs no Marmot.
 """
 
 import numpy as np
-
-
-def residualContributionAndTangent(
-    constraint, U: np.ndarray, dU: np.ndarray, timeStep
-) -> tuple[np.ndarray, np.ndarray]:
-    """The residual contribution of a constraint and its tangent, the latter as one dense matrix.
-
-    The tangent is scattered from the flat VIJ values with the constraint's own ``(I, J)`` pattern -- the one the
-    global assembly uses -- so that the check covers the layout together with the values.
-
-    Parameters
-    ----------
-    constraint
-        The constraint.
-    U
-        The local solution.
-    dU
-        The local solution increment.
-    timeStep
-        The time step handed to the constraint.
-
-    Returns
-    -------
-    tuple[np.ndarray, np.ndarray]
-        ``P`` and the dense ``nDof x nDof`` tangent.
-    """
-
-    nDof = constraint.nDof
-    size = constraint.getVIJContributionSize()
-    I_ = np.zeros(size, dtype=int)
-    J_ = np.zeros(size, dtype=int)
-    constraint.initializeVIJContribution(np.arange(nDof), I_, J_, 0)
-
-    flat = np.zeros(size)
-    P = np.zeros(nDof)
-    constraint.computeKernels(U, dU, P, constraint.shapeVIJContribution(flat), timeStep)
-
-    K = np.zeros((nDof, nDof))
-    np.add.at(K, (I_, J_), flat)
-    return P, K
-
-
-def finiteDifferenceTangent(constraint, dU: np.ndarray, timeStep, h: float = 1e-7) -> np.ndarray:
-    """The derivative of a constraint's residual contribution by central differences.
-
-    The nodes of particles and cells carry no total solution: at the start of an increment the configuration is the
-    current one, so ``U = dU``, and ``U`` and ``dU`` are perturbed together.
-
-    Parameters
-    ----------
-    constraint
-        The constraint.
-    dU
-        The local solution increment, at which to differentiate.
-    timeStep
-        The time step handed to the constraint.
-    h
-        The perturbation.
-
-    Returns
-    -------
-    np.ndarray
-        The dense matrix ``dP/dU``.
-    """
-
-    columns = []
-    for i in range(dU.size):
-        perturbation = np.zeros(dU.size)
-        perturbation[i] = h
-        forward = residualContributionAndTangent(constraint, dU + perturbation, dU + perturbation, timeStep)[0]
-        backward = residualContributionAndTangent(constraint, dU - perturbation, dU - perturbation, timeStep)[0]
-        columns.append((forward - backward) / (2.0 * h))
-    return np.column_stack(columns)
 
 
 def interpolationVector(nodes: list, coordinates: np.ndarray) -> np.ndarray:
