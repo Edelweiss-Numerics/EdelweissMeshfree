@@ -135,7 +135,7 @@ def run_sim(no_limit=False):
             "Displacement/SQCNIxNSNI/PlaneStrain/Quad",
             number,
             vertexCoordinates,
-            volume,
+            0.0,
             theApproximation,
             theMaterial,
         )
