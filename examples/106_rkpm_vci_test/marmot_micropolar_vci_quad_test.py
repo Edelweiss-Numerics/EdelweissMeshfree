@@ -75,8 +75,7 @@ from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
 from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
     MarmotParticleWrapper,
 )
-from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
-from edelweissmeshfree.solvers.nqsmarmotparallel import NQSParallelForMarmot
+from edelweissmeshfree.solvers.deprecated.nqs import NonlinearQuasistaticSolver
 
 
 def run_sim():
@@ -185,7 +184,7 @@ def run_sim():
     adaptiveTimeStepper = AdaptiveTimeStepper(0.0, 1.0, 1e-1, 1e-1, 1e-1, 1000, theJournal)
 
     nonlinearSolver = NonlinearQuasistaticSolver(theJournal)
-    nonlinearSolver = NQSParallelForMarmot(theJournal)
+    nonlinearSolver = NonlinearQuasistaticSolver(theJournal)
 
     iterationOptions = dict()
 

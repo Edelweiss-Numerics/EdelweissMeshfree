@@ -189,3 +189,24 @@ class MaterialPointBase(ABC):
         values
             The numpy array describing the initial state.
         """
+
+    @abstractmethod
+    def getRestartData(self) -> np.ndarray:
+        """The state of the last accepted increment, for a restart checkpoint. A material point is updated-Lagrangian:
+        its position follows from this state.
+
+        Returns
+        -------
+        np.ndarray
+            The state.
+        """
+
+    @abstractmethod
+    def readRestartData(self, restartData: np.ndarray):
+        """Restore the state :meth:`getRestartData` returned, and with it the position.
+
+        Parameters
+        ----------
+        restartData
+            The state.
+        """

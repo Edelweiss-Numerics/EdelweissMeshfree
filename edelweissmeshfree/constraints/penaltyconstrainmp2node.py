@@ -31,6 +31,9 @@ class PenaltyConstrainMP2Node(MPMConstraintBase):
         The penalty parameter value.
     """
 
+    #: Carries nothing from one increment to the next.
+    checkpointedState = {}
+
     def __init__(
         self,
         name: str,
@@ -114,17 +117,19 @@ class PenaltyConstrainMP2Node(MPMConstraintBase):
 
         return hasChanged
 
-    def applyConstraint(self, dU: np.ndarray, PExt: np.ndarray, V: np.ndarray, timeStep: TimeStep):
-        """Apply the penalty constraint to the residual and stiffness matrix.
+    def computeKernels(self, U_np: np.ndarray, dU: np.ndarray, P: np.ndarray, K: np.ndarray, timeStep: TimeStep):
+        """Add the residual contribution of the penalty constraint, and its tangent.
 
         Parameters
         ----------
+        U_np
+            The current solution; unused, the constraint acts on the increment.
         dU
-            The displacement vector.
-        PExt
-            The external force vector.
-        V
-            The stiffness matrix.
+            The displacement increment.
+        P
+            The residual contribution to augment.
+        K
+            The tangent to augment.
         timeStep
             The time step.
         """
@@ -132,10 +137,10 @@ class PenaltyConstrainMP2Node(MPMConstraintBase):
         # loop over the prescribed components
         for i in self._prescribedComponents:
 
-            P_i = PExt[i :: self._fieldSize]  # reshape the force vector accounting for the ith component
+            P_i = P[i :: self._fieldSize]  # reshape the residual vector accounting for the ith component
             dU_j = dU[i :: self._fieldSize]  # reshape the displacement vector accounting for the ith component
 
-            K_ij = V.reshape((self.nDof, self.nDof))[i :: self._fieldSize, i :: self._fieldSize]
+            K_ij = K.reshape((self.nDof, self.nDof))[i :: self._fieldSize, i :: self._fieldSize]
 
             masterNodeIndex = len(self._slaveNodes)  # index of the master node is the last one
 

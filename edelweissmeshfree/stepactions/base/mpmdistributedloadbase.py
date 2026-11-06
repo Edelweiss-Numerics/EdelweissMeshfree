@@ -37,14 +37,19 @@
 from abc import abstractmethod
 
 import numpy as np
-from edelweissfe.stepactions.base.stepactionbase import StepActionBase
+from edelweissfe.numerics.dofmanager import DofManager, DofVector
+from edelweissfe.stepactions.base.loadbase import LoadBase
 from edelweissfe.timesteppers.timestep import TimeStep
 
 from edelweissmeshfree.materialpoints.base.mp import MaterialPointBase
 from edelweissmeshfree.sets.materialpointset import MaterialPointSet
 
 
-class MPMDistributedLoadBase(StepActionBase):
+class MPMDistributedLoadBase(LoadBase):
+    """Base class for distributed (surface) loads carried by material points: each cell a loaded material point lies
+    in integrates the load. It is an EdelweissFE load (:class:`~edelweissfe.stepactions.base.loadbase.LoadBase`): it
+    assembles its own residual contribution, the negative of the external load, in :meth:`assembleLoad`."""
+
     @property
     @abstractmethod
     def mpSet(self) -> MaterialPointSet:
@@ -85,3 +90,51 @@ class MPMDistributedLoadBase(StepActionBase):
                 - the surface ID.
                 - the load vector.
         """
+
+    def assembleLoad(
+        self,
+        P: DofVector,
+        K,
+        U_np: DofVector,
+        dU: DofVector,
+        timeStep: TimeStep,
+        dofManager: DofManager,
+    ):
+        """Let the cells of every loaded material point add the residual contribution of the load the material point
+        carries, the negative of the external load, and its tangent; see
+        :meth:`~edelweissfe.stepactions.base.loadbase.LoadBase.assembleLoad`.
+
+        Parameters
+        ----------
+        P
+            The global residual contribution vector to augment.
+        K
+            The system matrix to augment, which hands out the block of a cell by ``K[cell]``; None for an explicit
+            solver, which needs no tangent.
+        U_np
+            The current global solution.
+        dU
+            The global solution increment.
+        timeStep
+            The current time step.
+        dofManager
+            The DOF manager of the equation system.
+        """
+
+        for mp in self.mpSet:
+            surfaceID, loadVector = self.getCurrentMaterialPointLoad(mp, timeStep)
+
+            for cl in mp.assignedCells:
+                Pc = np.zeros(cl.nDof)
+                Kc = K[cl] if K is not None else np.zeros(cl.nDof * cl.nDof)
+                cl.computeDistributedLoad(
+                    self.loadType,
+                    surfaceID,
+                    mp,
+                    loadVector,
+                    Pc,
+                    Kc,
+                    timeStep.totalTime,
+                    timeStep.timeIncrement,
+                )
+                P[cl] += Pc

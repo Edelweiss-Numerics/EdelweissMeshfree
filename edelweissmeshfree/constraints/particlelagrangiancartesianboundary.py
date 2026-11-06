@@ -12,17 +12,42 @@ from edelweissmeshfree.particles.base.baseparticle import BaseParticle
 
 
 class ParticleLagrangianContactCartesianBoundaryConstraint(MPMConstraintBase):
-    """
+    r"""
     This class implements a Lagrangian contact boundary constraint.
     It prevents a particle from penetrating a defined boundary surface.
     The constraint is applied using Lagrange multipliers to enforce the contact condition.
     Only cartesian planes are supported as boundary surfaces.
 
-    The constraint equation is defined as:
-        g = n . (x - x_boundary) <= 0
-    where n is the orientation of boundary, x is the particle position, and x_boundary is the boundary position.
+    The constraint equation is defined as
+
+    .. math::
+
+        g = \boldsymbol{n} \cdot (\boldsymbol{x} - \boldsymbol{x}_{\mathrm{boundary}}) \leq 0,
+
+    where :math:`\boldsymbol{n}` is the orientation of the boundary, :math:`\boldsymbol{x}` the particle position, and
+    :math:`\boldsymbol{x}_{\mathrm{boundary}}` the boundary position.
 
     The orientation is determined based on the initial position of the particle relative to the boundary.
+
+    The particle interpolates its displacement from the nodes of its kernel functions, as an increment on the current
+    configuration, so the gap is measured with the increment :math:`\boldsymbol{N} \cdot \Delta\mathbf{U}_j` of the
+    constrained component :math:`j` from the position at the start of the increment. While the particle is in contact,
+    a multiplier :math:`\lambda` enforces :math:`g = 0`, and the constraint adds
+
+    .. math::
+
+        \mathbf{P}_{U_j} \mathrel{+}= \lambda\, \frac{\partial g}{\partial \Delta\mathbf{U}_j}, \qquad
+        P_{\lambda} \mathrel{+}= g, \qquad
+        \mathbf{K}_{U_j \lambda} \mathrel{+}= \frac{\partial g}{\partial \Delta\mathbf{U}_j}, \qquad
+        \mathbf{K}_{\lambda U_j} \mathrel{+}= \frac{\partial g}{\partial \Delta\mathbf{U}_j}^T,
+
+    with :math:`\partial g / \partial \Delta\mathbf{U}_j = \boldsymbol{n}_j \boldsymbol{N}`. The multiplier is the
+    contact force, positive in compression. A particle that does not penetrate the boundary, or whose multiplier would
+    pull it towards the boundary, is out of contact: the constraint then adds :math:`P_{\lambda} \mathrel{+}= \lambda`
+    and :math:`K_{\lambda\lambda} \mathrel{+}= 1`, which holds the multiplier at zero.
+
+    The gap is one on increments, the multiplier is a total: the contact force that balances the total stress of the
+    particle, read from ``U_np``, where it continues from the last converged increment. ``reactionForce`` holds it.
 
     Parameters
     ----------
@@ -30,9 +55,6 @@ class ParticleLagrangianContactCartesianBoundaryConstraint(MPMConstraintBase):
         Name of the constraint.
     particle : BaseParticle
         The particle to which the constraint is applied.
-    location:
-        Either "center", "face" or "vertex. For face or vertex, the IDs need
-        to be specified in the particle definition. Note that faceIDs start (Abaqus-convention) at 1.
     component : int
         The component (0 for x, 1 for y, 2 for z) of
         the displacement field that is constrained.
@@ -40,7 +62,19 @@ class ParticleLagrangianContactCartesianBoundaryConstraint(MPMConstraintBase):
         The position of the boundary along the specified component.
     model
         The simulation model.
+    location
+        Where the constraint acts on the particle: at its "center", at the face given by faceID ("face"), or at the
+        vertex given by vertexID ("vertex").
+    faceID
+        The face if location is "face"; face IDs start (Abaqus convention) at 1.
+    vertexID
+        The vertex if location is "vertex".
+    velocity
+        The velocity of the boundary along the constrained component.
     """
+
+    #: The multiplier is a scalar variable of the model, which the model's checkpoint holds.
+    checkpointedState = {}
 
     def __init__(
         self,
@@ -76,7 +110,7 @@ class ParticleLagrangianContactCartesianBoundaryConstraint(MPMConstraintBase):
             elif location == "vertex":
                 if vertexID is None:
                     raise ValueError("vertexID must be specified when location is 'vertex'.")
-                constraintLocation = particle.getVertexCoordinates(vertexID)
+                constraintLocation = particle.getVertexCoordinates()[vertexID]
             return constraintLocation
 
         self._getConstraintLocation = _getConstraintLocation
@@ -144,32 +178,30 @@ class ParticleLagrangianContactCartesianBoundaryConstraint(MPMConstraintBase):
 
         return hasChanged
 
-    def applyConstraint(self, dU_: np.ndarray, PExt: np.ndarray, V: np.ndarray, timeStep: TimeStep):
+    def computeKernels(self, U_np: np.ndarray, dU: np.ndarray, P: np.ndarray, K: np.ndarray, timeStep: TimeStep):
+        # the nodal field values come first, the multiplier last; the nodal values are increments, the multiplier a
+        # total
+        nU = len(self._nodes) * self._fieldSize
+        dU_U = dU[:nU]
+        multiplier = U_np[nU]
+        P_U = P[:nU]
+        P_L = P[nU:]
 
-        dU_U = dU_[: -self._nLagrangianMultipliers]
-        dU_L = dU_[-self._nLagrangianMultipliers :]
-        PExt_U = PExt[: -self._nLagrangianMultipliers]
-        PExt_L = PExt[-self._nLagrangianMultipliers :]
+        K = K.reshape((self.nDof, self.nDof))
+        K_UL = K[:nU, nU:]
+        K_LU = K[nU:, :nU]
+        K_LL = K[nU:, nU:]
 
-        K = V.reshape((self.nDof, self.nDof))
-
-        K_UL = K[: -self._nLagrangianMultipliers, -self._nLagrangianMultipliers :]
-        K_LU = K[-self._nLagrangianMultipliers :, : -self._nLagrangianMultipliers]
-        K_LL = K[-self._nLagrangianMultipliers :, -self._nLagrangianMultipliers :]
-
-        # lag is the index of the lagrangian multiplier
-        # i is the component of the field being constrained
-        i = self._component
+        # j is the constrained component of the field, lag the index of the multiplier
+        j = self._component
         lag = 0
 
-        P_U_i = PExt_U[i :: self._fieldSize]
-        dU_U_j = dU_U[i :: self._fieldSize]
+        P_U_j = P_U[j :: self._fieldSize]
+        dU_U_j = dU_U[j :: self._fieldSize]
+        K_UL_j = K_UL[j :: self._fieldSize, :]
+        K_LU_j = K_LU[:, j :: self._fieldSize]
 
-        K_UL_j = K_UL[i :: self._fieldSize, :]
-        K_LU_j = K_LU[:, i :: self._fieldSize]
-
-        dL_l = dU_L[lag]
-        self.reactionForce = dL_l
+        self.reactionForce = multiplier
 
         N = self._particle.getInterpolationVector(self._getConstraintLocation())
 
@@ -177,36 +209,31 @@ class ParticleLagrangianContactCartesianBoundaryConstraint(MPMConstraintBase):
 
         deltaU_j = N @ dU_U_j[nodeIdcs]
 
-        g_l = self._orientation * (
+        g = self._orientation * (
             deltaU_j - (-self._particle_coordinate_j + self._boundaryPosition + self._velocity * timeStep.stepProgress)
         )
 
         gap_tol = 1e-13
         tensile_threshhold = 1e-13
 
-        is_penetrating = g_l >= -gap_tol
+        is_penetrating = g >= -gap_tol
 
-        is_in_tension = (dL_l) < -tensile_threshhold
-
-        should_be_active = True
+        is_in_tension = multiplier < -tensile_threshhold
 
         if not is_penetrating or is_in_tension:
-            should_be_active = False
-
-        if not should_be_active:
-            # contact not active, but we need to ensure that no force is transferred
-            PExt_L[lag] += dL_l
+            # out of contact: hold the multiplier at zero, so that no force is transferred
+            P_L[lag] += multiplier
             K_LL[lag, lag] += 1.0
 
             return
 
-        dg_l_dU_j = N * self._orientation
+        dg_dU_j = N * self._orientation
 
-        P_U_i[nodeIdcs] += dL_l * dg_l_dU_j
-        PExt_L[lag] += g_l
+        P_U_j[nodeIdcs] += multiplier * dg_dU_j
+        P_L[lag] += g
 
-        K_UL_j[nodeIdcs, lag] += dg_l_dU_j
-        K_LU_j[lag, nodeIdcs] += dg_l_dU_j
+        K_UL_j[nodeIdcs, lag] += dg_dU_j
+        K_LU_j[lag, nodeIdcs] += dg_dU_j
 
         self._contactCurrentlyActive = True
 

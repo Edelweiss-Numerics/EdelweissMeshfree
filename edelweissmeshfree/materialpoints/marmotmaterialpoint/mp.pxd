@@ -121,7 +121,7 @@ cdef class MarmotMaterialPointWrapper:
     cpdef void _initializeStateVarsTemp(self, ) nogil
 
     cpdef void computeYourself(self,
-                     double timeNew,
-                     double dTime, ) except * nogil
+                               double timeNew,
+                               double dTime, ) except *
 
     cdef double[::1] getStateView(self, string stateName)
