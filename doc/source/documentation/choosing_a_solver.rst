@@ -95,9 +95,8 @@ onto EdelweissFE's as follows:
 
 **Restart.** EdelweissFE's restart output manager writes a checkpoint of the converged state; an ``MPMModel`` adds the
 state of its material points and particles, from which their positions follow (see
-:meth:`~edelweissmeshfree.models.mpmmodel.MPMModel.writeRestart`). The output manager writes the state of every output
-manager, which it finds in ``model.outputManagers``. A resumed run builds the model as the checkpointed run did,
-restores its state, and continues the step:
+:meth:`~edelweissmeshfree.models.mpmmodel.MPMModel.writeRestart`), and the state of the output managers of the step.
+A resumed run builds the model as the checkpointed run did, restores its state, and continues the step:
 
 .. code-block:: python
 
@@ -110,7 +109,6 @@ restores its state, and continues the step:
         configuration=RestartOutputManagerSchema(writeInterval=1, baseName="restart"),
     )
     outputManagers = [ensightOutput, restartOutput]
-    model.outputManagers = {outputManager.name: outputManager for outputManager in outputManagers}
 
     # in the resumed run, right after model.prepareYourself(journal):
     resumeCheckpoint = ResumeCheckpoint("restart_1.h5")
