@@ -38,16 +38,19 @@
 from abc import abstractmethod
 
 import numpy as np
-from edelweissfe.stepactions.base.stepactionbase import StepActionBase
+from edelweissfe.numerics.dofmanager import DofManager, DofVector
+from edelweissfe.stepactions.base.loadbase import LoadBase
 from edelweissfe.timesteppers.timestep import TimeStep
 
 from edelweissmeshfree.sets.cellset import CellSet
 
 
-class MPMBodyLoadBase(StepActionBase):
-    """Base class for body loads.
+class MPMBodyLoadBase(LoadBase):
+    """Base class for body loads on the cells of the background grid, such as gravity.
 
-    If you want to implement a new body load, you should derive from this class.
+    It is an EdelweissFE load (:class:`~edelweissfe.stepactions.base.loadbase.LoadBase`): it assembles its own
+    residual contribution, the negative of the external load, in :meth:`assembleLoad`. If you want to implement a new
+    body load, you should derive from this class.
     """
 
     @property
@@ -86,3 +89,48 @@ class MPMBodyLoadBase(StepActionBase):
         np.ndarray
             The magnitude.
         """
+
+    def assembleLoad(
+        self,
+        P: DofVector,
+        K,
+        U_np: DofVector,
+        dU: DofVector,
+        timeStep: TimeStep,
+        dofManager: DofManager,
+    ):
+        """Let every active cell of the cell set add the residual contribution of the body load, the negative of the
+        external load, and its tangent; see :meth:`~edelweissfe.stepactions.base.loadbase.LoadBase.assembleLoad`.
+
+        The active cells are those of the equation system, i.e. those the DOF manager numbers; a body load acts only
+        on them.
+
+        Parameters
+        ----------
+        P
+            The global residual contribution vector to augment.
+        K
+            The system matrix to augment, which hands out the block of a cell by ``K[cell]``; None for an explicit
+            solver, which needs no tangent.
+        U_np
+            The current global solution.
+        dU
+            The global solution increment.
+        timeStep
+            The current time step.
+        dofManager
+            The DOF manager of the equation system.
+        """
+
+        loadVector = self.getCurrentLoad(timeStep)
+        activeCells = dofManager.idcsOfCellsInDofVector
+
+        # summed in the order of the cell set
+        for cl in self.cellSet:
+            if cl in activeCells:
+                Pc = np.zeros(cl.nDof)
+                Kc = K[cl] if K is not None else np.zeros(cl.nDof * cl.nDof)
+
+                cl.computeBodyLoad(self.loadType, loadVector, Pc, Kc, timeStep.totalTime, timeStep.timeIncrement)
+
+                P[cl] += Pc
