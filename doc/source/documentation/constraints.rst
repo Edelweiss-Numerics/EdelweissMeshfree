@@ -26,7 +26,8 @@ switched off is not part of the equation system.
 
 Because :math:`\mathbf{K}` is the derivative of exactly what is added to :math:`\mathbf{P}`, each constraint is
 checked by central differences of its own ``computeKernels`` in
-``edelweissmeshfree/constraints/test/residual_tangent_test.py``; add a case there for a new one.
+``edelweissmeshfree/constraints/test/residual_tangent_test.py``, with EdelweissFE's check
+(:mod:`edelweissfe.utils.residualtangentcheck`); add a case there for a new one.
 
 A constraint written for explicit analyses alone, with forces and without a tangent, derives from
 :class:`~edelweissmeshfree.constraints.base.mpmexplicitconstraintbase.MPMExplicitConstraintBase` and implements

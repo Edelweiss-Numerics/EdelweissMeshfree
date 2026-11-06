@@ -28,8 +28,8 @@
 tangent ``K = dP/dU``.
 
 - Every constraint that adds a tangent is checked by central differences of its own residual contribution, at a state
-  where every switch (contact or not, a multiplier in tension or not) stays on one side under the perturbation. A
-  ``P`` of the wrong sign fails this check as surely as a wrong ``K``.
+  where every switch (contact or not, a multiplier in tension or not) stays on one side under the perturbation. This
+  catches a wrong ``K``, and a ``P`` whose sign alone is wrong; a ``P`` and a ``K`` negated together pass it.
 - A constraint for explicit analyses only has no tangent; its residual contribution is compared with that of its
   implicit counterpart in the same state, which the check above covers.
 - The check above holds at whatever point of a particle a constraint acts. A constraint that acts at a point the user
@@ -43,6 +43,10 @@ import numpy as np
 import pytest
 from edelweissfe.points.node import Node
 from edelweissfe.timesteppers.timestep import TimeStep
+from edelweissfe.utils.residualtangentcheck import (
+    finiteDifferenceTangent,
+    residualContributionAndTangent,
+)
 from edelweissfe.variables.scalarvariable import ScalarVariable
 
 from edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit import (
@@ -87,8 +91,6 @@ from edelweissmeshfree.constraints.test._residualtangent import (
     CellStandIn,
     MaterialPointStandIn,
     ParticleStandIn,
-    finiteDifferenceTangent,
-    residualContributionAndTangent,
 )
 from edelweissmeshfree.models.mpmmodel import MPMModel
 
@@ -293,7 +295,7 @@ def test_the_tangent_is_the_derivative_of_the_residual_contribution(name, model)
     constraint, dU = _build(name, model)
 
     P, K = residualContributionAndTangent(constraint, dU, dU, TIMESTEP)
-    dP_dU = finiteDifferenceTangent(constraint, dU, TIMESTEP)
+    dP_dU = finiteDifferenceTangent(constraint, dU, dU, TIMESTEP)
 
     assert np.abs(K).max() > 0.0, "the check is vacuous without a tangent"
     np.testing.assert_allclose(K, dP_dU, rtol=1e-6, atol=1e-6 * np.abs(K).max())
