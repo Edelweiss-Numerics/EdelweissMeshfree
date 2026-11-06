@@ -40,9 +40,12 @@ from edelweissfe.timesteppers.timestep import TimeStep
 
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.particles.base.baseparticle import BaseParticle
+from edelweissmeshfree.stepactions.base.particledistributedloadbase import (
+    ParticleDistributedLoadBase,
+)
 
 
-class ParticleNitscheDirichlet:
+class ParticleNitscheDirichlet(ParticleDistributedLoadBase):
     """Weak Dirichlet boundary condition via (non-symmetric/incomplete) Nitsche's method.
 
     Enforces prescribed displacement components on a particle boundary surface through the
