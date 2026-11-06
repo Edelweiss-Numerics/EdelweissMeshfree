@@ -572,11 +572,11 @@ class BaseNonlinearSolver:
         # first changed one are still running -- and the caller goes straight on to rebuild the dof
         # manager from constraint node lists that those threads are still rewriting. A constraint
         # updated after that snapshot keeps a dof block sized for a kernel support its particle no
-        # longer has, and the next force evaluation fails to broadcast (measured: with 24 chunks,
-        # ``any`` returned early in 33 of 62 increments, once with 13 chunks still in flight).
+        # longer has, and the next force evaluation fails to broadcast.
         #
         # Every ``executor.map`` in the particle managers is wrapped the same way, for the same
-        # reason. Do not "simplify" this back into ``any(threadPool.map(...))``.
+        # reason. Do not "simplify" this back into ``any(threadPool.map(...))``; the test
+        # ``solvers/test/constraintconnectivity_test.py`` fails if it is.
         connectivityHasChangedPerChunk = list(
             threadPool.map(lambda chunk: self._updateConnectivityOfConstraintChunk(chunk, model), constraintChunks)
         )
