@@ -259,8 +259,6 @@ def run_sim(
 
     nonlinearSolver = NonlinearQuasistaticSolver(theJournal)
     # Only the options that differ from the solver defaults; the per-field dicts are new dicts of this simulation.
-    # (Writing into the per-field dicts of a copy of NonlinearQuasistaticSolver.validOptions would change the
-    # defaults of the class, and with them every later simulation in the same Python process.)
     iterationOptions = dict()
 
     iterationOptions["max. iterations"] = 15

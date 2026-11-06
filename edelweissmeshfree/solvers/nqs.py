@@ -35,6 +35,7 @@
 #  ---------------------------------------------------------------------
 import gc
 from collections.abc import Callable
+from types import MappingProxyType
 
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
@@ -84,30 +85,36 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
 
     identification = "MPM-NQS-Solver"
 
-    validOptions = {
-        "max. iterations": 10,
-        "critical iterations": 5,
-        "allowed residual growths": 10,
-        "iterations for alt. tolerances": 5,
-        "zero increment threshhold": 1e-13,
-        "zero flux threshhold": 1e-9,
-        "default relative flux residual tolerance": 1e-4,
-        "default relative flux residual tolerance alt.": 1e-3,
-        "default relative field correction tolerance": 1e-3,
-        "default absolute flux residual tolerance": 1e-14,
-        "default absolute field correction tolerance": 1e-14,
-        "spec. relative flux residual tolerances": dict(),
-        "spec. relative flux residual tolerances alt.": dict(),
-        "spec. relative field correction tolerances": dict(),
-        "spec. absolute flux residual tolerances": dict(),
-        "spec. absolute field correction tolerances": dict(),
-        "failed increment cutback factor": 0.25,
-        "fall back to quasi Newton after allowed residual growths": False,
-        "line search": False,
-        "line search after n iterations": 5,
-        "line search every n iterations": 2,
-        "line search alphas": [0.8, 1.0, 1.2],
-    }
+    #: The options and their defaults. A simulation passes the options it changes (``userIterationOptions`` of
+    #: :meth:`solveStep`), which replace the defaults, a per-field dict as a whole. The defaults are read-only at every
+    #: level: they are shared by every simulation in the Python process, so a write into them, e.g. into a per-field
+    #: dict of a copy, would change the defaults of every later simulation.
+    validOptions = MappingProxyType(
+        {
+            "max. iterations": 10,
+            "critical iterations": 5,
+            "allowed residual growths": 10,
+            "iterations for alt. tolerances": 5,
+            "zero increment threshhold": 1e-13,
+            "zero flux threshhold": 1e-9,
+            "default relative flux residual tolerance": 1e-4,
+            "default relative flux residual tolerance alt.": 1e-3,
+            "default relative field correction tolerance": 1e-3,
+            "default absolute flux residual tolerance": 1e-14,
+            "default absolute field correction tolerance": 1e-14,
+            "spec. relative flux residual tolerances": MappingProxyType({}),
+            "spec. relative flux residual tolerances alt.": MappingProxyType({}),
+            "spec. relative field correction tolerances": MappingProxyType({}),
+            "spec. absolute flux residual tolerances": MappingProxyType({}),
+            "spec. absolute field correction tolerances": MappingProxyType({}),
+            "failed increment cutback factor": 0.25,
+            "fall back to quasi Newton after allowed residual growths": False,
+            "line search": False,
+            "line search after n iterations": 5,
+            "line search every n iterations": 2,
+            "line search alphas": (0.8, 1.0, 1.2),
+        }
+    )
 
     def __init__(self, journal: Journal):
         super().__init__(journal)
