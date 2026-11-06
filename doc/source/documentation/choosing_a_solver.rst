@@ -200,6 +200,14 @@ the solver with their consistent mass. Where the inertia of the particles is int
         of the increment they were computed on, and lose that meaning when the support of the particles changes.
         The acceleration at the start of a step is computed from equilibrium, for these nodes as for every node.
 
+The two keep the motion of the particles in different places: ``entities`` in the particles' state, ``nodes`` in the
+velocity and acceleration of the kernel functions' nodes. Nothing transfers the motion from the one to the other (a
+projection from the particles to the nodes is not offered: it works poorly). A step whose mode would take the motion
+from where the model does not hold it therefore refuses to start: ``nodes`` after a step in ``entities``, or after an
+initial velocity given to the particles, and ``entities`` after a step in ``nodes``. Keep the mode of the step before,
+or let a quasi-static step bring the model to rest in between. After the explicit solver, which keeps the motion in
+both places, either mode may follow.
+
 In both, ``P`` is the internal force with the inertial force (see EdelweissFE's "Node field results"): the particles'
 own in ``entities``, the solver's at the nodes in ``nodes``. The zero increment before the first increment of a step
 is skipped, with the state kept: nothing moves in zero time (a zero-length increment adds no inertia in the particles
@@ -261,9 +269,10 @@ What to know
 
 - **The zero increment.** The first increment of a step must be the zero increment (the default of a step): it
   assembles the lumped mass of the configuration the step starts from. If the model holds the motion at its nodes
-  (after a step of this solver), the step continues it as ``NED`` does: from the velocity of the nodes and the net
-  force of their acceleration. Otherwise it evaluates the forces of the configuration and projects the velocity from
-  the particles' momentum, e.g. the initial velocity given to the particles.
+  (after a step of this solver, or of ``NID`` integrating the inertia at the nodes), the step continues it as ``NED``
+  does: from the velocity of the nodes and the net force of their acceleration. Otherwise it evaluates the forces of
+  the configuration and projects the velocity from the particles' momentum: the initial velocity given to the
+  particles, or the velocity of a step of ``NID`` that integrated the inertia in the particles.
 - **The velocity** of the kernel functions' nodes is the model's: it is written to the entry ``V`` of the node fields
   at acceptance, and read back by node whenever the equation system is rebuilt, also at the start of a step. A node
   keeps its velocity while the active nodes change around it, and a node that has just become active starts at rest.
