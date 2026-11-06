@@ -221,7 +221,6 @@ def run_sim(
                 configuration=RestartOutputManagerSchema(writeInterval=1, baseName=restartBaseName),
             )
         )
-    theModel.outputManagers = {outputManager.name: outputManager for outputManager in outputManagers}
 
     # The step ends on its increment cap, which is how it is meant to end.
     step = AdaptiveStep(
