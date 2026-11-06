@@ -39,8 +39,17 @@ class MPMConstraintBase(ConstraintBase):
     the multipliers as its scalar variables, and its checkpoint holds them with it.
 
     A constraint that acts only in an explicit analysis, with forces and without a tangent, derives from
-    :class:`~edelweissmeshfree.constraints.base.mpmexplicitconstraintbase.MPMExplicitConstraintBase` instead.
+    :class:`~edelweissmeshfree.constraints.base.mpmexplicitconstraintbase.MPMExplicitConstraintBase` instead. Whether a
+    constraint acts in an explicit analysis at all, it declares in :attr:`actsInExplicitAnalysis`.
     """
+
+    #: Whether this constraint acts in an explicit analysis
+    #: (:class:`~edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic`), which evaluates the
+    #: constraints at the configuration it has just accepted: the particles have moved, and the nodes of the kernel
+    #: functions carry neither a solution nor an increment. A constraint that measures its condition at the particles'
+    #: current positions acts there, e.g. a contact with a boundary; a constraint on the increment, e.g. a weak
+    #: Dirichlet condition or an equal value, would act as if nothing had moved, and the solver refuses it.
+    actsInExplicitAnalysis: bool = False
 
     @property
     @abstractmethod
