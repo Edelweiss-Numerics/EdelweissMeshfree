@@ -98,7 +98,8 @@ onto EdelweissFE's as follows:
     * - ``skipZeroIncrements`` (it kept the zero increment and skipped only its solve)
       - EdelweissFE's implicit dynamic solver skips the solve of a zero-length increment by itself; for a quasi-static
         solver, a time stepper without the zero increment (``makeZeroIncrementFirst=False``). Neither applies to
-        ``MeshfreeExplicitDynamic``: its step starts with the zero increment, which evaluates the forces at rest
+        ``MeshfreeExplicitDynamic``: its step starts with the zero increment, which evaluates the forces of the
+        configuration the step starts from, and takes its velocity (see `Explicit dynamics`_)
 
 **Restart.** EdelweissFE's restart output manager writes a checkpoint of the converged state; an ``MPMModel`` adds the
 state of its material points and particles, from which their positions follow (see
