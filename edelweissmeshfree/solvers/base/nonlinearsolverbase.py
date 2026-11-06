@@ -273,7 +273,8 @@ class BaseNonlinearSolver:
         key = (dirichlet, theDofManager, reducedNodeSet, tuple(dirichlet.components))
         indices = cache.get(key)
         if indices is None:
-            fieldIndices = theDofManager.idcsOfFieldsOnNodeSetsInDofVector[dirichlet.field][reducedNodeSet]
+            # every node of the reduced set is active, so all of them are located
+            fieldIndices, _ = theDofManager.locateFieldOnNodeSet(dirichlet.field, reducedNodeSet)
 
             indices = cache[key] = fieldIndices.reshape((-1, dirichlet.fieldSize))[:, dirichlet.components].flatten()
 
@@ -527,8 +528,14 @@ class BaseNonlinearSolver:
            None of them writes to the model, and none of them creates nodes or variables, so two
            constraints can never touch the same memory.
         2. The individual answers are combined with a logical *or*. That is independent of the order
-           in which the answers arrive, so the result does not depend on how the work was split, nor
-           on how the threads happened to be scheduled.
+           in which the answers arrive, so the *value* returned does not depend on how the work was
+           split, nor on how the threads happened to be scheduled.
+
+        Point 2 is about the value only, and it is not on its own enough: ``any`` short-circuits, so
+        reducing a lazy ``Executor.map`` would also make this function *return early*, while the
+        chunks after the first changed one are still writing. The caller rebuilds the dof manager
+        immediately afterwards, from the very node lists those threads are still rewriting. Hence
+        the results are materialised before being reduced -- see the comment at the call below.
 
         Parameters
         ----------
@@ -559,8 +566,20 @@ class BaseNonlinearSolver:
         constraintChunks = [constraints[i : i + chunkSize] for i in range(0, len(constraints), chunkSize)]
 
         threadPool = getThreadPool(numberOfThreads)
-        connectivityHasChangedPerChunk = threadPool.map(
-            lambda chunk: self._updateConnectivityOfConstraintChunk(chunk, model), constraintChunks
+
+        # Materialised before it is reduced, and that is the whole point of the ``list``:
+        # ``Executor.map`` returns a *lazy* iterator, and ``any`` stops consuming at the first
+        # ``True``. Reducing the iterator directly therefore returns while the chunks after the
+        # first changed one are still running -- and the caller goes straight on to rebuild the dof
+        # manager from constraint node lists that those threads are still rewriting. A constraint
+        # updated after that snapshot keeps a dof block sized for a kernel support its particle no
+        # longer has, and the next force evaluation fails to broadcast.
+        #
+        # Every ``executor.map`` in the particle managers is wrapped the same way, for the same
+        # reason. Do not "simplify" this back into ``any(threadPool.map(...))``; the test
+        # ``solvers/test/constraintconnectivity_test.py`` fails if it is.
+        connectivityHasChangedPerChunk = list(
+            threadPool.map(lambda chunk: self._updateConnectivityOfConstraintChunk(chunk, model), constraintChunks)
         )
 
         return any(connectivityHasChangedPerChunk)
@@ -587,9 +606,19 @@ class BaseNonlinearSolver:
 
         return connectivityHasChanged
 
-    def _getActiveCellsFromManagers(self, mpmManagers):
+    def _getActiveCellsFromManagers(self, mpmManagers: list[MPMManagerBase]) -> list:
+        """Collect the cells that are active in any of the MPM managers, sorted by their number; see
+        :meth:`~edelweissmeshfree.models.mpmmodel.MPMModel.activeCellsOf`.
 
-        activeCells = set()
-        for man in mpmManagers:
-            activeCells |= man.getActiveCells()
-        return activeCells
+        Parameters
+        ----------
+        mpmManagers
+            The list of MPMManagerBase instances.
+
+        Returns
+        -------
+        list
+            The active cells, each once, sorted by cell number.
+        """
+
+        return MPMModel.activeCellsOf(mpmManagers)

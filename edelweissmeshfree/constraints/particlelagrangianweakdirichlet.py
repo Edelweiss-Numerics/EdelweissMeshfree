@@ -12,26 +12,67 @@ from edelweissmeshfree.particles.base.baseparticle import BaseParticle
 
 
 class ParticleLagrangianWeakDirichlet(MPMConstraintBase):
-    """
-    This is an implementation of weak Dirichlet boundary conditions using a penalty formulation.
-    It constrains a material point field increment.
+    r"""Prescribes the increment of a field at one point of one particle -- its center, the center of one of its faces,
+    or one of its vertices -- with Lagrange multipliers.
+
+    It is the Lagrange multiplier counterpart of
+    :class:`~edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet`. A penalty
+    spring enforces the prescribed value only approximately, the more closely the stiffer it is; a multiplier enforces
+    it exactly, at the cost of one more unknown per prescribed component, and of a zero block on the diagonal of the
+    tangent. To constrain a set of particles, create one constraint per particle with
+    :func:`ParticleLagrangianWeakDirichletOnParticleSetFactory`: every constraint couples only the nodes of its own
+    particle, so its tangent block stays small, where one constraint on all particles would couple all nodes of the set
+    in one dense block.
+
+    A particle interpolates the field from the nodes of its kernel functions, as an increment on the current
+    configuration: :math:`u(\boldsymbol{x}) = \boldsymbol{N}(\boldsymbol{x}) \cdot \Delta\mathbf{U}`. At the
+    constrained point :math:`\boldsymbol{x}_c` and for every prescribed component :math:`i`, a multiplier
+    :math:`\lambda_i` enforces
+
+    .. math::
+
+        g_i = \boldsymbol{N}(\boldsymbol{x}_c) \cdot \Delta\mathbf{U}_i - \Delta\bar{u}_i = 0,
+
+    where :math:`\Delta\bar{u}_i` is the share of the step's prescribed increment that falls into the current
+    increment. Following the rule of every constraint (see
+    :class:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase`), the constraint adds
+
+    .. math::
+
+        \mathbf{P}_{U_i} \mathrel{+}= \lambda_i\, \boldsymbol{N}(\boldsymbol{x}_c), \qquad
+        P_{\lambda_i} \mathrel{+}= g_i, \qquad
+        \mathbf{K}_{U_i \lambda_i} \mathrel{+}= \boldsymbol{N}(\boldsymbol{x}_c), \qquad
+        \mathbf{K}_{\lambda_i U_i} \mathrel{+}= \boldsymbol{N}(\boldsymbol{x}_c)^T,
+
+    so that it acts on the particle with the point force :math:`-\lambda_i` at :math:`\boldsymbol{x}_c`. The tangent is
+    symmetric, as the constraint stems from the potential :math:`\sum_i \lambda_i g_i`. ``reactionForce`` holds, per
+    component of the field, the multiplier: the force with which the particle acts on the constraint.
+
+    The multipliers are ordered as the components in ``prescribedStepDelta``.
 
     Parameters
     ----------
     name
         The name of this constraint.
     constrainedParticle
-        The particle whose field value is to be constrained.
-    constrainedLocation
-        The location on the particle to apply the constraint. Can be "center" or a vertex
-        index (0 to number of vertices - 1).
+        The particle whose field is to be constrained.
     field
         The field this constraint is acting on.
     prescribedStepDelta
-        A dictionary mapping field component indices to their prescribed step increments.
+        The prescribed increment of the field over the step, by component.
     model
         The full MPMModel instance.
+    location
+        The point of the particle to constrain: ``"center"``, ``"face"`` (the center of the face ``faceID``) or
+        ``"vertex"`` (the vertex ``vertexID``).
+    faceID
+        The face whose center is constrained, if ``location`` is ``"face"``.
+    vertexID
+        The vertex that is constrained, if ``location`` is ``"vertex"``.
     """
+
+    #: Carries nothing from one increment to the next: the multipliers are unknowns of every increment.
+    checkpointedState = {}
 
     def __init__(
         self,
@@ -39,7 +80,7 @@ class ParticleLagrangianWeakDirichlet(MPMConstraintBase):
         constrainedParticle: BaseParticle,
         field: str,
         prescribedStepDelta: dict,
-        model,
+        model: MPMModel,
         location: str = "center",
         faceID: int = None,
         vertexID: int = None,
@@ -51,23 +92,22 @@ class ParticleLagrangianWeakDirichlet(MPMConstraintBase):
         self._fieldSize = getFieldSize(self._field, model.domainSize)
         self._nodes = dict()
 
-        def _getConstraintLocation():
-            particle = self._constrainedParticle
-            if location == "center":
-                constraintLocation = particle.getCenterCoordinates()
-            elif location == "face":
-                if faceID is None:
-                    raise ValueError("faceID must be specified when location is 'face'.")
-                constraintLocation = particle.getFaceCoordinates(faceID)
-            elif location == "vertex":
-                if vertexID is None:
-                    raise ValueError("vertexID must be specified when location is 'vertex'.")
-                constraintLocation = particle.getVertexCoordinates()[vertexID]
-            return constraintLocation
-
-        self._getConstraintLocation = _getConstraintLocation
+        if location not in ("center", "face", "vertex"):
+            raise ValueError("Constraint '{:}': location must be 'center', 'face' or 'vertex'.".format(name))
+        if location == "face" and faceID is None:
+            raise ValueError("Constraint '{:}': faceID must be specified when location is 'face'.".format(name))
+        if location == "vertex" and not isinstance(vertexID, int):
+            raise ValueError(
+                "Constraint '{:}': vertexID must be one vertex index when location is 'vertex'.".format(name)
+            )
+        self._location = location
+        self._faceID = faceID
+        self._vertexID = vertexID
 
         self._nLagrangianMultipliers = len(self._prescribedStepDelta)
+        if self._nLagrangianMultipliers == 0:
+            raise ValueError("Constraint '{:}' constrains nothing: it needs prescribed components.".format(name))
+
         self.reactionForce = np.zeros(self._fieldSize)
 
     @property
@@ -105,7 +145,6 @@ class ParticleLagrangianWeakDirichlet(MPMConstraintBase):
         self._lagrangianMultipliers = scalarVariables
 
     def updateConnectivity(self, model):
-
         nodes = {
             n: i
             for i, n in enumerate(
@@ -113,67 +152,63 @@ class ParticleLagrangianWeakDirichlet(MPMConstraintBase):
             )
         }
 
-        hasChanged = False
-        if nodes != self._nodes:
-            hasChanged = True
-
+        hasChanged = nodes != self._nodes
         self._nodes = nodes
 
         return hasChanged
 
-    def applyConstraint(self, dU_: np.ndarray, PExt: np.ndarray, V: np.ndarray, timeStep: TimeStep):
+    def _constrainedPointCoordinates(self) -> np.ndarray:
+        """The current coordinates of the constrained point of the particle.
 
-        dU_U = dU_[: -self._nLagrangianMultipliers]
-        dU_L = dU_[-self._nLagrangianMultipliers :]
-        PExt_U = PExt[: -self._nLagrangianMultipliers]
-        PExt_L = PExt[-self._nLagrangianMultipliers :]
+        Returns
+        -------
+        np.ndarray
+            The coordinates of the center, of the center of the face, or of the vertex.
+        """
 
-        K = V.reshape((self.nDof, self.nDof))
+        particle = self._constrainedParticle
+        if self._location == "center":
+            return particle.getCenterCoordinates()
+        if self._location == "face":
+            return particle.getFaceCoordinates(self._faceID)
+        return particle.getVertexCoordinates()[self._vertexID]
 
-        # K_UU = K[:-self._nLagrangianMultipliers, :-self._nLagrangianMultipliers]
-        K_UL = K[: -self._nLagrangianMultipliers, -self._nLagrangianMultipliers :]
-        K_LU = K[-self._nLagrangianMultipliers :, : -self._nLagrangianMultipliers]
-        # K_LL = K[-self._nLagrangianMultipliers:, -self._nLagrangianMultipliers:]
+    def computeKernels(self, U_np: np.ndarray, dU: np.ndarray, P: np.ndarray, K: np.ndarray, timeStep: TimeStep):
+        # the nodal field values come first, the multipliers last
+        nU = len(self._nodes) * self._fieldSize
+        dU_U = dU[:nU]
+        multipliers = dU[nU:]
+        P_U = P[:nU]
+        P_L = P[nU:]
+
+        K = K.reshape((self.nDof, self.nDof))
+        K_UL = K[:nU, nU:]
+        K_LU = K[nU:, :nU]
 
         self.reactionForce.fill(0.0)
-        p = self._constrainedParticle
 
-        # if self._constrainedLocation == "center":
-        #     constrainedCoordinates = p.getCenterCoordinates()
-        # elif isinstance(self._constrainedLocation, int):
-        #     constrainedCoordinates = p.getVertexCoordinates()[self._constrainedLocation]
-
-        constrainedCoordinates = self._getConstraintLocation()
+        particle = self._constrainedParticle
+        N = particle.getInterpolationVector(self._constrainedPointCoordinates())
+        nodeIdcs = [self._nodes[kf.node] for kf in particle.kernelFunctions]
 
         for lag, (i, prescribedComponent) in enumerate(self._prescribedStepDelta.items()):
-            # lag is the lagrange multiplier index
-            # i is the field component index
-            # prescribedComponent is the prescribed increment for this step
+            # lag counts the multipliers, i is the component of the field
+            dU_U_i = dU_U[i :: self._fieldSize]
+            P_U_i = P_U[i :: self._fieldSize]
+            K_UL_i = K_UL[i :: self._fieldSize, :]
+            K_LU_i = K_LU[:, i :: self._fieldSize]
+            multiplier = multipliers[lag]
 
-            P_U_i = PExt_U[i :: self._fieldSize]
-            dU_U_j = dU_U[i :: self._fieldSize]
+            g = N @ dU_U_i[nodeIdcs] - prescribedComponent * timeStep.stepProgressIncrement
+            dg_dU_i = N
 
-            K_UL_j = K_UL[i :: self._fieldSize, :]
-            K_LU_j = K_LU[:, i :: self._fieldSize]
+            P_U_i[nodeIdcs] += multiplier * dg_dU_i
+            P_L[lag] += g
 
-            dL_l = dU_L[lag]
+            K_UL_i[nodeIdcs, lag] += dg_dU_i
+            K_LU_i[lag, nodeIdcs] += dg_dU_i
 
-            N = p.getInterpolationVector(constrainedCoordinates)
-
-            nodeIdcs = [self._nodes[kf.node] for kf in p.kernelFunctions]
-
-            mpValue = N @ dU_U_j[nodeIdcs]
-
-            g_l = mpValue - prescribedComponent * timeStep.stepProgressIncrement
-            dg_l_dU_j = N
-
-            P_U_i[nodeIdcs] += dL_l * dg_l_dU_j
-            PExt_L[lag] += g_l
-
-            K_UL_j[nodeIdcs, lag] += dg_l_dU_j
-            K_LU_j[lag, nodeIdcs] += dg_l_dU_j
-
-            self.reactionForce[i] += dL_l
+            self.reactionForce[i] += multiplier
 
 
 def ParticleLagrangianWeakDirichletOnParticleSetFactory(
@@ -184,34 +219,36 @@ def ParticleLagrangianWeakDirichletOnParticleSetFactory(
     model: MPMModel,
     location: str = "center",
     faceID: int = None,
-    vertexID: int | list[int] = None,
-):
-    """
-    Factory function to create ParticleLagrangianWeakDirichlet constraints on a collection of particles.
+    vertexID: int = None,
+) -> dict[str, ParticleLagrangianWeakDirichlet]:
+    """Creates one :class:`ParticleLagrangianWeakDirichlet` per particle of a collection, all constraining the same
+    point of their particles.
 
     Parameters
     ----------
     baseName
-        The base name for the constraints.
+        The base name of the constraints.
     particleCollection
-        An iterable collection of particles or an EntityBasedSurface.
+        The particles to constrain, or an EntityBasedSurface, whose particles are constrained at the faces it names.
     field
         The field to be constrained.
     prescribedStepDelta
-        A dictionary mapping field component indices to their prescribed step increments.
+        The prescribed increment of the field over the step, by component.
     model
         The MPMModel instance.
     location
-        The location on the particle to apply the constraint. Can be "center", "face", or "vertex".
+        The point of every particle to constrain: ``"center"``, ``"face"`` or ``"vertex"``.
     faceID
-        The face ID if location is "face" and if particleCollection is not an EntityBasedSurface.
+        The face whose center is constrained, if ``location`` is ``"face"`` and ``particleCollection`` is not an
+        EntityBasedSurface.
     vertexID
-        The vertex ID if location is "vertex".
+        The vertex that is constrained, if ``location`` is ``"vertex"``. To constrain several vertices of every
+        particle, call this factory once per vertex.
 
     Returns
     -------
-    dict
-        A dictionary mapping constraint names to ParticleLagrangianWeakDirichlet instances.
+    dict[str, ParticleLagrangianWeakDirichlet]
+        The constraints, by name.
     """
 
     constraints = dict()
@@ -220,23 +257,17 @@ def ParticleLagrangianWeakDirichletOnParticleSetFactory(
         for faceID, particles in particleCollection.items():
             for i, p in enumerate(particles):
                 name = f"{baseName}_face{faceID}_{i}"
-                constraint = ParticleLagrangianWeakDirichlet(
+                constraints[name] = ParticleLagrangianWeakDirichlet(
                     name, p, field, prescribedStepDelta, model, location, faceID
                 )
-                constraints[name] = constraint
         return constraints
 
-    elif isinstance(particleCollection, Iterable):
-
+    if isinstance(particleCollection, Iterable):
         for i, p in enumerate(particleCollection):
             name = f"{baseName}_{i}"
-            constraint = ParticleLagrangianWeakDirichlet(
+            constraints[name] = ParticleLagrangianWeakDirichlet(
                 name, p, field, prescribedStepDelta, model, location, faceID, vertexID
             )
-            constraints[name] = constraint
-
         return constraints
 
-    else:
-        raise TypeError("particleCollection must be a list of particles or an EntityBasedSurface.")
-    return constraints
+    raise TypeError("particleCollection must be a list of particles or an EntityBasedSurface.")

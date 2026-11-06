@@ -41,9 +41,12 @@ from edelweissfe.timesteppers.timestep import TimeStep
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.particles.base.baseparticle import BaseParticle
 from edelweissmeshfree.sets.particleset import ParticleSet
+from edelweissmeshfree.stepactions.base.particledistributedloadbase import (
+    ParticleDistributedLoadBase,
+)
 
 
-class ParticleDistributedLoad:
+class ParticleDistributedLoad(ParticleDistributedLoadBase):
     """
     This is a distributed load for particles.
 
@@ -100,12 +103,19 @@ class ParticleDistributedLoad:
     def loadType(self) -> str:
         return self._loadType
 
-    def applyAtStepEnd(self, model, stepMagnitude=None):
+    def applyAtStepEnd(self, model, loadParameter: float | None = None):
+        """Keep the value the load reached at the end of the step, from which the next step starts; see
+        :meth:`~edelweissfe.stepactions.base.loadbase.LoadBase.applyAtStepEnd`.
+
+        Parameters
+        ----------
+        model
+            The current state of the model.
+        loadParameter
+            The load parameter an arc length step ended at; None for a step that follows the amplitude.
+        """
         if not self._idle:
-            if stepMagnitude is None:
-                self._loadAtStepStart += self._delta * self._amplitude(1.0)
-            else:
-                self._loadAtStepStart += self._delta * stepMagnitude
+            self._loadAtStepStart += self._delta * self.amplitudeAtStepEnd(self._amplitude, loadParameter)
 
             self._delta = 0
             self._idle = True

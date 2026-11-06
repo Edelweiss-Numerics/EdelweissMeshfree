@@ -80,6 +80,9 @@ class ParticleMortarWeakDirichlet(MPMConstraintBase):
         Highest polynomial order of the multiplier field per constrained component.
     """
 
+    #: Carries nothing from one increment to the next.
+    checkpointedState = {}
+
     def __init__(
         self,
         name: str,
@@ -172,14 +175,14 @@ class ParticleMortarWeakDirichlet(MPMConstraintBase):
 
         return xi, w
 
-    def applyConstraint(self, dU_: np.ndarray, PExt: np.ndarray, V: np.ndarray, timeStep: TimeStep):
+    def computeKernels(self, U_np: np.ndarray, dU: np.ndarray, P: np.ndarray, K: np.ndarray, timeStep: TimeStep):
         nL = self._nLagrangianMultipliers
-        dU_U = dU_[:-nL]
-        dU_L = dU_[-nL:]
-        PExt_U = PExt[:-nL]
-        PExt_L = PExt[-nL:]
+        dU_U = dU[:-nL]
+        dU_L = dU[-nL:]
+        P_U = P[:-nL]
+        P_L = P[-nL:]
 
-        K = V.reshape((self.nDof, self.nDof))
+        K = K.reshape((self.nDof, self.nDof))
         K_UL = K[:-nL, -nL:]
         K_LU = K[-nL:, :-nL]
 
@@ -199,7 +202,7 @@ class ParticleMortarWeakDirichlet(MPMConstraintBase):
 
         for comp, (i, prescribedComponent) in enumerate(self._prescribedStepDelta.items()):
             dU_U_j = dU_U[i :: self._fieldSize]
-            P_U_i = PExt_U[i :: self._fieldSize]
+            P_U_i = P_U[i :: self._fieldSize]
             K_UL_j = K_UL[i :: self._fieldSize, :]
             K_LU_j = K_LU[:, i :: self._fieldSize]
 
@@ -215,7 +218,7 @@ class ParticleMortarWeakDirichlet(MPMConstraintBase):
                 dg_l_dU = wPk @ B
 
                 P_U_i += dL_l * dg_l_dU
-                PExt_L[lag] += g_l
+                P_L[lag] += g_l
 
                 K_UL_j[:, lag] += dg_l_dU
                 K_LU_j[lag, :] += dg_l_dU

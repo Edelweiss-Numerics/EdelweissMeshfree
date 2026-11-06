@@ -128,6 +128,7 @@ class NQSParallelForMarmot(NonlinearQuasistaticSolver):
     def _computeCells(
         self,
         activeCells_: list,
+        U_np: DofVector,
         dU: DofVector,
         P: DofVector,
         F: DofVector,
@@ -141,8 +142,9 @@ class NQSParallelForMarmot(NonlinearQuasistaticSolver):
             # direct path does not have. Fall back to the base class's sequential loop, which goes
             # through the contribution object: cells are ~0.0002 s of a 3.4 s assembly here, so the
             # threading is not worth a second kernel.
-            return super()._computeCells(activeCells_, dU, P, F, K, time, dT, theDofManager)
+            return super()._computeCells(activeCells_, U_np, dU, P, F, K, time, dT, theDofManager)
 
+        # Marmot cells are incremental: the kernel hands them the solution increment only.
         return computeMarmotCellsInParallel(
             activeCells_,
             dU,
@@ -159,6 +161,7 @@ class NQSParallelForMarmot(NonlinearQuasistaticSolver):
     def _computeParticles(
         self,
         particles_: list,
+        U_np: DofVector,
         dU: DofVector,
         P: DofVector,
         F: DofVector,
@@ -167,6 +170,7 @@ class NQSParallelForMarmot(NonlinearQuasistaticSolver):
         dT: float,
         theDofManager: DofManager,
     ):
+        # Marmot particles are incremental: the kernels hand them the solution increment only.
         if K.vijArray is None:
             return self._computeParticlesIntoCSR(particles_, dU, P, F, time, dT, theDofManager)
 
@@ -294,7 +298,7 @@ class NQSParallelForMarmot(NonlinearQuasistaticSolver):
         # ---- evaluation 1: the production path, untouched -------------------------------------
         computeMarmotParticlesInParallel(particles_, dU, P, F, K_VIJ, time, dT, theDofManager, self.numThreads)
 
-        # cells and elements may have written before us, so the particle contribution is the delta
+        # cells and cell elements may have written before us, so the particle contribution is the delta
         VParticles = np.ascontiguousarray(np.asarray(K_VIJ) - VBefore)
         PParticles = np.asarray(P) - PBefore
 
@@ -618,7 +622,7 @@ class NQSParallelForMarmot(NonlinearQuasistaticSolver):
         particles = list(particles_)
         entityIds = np.array([self._directCSREntityIds[p] for p in particles], dtype=np.intc)
 
-        # cells and elements may already have contributed, and the benchmark clears the array
+        # cells and cell elements may already have contributed, and the benchmark clears the array
         VBefore = np.array(K_VIJ, copy=True)
 
         PDiscard = theDofManager.constructDofVector()
