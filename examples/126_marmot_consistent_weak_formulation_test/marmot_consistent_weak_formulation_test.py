@@ -34,8 +34,6 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 
-import argparse
-
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 import pytest
@@ -82,6 +80,12 @@ from edelweissmeshfree.stepactions.particledistributedload import (
 # )
 
 
+# The square block, its Young's modulus, and the pressure that balances the initial stress.
+blockLength = 10.0
+youngsModulus = 3000.0
+pressure = 100.0
+
+
 def run_sim():
     dimension = 2
 
@@ -98,11 +102,15 @@ def run_sim():
 
     x0 = 0
     y0 = 0
-    height = 10
-    length = 10
+    height = blockLength
+    length = blockLength
     nX = 10
     nY = 10
-    supportRadius = 2
+    # Not a multiple of the particle spacing: the kernel functions sit on the particle centers, and with a
+    # multiple, particle centers lie exactly on the support boundaries of other kernel functions. There, the
+    # support test of the VCI correction decides by round-off whether a particle takes part in the
+    # correction of that kernel function, and the result depends on the order of floating-point operations.
+    supportRadius = 2.5
 
     def theMeshfreeKernelFunctionFactory(node):
         return MarmotMeshfreeKernelFunctionWrapper(node, "BSplineBoxed", supportRadius=supportRadius, continuityOrder=3)
@@ -117,7 +125,7 @@ def run_sim():
     # We need a dummy material for the material point
     theMaterial = {
         "material": "GMDamagedShearNeoHooke",
-        "properties": np.array([3000.0, 0.2, 1, 0.1, 0.2, 1.4999, 1.0]),
+        "properties": np.array([youngsModulus, 0.2, 1, 0.1, 0.2, 1.4999, 1.0]),
     }
 
     def TheParticleFactory(number, vertexCoordinates, volume):
@@ -190,7 +198,7 @@ def run_sim():
     # =====================================================================
 
     for particle in theModel.particles.values():
-        particle.setInitialCondition("geostaticstress", -100)
+        particle.setInitialCondition("geostaticstress", -pressure)
 
     theJournal.printPrettyTable(theModel.makePrettyTableSummary(), "summary")
 
@@ -262,7 +270,7 @@ def run_sim():
         journal=theJournal,
         particleSurface=surfacePressure,
         distributedLoadType="pressure",
-        loadVector=np.array([-100]),
+        loadVector=np.array([-pressure]),
         f_t=lambda t: 1.0,
     )
     # pressure_right = ParticleDistributedLoad(
@@ -377,7 +385,15 @@ def change_test_dir(request, monkeypatch):
     monkeypatch.chdir(request.fspath.dirname)
 
 
-def test_sim():
+def test_sim(assert_gold):
+    """A geostatic initial stress balanced by a pressure on the top and right faces, with the weak-form correction.
+
+    The weak-form correction on the left and bottom faces, where the displacement is constrained weakly, supplies
+    the boundary term of the initial stress that the meshfree test functions see there (example 125 omits it).
+    The initial stress is then in equilibrium with the pressure, and the particles must not move: the expected
+    displacement is zero, measured against the displacement scale pressure * length / Young's modulus of the
+    block.
+    """
 
     # disable plots and suppress warnings
     import matplotlib
@@ -391,18 +407,10 @@ def test_sim():
 
     res = fieldOutputController.fieldOutputs["displacement"].getLastResult()
 
-    gold = np.loadtxt("gold.csv")
+    displacementScale = pressure * blockLength / youngsModulus
 
-    assert np.isclose(np.copy(res.flatten() - gold.flatten()), 0.0, rtol=1e-12).all()
+    assert_gold(res, np.zeros_like(res), rtol=0.0, atol=1e-10 * displacementScale)
 
 
 if __name__ == "__main__":
-    theModel, fieldOutputController = run_sim()
-    res = fieldOutputController.fieldOutputs["displacement"].getLastResult()
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--create-gold", dest="create_gold", action="store_true", help="create the gold file.")
-    args = parser.parse_args()
-
-    if args.create_gold:
-        np.savetxt("gold.csv", res.flatten())
+    run_sim()
