@@ -46,6 +46,7 @@ from edelweissmeshfree.materialpoints.marmotmaterialpoint.mp cimport (
 )
 from edelweissmeshfree.meshfree.approximations.marmot.marmotmeshfreeapproximation cimport (
     MarmotMeshfreeApproximation,
+    MarmotMeshfreeApproximationWrapper,
 )
 from edelweissmeshfree.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunction cimport (
     MarmotMeshfreeKernelFunction,
@@ -120,14 +121,6 @@ cdef extern from "Marmot/MarmotParticle.h":
 
         void computeLumpedMomentum ( double* mLumped)
 
-        void computeDistributedLoadExplicit(        int type,
-                                            int surfaceID,
-                                            const double* load,
-                                            double* Pc,
-                                            double timeNewTotal,
-                                            double dT) except +
-
-
         const unordered_map[string, int]& getSupportedBodyLoadTypes()
 
         const unordered_map[string, int]& getSupportedDistributedLoadTypes()
@@ -166,9 +159,9 @@ cdef extern from "Marmot/MarmotParticle.h":
 
         void vci_assignTestFunctionCorrectionTerms(const double* eta_AjC_RowMajor)
 
-        void setProperties( const double* properties, int nProperties )
+        void setProperties( const double* properties, int nProperties ) except +
 
-        void setProperty( const string& propertyName, const double* property )
+        void setProperty( const string& propertyName, const double* property ) except +
 
         void setInitialCondition( const string& stateName, const double* stateValue )
 
@@ -181,7 +174,8 @@ cdef class MarmotParticleWrapper:
 
     cdef MarmotParticle* _marmotParticle
 
-    cdef MarmotMeshfreeApproximation* _marmotMeshfreeApproximation
+    # the approximation the Marmot particle refers to, held so that it lives as long as the particle
+    cdef MarmotMeshfreeApproximationWrapper _approximation
 
     cdef np.ndarray materialProperties
     cdef double[::1] materialPropertiesView

@@ -101,12 +101,12 @@ class Cell(CellBase):
     ):
         pass
 
-    def computeMaterialPointKernels(
+    def computeKernels(
         self,
-        materialPoints: list[MaterialPointBase],
-        P: np.ndarray,
         K: np.ndarray,
-        timeStep: float,
+        P: np.ndarray,
+        U: np.ndarray,
+        dU: np.ndarray,
         timeTotal: float,
         dTime: float,
     ):

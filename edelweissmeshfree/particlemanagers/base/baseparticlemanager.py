@@ -50,6 +50,12 @@ class BaseParticleManager(ABC):
     The BaseParticleManager class is an abstract base class for all particle managers.
     If you want to implement a new particle manager, you have to inherit from this class."""
 
+    #: Whether every kernel function is bonded to a particle and moves with it. A bonded kernel function always covers
+    #: its own particle, so the set of nodes the particles reach cannot change, only which particle reaches which node.
+    #: A manager that bonds them sets it in its constructor; False otherwise, which is always safe: a solver then
+    #: assumes the nodes may change.
+    kernelFunctionsAreBondedToParticles: bool = False
+
     @abstractmethod
     def updateConnectivity(
         self,

@@ -40,6 +40,7 @@ import numpy as np
 import pytest
 from edelweissfe.config.linsolve import getLinSolverByName
 from edelweissfe.journal.journal import Journal
+from edelweissfe.stepactions.dirichlet import StepAction as Dirichlet
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 from edelweissfe.utils.exceptions import StepFailed
 
@@ -50,9 +51,8 @@ from edelweissmeshfree.mpmmanagers.smartmpmmanager import SmartMaterialPointMana
 from edelweissmeshfree.outputmanagers.ensight import (
     OutputManager as EnsightOutputManager,
 )
-from edelweissmeshfree.solvers.nqsmarmotparallel import NQSParallelForMarmot
+from edelweissmeshfree.solvers.deprecated.nqs import NonlinearQuasistaticSolver
 from edelweissmeshfree.stepactions.bodyload import BodyLoad
-from edelweissmeshfree.stepactions.dirichlet import Dirichlet
 
 
 def run_sim(logFile=None, order: int = 2):
@@ -106,7 +106,6 @@ def run_sim(logFile=None, order: int = 2):
     )
 
     mpmModel.prepareYourself(journal)
-    mpmModel.nodeFields["displacement"].createFieldValueEntry("dU")
 
     journal.printPrettyTable(mpmModel.makePrettyTableSummary(), "Model summary")
 
@@ -190,7 +189,7 @@ def run_sim(logFile=None, order: int = 2):
         np.array([0.0, 10 * -1.0, 0.0]),
     )
 
-    nonlinearSolver = NQSParallelForMarmot(journal)
+    nonlinearSolver = NonlinearQuasistaticSolver(journal)
 
     iterationOptions = dict()
 

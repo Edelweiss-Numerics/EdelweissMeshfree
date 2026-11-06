@@ -53,7 +53,7 @@ from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
 from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
     MarmotParticleWrapper,
 )
-from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
+from edelweissmeshfree.solvers.deprecated.nqs import NonlinearQuasistaticSolver
 
 
 def run_sim():
@@ -215,7 +215,6 @@ def run_sim():
         theJournal,
     )
 
-    # nonlinearSolver = NQSParallelForMarmot(theJournal)
     nonlinearSolver = NonlinearQuasistaticSolver(theJournal)
 
     iterationOptions = {
@@ -235,10 +234,10 @@ def run_sim():
     #     theJournal,
     #     theModel.surfaces["mesh_particles_sideset_load"],
     #     "pressure",
-    #     np.array([-1e3]),
+    #     np.array([1e3]),
     # )
 
-    from edelweissmeshfree.numerics.predictors.quadraticpredictor import (
+    from edelweissmeshfree.solvers.deprecated.predictors.quadraticpredictor import (
         QuadraticPredictor,
     )
 

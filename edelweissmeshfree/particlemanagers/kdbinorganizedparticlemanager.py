@@ -188,7 +188,7 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
         self._meshfreeKernelFunctions = particleKernelDomain.meshfreeKernelFunctions
         self._particles = particleKernelDomain.particles
         self._dimension = dimension
-        self._bondParticlesToKernelFunctions = bondParticlesToKernelFunctions
+        self.kernelFunctionsAreBondedToParticles = bondParticlesToKernelFunctions
         self._journal = journal
 
         if isFreeThreadingSupported():
@@ -223,7 +223,7 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
             raise ValueError("randomlyShiftPartliceShapeFunctions must be a boolean or a float.")
         self._randomlyShiftPartliceShapeFunctions = randomlyShiftPartliceShapeFunctions
 
-        if self._bondParticlesToKernelFunctions:
+        if self.kernelFunctionsAreBondedToParticles:
             if len(self._particles) != len(self._meshfreeKernelFunctions):
                 raise ValueError("The number of particles and kernel functions must be equal.")
 
@@ -300,7 +300,7 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
             True if any particle's set of kernel functions changed.
         """
 
-        if self._bondParticlesToKernelFunctions:
+        if self.kernelFunctionsAreBondedToParticles:
             self._moveKernelFunctionsToTheirParticles()
 
         if not self._aSearchIsDue():
@@ -308,7 +308,7 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
             self._particlesWithChangedKernelFunctions = []
             return False
 
-        if self._bondParticlesToKernelFunctions:
+        if self.kernelFunctionsAreBondedToParticles:
             self.signalizeKernelFunctionUpdate()
 
         self._searchForCoveringKernelFunctions()

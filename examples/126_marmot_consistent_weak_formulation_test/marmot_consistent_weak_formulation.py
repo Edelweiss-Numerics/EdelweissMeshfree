@@ -72,7 +72,7 @@ from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
 from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
     MarmotParticleWrapper,
 )
-from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
+from edelweissmeshfree.solvers.deprecated.nqs import NonlinearQuasistaticSolver
 from edelweissmeshfree.stepactions.particledistributedload import (
     ParticleDistributedLoad,
 )
@@ -151,29 +151,6 @@ def run_sim():
     # We need this model to create the dof manager
     theModel.particleKernelDomains["my_all_with_all"] = theParticleKernelDomain
 
-    # constraintsLeft = []
-    # i = 0
-    # for particle in theModel.particleSets["rectangular_grid_left"]:
-    #    constraintsLeft.append(
-    #        ParticleLagrangianWeakDirichletOnParticleSetFactory(
-    #            f"left_{i}", [particle], "displacement", {0: 0}, theModel, location="vertex", vertexID=[0, 1]
-    #        )
-    #    )
-    #    i += 1
-    # constraintsBottom = []
-    # i = 0
-    # for particle in theModel.particleSets["rectangular_grid_bottom"]:
-    #    constraintsBottom.append(
-    #        ParticleLagrangianWeakDirichletOnParticleSetFactory(
-    #            f"bottom_{i}", [particle], "displacement", {1: 0}, theModel, location="vertex", vertexID=[1, 2]
-    #        )
-    #    )
-    #    i += 1
-
-    # for c in constraintsLeft:
-    #    theModel.constraints.update(c)
-    # for c in constraintsBottom:
-    #    theModel.constraints.update(c)
     dirichletLeft = ParticleLagrangianWeakDirichletOnParticleSetFactory(
         "left", theModel.particleSets["rectangular_grid_left"], "displacement", {0: 0}, theModel, location="center"
     )
@@ -262,7 +239,7 @@ def run_sim():
         journal=theJournal,
         particleSurface=surfacePressure,
         distributedLoadType="pressure",
-        loadVector=np.array([-100]),
+        loadVector=np.array([100]),
         f_t=lambda t: 1.0,
     )
     # pressure_right = ParticleDistributedLoad(
@@ -271,7 +248,7 @@ def run_sim():
     #    journal=theJournal,
     #    particles=theModel.particleSets["rectangular_grid_right"],
     #    distributedLoadType="pressure",
-    #    loadVector=np.array([-100]),
+    #    loadVector=np.array([100]),
     #    surfaceID=2,
     #    f_t=lambda t: 1.0,
     # )
@@ -310,7 +287,6 @@ def run_sim():
     incSize = 1e-1
     adaptiveTimeStepper = AdaptiveTimeStepper(0.0, 1.0, incSize, incSize, incSize / 1, 50, theJournal)
 
-    # nonlinearSolver = NQSParallelForMarmot(theJournal)
     nonlinearSolver = NonlinearQuasistaticSolver(theJournal)
 
     iterationOptions = dict()
