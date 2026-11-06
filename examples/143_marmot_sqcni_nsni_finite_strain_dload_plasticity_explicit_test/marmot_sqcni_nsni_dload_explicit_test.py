@@ -31,8 +31,9 @@ import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 import pytest
 from edelweissfe.journal.journal import Journal
-from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
-from edelweissfe.utils.exceptions import ReachedMaxIncrements, StepFailed
+from edelweissfe.steps.adaptivestep import AdaptiveStep
+from edelweissfe.steps.stepmanager import StepActionCollection
+from edelweissfe.utils.exceptions import StepFailed
 
 from edelweissmeshfree.constraints.explicit.particlepenaltyrigidbodycontactexplicit import (
     ParticlePenaltyContactImplicitSurfaceConstraintExplicitFactory,
@@ -61,9 +62,7 @@ from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
 from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
     MarmotParticleWrapper,
 )
-from edelweissmeshfree.solvers.explicitmultiphysicssolver import (
-    ExplicitMultiphysicsSolver,
-)
+from edelweissmeshfree.solvers.meshfreeexplicitdynamic import MeshfreeExplicitDynamic
 
 
 def run_sim():
@@ -207,6 +206,8 @@ def run_sim():
         ParticleDistributedLoad,
     )
 
+    # Pushes the projectile down onto the sphere: a positive particle pressure pulls along the outward normal of the
+    # face, in explicit and implicit runs alike.
     pressureTop = ParticleDistributedLoad(
         "pressureTop",
         theModel,
@@ -264,29 +265,36 @@ def run_sim():
     ensightOutput.initializeJob()
 
     incSize = 3e-3
-    adaptiveTimeStepper = AdaptiveTimeStepper(
-        0.0, tMax, incSize, incSize, incSize / 1e8, 101, theJournal, increaseFactor=1.5
-    )
-
-    nonlinearSolver = ExplicitMultiphysicsSolver(theJournal)
 
     # for p in theModel.particleSets["projectile_all"]:
     #     v = p.getResultArray("velocity")
     #     v[1] = vProjectileInitial
     #     p.acceptStateAndPosition()
 
-    try:
-        nonlinearSolver.solveStep(
-            adaptiveTimeStepper,
-            theModel,
-            fieldOutputController,
-            outputManagers=[ensightOutput],
-            particleManagers=[theParticleManager],
-            particleDistributedLoads=[pressureTop],
-        )
+    # The model holds its particle manager and its constraints, the step the loads. The step ends on its increment
+    # cap, not at its end time.
+    theModel.particleManagers.append(theParticleManager)
+    stepActions = StepActionCollection()
+    stepActions["distributedload"][pressureTop.name] = pressureTop
+    step = AdaptiveStep(
+        0,
+        theModel,
+        fieldOutputController,
+        theJournal,
+        {},
+        MeshfreeExplicitDynamic({}, theJournal),
+        [ensightOutput],
+        stepActions,
+        stepLength=tMax,
+        startInc=incSize,
+        maxInc=incSize,
+        minInc=incSize / 1e8,
+        maxNumInc=101,
+        increaseFactor=1.5,
+    )
 
-    except ReachedMaxIncrements as e:
-        theJournal.message(f"Reached maximum number of increments: {str(e)}", "error")
+    try:
+        step.solve()
 
     except StepFailed as e:
         theJournal.message(f"Step failed: {str(e)}", "error")

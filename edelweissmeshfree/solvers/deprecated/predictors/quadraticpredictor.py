@@ -38,8 +38,10 @@ from edelweissfe.journal.journal import Journal
 from edelweissfe.numerics.dofmanager import DofVector
 from edelweissfe.timesteppers.timestep import TimeStep
 
-from edelweissmeshfree.numerics.predictors.basepredictor import BasePredictor
-from edelweissmeshfree.numerics.predictors.linearpredictor import LinearPredictor
+from edelweissmeshfree.solvers.deprecated.predictors.basepredictor import BasePredictor
+from edelweissmeshfree.solvers.deprecated.predictors.linearpredictor import (
+    LinearPredictor,
+)
 
 
 class QuadraticPredictor(BasePredictor):

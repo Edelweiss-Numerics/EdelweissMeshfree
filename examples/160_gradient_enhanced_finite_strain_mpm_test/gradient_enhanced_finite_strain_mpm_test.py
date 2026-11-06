@@ -60,6 +60,7 @@ import numpy as np
 import pytest
 from edelweissfe.config.linsolve import getLinSolverByName
 from edelweissfe.journal.journal import Journal
+from edelweissfe.stepactions.dirichlet import StepAction as Dirichlet
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 from edelweissfe.utils.exceptions import StepFailed
 
@@ -70,8 +71,7 @@ from edelweissmeshfree.generators import (
 )
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.mpmmanagers.smartmpmmanager import SmartMaterialPointManager
-from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
-from edelweissmeshfree.stepactions.dirichlet import Dirichlet
+from edelweissmeshfree.solvers.deprecated.nqs import NonlinearQuasistaticSolver
 
 KAPPA0 = 1e-3
 SHORTENING = 0.4
@@ -127,8 +127,6 @@ def run_sim(materialName):
     )
 
     mpmModel.prepareYourself(journal)
-    mpmModel.nodeFields["displacement"].createFieldValueEntry("dU")
-    mpmModel.nodeFields["nonlocal damage"].createFieldValueEntry("dU")
 
     allCells = mpmModel.cellSets["all"]
     allMPs = mpmModel.materialPointSets["all"]

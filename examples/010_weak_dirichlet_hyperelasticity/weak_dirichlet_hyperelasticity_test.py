@@ -31,6 +31,7 @@ import numpy as np
 import pytest
 from edelweissfe.config.linsolve import getLinSolverByName
 from edelweissfe.journal.journal import Journal
+from edelweissfe.stepactions.dirichlet import StepAction as Dirichlet
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 from edelweissfe.utils.exceptions import StepFailed
 
@@ -45,8 +46,7 @@ from edelweissmeshfree.mpmmanagers.smartmpmmanager import SmartMaterialPointMana
 from edelweissmeshfree.outputmanagers.ensight import (
     OutputManager as EnsightOutputManager,
 )
-from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
-from edelweissmeshfree.stepactions.dirichlet import Dirichlet
+from edelweissmeshfree.solvers.deprecated.nqs import NonlinearQuasistaticSolver
 
 
 def run_sim():
@@ -89,7 +89,6 @@ def run_sim():
     )
 
     mpmModel.prepareYourself(journal)
-    mpmModel.nodeFields["displacement"].createFieldValueEntry("dU")
 
     journal.printPrettyTable(mpmModel.makePrettyTableSummary(), "Model summary")
 

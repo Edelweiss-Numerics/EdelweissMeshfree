@@ -106,5 +106,23 @@ cdef class MarmotCellElementWrapper(MarmotCellWrapper):
         """Get the type of the material points in the cell."""
         return MarmotMaterialPointWrapper
 
+    def computeKernels(self,
+                       double[::1] Kc,
+                       double[::1] Pc,
+                       const double[::1] Uc,
+                       const double[::1] dUc,
+                       double timeNew,
+                       double dTime):
+        """Add the internal forces of the material points to the residual, and their tangent; see
+        :meth:`edelweissmeshfree.cells.base.cell.CellBase.computeKernels`. Unlike a cell, a cell element deforms like
+        an element, so Marmot gets the current solution, not its increment. A failure in Marmot requests a cutback,
+        as for an EdelweissFE element."""
+
+        try:
+            with nogil:
+                self._marmotCell.computeMaterialPointKernels(&Uc[0], &Pc[0], &Kc[0], timeNew, dTime)
+        except (RuntimeError, ValueError) as e:
+            raise CutbackRequest(str(e), 0.5)
+
     def acceptLastState(self, ):
         pass
