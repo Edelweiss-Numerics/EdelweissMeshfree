@@ -53,6 +53,9 @@ class MaterialPointPointWiseDistributedLoad(MPMDistributedLoadBase):
 
     """
 
+    #: The load accumulated by the steps before, this step's increment, and whether it is idle.
+    checkpointedState = {"_loadAtStepStart": np.ndarray, "_delta": np.ndarray, "_idle": bool}
+
     def __init__(
         self,
         name: str,
@@ -89,14 +92,19 @@ class MaterialPointPointWiseDistributedLoad(MPMDistributedLoadBase):
     def loadType(self) -> str:
         return self._loadType
 
-    def applyAtStepEnd(self, model, stepMagnitude=None):
+    def applyAtStepEnd(self, model, loadParameter: float | None = None):
+        """Keep the value the load reached at the end of the step, from which the next step starts; see
+        :meth:`~edelweissfe.stepactions.base.loadbase.LoadBase.applyAtStepEnd`.
+
+        Parameters
+        ----------
+        model
+            The current state of the model.
+        loadParameter
+            The load parameter an arc length step ended at; None for a step that follows the amplitude.
+        """
         if not self._idle:
-            if stepMagnitude is None:
-                # standard case
-                self._loadAtStepStart += self._delta * self._amplitude(1.0)
-            else:
-                # set the 'actual' increment manually, e.g. for arc length method
-                self._loadAtStepStart += self._delta * stepMagnitude
+            self._loadAtStepStart += self._delta * self.amplitudeAtStepEnd(self._amplitude, loadParameter)
 
             self._delta = 0
             self._idle = True

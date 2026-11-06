@@ -44,8 +44,6 @@ autodoc_member_order = "groupwise"
 # less crowded:
 autodoc_typehints = "description"
 
-autoclass_content = "init"
-
 napoleon_use_admonition_for_notes = True
 numpydoc_show_class_members = True
 numpydoc_class_members_toctree = False
