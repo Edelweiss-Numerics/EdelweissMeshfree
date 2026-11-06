@@ -111,7 +111,8 @@ def run_sim():
     ensightOutput.initializeJob()
 
     try:
-        for i in range(100):
+        # 88 increments: the last one carries the rightmost material points past the right edge of the grid
+        for i in range(88):
             print("time step {:}".format(i))
 
             hasChanged = mpmManager.updateConnectivity()
@@ -182,10 +183,6 @@ def run_sim():
 
             journal.printSeperationLine()
 
-    except Exception as e:
-        print(str(e))
-        raise
-
     finally:
         fieldOutputController.finalizeJob()
         ensightOutput.finalizeJob()
@@ -193,7 +190,7 @@ def run_sim():
         prettytable.min_table_width = journal.linewidth
         print(prettytable)
 
-        return mpmModel
+    return mpmModel
 
 
 @pytest.fixture(autouse=True)

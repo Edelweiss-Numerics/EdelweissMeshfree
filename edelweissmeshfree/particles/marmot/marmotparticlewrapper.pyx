@@ -88,7 +88,8 @@ cdef class MarmotParticleWrapper:
         self._centerCoordinatesView = self._centerCoordinates
 
         # self._marmotMaterialPoint = <MarmotMaterialPoint*> self._mp._marmotMaterialPoint
-        self._marmotMeshfreeApproximation = <MarmotMeshfreeApproximation* > marmotMeshfreeApproximationWrapper._marmotMeshfreeApproximation
+        # the Marmot particle refers to the approximation, which the wrapper owns: keep the wrapper alive with the particle
+        self._approximation = marmotMeshfreeApproximationWrapper
 
         self._assignedKernelFunctions = list()
 
@@ -106,7 +107,7 @@ cdef class MarmotParticleWrapper:
                                                                                        materialName.upper().encode('utf-8'),
                                                                                        &self.materialPropertiesView[0],
                                                                                        nMaterialProperties,
-                                                                                       self._marmotMeshfreeApproximation[0],
+                                                                                       self._approximation._marmotMeshfreeApproximation[0],
                                                                                        )
         except ValueError as e:
             raise NotImplementedError("Failed to create instance of MarmotParticle {:}: {:}".format(particleType, e)) from e
@@ -194,16 +195,24 @@ cdef class MarmotParticleWrapper:
     def dofIndicesPermutation(self):
         return None
 
-    def computePhysicsKernels(self,
-                                     double[::1] dUc,
-                                     double[::1] Pc,
-                                     double[::1] Kc,
-                                     double timeNew,
-                                     double dTime, ) :
-        """Evaluate residual and stiffness for given time, field, and field increment."""
+    def computeKernels(self,
+                       double[::1] Kc,
+                       double[::1] Pc,
+                       const double[::1] Uc,
+                       const double[::1] dUc,
+                       double timeNew,
+                       double dTime):
+        """Add the internal forces of the particle to the residual, and their tangent; see
+        :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeKernels`. A particle is incremental,
+        so Marmot gets the solution increment. A failure in Marmot, e.g. a material that cannot integrate the
+        increment, requests a cutback, as for an EdelweissFE element."""
 
         self._initializeStateVarsTemp()
-        self._marmotParticle.computePhysicsKernels(&dUc[0], &Pc[0], &Kc[0], timeNew, dTime)
+        try:
+            with nogil:
+                self._marmotParticle.computePhysicsKernels(&dUc[0], &Pc[0], &Kc[0], timeNew, dTime)
+        except (RuntimeError, ValueError) as e:
+            raise CutbackRequest(str(e), 0.5)
 
 
     def updatePhysicsExplicit(self,
@@ -382,8 +391,16 @@ cdef class MarmotParticleWrapper:
         return self._stateVars
 
     def readRestartData(self, data):
+        """Restore the state :meth:`getRestartData` returned. The geometry of the underlying MarmotParticle follows
+        from its state, and is brought to it as at the start of an increment (see :meth:`prepareYourself`)."""
+
         np.asarray(self._stateVars)[:] = data[:]
-        self._initializeStateVarsTemp()
+        self.prepareYourself(0.0, 0.0)
+
+    @property
+    def couplesAllItsDofs(self) -> bool:
+        """``True``: the block is the dense ``nDof x nDof`` matrix, column-major."""
+        return True
 
     def getVIJContributionSize(self) -> int:
         """Return the number of entries this entity contributes to the VIJ (COO) system matrix."""

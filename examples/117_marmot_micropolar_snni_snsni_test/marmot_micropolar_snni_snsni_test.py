@@ -39,9 +39,10 @@ import argparse
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 import pytest
-from edelweissfe.config.linsolve import getLinSolverByName
 from edelweissfe.journal.journal import Journal
-from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
+from edelweissfe.solvers.nonlinearimplicitstatic import NIST
+from edelweissfe.steps.adaptivestep import AdaptiveStep
+from edelweissfe.steps.stepmanager import StepActionCollection
 from edelweissfe.utils.exceptions import StepFailed
 
 from edelweissmeshfree.constraints.particlepenaltyweakdirichtlet import (
@@ -71,7 +72,10 @@ from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
 from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
     MarmotParticleWrapper,
 )
-from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
+from edelweissmeshfree.solvers.meshfreeconvergencecriterion import (
+    jobInfoWithMeshfreeTolerances,
+    meshfreeCriterionOptions,
+)
 
 # from edelweissmeshfree.generators.rectangularparticlegridgenerator import (
 #     generateRectangularParticleGrid,
@@ -79,6 +83,8 @@ from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
 
 
 def run_sim():
+    """Solve the example with EdelweissFE's NIST: RKPM particles bonded to their kernel functions, with variationally
+    consistent integration."""
     dimension = 2
 
     # set nump linewidth to 200:
@@ -188,18 +194,6 @@ def run_sim():
     ]
 
     incSize = 2e-1
-    adaptiveTimeStepper = AdaptiveTimeStepper(0.0, 1.0, incSize, incSize, incSize / 1, 50, theJournal)
-
-    # nonlinearSolver = NQSParallelForMarmot(theJournal)
-    nonlinearSolver = NonlinearQuasistaticSolver(theJournal)
-
-    iterationOptions = dict()
-
-    iterationOptions["max. iterations"] = 15
-    iterationOptions["critical iterations"] = 3
-    iterationOptions["allowed residual growths"] = 10
-
-    linearSolver = getLinSolverByName("pardiso", {})
 
     from edelweissmeshfree.meshfree.vci import (
         BoundaryParticleDefinition,
@@ -225,20 +219,35 @@ def run_sim():
         "pressureTop", theModel, theJournal, theModel.surfaces["rectangular_grid_top"], "pressure", np.array([-5.0])
     )
 
-    try:
-        nonlinearSolver.solveStep(
-            adaptiveTimeStepper,
-            linearSolver,
-            theModel,
-            fieldOutputController,
-            outputManagers=[ensightOutput],
-            particleManagers=[theParticleManager],
-            constraints=dirichlets,
-            userIterationOptions=iterationOptions,
-            particleDistributedLoads=[pressureTop],
-            vciManagers=[vciManager],
-        )
+    # The model holds its managers and constraints, the load is a step action of the step.
+    theModel.particleManagers.append(theParticleManager)
+    theModel.vciManagers.append(vciManager)
+    for constraint in dirichlets:
+        theModel.constraints[constraint.name] = constraint
+    stepActions = StepActionCollection()
+    stepActions["distributedload"][pressureTop.name] = pressureTop
 
+    jobInfo = jobInfoWithMeshfreeTolerances()
+    step = AdaptiveStep(
+        0,
+        theModel,
+        fieldOutputController,
+        theJournal,
+        jobInfo,
+        NIST(jobInfo, theJournal, linsolver="pardiso", **meshfreeCriterionOptions),
+        [ensightOutput],
+        stepActions,
+        startInc=incSize,
+        maxInc=incSize,
+        minInc=incSize,
+        maxNumInc=50,
+        maxIter=15,
+        criticalIter=3,
+        maxGrowIter=10,
+    )
+
+    try:
+        step.solve()
     except StepFailed as e:
         theJournal.message(f"Step failed: {str(e)}", "error")
         raise

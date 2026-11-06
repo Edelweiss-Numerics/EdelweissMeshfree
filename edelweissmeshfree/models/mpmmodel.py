@@ -37,16 +37,18 @@
 import copy
 
 import h5py
-import numpy as np
 from edelweissfe.config.phenomena import getFieldSize, phenomena
 from edelweissfe.journal.journal import Journal
 from edelweissfe.models.femodel import FEModel
 from edelweissfe.sets.elementset import ElementSet
 from edelweissfe.sets.nodeset import NodeSet
+from edelweissfe.utils.exceptions import RestartError
 from edelweissfe.variables.fieldvariable import FieldVariable
 from prettytable import PrettyTable
 
 from edelweissmeshfree.fields.nodefield import MPMNodeField
+from edelweissmeshfree.models.mpmequationsystemlayout import MPMEquationSystemLayout
+from edelweissmeshfree.numerics.dofmanager import MPMDofManager
 from edelweissmeshfree.sets.cellelementset import CellElementSet
 from edelweissmeshfree.sets.cellset import CellSet
 from edelweissmeshfree.sets.materialpointset import MaterialPointSet
@@ -78,6 +80,13 @@ class MPMModel(FEModel):
         self.meshfreeKernelFunctions = {}  #: The collection of MeshfreeKernelFunctions in the present model.
         self.particleKernelDomains = {}  #: The collection of ParticleKernelDomains in the present model.
         self.vertexSets = {}  #: The collection of VertexSets for per particle in the present model.
+        #: The managers that assign the material points to the cells they lie in, see :meth:`updateConnectivity`.
+        self.mpmManagers = []
+        #: The managers that assign the particles to the kernel functions they reach, see :meth:`updateConnectivity`.
+        self.particleManagers = []
+        #: The variationally consistent integration managers, which correct the particles' test functions after every
+        #: update of the connectivity, see :meth:`updateConnectivity`.
+        self.vciManagers = []
 
         super().__init__(dimension)
 
@@ -146,18 +155,14 @@ class MPMModel(FEModel):
         return super()._prepareVariablesAndFields(journal)
 
     def _prepareMaterialPoints(self, journal: Journal):
-        """Prepare elements for a simulation.
-        In detail, sections are assigned.
-
+        """Initialize the material points for a simulation. They carry their material from their creation; the
+        sections are assigned to the finite elements by :meth:`~edelweissfe.models.femodel.FEModel.prepareYourself`.
 
         Parameters
         ----------
         journal
             The journal instance.
         """
-        for section in self.sections.values():
-            section.assignSectionPropertiesToModel(self)
-
         for mp in self.materialPoints.values():
             mp.initializeYourself()
 
@@ -258,6 +263,120 @@ class MPMModel(FEModel):
 
         return theNodeFields
 
+    def updateConnectivity(self) -> bool:
+        """Bring the coupling of the degrees of freedom up to date with the converged state, before an increment; see
+        :meth:`~edelweissfe.models.femodel.FEModel.updateConnectivity`. Called by EdelweissFE's solvers at the start
+        of every increment and of every retry after a cutback.
+
+        First the managers assign the material points to the cells they lie in (:attr:`mpmManagers`) and the particles
+        to the kernel functions they reach (:attr:`particleManagers`), each from its converged state: a failed attempt
+        may have left a trial state behind. Then the constraints follow, which couple the nodes the managers have just
+        assigned. Finally, the test functions of the particles are corrected for the new connectivity
+        (:attr:`vciManagers`).
+
+        A change of the active domain is a change of the coupling, not of the mesh: no node is created or moved, so the
+        solver rebuilds its equation system, but does not re-equilibrate.
+
+        Returns
+        -------
+        bool
+            True if a coupling changed, so that the equation system has to be rebuilt.
+        """
+
+        connectivityChanged = False
+
+        if self.mpmManagers:
+            # The arguments are those of the converged state; no material point reads them here.
+            for materialPoint in self.materialPoints.values():
+                materialPoint.prepareYourself(self.time, 0.0)
+            for mpmManager in self.mpmManagers:
+                connectivityChanged |= mpmManager.updateConnectivity()
+
+        if self.particleManagers:
+            for particle in self.particles.values():
+                particle.prepareYourself(self.time, 0.0)
+            for particleManager in self.particleManagers:
+                connectivityChanged |= particleManager.updateConnectivity()
+
+        connectivityChanged |= super().updateConnectivity()
+
+        for vciManager in self.vciManagers:
+            vciManager.computeVCICorrections()
+
+        return connectivityChanged
+
+    def buildEquationSystem(self, withSystemMatrix: bool = True) -> MPMEquationSystemLayout:
+        """Lay out the equation system of the model on its active domain; see
+        :meth:`~edelweissfe.models.femodel.FEModel.buildEquationSystem` and :class:`MPMEquationSystemLayout`.
+
+        The active domain consists of the cells that hold material points, the nodes these cells and the particles'
+        kernel functions reach, and the finite elements and cell elements with their nodes. Its degrees of freedom are
+        numbered on the active nodes; the model's node sets are located on their nodes in the active domain. The
+        elements the solver computes are the finite elements, the active cells, the cell elements and the particles.
+
+        Parameters
+        ----------
+        withSystemMatrix
+            False for an explicit solver, which assembles no system matrix.
+
+        Returns
+        -------
+        MPMEquationSystemLayout
+            The layout of the equation system.
+        """
+
+        activeCells = self.activeCellsOf(self.mpmManagers)
+        nodesWithPersistentFieldValues, _, activeNodeFields, activeNodeSets = self.assembleActiveDomain(activeCells)
+        constraints = self.activeConstraints()
+
+        dofManager = MPMDofManager(
+            activeNodeFields.values(),
+            [scalarVariable for constraint in constraints for scalarVariable in constraint.scalarVariables],
+            elements=self.elements.values(),
+            constraints=constraints,
+            nodeSets=self.nodeSets.values(),
+            cells=activeCells,
+            cellElements=self.cellElements.values(),
+            particles=self.particles.values(),
+            initializeVIJPattern=withSystemMatrix,
+            determiningIndexToHostObjectMappping=withSystemMatrix,
+        )
+
+        return MPMEquationSystemLayout(
+            self,
+            dofManager,
+            [*self.elements.values(), *activeCells, *self.cellElements.values(), *self.particles.values()],
+            activeCells,
+            nodesWithPersistentFieldValues,
+            activeNodeFields,
+            self._reducedToActiveDomain(activeCells, activeNodeFields, activeNodeSets),
+        )
+
+    @staticmethod
+    def activeCellsOf(mpmManagers: list) -> list:
+        """The cells that are active in any of the MPM managers.
+
+        Cells define no ``__hash__``, so a set of them iterates in an address-dependent order that differs between runs.
+        The order of the active cells fixes their blocks in the system matrix and the order in which their
+        contributions are summed, so the cells are sorted by their unique number.
+
+        Parameters
+        ----------
+        mpmManagers
+            The MPM managers.
+
+        Returns
+        -------
+        list
+            The active cells, each once, sorted by cell number.
+        """
+
+        activeCells = set()
+        for mpmManager in mpmManagers:
+            activeCells.update(mpmManager.getActiveCells())
+
+        return sorted(activeCells, key=lambda cell: cell.cellNumber)
+
     def getActiveSubModel(self):
         """
         For many applications only a part of the model is active.
@@ -271,14 +390,36 @@ class MPMModel(FEModel):
             The active sub model.
         """
 
-        activeCells = {cell.number: cell for mp in self.materialPoints.values() for cell in mp.cells}
+        activeCells = sorted(
+            {cell for mp in self.materialPoints.values() for cell in mp.cells}, key=lambda cell: cell.cellNumber
+        )
 
         _, _, reducedNodeFields, reducedNodeSets = self.assembleActiveDomain(activeCells)
 
+        return self._reducedToActiveDomain(activeCells, reducedNodeFields, reducedNodeSets)
+
+    def _reducedToActiveDomain(self, activeCells: list, activeNodeFields: dict, activeNodeSets: dict):
+        """A shallow copy of the model, reduced to its active domain: its cells, node fields and node sets.
+
+        Parameters
+        ----------
+        activeCells
+            The active cells.
+        activeNodeFields
+            The node fields on the active nodes.
+        activeNodeSets
+            The node sets reduced onto the active nodes.
+
+        Returns
+        -------
+        MPMModel
+            The reduced model.
+        """
+
         activeModel = copy.copy(self)
-        activeModel.nodeSets = reducedNodeSets
-        activeModel.nodeFields = reducedNodeFields
-        activeModel.cells = activeCells
+        activeModel.nodeSets = activeNodeSets
+        activeModel.nodeFields = activeNodeFields
+        activeModel.cells = {cell.cellNumber: cell for cell in activeCells}
 
         return activeModel
 
@@ -386,38 +527,52 @@ class MPMModel(FEModel):
         return prettytable
 
     def writeRestart(self, restartFile: h5py.File):
-        """Write the current state of the model to a restart file.
+        """Write the converged state of the model to a restart checkpoint: EdelweissFE's model state (see
+        :meth:`~edelweissfe.models.femodel.FEModel.writeRestart`), and the state of every material point and particle.
+
+        The material point method and RKPM are updated-Lagrangian: the material points and particles carry the state,
+        and their positions follow from it. The connectivity -- which cells hold which material points, which kernel
+        functions reach which particles, where bonded kernel functions sit -- follows from the positions, and is
+        rebuilt by the first connectivity update of the resumed run (:meth:`updateConnectivity`), as before every
+        increment.
 
         Parameters
         ----------
-        fileName
-            The name of the restart file.
+        restartFile
+            An open, writable :class:`h5py.File` (or group) to write the checkpoint into.
         """
 
         super().writeRestart(restartFile)
 
-        f = restartFile
+        materialPointsGroup = restartFile.create_group("materialPoints")
+        for materialPoint in self.materialPoints.values():
+            materialPointsGroup.create_dataset(str(materialPoint.number), data=materialPoint.getRestartData())
 
-        # particles
-        f.create_group("particles")
-        for p in self.particles.values():
-            theData = p.getRestartData()
-            f["particles"].create_dataset(str(p.number), data=theData)
+        particlesGroup = restartFile.create_group("particles")
+        for particle in self.particles.values():
+            particlesGroup.create_dataset(str(particle.number), data=particle.getRestartData())
 
-    def readRestart(self, restartFile: h5py.File):
-        """Read the state of the model from a restart file.
+    def readRestart(self, restartFile: h5py.File, journal: Journal = None):
+        """Read the state of the model from a restart checkpoint written by :meth:`writeRestart`.
+
+        The model must have been built as for the checkpointed run, and :meth:`prepareYourself` called.
 
         Parameters
         ----------
-        fileName
-            The name of the restart file.
+        restartFile
+            An open, readable :class:`h5py.File` (or group) to read the checkpoint from.
+        journal
+            The journal, for the progress messages of the topology replay.
         """
 
-        super().readRestart(restartFile)
+        super().readRestart(restartFile, journal)
 
-        f = restartFile
-
-        # particles
-        for p in self.particles.values():
-            theData = f["particles"][str(p.number)]
-            p.readRestartData(np.asarray(theData))
+        for entities, groupName in ((self.materialPoints, "materialPoints"), (self.particles, "particles")):
+            if groupName not in restartFile:
+                raise RestartError("the checkpoint holds no state of the {:} of an MPMModel".format(groupName))
+            group = restartFile[groupName]
+            for number, entity in entities.items():
+                key = str(entity.number)
+                if key not in group:
+                    raise RestartError("the checkpoint holds no state for {:} {:}".format(groupName, number))
+                entity.readRestartData(group[key][()])

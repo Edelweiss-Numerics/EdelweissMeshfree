@@ -64,7 +64,8 @@ def run_sim():
 
     mpmModel = MPMModel(dimension)
 
-    linearElastic = {"material": "LINEARELASTIC", "properties": np.array([30000.0, 0.3])}
+    # E, nu, density (zero density: this test has no inertia)
+    linearElastic = {"material": "LINEARELASTIC/HUGHES-WINGET", "properties": np.array([30000.0, 0.3, 0.0])}
 
     rectangulargridgenerator.generateModelData(
         mpmModel,
@@ -76,7 +77,7 @@ def run_sim():
         nX=20,
         nY=10,
         cellProvider="LagrangianMarmotCell",
-        cellType="Displacement/SmallStrain/Quad4",
+        cellType="Displacement/Quad4",
     )
     rectangularmpgenerator.generateModelData(
         mpmModel,
@@ -88,7 +89,7 @@ def run_sim():
         nX=3,
         nY=3,
         mpProvider="marmot",
-        mpType="Displacement/SmallStrain/PlaneStrain",
+        mpType="Displacement/PlaneStrain",
         material=linearElastic,
     )
 
@@ -121,9 +122,9 @@ def run_sim():
         "stress",
     )
     fieldOutputController.addPerMaterialPointFieldOutput(
-        "strain",
+        "deformation gradient",
         allMPs,
-        "strain",
+        "deformation gradient",
     )
 
     fieldOutputController.initializeJob()
@@ -133,7 +134,7 @@ def run_sim():
     ensightOutput.createPerNodeOutput(fieldOutputController.fieldOutputs["dU"])
     ensightOutput.createPerNodeOutput(fieldOutputController.fieldOutputs["displacement"])
     ensightOutput.createPerNodeOutput(fieldOutputController.fieldOutputs["stress"])
-    ensightOutput.createPerNodeOutput(fieldOutputController.fieldOutputs["strain"])
+    ensightOutput.createPerNodeOutput(fieldOutputController.fieldOutputs["deformation gradient"])
 
     ensightOutput.initializeJob()
 
@@ -196,22 +197,27 @@ def run_sim():
             activeNodeFields["displacement"]["dU"][:] = shift
             dofManager.writeNodeFieldToDofVector(dUActiveCells, activeNodeFields["displacement"], "dU")
 
-            idcsTop = dofManager.idcsOfFieldsOnNodeSetsInDofVector["displacement"][
-                reducedNodeSets[mpmModel.nodeSets["rectangular_grid_top"]]
-            ]
+            idcsTop, _ = dofManager.locateFieldOnNodeSet(
+                "displacement", reducedNodeSets[mpmModel.nodeSets["rectangular_grid_top"]]
+            )
             dUActiveCells[idcsTop[1::2]] = 0.0
 
-            idcsBottom = dofManager.idcsOfFieldsOnNodeSetsInDofVector["displacement"][
-                reducedNodeSets[mpmModel.nodeSets["rectangular_grid_bottom"]]
-            ]
+            idcsBottom, _ = dofManager.locateFieldOnNodeSet(
+                "displacement", reducedNodeSets[mpmModel.nodeSets["rectangular_grid_bottom"]]
+            )
             dUActiveCells[idcsBottom[1::2]] = 0.0
 
-            idcsRight = dofManager.idcsOfFieldsOnNodeSetsInDofVector["displacement"][
-                reducedNodeSets[mpmModel.nodeSets["rectangular_grid_right"]]
-            ]
+            idcsRight, _ = dofManager.locateFieldOnNodeSet(
+                "displacement", reducedNodeSets[mpmModel.nodeSets["rectangular_grid_right"]]
+            )
             dUActiveCells[idcsRight] = 0.0
 
             dofManager.writeDofVectorToNodeField(dUActiveCells, activeNodeFields["displacement"], "dU")
+
+            # a new increment begins: the material points reset their displacement increment, which the cells
+            # then accumulate (the order of the solvers: prepare, interpolate, compute)
+            for mp in allMPs:
+                mp.prepareYourself(time, i)
 
             for c in activeCells:
                 dUCell = dUActiveCells[c]
@@ -232,8 +238,6 @@ def run_sim():
             ensightOutput.finalizeIncrement()
 
             journal.printSeperationLine()
-    except Exception as e:
-        print("An exception occurred: {:}".format(e))
 
     finally:
         fieldOutputController.finalizeJob()
@@ -243,7 +247,7 @@ def run_sim():
         prettytable.min_table_width = journal.linewidth
         journal.printPrettyTable(prettytable, "Dirichlet Test")
 
-        return mpmModel
+    return mpmModel
 
 
 @pytest.fixture(autouse=True)

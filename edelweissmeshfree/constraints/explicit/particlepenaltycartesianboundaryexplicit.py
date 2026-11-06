@@ -6,21 +6,27 @@ from edelweissfe.surfaces.entitybasedsurface import EntityBasedSurface
 from edelweissfe.timesteppers.timestep import TimeStep
 from edelweissfe.variables.scalarvariable import ScalarVariable
 
-from edelweissmeshfree.constraints.base.mpmconstraintbase import MPMConstraintBase
+from edelweissmeshfree.constraints.base.mpmexplicitconstraintbase import (
+    MPMExplicitConstraintBase,
+)
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.particles.base.baseparticle import BaseParticle
 
 
-class ParticlePenaltyCartesianBoundaryConstraintExplicit(MPMConstraintBase):
-    """
+class ParticlePenaltyCartesianBoundaryConstraintExplicit(MPMExplicitConstraintBase):
+    r"""
     This class implements a Penalty contact boundary constraint for EXPLICIT simulations.
     It prevents a particle from penetrating a defined boundary surface by applying
     penalty forces directly to the grid nodes.
 
     The constraint is applied based on the current position of the particle relative to the boundary.
-    If penetration is detected:
-        F_penalty = -k * g * n
-    where g is penetration depth, k is penalty parameter, n is normal.
+    If penetration is detected, the penalty force is
+
+    .. math::
+
+        \boldsymbol{F}_{\mathrm{penalty}} = -k\, g\, \boldsymbol{n},
+
+    where :math:`g` is the penetration depth, :math:`k` the penalty parameter and :math:`\boldsymbol{n}` the normal.
 
     Parameters
     ----------
@@ -49,6 +55,9 @@ class ParticlePenaltyCartesianBoundaryConstraintExplicit(MPMConstraintBase):
     proximityFactor : float
         The factor for proximity checking distance.
     """
+
+    #: Carries nothing from one increment to the next.
+    checkpointedState = {}
 
     def __init__(
         self,
@@ -119,7 +128,6 @@ class ParticlePenaltyCartesianBoundaryConstraintExplicit(MPMConstraintBase):
         if self._doProximityCheck:
             self._proximityDist = particle.getVolumeUndeformed() ** (1.0 / domainSize) * proximityFactor
 
-        self.isActive = True
         self._dof_indices = np.array([], dtype=np.int32)
 
     @property
@@ -142,10 +150,6 @@ class ParticlePenaltyCartesianBoundaryConstraintExplicit(MPMConstraintBase):
     def scalarVariables(self) -> list:
         return []
 
-    @property
-    def active(self) -> bool:
-        return self.isActive
-
     def getNumberOfAdditionalNeededScalarVariables(self) -> int:
         return 0
 
@@ -165,33 +169,36 @@ class ParticlePenaltyCartesianBoundaryConstraintExplicit(MPMConstraintBase):
         hasChanged = nodes != self._nodes
         self._nodes = nodes
 
-        wasActive = self.isActive
-        self.isActive = True
+        wasActive = self.active
 
-        if self._doProximityCheck:
-            self.isActive = False
-            # Check if any point is close enough to boundary
-            # Using simple distance check
-            for p in self._constrained_points:
-                dist = abs(p[self._component] - self._boundaryPosition)
-                if dist <= self._proximityDist:
-                    self.isActive = True
-                    break
+        # within reach if one of the constrained points is close enough to the boundary
+        self.withinReach = not self._doProximityCheck or any(
+            abs(p[self._component] - self._boundaryPosition) <= self._proximityDist for p in self._constrained_points
+        )
 
-            if self.isActive != wasActive:
-                hasChanged = True
+        if self.active != wasActive:
+            hasChanged = True
 
-        if not self.isActive:
+        if not self.active:
             self.reactionForce = 0.0
 
         return hasChanged
 
-    def applyConstraint(self, PExt: np.ndarray, timeStep: TimeStep):
+    def computeKernelsExplicit(self, U_np: np.ndarray, dU: np.ndarray, P: np.ndarray, timeStep: TimeStep):
+        """Add the residual contribution of the penalty force: the negative of the force with which the boundary
+        pushes the particle back, evaluated at the particle's current position.
+
+        Parameters
+        ----------
+        U_np
+            The current solution; unused, the penetration follows from the particle's current position.
+        dU
+            The solution increment; likewise unused.
+        P
+            The residual contribution to augment.
+        timeStep
+            The current time step.
         """
-        Applies the penalty force to the external force vector PExt.
-        """
-        if not self.isActive:
-            return
 
         # Explicit: calculate wall position at current time
         # Assuming stepProgress handles linear motion within step or total time
@@ -223,10 +230,9 @@ class ParticlePenaltyCartesianBoundaryConstraintExplicit(MPMConstraintBase):
                 # Get shape functions for this specific constrained point
                 N = self._particle.getInterpolationVector(p).flatten()
 
-                # Vectorized add to global force vector
-                # PExt[indices] += N * scalar
+                # the residual contribution is the negative of the force on the nodes
                 # Using np.add.at is safer if indices repeat (unlikely here) but direct slicing is faster
-                PExt[comp :: self._fieldSize] += N * force_scalar
+                P[comp :: self._fieldSize] -= N * force_scalar
 
                 total_penalty_force += g * penalty
 

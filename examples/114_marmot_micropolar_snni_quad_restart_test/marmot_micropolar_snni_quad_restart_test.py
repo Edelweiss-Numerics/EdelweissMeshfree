@@ -39,9 +39,13 @@ import argparse
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 import pytest
-from edelweissfe.config.linsolve import getLinSolverByName
 from edelweissfe.journal.journal import Journal
-from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
+from edelweissfe.outputmanagers.restart import OutputManager as RestartOutputManager
+from edelweissfe.outputmanagers.restart import RestartOutputManagerSchema
+from edelweissfe.solvers.nonlinearimplicitstaticparallel import NISTParallel
+from edelweissfe.steps.adaptivestep import AdaptiveStep
+from edelweissfe.steps.stepmanager import StepActionCollection
+from edelweissfe.utils.checkpoint import ResumeCheckpoint
 from edelweissfe.utils.exceptions import StepFailed
 
 from edelweissmeshfree.constraints.particlepenaltyweakdirichtlet import (
@@ -71,14 +75,28 @@ from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
 from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
     MarmotParticleWrapper,
 )
-from edelweissmeshfree.solvers.nqsmarmotparallel import NQSParallelForMarmot
+from edelweissmeshfree.solvers.meshfreeconvergencecriterion import (
+    jobInfoWithMeshfreeTolerances,
+    meshfreeCriterionOptions,
+)
 
 # from edelweissmeshfree.generators.rectangularparticlegridgenerator import (
 #     generateRectangularParticleGrid,
 # )
 
 
-def run_sim():
+def run_sim(restartBaseName: str = "restart", resumeFrom: str = None, maxNumInc: int = 1000):
+    """Solve the example with EdelweissFE's NISTParallel, writing a restart checkpoint after every increment.
+
+    Parameters
+    ----------
+    restartBaseName
+        The base name of the restart checkpoints.
+    resumeFrom
+        The checkpoint to resume the step from, or None for a fresh start.
+    maxNumInc
+        The number of increments after which the step stops (the zero increment is number 0).
+    """
     dimension = 2
 
     # set nump linewidth to 200:
@@ -150,6 +168,12 @@ def run_sim():
     theModel.prepareYourself(theJournal)
     theJournal.printPrettyTable(theModel.makePrettyTableSummary(), "summary")
 
+    # A resumed run is built as the checkpointed one, and then takes over the model's state from the checkpoint.
+    resumeCheckpoint = None
+    if resumeFrom is not None:
+        resumeCheckpoint = ResumeCheckpoint(resumeFrom)
+        resumeCheckpoint.restoreModel(theModel, theJournal)
+
     fieldOutputController = MPMFieldOutputController(theModel, theJournal)
 
     fieldOutputController.addPerParticleFieldOutput(
@@ -182,54 +206,46 @@ def run_sim():
         dirichletRight,
     ]
 
+    for constraint in dirichlets:
+        theModel.constraints[constraint.name] = constraint
+    theModel.particleManagers.append(theParticleManager)
+
+    restartOutput = RestartOutputManager(
+        "restart",
+        theModel,
+        fieldOutputController,
+        theJournal,
+        None,
+        configuration=RestartOutputManagerSchema(writeInterval=1, baseName=restartBaseName),
+    )
+    outputManagers = [ensightOutput, restartOutput]
+
     incSize = 5e-1
-    adaptiveTimeStepper = AdaptiveTimeStepper(0.0, 1.0, incSize, incSize, incSize / 1e3, 1, theJournal)
-
-    nonlinearSolver = NQSParallelForMarmot(theJournal)
-    # nonlinearSolver = NonlinearQuasistaticSolver(theJournal)
-
-    iterationOptions = dict()
-
-    iterationOptions["max. iterations"] = 15
-    iterationOptions["critical iterations"] = 3
-    iterationOptions["allowed residual growths"] = 10
-
-    linearSolver = getLinSolverByName("pardiso", {})
-
-    try:
-        nonlinearSolver.solveStep(
-            adaptiveTimeStepper,
-            linearSolver,
-            theModel,
-            fieldOutputController,
-            outputManagers=[ensightOutput],
-            particleManagers=[theParticleManager],
-            constraints=dirichlets,
-            userIterationOptions=iterationOptions,
-            restartWriteInterval=1,
-        )
-
-    except StepFailed:
-        theJournal.message("Controlled termination, let's try a restart", "Step 1")
-
-    nonlinearSolver.readRestart("./restart_1.h5", adaptiveTimeStepper, theModel)
-    adaptiveTimeStepper.maxNumberIncrements = 3
+    jobInfo = jobInfoWithMeshfreeTolerances()
+    step = AdaptiveStep(
+        0,
+        theModel,
+        fieldOutputController,
+        theJournal,
+        jobInfo,
+        NISTParallel(jobInfo, theJournal, linsolver="pardiso", **meshfreeCriterionOptions),
+        outputManagers,
+        StepActionCollection(),
+        startInc=incSize,
+        maxInc=incSize,
+        minInc=incSize / 1e3,
+        maxNumInc=maxNumInc,
+        maxIter=15,
+        criticalIter=3,
+        maxGrowIter=10,
+    )
 
     try:
-        nonlinearSolver.solveStep(
-            adaptiveTimeStepper,
-            linearSolver,
-            theModel,
-            fieldOutputController,
-            outputManagers=[ensightOutput],
-            particleManagers=[theParticleManager],
-            constraints=dirichlets,
-            userIterationOptions=iterationOptions,
-            restartWriteInterval=1,
-        )
+        step.solve(resumeCheckpoint)
 
-    except StepFailed:
-        theJournal.message("This should not happen", "Step 2")
+    except StepFailed as e:
+        theJournal.message(f"Step failed: {str(e)}", "error")
+        raise
 
     finally:
         fieldOutputController.finalizeJob()
@@ -250,7 +266,9 @@ def change_test_dir(request, monkeypatch):
     monkeypatch.chdir(request.fspath.dirname)
 
 
-def test_sim(assert_gold):
+def test_sim(assert_gold, tmp_path):
+    """The step stops after its first increment; a model built anew resumes it from the restart checkpoint written
+    after that increment, and finishes it."""
 
     # disable plots and suppress warnings
     import matplotlib
@@ -260,13 +278,14 @@ def test_sim(assert_gold):
 
     warnings.filterwarnings("ignore")
 
-    theModel, fieldOutputController = run_sim()
+    restartBaseName = str(tmp_path / "restart")
+    run_sim(restartBaseName, maxNumInc=1)
+    theModel, fieldOutputController = run_sim(restartBaseName, resumeFrom=restartBaseName + "_1.h5")
 
     res = fieldOutputController.fieldOutputs["displacement"].getLastResult()
 
     gold = np.loadtxt("gold.csv")
 
-    # assert np.isclose(lastStiffness, gold).all()
     assert_gold(res, gold)
 
 

@@ -40,9 +40,12 @@ from edelweissfe.timesteppers.timestep import TimeStep
 
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.particles.base.baseparticle import BaseParticle
+from edelweissmeshfree.stepactions.base.particledistributedloadbase import (
+    ParticleDistributedLoadBase,
+)
 
 
-class ParticleNitscheDirichlet:
+class ParticleNitscheDirichlet(ParticleDistributedLoadBase):
     """Weak Dirichlet boundary condition via (non-symmetric/incomplete) Nitsche's method.
 
     Enforces prescribed displacement components on a particle boundary surface through the
@@ -82,6 +85,9 @@ class ParticleNitscheDirichlet:
         Amplitude function of the prescribed value over step progress (default linear).
     """
 
+    #: The prescribed value reached by the steps before, this step's increment, and whether it is idle.
+    checkpointedState = {"_gAtStepStart": np.ndarray, "_delta": np.ndarray, "_idle": bool}
+
     def __init__(
         self,
         name: str,
@@ -117,12 +123,21 @@ class ParticleNitscheDirichlet:
     def loadType(self) -> str:
         return "nitschedirichlet"
 
-    def applyAtStepEnd(self, model, stepMagnitude=None):
+    def applyAtStepEnd(self, model, loadParameter: float | None = None):
+        """Keep the prescribed value reached at the end of the step, from which the next step starts; see
+        :meth:`~edelweissfe.stepactions.base.loadbase.LoadBase.applyAtStepEnd`.
+
+        Parameters
+        ----------
+        model
+            The current state of the model.
+        loadParameter
+            The load parameter an arc length step ended at; None for a step that follows the amplitude.
+        """
         if not self._idle:
-            if stepMagnitude is None:
-                self._gAtStepStart = self._gAtStepStart + self._delta * self._amplitude(1.0)
-            else:
-                self._gAtStepStart = self._gAtStepStart + self._delta * stepMagnitude
+            self._gAtStepStart = self._gAtStepStart + self._delta * self.amplitudeAtStepEnd(
+                self._amplitude, loadParameter
+            )
 
             self._delta = 0
             self._idle = True
