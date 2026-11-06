@@ -291,9 +291,7 @@ def run_sim(particleSize, supportRadius, continuityOrder, completenessOrder):
     stepActions["distributedload"][disturbance.name] = disturbance
     stepActions["indirectcontrol"][indirectcontrol.name] = indirectcontrol
 
-    # The restart output manager writes the state of every output manager, so the model knows them by name.
     outputManagers = [ensightOutput, restartOutput]
-    theModel.outputManagers = {outputManager.name: outputManager for outputManager in outputManagers}
 
     jobInfo = jobInfoWithMeshfreeTolerances()
     solver = NISTPArcLength(

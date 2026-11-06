@@ -218,9 +218,7 @@ def run_sim(restartBaseName: str = "restart", resumeFrom: str = None, maxNumInc:
         None,
         configuration=RestartOutputManagerSchema(writeInterval=1, baseName=restartBaseName),
     )
-    # The restart output manager writes the state of every output manager, so the model knows them by name.
     outputManagers = [ensightOutput, restartOutput]
-    theModel.outputManagers = {outputManager.name: outputManager for outputManager in outputManagers}
 
     incSize = 5e-1
     jobInfo = jobInfoWithMeshfreeTolerances()
