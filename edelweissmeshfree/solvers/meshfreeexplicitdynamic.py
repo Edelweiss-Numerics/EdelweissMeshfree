@@ -407,6 +407,10 @@ class MeshfreeExplicitDynamic(NonlinearSolverBase):
         elif firstEvaluationOfStep or self.options["projectVelocityEveryIncrement"]:
             self._V = momentum * self._Minv
 
+        # A node without inertia has no equation of motion, so it has no velocity: not even the one it carried while it
+        # still had a mass, which the update would otherwise keep, as it adds nothing there.
+        self._V[self._Minv == 0.0] = 0.0
+
         with performancetiming.timeit("write results to nodes"):
             self._layout.writeResultsToModel(self._noSolution(), None, internalAndInertialForce)
             self._layout.writeVelocityAndAccelerationToModel(self._V, acceleration)
@@ -586,7 +590,8 @@ class MeshfreeExplicitDynamic(NonlinearSolverBase):
         np.negative(R, out=P)
 
         # A node whose kernel function the particles reach only where it vanishes has no positive mass (exactly zero,
-        # or zero up to round-off): it carries no inertia, hence no equation of motion, and keeps a zero velocity.
+        # or zero up to round-off): it carries no inertia, hence no equation of motion, and gets no velocity (see
+        # acceptIncrement).
         Minv = dofManager.constructDofVector()
         Minv[:] = 0.0
         hasInertia = M > 0.0

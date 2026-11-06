@@ -49,6 +49,7 @@ from edelweissmeshfree.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunct
     MarmotMeshfreeKernelFunctionWrapper,
 )
 from edelweissmeshfree.meshfree.particlekerneldomain import ParticleKernelDomain
+from edelweissmeshfree.models.mpmequationsystemlayout import MPMEquationSystemLayout
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
     KDBinOrganizedParticleManager,
@@ -102,6 +103,27 @@ class _SolverRecordingTheVelocityAtReconnection(MeshfreeExplicitDynamic):
             node: np.array(self._V[dofManager.idcsOfFieldVariablesInDofVector[node.fields["displacement"]]])
             for node in self._layout.activeNodes
         }
+
+
+class _SolverRecordingTheNodesWithoutInertia(_SolverRecordingTheVelocityAtReconnection):
+    """The explicit solver, recording at every acceptance the velocity of the active nodes without inertia, and the
+    nodes among them that moved before."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.velocityOfNodesWithoutInertia = []
+        self.nodesThatLostTheirInertiaWhileMoving = set()
+
+    def acceptIncrement(self, step, model, timeStep):
+        velocityBefore = self.velocityOfTheActiveNodes()
+        super().acceptIncrement(step, model, timeStep)
+        dofManager = self._layout.dofManager
+        for node, velocity in self.velocityOfTheActiveNodes().items():
+            indices = dofManager.idcsOfFieldVariablesInDofVector[node.fields["displacement"]]
+            if np.all(np.asarray(self._Minv)[indices] == 0.0):
+                self.velocityOfNodesWithoutInertia.append(velocity)
+                if np.any(velocityBefore.get(node, 0.0)):
+                    self.nodesThatLostTheirInertiaWhileMoving.add(node)
 
 
 def _translatingBody(journal: Journal, youngsModulus: float = YOUNGS_MODULUS, stretching: float = 0.0) -> MPMModel:
@@ -230,6 +252,41 @@ def test_the_velocity_is_carried_by_node_across_a_change_of_the_active_nodes():
                 np.testing.assert_array_equal(displacement[entry][row], 0.0)
     np.testing.assert_array_equal(displacement["U"], 0.0)
     assert np.any(displacement["dU"][:, 0] > 0.0)
+
+
+def test_a_node_without_inertia_has_no_velocity(monkeypatch):
+    """A node whose mass is not positive has no equation of motion, so it has no velocity: also a node that moved while
+    it had a mass, and lost it as the body moved on, keeps none. The test takes away the mass of the node with the
+    largest one, from the tenth evaluation on, as a body leaving the node would."""
+
+    assembleLumpedMassOfParticles = MPMEquationSystemLayout.assembleLumpedMassOfParticles
+    evaluations = []
+    nodeLosingItsMass = []
+
+    def assembleWithoutTheMassOfOneNode(layout, forEachChunk):
+        M = assembleLumpedMassOfParticles(layout, forEachChunk)
+        evaluations.append(len(evaluations))
+        if len(evaluations) >= 10:
+            dofs = layout.dofManager.idcsOfFieldVariablesInDofVector
+            if not nodeLosingItsMass:
+                nodeLosingItsMass.append(
+                    max(layout.activeNodes, key=lambda node: float(np.sum(M[dofs[node.fields["displacement"]]])))
+                )
+            if nodeLosingItsMass[0] in layout.activeNodes:
+                M[dofs[nodeLosingItsMass[0].fields["displacement"]]] = 0.0
+        return M
+
+    monkeypatch.setattr(MPMEquationSystemLayout, "assembleLumpedMassOfParticles", assembleWithoutTheMassOfOneNode)
+
+    journal = Journal()
+    model = _translatingBody(journal)
+    solver = _SolverRecordingTheNodesWithoutInertia({}, journal)
+
+    _solve(model, journal, [solver], [N_INCREMENTS])
+
+    assert nodeLosingItsMass[0] in solver.nodesThatLostTheirInertiaWhileMoving
+    for velocity in solver.velocityOfNodesWithoutInertia:
+        np.testing.assert_array_equal(velocity, 0.0)
 
 
 def test_two_explicit_steps_are_one():
