@@ -285,7 +285,7 @@ def run_sim(no_limit=False):
         prettytable.min_table_width = theJournal.linewidth
         theJournal.printPrettyTable(prettytable, "Summary")
 
-        return theModel, fieldOutputController
+    return theModel, fieldOutputController
 
 
 @pytest.fixture(autouse=True)

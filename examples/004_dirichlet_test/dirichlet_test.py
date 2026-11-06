@@ -238,8 +238,6 @@ def run_sim():
             ensightOutput.finalizeIncrement()
 
             journal.printSeperationLine()
-    except Exception as e:
-        print("An exception occurred: {:}".format(e))
 
     finally:
         fieldOutputController.finalizeJob()
@@ -249,7 +247,7 @@ def run_sim():
         prettytable.min_table_width = journal.linewidth
         journal.printPrettyTable(prettytable, "Dirichlet Test")
 
-        return mpmModel
+    return mpmModel
 
 
 @pytest.fixture(autouse=True)
