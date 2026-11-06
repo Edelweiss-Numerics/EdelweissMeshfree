@@ -39,6 +39,7 @@ from collections import deque
 
 import edelweissfe.utils.performancetiming as performancetiming
 import h5py
+import numpy as np
 from edelweissfe.constraints.base.constraintbase import ConstraintBase
 from edelweissfe.journal.journal import Journal
 from edelweissfe.numerics.dofmanager import DofManager, DofVector
@@ -107,41 +108,6 @@ class BaseNonlinearSolver:
     #: subclasses call ``super().__init__()``.
     _dirichletIndicesCache = None
 
-    #: Number of threads used by threaded assembly kernels. Parallel solvers shadow this with an
-    #: instance attribute; the sequential default of one keeps the base solvers meaningful.
-    numThreads = 1
-
-    #: Assemble particle contributions straight into CSR, bypassing the VIJ staging array. Off by
-    #: default: the VIJ path remains the reference until the direct path has been measured.
-    useDirectCSRAssembly = False
-
-    #: Run *both* assembly paths per iteration and compare the resulting CSR data. Diagnostic only,
-    #: and roughly twice the assembly cost -- the point is that the comparison happens against a
-    #: fully prepared model inside the real solver, which a standalone harness cannot provide.
-    verifyDirectCSRAssembly = False
-
-    #: Benchmark both assembly paths against each other, per iteration, on identical state. Diagnostic
-    #: only; the solve continues on the VIJ path so no result changes.
-    timeDirectCSRAssembly = False
-
-    #: How many private CSR copies the direct assembler keeps. Zero means one per thread, which is
-    #: the reproducible default; a smaller positive number makes threads share a copy and synchronise
-    #: the scatter with atomics, saving memory at the cost of a fixed summation order. One is fully
-    #: atomic. See ``CSRDirectAssembler::setNumBuffers``.
-    directCSRNumBuffers = 0
-
-    #: The CSR generator for the current connectivity, or None. Reachable so the benchmark can time
-    #: the production gather.
-    _csrGenerator = None
-
-    #: The :class:`DirectCSRAssembler` for the current connectivity, or None. Rebuilt whenever the
-    #: Newton cache is, since its offset map has exactly the lifetime of the CSR pattern.
-    _directCSRAssembler = None
-
-    #: Maps each registered entity to its index in the assembler's map. Keyed by entity rather than
-    #: inferred from iteration order, so a reordering of the active set cannot silently misaddress.
-    _directCSREntityIds = None
-
     def __init__(self, journal: Journal):
         self.journal = journal
 
@@ -179,7 +145,6 @@ class BaseNonlinearSolver:
         timeStep: TimeStep,
         R: DofVector,
         dirichlets: list[DirichletBase],
-        reducedNodeSets,
         theDofManager: DofManager,
     ):
         """Apply the dirichlet bcs on the residual vector
@@ -193,8 +158,6 @@ class BaseNonlinearSolver:
             The residual vector of the global equation system to be modified.
         dirichlets
             The list of dirichlet boundary conditions.
-        activeNodeSets
-            The sets with active nodes only.
         theDofManager
             The DofManager instance.
 
@@ -205,10 +168,8 @@ class BaseNonlinearSolver:
         """
 
         for dirichlet in dirichlets:
-            dirichletNodes = reducedNodeSets[dirichlet.nSet]
-            R[self._findDirichletIndices(theDofManager, dirichlet, dirichletNodes)] = dirichlet.getPrescribedIncrement(
-                timeStep, dirichletNodes
-            ).flatten()
+            dofIndices, nodePositions = self._locateDirichlet(theDofManager, dirichlet)
+            R[dofIndices] = dirichlet.getPrescribedIncrement(timeStep)[nodePositions].flatten()
 
         return R
 
@@ -259,25 +220,58 @@ class BaseNonlinearSolver:
         for action in actions:
             action.applyAtIncrementStart(model, timeStep)
 
-    def _findDirichletIndices(self, theDofManager, dirichlet, reducedNodeSet):
-        # The result is fully determined by the boundary condition, its (mutable)
-        # components, the current DofManager, and the reduced node set, so it is
-        # memoized. It is requested multiple times per Newton iteration (residual
-        # zeroing and system matrix modification), but only changes when the
-        # equation system is rebuilt or the boundary condition is updated between
-        # steps.
+    def _findDirichletIndices(self, theDofManager: DofManager, dirichlet: DirichletBase) -> np.ndarray:
+        """The DOF indices a Dirichlet boundary condition prescribes, node after node, see :meth:`_locateDirichlet`.
+
+        Parameters
+        ----------
+        theDofManager
+            The DofManager instance.
+        dirichlet
+            The boundary condition.
+
+        Returns
+        -------
+        np.ndarray
+            The prescribed DOF indices.
+        """
+
+        return self._locateDirichlet(theDofManager, dirichlet)[0]
+
+    def _locateDirichlet(self, theDofManager: DofManager, dirichlet: DirichletBase) -> tuple[np.ndarray, np.ndarray]:
+        """Where a Dirichlet boundary condition acts in the equation system: the DOF indices of its prescribed
+        components on the nodes of its node set that lie in the active domain, and the positions of these nodes in
+        the set, which select the rows of
+        :meth:`~edelweissfe.stepactions.base.dirichletbase.DirichletBase.getPrescribedIncrement`.
+
+        Memoized: the result is requested several times per Newton iteration (residual and system matrix), but
+        changes only when the equation system is rebuilt or the boundary condition is updated between steps.
+
+        Parameters
+        ----------
+        theDofManager
+            The DofManager instance.
+        dirichlet
+            The boundary condition.
+
+        Returns
+        -------
+        tuple[np.ndarray, np.ndarray]
+            The prescribed DOF indices, and the positions of their nodes in the node set.
+        """
+
         cache = self._dirichletIndicesCache
         if cache is None:
             cache = self._dirichletIndicesCache = {}
 
-        key = (dirichlet, theDofManager, reducedNodeSet, tuple(dirichlet.components))
-        indices = cache.get(key)
-        if indices is None:
-            fieldIndices = theDofManager.idcsOfFieldsOnNodeSetsInDofVector[dirichlet.field][reducedNodeSet]
+        key = (dirichlet, theDofManager, tuple(dirichlet.components))
+        located = cache.get(key)
+        if located is None:
+            fieldIndices, nodePositions = theDofManager.locateFieldOnNodeSet(dirichlet.field, dirichlet.nSet)
+            dofIndices = fieldIndices.reshape((-1, dirichlet.fieldSize))[:, dirichlet.components].flatten()
+            located = cache[key] = (dofIndices, nodePositions)
 
-            indices = cache[key] = fieldIndices.reshape((-1, dirichlet.fieldSize))[:, dirichlet.components].flatten()
-
-        return indices
+        return located
 
     @performancetiming.timeit("assembly active domain")
     def _assembleActiveDomain(self, activeCells, model: MPMModel) -> tuple[NodeSet, NodeSet, dict, dict]:
@@ -527,8 +521,14 @@ class BaseNonlinearSolver:
            None of them writes to the model, and none of them creates nodes or variables, so two
            constraints can never touch the same memory.
         2. The individual answers are combined with a logical *or*. That is independent of the order
-           in which the answers arrive, so the result does not depend on how the work was split, nor
-           on how the threads happened to be scheduled.
+           in which the answers arrive, so the *value* returned does not depend on how the work was
+           split, nor on how the threads happened to be scheduled.
+
+        Point 2 is about the value only, and it is not on its own enough: ``any`` short-circuits, so
+        reducing a lazy ``Executor.map`` would also make this function *return early*, while the
+        chunks after the first changed one are still writing. The caller rebuilds the dof manager
+        immediately afterwards, from the very node lists those threads are still rewriting. Hence
+        the results are materialised before being reduced -- see the comment at the call below.
 
         Parameters
         ----------
@@ -559,8 +559,20 @@ class BaseNonlinearSolver:
         constraintChunks = [constraints[i : i + chunkSize] for i in range(0, len(constraints), chunkSize)]
 
         threadPool = getThreadPool(numberOfThreads)
-        connectivityHasChangedPerChunk = threadPool.map(
-            lambda chunk: self._updateConnectivityOfConstraintChunk(chunk, model), constraintChunks
+
+        # Materialised before it is reduced, and that is the whole point of the ``list``:
+        # ``Executor.map`` returns a *lazy* iterator, and ``any`` stops consuming at the first
+        # ``True``. Reducing the iterator directly therefore returns while the chunks after the
+        # first changed one are still running -- and the caller goes straight on to rebuild the dof
+        # manager from constraint node lists that those threads are still rewriting. A constraint
+        # updated after that snapshot keeps a dof block sized for a kernel support its particle no
+        # longer has, and the next force evaluation fails to broadcast.
+        #
+        # Every ``executor.map`` in the particle managers is wrapped the same way, for the same
+        # reason. Do not "simplify" this back into ``any(threadPool.map(...))``; the test
+        # ``solvers/test/constraintconnectivity_test.py`` fails if it is.
+        connectivityHasChangedPerChunk = list(
+            threadPool.map(lambda chunk: self._updateConnectivityOfConstraintChunk(chunk, model), constraintChunks)
         )
 
         return any(connectivityHasChangedPerChunk)
@@ -587,9 +599,19 @@ class BaseNonlinearSolver:
 
         return connectivityHasChanged
 
-    def _getActiveCellsFromManagers(self, mpmManagers):
+    def _getActiveCellsFromManagers(self, mpmManagers: list[MPMManagerBase]) -> list:
+        """Collect the cells that are active in any of the MPM managers, sorted by their number; see
+        :meth:`~edelweissmeshfree.models.mpmmodel.MPMModel.activeCellsOf`.
 
-        activeCells = set()
-        for man in mpmManagers:
-            activeCells |= man.getActiveCells()
-        return activeCells
+        Parameters
+        ----------
+        mpmManagers
+            The list of MPMManagerBase instances.
+
+        Returns
+        -------
+        list
+            The active cells, each once, sorted by cell number.
+        """
+
+        return MPMModel.activeCellsOf(mpmManagers)

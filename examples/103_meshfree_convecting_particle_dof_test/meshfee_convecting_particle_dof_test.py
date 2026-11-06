@@ -179,7 +179,7 @@ def run_sim():
             timeNew = 0.0
             dTime = 0.0
 
-            theParticle.computePhysicsKernels(dUc, Pc, Kc, timeNew, dTime)
+            theParticle.computeKernels(Kc, Pc, dUc, dUc, timeNew, dTime)
             theParticle.acceptStateAndPosition()
 
             theJournal.message(f"particle: {theParticle.number}", "info")

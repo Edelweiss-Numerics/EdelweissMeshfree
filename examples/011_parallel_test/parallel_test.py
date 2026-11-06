@@ -29,9 +29,11 @@ import argparse
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 import pytest
-from edelweissfe.config.linsolve import getLinSolverByName
 from edelweissfe.journal.journal import Journal
-from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
+from edelweissfe.solvers.nonlinearimplicitstaticparallel import NISTParallel
+from edelweissfe.stepactions.dirichlet import StepAction as Dirichlet
+from edelweissfe.steps.adaptivestep import AdaptiveStep
+from edelweissfe.steps.stepmanager import StepActionCollection
 from edelweissfe.utils.exceptions import StepFailed
 
 from edelweissmeshfree.constraints.penaltyweakdirichlet import PenaltyWeakDirichlet
@@ -45,12 +47,16 @@ from edelweissmeshfree.mpmmanagers.smartmpmmanager import SmartMaterialPointMana
 from edelweissmeshfree.outputmanagers.ensight import (
     OutputManager as EnsightOutputManager,
 )
-from edelweissmeshfree.solvers.nqsmarmotparallel import NQSParallelForMarmot
-from edelweissmeshfree.stepactions.dirichlet import Dirichlet
+from edelweissmeshfree.solvers.meshfreeconvergencecriterion import (
+    jobInfoWithMeshfreeTolerances,
+    meshfreeCriterionOptions,
+)
 
 
 @performancetiming.timeit("simulation")
 def run_sim():
+    """Solve the example with EdelweissFE's NISTParallel: the material points move through a fixed background grid,
+    so the cells they occupy, and with them the equation system, change from increment to increment."""
     dimension = 2
 
     journal = Journal()
@@ -153,33 +159,35 @@ def run_sim():
         )
     ]
 
-    adaptiveTimeStepper = AdaptiveTimeStepper(0.0, 1.0, 1e-1, 1e-1, 1e-3, 10, journal)
+    # The model holds its manager and constraints; the boundary condition is a step action of the step, which prescribes
+    # the nodes of the grid's left edge that lie in the active domain.
+    mpmModel.mpmManagers.append(mpmManager)
+    for constraint in weakDirichlets:
+        mpmModel.constraints[constraint.name] = constraint
+    stepActions = StepActionCollection()
+    stepActions["dirichlet"][dirichletLeft.name] = dirichletLeft
 
-    nonlinearSolver = NQSParallelForMarmot(journal)
-
-    iterationOptions = dict()
-
-    iterationOptions["max. iterations"] = 15
-    iterationOptions["critical iterations"] = 5
-    iterationOptions["allowed residual growths"] = 3
-
-    linearSolver = getLinSolverByName("pardiso", {})
+    jobInfo = jobInfoWithMeshfreeTolerances()
+    step = AdaptiveStep(
+        0,
+        mpmModel,
+        fieldOutputController,
+        journal,
+        jobInfo,
+        NISTParallel(jobInfo, journal, linsolver="pardiso", **meshfreeCriterionOptions),
+        outputManagers,
+        stepActions,
+        startInc=1e-1,
+        maxInc=1e-1,
+        minInc=1e-3,
+        maxNumInc=10,
+        maxIter=15,
+        criticalIter=5,
+        maxGrowIter=3,
+    )
 
     try:
-        nonlinearSolver.solveStep(
-            adaptiveTimeStepper,
-            linearSolver,
-            mpmModel,
-            fieldOutputController,
-            mpmManagers=[mpmManager],
-            dirichlets=[
-                dirichletLeft,
-            ],
-            constraints=weakDirichlets,
-            outputManagers=outputManagers,
-            userIterationOptions=iterationOptions,
-        )
-
+        step.solve()
     except StepFailed as e:
         journal.errorMessage(str(e), "StepFailed")
         raise
@@ -190,8 +198,6 @@ def run_sim():
         prettytable = performancetiming.makePrettyTable()
         prettytable.min_table_width = journal.linewidth
         journal.printPrettyTable(prettytable, "Summary")
-
-    np.savetxt("U.csv", fieldOutputController.fieldOutputs["displacement"].getLastResult())
 
     return mpmModel
 
@@ -205,11 +211,7 @@ def change_test_dir(request, monkeypatch):
 
 
 def test_sim(assert_gold):
-    try:
-        mpmModel = run_sim()
-    except ValueError as e:
-        pytest.skip(str(e))
-        return
+    mpmModel = run_sim()
 
     res = np.array([mp.getResultArray("displacement") for mp in mpmModel.materialPoints.values()])
     gold = np.loadtxt("gold.csv")

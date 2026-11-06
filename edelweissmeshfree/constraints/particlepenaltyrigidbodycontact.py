@@ -17,11 +17,33 @@ class ParticlePenaltyContactImplicitSurfaceConstraint(MPMConstraintBase):
 
     Parameters
     ----------
+    name
+        The name of this constraint.
+    particle
+        The particle to which the constraint is applied.
     implicit_function : function
         Returns signed distance. Convention: Negative = Inside (Penetration).
     gradient_function : function
         Returns gradient vector. Convention: Points OUTWARD (Normal).
+    model
+        The MPM model instance.
+    location
+        Where the constraint acts on the particle: at its "center", at the faces given by faceIDs ("face"), or at the
+        vertices given by vertexIDs ("vertex").
+    faceIDs
+        The face ID(s) if location is "face"; face IDs start (Abaqus convention) at 1.
+    vertexIDs
+        The vertex ID(s) if location is "vertex".
+    penaltyParameter
+        The penalty stiffness parameter.
+    doProximityCheck
+        If True, the constraint is only active while one of its points is close to the surface.
+    proximityFactor
+        How close, as a multiple of the particle's characteristic length.
     """
+
+    #: Carries nothing from one increment to the next.
+    checkpointedState = {}
 
     def __init__(
         self,
@@ -49,7 +71,7 @@ class ParticlePenaltyContactImplicitSurfaceConstraint(MPMConstraintBase):
 
         def _getConstraintLocations():
             if location == "center":
-                [constraintLocation] = particle.getCenterCoordinates()
+                constraintLocation = [particle.getCenterCoordinates()]
             elif location == "face":
                 if faceIDs is None:
                     raise ValueError("faceID must be specified when location is 'face'.")
@@ -75,8 +97,6 @@ class ParticlePenaltyContactImplicitSurfaceConstraint(MPMConstraintBase):
                 particle.getVolumeUndeformed() ** (1.0 / self._domainSize) * proximityFactor
             )
 
-        self.isActive = True
-
     @property
     def name(self) -> str:
         return self._name
@@ -97,10 +117,6 @@ class ParticlePenaltyContactImplicitSurfaceConstraint(MPMConstraintBase):
     def scalarVariables(self) -> list:
         return list()
 
-    @property
-    def active(self) -> bool:
-        return self.isActive
-
     def getNumberOfAdditionalNeededScalarVariables(self) -> int:
         return 0
 
@@ -114,32 +130,24 @@ class ParticlePenaltyContactImplicitSurfaceConstraint(MPMConstraintBase):
         self._nodes = nodes
         self._constrained_points = self._getConstraintLocations()
 
-        wasActive = self.isActive
-        self.isActive = True
+        wasActive = self.active
 
-        if self._doProximityCheck:
-            self.isActive = False
-            for p_coord in self._constrained_points:
-                dist = self._implicit_function(p_coord)
-                if dist < self._particleCharacteristicLength_x_proximityFactor:
-                    self.isActive = True
-                    break
+        # within reach if one of the constrained points is close enough to the surface
+        self.withinReach = not self._doProximityCheck or any(
+            self._implicit_function(p_coord) < self._particleCharacteristicLength_x_proximityFactor
+            for p_coord in self._constrained_points
+        )
 
-            if self.isActive != wasActive:
-                hasChanged = True
+        if self.active != wasActive:
+            hasChanged = True
 
-        if not self.isActive:
+        if not self.active:
             self.reactionForce = 0.0
 
         return hasChanged
 
-    def applyConstraint(self, dU_: np.ndarray, PExt: np.ndarray, V: np.ndarray, timeStep: TimeStep):
-        if not self.isActive:
-            return
-
-        K_UU = V.reshape((self.nDof, self.nDof))
-
-        dU = dU_
+    def computeKernels(self, U_np: np.ndarray, dU: np.ndarray, P: np.ndarray, K: np.ndarray, timeStep: TimeStep):
+        K_UU = K.reshape((self.nDof, self.nDof))
 
         for constrained_point in self._constrained_points:
 
@@ -176,7 +184,7 @@ class ParticlePenaltyContactImplicitSurfaceConstraint(MPMConstraintBase):
                 dg_dU[start_idx : start_idx + self._fieldSize] = N_vec[i] * constraint_vec
 
             # Update Force (Using += just like original)
-            PExt += self._penaltyParameter * dg_dU * g
+            P += self._penaltyParameter * dg_dU * g
 
             # Update Stiffness (Using += just like original)
             K_update = self._penaltyParameter * np.outer(dg_dU, dg_dU)

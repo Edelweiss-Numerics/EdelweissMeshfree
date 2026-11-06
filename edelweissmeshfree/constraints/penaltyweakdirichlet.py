@@ -29,6 +29,9 @@ class PenaltyWeakDirichlet(MPMConstraintBase):
         The penalty parameter value.
     """
 
+    #: Carries nothing from one increment to the next.
+    checkpointedState = {}
+
     def __init__(
         self,
         name: str,
@@ -106,12 +109,12 @@ class PenaltyWeakDirichlet(MPMConstraintBase):
 
         return hasChanged
 
-    def applyConstraint(self, dU: np.ndarray, PExt: np.ndarray, V: np.ndarray, timeStep: TimeStep):
+    def computeKernels(self, U_np: np.ndarray, dU: np.ndarray, P: np.ndarray, K: np.ndarray, timeStep: TimeStep):
         for i, prescribedComponent in self._prescribedStepDelta.items():
-            P_i = PExt[i :: self._fieldSize]
+            P_i = P[i :: self._fieldSize]
             dU_j = dU[i :: self._fieldSize]
 
-            K_ij = V.reshape((self.nDof, self.nDof))[i :: self._fieldSize, i :: self._fieldSize]
+            K_ij = K.reshape((self.nDof, self.nDof))[i :: self._fieldSize, i :: self._fieldSize]
 
             for mp in self._constrainedMPs:
                 center = mp.getCenterCoordinates()

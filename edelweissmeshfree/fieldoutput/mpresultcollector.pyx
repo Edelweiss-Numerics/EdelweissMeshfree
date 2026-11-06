@@ -42,6 +42,26 @@ from libc.stdlib cimport free, malloc
 
 
 cdef class MaterialPointResultCollector:
+    """
+    A cdef class for collecting materialPoint results (by using the permanent results pointer (i.e., a numpy array)
+    in large array of all materialPoints and all quadrature points.
+
+    Collecting materialPointal results may be a performance critical part.
+    This cdef class allows for the efficient gathering.
+    A 3D array is assembled if multiple quadrature points are requested (shape ``[materialPoints, quadraturePoints, resultVector]`` )
+    or a 2D array for one quadrature point ( shape ``[materialPoints, resultVector]`` ).
+
+    Method :func:`~edelweissfe.utils.materialPointresultcollector.MaterialPointResultCollector.getCurrentResults` updates the assembly array and passes it back.
+
+    The caller is responsible to make a copy of it, if persistent results are needed!
+
+    Parameters
+    ----------
+    materialPoints
+        The list of materialPoints for which the results should be collected.
+    result
+        The name of the requested result.
+    """
 
     cdef public  resultsTable
 
@@ -50,26 +70,6 @@ cdef class MaterialPointResultCollector:
     cdef double** resultPointers
 
     def __init__(self, materialPoints:list, result:str):
-        """
-        A cdef class for collecting materialPoint results (by using the permanent results pointer (i.e., a numpy array)
-        in large array of all materialPoints and all quadrature points.
-
-        Collecting materialPointal results may be a performance critical part.
-        This cdef class allows for the efficient gathering.
-        A 3D array is assembled if multiple quadrature points are requested (shape ``[materialPoints, quadraturePoints, resultVector]`` )
-        or a 2D array for one quadrature point ( shape ``[materialPoints, resultVector]`` ).
-
-        Method :func:`~edelweissfe.utils.materialPointresultcollector.MaterialPointResultCollector.getCurrentResults` updates the assembly array and passes it back.
-
-        The caller is responsible to make a copy of it, if persistent results are needed!
-
-        Parameters
-        ----------
-        materialPoints
-            The list of materialPoints for which the results should be collected.
-        result
-            The name of the requested result.
-        """
 
         # hotfix for cython compile error associated with 'range' typing of argument quadraturePoints
         # this is due to a bug in in cython 0.29.xx and should be fixed in cython 3.x.x

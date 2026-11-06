@@ -1,6 +1,10 @@
 Material Points
 ===============
 
+A material point integrates its material for the increment it received from its cells in ``computeYourself``. A
+Marmot material point whose material cannot integrate the increment -- Marmot throws -- requests a cutback
+(EdelweissFE's ``CutbackRequest``), as an EdelweissFE element does, and the solver retries the increment smaller.
+
 .. automodule:: edelweissmeshfree.materialpoints.base.mp
    :members:
    :private-members:

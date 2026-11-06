@@ -233,24 +233,32 @@ class BaseParticle(BaseNodeCouplingEntity):
         """
 
     @abstractmethod
-    def computePhysicsKernels(
+    def computeKernels(
         self,
-        dU: np.ndarray,
-        P: np.ndarray,
         K: np.ndarray,
+        P: np.ndarray,
+        U: np.ndarray,
+        dU: np.ndarray,
         timeTotal: float,
         dTime: float,
     ):
-        """Evaluate the kernel residual and stiffness for given time based for all assigned MaterialPoints.
+        """Add the internal forces of the particle to the residual, and their tangent: the signature of
+        :meth:`edelweissfe.elements.base.baseelement.BaseElement.computeKernels`, so that a solver evaluates
+        particles and elements alike.
+
+        A particle is incremental on the current configuration: its kernel functions move with it, and their
+        nodal values are increments, so a particle reads ``dU``, not ``U``.
 
         Parameters
         ----------
+        K
+            The tangent ``dP/dU`` to augment, the stiffness matrix.
+        P
+            The residual contribution to augment, the internal forces.
+        U
+            The current solution.
         dU
             The current solution increment.
-        P
-            The external load vector to be defined.
-        K
-            The stiffness matrix to be defined.
         timeTotal
             The current total time.
         dTime
@@ -267,7 +275,8 @@ class BaseParticle(BaseNodeCouplingEntity):
         timeTotal: float,
         dTime: float,
     ):
-        """Compute bulk loads (body loads) for given time based for all assigned MaterialPoints.
+        """Add the residual contribution of a body load on the particle, the negative of the external load
+        :math:`-\\boldsymbol{f}_\\mathrm{ext}`, and its tangent, which is zero for a dead load.
 
         Parameters
         ----------
@@ -276,9 +285,9 @@ class BaseParticle(BaseNodeCouplingEntity):
         load
             The float (vector) describing the load.
         P
-            The external load vector to be defined.
+            The residual contribution to augment, :math:`-\\boldsymbol{f}_\\mathrm{ext}`.
         K
-            The stiffness matrix to be defined.
+            The tangent ``dP/dU`` to augment.
         timeTotal
             The current total time.
         dTime
@@ -296,20 +305,22 @@ class BaseParticle(BaseNodeCouplingEntity):
         timeTotal: float,
         dTime: float,
     ):
-        """Compute distributed (surface) a for given time based for a specific assigned material point.
+        """Add the residual contribution of a distributed (surface) load on a surface of the particle, the negative of
+        the external load :math:`-\\boldsymbol{f}_\\mathrm{ext}`, and its tangent, which is nonzero only for a load
+        that follows the deformation.
 
         Parameters
         ----------
         loadType
             The type of load to be computed (e.g., 'pressure')
         surfaceID
-            The ID describing the surface of the material point.
+            The ID describing the surface of the particle.
         load
             The float (vector) describing the load.
         P
-            The external load vector to be defined.
+            The residual contribution to augment, :math:`-\\boldsymbol{f}_\\mathrm{ext}`.
         K
-            The stiffness matrix to be defined.
+            The tangent ``dP/dU`` to augment.
         timeTotal
             The current total time.
         dTime
@@ -496,20 +507,21 @@ class BaseParticle(BaseNodeCouplingEntity):
 
     @abstractmethod
     def getRestartData(self) -> np.ndarray:
-        """Get the restart data in  form of a numpy array.
+        """The state of the last accepted increment, for a restart checkpoint. A particle is updated-Lagrangian: its
+        position and shape follow from this state.
 
         Returns
         -------
         np.ndarray
-            The restart data.
+            The state.
         """
 
     @abstractmethod
     def readRestartData(self, restartData: np.ndarray):
-        """Set the restart data.
+        """Restore the state :meth:`getRestartData` returned, and with it the position and the shape.
 
         Parameters
         ----------
         restartData
-            The restart data.
+            The state.
         """
