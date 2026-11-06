@@ -33,6 +33,11 @@ the width of the cell, so the first full increment would turn the material point
 ("non-positive elastic volume ratio"), Marmot throws, the solver cuts the increment back, and the smaller increment
 converges.
 
+The deprecated solver cuts back by its own factor. EdelweissFE's solver meets the failure where it updates the material
+points (:meth:`~edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.updateMaterialPoints`); the
+material point asks for half the increment, as an EdelweissFE element does, and the step cuts back by the larger of
+this and its ``cutbackFactor``.
+
 A particle translates a failure of Marmot into a cutback request in its wrapper as well, in the implicit kernel, and
 the request reaches the solver from whichever thread of the pool evaluated the particle. The cells and cell elements
 translate it too, but cannot be made to fail: their kernels integrate the stresses their material points have
@@ -75,11 +80,21 @@ class RecordingJournal(Journal):
         super().errorMessage(errorMessage, senderIdentification)
 
 
-def _compressOneCell(solverType):
-    """Push the right edge of a one-cell grid to the left by more than the width of the cell, in at most two
-    increments (the zero increment and one more)."""
+def _compressOneCell(solve):
+    """Push the right edge of a one-cell grid to the left by more than the width of the cell.
 
-    from edelweissfe.config.linsolve import getLinSolverByName
+    Parameters
+    ----------
+    solve
+        Solves the step, ``solve(model, mpmManager, dirichlets, fieldOutputController, journal)``, and returns its time
+        stepper.
+
+    Returns
+    -------
+    tuple
+        The model, the journal, and the time stepper of the step.
+    """
+
     from edelweissfe.stepactions.dirichlet import StepAction as Dirichlet
 
     from edelweissmeshfree.fieldoutput.fieldoutput import MPMFieldOutputController
@@ -136,12 +151,31 @@ def _compressOneCell(solverType):
         Dirichlet("right", model.nodeSets["rectangular_grid_right"], "displacement", {0: -SHORTENING}, model, journal),
     ]
 
-    # the zero increment, then one more: the full step, which fails, and its cutback
-    timeStepper = AdaptiveTimeStepper(0.0, 1.0, 1.0, 1.0, 0.1, 1, journal)
-
-    solver = solverType(journal)
     try:
-        solver.solveStep(
+        timeStepper = solve(model, mpmManager, dirichlets, fieldOutputController, journal)
+    finally:
+        fieldOutputController.finalizeJob()
+
+    return model, journal, timeStepper
+
+
+def _assertMarmotFailedAndTheIncrementWasCutBackTo(incrementSize: float, journal: RecordingJournal):
+    assert any("non-positive elastic volume ratio" in message for message in journal.messages), "Marmot did not fail"
+    cutbacks = [message for message in journal.messages if message.startswith("Cutback to increment size")]
+    assert cutbacks[0] == "Cutback to increment size {:}".format(incrementSize)
+
+
+def test_a_failing_material_point_is_a_cutback():
+    """The solver integrates the material points through the material point wrapper."""
+
+    from edelweissfe.config.linsolve import getLinSolverByName
+
+    from edelweissmeshfree.solvers.deprecated.nqs import NonlinearQuasistaticSolver
+
+    def solve(model, mpmManager, dirichlets, fieldOutputController, journal):
+        # the zero increment, then one more: the full step, which fails, and its cutback
+        timeStepper = AdaptiveTimeStepper(0.0, 1.0, 1.0, 1.0, 0.1, 1, journal)
+        NonlinearQuasistaticSolver(journal).solveStep(
             timeStepper,
             getLinSolverByName("pardiso", {}),
             model,
@@ -150,26 +184,62 @@ def _compressOneCell(solverType):
             dirichlets=dirichlets,
             userIterationOptions={"max. iterations": 15, "failed increment cutback factor": CUTBACK_FACTOR},
         )
-    finally:
-        fieldOutputController.finalizeJob()
+        return timeStepper
 
-    return model, timeStepper, journal
+    model, journal, timeStepper = _compressOneCell(solve)
 
-
-def _checkCutback(model, timeStepper, journal):
-    assert any("non-positive elastic volume ratio" in message for message in journal.messages), "Marmot did not fail"
-    assert any("Cutback to increment size {:}".format(CUTBACK_FACTOR) in message for message in journal.messages)
+    _assertMarmotFailedAndTheIncrementWasCutBackTo(CUTBACK_FACTOR, journal)
     # the zero increment and the smaller increment converged
     assert timeStepper.numberOfIncrementsDone() == 2
     assert model.time == pytest.approx(CUTBACK_FACTOR)
 
 
-def test_a_failing_material_point_is_a_cutback():
-    """The solver integrates the material points through the material point wrapper."""
+@pytest.mark.parametrize("cutbackFactor, cutbackSize", [(0.25, 0.5), (0.6, 0.6)])
+def test_a_failing_material_point_cuts_the_increment_back_to_the_larger_of_half_and_the_cutback_factor(
+    cutbackFactor: float, cutbackSize: float
+):
+    """EdelweissFE's NIST updates the material points through the equation system layout of the model."""
 
-    from edelweissmeshfree.solvers.deprecated.nqs import NonlinearQuasistaticSolver
+    from edelweissfe.solvers.nonlinearimplicitstatic import NIST
+    from edelweissfe.steps.adaptivestep import AdaptiveStep
+    from edelweissfe.steps.stepmanager import StepActionCollection
 
-    _checkCutback(*_compressOneCell(NonlinearQuasistaticSolver))
+    from edelweissmeshfree.solvers.meshfreeconvergencecriterion import (
+        jobInfoWithMeshfreeTolerances,
+        meshfreeCriterionOptions,
+    )
+
+    def solve(model, mpmManager, dirichlets, fieldOutputController, journal):
+        model.mpmManagers.append(mpmManager)
+        stepActions = StepActionCollection()
+        for dirichlet in dirichlets:
+            stepActions["dirichlet"][dirichlet.name] = dirichlet
+
+        jobInfo = jobInfoWithMeshfreeTolerances()
+        # the zero increment, then one more: the full step, which fails, and its retry; the step ends there
+        step = AdaptiveStep(
+            0,
+            model,
+            fieldOutputController,
+            journal,
+            jobInfo,
+            NIST(jobInfo, journal, linsolver="pardiso", **meshfreeCriterionOptions),
+            [],
+            stepActions,
+            startInc=1.0,
+            maxInc=1.0,
+            minInc=0.1,
+            maxNumInc=1,
+            maxIter=15,
+            cutbackFactor=cutbackFactor,
+        )
+        step.solve()
+        return step.timeStepper
+
+    model, journal, _ = _compressOneCell(solve)
+
+    _assertMarmotFailedAndTheIncrementWasCutBackTo(cutbackSize, journal)
+    assert model.time == pytest.approx(cutbackSize)
 
 
 #: The finite-strain J2 plasticity of the explicit solver's tests -- K, G, fy, fyInf, eta, H, implementation, density --
