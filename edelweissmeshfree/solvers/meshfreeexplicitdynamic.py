@@ -87,13 +87,14 @@ critical time step. The first increment of a step must be the zero increment, wh
 configuration the step starts from. Where the step takes the motion from, the model says
 (:meth:`~edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.carriersOfTheMotionOfParticles`):
 
-- If the model holds the motion at its nodes -- after a step of this solver -- the step continues it as NED does. It
-  starts from the velocity of the nodes, carried by node as in every rebuild, and from the net force of their
-  acceleration, :math:`\\boldsymbol{f} = \\boldsymbol{M} \\boldsymbol{a}`. The force evaluated at the zero increment
-  would not do: the particles have taken a zero-length increment, and the stabilization of their integration refers
-  to the increment taken last.
-- Otherwise -- at the start of an analysis, with the initial velocity given to the particles, or after a quasi-static
-  step -- it evaluates the forces of the configuration and projects the velocity from the particles' momentum.
+- If the model holds the motion at its nodes -- after a step of this solver, or of NID integrating the inertia at the
+  nodes -- the step continues it as NED does. It starts from the velocity of the nodes, carried by node as in every
+  rebuild, and from the net force of their acceleration, :math:`\\boldsymbol{f} = \\boldsymbol{M} \\boldsymbol{a}`.
+  The force evaluated at the zero increment would not do: the particles have taken a zero-length increment, and the
+  stabilization of their integration refers to the increment taken last.
+- Otherwise -- at the start of an analysis, with the initial velocity given to the particles, after a quasi-static step,
+  or after NID integrating the inertia in the particles -- it evaluates the forces of the configuration and projects the
+  velocity from the particles' momentum.
 
 The first increment of motion is then the leapfrog's half step from that velocity. After a step of this solver, the
 leapfrog continues as though the two steps were one. A resumed step continues from the velocity of the model and the

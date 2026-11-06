@@ -501,6 +501,51 @@ def test_a_quasi_static_step_leaves_the_particles_at_rest():
     assert max(speedsAfterTheSecondDynamicStep) < 1e-2 * velocityAfterTheFirstDynamicStep
 
 
+@pytest.mark.parametrize("first, second", [("particles", "nodes"), ("nodes", "particles")])
+def test_a_change_of_the_inertia_mode_that_would_lose_the_motion_is_refused(first, second):
+    """The two modes keep the motion of the particles in different places, in the particles' state or at the nodes of
+    their kernel functions, and nothing transfers it from the one to the other. A step in the other mode after a step
+    that left the cantilever moving therefore refuses to start, rather than starting the cantilever from rest."""
+
+    journal = Journal()
+    model, stepActions, fieldOutputController = buildRkpmCantilever(0.25, journal)
+    timeIncrement = eulerBernoulliPeriod() / incrementsPerPeriod
+    jobInfo = jobInfoWithMeshfreeTolerances(fluxResidualTolerance=1e-8, fieldCorrectionTolerance=1e-12)
+
+    def solveStep(number: int, meshfreeInertia: str):
+        solver = NonlinearImplicitDynamic(
+            jobInfo,
+            journal,
+            newmarkBeta=0.25,
+            newmarkGamma=0.5,
+            **meshfreeCriterionOptions | {"linsolver": "pardiso", "meshfreeInertia": meshfreeInertia},
+        )
+        AdaptiveStep(
+            number,
+            model,
+            fieldOutputController,
+            journal,
+            jobInfo,
+            solver,
+            [],
+            stepActions,
+            stepLength=4 * timeIncrement,
+            startInc=0.25,
+            maxInc=0.25,
+            minInc=0.25,
+            maxNumInc=10,
+            maxIter=15,
+        ).solve()
+
+    fieldOutputController.initializeJob()
+    try:
+        solveStep(0, first)
+        with pytest.raises(ValueError, match="meshfreeInertia={:} takes it".format(second)):
+            solveStep(1, second)
+    finally:
+        fieldOutputController.finalizeJob()
+
+
 @pytest.fixture(autouse=True)
 def change_test_dir(request, monkeypatch):
     """No matter where pytest is ran, we set the working dir

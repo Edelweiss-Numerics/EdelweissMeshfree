@@ -265,19 +265,28 @@ class MPMEquationSystemLayout(EquationSystemLayout):
     def carriersOfTheMotionOfParticles(self) -> set[str]:
         """Where the model holds the motion of its particles; see
         :meth:`~edelweissfe.models.equationsystemlayout.EquationSystemLayout.carriersOfTheMotionOfParticles`.
-        ``"nodes"`` if an incremental node of the active domain carries a velocity or an acceleration in the entries
+        ``"particles"`` if a particle that integrates its inertia (one with Newmark parameters) carries a velocity or an
+        acceleration in its state, ``"nodes"`` if an incremental node of the active domain carries one in the entries
         ``V`` and ``A`` of the model's node fields.
 
-        The explicit solver keeps the motion there: the velocity of the nodes is its state, and every particle takes its
-        own from them as it advances.
+        The implicit dynamic solver keeps the motion in the particles with ``meshfreeInertia=particles``, at the nodes
+        with ``meshfreeInertia=nodes``. The explicit solver keeps it in both: the velocity of the nodes is its state,
+        and every particle takes its own from them as it advances.
 
         Returns
         -------
         set[str]
-            ``"nodes"``, or none.
+            ``"particles"``, ``"nodes"``, both or none.
         """
 
         carriers = set()
+
+        if any(
+            np.any(particle.getResultArray("velocity")) or np.any(particle.getResultArray("acceleration"))
+            for particle in self.particles
+            if "newmark-beta beta" in particle.propertyNames
+        ):
+            carriers.add("particles")
 
         if self.incrementalNodes:
             rate = self.dofManager.constructDofVector()
