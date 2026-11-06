@@ -61,7 +61,8 @@ def run_sim():
 
     mpmModel = MPMModel(dimension)
 
-    linearElasticMaterial = {"material": "LINEARELASTIC", "properties": np.array([30000.0, 0.3])}
+    # E, nu, density (zero density: this test has no inertia)
+    linearElasticMaterial = {"material": "LINEARELASTIC/HUGHES-WINGET", "properties": np.array([30000.0, 0.3, 0.0])}
 
     rectangulargridgenerator.generateModelData(
         mpmModel,
@@ -73,7 +74,7 @@ def run_sim():
         nX=40,
         nY=20,
         cellProvider="LagrangianMarmotCell",
-        cellType="Displacement/SmallStrain/Quad4",
+        cellType="Displacement/Quad4",
     )
     rectangularmpgenerator.generateModelData(
         mpmModel,
@@ -85,12 +86,11 @@ def run_sim():
         nX=3,
         nY=3,
         mpProvider="marmot",
-        mpType="Displacement/SmallStrain/PlaneStrain",
+        mpType="Displacement/PlaneStrain",
         material=linearElasticMaterial,
     )
 
     mpmModel.prepareYourself(journal)
-    mpmModel.nodeFields["displacement"].createFieldValueEntry("dU")
 
     allCells = mpmModel.cellSets["all"]
     allMPs = mpmModel.materialPointSets["all"]
@@ -118,9 +118,9 @@ def run_sim():
         "stress",
     )
     fieldOutputController.addPerMaterialPointFieldOutput(
-        "strain",
+        "deformation gradient",
         allMPs,
-        "strain",
+        "deformation gradient",
     )
 
     fieldOutputController.initializeJob()
@@ -130,12 +130,13 @@ def run_sim():
     ensightOutput.createPerNodeOutput(fieldOutputController.fieldOutputs["dU"])
     ensightOutput.createPerNodeOutput(fieldOutputController.fieldOutputs["displacement"])
     ensightOutput.createPerNodeOutput(fieldOutputController.fieldOutputs["stress"])
-    ensightOutput.createPerNodeOutput(fieldOutputController.fieldOutputs["strain"])
+    ensightOutput.createPerNodeOutput(fieldOutputController.fieldOutputs["deformation gradient"])
 
     ensightOutput.initializeJob()
 
     try:
-        for i in range(100):
+        # 88 increments: the last one carries the rightmost material points past the right edge of the grid
+        for i in range(88):
             print("time step {:}".format(i))
 
             mpmManager.updateConnectivity()
@@ -160,7 +161,6 @@ def run_sim():
                 nodeField.name: MPMNodeField(nodeField.name, nodeField.dimension, activeNodes)
                 for nodeField in mpmModel.nodeFields.values()
             }
-            activeNodeFields["displacement"].createFieldValueEntry("dU")
 
             scalarVariables = []
             elements = []
@@ -180,6 +180,11 @@ def run_sim():
             activeNodeFields["displacement"]["dU"][:] = shift
             dofManager.writeNodeFieldToDofVector(dofVector, activeNodeFields["displacement"], "dU")
 
+            # a new increment begins: the material points reset their displacement increment, which the cells
+            # then accumulate (the order of the solvers: prepare, interpolate, compute)
+            for mp in allMPs:
+                mp.prepareYourself(time, i)
+
             for c in activeCells:
                 dUCell = dofVector[c]
                 c.interpolateFieldsToMaterialPoints(dUCell)
@@ -187,7 +192,7 @@ def run_sim():
             for mp in allMPs:
                 mp.computeYourself(time, i)
 
-            mpmModel.nodeFields["displacement"].copyEntriesFromOther(activeNodeFields["displacement"])
+            mpmModel.nodeFields["displacement"].copyEntriesFromOther(activeNodeFields["displacement"], ["dU"])
 
             mpmModel.advanceToTime(time)
 
@@ -197,10 +202,6 @@ def run_sim():
 
             journal.printSeperationLine()
 
-    except Exception as e:
-        print(str(e))
-        raise
-
     finally:
         fieldOutputController.finalizeJob()
         ensightOutput.finalizeJob()
@@ -208,7 +209,7 @@ def run_sim():
         prettytable.min_table_width = journal.linewidth
         print(prettytable)
 
-        return mpmModel
+    return mpmModel
 
 
 @pytest.fixture(autouse=True)

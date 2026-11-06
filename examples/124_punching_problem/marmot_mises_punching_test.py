@@ -62,7 +62,7 @@ from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
 from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
     MarmotParticleWrapper,
 )
-from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
+from edelweissmeshfree.solvers.deprecated.nqs import NonlinearQuasistaticSolver
 
 # from edelweissmeshfree.generators.rectangularparticlegridgenerator import (
 #     generateRectangularParticleGrid,
@@ -130,7 +130,7 @@ def run_sim(no_limit=False):
             "Displacement/SNNIxNSNI/PlaneStrain/Quad",
             number,
             vertexCoordinates,
-            volume,
+            0.0,
             theApproximation,
             theMaterial,
         )
@@ -242,7 +242,7 @@ def run_sim(no_limit=False):
 
     incSize = 5e-3
     adaptiveTimeStepper = AdaptiveTimeStepper(
-        0.0, 1.0, incSize, incSize, incSize / 1e8, 25 if not no_limit else 10000, theJournal, increaseFactor=1.5
+        0.0, 1.0, incSize, incSize, incSize / 1e8, 26 if not no_limit else 10000, theJournal, increaseFactor=1.5
     )
 
     nonlinearSolver = NonlinearQuasistaticSolver(theJournal)
@@ -285,7 +285,7 @@ def run_sim(no_limit=False):
         prettytable.min_table_width = theJournal.linewidth
         theJournal.printPrettyTable(prettytable, "Summary")
 
-        return theModel, fieldOutputController
+    return theModel, fieldOutputController
 
 
 @pytest.fixture(autouse=True)

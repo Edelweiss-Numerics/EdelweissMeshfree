@@ -39,10 +39,12 @@ import argparse
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 import pytest
-from edelweissfe.config.linsolve import getLinSolverByName
 from edelweissfe.journal.journal import Journal
+from edelweissfe.outputmanagers.restart import OutputManager as RestartOutputManager
+from edelweissfe.solvers.nonlinearimplicitstaticparallelarclength import NISTPArcLength
+from edelweissfe.steps.adaptivestep import AdaptiveStep
+from edelweissfe.steps.stepmanager import StepActionCollection
 from edelweissfe.surfaces.entitybasedsurface import EntityBasedSurface
-from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 from edelweissfe.utils.exceptions import StepFailed
 
 from edelweissmeshfree.constraints.particlepenaltyequalvalue import (
@@ -75,8 +77,9 @@ from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
 from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
     MarmotParticleWrapper,
 )
-from edelweissmeshfree.solvers.nqsmparclength import (
-    NonlinearQuasistaticMarmotArcLengthSolver,
+from edelweissmeshfree.solvers.meshfreeconvergencecriterion import (
+    jobInfoWithMeshfreeTolerances,
+    meshfreeCriterionOptions,
 )
 from edelweissmeshfree.stepactions.particledistributedload import (
     ParticleDistributedLoad,
@@ -85,6 +88,8 @@ from edelweissmeshfree.stepactions.particleindirectcontrol import IndirectContro
 
 
 def run_sim(particleSize, supportRadius, continuityOrder, completenessOrder):
+    """Solve the example with EdelweissFE's NISTPArcLength, with a quadratic extrapolation of the increments, and a
+    restart checkpoint written after every increment."""
     dimension = 2
 
     exportName = "gosford_particleSize_{:}_supportRadius_{:}_continuity_{:}_completeness_{:}".format(
@@ -187,7 +192,7 @@ def run_sim(particleSize, supportRadius, continuityOrder, completenessOrder):
         theJournal,
         surfacePressure,
         "pressure",
-        np.array([1.0]),
+        np.array([-1.0]),
     )
 
     import sympy as sp
@@ -198,7 +203,7 @@ def run_sim(particleSize, supportRadius, continuityOrder, completenessOrder):
         theJournal,
         surfaceDisturbance,
         "pressure",
-        np.array([-10.0 * nY / 80]),
+        np.array([10.0 * nY / 80]),
         f_t=sp.lambdify(
             sp.symbols("t"),
             sp.sympify("Heaviside(t)"),
@@ -245,18 +250,9 @@ def run_sim(particleSize, supportRadius, continuityOrder, completenessOrder):
     ensightOutput.createPerElementOutput(fieldOutputController.fieldOutputs["deformation gradient"])
     ensightOutput.initializeJob()
 
+    restartOutput = RestartOutputManager("restart", theModel, fieldOutputController, theJournal, None)
+
     incSize = 5e-1
-    adaptiveTimeStepper = AdaptiveTimeStepper(0.0, 1.0, incSize, incSize, incSize, 2000, theJournal)
-
-    nonlinearSolver = NonlinearQuasistaticMarmotArcLengthSolver(theJournal)
-
-    iterationOptions = dict()
-
-    iterationOptions["max. iterations"] = 25
-    iterationOptions["critical iterations"] = 7
-    iterationOptions["allowed residual growths"] = 10
-
-    linearSolver = getLinSolverByName("pardiso", {})
 
     from edelweissmeshfree.meshfree.vci import (
         BoundaryParticleDefinition,
@@ -284,28 +280,54 @@ def run_sim(particleSize, supportRadius, continuityOrder, completenessOrder):
         "IndirectController", theModel, theControlParticles, -0.1, cVector, "displacement", theJournal, f_t=lambda t: t
     )
 
-    from edelweissmeshfree.numerics.predictors.quadraticpredictor import (
-        QuadraticPredictor,
+    # The model holds its managers and constraints; the loads and the arc length controller are step actions of the
+    # step, and the solver takes the controller by its name.
+    theModel.particleManagers.append(theParticleManager)
+    theModel.vciManagers.append(vciManager)
+    for constraint in dirichlets + rigidBodyTop:
+        theModel.constraints[constraint.name] = constraint
+    stepActions = StepActionCollection()
+    stepActions["distributedload"][pressureTop.name] = pressureTop
+    stepActions["distributedload"][disturbance.name] = disturbance
+    stepActions["indirectcontrol"][indirectcontrol.name] = indirectcontrol
+
+    outputManagers = [ensightOutput, restartOutput]
+
+    jobInfo = jobInfoWithMeshfreeTolerances()
+    solver = NISTPArcLength(
+        jobInfo,
+        theJournal,
+        linsolver="pardiso",
+        **meshfreeCriterionOptions
+        | {
+            # a quadratic prediction, retried without if it fails, and kept while the rebuilt equation systems number
+            # the degrees of freedom as before
+            "extrapolation": "quadratic",
+            "retryWithoutExtrapolation": True,
+            "extrapolateAcrossConnectivityChange": True,
+            "arcLengthController": indirectcontrol.name,
+        },
+    )
+    step = AdaptiveStep(
+        0,
+        theModel,
+        fieldOutputController,
+        theJournal,
+        jobInfo,
+        solver,
+        outputManagers,
+        stepActions,
+        startInc=incSize,
+        maxInc=incSize,
+        minInc=incSize,
+        maxNumInc=2000,
+        maxIter=25,
+        criticalIter=7,
+        maxGrowIter=10,
     )
 
     try:
-        nonlinearSolver.solveStep(
-            adaptiveTimeStepper,
-            linearSolver,
-            theModel,
-            fieldOutputController,
-            indirectcontrol,
-            outputManagers=[ensightOutput],
-            particleManagers=[theParticleManager],
-            constraints=dirichlets + rigidBodyTop,
-            userIterationOptions=iterationOptions,
-            particleDistributedLoads=[pressureTop, disturbance],
-            vciManagers=[vciManager],
-            restartWriteInterval=1,
-            predictor=QuadraticPredictor(journal=theJournal, arcLength=True),
-            # predictor=LinearPredictor(journal=theJournal, arcLength=True)
-        )
-
+        step.solve()
     except StepFailed as e:
         theJournal.message(f"Step failed: {str(e)}", "error")
 

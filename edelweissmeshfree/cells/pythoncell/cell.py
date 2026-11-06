@@ -259,11 +259,12 @@ class PythonCell(CellBase):
         """Alias for interpolateFieldsToMaterialPoints (base class interface)."""
         self.interpolateFieldsToMaterialPoints(dU)
 
-    def computeMaterialPointKernels(
+    def computeKernels(
         self,
-        dU: np.ndarray,
-        P: np.ndarray,
         K: np.ndarray,
+        P: np.ndarray,
+        U: np.ndarray,
+        dU: np.ndarray,
         timeTotal: float,
         dTime: float,
     ):
@@ -271,12 +272,14 @@ class PythonCell(CellBase):
 
         Parameters
         ----------
-        dU
-            The current solution increment (8,).
-        P
-            The internal load vector to be filled (8,).
         K
-            The stiffness matrix to be filled (64,) in row-major order.
+            The stiffness matrix to be augmented (8 x 8).
+        P
+            The internal load vector to be augmented (8,).
+        U
+            The current solution (8,); unused, the material points carry the state.
+        dU
+            The current solution increment (8,); unused, it reached the material points by interpolation.
         timeTotal
             The current total time.
         dTime

@@ -8,17 +8,33 @@ from edelweissmeshfree.particles.base.baseparticle import BaseParticle
 
 
 class ParticleLagrangianEqualValueConstraint(MPMConstraintBase):
-    """
-    This is an implementation of an equal value constraint using Lagrangian multipliers.
-    It constrains the field values of two particles to be equal for the specified components.
-    The constraint can be expressed as:
-    g(x) = value_master - value_slave = 0
-    where value_master and value_slave are the interpolated field values at the master and slave particles, respectively.
-    They are computed as:
-    value_master = N_master * U_master
-    value_slave = N_slave * U_slave
-    where N_master and N_slave are the interpolation vectors for the master and slave particles,
-    and U_master and U_slave are the nodal field values.
+    r"""Constrains the field of two particles to change equally, in some components, with Lagrange multipliers.
+
+    Each particle interpolates the field at its center from the nodes of its kernel functions, as an increment on the
+    current configuration: :math:`\boldsymbol{N}_m \cdot \Delta\mathbf{U}` for the master particle,
+    :math:`\boldsymbol{N}_s \cdot \Delta\mathbf{U}` for the slave particle. For every constrained component :math:`i`, a
+    multiplier :math:`\lambda_i` enforces
+
+    .. math::
+
+        g_i = \boldsymbol{N}_m \cdot \Delta\mathbf{U}_i - \boldsymbol{N}_s \cdot \Delta\mathbf{U}_i = 0.
+
+    Following the rule of every constraint (see
+    :class:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase`), the constraint adds
+
+    .. math::
+
+        \mathbf{P}_{U_i} \mathrel{+}= \lambda_i\, \frac{\partial g_i}{\partial \Delta\mathbf{U}_i}, \qquad
+        P_{\lambda_i} \mathrel{+}= g_i, \qquad
+        \mathbf{K}_{U_i \lambda_i} \mathrel{+}= \frac{\partial g_i}{\partial \Delta\mathbf{U}_i}, \qquad
+        \mathbf{K}_{\lambda_i U_i} \mathrel{+}= \frac{\partial g_i}{\partial \Delta\mathbf{U}_i}^T,
+
+    with :math:`\partial g_i / \partial \Delta\mathbf{U}_i = \boldsymbol{N}_m - \boldsymbol{N}_s`: the master particle
+    receives the point force :math:`-\lambda_i` at its center, the slave particle :math:`+\lambda_i`.
+
+    The condition :math:`g_i` is one on increments -- two particles constrained from the start keep equal values -- the
+    multiplier :math:`\lambda_i` is a total: the force that the two particles transmit, read from ``U_np``, where it
+    continues from the last converged increment. ``reactionForce`` holds the multiplier per component of the field.
 
     Parameters
     ----------
@@ -35,6 +51,9 @@ class ParticleLagrangianEqualValueConstraint(MPMConstraintBase):
     model
         The full MPMModel instance.
     """
+
+    #: The multipliers are scalar variables of the model, which the model's checkpoint holds.
+    checkpointedState = {}
 
     def __init__(
         self,
@@ -116,55 +135,48 @@ class ParticleLagrangianEqualValueConstraint(MPMConstraintBase):
 
         return hasChanged
 
-    def applyConstraint(self, dU_: np.ndarray, PExt: np.ndarray, V: np.ndarray, timeStep: TimeStep):
+    def computeKernels(self, U_np: np.ndarray, dU: np.ndarray, P: np.ndarray, K: np.ndarray, timeStep: TimeStep):
+        # the nodal field values come first, the multipliers last; the nodal values are increments, the multipliers
+        # totals
+        nU = len(self._nodes) * self._fieldSize
+        dU_U = dU[:nU]
+        multipliers = U_np[nU:]
+        P_U = P[:nU]
+        P_L = P[nU:]
 
-        dU_U = dU_[: -self._nLagrangianMultipliers]
-        dU_L = dU_[-self._nLagrangianMultipliers :]
-        PExt_U = PExt[: -self._nLagrangianMultipliers]
-        PExt_L = PExt[-self._nLagrangianMultipliers :]
-
-        K = V.reshape((self.nDof, self.nDof))
-
-        K_UL = K[: -self._nLagrangianMultipliers, -self._nLagrangianMultipliers :]
-        K_LU = K[-self._nLagrangianMultipliers :, : -self._nLagrangianMultipliers]
+        K = K.reshape((self.nDof, self.nDof))
+        K_UL = K[:nU, nU:]
+        K_LU = K[nU:, :nU]
 
         self.reactionForce.fill(0.0)
+
+        N_master = self._masterParticle.getInterpolationVector(self._masterParticle.getCenterCoordinates())
+        N_slave = self._slaveParticle.getInterpolationVector(self._slaveParticle.getCenterCoordinates())
+        masterNodeIdcs = [self._nodes[kf.node] for kf in self._masterParticle.kernelFunctions]
+        slaveNodeIdcs = [self._nodes[kf.node] for kf in self._slaveParticle.kernelFunctions]
+        dg_dU_master = N_master
+        dg_dU_slave = -N_slave
+
         for lag, i in enumerate(self._components):
-            # lag is the index of the lagrangian multiplier
-            # i is the component of the field being constrained
+            # lag counts the multipliers, i is the component of the field
+            dU_U_i = dU_U[i :: self._fieldSize]
+            P_U_i = P_U[i :: self._fieldSize]
+            K_UL_i = K_UL[i :: self._fieldSize, :]
+            K_LU_i = K_LU[:, i :: self._fieldSize]
+            multiplier = multipliers[lag]
 
-            P_U_i = PExt_U[i :: self._fieldSize]
-            dU_U_j = dU_U[i :: self._fieldSize]
+            g = N_master @ dU_U_i[masterNodeIdcs] - N_slave @ dU_U_i[slaveNodeIdcs]
 
-            K_UL_j = K_UL[i :: self._fieldSize, :]
-            K_LU_j = K_LU[:, i :: self._fieldSize]
+            P_U_i[masterNodeIdcs] += multiplier * dg_dU_master
+            P_U_i[slaveNodeIdcs] += multiplier * dg_dU_slave
+            P_L[lag] += g
 
-            dL_l = dU_L[lag]
+            K_UL_i[masterNodeIdcs, lag] += dg_dU_master
+            K_LU_i[lag, masterNodeIdcs] += dg_dU_master
+            K_UL_i[slaveNodeIdcs, lag] += dg_dU_slave
+            K_LU_i[lag, slaveNodeIdcs] += dg_dU_slave
 
-            N_master = self._masterParticle.getInterpolationVector(self._masterParticle.getCenterCoordinates())
-            N_slave = self._slaveParticle.getInterpolationVector(self._slaveParticle.getCenterCoordinates())
-
-            masterNodeIdcs = [self._nodes[kf.node] for kf in self._masterParticle.kernelFunctions]
-            slaveNodeIdcs = [self._nodes[kf.node] for kf in self._slaveParticle.kernelFunctions]
-
-            masterValue = N_master @ dU_U_j[masterNodeIdcs]
-            slaveValue = N_slave @ dU_U_j[slaveNodeIdcs]
-
-            g_l = masterValue - slaveValue
-            dg_l_dU_j_master = N_master
-            dg_l_dU_j_slave = -N_slave
-
-            P_U_i[masterNodeIdcs] += dL_l * dg_l_dU_j_master
-            P_U_i[slaveNodeIdcs] += dL_l * dg_l_dU_j_slave
-            PExt_L[lag] += g_l
-
-            K_UL_j[masterNodeIdcs, lag] += dg_l_dU_j_master
-            K_LU_j[lag, masterNodeIdcs] += dg_l_dU_j_master
-
-            K_UL_j[slaveNodeIdcs, lag] += dg_l_dU_j_slave
-            K_LU_j[lag, slaveNodeIdcs] += dg_l_dU_j_slave
-
-            self.reactionForce[i] += dL_l
+            self.reactionForce[i] += multiplier
 
 
 def ParticleLagrangianEqualValueConstraintOnParticleSetFactory(
