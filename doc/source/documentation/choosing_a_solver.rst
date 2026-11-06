@@ -282,7 +282,7 @@ What to know
   a change of the connectivity only locates the changed particles and the constraints anew; otherwise the equation
   system is rebuilt.
 - **Nodes without mass.** A kernel function that the particles reach only where it vanishes has no positive lumped
-  mass; its node has no equation of motion and keeps a zero velocity.
+  mass; its node has no equation of motion and has no velocity, also after it lost its mass while it moved.
 - **A particle that cannot take an increment** ends the step with ``StepFailed``: the increment is set by stability,
   not by convergence, so it is not cut back.
 - **Pressure.** A particle pressure is assembled as in implicit runs: as for the finite elements, a positive pressure
