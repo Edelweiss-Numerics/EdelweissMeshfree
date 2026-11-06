@@ -393,8 +393,6 @@ class MeshfreeExplicitDynamic(NonlinearSolverBase):
         if not model.updateConnectivity():
             return False
 
-        # the force plans of the constraints are indexed by the DOF manager that is about to change
-        self._constraintForcePlans = None
         layout = self._layout
 
         if model.activeNodesAreFixed:
