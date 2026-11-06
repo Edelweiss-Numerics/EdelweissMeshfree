@@ -65,7 +65,7 @@ from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
 from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
     MarmotParticleWrapper,
 )
-from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
+from edelweissmeshfree.solvers.deprecated.nqs import NonlinearQuasistaticSolver
 
 # from edelweissmeshfree.generators.rectangularparticlegridgenerator import (
 #     generateRectangularParticleGrid,
@@ -135,7 +135,7 @@ def run_sim(no_limit=False):
             "Displacement/SQCNIxNSNI/PlaneStrain/Quad",
             number,
             vertexCoordinates,
-            volume,
+            0.0,
             theApproximation,
             theMaterial,
         )

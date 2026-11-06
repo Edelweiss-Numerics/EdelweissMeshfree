@@ -65,7 +65,7 @@ from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
 from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
     MarmotParticleWrapper,
 )
-from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
+from edelweissmeshfree.solvers.deprecated.nqs import NonlinearQuasistaticSolver
 from edelweissmeshfree.stepactions.particledistributedload import (
     ParticleDistributedLoad,
 )
@@ -73,7 +73,7 @@ from edelweissmeshfree.stepactions.particledistributedload import (
 # import gstools
 
 
-# from edelweissmeshfree.solvers.nqsmparclength import NonlinearQuasistaticMarmotArcLengthSolver
+# from edelweissmeshfree.solvers.deprecated.nqsmparclength import NonlinearQuasistaticMarmotArcLengthSolver
 
 
 def run_sim(
@@ -316,7 +316,7 @@ def run_sim(
         journal=theJournal,
         particleSurface=surfacePressure,
         distributedLoadType="pressure",
-        loadVector=np.array([-10]),
+        loadVector=np.array([10]),
         # surfaceID=1,
         f_t=lambda t: t,
     )
@@ -326,7 +326,7 @@ def run_sim(
     #    journal=theJournal,
     #    particles=theModel.particleSets[f"{name}__s_top_S3"],
     #    distributedLoadType="pressure",
-    #    loadVector=np.array([-10]),
+    #    loadVector=np.array([10]),
     #    surfaceID=3,
     #    f_t=lambda t: t,
     # )

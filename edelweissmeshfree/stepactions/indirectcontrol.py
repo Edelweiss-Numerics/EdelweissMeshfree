@@ -37,15 +37,12 @@
 import numpy as np
 from edelweissfe.config.phenomena import getFieldSize
 from edelweissfe.journal.journal import Journal
-from edelweissfe.numerics.dofmanager import DofVector
+from edelweissfe.numerics.dofmanager import DofManager, DofVector
+from edelweissfe.stepactions.base.arclengthcontrollerbase import ArcLengthControllerBase
 from edelweissfe.timesteppers.timestep import TimeStep
 
 from edelweissmeshfree.materialpoints.base.mp import MaterialPointBase
 from edelweissmeshfree.models.mpmmodel import MPMModel
-from edelweissmeshfree.numerics.dofmanager import DofManager
-from edelweissmeshfree.stepactions.base.arclengthcontrollerbase import (
-    ArcLengthControllerBase,
-)
 
 
 class IndirectControl(ArcLengthControllerBase):
@@ -72,6 +69,9 @@ class IndirectControl(ArcLengthControllerBase):
         The journal instance for logging purposes.
         """
 
+    #: The arc length reached by the steps before.
+    checkpointedState = {"_currentL0": float}
+
     def __init__(
         self,
         name: str,
@@ -82,7 +82,7 @@ class IndirectControl(ArcLengthControllerBase):
         field: str,
         journal: Journal,
     ):
-        self._name = name
+        self.name = name
         self._journal = journal
         self._L = L
         self._currentL0 = 0.0
@@ -146,6 +146,25 @@ class IndirectControl(ArcLengthControllerBase):
         ddLambda = (dL - self._c.dot(dUMP.flatten() + ddUMP_0.flatten())) / self._c.dot(ddUMP_f.flatten())
 
         return ddLambda
+
+    def finishIncrement(self, U: DofVector, dU: DofVector, dLambda: float, timeStep: TimeStep, dofManager: DofManager):
+        """Called by the arc length solver once an increment has converged; see
+        :meth:`~edelweissfe.stepactions.base.arclengthcontrollerbase.ArcLengthControllerBase.finishIncrement`. This
+        controller keeps nothing from one increment to the next: its target is the arc length of the whole step.
+
+        Parameters
+        ----------
+        U
+            The solution at the start of the increment.
+        dU
+            The converged increment of the solution.
+        dLambda
+            The converged increment of the load parameter.
+        timeStep
+            The converged time step.
+        dofManager
+            The dof manager of the current equation system.
+        """
 
     def applyAtStepEnd(self, model):
         self._currentL0 = self._L
