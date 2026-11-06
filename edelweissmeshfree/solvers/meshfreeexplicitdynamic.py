@@ -365,7 +365,8 @@ class MeshfreeExplicitDynamic(NonlinearSolverBase):
             model.advanceToTime(timeStep.totalTime)
 
         with performancetiming.timeit("write results to nodes"):
-            self._layout.writeResultsToModel(self._noSolution(), self._dU, None, V=self._V)
+            self._layout.writeResultsToModel(self._noSolution(), self._dU, None)
+            self._layout.writeVelocityAndAccelerationToModel(self._V, None)
 
         self._reconnect(model)
 
@@ -376,7 +377,8 @@ class MeshfreeExplicitDynamic(NonlinearSolverBase):
             self._V = momentum * self._Minv
 
         with performancetiming.timeit("write results to nodes"):
-            self._layout.writeResultsToModel(self._noSolution(), None, internalAndInertialForce, V=self._V)
+            self._layout.writeResultsToModel(self._noSolution(), None, internalAndInertialForce)
+            self._layout.writeVelocityAndAccelerationToModel(self._V, None)
 
     def endStep(self, step, model: MPMModel):
         """Nothing to finish.
