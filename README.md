@@ -77,5 +77,5 @@ stays disabled in your installation (a `RuntimeWarning: The global interpreter l
 has been enabled to load module ...` on stderr indicates a stale or misconfigured build):
 
 ```bash
-python -c "import sys; import edelweissmeshfree.solvers.base.parallelization, edelweissmeshfree.materialpoints.marmotmaterialpoint.mp; assert not sys._is_gil_enabled(), 'GIL was re-enabled!'; print('free-threading OK')"
+python -c "import sys; import edelweissmeshfree.mpmmanagers.utils, edelweissmeshfree.particles.marmot.marmotparticlewrapper, edelweissmeshfree.materialpoints.marmotmaterialpoint.mp; assert not sys._is_gil_enabled(), 'GIL was re-enabled!'; print('free-threading OK')"
 ```
