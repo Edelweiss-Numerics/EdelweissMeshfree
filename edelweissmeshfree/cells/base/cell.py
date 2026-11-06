@@ -58,8 +58,7 @@ class CellBase(ABC, VIJEntityBase):
         """MPM cells in EdelweissMPM should be derived from this
         base class in order to follow the general interface.
 
-        EdelweissMPM expects the layout of the internal and external load vectors, P, PExt, (and the stiffness)
-        to be of the form
+        EdelweissMeshfree expects the layout of the residual contribution P (and of the tangent) to be of the form
 
         .. code-block:: console
 
@@ -185,7 +184,8 @@ class CellBase(ABC, VIJEntityBase):
         timeTotal: float,
         dTime: float,
     ):
-        """Compute bulk loads (body loads) for given time based for all assigned MaterialPoints.
+        """Add the residual contribution of a body load on all assigned material points, the negative of the external
+        load :math:`-\\boldsymbol{f}_\\mathrm{ext}`, and its tangent, which is zero for a dead load.
 
         Parameters
         ----------
@@ -194,9 +194,9 @@ class CellBase(ABC, VIJEntityBase):
         load
             The float (vector) describing the load.
         P
-            The external load vector to be defined.
+            The residual contribution to augment, :math:`-\\boldsymbol{f}_\\mathrm{ext}`.
         K
-            The stiffness matrix to be defined.
+            The tangent ``dP/dU`` to augment.
         timeTotal
             The current total time.
         dTime
@@ -215,7 +215,9 @@ class CellBase(ABC, VIJEntityBase):
         timeTotal: float,
         dTime: float,
     ):
-        """Compute distributed (surface) a for given time based for a specific assigned material point.
+        """Add the residual contribution of a distributed (surface) load on a surface of one assigned material point,
+        the negative of the external load :math:`-\\boldsymbol{f}_\\mathrm{ext}`, and its tangent, which is nonzero
+        only for a load that follows the deformation.
 
         Parameters
         ----------
@@ -224,13 +226,13 @@ class CellBase(ABC, VIJEntityBase):
         surfaceID
             The ID describing the surface of the material point.
         materialPoint
-            The specific (already assigned) mateiral point for computing the surface load.
+            The specific (already assigned) material point for computing the surface load.
         load
             The float (vector) describing the load.
         P
-            The external load vector to be defined.
+            The residual contribution to augment, :math:`-\\boldsymbol{f}_\\mathrm{ext}`.
         K
-            The stiffness matrix to be defined.
+            The tangent ``dP/dU`` to augment.
         timeTotal
             The current total time.
         dTime

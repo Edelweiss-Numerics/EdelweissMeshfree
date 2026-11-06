@@ -275,7 +275,8 @@ class BaseParticle(BaseNodeCouplingEntity):
         timeTotal: float,
         dTime: float,
     ):
-        """Compute bulk loads (body loads) for given time based for all assigned MaterialPoints.
+        """Add the residual contribution of a body load on the particle, the negative of the external load
+        :math:`-\\boldsymbol{f}_\\mathrm{ext}`, and its tangent, which is zero for a dead load.
 
         Parameters
         ----------
@@ -284,9 +285,9 @@ class BaseParticle(BaseNodeCouplingEntity):
         load
             The float (vector) describing the load.
         P
-            The external load vector to be defined.
+            The residual contribution to augment, :math:`-\\boldsymbol{f}_\\mathrm{ext}`.
         K
-            The stiffness matrix to be defined.
+            The tangent ``dP/dU`` to augment.
         timeTotal
             The current total time.
         dTime
@@ -304,20 +305,22 @@ class BaseParticle(BaseNodeCouplingEntity):
         timeTotal: float,
         dTime: float,
     ):
-        """Compute distributed (surface) a for given time based for a specific assigned material point.
+        """Add the residual contribution of a distributed (surface) load on a surface of the particle, the negative of
+        the external load :math:`-\\boldsymbol{f}_\\mathrm{ext}`, and its tangent, which is nonzero only for a load
+        that follows the deformation.
 
         Parameters
         ----------
         loadType
             The type of load to be computed (e.g., 'pressure')
         surfaceID
-            The ID describing the surface of the material point.
+            The ID describing the surface of the particle.
         load
             The float (vector) describing the load.
         P
-            The external load vector to be defined.
+            The residual contribution to augment, :math:`-\\boldsymbol{f}_\\mathrm{ext}`.
         K
-            The stiffness matrix to be defined.
+            The tangent ``dP/dU`` to augment.
         timeTotal
             The current total time.
         dTime
