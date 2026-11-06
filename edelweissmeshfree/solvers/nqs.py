@@ -46,6 +46,7 @@ from edelweissfe.stepactions.base.dirichletbase import DirichletBase
 from edelweissfe.timesteppers.timestep import TimeStep
 from edelweissfe.utils.exceptions import (
     ConditionalStop,
+    CutbackRequest,
     DivergingSolution,
     ReachedMaxIncrements,
     ReachedMaxIterations,
@@ -239,9 +240,6 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                 if connectivityHasChanged or not theDofManager:
 
                     activeCells = self._getActiveCellsFromManagers(mpmManagers)
-                    # activeCells = set()
-                    # for man in mpmManagers:
-                    #     activeCells |= man.getActiveCells()
 
                     self.journal.message(
                         "active domain has changed, (re)initializing equation system & clearing cache",
@@ -249,7 +247,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                         level=1,
                     )
 
-                    activeNodesWithPersistentData, activeNodesWithVolatileData, reducedNodeFields, reducedNodeSets = (
+                    activeNodesWithPersistentFieldValues, _, reducedNodeFields, reducedNodeSets = (
                         self._assembleActiveDomain(activeCells, model)
                     )
 
@@ -259,24 +257,24 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                     theDofManager = self._createDofManager(
                         reducedNodeFields.values(),
                         activeConstraintsScalarVariables,
-                        elements,
-                        activeConstraints,
-                        # TODO : Check how to make next line more elegant
-                        # TODO 2
-                        # list(
-                        reducedNodeSets.values(),
-                        # ) + [activeNodesWithPersistentData],
-                        activeCells,
-                        model.cellElements.values(),
-                        particles,
+                        elements=elements,
+                        constraints=activeConstraints,
+                        nodeSets=reducedNodeSets.values(),
+                        cells=activeCells,
+                        cellElements=model.cellElements.values(),
+                        particles=particles,
                     )
 
                     U = theDofManager.constructDofVector()
 
-                    # TODO 3
-                    # if len(activeNodesWithPersistentData) > 0:
-                    #     for field in model.nodeFields.values():
-                    #         theDofManager.writeNodeFieldToDofVector(U, field, "U", activeNodesWithPersistentData)
+                    # Finite element nodes carry their total solution across increments; the nodes of
+                    # cells and particles are volatile and start every rebuild at zero.
+                    if activeNodesWithPersistentFieldValues:
+                        for field in model.nodeFields.values():
+                            if "U" in field:
+                                theDofManager.writeNodeFieldToDofVector(
+                                    U, field, "U", activeNodesWithPersistentFieldValues
+                                )
 
                     self.journal.message(
                         "resulting equation system has a size of {:}".format(theDofManager.nDof),
@@ -287,11 +285,6 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                     newtonCache = None
 
                 presentVariableNames = list(theDofManager.idcsOfFieldsInDofVector.keys())
-
-                # if theDofManager.idcsOfScalarVariablesInDofVector:
-                #     presentVariableNames += [
-                #         "scalar variables",
-                #     ]
 
                 # TODO: We are handling this currently as a dedicated special case,
                 # but we should consider to make this part of a more general
@@ -311,7 +304,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                 self.journal.message(iterationHeader2, self.identification, level=2)
 
                 if not newtonCache:
-                    newtonCache = self._createNewtonCache(theDofManager, particles)
+                    newtonCache = self._createNewtonCache(theDofManager)
                     linearSolver.setJournal(self.journal)
                     linearSolver.setModel(model, theDofManager)
 
@@ -356,7 +349,9 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                             else:
                                 raise
 
-                except (RuntimeError, DivergingSolution, ReachedMaxIterations) as e:
+                # A cutback request comes from an entity whose material cannot integrate the increment; the Marmot
+                # wrappers turn a failure in Marmot into one.
+                except (CutbackRequest, DivergingSolution, ReachedMaxIterations) as e:
                     self.journal.message(str(e), self.identification, 1)
 
                     try:
@@ -465,7 +460,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
         activeNodeSets
             The list of (reduced) active NodeSets.
         elements
-            The list of elements.
+            The finite elements.
         Un
             The old solution vector.
         activeCells
@@ -595,7 +590,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                     raise ReachedMaxIterations("Reached max. iterations in current increment, cutting back")
 
             if not quasi_Newton:
-                K_CSR = K.toCSR(useInPlace=False)
+                K_CSR = K.assembledMatrix().copy()
                 if iterationOptions["fall back to quasi Newton after allowed residual growths"]:
                     if iterationCounter == 0:
                         K_CSR_elastic = K_CSR.copy()
@@ -696,22 +691,23 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
         self._interpolateFieldsToMaterialPoints(cellElements, dU)
         self._computeMaterialPoints(materialPoints, timeStep.totalTime, timeStep.timeIncrement)
 
-        self._computeCells(activeCells, dU, PInt, F, K, timeStep.totalTime, timeStep.timeIncrement, theDofManager)
+        U_np = Un + dU
+        time = timeStep.totalTime
+        dT = timeStep.timeIncrement
 
-        self._computeElements(elements, dU, Un, PInt, F, K, timeStep.totalTime, timeStep.timeIncrement, theDofManager)
+        self._computeCells(activeCells, U_np, dU, PInt, F, K, time, dT, theDofManager)
 
-        self._computeCellElements(
-            cellElements, dU, Un, PInt, F, K, timeStep.totalTime, timeStep.timeIncrement, theDofManager
+        self._computeElements(elements, U_np, dU, PInt, F, K, time, dT, theDofManager)
+
+        self._computeCellElements(cellElements, U_np, dU, PInt, F, K, time, dT, theDofManager)
+
+        self._computeParticles(particles, U_np, dU, PInt, F, K, time, dT, theDofManager)
+
+        self._computeConstraints(constraints, U_np, dU, PInt, K, timeStep)
+
+        self._assembleLoads(
+            [*bodyLoads, *distributedLoads, *particleDistributedLoads], U_np, dU, PExt, K, timeStep, theDofManager
         )
-
-        self._computeParticles(particles, dU, PInt, F, K, timeStep.totalTime, timeStep.timeIncrement, theDofManager)
-
-        self._computeConstraints(constraints, dU, PInt, K, timeStep)
-
-        PExt, K = self._computeBodyLoads(bodyLoads, PExt, K, timeStep, theDofManager, activeCells)
-        PExt, K = self._computeCellDistributedLoads(distributedLoads, PExt, K, timeStep, theDofManager)
-
-        PExt, K = self._computeParticleDistributedLoads(particleDistributedLoads, PExt, K, timeStep, theDofManager)
 
         # every contributor has had its say; commit whatever is still held so the matrix is complete
         # when this returns rather than only once someone asks for the CSR form

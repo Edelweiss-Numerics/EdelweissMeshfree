@@ -151,29 +151,6 @@ def run_sim():
     # We need this model to create the dof manager
     theModel.particleKernelDomains["my_all_with_all"] = theParticleKernelDomain
 
-    # constraintsLeft = []
-    # i = 0
-    # for particle in theModel.particleSets["rectangular_grid_left"]:
-    #    constraintsLeft.append(
-    #        ParticleLagrangianWeakDirichletOnParticleSetFactory(
-    #            f"left_{i}", [particle], "displacement", {0: 0}, theModel, location="vertex", vertexID=[0, 1]
-    #        )
-    #    )
-    #    i += 1
-    # constraintsBottom = []
-    # i = 0
-    # for particle in theModel.particleSets["rectangular_grid_bottom"]:
-    #    constraintsBottom.append(
-    #        ParticleLagrangianWeakDirichletOnParticleSetFactory(
-    #            f"bottom_{i}", [particle], "displacement", {1: 0}, theModel, location="vertex", vertexID=[1, 2]
-    #        )
-    #    )
-    #    i += 1
-
-    # for c in constraintsLeft:
-    #    theModel.constraints.update(c)
-    # for c in constraintsBottom:
-    #    theModel.constraints.update(c)
     dirichletLeft = ParticleLagrangianWeakDirichletOnParticleSetFactory(
         "left", theModel.particleSets["rectangular_grid_left"], "displacement", {0: 0}, theModel, location="center"
     )

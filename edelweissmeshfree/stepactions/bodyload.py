@@ -41,29 +41,30 @@ from edelweissmeshfree.stepactions.base.mpmbodyloadbase import MPMBodyLoadBase
 
 
 class BodyLoad(MPMBodyLoadBase):
-    def __init__(self, name, model, journal, cells, bodyLoadType: str, loadVector, **kwargs):
-        """
-        This is a classical body load for MPM models.
+    """
+    This is a classical body load for MPM models.
 
-        Parameters
-        ----------
-        name : str
-            Name of the distributed load.
-        model : MPMModel
-            The MPM model tree.
-        journal : Journal
-            The journal to write messages to.
-        cells: CellSet
-            The cells to apply the distributed load to.
-        bodyLoadType: str
-            The type of the body load, e.g., "gravity".
-        loadVector : np.ndarray
-            The load vector to apply to the particles.
-        **kwargs
-            Additional keyword arguments. The following are supported:
-            - f_t : Callable[[float], float]
-                The amplitude function of the distributed load.
-        """
+    Parameters
+    ----------
+    name : str
+        Name of the distributed load.
+    model : MPMModel
+        The MPM model tree.
+    journal : Journal
+        The journal to write messages to.
+    cells: CellSet
+        The cells to apply the distributed load to.
+    bodyLoadType: str
+        The type of the body load, e.g., "gravity".
+    loadVector : np.ndarray
+        The load vector to apply to the particles.
+    **kwargs
+        Additional keyword arguments. The following are supported:
+        - f_t : Callable[[float], float]
+            The amplitude function of the distributed load.
+    """
+
+    def __init__(self, name, model, journal, cells, bodyLoadType: str, loadVector, **kwargs):
         self.name = name
 
         self._loadVector = loadVector
@@ -90,14 +91,19 @@ class BodyLoad(MPMBodyLoadBase):
     def loadType(self) -> str:
         return self._loadType
 
-    def applyAtStepEnd(self, model, stepMagnitude=None):
+    def applyAtStepEnd(self, model, loadParameter: float | None = None):
+        """Keep the value the load reached at the end of the step, from which the next step starts; see
+        :meth:`~edelweissfe.stepactions.base.loadbase.LoadBase.applyAtStepEnd`.
+
+        Parameters
+        ----------
+        model
+            The current state of the model.
+        loadParameter
+            The load parameter an arc length step ended at; None for a step that follows the amplitude.
+        """
         if not self._idle:
-            if stepMagnitude is None:
-                # standard case
-                self._loadAtStepStart += self._delta * self._amplitude(1.0)
-            else:
-                # set the 'actual' increment manually, e.g. for arc length method
-                self._loadAtStepStart += self._delta * stepMagnitude
+            self._loadAtStepStart += self._delta * self.amplitudeAtStepEnd(self._amplitude, loadParameter)
 
             self._delta = 0
             self._idle = True
