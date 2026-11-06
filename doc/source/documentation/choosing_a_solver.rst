@@ -140,7 +140,10 @@ Explicit dynamics
 An RKPM model in explicit dynamics is solved by
 :class:`~edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic`, an EdelweissFE solver built into an
 EdelweissFE step like the implicit ones. It integrates particles only; finite elements, material points, cell elements
-and constraints with Lagrange multipliers are refused.
+and constraints with Lagrange multipliers are refused. So is a constraint that does not act in an explicit analysis
+(``actsInExplicitAnalysis``, see :doc:`constraints`): the constraints are evaluated at the configuration just accepted,
+where the nodes of the kernel functions carry neither a solution nor an increment, so a weak Dirichlet condition or an
+equal value on the increment would act as if nothing had moved. The penalty contacts act, explicit or not.
 
 .. code-block:: python
 

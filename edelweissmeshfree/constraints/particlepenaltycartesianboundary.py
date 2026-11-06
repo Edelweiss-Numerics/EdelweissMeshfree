@@ -64,6 +64,11 @@ class ParticlePenaltyContactCartesianBoundaryConstraint(MPMConstraintBase):
     #: Carries nothing from one increment to the next.
     checkpointedState = {}
 
+    #: It measures the penetration of the boundary at the particle's current position, on top of the increment, so it acts
+    #: in an explicit analysis as well, where the increment is zero; see
+    #: :attr:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.actsInExplicitAnalysis`.
+    actsInExplicitAnalysis = True
+
     def __init__(
         self,
         name: str,

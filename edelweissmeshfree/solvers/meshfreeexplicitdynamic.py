@@ -88,6 +88,7 @@ from edelweissfe.timesteppers.timestep import TimeStep
 from edelweissfe.utils.exceptions import CutbackRequest, StepFailed
 from edelweissfe.utils.schema import schemaField
 
+from edelweissmeshfree.constraints.base.mpmconstraintbase import MPMConstraintBase
 from edelweissmeshfree.models.mpmmodel import MPMModel
 
 
@@ -162,8 +163,16 @@ class MeshfreeExplicitDynamic(NonlinearSolverBase):
 
     def validateModelCapabilities(self, model: MPMModel):
         """Refuse what this solver does not integrate, on top of the base checks: everything but particles, i.e.
-        finite elements, cells with their material points, and cell elements; and constraints with scalar variables
-        of their own (Lagrange multipliers), which carry no inertia and therefore have no equation of motion.
+        finite elements, cells with their material points, and cell elements; constraints with scalar variables of
+        their own (Lagrange multipliers), which carry no inertia and therefore have no equation of motion; and
+        constraints that do not act in an explicit analysis
+        (:attr:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.actsInExplicitAnalysis`): the
+        constraints are evaluated at the configuration just accepted, where the nodes of the kernel functions carry
+        neither a solution nor an increment, so a constraint on the increment would act as if nothing had moved.
+
+        A constraint that is switched off at the start of the step takes no part in it: switched off from outside, it
+        stays off, and the constraints that switch themselves on by their reach, the contacts, act in an explicit
+        analysis.
 
         Parameters
         ----------
@@ -183,11 +192,22 @@ class MeshfreeExplicitDynamic(NonlinearSolverBase):
                 raise NotImplementedError(f"The model has {what}; {self.identification} integrates particles only.")
 
         for name, constraint in model.constraints.items():
+            # a constraint that is switched off has no place in the equation system
+            if not constraint.active:
+                continue
             if constraint.getNumberOfAdditionalNeededScalarVariables():
                 raise NotImplementedError(
                     f"Constraint '{name}' introduces scalar variables, which carry no inertia, so "
                     f"{self.identification} has no equation of motion for them. Only constraints that act through "
                     "nodal forces (penalty formulations) are supported."
+                )
+            if not (isinstance(constraint, MPMConstraintBase) and constraint.actsInExplicitAnalysis):
+                raise NotImplementedError(
+                    f"Constraint '{name}' ({type(constraint).__name__}) does not act in an explicit analysis: "
+                    f"{self.identification} evaluates the constraints at the configuration just accepted, where the "
+                    "nodes of the kernel functions carry neither a solution nor an increment, so a constraint that "
+                    "reads them would act as if nothing had moved. A constraint that acts here measures its condition "
+                    "at the particles' current positions, see MPMConstraintBase.actsInExplicitAnalysis."
                 )
 
     def beginStep(self, step, model: MPMModel, fieldOutputController, outputmanagers):
