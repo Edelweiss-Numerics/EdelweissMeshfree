@@ -68,6 +68,58 @@ def quadraticEdgeShapeFunctions(xi: np.ndarray) -> tuple[np.ndarray, np.ndarray]
     return N, dN_dXi
 
 
+def isQuadraticEdge(corner: np.ndarray, midside: np.ndarray, otherCorner: np.ndarray) -> bool:
+    """Whether three points, in this order, can be the nodes of a quadratic element edge: the midside node lies within
+    a quarter of the distance between the corners from their midpoint. A midside node further along the line between
+    the corners folds the edge onto itself (the edge mapping is no longer monotonic), one further away from that line
+    bends the edge by more than a right angle between its corners.
+
+    Parameters
+    ----------
+    corner
+        The first corner node.
+    midside
+        The midside node.
+    otherCorner
+        The other corner node.
+
+    Returns
+    -------
+    bool
+        True if the points can be a quadratic edge in this order.
+    """
+
+    return bool(np.linalg.norm(midside - 0.5 * (corner + otherCorner)) < 0.25 * np.linalg.norm(otherCorner - corner))
+
+
+def turnsBack(edge: np.ndarray, nextEdge: np.ndarray) -> bool:
+    """Whether a quadratic edge turns back at its end, where the next edge starts: whether the two directions there
+    enclose more than a right angle. An interface may have corners, but it does not go back on itself.
+
+    Parameters
+    ----------
+    edge
+        The corner, midside and corner node of the edge.
+    nextEdge
+        The corner, midside and corner node of the next edge, which starts at the last node of ``edge``.
+
+    Returns
+    -------
+    bool
+        True if the interface turns back.
+    """
+
+    _, dN_dXi = quadraticEdgeShapeFunctions(np.array([1.0, -1.0]))
+    dx_dXi_atTheEnd = dN_dXi[0] @ edge
+    dx_dXi_atTheStartOfTheNext = dN_dXi[1] @ nextEdge
+
+    # a corner of exactly a right angle is no turn back, whatever the round-off of the coordinates
+    return bool(
+        dx_dXi_atTheEnd @ dx_dXi_atTheStartOfTheNext
+        < -1e-12 * np.linalg.norm(dx_dXi_atTheEnd) * np.linalg.norm(dx_dXi_atTheStartOfTheNext)
+    )
+
+
 def distanceToPolygon(point: np.ndarray, vertices: np.ndarray) -> float:
     """The distance of a point to a convex polygon: zero inside, else the distance to the nearest edge.
 
@@ -149,7 +201,10 @@ class ParticleFiniteElementMortarTie(MPMConstraintBase):
     - The finite element side carries the multipliers. Its nodes must not be prescribed by a Dirichlet boundary
       condition as well, which would constrain them twice.
     - The finite element side is given by its interface nodes, in order along the interface: corner node, midside
-      node, corner node, midside node, ..., corner node -- the edges of quadratic elements.
+      node, corner node, midside node, ..., corner node -- the edges of quadratic elements. The tie checks that the
+      order is one along the interface: every midside node lies near the middle of its corners
+      (:func:`isQuadraticEdge`), and the interface does not turn back at a corner node (:func:`turnsBack`). A node set
+      in the order of its labels, for instance, is refused.
     - The RKPM side is given by its particles along the interface.
 
     Parameters
@@ -193,6 +248,7 @@ class ParticleFiniteElementMortarTie(MPMConstraintBase):
             raise ValueError("Constraint '{:}': there are no interface particles.".format(name))
 
         self._fieldSize = getFieldSize("displacement", model.domainSize)
+        self._checkThatTheNodesAreInOrderAlongTheInterface()
         self._nLagrangianMultipliers = len(self._finiteElementNodes) * self._fieldSize
         self._xi, self._gaussWeights = np.polynomial.legendre.leggauss(quadraturePointsPerEdge)
         self._N_edge, self._dN_dXi_edge = quadraticEdgeShapeFunctions(self._xi)
@@ -202,6 +258,37 @@ class ParticleFiniteElementMortarTie(MPMConstraintBase):
         self.dGap_dFiniteElementIncrement = np.zeros((len(self._finiteElementNodes), len(self._finiteElementNodes)))
         #: The derivative of the gap with respect to the increments at the kernel nodes, per component.
         self.dGap_dKernelIncrement = np.zeros((len(self._finiteElementNodes), 0))
+
+    def _checkThatTheNodesAreInOrderAlongTheInterface(self):
+        """Refuse finite element interface nodes that are not in order along the interface: corner, midside, corner,
+        ... The tie integrates every triple of them as an element edge, so nodes in another order would tie the wrong
+        edges without any other sign of it.
+
+        Raises
+        ------
+        ValueError
+            If a triple is no quadratic edge, or if the interface turns back at a corner node.
+        """
+
+        coordinates = np.array([node.coordinates[: self._fieldSize] for node in self._finiteElementNodes])
+        labels = [node.label for node in self._finiteElementNodes]
+
+        edges = [slice(first, first + 3) for first in range(0, len(coordinates) - 1, 2)]
+        for edge in edges:
+            if not isQuadraticEdge(*coordinates[edge]):
+                raise ValueError(
+                    "Constraint '{:}': the finite element interface nodes {:} are no quadratic element edge: the "
+                    "midside node must lie near the middle of the corners. The interface nodes must be given in order "
+                    "along the interface: corner, midside, corner, ..., corner; a node set in the order of its "
+                    "labels is not in that order in general.".format(self._name, labels[edge])
+                )
+        for edge, nextEdge in zip(edges, edges[1:]):
+            if turnsBack(coordinates[edge], coordinates[nextEdge]):
+                raise ValueError(
+                    "Constraint '{:}': the finite element interface turns back at node {:}, from the edge {:} to the "
+                    "edge {:}. The interface nodes must be given in order along the interface: corner, midside, "
+                    "corner, ..., corner.".format(self._name, labels[nextEdge][0], labels[edge], labels[nextEdge])
+                )
 
     @property
     def name(self) -> str:

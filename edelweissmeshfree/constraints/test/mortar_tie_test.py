@@ -42,7 +42,8 @@ two particles to its right, whose stand-in shape functions are a partition of un
   as the shape functions on both sides sum to one, row sums that are the integrals of the edge shape functions;
 - a translation of both sides by the same increment leaves no gap, and a common traction is transmitted with equal
   and opposite resultants;
-- the integral follows the finite element nodes to their converged positions: the configuration is the current one.
+- the integral follows the finite element nodes to their converged positions: the configuration is the current one;
+- the finite element interface nodes must be in order along the interface, which is checked on their geometry.
 """
 
 import numpy as np
@@ -180,3 +181,19 @@ def test_the_finite_element_side_must_consist_of_quadratic_edges():
 
     with pytest.raises(ValueError, match="quadratic edges"):
         ParticleFiniteElementMortarTie("tie", model, particles, finiteElementNodes[:4])
+
+
+@pytest.mark.parametrize(
+    "order",
+    [
+        # the corner nodes first, then the midside nodes, as in a node set in the order of its labels
+        (0, 2, 4, 1, 3),
+        # the same with the midside nodes backwards: each triple could be an edge, but the second one turns back
+        (0, 2, 4, 3, 1),
+    ],
+)
+def test_the_finite_element_interface_nodes_must_be_in_order_along_the_interface(order):
+    model, finiteElementNodes, particles = _model()
+
+    with pytest.raises(ValueError, match="in order along the interface"):
+        ParticleFiniteElementMortarTie("tie", model, particles, [finiteElementNodes[i] for i in order])

@@ -41,8 +41,11 @@ value as the displacement of its node. Instead, a constraint ties the two displa
   of every increment, in ``updateConnectivity``, and the tie is linear during the increment.
 
 The finite element side of the interface consists of the edges of quadratic elements, given by their nodes in order:
-corner, midside, corner, ... The RKPM side is given by the particles along the interface. The interface nodes of the
-finite elements carry the multipliers; they must not carry a Dirichlet boundary condition too.
+corner, midside, corner, ... The tie checks the order on the geometry: every midside node must lie near the middle of
+its corners, and the interface must not turn back at a corner node. A node set in the order of its labels, with the
+corner nodes numbered before the midside nodes, is refused. The RKPM side is given by the particles along the
+interface. The interface nodes of the finite elements carry the multipliers; they must not carry a Dirichlet boundary
+condition too.
 
 .. code-block:: python
 
