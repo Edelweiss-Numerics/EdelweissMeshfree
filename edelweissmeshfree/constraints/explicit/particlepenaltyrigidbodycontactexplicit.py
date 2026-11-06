@@ -95,8 +95,6 @@ class ParticlePenaltyContactImplicitSurfaceConstraintExplicit(MPMExplicitConstra
         if self._doProximityCheck:
             self._proximityDist = particle.getVolumeUndeformed() ** (1.0 / self._domainSize) * proximityFactor
 
-        self.isActive = True
-
     @property
     def name(self) -> str:
         return self._name
@@ -116,10 +114,6 @@ class ParticlePenaltyContactImplicitSurfaceConstraintExplicit(MPMExplicitConstra
     @property
     def scalarVariables(self) -> list:
         return []
-
-    @property
-    def active(self) -> bool:
-        return self.isActive
 
     def getNumberOfAdditionalNeededScalarVariables(self) -> int:
         return 0
@@ -148,22 +142,17 @@ class ParticlePenaltyContactImplicitSurfaceConstraintExplicit(MPMExplicitConstra
         hasChanged = nodes != self._nodes
         self._nodes = nodes
 
-        wasActive = self.isActive
-        self.isActive = True
+        wasActive = self.active
 
-        if self._doProximityCheck:
-            self.isActive = False
-            for p_coord in self._constrained_points:
-                dist = self._implicit_function(p_coord)
-                # Active if within proximity distance (SDF < threshold)
-                if dist < self._proximityDist:
-                    self.isActive = True
-                    break
+        # within reach if one of the constrained points is close enough to the surface (signed distance below it)
+        self.withinReach = not self._doProximityCheck or any(
+            self._implicit_function(p_coord) < self._proximityDist for p_coord in self._constrained_points
+        )
 
-            if self.isActive != wasActive:
-                hasChanged = True
+        if self.active != wasActive:
+            hasChanged = True
 
-        if not self.isActive:
+        if not self.active:
             self.reactionForce = 0.0
 
         return hasChanged
