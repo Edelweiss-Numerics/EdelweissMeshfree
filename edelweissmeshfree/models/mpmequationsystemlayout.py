@@ -59,8 +59,9 @@ class MPMEquationSystemLayout(EquationSystemLayout):
     particles. Their nodal values are the coefficients of one increment: every increment starts them at zero, so that
     their solution ``U`` is zero, and their increment ``dU`` is their meaningful nodal value.
 
-    The model's node fields are written straight, by node: on the nodes of the active domain from the vectors of the
-    equation system, zero on all other nodes.
+    The model's node fields are read and written straight, by node: read on the nodes that carry an entry (see
+    :meth:`readEntryOfNodeField`), written on the nodes of the active domain from the vectors of the equation system,
+    zero on all other nodes (see :meth:`writeEntryOfNodeField`).
 
     Parameters
     ----------
@@ -130,36 +131,28 @@ class MPMEquationSystemLayout(EquationSystemLayout):
         )
         self.dofManager.updateConstraints(self.model.activeConstraints())
 
-    def readStateFromModel(self, U: DofVector, V: DofVector = None, A: DofVector = None, dynamicFields: list = None):
-        """Read the state the model carries from increment to increment into the vectors of a (re)built equation
-        system: the entry ``U`` of the node fields at the nodes that carry their total solution (those of finite
-        elements and cell elements), the values of the scalar variables, and, for a solver that integrates in time,
-        the entries ``V`` and ``A`` at every node of the active domain. The solution of the incremental nodes starts at
-        zero; their velocity is that of the node, carried by node from one equation system to the next: a node keeps
-        it when the active domain changes around it, and a node that has just become active is at rest.
+    def readEntryOfNodeField(self, dofVector: DofVector, nodeField, entry: str):
+        """Read one entry of one node field of the model into a vector of the equation system, by node; every read of
+        :meth:`~edelweissfe.models.equationsystemlayout.EquationSystemLayout.readStateFromModel` goes through here.
+        The solution ``U`` is read at the nodes that carry their total solution (those of finite elements and cell
+        elements): the incremental nodes start every increment at zero. The velocity ``V`` and the acceleration ``A``
+        are read at every node of the active domain: they are carried by node from one equation system to the next, so
+        that a node keeps them when the active domain changes around it, and a node that has just become active is at
+        rest.
 
         Parameters
         ----------
-        U
-            The solution vector of the equation system, zero, overwritten.
-        V
-            The velocity vector of the equation system, zero, overwritten; None if the solver has none.
-        A
-            The acceleration vector of the equation system, zero, overwritten; None if the solver has none.
-        dynamicFields
-            The names of the fields whose velocity and acceleration are read; None for every field.
+        dofVector
+            The vector of the equation system, zero, overwritten on the degrees of freedom of the field.
+        nodeField
+            The node field of the model.
+        entry
+            The entry.
         """
 
-        if self.nodesWithPersistentFieldValues:
-            for nodeField in self.model.nodeFields.values():
-                self.dofManager.writeNodeFieldToDofVector(U, nodeField, "U", self.nodesWithPersistentFieldValues)
-        self.dofManager.writeScalarVariablesToDofVector(U)
-
-        for nodeField in self._nodeFieldsWithVelocity(dynamicFields):
-            if V is not None:
-                self.dofManager.writeNodeFieldToDofVector(V, nodeField, "V", self.activeNodes)
-            if A is not None:
-                self.dofManager.writeNodeFieldToDofVector(A, nodeField, "A", self.activeNodes)
+        nodes = self.nodesWithPersistentFieldValues if entry == "U" else self.activeNodes
+        if nodes:
+            self.dofManager.writeNodeFieldToDofVector(dofVector, nodeField, entry, nodes)
 
     def zeroIncrementalCoefficients(self, U: DofVector):
         """Set the degrees of freedom of the incremental nodes (:attr:`incrementalNodes`) to zero in the solution
