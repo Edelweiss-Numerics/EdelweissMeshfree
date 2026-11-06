@@ -47,6 +47,11 @@ from edelweissfe.numerics.dofmanager import DofManager, DofVector
 from edelweissfe.sets.nodeset import NodeSet
 from edelweissfe.timesteppers.timestep import TimeStep
 
+#: The lumped mass of a node below this fraction of the largest one is zero up to round-off: the particles reach its
+#: kernel function only where it vanishes. A solver that divides by it would give the node an acceleration of round-off
+#: over round-off.
+MASS_AT_ROUND_OFF = 1e-12
+
 
 class MPMEquationSystemLayout(EquationSystemLayout):
     """The layout of the equation system of a meshfree model, on its active domain: the background cells that hold
@@ -222,6 +227,10 @@ class MPMEquationSystemLayout(EquationSystemLayout):
         assembly of this mass: the explicit solver divides by it, the implicit dynamic solver adds it to the mass of
         the nodes when it integrates the particles' inertia there.
 
+        A node carries inertia if its mass is positive beyond round-off, more than
+        :data:`~edelweissmeshfree.models.mpmequationsystemlayout.MASS_AT_ROUND_OFF` of the largest one; every other node
+        gets zero, the mass of a node without inertia, which both solvers take as such.
+
         Parameters
         ----------
         forEachChunk
@@ -247,6 +256,9 @@ class MPMEquationSystemLayout(EquationSystemLayout):
 
         forEachChunk(self.particles, assemble)
         scatterM.assembleInto(M)
+
+        if M.size:
+            M[M <= MASS_AT_ROUND_OFF * np.max(M)] = 0.0
 
         return M
 
