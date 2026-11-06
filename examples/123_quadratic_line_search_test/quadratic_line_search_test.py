@@ -168,7 +168,7 @@ def run_sim(no_limit=False):
             "Displacement/R-SNNIxNSNI/PlaneStrain/Quad",
             number,
             vertexCoordinates,
-            volume,
+            0.0,
             theApproximation,
             theMaterial,
         )
@@ -178,7 +178,7 @@ def run_sim(no_limit=False):
             "Displacement/R-SNNIxNSNI/PlaneStrain/Quad",
             number,
             vertexCoordinates,
-            volume,
+            0.0,
             theApproximation,
             theMaterialProjectile,
         )
@@ -322,7 +322,7 @@ def run_sim(no_limit=False):
         incSize,
         incSize,
         incSize / 1e8,
-        10 if not no_limit else 10000,
+        11 if not no_limit else 10000,
         theJournal,
         increaseFactor=1.5,
         makeZeroIncrementFirst=False,
