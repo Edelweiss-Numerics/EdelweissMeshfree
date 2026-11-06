@@ -32,12 +32,21 @@ throughout (its cohesion is far above any stress here). The right edge of the gr
 the width of the cell, so the first full increment would turn the material point inside out. The material refuses it
 ("non-positive elastic volume ratio"), Marmot throws, the solver cuts the increment back, and the smaller increment
 converges.
+
+A particle translates a failure of Marmot into a cutback request in its wrapper as well, in the implicit kernel, and
+the request reaches the solver from whichever thread of the pool evaluated the particle. The cells and cell elements
+translate it too, but cannot be made to fail: their kernels integrate the stresses their material points have
+computed before.
 """
+
+import itertools
 
 import numpy as np
 import pytest
 from edelweissfe.journal.journal import Journal
+from edelweissfe.numerics import parallelizationutilities
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
+from edelweissfe.utils.exceptions import CutbackRequest
 
 CELL_WIDTH = 2.0
 SHORTENING = 1.1 * CELL_WIDTH
@@ -169,3 +178,83 @@ def test_a_failing_material_point_in_the_threaded_kernel_is_a_cutback():
     from edelweissmeshfree.solvers.nqsmarmotparallel import NQSParallelForMarmot
 
     _checkCutback(*_compressOneCell(NQSParallelForMarmot))
+
+
+#: The finite-strain J2 plasticity of the explicit solver's tests -- K, G, fy, fyInf, eta, H, implementation, density --
+#: with an implementation it does not have, so that every stress update fails.
+NO_SUCH_IMPLEMENTATION = 7
+WHAT_THE_MATERIAL_SAYS = "implementation type not supported"
+FAILING_J2_PLASTICITY = {
+    "material": "FiniteStrainJ2Plasticity",
+    "properties": np.array([1.0, 0.5, 1e9, 1e9, 1.0, 0.0, NO_SUCH_IMPLEMENTATION, 1.0e-8]),
+}
+
+
+def _particleWhoseMaterialFails():
+    """An RKPM particle on the unit square, with the nine kernel functions that cover it, of a material that fails at
+    every stress update; and its approximation, which the particle refers to without keeping it alive, so that the
+    caller holds it as long as the particle."""
+
+    from edelweissfe.points.node import Node
+
+    from edelweissmeshfree.meshfree.approximations.marmot.marmotmeshfreeapproximation import (
+        MarmotMeshfreeApproximationWrapper,
+    )
+    from edelweissmeshfree.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunction import (
+        MarmotMeshfreeKernelFunctionWrapper,
+    )
+    from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
+        MarmotParticleWrapper,
+    )
+
+    approximation = MarmotMeshfreeApproximationWrapper("ReproducingKernel", 2, completenessOrder=1)
+    particle = MarmotParticleWrapper(
+        "Displacement/SQCNIxNSNI/PlaneStrain/Quad",
+        1,
+        np.array([[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]]),
+        0.0,
+        approximation,
+        FAILING_J2_PLASTICITY,
+    )
+    kernelCenters = itertools.product((-0.5, 0.5, 1.5), repeat=2)
+    particle.assignKernelFunctions(
+        [
+            MarmotMeshfreeKernelFunctionWrapper(
+                Node(label, np.array(center)), "BSplineBoxed", supportRadius=1.5, continuityOrder=3
+            )
+            for label, center in enumerate(kernelCenters)
+        ]
+    )
+    particle.initializeYourself()
+    return particle, approximation
+
+
+def _evaluateImplicitly(particle):
+    nDof = particle.nDof
+    particle.computeKernels(np.zeros(nDof * nDof), np.zeros(nDof), np.zeros(nDof), np.zeros(nDof), 1.0, 1.0)
+
+
+def test_a_particle_whose_material_fails_requests_a_cutback():
+    particle, approximation = _particleWhoseMaterialFails()
+
+    with pytest.raises(CutbackRequest, match=WHAT_THE_MATERIAL_SAYS) as request:
+        _evaluateImplicitly(particle)
+    assert request.value.cutbackSize == 0.5
+
+
+def test_the_cutback_request_of_a_particle_reaches_the_solver_from_any_thread_of_the_pool(monkeypatch):
+    """The solvers evaluate the particles in chunks on the thread pool
+    (:func:`~edelweissfe.numerics.parallelizationutilities.mapChunksInParallel`), which hands the first failure on to
+    the solver as it is."""
+
+    monkeypatch.setenv("OMP_NUM_THREADS", "4")
+    monkeypatch.setattr(parallelizationutilities, "getNumberOfWorkerThreads", lambda: 4)
+    particlesAndApproximations = [_particleWhoseMaterialFails() for _ in range(16)]
+    particles = [particle for particle, _ in particlesAndApproximations]
+
+    def evaluate(chunk):
+        for particle in chunk:
+            _evaluateImplicitly(particle)
+
+    with pytest.raises(CutbackRequest, match=WHAT_THE_MATERIAL_SAYS):
+        parallelizationutilities.mapChunksInParallel(particles, evaluate)
