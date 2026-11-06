@@ -42,6 +42,7 @@ cimport numpy as np
 
 cimport edelweissmeshfree.cells.marmotcell.marmotcell
 
+from edelweissfe.numerics.systemmatrixcontributor import denseBlockLocalEntries
 from edelweissfe.utils.exceptions import CutbackRequest
 
 from libc.stdlib cimport free, malloc
@@ -129,15 +130,22 @@ cdef class MarmotCellWrapper:
     def assignedMaterialPoints(self):
         return self._assignedMaterialPoints
 
-    cpdef void computeMaterialPointKernels(self,
-                         double[::1] dUc,
-                         double[::1] Pc,
-                         double[::1] Kc,
-                         double timeNew,
-                         double dTime, ) nogil:
-        """Evaluate residual and stiffness for given time, field, and field increment."""
+    def computeKernels(self,
+                       double[::1] Kc,
+                       double[::1] Pc,
+                       const double[::1] Uc,
+                       const double[::1] dUc,
+                       double timeNew,
+                       double dTime):
+        """Add the internal forces of the assigned material points to the residual, and their tangent; see
+        :meth:`edelweissmeshfree.cells.base.cell.CellBase.computeKernels`. A cell is incremental, so Marmot gets the
+        solution increment. A failure in Marmot requests a cutback, as for an EdelweissFE element."""
 
-        self._marmotCell.computeMaterialPointKernels(&dUc[0], &Pc[0], &Kc[0], timeNew, dTime)
+        try:
+            with nogil:
+                self._marmotCell.computeMaterialPointKernels(&dUc[0], &Pc[0], &Kc[0], timeNew, dTime)
+        except (RuntimeError, ValueError) as e:
+            raise CutbackRequest(str(e), 0.5)
 
     cpdef void interpolateFieldsToMaterialPoints(self, double[::1] dUc) nogil:
 
@@ -215,19 +223,17 @@ cdef class MarmotCellWrapper:
         self._marmotCell.getInterpolationVector(&Nview_[0], &coords[0])
         return N
 
-    def getVIJContributionSize(self) -> int:
-        """Return the number of entries this entity contributes to the VIJ (COO) system matrix."""
-        return self.nDof**2
+    @property
+    def couplesAllItsDofs(self) -> bool:
+        """``True``: the block is the dense ``nDof x nDof`` matrix, column-major."""
+        return True
 
-    def shapeVIJContribution(self, flat_view: np.ndarray) -> np.ndarray:
+    def localEntriesOfBlock(self) -> tuple[np.ndarray, np.ndarray]:
+        """The entries of the dense block, see
+        :func:`~edelweissfe.numerics.systemmatrixcontributor.denseBlockLocalEntries`."""
+        return denseBlockLocalEntries(self.nDof)
+
+    def shapeBlock(self, values: np.ndarray) -> np.ndarray:
         """Keep the view flat for Cython 1-D memoryview compatibility."""
-        return flat_view
-
-    def initializeVIJContribution(self, idcs: np.ndarray, I_: np.ndarray, J_: np.ndarray, offset: int) -> None:
-        """Initialize the I and J arrays for the VIJ (COO) system matrix assembly. """
-
-        n = len(idcs)
-        VIJLocations = np.tile(idcs, (n, 1))
-        I_[offset : offset + n**2] = VIJLocations.flatten()
-        J_[offset : offset + n**2] = VIJLocations.flatten("F")
+        return values
 

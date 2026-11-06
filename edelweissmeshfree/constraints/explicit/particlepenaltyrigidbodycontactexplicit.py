@@ -6,12 +6,14 @@ from edelweissfe.surfaces.entitybasedsurface import EntityBasedSurface
 from edelweissfe.timesteppers.timestep import TimeStep
 from edelweissfe.variables.scalarvariable import ScalarVariable
 
-from edelweissmeshfree.constraints.base.mpmconstraintbase import MPMConstraintBase
+from edelweissmeshfree.constraints.base.mpmexplicitconstraintbase import (
+    MPMExplicitConstraintBase,
+)
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.particles.base.baseparticle import BaseParticle
 
 
-class ParticlePenaltyContactImplicitSurfaceConstraintExplicit(MPMConstraintBase):
+class ParticlePenaltyContactImplicitSurfaceConstraintExplicit(MPMExplicitConstraintBase):
     """
     Penalty contact constraint for arbitrary implicit surfaces in EXPLICIT simulations.
 
@@ -38,6 +40,9 @@ class ParticlePenaltyContactImplicitSurfaceConstraintExplicit(MPMConstraintBase)
     proximityFactor
         Multiplier for the proximity distance threshold, based on particle size. Default is 2.
     """
+
+    #: Carries nothing from one increment to the next.
+    checkpointedState = {}
 
     def __init__(
         self,
@@ -90,8 +95,6 @@ class ParticlePenaltyContactImplicitSurfaceConstraintExplicit(MPMConstraintBase)
         if self._doProximityCheck:
             self._proximityDist = particle.getVolumeUndeformed() ** (1.0 / self._domainSize) * proximityFactor
 
-        self.isActive = True
-
     @property
     def name(self) -> str:
         return self._name
@@ -111,10 +114,6 @@ class ParticlePenaltyContactImplicitSurfaceConstraintExplicit(MPMConstraintBase)
     @property
     def scalarVariables(self) -> list:
         return []
-
-    @property
-    def active(self) -> bool:
-        return self.isActive
 
     def getNumberOfAdditionalNeededScalarVariables(self) -> int:
         return 0
@@ -143,39 +142,36 @@ class ParticlePenaltyContactImplicitSurfaceConstraintExplicit(MPMConstraintBase)
         hasChanged = nodes != self._nodes
         self._nodes = nodes
 
-        wasActive = self.isActive
-        self.isActive = True
+        wasActive = self.active
 
-        if self._doProximityCheck:
-            self.isActive = False
-            for p_coord in self._constrained_points:
-                dist = self._implicit_function(p_coord)
-                # Active if within proximity distance (SDF < threshold)
-                if dist < self._proximityDist:
-                    self.isActive = True
-                    break
+        # within reach if one of the constrained points is close enough to the surface (signed distance below it)
+        self.withinReach = not self._doProximityCheck or any(
+            self._implicit_function(p_coord) < self._proximityDist for p_coord in self._constrained_points
+        )
 
-            if self.isActive != wasActive:
-                hasChanged = True
+        if self.active != wasActive:
+            hasChanged = True
 
-        if not self.isActive:
+        if not self.active:
             self.reactionForce = 0.0
 
         return hasChanged
 
-    def applyConstraint(self, PExt: np.ndarray, timeStep: TimeStep):
-        """
-        Applies penalty forces to the global external force vector.
+    def computeKernelsExplicit(self, U_np: np.ndarray, dU: np.ndarray, P: np.ndarray, timeStep: TimeStep):
+        """Add the residual contribution of the penalty forces: the negative of the forces with which the surface
+        pushes the particle back, evaluated at the particle's current position.
 
         Parameters
         ----------
-        PExt
-            The global external force vector to which penalty forces will be added.
+        U_np
+            The current solution; unused, the penetration follows from the particle's current position.
+        dU
+            The solution increment; likewise unused.
+        P
+            The residual contribution to augment.
         timeStep
             The current time step information (not used in this constraint but included for interface consistency).
         """
-        if not self.isActive:
-            return
 
         total_reaction = 0.0
 
@@ -193,8 +189,9 @@ class ParticlePenaltyContactImplicitSurfaceConstraintExplicit(MPMConstraintBase)
 
                 N = self._particle.getInterpolationVector(p_coord).flatten()
 
+                # the residual contribution is the negative of the force on the nodes
                 for d in range(self._domainSize):
-                    PExt[d :: self._fieldSize] += N * force_vector[d]
+                    P[d :: self._fieldSize] -= N * force_vector[d]
 
                 total_reaction += self._penaltyParameter * g
 

@@ -46,40 +46,41 @@ the abstract base class :class:`~CellBase`.
 from abc import ABC, abstractmethod
 
 import numpy as np
-from edelweissfe.numerics.vijentitybase import VIJEntityBase
+from edelweissfe.numerics.systemmatrixcontributor import SystemMatrixContributorBase
 from edelweissfe.points.node import Node
 
 from edelweissmeshfree.materialpoints.base.mp import MaterialPointBase
 
 
-class CellBase(ABC, VIJEntityBase):
+class CellBase(ABC, SystemMatrixContributorBase):
+    """MPM cells in EdelweissMPM should be derived from this
+    base class in order to follow the general interface.
+
+    EdelweissMeshfree expects the layout of the residual contribution P (and of the tangent) to be of the form
+
+    .. code-block:: console
+
+        [ node 1 - dofs field 1,
+          node 1 - dofs field 2,
+          node 1 - ... ,
+          node 1 - dofs field n,
+          node 2 - dofs field 1,
+          ... ,
+          node N - dofs field n].
+
+    Parameters
+    ----------
+    cellType
+        A string identifying the requested element formulation.
+    cellNumber
+        A unique integer label used for all kinds of purposes.
+    nodes
+        The list of Nodes assigned to this cell.
+    """
+
     @abstractmethod
     def __init__(self, cellType: str, cellNumber: int, nodes: list[Node]):
-        """MPM cells in EdelweissMPM should be derived from this
-        base class in order to follow the general interface.
-
-        EdelweissMPM expects the layout of the internal and external load vectors, P, PExt, (and the stiffness)
-        to be of the form
-
-        .. code-block:: console
-
-            [ node 1 - dofs field 1,
-              node 1 - dofs field 2,
-              node 1 - ... ,
-              node 1 - dofs field n,
-              node 2 - dofs field 1,
-              ... ,
-              node N - dofs field n].
-
-        Parameters
-        ----------
-        cellType
-            A string identifying the requested element formulation.
-        cellNumber
-            A unique integer label used for all kinds of purposes.
-        nodes
-            The list of Nodes assigned to this cell.
-        """
+        pass
 
     @property
     @abstractmethod
@@ -142,24 +143,33 @@ class CellBase(ABC, VIJEntityBase):
         """
 
     @abstractmethod
-    def computeMaterialPointKernels(
+    def computeKernels(
         self,
-        dU: np.ndarray,
-        P: np.ndarray,
         K: np.ndarray,
+        P: np.ndarray,
+        U: np.ndarray,
+        dU: np.ndarray,
         timeTotal: float,
         dTime: float,
     ):
-        """Evaluate the kernel residual and stiffness for given time based for all assigned MaterialPoints.
+        """Add the internal forces of all assigned material points to the residual, and their tangent: the
+        signature of :meth:`edelweissfe.elements.base.baseelement.BaseElement.computeKernels`, so that a solver
+        evaluates cells and elements alike.
+
+        A cell is incremental on the current configuration: its nodal values are increments, so a cell may read
+        ``dU``, but never ``U``. The increment has reached its material points by interpolation before, and their
+        state is what the cell integrates.
 
         Parameters
         ----------
+        K
+            The tangent ``dP/dU`` to augment, the stiffness matrix.
+        P
+            The residual contribution to augment, the internal forces.
+        U
+            The current solution.
         dU
             The current solution increment.
-        P
-            The external load vector to be defined.
-        K
-            The stiffness matrix to be defined.
         timeTotal
             The current total time.
         dTime
@@ -176,7 +186,8 @@ class CellBase(ABC, VIJEntityBase):
         timeTotal: float,
         dTime: float,
     ):
-        """Compute bulk loads (body loads) for given time based for all assigned MaterialPoints.
+        """Add the residual contribution of a body load on all assigned material points, the negative of the external
+        load :math:`-\\boldsymbol{f}_\\mathrm{ext}`, and its tangent, which is zero for a dead load.
 
         Parameters
         ----------
@@ -185,9 +196,9 @@ class CellBase(ABC, VIJEntityBase):
         load
             The float (vector) describing the load.
         P
-            The external load vector to be defined.
+            The residual contribution to augment, :math:`-\\boldsymbol{f}_\\mathrm{ext}`.
         K
-            The stiffness matrix to be defined.
+            The tangent ``dP/dU`` to augment.
         timeTotal
             The current total time.
         dTime
@@ -206,7 +217,9 @@ class CellBase(ABC, VIJEntityBase):
         timeTotal: float,
         dTime: float,
     ):
-        """Compute distributed (surface) a for given time based for a specific assigned material point.
+        """Add the residual contribution of a distributed (surface) load on a surface of one assigned material point,
+        the negative of the external load :math:`-\\boldsymbol{f}_\\mathrm{ext}`, and its tangent, which is nonzero
+        only for a load that follows the deformation.
 
         Parameters
         ----------
@@ -215,13 +228,13 @@ class CellBase(ABC, VIJEntityBase):
         surfaceID
             The ID describing the surface of the material point.
         materialPoint
-            The specific (already assigned) mateiral point for computing the surface load.
+            The specific (already assigned) material point for computing the surface load.
         load
             The float (vector) describing the load.
         P
-            The external load vector to be defined.
+            The residual contribution to augment, :math:`-\\boldsymbol{f}_\\mathrm{ext}`.
         K
-            The stiffness matrix to be defined.
+            The tangent ``dP/dU`` to augment.
         timeTotal
             The current total time.
         dTime

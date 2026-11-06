@@ -31,6 +31,7 @@ import numpy as np
 import pytest
 from edelweissfe.config.linsolve import getLinSolverByName
 from edelweissfe.journal.journal import Journal
+from edelweissfe.stepactions.dirichlet import StepAction as Dirichlet
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 
 from edelweissmeshfree.fieldoutput.fieldoutput import MPMFieldOutputController
@@ -40,8 +41,7 @@ from edelweissmeshfree.mpmmanagers.smartmpmmanager import SmartMaterialPointMana
 from edelweissmeshfree.outputmanagers.ensight import (
     OutputManager as EnsightOutputManager,
 )
-from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
-from edelweissmeshfree.stepactions.dirichlet import Dirichlet
+from edelweissmeshfree.solvers.deprecated.nqs import NonlinearQuasistaticSolver
 from edelweissmeshfree.stepactions.distributedload import (
     MaterialPointPointWiseDistributedLoad,
 )
@@ -69,7 +69,12 @@ def run_sim():
         cellType="GradientEnhancedMicropolar/Quad4",
     )
 
-    center = np.array([50.0, 0.0])
+    # The half disk rests on the grid's lower edge, whose nodes are fixed, but its material points start strictly
+    # inside the grid. On the edge itself (y = 0), a material point would move by the rounding-level increments the
+    # linear solver returns for the fixed nodes, and leave the grid whenever they are negative. At a height d > 0 in
+    # a cell of height h, it moves to d (1 + dU_y / h), where dU_y is the increment of the cell's upper edge, so it
+    # cannot leave the grid unless the cell inverts.
+    center = np.array([50.0, 1e-4])
 
     gmNeoHooke = {"material": "GMDAMAGEDSHEARNEOHOOKE", "properties": np.array([300.0, 0.3, 1.0, 2, 4, 1.4999, 1.0])}
     circlempgenerator.generateModelData(
@@ -86,7 +91,6 @@ def run_sim():
     )
 
     mpmModel.prepareYourself(journal)
-    mpmModel.nodeFields["displacement"].createFieldValueEntry("dU")
 
     allCells = mpmModel.cellSets["all"]
     allMPs = mpmModel.materialPointSets["all"]

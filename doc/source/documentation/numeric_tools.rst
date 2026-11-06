@@ -11,30 +11,3 @@ problems.
    :members:
    :private-members:
    :inherited-members:
-
-
-Predictors
-----------
-
-Predictors are used to make initial guesses in the Newton-Raphson solver.
-
-``BasePredictor`` class
-***********************
-
-.. automodule:: edelweissmeshfree.numerics.predictors.basepredictor
-   :members:
-   :private-members:
-
-``LinearPredictor`` class
-*************************
-
-.. automodule:: edelweissmeshfree.numerics.predictors.linearpredictor
-   :members:
-   :private-members:
-
-``QuadraticPredictor`` class
-****************************
-
-.. automodule:: edelweissmeshfree.numerics.predictors.quadraticpredictor
-   :members:
-   :private-members:
