@@ -31,6 +31,7 @@ import numpy as np
 import pytest
 from edelweissfe.config.linsolve import getLinSolverByName
 from edelweissfe.journal.journal import Journal
+from edelweissfe.stepactions.dirichlet import StepAction as Dirichlet
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 
 from edelweissmeshfree.constraints.penaltyweakdirichlet import PenaltyWeakDirichlet
@@ -44,8 +45,7 @@ from edelweissmeshfree.mpmmanagers.smartmpmmanager import SmartMaterialPointMana
 from edelweissmeshfree.outputmanagers.ensight import (
     OutputManager as EnsightOutputManager,
 )
-from edelweissmeshfree.solvers.nqsmarmotparallel import NQSParallelForMarmot
-from edelweissmeshfree.stepactions.dirichlet import Dirichlet
+from edelweissmeshfree.solvers.deprecated.nqs import NonlinearQuasistaticSolver
 
 
 @performancetiming.timeit("simulation")
@@ -90,7 +90,6 @@ def run_sim(bspline_order):
     )
 
     mpmModel.prepareYourself(journal)
-    mpmModel.nodeFields["displacement"].createFieldValueEntry("dU")
 
     allCells = mpmModel.cellSets["all"]
     allMPs = mpmModel.materialPointSets["all"]
@@ -161,7 +160,7 @@ def run_sim(bspline_order):
 
     adaptiveTimeStepper = AdaptiveTimeStepper(0.0, 1.0, 1e-1, 1e-1, 1e-3, 1000, journal)
 
-    nonlinearSolver = NQSParallelForMarmot(journal)
+    nonlinearSolver = NonlinearQuasistaticSolver(journal)
 
     iterationOptions = dict()
 

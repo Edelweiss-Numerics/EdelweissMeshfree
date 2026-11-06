@@ -39,9 +39,10 @@ import argparse
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 import pytest
-from edelweissfe.config.linsolve import getLinSolverByName
 from edelweissfe.journal.journal import Journal
-from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
+from edelweissfe.solvers.nonlinearimplicitstaticparallel import NISTParallel
+from edelweissfe.steps.adaptivestep import AdaptiveStep
+from edelweissfe.steps.stepmanager import StepActionCollection
 from edelweissfe.utils.exceptions import StepFailed
 
 from edelweissmeshfree.constraints.particlepenaltyweakdirichtlet import (
@@ -71,14 +72,25 @@ from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
 from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
     MarmotParticleWrapper,
 )
-from edelweissmeshfree.solvers.nqsmarmotparallel import NQSParallelForMarmot
+from edelweissmeshfree.solvers.meshfreeconvergencecriterion import (
+    jobInfoWithMeshfreeTolerances,
+    meshfreeCriterionOptions,
+)
 
 # from edelweissmeshfree.generators.rectangularparticlegridgenerator import (
 #     generateRectangularParticleGrid,
 # )
 
 
-def run_sim(useDirectCSRAssembly=False):
+def run_sim(systemMatrixAssembly: str = "vij"):
+    """Solve the example with EdelweissFE's NISTParallel.
+
+    Parameters
+    ----------
+    systemMatrixAssembly
+        How the solver assembles the system matrix: ``vij``, staged in a VIJ array and summed into CSR, or ``direct``,
+        scattered straight into CSR.
+    """
     dimension = 2
 
     # set nump linewidth to 200:
@@ -182,32 +194,38 @@ def run_sim(useDirectCSRAssembly=False):
         dirichletRight,
     ]
 
+    for constraint in dirichlets:
+        theModel.constraints[constraint.name] = constraint
+    theModel.particleManagers.append(theParticleManager)
+
     incSize = 5e-1
-    adaptiveTimeStepper = AdaptiveTimeStepper(0.0, 1.0, incSize, incSize, incSize / 1e3, 1000, theJournal)
-
-    nonlinearSolver = NQSParallelForMarmot(theJournal)
-    # nonlinearSolver = NonlinearQuasistaticSolver(theJournal)
-    nonlinearSolver.useDirectCSRAssembly = useDirectCSRAssembly
-
-    iterationOptions = dict()
-
-    iterationOptions["max. iterations"] = 15
-    iterationOptions["critical iterations"] = 3
-    iterationOptions["allowed residual growths"] = 10
-
-    linearSolver = getLinSolverByName("pardiso", {})
+    jobInfo = jobInfoWithMeshfreeTolerances()
+    solver = NISTParallel(
+        jobInfo,
+        theJournal,
+        linsolver="pardiso",
+        **meshfreeCriterionOptions | {"systemMatrixAssembly": systemMatrixAssembly},
+    )
+    step = AdaptiveStep(
+        0,
+        theModel,
+        fieldOutputController,
+        theJournal,
+        jobInfo,
+        solver,
+        [ensightOutput],
+        StepActionCollection(),
+        startInc=incSize,
+        maxInc=incSize,
+        minInc=incSize / 1e3,
+        maxNumInc=1000,
+        maxIter=15,
+        criticalIter=3,
+        maxGrowIter=10,
+    )
 
     try:
-        nonlinearSolver.solveStep(
-            adaptiveTimeStepper,
-            linearSolver,
-            theModel,
-            fieldOutputController,
-            outputManagers=[ensightOutput],
-            particleManagers=[theParticleManager],
-            constraints=dirichlets,
-            userIterationOptions=iterationOptions,
-        )
+        step.solve()
 
     except StepFailed as e:
         theJournal.message(f"Step failed: {str(e)}", "error")
@@ -253,9 +271,8 @@ def test_sim(assert_gold):
 
 
 def test_sim_direct_csr_assembly(assert_gold):
-    """The direct-to-CSR assembly path must reproduce the VIJ path's result exactly on a real,
-    multi-increment nonlinear (finite-strain, damaged) solve -- not just agree on a single
-    diagnostic comparison inside one iteration. Same model, same gold file as test_sim."""
+    """The system matrix scattered straight into CSR gives the result of the VIJ assembly on a multi-increment nonlinear
+    (finite-strain, damaged) solve. Same model, same gold file as test_sim."""
 
     import matplotlib
 
@@ -264,7 +281,7 @@ def test_sim_direct_csr_assembly(assert_gold):
 
     warnings.filterwarnings("ignore")
 
-    theModel, fieldOutputController = run_sim(useDirectCSRAssembly=True)
+    theModel, fieldOutputController = run_sim(systemMatrixAssembly="direct")
 
     res = fieldOutputController.fieldOutputs["displacement"].getLastResult()
 
