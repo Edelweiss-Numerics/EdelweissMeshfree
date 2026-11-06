@@ -141,8 +141,6 @@ class ParticlePenaltyContactCartesianBoundaryConstraint(MPMConstraintBase):
                 particle.getVolumeUndeformed() ** (1.0 / domainSize) * proximityFactor
             )
 
-        self.isActive = True
-
     @property
     def name(self) -> str:
         return self._name
@@ -169,10 +167,6 @@ class ParticlePenaltyContactCartesianBoundaryConstraint(MPMConstraintBase):
     ) -> list:
         return list()
 
-    @property
-    def active(self) -> bool:
-        return self.isActive
-
     def getNumberOfAdditionalNeededScalarVariables(
         self,
     ) -> int:
@@ -196,30 +190,19 @@ class ParticlePenaltyContactCartesianBoundaryConstraint(MPMConstraintBase):
         # get the current constrained points, as the particle may have moved
         self._constrained_points = self._getConstraintLocations()
 
-        wasActive = self.isActive
-        self.isActive = True
+        wasActive = self.active
 
-        if self._doProximityCheck:
-            # check if any of the constrained points is within proximity to the boundary
-            self.isActive = False
+        # within reach if one of the constrained points is close enough to the boundary
+        self.withinReach = not self._doProximityCheck or any(
+            abs(constrained_point[self._component] - self._boundaryPosition)
+            <= self._particleCharacteristicLength_x_proximityFactor
+            for constrained_point in self._constrained_points
+        )
 
-            for constrained_point in self._constrained_points:
-                constrained_point_j = constrained_point[self._component]
-                distanceToBoundary = abs(constrained_point_j - self._boundaryPosition)
-                if distanceToBoundary > self._particleCharacteristicLength_x_proximityFactor:
-                    # not close enough to boundary
-                    hasChanged = wasActive is not False
-                    self.isActive = False
-                else:
-                    # close enough to boundary
-                    hasChanged = wasActive is not True
-                    self.isActive = True
+        if self.active != wasActive:
+            hasChanged = True
 
-                if self.isActive:
-                    # no need to check other points, one is enough
-                    break
-
-        if not self.isActive:
+        if not self.active:
             self.reactionForce = 0.0
 
         return hasChanged

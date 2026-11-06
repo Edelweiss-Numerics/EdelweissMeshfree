@@ -20,9 +20,11 @@ its nodes, what an element of the same mechanics would add as its internal force
 
 The nodal values of the particles and of the cells are increments on the current configuration, so these constraints
 read the increment ``dU``. Their nodes are those the particles or material points currently interpolate from: a
-constraint finds them anew at the start of every increment, in ``updateConnectivity``, which may also switch the
-constraint off (``active``), e.g. a contact constraint whose particle is far from the boundary. A constraint that is
-switched off is not part of the equation system.
+constraint finds them anew at the start of every increment, in ``updateConnectivity``, which may also find the
+constraint out of reach (``withinReach``), e.g. a contact constraint whose particle is far from the boundary. A
+constraint takes part in the equation system (``active``) while it is within reach, unless it is switched off from
+outside: setting ``active`` to False, e.g. by a ``modelupdate`` step action, switches a constraint off whatever it
+finds in reach, until it is switched on again.
 
 Because :math:`\mathbf{K}` is the derivative of exactly what is added to :math:`\mathbf{P}`, each constraint is
 checked by central differences of its own ``computeKernels`` in

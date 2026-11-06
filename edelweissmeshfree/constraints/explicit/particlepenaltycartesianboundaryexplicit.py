@@ -124,7 +124,6 @@ class ParticlePenaltyCartesianBoundaryConstraintExplicit(MPMExplicitConstraintBa
         if self._doProximityCheck:
             self._proximityDist = particle.getVolumeUndeformed() ** (1.0 / domainSize) * proximityFactor
 
-        self.isActive = True
         self._dof_indices = np.array([], dtype=np.int32)
 
     @property
@@ -147,10 +146,6 @@ class ParticlePenaltyCartesianBoundaryConstraintExplicit(MPMExplicitConstraintBa
     def scalarVariables(self) -> list:
         return []
 
-    @property
-    def active(self) -> bool:
-        return self.isActive
-
     def getNumberOfAdditionalNeededScalarVariables(self) -> int:
         return 0
 
@@ -170,23 +165,17 @@ class ParticlePenaltyCartesianBoundaryConstraintExplicit(MPMExplicitConstraintBa
         hasChanged = nodes != self._nodes
         self._nodes = nodes
 
-        wasActive = self.isActive
-        self.isActive = True
+        wasActive = self.active
 
-        if self._doProximityCheck:
-            self.isActive = False
-            # Check if any point is close enough to boundary
-            # Using simple distance check
-            for p in self._constrained_points:
-                dist = abs(p[self._component] - self._boundaryPosition)
-                if dist <= self._proximityDist:
-                    self.isActive = True
-                    break
+        # within reach if one of the constrained points is close enough to the boundary
+        self.withinReach = not self._doProximityCheck or any(
+            abs(p[self._component] - self._boundaryPosition) <= self._proximityDist for p in self._constrained_points
+        )
 
-            if self.isActive != wasActive:
-                hasChanged = True
+        if self.active != wasActive:
+            hasChanged = True
 
-        if not self.isActive:
+        if not self.active:
             self.reactionForce = 0.0
 
         return hasChanged
