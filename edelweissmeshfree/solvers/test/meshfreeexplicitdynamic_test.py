@@ -67,13 +67,18 @@ N_INCREMENTS = 40
 
 # soft, so that the body translates nearly rigidly, far within the stable time increment
 YOUNGS_MODULUS, POISSONS_RATIO = 1.0, 0.3
-BULK_MODULUS = YOUNGS_MODULUS / (3 * (1 - 2 * POISSONS_RATIO))
-SHEAR_MODULUS = YOUNGS_MODULUS / (2 * (1 + POISSONS_RATIO))
-# K, G, yield stress (never reached), ..., mass density
-MATERIAL = {
-    "material": "FiniteStrainJ2Plasticity",
-    "properties": np.array([BULK_MODULUS, SHEAR_MODULUS, 1e9, 1e9, 1, 0, 1, 1.0e-8]),
-}
+
+
+def _material(youngsModulus: float) -> dict:
+    """An elastic material (its yield stress is never reached) of the given Young's modulus."""
+
+    bulkModulus = youngsModulus / (3 * (1 - 2 * POISSONS_RATIO))
+    shearModulus = youngsModulus / (2 * (1 + POISSONS_RATIO))
+    # K, G, yield stress (never reached), ..., mass density
+    return {
+        "material": "FiniteStrainJ2Plasticity",
+        "properties": np.array([bulkModulus, shearModulus, 1e9, 1e9, 1, 0, 1, 1.0e-8]),
+    }
 
 
 class _SolverRecordingTheVelocityAtReconnection(MeshfreeExplicitDynamic):
@@ -99,8 +104,9 @@ class _SolverRecordingTheVelocityAtReconnection(MeshfreeExplicitDynamic):
         }
 
 
-def _translatingBody(journal: Journal) -> MPMModel:
-    """A block of particles moving to the right, over a grid of kernel functions that reaches beyond it."""
+def _translatingBody(journal: Journal, youngsModulus: float = YOUNGS_MODULUS, stretching: float = 0.0) -> MPMModel:
+    """A block of particles moving to the right, over a grid of kernel functions that reaches beyond it; with a
+    stretching, its velocity grows from its left to its right end by that rate times its length."""
 
     dimension = 2
     model = MPMModel(dimension)
@@ -127,7 +133,12 @@ def _translatingBody(journal: Journal) -> MPMModel:
 
     def particleFactory(number, vertexCoordinates, volume):
         return MarmotParticleWrapper(
-            "Displacement/SQCNIxNSNI/PlaneStrain/Quad", number, vertexCoordinates, 0.0, approximation, MATERIAL
+            "Displacement/SQCNIxNSNI/PlaneStrain/Quad",
+            number,
+            vertexCoordinates,
+            0.0,
+            approximation,
+            _material(youngsModulus),
         )
 
     generateRectangularQuadParticleGrid(
@@ -154,10 +165,37 @@ def _translatingBody(journal: Journal) -> MPMModel:
     model.prepareYourself(journal)
 
     for particle in model.particles.values():
-        particle.getResultArray("velocity")[0] = VELOCITY
+        center = particle.getCenterCoordinates()
+        particle.getResultArray("velocity")[0] = VELOCITY + stretching * (center[0] - 2.5 * PARTICLE_SIZE)
         particle.acceptStateAndPosition()
 
     return model
+
+
+def _solve(model: MPMModel, journal: Journal, solversOfTheSteps: list, nIncrementsOfTheSteps: list):
+    """Solve consecutive steps of the given solvers, each of the given number of increments of TIME_INCREMENT."""
+
+    fieldOutputController = MPMFieldOutputController(model, journal)
+    fieldOutputController.initializeJob()
+    try:
+        for number, (solver, nIncrements) in enumerate(zip(solversOfTheSteps, nIncrementsOfTheSteps)):
+            AdaptiveStep(
+                number,
+                model,
+                fieldOutputController,
+                journal,
+                {},
+                solver,
+                [],
+                StepActionCollection(),
+                stepLength=nIncrements * TIME_INCREMENT,
+                startInc=1.0 / nIncrements,
+                maxInc=1.0 / nIncrements,
+                minInc=1.0 / nIncrements,
+                maxNumInc=2 * nIncrements,
+            ).solve()
+    finally:
+        fieldOutputController.finalizeJob()
 
 
 def test_the_velocity_is_carried_by_node_across_a_change_of_the_active_nodes():
@@ -165,28 +203,7 @@ def test_the_velocity_is_carried_by_node_across_a_change_of_the_active_nodes():
     model = _translatingBody(journal)
     solver = _SolverRecordingTheVelocityAtReconnection({}, journal)
 
-    fieldOutputController = MPMFieldOutputController(model, journal)
-    fieldOutputController.initializeJob()
-    stepLength = N_INCREMENTS * TIME_INCREMENT
-    step = AdaptiveStep(
-        0,
-        model,
-        fieldOutputController,
-        journal,
-        {},
-        solver,
-        [],
-        StepActionCollection(),
-        stepLength=stepLength,
-        startInc=1.0 / N_INCREMENTS,
-        maxInc=1.0 / N_INCREMENTS,
-        minInc=1.0 / N_INCREMENTS,
-        maxNumInc=2 * N_INCREMENTS,
-    )
-    try:
-        step.solve()
-    finally:
-        fieldOutputController.finalizeJob()
+    _solve(model, journal, [solver], [N_INCREMENTS])
 
     newlyActiveNodes = [set(after) - set(before) for before, after in solver.activeNodeChanges]
     assert any(newlyActiveNodes), "the body did not move far enough for a node to become active"
@@ -197,15 +214,51 @@ def test_the_velocity_is_carried_by_node_across_a_change_of_the_active_nodes():
             else:
                 np.testing.assert_array_equal(velocity, 0.0)
 
-    # the model holds the velocity of the active nodes, the solver's; zero elsewhere, and no solution anywhere
+    # The model holds the velocity of the active nodes at the end of the step: the solver's, half an increment behind,
+    # advanced by that half increment with the acceleration. Zero elsewhere, and no solution anywhere.
     displacement = model.nodeFields["displacement"]
     velocityOfTheActiveNodes = solver.velocityOfTheActiveNodes()
+    halfIncrement = 0.5 * solver.prevTimeStep.timeIncrement
     for node in displacement.nodes:
         row = displacement.indexOfNode(node)
         if node in velocityOfTheActiveNodes:
-            np.testing.assert_array_equal(displacement["V"][row], velocityOfTheActiveNodes[node])
+            np.testing.assert_array_equal(
+                displacement["V"][row], velocityOfTheActiveNodes[node] + halfIncrement * displacement["A"][row]
+            )
         else:
-            for entry in ("V", "P"):
+            for entry in ("V", "A", "P"):
                 np.testing.assert_array_equal(displacement[entry][row], 0.0)
     np.testing.assert_array_equal(displacement["U"], 0.0)
     assert np.any(displacement["dU"][:, 0] > 0.0)
+
+
+def test_two_explicit_steps_are_one():
+    """A step continues from the velocity and the acceleration the step before ends with: a body that stretches as it
+    translates, stiff enough to accelerate visibly within an increment and still far within the stable time increment,
+    solved by one step and by two steps of half its length, each by its own solver, ends in the same state. The second
+    step takes the velocity of the nodes the first one leaves, rather than projecting it again from the particles, and
+    its first increment of motion continues the leapfrog."""
+
+    def stretchingBody(journal):
+        return _translatingBody(journal, youngsModulus=1.0e2, stretching=0.1 * VELOCITY / (5 * PARTICLE_SIZE))
+
+    journal = Journal()
+    oneStep = stretchingBody(journal)
+    _solve(oneStep, journal, [MeshfreeExplicitDynamic({}, journal)], [N_INCREMENTS])
+    twoSteps = stretchingBody(journal)
+    _solve(
+        twoSteps,
+        journal,
+        [MeshfreeExplicitDynamic({}, journal), MeshfreeExplicitDynamic({}, journal)],
+        [N_INCREMENTS // 2, N_INCREMENTS // 2],
+    )
+
+    expected, actual = oneStep.nodeFields["displacement"], twoSteps.nodeFields["displacement"]
+    # the body accelerates: the acceleration changes the velocity within an increment by more than round-off
+    assert TIME_INCREMENT * np.max(np.abs(expected["A"])) > 1e-6 * VELOCITY
+    for entry in ("V", "A"):
+        np.testing.assert_allclose(
+            actual[entry], expected[entry], rtol=0.0, atol=1e-9 * np.max(np.abs(expected[entry])), err_msg=entry
+        )
+    for one, two in zip(oneStep.particles.values(), twoSteps.particles.values()):
+        np.testing.assert_allclose(two.getCenterCoordinates(), one.getCenterCoordinates(), rtol=1e-12)

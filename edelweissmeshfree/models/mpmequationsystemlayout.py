@@ -41,6 +41,7 @@ their equation system, see :meth:`~edelweissmeshfree.models.mpmmodel.MPMModel.bu
 
 from collections.abc import Callable
 
+import numpy as np
 from edelweissfe.models.equationsystemlayout import EquationSystemLayout
 from edelweissfe.numerics.dofmanager import DofManager, DofVector
 from edelweissfe.sets.nodeset import NodeSet
@@ -185,6 +186,37 @@ class MPMEquationSystemLayout(EquationSystemLayout):
 
         nodeField[entry][:] = 0.0
         self.dofManager.writeDofVectorToNodeField(dofVector, nodeField, entry, self.activeNodes)
+
+    def carriersOfTheMotion(self) -> set[str]:
+        """Where the model holds the motion of its particles; see
+        :meth:`~edelweissfe.models.equationsystemlayout.EquationSystemLayout.carriersOfTheMotion`.
+        ``"nodes"`` if an incremental node of the active domain carries a velocity or an acceleration in the entries
+        ``V`` and ``A`` of the model's node fields.
+
+        The explicit solver keeps the motion there: the velocity of the nodes is its state, and every particle takes its
+        own from them as it advances.
+
+        Returns
+        -------
+        set[str]
+            ``"nodes"``, or none.
+        """
+
+        carriers = set()
+
+        if self.incrementalNodes:
+            rate = self.dofManager.constructDofVector()
+            for fieldName in self.dofManager.fields:
+                for entry in ("V", "A"):
+                    rate[:] = 0.0
+                    self.dofManager.writeNodeFieldToDofVector(
+                        rate, self.model.nodeFields[fieldName], entry, self.incrementalNodes
+                    )
+                    if np.any(rate):
+                        carriers.add("nodes")
+                        return carriers
+
+        return carriers
 
     def updateMaterialPoints(self, dU: DofVector, timeStep: TimeStep, forEachChunk: Callable[[list, Callable], None]):
         """Update the material points with the trial solution increment, before the solver computes the cells, which
