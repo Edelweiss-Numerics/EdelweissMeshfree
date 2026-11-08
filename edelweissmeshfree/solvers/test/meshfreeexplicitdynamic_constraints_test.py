@@ -28,7 +28,8 @@
 moved, and the nodes of the kernel functions carry neither a solution nor an increment. It refuses a constraint that
 would act as if nothing had moved there (``MPMConstraintBase.actsInExplicitAnalysis``): one on the increment, such as a
 weak Dirichlet condition or an equal value, or one of EdelweissFE, whose nodes carry their solution. The penalty
-contacts act, explicit or not. A constraint that is switched off takes no part in the step, and is not refused.
+contacts act, explicit or not. A constraint switched off from outside takes no part in the step, and is not refused;
+one that is switched on is refused even while it is out of reach, since it may come within reach during the step.
 
 The particles are stand-ins, so that no Marmot is needed.
 """
@@ -159,3 +160,12 @@ def test_a_constraint_that_is_switched_off_is_not_refused(name):
     model.constraints["constraint"].active = False
 
     _validate(model)
+
+
+@pytest.mark.parametrize("name", NOT_ACTING)
+def test_a_constraint_that_is_switched_on_is_refused_even_out_of_reach(name):
+    model = _modelWith(NOT_ACTING[name])
+    model.constraints["constraint"].withinReach = False
+
+    with pytest.raises(NotImplementedError, match="does not act in an explicit analysis"):
+        MeshfreeExplicitDynamic({}, Journal(verbose=False)).validateModelCapabilities(model)

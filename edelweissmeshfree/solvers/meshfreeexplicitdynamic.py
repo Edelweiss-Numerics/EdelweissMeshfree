@@ -170,9 +170,10 @@ class MeshfreeExplicitDynamic(NonlinearSolverBase):
         constraints are evaluated at the configuration just accepted, where the nodes of the kernel functions carry
         neither a solution nor an increment, so a constraint on the increment would act as if nothing had moved.
 
-        A constraint that is switched off at the start of the step takes no part in it: switched off from outside, it
-        stays off, and the constraints that switch themselves on by their reach, the contacts, act in an explicit
-        analysis.
+        A constraint switched off from outside
+        (:attr:`~edelweissfe.constraints.base.constraintbase.ConstraintBase.switchedOn`) takes no part in the step and
+        is not refused. One that is switched on is checked even while it is out of reach: it may come within reach
+        during the step.
 
         Parameters
         ----------
@@ -192,8 +193,8 @@ class MeshfreeExplicitDynamic(NonlinearSolverBase):
                 raise NotImplementedError(f"The model has {what}; {self.identification} integrates particles only.")
 
         for name, constraint in model.constraints.items():
-            # a constraint that is switched off has no place in the equation system
-            if not constraint.active:
+            # a constraint switched off from outside takes no part in the step
+            if not constraint.switchedOn:
                 continue
             if constraint.getNumberOfAdditionalNeededScalarVariables():
                 raise NotImplementedError(
