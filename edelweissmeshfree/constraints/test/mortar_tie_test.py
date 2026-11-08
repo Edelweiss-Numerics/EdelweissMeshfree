@@ -99,7 +99,7 @@ def _model():
 def _tie(model, finiteElementNodes, particles) -> ParticleFiniteElementMortarTie:
     tie = ParticleFiniteElementMortarTie("tie", model, particles, finiteElementNodes)
     tie.assignAdditionalScalarVariables(
-        [ScalarVariable() for _ in range(tie.getNumberOfAdditionalNeededScalarVariables())]
+        [ScalarVariable("tie_{:}".format(i)) for i in range(tie.getNumberOfAdditionalNeededScalarVariables())]
     )
     tie.updateConnectivity(model)
     return tie
