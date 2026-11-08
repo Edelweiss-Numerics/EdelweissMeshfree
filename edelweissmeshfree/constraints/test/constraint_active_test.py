@@ -134,3 +134,17 @@ def test_a_contact_switched_off_from_outside_stays_off_until_it_is_switched_on_a
     _moveTo(particle, OUT_OF_REACH)
     constraint.updateConnectivity(model)
     assert not constraint.active, "switched on again, it follows the reach of its particle"
+
+
+@pytest.mark.parametrize("name", CONTACTS)
+def test_the_model_does_not_locate_a_contact_switched_off_from_outside(name):
+    model, constraint, particle = _contactInReach(name)
+
+    constraint.active = False
+    _moveTo(particle, OUT_OF_REACH)
+    assert not model.updateConnectivity()
+    assert constraint.withinReach, "switched off from outside, the contact rests: the model does not locate it"
+
+    constraint.active = True
+    assert model.updateConnectivity(), "switched on again, it is located, and finds itself out of reach"
+    assert not constraint.withinReach and not constraint.active

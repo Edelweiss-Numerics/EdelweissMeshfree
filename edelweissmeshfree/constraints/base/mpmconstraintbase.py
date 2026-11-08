@@ -28,7 +28,7 @@ class MPMConstraintBase(ConstraintBase):
       from the boundary: it sets
       :attr:`~edelweissfe.constraints.base.constraintbase.ConstraintBase.withinReach`, and reports a change of
       :attr:`~edelweissfe.constraints.base.constraintbase.ConstraintBase.active`. A constraint switched off from
-      outside, through ``active``, stays off whatever it finds.
+      outside, through ``active``, stays off whatever it finds, and rests: the model does not locate it anew.
     - Every constraint declares the state it carries from one increment to the next, in ``checkpointedState``
       (empty if it carries none), so that a restart can restore it.
 
