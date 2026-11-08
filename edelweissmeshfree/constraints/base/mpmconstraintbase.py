@@ -25,8 +25,10 @@ class MPMConstraintBase(ConstraintBase):
       they change as the kernel functions and cells move: ``updateConnectivity`` finds them anew at the start of
       every increment, and reports a change.
     - A constraint may switch itself off in ``updateConnectivity``, e.g. a contact constraint whose particle is far
-      from the boundary: it sets :attr:`withinReach`, and reports a change of :attr:`active`. A constraint switched
-      off from outside, through :attr:`active`, stays off whatever it finds.
+      from the boundary: it sets
+      :attr:`~edelweissfe.constraints.base.constraintbase.ConstraintBase.withinReach`, and reports a change of
+      :attr:`~edelweissfe.constraints.base.constraintbase.ConstraintBase.active`. A constraint switched off from
+      outside, through ``active``, stays off whatever it finds.
     - Every constraint declares the state it carries from one increment to the next, in ``checkpointedState``
       (empty if it carries none), so that a restart can restore it.
 
@@ -36,34 +38,6 @@ class MPMConstraintBase(ConstraintBase):
     A constraint that acts only in an explicit analysis, with forces and without a tangent, derives from
     :class:`~edelweissmeshfree.constraints.base.mpmexplicitconstraintbase.MPMExplicitConstraintBase` instead.
     """
-
-    #: Whether this constraint is within reach of what it constrains, as it finds in ``updateConnectivity``: a contact
-    #: constraint whose particle is far from the boundary is not, and takes no part in the equation system then. A
-    #: constraint that does not check stays within reach.
-    withinReach: bool = True
-
-    #: Whether this constraint is switched on from outside, see :attr:`active`.
-    _switchedOn: bool = True
-
-    @property
-    def active(self) -> bool:
-        """Whether this constraint takes part in the equation system, see
-        :attr:`~edelweissfe.constraints.base.constraintbase.ConstraintBase.active`: while it is switched on and
-        :attr:`withinReach`. Setting it switches the constraint on or off from outside, e.g. by a ``modelupdate`` step
-        action: switched off, it stays off whatever it finds in reach; switched on again, it takes part while it is
-        within reach.
-
-        Returns
-        -------
-        bool
-            Whether the constraint takes part in the equation system.
-        """
-
-        return self._switchedOn and self.withinReach
-
-    @active.setter
-    def active(self, switchedOn: bool):
-        self._switchedOn = switchedOn
 
     @property
     @abstractmethod

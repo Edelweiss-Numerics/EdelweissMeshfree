@@ -26,8 +26,8 @@
 #  ---------------------------------------------------------------------
 """A constraint takes part in the equation system while it is ``active`` (EdelweissFE's
 ``ConstraintBase.active``). The contact constraints of EdelweissMeshfree switch themselves on and off by the reach of
-their particle (``MPMConstraintBase.withinReach``), and they can be switched off from outside like any constraint:
-then they stay off, whatever they find in reach, until they are switched on again.
+their particle (``ConstraintBase.withinReach``), and they can be switched off from outside like any constraint: then
+they stay off, whatever they find in reach, until they are switched on again.
 
 The particle is a stand-in, so that no Marmot is needed. It starts 0.1 below a boundary at y = 0.75, within the reach
 of its contact, twice its characteristic length, 0.2; moved down to y = 0.3, it is out of reach.

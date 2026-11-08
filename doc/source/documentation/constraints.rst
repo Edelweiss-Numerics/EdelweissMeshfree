@@ -24,7 +24,8 @@ constraint finds them anew at the start of every increment, in ``updateConnectiv
 constraint out of reach (``withinReach``), e.g. a contact constraint whose particle is far from the boundary. A
 constraint takes part in the equation system (``active``) while it is within reach, unless it is switched off from
 outside: setting ``active`` to False, e.g. by a ``modelupdate`` step action, switches a constraint off whatever it
-finds in reach, until it is switched on again.
+finds in reach, until it is switched on again. These are the rules of EdelweissFE's constraint base class, see the
+EdelweissFE constraint documentation.
 
 Because :math:`\mathbf{K}` is the derivative of exactly what is added to :math:`\mathbf{P}`, each constraint is
 checked by central differences of its own ``computeKernels`` in
