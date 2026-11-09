@@ -34,26 +34,36 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 
+from edelweissfe.sets.orderedset import OrderedSet
 
-class MaterialPointSet(set):
-    """A basic node set.
-    It has a label, and a list containing the unique nodes.
+from edelweissmeshfree.materialpoints.base.mp import MaterialPointBase
+from edelweissmeshfree.materialpoints.marmotmaterialpoint.mp import (
+    MarmotMaterialPointWrapper,
+)
+
+
+class MaterialPointSet(OrderedSet):
+    """A basic material point set.
+    It has a name, and contains the unique material points in the order in which they were given.
+
+    That order is the order of iteration, so it is reproducible from run to run: the material point managers
+    hand the material points to their cells in this order, and the loads and constraints defined on a set sum
+    their contributions in this order. (A plain set iterates in the order of memory addresses, which changes
+    from run to run, and with it the rounding of these sums.)
 
     Parameters
     ----------
-    label
-        The unique label for this element set.
-    nodes
-        A list of nodes.
+    name
+        The unique name for this material point set.
+    mps
+        The material points, in the order of iteration.
     """
 
     def __init__(
         self,
         name: str,
-        mps: list,
+        mps,
     ):
-        self.name = name
-        super().__init__(mps)
+        self.allowedObjectTypes = [MaterialPointBase, MarmotMaterialPointWrapper]
 
-    def __hash__(self):
-        return hash(self.name)
+        super().__init__(name, mps)
