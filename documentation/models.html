@@ -864,7 +864,7 @@ the cell elements.</p></li>
 <p class="rubric">Methods</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.updateMaterialPoints" title="edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.updateMaterialPoints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateMaterialPoints</span></code></a>(dU, timeStep)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.updateMaterialPoints" title="edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.updateMaterialPoints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateMaterialPoints</span></code></a>(dU, timeStep, forEachChunk)</p></td>
 <td><p>Update the material points with the trial solution increment, before the solver computes the cells, which integrate them: the material points return to their converged state, every active cell (and cell element) interpolates the solution increment to the material points it holds, and the material points evaluate their material.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.writeResultsToModel" title="edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.writeResultsToModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeResultsToModel</span></code></a>(U, dU, P)</p></td>
@@ -877,16 +877,19 @@ the cell elements.</p></li>
 </table>
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.updateMaterialPoints">
-<span class="sig-name descname"><span class="pre">updateMaterialPoints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmequationsystemlayout.html#MPMEquationSystemLayout.updateMaterialPoints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.updateMaterialPoints" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">updateMaterialPoints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forEachChunk</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmequationsystemlayout.html#MPMEquationSystemLayout.updateMaterialPoints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.updateMaterialPoints" title="Link to this definition"></a></dt>
 <dd><p>Update the material points with the trial solution increment, before the solver computes the cells, which
 integrate them: the material points return to their converged state, every active cell (and cell element)
 interpolates the solution increment to the material points it holds, and the material points evaluate their
-material.</p>
+material. Each of the three is a loop over independent entities – a material point lies in one cell – in the
+solver’s loop over chunks, on its threads for a parallel solver.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>dU</strong> (<em>DofVector</em>) – The trial solution increment.</p></li>
 <li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The time step.</p></li>
+<li><p><strong>forEachChunk</strong> (<em>Callable</em><em>[</em><em>[</em><em>list</em><em>, </em><em>Callable</em><em>]</em><em>, </em><em>None</em><em>]</em>) – The solver’s loop over chunks of independent entities, see
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">forEachChunk()</span></code>.</p></li>
 </ul>
 </dd>
 </dl>
@@ -939,6 +942,18 @@ values of the scalar variables. The nodes of the grid and of the kernel function
 <dt class="sig sig-object py" id="edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.activeNodeFields">
 <span class="sig-name descname"><span class="pre">activeNodeFields</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.activeNodeFields" title="Link to this definition"></a></dt>
 <dd><p>The node fields on the nodes of the active domain.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.cellsInterpolatingToMaterialPoints">
+<span class="sig-name descname"><span class="pre">cellsInterpolatingToMaterialPoints</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.cellsInterpolatingToMaterialPoints" title="Link to this definition"></a></dt>
+<dd><p>The active cells and the cell elements, which interpolate the solution to the material points they hold.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.materialPoints">
+<span class="sig-name descname"><span class="pre">materialPoints</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.materialPoints" title="Link to this definition"></a></dt>
+<dd><p>The material points of the model, a list the solver hands out in chunks.</p>
 </dd></dl>
 
 <dl class="py attribute">

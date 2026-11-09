@@ -735,6 +735,8 @@ For higher order (non point) particles, the surface vector might be omitted and 
 <dt class="field-odd">Attributes<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>baseFields</strong></dt><dd></dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.couplesAllItsDofs" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.couplesAllItsDofs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">couplesAllItsDofs</span></code></a></dt><dd><p><code class="docutils literal notranslate"><span class="pre">True</span></code>: the block is the dense <code class="docutils literal notranslate"><span class="pre">nDof</span> <span class="pre">x</span> <span class="pre">nDof</span></code> matrix, column-major.</p>
+</dd>
 <dt><strong>dimension</strong></dt><dd></dd>
 <dt><strong>dofIndicesPermutation</strong></dt><dd></dd>
 <dt><strong>ensightType</strong></dt><dd></dd>
@@ -989,6 +991,17 @@ updated by the underlying MarmotParticle.</p>
 <dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.updatePhysicsExplicit">
 <span class="sig-name descname"><span class="pre">updatePhysicsExplicit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dUc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeNew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dTime</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.updatePhysicsExplicit" title="Link to this definition"></a></dt>
 <dd><p>Evaluate residual for given time, field, and field increment.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.couplesAllItsDofs">
+<span class="sig-name descname"><span class="pre">couplesAllItsDofs</span></span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.couplesAllItsDofs" title="Link to this definition"></a></dt>
+<dd><p>the block is the dense <code class="docutils literal notranslate"><span class="pre">nDof</span> <span class="pre">x</span> <span class="pre">nDof</span></code> matrix, column-major.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">True</span></code></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py attribute">

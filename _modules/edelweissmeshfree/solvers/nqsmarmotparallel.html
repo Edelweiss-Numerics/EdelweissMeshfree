@@ -175,12 +175,6 @@
     <span class="c1">#: order is alternated, so a warm-up or a drifting machine biases neither.</span>
     <span class="n">directCSRTimingRepeats</span> <span class="o">=</span> <span class="mi">5</span>
 
-    <span class="c1">#: Private-buffer counts to time in turn, e.g. ``(16, 4, 1)``. Empty means time only whatever the</span>
-    <span class="c1">#: assembler is currently configured with. Sweeping here rather than across separate runs keeps</span>
-    <span class="c1">#: every configuration on the same state, the same increment and the same process -- and lets one</span>
-    <span class="c1">#: offset map serve all of them, since only the buffers are reallocated.</span>
-    <span class="n">directCSRBufferSweep</span> <span class="o">=</span> <span class="p">()</span>
-
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">journal</span><span class="p">:</span> <span class="n">Journal</span><span class="p">,</span>
@@ -401,7 +395,7 @@
             <span class="n">start</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">idcsOfHigherOrderEntitiesInVIJ</span><span class="p">[</span><span class="n">particle</span><span class="p">]</span>
             <span class="n">nDof</span> <span class="o">=</span> <span class="n">particle</span><span class="o">.</span><span class="n">nDof</span>
             <span class="n">assembler</span><span class="o">.</span><span class="n">scatterBlock</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_directCSREntityIds</span><span class="p">[</span><span class="n">particle</span><span class="p">],</span> <span class="n">VParticles</span><span class="p">[</span><span class="n">start</span> <span class="p">:</span> <span class="n">start</span> <span class="o">+</span> <span class="n">nDof</span> <span class="o">*</span> <span class="n">nDof</span><span class="p">])</span>
-        <span class="n">scattered</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">assembler</span><span class="o">.</span><span class="n">reduce</span><span class="p">()</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">scattered</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">assembler</span><span class="o">.</span><span class="n">csrMatrix</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="n">errScatter</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">scattered</span> <span class="o">-</span> <span class="n">staged</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
 
@@ -431,10 +425,10 @@
             <span class="n">theDofManager</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">numThreads</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="n">fused</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">assembler</span><span class="o">.</span><span class="n">reduce</span><span class="p">()</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">fused</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">assembler</span><span class="o">.</span><span class="n">csrMatrix</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="c1"># ---- comparison "fused1": the same kernel on one thread -------------------------------</span>
-        <span class="c1"># Discriminates a threading or privatisation fault from a fault in the scratch buffer: if one</span>
+        <span class="c1"># Discriminates a threading or atomic-scatter fault from a fault in the scratch buffer: if one</span>
         <span class="c1"># thread reproduces the VIJ result and sixteen do not, the loop is at fault, not the buffer.</span>
         <span class="n">PFused1</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
         <span class="n">FFused1</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
@@ -442,7 +436,7 @@
         <span class="n">computeMarmotParticlesIntoCSR</span><span class="p">(</span>
             <span class="n">particles_</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">PFused1</span><span class="p">,</span> <span class="n">FFused1</span><span class="p">,</span> <span class="n">entityIds</span><span class="p">,</span> <span class="n">assembler</span><span class="o">.</span><span class="n">corePointer</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">dT</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">,</span> <span class="mi">1</span>
         <span class="p">)</span>
-        <span class="n">fused1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">assembler</span><span class="o">.</span><span class="n">reduce</span><span class="p">()</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">fused1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">assembler</span><span class="o">.</span><span class="n">csrMatrix</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="n">scaleK</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">staged</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
         <span class="n">relScatter</span> <span class="o">=</span> <span class="n">errScatter</span> <span class="o">/</span> <span class="n">scaleK</span>
@@ -552,7 +546,7 @@
 
 <div class="viewcode-block" id="NQSParallelForMarmot._reportAssemblyMemory">
 <a class="viewcode-back" href="../../../documentation/solvers.html#edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._reportAssemblyMemory">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_reportAssemblyMemory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">K_VIJ</span><span class="p">:</span> <span class="n">VIJSystemMatrix</span><span class="p">,</span> <span class="n">memoryOfBufferCount</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_reportAssemblyMemory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">K_VIJ</span><span class="p">:</span> <span class="n">VIJSystemMatrix</span><span class="p">,</span> <span class="n">assemblerBytes</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""Report what each assembly path actually costs in memory, term by term.</span>
 
 <span class="sd">        The memory balance is the point of the direct path -- the DOF ceiling is set by it, not by</span>
@@ -569,9 +563,8 @@
 <span class="sd">            the ``sizeVIJ`` value array, plus the gather map ``gather_sources`` (int32 per COO pair)</span>
 <span class="sd">            and ``assembly_ptr`` (int32 per nnz).</span>
 <span class="sd">        direct only</span>
-<span class="sd">            the ``offsets`` map (uint16 per COO pair), the private CSR copies</span>
-<span class="sd">            (``nBuffers * nnz * 8``) and ``entityRows``. Reported once per buffer count, because</span>
-<span class="sd">            that term is the whole reason the buffer count is a knob.</span>
+<span class="sd">            the ``offsets`` map (uint16 per COO pair) and ``entityRows``; the threads scatter into</span>
+<span class="sd">            the CSR data array itself.</span>
 
 <span class="sd">        The totals reported by the C++ cores (``CSRGenerator.memoryBytes`` and</span>
 <span class="sd">        ``DirectCSRAssembler.memoryBytes``) are printed as a cross-check on the per-term arithmetic,</span>
@@ -581,8 +574,8 @@
 <span class="sd">        ----------</span>
 <span class="sd">        K_VIJ</span>
 <span class="sd">            The VIJ system matrix, for the value and index array sizes.</span>
-<span class="sd">        memoryOfBufferCount</span>
-<span class="sd">            ``DirectCSRAssembler.memoryBytes`` for each buffer count that was configured.</span>
+<span class="sd">        assemblerBytes</span>
+<span class="sd">            ``DirectCSRAssembler.memoryBytes``.</span>
 <span class="sd">        """</span>
 
         <span class="n">gib</span> <span class="o">=</span> <span class="mf">1024.0</span><span class="o">**</span><span class="mi">3</span>
@@ -647,32 +640,26 @@
             <span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
         <span class="p">)</span>
 
-        <span class="k">for</span> <span class="n">nb</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">memoryOfBufferCount</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-            <span class="n">asmBytes</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">memoryOfBufferCount</span><span class="p">[</span><span class="n">nb</span><span class="p">])</span>
-            <span class="n">bPriv</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">nb</span><span class="p">)</span> <span class="o">*</span> <span class="n">nnz</span> <span class="o">*</span> <span class="mf">8.0</span>
-            <span class="c1"># residual against the assembler's own total: entityRows plus the small per-entity tables</span>
-            <span class="n">bEntity</span> <span class="o">=</span> <span class="n">asmBytes</span> <span class="o">-</span> <span class="n">bOffsets</span> <span class="o">-</span> <span class="n">bPriv</span>
-            <span class="n">directPath</span> <span class="o">=</span> <span class="n">bCommon</span> <span class="o">+</span> <span class="n">asmBytes</span>
-            <span class="n">assemblyDirect</span> <span class="o">=</span> <span class="n">asmBytes</span> <span class="o">+</span> <span class="n">bIndptr</span> <span class="o">+</span> <span class="n">bIndices</span> <span class="o">+</span> <span class="n">bData</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span>
-                <span class="s2">"    direct, </span><span class="si">{:2d}</span><span class="s2"> buffer(s): private copies </span><span class="si">{:8.2f}</span><span class="s2"> GiB, entityRows </span><span class="si">{:5.2f}</span><span class="s2"> GiB"</span>
-                <span class="s2">" -&gt; total </span><span class="si">{:8.2f}</span><span class="s2"> GiB   assembly-only </span><span class="si">{:8.2f}</span><span class="s2"> GiB   exclusive </span><span class="si">{:8.2f}</span><span class="s2"> GiB"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                    <span class="n">nb</span><span class="p">,</span> <span class="n">bPriv</span> <span class="o">/</span> <span class="n">gib</span><span class="p">,</span> <span class="n">bEntity</span> <span class="o">/</span> <span class="n">gib</span><span class="p">,</span> <span class="n">directPath</span> <span class="o">/</span> <span class="n">gib</span><span class="p">,</span> <span class="n">assemblyDirect</span> <span class="o">/</span> <span class="n">gib</span><span class="p">,</span> <span class="n">asmBytes</span> <span class="o">/</span> <span class="n">gib</span>
-                <span class="p">),</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">,</span>
-                <span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-            <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span>
-                <span class="s2">"                          ratios vs VIJ: total </span><span class="si">{:.2f}</span><span class="s2">x   assembly-only </span><span class="si">{:.2f}</span><span class="s2">x"</span>
-                <span class="s2">"   exclusive </span><span class="si">{:.2f}</span><span class="s2">x   (private copies are </span><span class="si">{:.0%}</span><span class="s2"> of the direct path)"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                    <span class="n">vijPath</span> <span class="o">/</span> <span class="n">directPath</span><span class="p">,</span>
-                    <span class="n">assemblyVIJ</span> <span class="o">/</span> <span class="n">assemblyDirect</span><span class="p">,</span>
-                    <span class="n">bVIJOnly</span> <span class="o">/</span> <span class="n">asmBytes</span><span class="p">,</span>
-                    <span class="n">bPriv</span> <span class="o">/</span> <span class="n">asmBytes</span><span class="p">,</span>
-                <span class="p">),</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">,</span>
-                <span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-            <span class="p">)</span></div>
+        <span class="n">asmBytes</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">assemblerBytes</span><span class="p">)</span>
+        <span class="c1"># residual against the assembler's own total: entityRows plus the small per-entity tables</span>
+        <span class="n">bEntity</span> <span class="o">=</span> <span class="n">asmBytes</span> <span class="o">-</span> <span class="n">bOffsets</span>
+        <span class="n">directPath</span> <span class="o">=</span> <span class="n">bCommon</span> <span class="o">+</span> <span class="n">asmBytes</span>
+        <span class="n">assemblyDirect</span> <span class="o">=</span> <span class="n">asmBytes</span> <span class="o">+</span> <span class="n">bIndptr</span> <span class="o">+</span> <span class="n">bIndices</span> <span class="o">+</span> <span class="n">bData</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span>
+            <span class="s2">"    direct path: entityRows </span><span class="si">{:5.2f}</span><span class="s2"> GiB -&gt; total </span><span class="si">{:8.2f}</span><span class="s2"> GiB   assembly-only </span><span class="si">{:8.2f}</span><span class="s2"> GiB"</span>
+            <span class="s2">"   exclusive </span><span class="si">{:8.2f}</span><span class="s2"> GiB"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bEntity</span> <span class="o">/</span> <span class="n">gib</span><span class="p">,</span> <span class="n">directPath</span> <span class="o">/</span> <span class="n">gib</span><span class="p">,</span> <span class="n">assemblyDirect</span> <span class="o">/</span> <span class="n">gib</span><span class="p">,</span> <span class="n">asmBytes</span> <span class="o">/</span> <span class="n">gib</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">,</span>
+            <span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span>
+            <span class="s2">"                 ratios vs VIJ: total </span><span class="si">{:.2f}</span><span class="s2">x   assembly-only </span><span class="si">{:.2f}</span><span class="s2">x   exclusive </span><span class="si">{:.2f}</span><span class="s2">x"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">vijPath</span> <span class="o">/</span> <span class="n">directPath</span><span class="p">,</span>
+                <span class="n">assemblyVIJ</span> <span class="o">/</span> <span class="n">assemblyDirect</span><span class="p">,</span>
+                <span class="n">bVIJOnly</span> <span class="o">/</span> <span class="n">asmBytes</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">,</span>
+            <span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="NQSParallelForMarmot._computeParticlesAndTimeDirectCSR">
@@ -707,9 +694,8 @@
 <span class="sd">            ``gather`` ``CSRGenerator.updateCSR``, the production gather.</span>
 
 <span class="sd">        direct path</span>
-<span class="sd">            ``begin`` clearing the private CSR buffers.</span>
+<span class="sd">            ``begin`` clearing the CSR data array.</span>
 <span class="sd">            ``eval`` the particle loop, writing into a cached scratch block and scattering it.</span>
-<span class="sd">            ``reduce`` summing the private buffers.</span>
 
 <span class="sd">        Medians are reported, with the spread, because the scatter was previously measured varying by</span>
 <span class="sd">        +-18% run to run -- wide enough that a single sample cannot support a ratio.</span>
@@ -728,14 +714,7 @@
         <span class="n">PDiscard</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
         <span class="n">FDiscard</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
 
-        <span class="n">bufferCounts</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">nb</span><span class="p">)</span> <span class="k">for</span> <span class="n">nb</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">directCSRBufferSweep</span><span class="p">]</span> <span class="ow">or</span> <span class="p">[</span><span class="n">assembler</span><span class="o">.</span><span class="n">numBuffers</span><span class="p">]</span>
-        <span class="n">originalNumBuffers</span> <span class="o">=</span> <span class="n">assembler</span><span class="o">.</span><span class="n">numBuffers</span>
-
-        <span class="n">samples</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"zero"</span><span class="p">,</span> <span class="s2">"vijEval"</span><span class="p">,</span> <span class="s2">"gather"</span><span class="p">)}</span>
-        <span class="k">for</span> <span class="n">nb</span> <span class="ow">in</span> <span class="n">bufferCounts</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"begin"</span><span class="p">,</span> <span class="s2">"fusedEval"</span><span class="p">,</span> <span class="s2">"reduce"</span><span class="p">):</span>
-                <span class="n">samples</span><span class="p">[(</span><span class="n">nb</span><span class="p">,</span> <span class="n">k</span><span class="p">)]</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">memoryOfBufferCount</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"zero"</span><span class="p">,</span> <span class="s2">"vijEval"</span><span class="p">,</span> <span class="s2">"gather"</span><span class="p">,</span> <span class="s2">"begin"</span><span class="p">,</span> <span class="s2">"fusedEval"</span><span class="p">)}</span>
 
         <span class="k">def</span><span class="w"> </span><span class="nf">timeVIJ</span><span class="p">():</span>
             <span class="n">t0</span> <span class="o">=</span> <span class="n">perf_counter</span><span class="p">()</span>
@@ -751,7 +730,7 @@
             <span class="n">samples</span><span class="p">[</span><span class="s2">"vijEval"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t2</span> <span class="o">-</span> <span class="n">t1</span><span class="p">)</span>
             <span class="n">samples</span><span class="p">[</span><span class="s2">"gather"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t3</span> <span class="o">-</span> <span class="n">t2</span><span class="p">)</span>
 
-        <span class="k">def</span><span class="w"> </span><span class="nf">timeFused</span><span class="p">(</span><span class="n">nb</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">timeFused</span><span class="p">():</span>
             <span class="n">t0</span> <span class="o">=</span> <span class="n">perf_counter</span><span class="p">()</span>
             <span class="n">assembler</span><span class="o">.</span><span class="n">beginAssembly</span><span class="p">()</span>
             <span class="n">t1</span> <span class="o">=</span> <span class="n">perf_counter</span><span class="p">()</span>
@@ -768,25 +747,16 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">numThreads</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="n">t2</span> <span class="o">=</span> <span class="n">perf_counter</span><span class="p">()</span>
-            <span class="n">assembler</span><span class="o">.</span><span class="n">reduce</span><span class="p">()</span>
-            <span class="n">t3</span> <span class="o">=</span> <span class="n">perf_counter</span><span class="p">()</span>
-            <span class="n">samples</span><span class="p">[(</span><span class="n">nb</span><span class="p">,</span> <span class="s2">"begin"</span><span class="p">)]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t1</span> <span class="o">-</span> <span class="n">t0</span><span class="p">)</span>
-            <span class="n">samples</span><span class="p">[(</span><span class="n">nb</span><span class="p">,</span> <span class="s2">"fusedEval"</span><span class="p">)]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t2</span> <span class="o">-</span> <span class="n">t1</span><span class="p">)</span>
-            <span class="n">samples</span><span class="p">[(</span><span class="n">nb</span><span class="p">,</span> <span class="s2">"reduce"</span><span class="p">)]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t3</span> <span class="o">-</span> <span class="n">t2</span><span class="p">)</span>
+            <span class="n">samples</span><span class="p">[</span><span class="s2">"begin"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t1</span> <span class="o">-</span> <span class="n">t0</span><span class="p">)</span>
+            <span class="n">samples</span><span class="p">[</span><span class="s2">"fusedEval"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t2</span> <span class="o">-</span> <span class="n">t1</span><span class="p">)</span>
 
-        <span class="c1"># The buffer count is set once per configuration rather than per repeat: setNumBuffers</span>
-        <span class="c1"># reallocates, and at this size that allocation would otherwise dominate what is being timed.</span>
-        <span class="k">for</span> <span class="n">nb</span> <span class="ow">in</span> <span class="n">bufferCounts</span><span class="p">:</span>
-            <span class="n">assembler</span><span class="o">.</span><span class="n">setNumBuffers</span><span class="p">(</span><span class="n">nb</span><span class="p">)</span>
-            <span class="n">memoryOfBufferCount</span><span class="p">[</span><span class="n">nb</span><span class="p">]</span> <span class="o">=</span> <span class="n">assembler</span><span class="o">.</span><span class="n">memoryBytes</span>
-            <span class="k">for</span> <span class="n">repeat</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">directCSRTimingRepeats</span><span class="p">):</span>
-                <span class="k">if</span> <span class="n">repeat</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">timeVIJ</span><span class="p">()</span>
-                    <span class="n">timeFused</span><span class="p">(</span><span class="n">nb</span><span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">timeFused</span><span class="p">(</span><span class="n">nb</span><span class="p">)</span>
-                    <span class="n">timeVIJ</span><span class="p">()</span>
-        <span class="n">assembler</span><span class="o">.</span><span class="n">setNumBuffers</span><span class="p">(</span><span class="n">originalNumBuffers</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">repeat</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">directCSRTimingRepeats</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">repeat</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">timeVIJ</span><span class="p">()</span>
+                <span class="n">timeFused</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">timeFused</span><span class="p">()</span>
+                <span class="n">timeVIJ</span><span class="p">()</span>
 
         <span class="k">def</span><span class="w"> </span><span class="nf">med</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
             <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="n">key</span><span class="p">]))</span>
@@ -798,13 +768,13 @@
         <span class="n">vijTotal</span> <span class="o">=</span> <span class="n">med</span><span class="p">(</span><span class="s2">"zero"</span><span class="p">)</span> <span class="o">+</span> <span class="n">med</span><span class="p">(</span><span class="s2">"vijEval"</span><span class="p">)</span> <span class="o">+</span> <span class="n">med</span><span class="p">(</span><span class="s2">"gather"</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span>
-            <span class="s2">"assembly benchmark, </span><span class="si">{:}</span><span class="s2"> repeats, </span><span class="si">{:}</span><span class="s2"> threads, </span><span class="si">{:}</span><span class="s2"> particles, buffer counts </span><span class="si">{:}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">directCSRTimingRepeats</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">numThreads</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">particles</span><span class="p">),</span> <span class="n">bufferCounts</span>
+            <span class="s2">"assembly benchmark, </span><span class="si">{:}</span><span class="s2"> repeats, </span><span class="si">{:}</span><span class="s2"> threads, </span><span class="si">{:}</span><span class="s2"> particles"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">directCSRTimingRepeats</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">numThreads</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">particles</span><span class="p">)</span>
             <span class="p">),</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">,</span>
             <span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_reportAssemblyMemory</span><span class="p">(</span><span class="n">K_VIJ</span><span class="p">,</span> <span class="n">memoryOfBufferCount</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_reportAssemblyMemory</span><span class="p">(</span><span class="n">K_VIJ</span><span class="p">,</span> <span class="n">assembler</span><span class="o">.</span><span class="n">memoryBytes</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span>
             <span class="p">(</span><span class="s2">"VIJ   zero  "</span><span class="p">,</span> <span class="s2">"zero"</span><span class="p">),</span>
             <span class="p">(</span><span class="s2">"VIJ   eval  "</span><span class="p">,</span> <span class="s2">"vijEval"</span><span class="p">),</span>
@@ -820,35 +790,26 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">,</span>
             <span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="k">for</span> <span class="n">nb</span> <span class="ow">in</span> <span class="n">bufferCounts</span><span class="p">:</span>
-            <span class="n">fusedTotal</span> <span class="o">=</span> <span class="n">med</span><span class="p">((</span><span class="n">nb</span><span class="p">,</span> <span class="s2">"begin"</span><span class="p">))</span> <span class="o">+</span> <span class="n">med</span><span class="p">((</span><span class="n">nb</span><span class="p">,</span> <span class="s2">"fusedEval"</span><span class="p">))</span> <span class="o">+</span> <span class="n">med</span><span class="p">((</span><span class="n">nb</span><span class="p">,</span> <span class="s2">"reduce"</span><span class="p">))</span>
-            <span class="n">mode</span> <span class="o">=</span> <span class="s2">"privatised"</span> <span class="k">if</span> <span class="n">nb</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">numThreads</span> <span class="k">else</span> <span class="p">(</span><span class="s2">"atomic"</span> <span class="k">if</span> <span class="n">nb</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="s2">"shared"</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span>
-                <span class="s2">"  direct, </span><span class="si">{:2d}</span><span class="s2"> buffer(s) [</span><span class="si">{:10s}</span><span class="s2">]  begin </span><span class="si">{:7.4f}</span><span class="s2">  eval </span><span class="si">{:7.4f}</span><span class="s2">  reduce </span><span class="si">{:7.4f}</span><span class="s2">"</span>
-                <span class="s2">"  (spread </span><span class="si">{:4.1%}</span><span class="s2">/</span><span class="si">{:4.1%}</span><span class="s2">/</span><span class="si">{:4.1%}</span><span class="s2">)"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                    <span class="n">nb</span><span class="p">,</span>
-                    <span class="n">mode</span><span class="p">,</span>
-                    <span class="n">med</span><span class="p">((</span><span class="n">nb</span><span class="p">,</span> <span class="s2">"begin"</span><span class="p">)),</span>
-                    <span class="n">med</span><span class="p">((</span><span class="n">nb</span><span class="p">,</span> <span class="s2">"fusedEval"</span><span class="p">)),</span>
-                    <span class="n">med</span><span class="p">((</span><span class="n">nb</span><span class="p">,</span> <span class="s2">"reduce"</span><span class="p">)),</span>
-                    <span class="n">spread</span><span class="p">((</span><span class="n">nb</span><span class="p">,</span> <span class="s2">"begin"</span><span class="p">)),</span>
-                    <span class="n">spread</span><span class="p">((</span><span class="n">nb</span><span class="p">,</span> <span class="s2">"fusedEval"</span><span class="p">)),</span>
-                    <span class="n">spread</span><span class="p">((</span><span class="n">nb</span><span class="p">,</span> <span class="s2">"reduce"</span><span class="p">)),</span>
-                <span class="p">),</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">,</span>
-                <span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-            <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span>
-                <span class="s2">"  TOTAL  direct, </span><span class="si">{:2d}</span><span class="s2"> buffer(s) </span><span class="si">{:8.4f}</span><span class="s2"> s   speedup vs VIJ </span><span class="si">{:.3f}</span><span class="s2">x"</span>
-                <span class="s2">"   assembler </span><span class="si">{:6.2f}</span><span class="s2"> GiB"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                    <span class="n">nb</span><span class="p">,</span>
-                    <span class="n">fusedTotal</span><span class="p">,</span>
-                    <span class="n">vijTotal</span> <span class="o">/</span> <span class="n">fusedTotal</span> <span class="k">if</span> <span class="n">fusedTotal</span> <span class="o">&gt;</span> <span class="mf">0.0</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="s2">"nan"</span><span class="p">),</span>
-                    <span class="n">memoryOfBufferCount</span><span class="p">[</span><span class="n">nb</span><span class="p">]</span> <span class="o">/</span> <span class="mf">1024.0</span><span class="o">**</span><span class="mi">3</span><span class="p">,</span>
-                <span class="p">),</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">,</span>
-                <span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-            <span class="p">)</span>
+        <span class="n">fusedTotal</span> <span class="o">=</span> <span class="n">med</span><span class="p">(</span><span class="s2">"begin"</span><span class="p">)</span> <span class="o">+</span> <span class="n">med</span><span class="p">(</span><span class="s2">"fusedEval"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span>
+            <span class="s2">"  direct begin </span><span class="si">{:7.4f}</span><span class="s2">  eval </span><span class="si">{:7.4f}</span><span class="s2">  (spread </span><span class="si">{:4.1%}</span><span class="s2">/</span><span class="si">{:4.1%}</span><span class="s2">)"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">med</span><span class="p">(</span><span class="s2">"begin"</span><span class="p">),</span>
+                <span class="n">med</span><span class="p">(</span><span class="s2">"fusedEval"</span><span class="p">),</span>
+                <span class="n">spread</span><span class="p">(</span><span class="s2">"begin"</span><span class="p">),</span>
+                <span class="n">spread</span><span class="p">(</span><span class="s2">"fusedEval"</span><span class="p">),</span>
+            <span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">,</span>
+            <span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span>
+            <span class="s2">"  TOTAL  direct </span><span class="si">{:8.4f}</span><span class="s2"> s   speedup vs VIJ </span><span class="si">{:.3f}</span><span class="s2">x   assembler </span><span class="si">{:6.2f}</span><span class="s2"> GiB"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">fusedTotal</span><span class="p">,</span>
+                <span class="n">vijTotal</span> <span class="o">/</span> <span class="n">fusedTotal</span> <span class="k">if</span> <span class="n">fusedTotal</span> <span class="o">&gt;</span> <span class="mf">0.0</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="s2">"nan"</span><span class="p">),</span>
+                <span class="n">assembler</span><span class="o">.</span><span class="n">memoryBytes</span> <span class="o">/</span> <span class="mf">1024.0</span><span class="o">**</span><span class="mi">3</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">,</span>
+            <span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span>
 
         <span class="c1"># restore what the benchmark clobbered, then do the real evaluation</span>
         <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">K_VIJ</span><span class="p">)[:]</span> <span class="o">=</span> <span class="n">VBefore</span>

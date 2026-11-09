@@ -114,6 +114,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.constraints.base.constraintbase</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConstraintBase</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.numerics.dofmanager</span><span class="w"> </span><span class="kn">import</span> <span class="n">DofManager</span><span class="p">,</span> <span class="n">DofVector</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.numerics.systemmatrixassembly</span><span class="w"> </span><span class="kn">import</span> <span class="n">VIJSystemMatrixAssembly</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.outputmanagers.base.outputmanagerbase</span><span class="w"> </span><span class="kn">import</span> <span class="n">OutputManagerBase</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.stepactions.base.arclengthcontrollerbase</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArcLengthControllerBase</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.stepactions.base.dirichletbase</span><span class="w"> </span><span class="kn">import</span> <span class="n">DirichletBase</span>
@@ -124,7 +125,6 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.models.mpmmodel</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPMModel</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.mpmmanagers.base.mpmmanagerbase</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPMManagerBase</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.numerics.predictors.basepredictor</span><span class="w"> </span><span class="kn">import</span> <span class="n">BasePredictor</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.numerics.systemmatrixcontribution</span><span class="w"> </span><span class="kn">import</span> <span class="n">VIJContribution</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.particlemanagers.base.baseparticlemanager</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">BaseParticleManager</span><span class="p">,</span>
 <span class="p">)</span>
@@ -559,8 +559,7 @@
         <span class="k">if</span> <span class="n">arcLengthController</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_createNewtonCache</span><span class="p">(</span><span class="n">theDofManager</span><span class="p">)</span>
 
-        <span class="n">K_VIJ</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructVIJSystemMatrix</span><span class="p">()</span>
-        <span class="n">csrGenerator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_makeCachedCOOToCSRGenerator</span><span class="p">(</span><span class="n">K_VIJ</span><span class="p">)</span>
+        <span class="n">csrGenerator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_makeCachedCOOToCSRGenerator</span><span class="p">(</span><span class="n">theDofManager</span><span class="p">)</span>
         <span class="n">dU</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
         <span class="n">Rhs_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">theDofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">(),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>  <span class="c1"># 2 RHSs</span>
         <span class="n">F</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
@@ -568,11 +567,8 @@
         <span class="n">PExt</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
         <span class="n">PExt_0</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
         <span class="n">PExt_f</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
-        <span class="n">K_VIJ_0</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructVIJSystemMatrix</span><span class="p">()</span>
-        <span class="n">K_VIJ_f</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructVIJSystemMatrix</span><span class="p">()</span>
-
         <span class="n">newtonCache</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">VIJContribution</span><span class="p">(</span><span class="n">K_VIJ</span><span class="p">,</span> <span class="n">csrGenerator</span><span class="p">),</span>
+            <span class="n">VIJSystemMatrixAssembly</span><span class="p">(</span><span class="n">csrGenerator</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
             <span class="n">csrGenerator</span><span class="p">,</span>
             <span class="n">dU</span><span class="p">,</span>
             <span class="n">Rhs_</span><span class="p">,</span>
@@ -581,8 +577,8 @@
             <span class="n">PExt</span><span class="p">,</span>
             <span class="n">PExt_0</span><span class="p">,</span>
             <span class="n">PExt_f</span><span class="p">,</span>
-            <span class="n">VIJContribution</span><span class="p">(</span><span class="n">K_VIJ_0</span><span class="p">,</span> <span class="n">csrGenerator</span><span class="p">),</span>
-            <span class="n">VIJContribution</span><span class="p">(</span><span class="n">K_VIJ_f</span><span class="p">,</span> <span class="n">csrGenerator</span><span class="p">),</span>
+            <span class="n">VIJSystemMatrixAssembly</span><span class="p">(</span><span class="n">csrGenerator</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="n">VIJSystemMatrixAssembly</span><span class="p">(</span><span class="n">csrGenerator</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
         <span class="p">)</span>
 
         <span class="c1"># this cache carries three VIJ matrices and no direct-to-CSR assembler; cleared explicitly so</span>

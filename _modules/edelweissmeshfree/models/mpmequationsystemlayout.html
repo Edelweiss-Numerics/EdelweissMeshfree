@@ -113,6 +113,8 @@
 <span class="sd">:class:`~edelweissmeshfree.models.mpmmodel.MPMModel` gives EdelweissFE's implicit solvers whenever they (re)build</span>
 <span class="sd">their equation system, see :meth:`~edelweissmeshfree.models.mpmmodel.MPMModel.buildEquationSystem`."""</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
+
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.models.equationsystemlayout</span><span class="w"> </span><span class="kn">import</span> <span class="n">EquationSystemLayout</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.numerics.dofmanager</span><span class="w"> </span><span class="kn">import</span> <span class="n">DofManager</span><span class="p">,</span> <span class="n">DofVector</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.sets.nodeset</span><span class="w"> </span><span class="kn">import</span> <span class="n">NodeSet</span>
@@ -171,6 +173,10 @@
         <span class="c1">#: The node fields on the nodes of the active domain.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">activeNodeFields</span> <span class="o">=</span> <span class="n">activeNodeFields</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">modelForLinearSolver</span> <span class="o">=</span> <span class="n">modelForLinearSolver</span>
+        <span class="c1">#: The material points of the model, a list the solver hands out in chunks.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">materialPoints</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">materialPoints</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="c1">#: The active cells and the cell elements, which interpolate the solution to the material points they hold.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cellsInterpolatingToMaterialPoints</span> <span class="o">=</span> <span class="n">activeCells</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">cellElements</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
 
 <div class="viewcode-block" id="MPMEquationSystemLayout.writeSolutionToDofVector">
 <a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.writeSolutionToDofVector">[docs]</a>
@@ -226,11 +232,12 @@
 
 <div class="viewcode-block" id="MPMEquationSystemLayout.updateMaterialPoints">
 <a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.updateMaterialPoints">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">updateMaterialPoints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dU</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">updateMaterialPoints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dU</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">,</span> <span class="n">forEachChunk</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">list</span><span class="p">,</span> <span class="n">Callable</span><span class="p">],</span> <span class="kc">None</span><span class="p">]):</span>
 <span class="w">        </span><span class="sd">"""Update the material points with the trial solution increment, before the solver computes the cells, which</span>
 <span class="sd">        integrate them: the material points return to their converged state, every active cell (and cell element)</span>
 <span class="sd">        interpolates the solution increment to the material points it holds, and the material points evaluate their</span>
-<span class="sd">        material.</span>
+<span class="sd">        material. Each of the three is a loop over independent entities -- a material point lies in one cell -- in the</span>
+<span class="sd">        solver's loop over chunks, on its threads for a parallel solver.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -238,22 +245,29 @@
 <span class="sd">            The trial solution increment.</span>
 <span class="sd">        timeStep</span>
 <span class="sd">            The time step.</span>
+<span class="sd">        forEachChunk</span>
+<span class="sd">            The solver's loop over chunks of independent entities, see</span>
+<span class="sd">            :meth:`~edelweissfe.solvers.nonlinearimplicitstatic.NIST.forEachChunk`.</span>
 <span class="sd">        """</span>
 
         <span class="n">time</span> <span class="o">=</span> <span class="n">timeStep</span><span class="o">.</span><span class="n">totalTime</span>
         <span class="n">dT</span> <span class="o">=</span> <span class="n">timeStep</span><span class="o">.</span><span class="n">timeIncrement</span>
 
-        <span class="k">for</span> <span class="n">materialPoint</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">materialPoints</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-            <span class="n">materialPoint</span><span class="o">.</span><span class="n">prepareYourself</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">dT</span><span class="p">)</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">prepare</span><span class="p">(</span><span class="n">materialPoints</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">materialPoint</span> <span class="ow">in</span> <span class="n">materialPoints</span><span class="p">:</span>
+                <span class="n">materialPoint</span><span class="o">.</span><span class="n">prepareYourself</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">dT</span><span class="p">)</span>
 
-        <span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">activeCells</span><span class="p">:</span>
-            <span class="n">cell</span><span class="o">.</span><span class="n">interpolateFieldsToMaterialPoints</span><span class="p">(</span><span class="n">dU</span><span class="p">[</span><span class="n">cell</span><span class="p">])</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">interpolate</span><span class="p">(</span><span class="n">cells</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="n">cells</span><span class="p">:</span>
+                <span class="n">cell</span><span class="o">.</span><span class="n">interpolateFieldsToMaterialPoints</span><span class="p">(</span><span class="n">dU</span><span class="p">[</span><span class="n">cell</span><span class="p">])</span>
 
-        <span class="k">for</span> <span class="n">cellElement</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">cellElements</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-            <span class="n">cellElement</span><span class="o">.</span><span class="n">interpolateFieldsToMaterialPoints</span><span class="p">(</span><span class="n">dU</span><span class="p">[</span><span class="n">cellElement</span><span class="p">])</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">compute</span><span class="p">(</span><span class="n">materialPoints</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">materialPoint</span> <span class="ow">in</span> <span class="n">materialPoints</span><span class="p">:</span>
+                <span class="n">materialPoint</span><span class="o">.</span><span class="n">computeYourself</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">dT</span><span class="p">)</span>
 
-        <span class="k">for</span> <span class="n">materialPoint</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">materialPoints</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-            <span class="n">materialPoint</span><span class="o">.</span><span class="n">computeYourself</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">dT</span><span class="p">)</span></div>
+        <span class="n">forEachChunk</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">materialPoints</span><span class="p">,</span> <span class="n">prepare</span><span class="p">)</span>
+        <span class="n">forEachChunk</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cellsInterpolatingToMaterialPoints</span><span class="p">,</span> <span class="n">interpolate</span><span class="p">)</span>
+        <span class="n">forEachChunk</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">materialPoints</span><span class="p">,</span> <span class="n">compute</span><span class="p">)</span></div>
 </div>
 
 </pre></div>

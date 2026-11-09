@@ -452,9 +452,8 @@ make it large, so the memset is charged here rather than treated as overhead.
 <code class="docutils literal notranslate"><span class="pre">eval</span></code> the particle loop, writing each block into its slab.
 <code class="docutils literal notranslate"><span class="pre">gather</span></code> <code class="docutils literal notranslate"><span class="pre">CSRGenerator.updateCSR</span></code>, the production gather.</p>
 </dd>
-<dt>direct path</dt><dd><p><code class="docutils literal notranslate"><span class="pre">begin</span></code> clearing the private CSR buffers.
-<code class="docutils literal notranslate"><span class="pre">eval</span></code> the particle loop, writing into a cached scratch block and scattering it.
-<code class="docutils literal notranslate"><span class="pre">reduce</span></code> summing the private buffers.</p>
+<dt>direct path</dt><dd><p><code class="docutils literal notranslate"><span class="pre">begin</span></code> clearing the CSR data array.
+<code class="docutils literal notranslate"><span class="pre">eval</span></code> the particle loop, writing into a cached scratch block and scattering it.</p>
 </dd>
 </dl>
 <p>Medians are reported, with the spread, because the scatter was previously measured varying by
@@ -549,7 +548,7 @@ nothing has to clear or re-read a multi-gigabyte array.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._reportAssemblyMemory">
-<span class="sig-name descname"><span class="pre">_reportAssemblyMemory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">K_VIJ</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memoryOfBufferCount</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/solvers/nqsmarmotparallel.html#NQSParallelForMarmot._reportAssemblyMemory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._reportAssemblyMemory" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">_reportAssemblyMemory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">K_VIJ</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assemblerBytes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/solvers/nqsmarmotparallel.html#NQSParallelForMarmot._reportAssemblyMemory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._reportAssemblyMemory" title="Link to this definition"></a></dt>
 <dd><p>Report what each assembly path actually costs in memory, term by term.</p>
 <p>The memory balance is the point of the direct path – the DOF ceiling is set by it, not by
 the assembly time – and it has been misreported twice, so this prints every term rather
@@ -563,9 +562,8 @@ to build its offset map, the VIJ path to gather), and the CSR matrix itself
 <dt>VIJ only</dt><dd><p>the <code class="docutils literal notranslate"><span class="pre">sizeVIJ</span></code> value array, plus the gather map <code class="docutils literal notranslate"><span class="pre">gather_sources</span></code> (int32 per COO pair)
 and <code class="docutils literal notranslate"><span class="pre">assembly_ptr</span></code> (int32 per nnz).</p>
 </dd>
-<dt>direct only</dt><dd><p>the <code class="docutils literal notranslate"><span class="pre">offsets</span></code> map (uint16 per COO pair), the private CSR copies
-(<code class="docutils literal notranslate"><span class="pre">nBuffers</span> <span class="pre">*</span> <span class="pre">nnz</span> <span class="pre">*</span> <span class="pre">8</span></code>) and <code class="docutils literal notranslate"><span class="pre">entityRows</span></code>. Reported once per buffer count, because
-that term is the whole reason the buffer count is a knob.</p>
+<dt>direct only</dt><dd><p>the <code class="docutils literal notranslate"><span class="pre">offsets</span></code> map (uint16 per COO pair) and <code class="docutils literal notranslate"><span class="pre">entityRows</span></code>; the threads scatter into
+the CSR data array itself.</p>
 </dd>
 </dl>
 <p>The totals reported by the C++ cores (<code class="docutils literal notranslate"><span class="pre">CSRGenerator.memoryBytes</span></code> and
@@ -575,7 +573,7 @@ so a term that is wrong here shows up as a mismatch rather than propagating sile
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>K_VIJ</strong> (<em>VIJSystemMatrix</em>) – The VIJ system matrix, for the value and index array sizes.</p></li>
-<li><p><strong>memoryOfBufferCount</strong> (<em>dict</em>) – <code class="docutils literal notranslate"><span class="pre">DirectCSRAssembler.memoryBytes</span></code> for each buffer count that was configured.</p></li>
+<li><p><strong>assemblerBytes</strong> (<em>int</em>) – <code class="docutils literal notranslate"><span class="pre">DirectCSRAssembler.memoryBytes</span></code>.</p></li>
 </ul>
 </dd>
 </dl>
@@ -595,15 +593,6 @@ so a term that is wrong here shows up as a mismatch rather than propagating sile
 </ul>
 </dd>
 </dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot.directCSRBufferSweep">
-<span class="sig-name descname"><span class="pre">directCSRBufferSweep</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">()</span></span><a class="headerlink" href="#edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot.directCSRBufferSweep" title="Link to this definition"></a></dt>
-<dd><p>Private-buffer counts to time in turn, e.g. <code class="docutils literal notranslate"><span class="pre">(16,</span> <span class="pre">4,</span> <span class="pre">1)</span></code>. Empty means time only whatever the
-assembler is currently configured with. Sweeping here rather than across separate runs keeps
-every configuration on the same state, the same increment and the same process – and lets one
-offset map serve all of them, since only the buffers are reallocated.</p>
 </dd></dl>
 
 <dl class="py attribute">

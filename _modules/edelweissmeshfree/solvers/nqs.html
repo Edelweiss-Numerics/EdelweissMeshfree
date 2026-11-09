@@ -672,7 +672,7 @@
                     <span class="k">raise</span> <span class="n">ReachedMaxIterations</span><span class="p">(</span><span class="s2">"Reached max. iterations in current increment, cutting back"</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="ow">not</span> <span class="n">quasi_Newton</span><span class="p">:</span>
-                <span class="n">K_CSR</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">toCSR</span><span class="p">(</span><span class="n">useInPlace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="n">K_CSR</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">assembledMatrix</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
                 <span class="k">if</span> <span class="n">iterationOptions</span><span class="p">[</span><span class="s2">"fall back to quasi Newton after allowed residual growths"</span><span class="p">]:</span>
                     <span class="k">if</span> <span class="n">iterationCounter</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                         <span class="n">K_CSR_elastic</span> <span class="o">=</span> <span class="n">K_CSR</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>

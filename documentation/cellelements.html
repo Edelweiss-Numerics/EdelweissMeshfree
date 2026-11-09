@@ -147,6 +147,8 @@ If you want to implement a new CellElement, you have to inherit from this class.
 </dd>
 <dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.base.cell.CellBase.cellNumber" title="edelweissmeshfree.cells.base.cell.CellBase.cellNumber"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cellNumber</span></code></a></dt><dd><p>The unique number of this cell</p>
 </dd>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs" title="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">couplesAllItsDofs</span></code></a></dt><dd><p>Whether the entity’s block couples every one of its degrees of freedom with every other one.</p>
+</dd>
 <dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.base.cell.CellBase.dofIndicesPermutation" title="edelweissmeshfree.cells.base.cell.CellBase.dofIndicesPermutation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dofIndicesPermutation</span></code></a></dt><dd><p>The permutation pattern for the residual vector and the stiffness matrix to aggregate all entries in order to resemble the defined fields nodewise.</p>
 </dd>
 <dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.base.cell.CellBase.ensightType" title="edelweissmeshfree.cells.base.cell.CellBase.ensightType"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ensightType</span></code></a></dt><dd><p>The shape of the element in Ensight Gold notation.</p>
@@ -295,6 +297,8 @@ This class is not intended to be used directly, but to be subclassed by the actu
 <dt><strong>assignedMaterialPoints</strong></dt><dd></dd>
 <dt><strong>cellNumber</strong></dt><dd></dd>
 <dt><strong>cellType</strong></dt><dd></dd>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs" title="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">couplesAllItsDofs</span></code></a></dt><dd><p><code class="docutils literal notranslate"><span class="pre">True</span></code>: the block is the dense <code class="docutils literal notranslate"><span class="pre">nDof</span> <span class="pre">x</span> <span class="pre">nDof</span></code> matrix, column-major.</p>
+</dd>
 <dt><strong>dofIndicesPermutation</strong></dt><dd></dd>
 <dt><strong>elNumber</strong></dt><dd></dd>
 <dt><strong>ensightType</strong></dt><dd></dd>
@@ -408,6 +412,8 @@ as for an EdelweissFE element.</p>
 <dt><strong>assignedMaterialPoints</strong></dt><dd></dd>
 <dt><strong>cellNumber</strong></dt><dd></dd>
 <dt><strong>cellType</strong></dt><dd></dd>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs" title="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">couplesAllItsDofs</span></code></a></dt><dd><p><code class="docutils literal notranslate"><span class="pre">True</span></code>: the block is the dense <code class="docutils literal notranslate"><span class="pre">nDof</span> <span class="pre">x</span> <span class="pre">nDof</span></code> matrix, column-major.</p>
+</dd>
 <dt><strong>dofIndicesPermutation</strong></dt><dd></dd>
 <dt><strong>elNumber</strong></dt><dd></dd>
 <dt><strong>ensightType</strong></dt><dd></dd>
