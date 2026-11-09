@@ -36,33 +36,28 @@ from edelweissfe.timesteppers.timestep import TimeStep
 
 
 class Dirichlet(DirichletBase):
+    """
+    This is a classical dirichlet boundary condition for MPM models.
+
+    Parameters
+    ----------
+    name : str
+        Name of the boundary condition.
+    nSet : NodeSet
+        The node set to apply the BC to.
+    field : str
+        The field to apply the BC to.
+    values : dict
+        The prescribed increment of the field over the step, by component.
+    model : MPMModel
+        The MPM model tree.
+    journal : Journal
+        The journal to write messages to.
+    f_t : Callable[[float], float]
+        The amplitude of the prescribed increment over the step progress.
+    """
 
     def __init__(self, name, nSet, field, values, model, journal, f_t: Callable[[float], float] = None):
-        """
-        This is a classical dirichlet boundary condition for MPM models.
-
-        Parameters
-        ----------
-        name : str
-            Name of the distributed load.
-        nSet : NodeSet
-            The node set to apply the BC to.
-        field : str
-            The field to apply the BC to.
-
-        model : MPMModel
-            The MPM model tree.
-        journal : Journal
-            The journal to write messages to.
-        cells: CellSet
-            The cells to apply the distributed load to.
-        bodyLoadType: str
-            The type of the body load, e.g., "gravity".
-        loadVector : np.ndarray
-            The load vector to apply to the particles.
-        f_t : Callable[[float], float]
-                The amplitude function of the distributed load.
-        """
         self.name = name
         self._journal = journal
         self._domainSize = model.domainSize

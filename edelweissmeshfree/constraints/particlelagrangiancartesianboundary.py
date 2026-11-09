@@ -12,15 +12,20 @@ from edelweissmeshfree.particles.base.baseparticle import BaseParticle
 
 
 class ParticleLagrangianContactCartesianBoundaryConstraint(MPMConstraintBase):
-    """
+    r"""
     This class implements a Lagrangian contact boundary constraint.
     It prevents a particle from penetrating a defined boundary surface.
     The constraint is applied using Lagrange multipliers to enforce the contact condition.
     Only cartesian planes are supported as boundary surfaces.
 
-    The constraint equation is defined as:
-        g = n . (x - x_boundary) <= 0
-    where n is the orientation of boundary, x is the particle position, and x_boundary is the boundary position.
+    The constraint equation is defined as
+
+    .. math::
+
+        g = \boldsymbol{n} \cdot (\boldsymbol{x} - \boldsymbol{x}_{\mathrm{boundary}}) \leq 0,
+
+    where :math:`\boldsymbol{n}` is the orientation of the boundary, :math:`\boldsymbol{x}` the particle position, and
+    :math:`\boldsymbol{x}_{\mathrm{boundary}}` the boundary position.
 
     The orientation is determined based on the initial position of the particle relative to the boundary.
 

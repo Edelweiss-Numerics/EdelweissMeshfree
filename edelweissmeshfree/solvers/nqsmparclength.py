@@ -40,6 +40,7 @@ import numpy as np
 from edelweissfe.constraints.base.constraintbase import ConstraintBase
 from edelweissfe.numerics.dofmanager import DofManager, DofVector
 from edelweissfe.outputmanagers.base.outputmanagerbase import OutputManagerBase
+from edelweissfe.stepactions.base.arclengthcontrollerbase import ArcLengthControllerBase
 from edelweissfe.stepactions.base.dirichletbase import DirichletBase
 from edelweissfe.timesteppers.timestep import TimeStep
 from edelweissfe.utils.exceptions import DivergingSolution, ReachedMaxIterations
@@ -53,9 +54,6 @@ from edelweissmeshfree.particlemanagers.base.baseparticlemanager import (
     BaseParticleManager,
 )
 from edelweissmeshfree.solvers.nqsmarmotparallel import NQSParallelForMarmot
-from edelweissmeshfree.stepactions.base.arclengthcontrollerbase import (
-    ArcLengthControllerBase,
-)
 from edelweissmeshfree.stepactions.base.mpmbodyloadbase import MPMBodyLoadBase
 from edelweissmeshfree.stepactions.base.mpmdistributedloadbase import (
     MPMDistributedLoadBase,
