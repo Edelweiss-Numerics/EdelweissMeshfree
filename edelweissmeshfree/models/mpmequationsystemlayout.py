@@ -38,6 +38,8 @@
 :class:`~edelweissmeshfree.models.mpmmodel.MPMModel` gives EdelweissFE's implicit solvers whenever they (re)build
 their equation system, see :meth:`~edelweissmeshfree.models.mpmmodel.MPMModel.buildEquationSystem`."""
 
+from collections.abc import Callable
+
 from edelweissfe.models.equationsystemlayout import EquationSystemLayout
 from edelweissfe.numerics.dofmanager import DofManager, DofVector
 from edelweissfe.sets.nodeset import NodeSet
@@ -94,6 +96,10 @@ class MPMEquationSystemLayout(EquationSystemLayout):
         #: The node fields on the nodes of the active domain.
         self.activeNodeFields = activeNodeFields
         self.modelForLinearSolver = modelForLinearSolver
+        #: The material points of the model, a list the solver hands out in chunks.
+        self.materialPoints = list(model.materialPoints.values())
+        #: The active cells and the cell elements, which interpolate the solution to the material points they hold.
+        self.cellsInterpolatingToMaterialPoints = activeCells + list(model.cellElements.values())
 
     def writeSolutionToDofVector(self, U: DofVector) -> DofVector:
         """Write the solution the model carries from increment to increment into the solution vector of a (re)built
@@ -141,11 +147,12 @@ class MPMEquationSystemLayout(EquationSystemLayout):
 
         self.dofManager.writeDofVectorToScalarVariables(U)
 
-    def updateMaterialPoints(self, dU: DofVector, timeStep: TimeStep):
+    def updateMaterialPoints(self, dU: DofVector, timeStep: TimeStep, forEachChunk: Callable[[list, Callable], None]):
         """Update the material points with the trial solution increment, before the solver computes the cells, which
         integrate them: the material points return to their converged state, every active cell (and cell element)
         interpolates the solution increment to the material points it holds, and the material points evaluate their
-        material.
+        material. Each of the three is a loop over independent entities -- a material point lies in one cell -- in the
+        solver's loop over chunks, on its threads for a parallel solver.
 
         Parameters
         ----------
@@ -153,19 +160,26 @@ class MPMEquationSystemLayout(EquationSystemLayout):
             The trial solution increment.
         timeStep
             The time step.
+        forEachChunk
+            The solver's loop over chunks of independent entities, see
+            :meth:`~edelweissfe.solvers.nonlinearimplicitstatic.NIST.forEachChunk`.
         """
 
         time = timeStep.totalTime
         dT = timeStep.timeIncrement
 
-        for materialPoint in self.model.materialPoints.values():
-            materialPoint.prepareYourself(time, dT)
+        def prepare(materialPoints):
+            for materialPoint in materialPoints:
+                materialPoint.prepareYourself(time, dT)
 
-        for cell in self.activeCells:
-            cell.interpolateFieldsToMaterialPoints(dU[cell])
+        def interpolate(cells):
+            for cell in cells:
+                cell.interpolateFieldsToMaterialPoints(dU[cell])
 
-        for cellElement in self.model.cellElements.values():
-            cellElement.interpolateFieldsToMaterialPoints(dU[cellElement])
+        def compute(materialPoints):
+            for materialPoint in materialPoints:
+                materialPoint.computeYourself(time, dT)
 
-        for materialPoint in self.model.materialPoints.values():
-            materialPoint.computeYourself(time, dT)
+        forEachChunk(self.materialPoints, prepare)
+        forEachChunk(self.cellsInterpolatingToMaterialPoints, interpolate)
+        forEachChunk(self.materialPoints, compute)

@@ -40,8 +40,13 @@ That is the whole change. What it does:
   distributed loads -- writes into a small reused scratch block that is then scattered.
 
 None of the contributors themselves changed. They ask the same question they always did (*"give me the
-block for this entity"*); only what sits behind that request differs, via
-:class:`~edelweissmeshfree.numerics.systemmatrixcontribution.SystemMatrixContributionBase`.
+block for this entity"*); only what sits behind that request differs, via EdelweissFE's
+:class:`~edelweissfe.numerics.systemmatrixassembly.SystemMatrixAssembly`.
+
+An :class:`~edelweissmeshfree.models.mpmmodel.MPMModel` solved by EdelweissFE's implicit solvers selects the path
+with their option ``systemMatrixAssembly`` (``vij`` or ``direct``); the elements, cells and particles are then
+computed in the solver's own loop, on its threads, and every thread scatters into a CSR copy of its own (see
+EdelweissFE's *System matrix assembly* page).
 
 What it is worth
 ----------------
@@ -124,23 +129,13 @@ direct path at 126.77 GiB peak.
    by about 13.5% against a deformed state, because deformation grows the neighbour lists. Scale its
    numbers up before judging whether a grid will survive a whole simulation.
 
-Private copies, and reproducibility
------------------------------------
+One CSR array, and reproducibility
+----------------------------------
 
-Threads need somewhere to accumulate. By default each gets its own copy of the CSR data, which is
-synchronisation-free and keeps the summation order fixed, so results are bit-reproducible. That costs
-``numThreads x nnz x 8`` bytes. ``directCSRNumBuffers`` reduces the count, down to ``1`` for a fully
-atomic scatter.
-
-Measured at 43,350 DOF on 16 threads: 16 copies cost 11.72 GiB and 3.43 s; one copy costs 3.76 GiB and
-3.83 s, i.e. **11.8% slower for 3.1x less memory**. The intermediate setting of 4 is not worth having --
-it pays 10.2 of those 11.8 percentage points for only part of the saving, because the cost is the atomic
-instruction rather than contention.
-
-**Keep the default unless memory is genuinely binding.** Atomics make the summation order depend on
-thread interleaving, so re-running a simulation no longer reproduces the previous run bit-for-bit. Given
-that peak memory is usually set by something other than the assembly (below), the saving often buys
-nothing while the reproducibility loss is real.
+All threads of the particle kernel scatter into the one CSR data array of the matrix, every addition
+atomic (see EdelweissFE's page on the system matrix assembly); per thread there is only a scratch block. The
+order in which the threads add to an entry depends on their timing, so re-running a simulation with more
+than one thread reproduces the previous run to round-off, not bit for bit.
 
 Where the memory ceiling actually is
 ------------------------------------
@@ -173,24 +168,19 @@ peak to sit well above it. If a run dies of memory, look at the setup phase befo
 Limitations
 -----------
 
-- **Only dense contributions.** The scatter addresses a dense ``nDof x nDof`` column-major block. Every
-  meshfree entity lays its contribution out that way, but a constraint is free to declare a sparse
-  custom VIJ pattern; such an entity raises ``NotImplementedError`` at registration rather than being
-  silently misassembled.
-- **The arc-length solver is not supported.** It forms more than one matrix (a reference-load
-  stiffness) and combines them by array arithmetic, which a path that accumulates into a single CSR copy
+- **EdelweissMeshfree's own arc-length solver is not supported.** It forms more than one matrix (a reference-load
+  stiffness) and combines them by array arithmetic, which a path that accumulates into a single CSR matrix
   cannot express. It stays on the staging path and says so.
 - **The non-particle contributors are assembled sequentially.** They are under 2% of the runtime, so
-  this is deliberate; a threaded caller reaching
-  :class:`~edelweissmeshfree.numerics.systemmatrixcontribution.DirectCSRContribution` raises rather than
-  racing.
+  this is deliberate; they write through the blocks of worker 0 of
+  :class:`~edelweissfe.numerics.systemmatrixassembly.DirectCSRSystemMatrixAssembly`.
 - **The assembly diagnostics need the staging path**, since they compare against it. Requesting them
   together with ``useDirectCSRAssembly`` raises.
 
 Diagnostics
 -----------
 
-Three switches on the parallel Marmot solver, all off by default:
+Two switches on the parallel Marmot solver, both off by default:
 
 ``verifyDirectCSRAssembly``
     Assemble the particles several ways on identical state and cross-check. Reports an addressing check
@@ -204,10 +194,6 @@ Three switches on the parallel Marmot solver, all off by default:
     which goes first. Also prints a term-by-term memory table for both paths with the C++ accounting as
     a cross-check on the arithmetic.
 
-``directCSRBufferSweep``
-    Time several private-copy counts in turn, e.g. ``(16, 4, 1)``, on the same state -- so the
-    memory/speed trade is measured rather than argued.
-
 .. note::
 
    Two traps when measuring this. Restart from a checkpoint and run **one** increment; and check that
@@ -218,9 +204,4 @@ Three switches on the parallel Marmot solver, all off by default:
 Reference
 ---------
 
-``SystemMatrixContribution`` classes
-------------------------------------
-
-.. automodule:: edelweissmeshfree.numerics.systemmatrixcontribution
-   :members:
-   :private-members:
+The assembly classes are EdelweissFE's, in :mod:`edelweissfe.numerics.systemmatrixassembly`.

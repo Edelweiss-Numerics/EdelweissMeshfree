@@ -222,6 +222,11 @@ cdef class MarmotCellWrapper:
         self._marmotCell.getInterpolationVector(&Nview_[0], &coords[0])
         return N
 
+    @property
+    def couplesAllItsDofs(self) -> bool:
+        """``True``: the block is the dense ``nDof x nDof`` matrix, column-major."""
+        return True
+
     def getVIJContributionSize(self) -> int:
         """Return the number of entries this entity contributes to the VIJ (COO) system matrix."""
         return self.nDof**2
