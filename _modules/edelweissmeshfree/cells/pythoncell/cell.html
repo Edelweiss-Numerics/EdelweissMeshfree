@@ -354,13 +354,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">interpolateFieldsToMaterialPoints</span><span class="p">(</span><span class="n">dU</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="PythonCell.computeMaterialPointKernels">
-<a class="viewcode-back" href="../../../../documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.computeMaterialPointKernels">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">computeMaterialPointKernels</span><span class="p">(</span>
+<div class="viewcode-block" id="PythonCell.computeKernels">
+<a class="viewcode-back" href="../../../../documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.computeKernels">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">computeKernels</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">dU</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-        <span class="n">P</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
         <span class="n">K</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">P</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">U</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">dU</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
         <span class="n">timeTotal</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
         <span class="n">dTime</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="p">):</span>
@@ -368,12 +369,14 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        dU</span>
-<span class="sd">            The current solution increment (8,).</span>
-<span class="sd">        P</span>
-<span class="sd">            The internal load vector to be filled (8,).</span>
 <span class="sd">        K</span>
-<span class="sd">            The stiffness matrix to be filled (64,) in row-major order.</span>
+<span class="sd">            The stiffness matrix to be augmented (8 x 8).</span>
+<span class="sd">        P</span>
+<span class="sd">            The internal load vector to be augmented (8,).</span>
+<span class="sd">        U</span>
+<span class="sd">            The current solution (8,); unused, the material points carry the state.</span>
+<span class="sd">        dU</span>
+<span class="sd">            The current solution increment (8,); unused, it reached the material points by interpolation.</span>
 <span class="sd">        timeTotal</span>
 <span class="sd">            The current total time.</span>
 <span class="sd">        dTime</span>

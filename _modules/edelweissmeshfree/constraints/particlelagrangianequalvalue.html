@@ -113,6 +113,9 @@
 <span class="sd">        The full MPMModel instance.</span>
 <span class="sd">    """</span>
 
+    <span class="c1">#: Carries nothing from one increment to the next.</span>
+    <span class="n">checkpointedState</span> <span class="o">=</span> <span class="p">{}</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -202,16 +205,16 @@
         <span class="k">return</span> <span class="n">hasChanged</span></div>
 
 
-<div class="viewcode-block" id="ParticleLagrangianEqualValueConstraint.applyConstraint">
-<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlelagrangianequalvalue.ParticleLagrangianEqualValueConstraint.applyConstraint">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">applyConstraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dU_</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">PExt</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">V</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">):</span>
+<div class="viewcode-block" id="ParticleLagrangianEqualValueConstraint.computeKernels">
+<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlelagrangianequalvalue.ParticleLagrangianEqualValueConstraint.computeKernels">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">computeKernels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">U_np</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">dU</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">P</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">K</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">):</span>
 
-        <span class="n">dU_U</span> <span class="o">=</span> <span class="n">dU_</span><span class="p">[:</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span><span class="p">]</span>
-        <span class="n">dU_L</span> <span class="o">=</span> <span class="n">dU_</span><span class="p">[</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span> <span class="p">:]</span>
-        <span class="n">PExt_U</span> <span class="o">=</span> <span class="n">PExt</span><span class="p">[:</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span><span class="p">]</span>
-        <span class="n">PExt_L</span> <span class="o">=</span> <span class="n">PExt</span><span class="p">[</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span> <span class="p">:]</span>
+        <span class="n">dU_U</span> <span class="o">=</span> <span class="n">dU</span><span class="p">[:</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span><span class="p">]</span>
+        <span class="n">dU_L</span> <span class="o">=</span> <span class="n">dU</span><span class="p">[</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span> <span class="p">:]</span>
+        <span class="n">P_U</span> <span class="o">=</span> <span class="n">P</span><span class="p">[:</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span><span class="p">]</span>
+        <span class="n">P_L</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span> <span class="p">:]</span>
 
-        <span class="n">K</span> <span class="o">=</span> <span class="n">V</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">nDof</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nDof</span><span class="p">))</span>
+        <span class="n">K</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">nDof</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nDof</span><span class="p">))</span>
 
         <span class="n">K_UL</span> <span class="o">=</span> <span class="n">K</span><span class="p">[:</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span><span class="p">,</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span> <span class="p">:]</span>
         <span class="n">K_LU</span> <span class="o">=</span> <span class="n">K</span><span class="p">[</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span> <span class="p">:,</span> <span class="p">:</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span><span class="p">]</span>
@@ -221,7 +224,7 @@
             <span class="c1"># lag is the index of the lagrangian multiplier</span>
             <span class="c1"># i is the component of the field being constrained</span>
 
-            <span class="n">P_U_i</span> <span class="o">=</span> <span class="n">PExt_U</span><span class="p">[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span>
+            <span class="n">P_U_i</span> <span class="o">=</span> <span class="n">P_U</span><span class="p">[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span>
             <span class="n">dU_U_j</span> <span class="o">=</span> <span class="n">dU_U</span><span class="p">[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span>
 
             <span class="n">K_UL_j</span> <span class="o">=</span> <span class="n">K_UL</span><span class="p">[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">,</span> <span class="p">:]</span>
@@ -244,7 +247,7 @@
 
             <span class="n">P_U_i</span><span class="p">[</span><span class="n">masterNodeIdcs</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dL_l</span> <span class="o">*</span> <span class="n">dg_l_dU_j_master</span>
             <span class="n">P_U_i</span><span class="p">[</span><span class="n">slaveNodeIdcs</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dL_l</span> <span class="o">*</span> <span class="n">dg_l_dU_j_slave</span>
-            <span class="n">PExt_L</span><span class="p">[</span><span class="n">lag</span><span class="p">]</span> <span class="o">+=</span> <span class="n">g_l</span>
+            <span class="n">P_L</span><span class="p">[</span><span class="n">lag</span><span class="p">]</span> <span class="o">+=</span> <span class="n">g_l</span>
 
             <span class="n">K_UL_j</span><span class="p">[</span><span class="n">masterNodeIdcs</span><span class="p">,</span> <span class="n">lag</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dg_l_dU_j_master</span>
             <span class="n">K_LU_j</span><span class="p">[</span><span class="n">lag</span><span class="p">,</span> <span class="n">masterNodeIdcs</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dg_l_dU_j_master</span>

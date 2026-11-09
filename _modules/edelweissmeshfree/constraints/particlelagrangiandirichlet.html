@@ -73,7 +73,9 @@
            <div itemprop="articleBody">
              
   <h1>Source code for edelweissmeshfree.constraints.particlelagrangiandirichlet</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.config.phenomena</span><span class="w"> </span><span class="kn">import</span> <span class="n">getFieldSize</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.timesteppers.timestep</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeStep</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.variables.scalarvariable</span><span class="w"> </span><span class="kn">import</span> <span class="n">ScalarVariable</span>
@@ -83,12 +85,47 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.particles.base.baseparticle</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseParticle</span>
 
 
-<div class="viewcode-block" id="ParticlePenaltyWeakDirichlet">
-<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlelagrangiandirichlet.ParticlePenaltyWeakDirichlet">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">ParticlePenaltyWeakDirichlet</span><span class="p">(</span><span class="n">MPMConstraintBase</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""</span>
-<span class="sd">    This is an implementation of weak Dirichlet boundary conditions using a penalty formulation.</span>
-<span class="sd">    It constrains a material point field increment.</span>
+<div class="viewcode-block" id="ParticleLagrangianDirichlet">
+<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlelagrangiandirichlet.ParticleLagrangianDirichlet">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ParticleLagrangianDirichlet</span><span class="p">(</span><span class="n">MPMConstraintBase</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Prescribes the increment of a field at points of a set of particles -- their centers, or some of their</span>
+<span class="sd">    vertices -- with Lagrange multipliers.</span>
+
+<span class="sd">    It is the Lagrange multiplier counterpart of</span>
+<span class="sd">    :class:`~edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet`, and takes the</span>
+<span class="sd">    same arguments, save the penalty parameter. A penalty spring enforces the prescribed value only approximately, the</span>
+<span class="sd">    more closely the stiffer it is; a multiplier enforces it exactly, at the cost of one more unknown per point and</span>
+<span class="sd">    component, and of a zero block on the diagonal of the tangent. Where</span>
+<span class="sd">    :class:`~edelweissmeshfree.constraints.particlelagrangianweakdirichlet.ParticleLagrangianWeakDirichlet` constrains</span>
+<span class="sd">    one point of one particle, this constraint constrains all points of all its particles, and sums their multipliers</span>
+<span class="sd">    into one reaction force.</span>
+
+<span class="sd">    A particle interpolates the field from the nodes of its kernel functions, as an increment on the current</span>
+<span class="sd">    configuration: :math:`u(\boldsymbol{x}) = \boldsymbol{N}(\boldsymbol{x}) \cdot \Delta\mathbf{U}`. At every</span>
+<span class="sd">    constrained point :math:`\boldsymbol{x}_c` and for every prescribed component :math:`i`, a multiplier</span>
+<span class="sd">    :math:`\lambda` enforces</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        g = \boldsymbol{N}(\boldsymbol{x}_c) \cdot \Delta\mathbf{U}_i - \Delta\bar{u}_i = 0,</span>
+
+<span class="sd">    where :math:`\Delta\bar{u}_i` is the share of the step's prescribed increment that falls into the current</span>
+<span class="sd">    increment. Following the rule of every constraint (see</span>
+<span class="sd">    :class:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase`), the constraint adds</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \mathbf{P}_{U_i} \mathrel{+}= \lambda\, \boldsymbol{N}(\boldsymbol{x}_c), \qquad</span>
+<span class="sd">        P_\lambda \mathrel{+}= g, \qquad</span>
+<span class="sd">        \mathbf{K}_{U_i \lambda} \mathrel{+}= \boldsymbol{N}(\boldsymbol{x}_c), \qquad</span>
+<span class="sd">        \mathbf{K}_{\lambda U_i} \mathrel{+}= \boldsymbol{N}(\boldsymbol{x}_c)^T,</span>
+
+<span class="sd">    so that it acts on the particle with the point force :math:`-\lambda` at :math:`\boldsymbol{x}_c`.</span>
+<span class="sd">    ``reactionForce`` holds, per component of the field, the sum of the multipliers: the force with which the particles</span>
+<span class="sd">    act on the constraint.</span>
+
+<span class="sd">    The multipliers are ordered point by point -- particle by particle, and within a particle center or vertex by</span>
+<span class="sd">    vertex --, and within a point component by component.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -97,51 +134,55 @@
 <span class="sd">    model</span>
 <span class="sd">        The full MPMModel instance.</span>
 <span class="sd">    constrainedParticles</span>
-<span class="sd">        The list of particles to be constrained.</span>
+<span class="sd">        The particles to be constrained.</span>
 <span class="sd">    field</span>
 <span class="sd">        The field this constraint is acting on.</span>
 <span class="sd">    prescribedStepDelta</span>
-<span class="sd">        The dictionary containing the prescribed bc components for the field in the present load step.</span>
-<span class="sd">    penaltyParameter</span>
-<span class="sd">        The penalty parameter value.</span>
+<span class="sd">        The prescribed increment of the field over the step, by component.</span>
 <span class="sd">    constrain</span>
-<span class="sd">        Either constrain the center of the particle or a list of vertex indices for particles with multiple vertices.</span>
-<span class="sd">        If "center", the center of the particle is constrained. If a list, the vertices at the given indices are constrained.</span>
+<span class="sd">        ``"center"`` to constrain the center of every particle, or a list of vertex indices to constrain these vertices</span>
+<span class="sd">        of every particle.</span>
 <span class="sd">    """</span>
+
+    <span class="c1">#: Carries nothing from one increment to the next: the multipliers are unknowns of every increment.</span>
+    <span class="n">checkpointedState</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">model</span><span class="p">:</span> <span class="n">MPMModel</span><span class="p">,</span>
-        <span class="n">constrainedParticle</span><span class="p">:</span> <span class="n">BaseParticle</span><span class="p">,</span>
+        <span class="n">constrainedParticles</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">BaseParticle</span><span class="p">],</span>
         <span class="n">field</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">prescribedStepDelta</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
-        <span class="n">penaltyParameter</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
         <span class="n">constrain</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"center"</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_model</span> <span class="o">=</span> <span class="n">model</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_constrainedParticle</span> <span class="o">=</span> <span class="n">constrainedParticle</span>
-
+        <span class="bp">self</span><span class="o">.</span><span class="n">_constrainedParticles</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">constrainedParticles</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_field</span> <span class="o">=</span> <span class="n">field</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_prescribedStepDelta</span> <span class="o">=</span> <span class="n">prescribedStepDelta</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span> <span class="o">=</span> <span class="n">getFieldSize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_field</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">domainSize</span><span class="p">)</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">constrain</span> <span class="o">==</span> <span class="s2">"center"</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_constrainVertices</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">constrain</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">constrain</span> <span class="o">==</span> <span class="s2">"center"</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_constrainedVertices</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">nPointsPerParticle</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">constrain</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="n">constrain</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">constrain</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_constrainedVertices</span> <span class="o">=</span> <span class="n">constrain</span>
+            <span class="n">nPointsPerParticle</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">constrain</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">constrain</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Constrain must be 'center' or a list of vertex indices."</span><span class="p">)</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">constrain</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">constrain</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Constrain must be 'center' or a list of vertex indices."</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_constrainVertices</span> <span class="o">=</span> <span class="n">constrain</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">"Constraint '</span><span class="si">{:}</span><span class="s2">': constrain must be 'center' or a non-empty list of vertex indices."</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_prescribedStepDelta</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constrainVertices</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span> <span class="o">*=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_constrainVertices</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_constrainedParticles</span><span class="p">)</span> <span class="o">*</span> <span class="n">nPointsPerParticle</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_prescribedStepDelta</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">"Constraint '</span><span class="si">{:}</span><span class="s2">' constrains nothing: it needs particles and prescribed components."</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="p">)</span>
 
-        <span class="c1"># self.penaltyForce = np.zeros(self._fieldSize)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reactionForce</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -161,30 +202,30 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">nDof</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">scalarVariables</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scalarVariables</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lagrangianMultipliers</span>
 
-<div class="viewcode-block" id="ParticlePenaltyWeakDirichlet.getNumberOfAdditionalNeededScalarVariables">
-<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlelagrangiandirichlet.ParticlePenaltyWeakDirichlet.getNumberOfAdditionalNeededScalarVariables">[docs]</a>
+<div class="viewcode-block" id="ParticleLagrangianDirichlet.getNumberOfAdditionalNeededScalarVariables">
+<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlelagrangiandirichlet.ParticleLagrangianDirichlet.getNumberOfAdditionalNeededScalarVariables">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">getNumberOfAdditionalNeededScalarVariables</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-        <span class="k">return</span> <span class="mi">0</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span></div>
 
 
-<div class="viewcode-block" id="ParticlePenaltyWeakDirichlet.assignAdditionalScalarVariables">
-<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlelagrangiandirichlet.ParticlePenaltyWeakDirichlet.assignAdditionalScalarVariables">[docs]</a>
+<div class="viewcode-block" id="ParticleLagrangianDirichlet.assignAdditionalScalarVariables">
+<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlelagrangiandirichlet.ParticleLagrangianDirichlet.assignAdditionalScalarVariables">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">assignAdditionalScalarVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scalarVariables</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ScalarVariable</span><span class="p">]):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_scalarVariables</span> <span class="o">=</span> <span class="n">scalarVariables</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lagrangianMultipliers</span> <span class="o">=</span> <span class="n">scalarVariables</span></div>
 
 
-<div class="viewcode-block" id="ParticlePenaltyWeakDirichlet.updateConnectivity">
-<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlelagrangiandirichlet.ParticlePenaltyWeakDirichlet.updateConnectivity">[docs]</a>
+<div class="viewcode-block" id="ParticleLagrangianDirichlet.updateConnectivity">
+<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlelagrangiandirichlet.ParticleLagrangianDirichlet.updateConnectivity">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">updateConnectivity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
         <span class="n">nodes</span> <span class="o">=</span> <span class="p">{</span>
             <span class="n">n</span><span class="p">:</span> <span class="n">i</span>
@@ -195,44 +236,79 @@
             <span class="p">)</span>
         <span class="p">}</span>
 
-        <span class="n">hasChanged</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="k">if</span> <span class="n">nodes</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="p">:</span>
-            <span class="n">hasChanged</span> <span class="o">=</span> <span class="kc">True</span>
-
+        <span class="n">hasChanged</span> <span class="o">=</span> <span class="n">nodes</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span> <span class="o">=</span> <span class="n">nodes</span>
 
         <span class="k">return</span> <span class="n">hasChanged</span></div>
 
 
-<div class="viewcode-block" id="ParticlePenaltyWeakDirichlet.applyConstraint">
-<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlelagrangiandirichlet.ParticlePenaltyWeakDirichlet.applyConstraint">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">applyConstraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dU</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">PExt</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">V</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">prescribedComponent</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prescribedStepDelta</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">P_i</span> <span class="o">=</span> <span class="n">PExt</span><span class="p">[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span>
-            <span class="n">dU_j</span> <span class="o">=</span> <span class="n">dU</span><span class="p">[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span>
+<div class="viewcode-block" id="ParticleLagrangianDirichlet._shapeFunctionsAtConstrainedPoints">
+<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlelagrangiandirichlet.ParticleLagrangianDirichlet._shapeFunctionsAtConstrainedPoints">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_shapeFunctionsAtConstrainedPoints</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]]:</span>
+<span class="w">        </span><span class="sd">"""The shape functions of the particles at the constrained points, point by point.</span>
 
-            <span class="n">K_ij</span> <span class="o">=</span> <span class="n">V</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">nDof</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nDof</span><span class="p">))[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">,</span> <span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list[tuple[np.ndarray, list[int]]]</span>
+<span class="sd">            For every point, the values of the shape functions there, and the indices of their nodes in this</span>
+<span class="sd">            constraint's node list.</span>
+<span class="sd">        """</span>
 
-            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constrainedParticles</span><span class="p">:</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constrainVertices</span><span class="p">:</span>
-                    <span class="n">constrainedCoordinates</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">getVertexCoordinates</span><span class="p">()[</span><span class="bp">self</span><span class="o">.</span><span class="n">_constrainVertices</span><span class="p">]</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">constrainedCoordinates</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">getCenterCoordinates</span><span class="p">()]</span>
+        <span class="n">shapeFunctionsAtPoints</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constrainedParticles</span><span class="p">:</span>
+            <span class="n">nodeIdcs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="p">[</span><span class="n">kf</span><span class="o">.</span><span class="n">node</span><span class="p">]</span> <span class="k">for</span> <span class="n">kf</span> <span class="ow">in</span> <span class="n">p</span><span class="o">.</span><span class="n">kernelFunctions</span><span class="p">]</span>
 
-                <span class="k">for</span> <span class="n">constrainedCoordinate</span> <span class="ow">in</span> <span class="n">constrainedCoordinates</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constrainedVertices</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">constrainedCoordinates</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">getCenterCoordinates</span><span class="p">()]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">constrainedCoordinates</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">getVertexCoordinates</span><span class="p">()[</span><span class="bp">self</span><span class="o">.</span><span class="n">_constrainedVertices</span><span class="p">]</span>
 
-                    <span class="n">N</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">getInterpolationVector</span><span class="p">(</span><span class="n">constrainedCoordinate</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">coordinates</span> <span class="ow">in</span> <span class="n">constrainedCoordinates</span><span class="p">:</span>
+                <span class="n">shapeFunctionsAtPoints</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">p</span><span class="o">.</span><span class="n">getInterpolationVector</span><span class="p">(</span><span class="n">coordinates</span><span class="p">),</span> <span class="n">nodeIdcs</span><span class="p">))</span>
 
-                    <span class="n">nodeIdcs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="p">[</span><span class="n">kf</span><span class="o">.</span><span class="n">node</span><span class="p">]</span> <span class="k">for</span> <span class="n">kf</span> <span class="ow">in</span> <span class="n">p</span><span class="o">.</span><span class="n">kernelFunctions</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">shapeFunctionsAtPoints</span></div>
 
-                    <span class="n">mpValue</span> <span class="o">=</span> <span class="n">N</span> <span class="o">@</span> <span class="n">dU_j</span><span class="p">[</span><span class="n">nodeIdcs</span><span class="p">]</span>
 
-                    <span class="n">P_i</span><span class="p">[</span><span class="n">nodeIdcs</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span>
-                        <span class="n">N</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_penaltyParameter</span> <span class="o">*</span> <span class="p">(</span><span class="n">mpValue</span> <span class="o">-</span> <span class="n">prescribedComponent</span> <span class="o">*</span> <span class="n">timeStep</span><span class="o">.</span><span class="n">stepProgressIncrement</span><span class="p">)</span>
-                    <span class="p">)</span>
-                    <span class="n">K_ij</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="n">nodeIdcs</span><span class="p">,</span> <span class="n">nodeIdcs</span><span class="p">)]</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_penaltyParameter</span>
+<div class="viewcode-block" id="ParticleLagrangianDirichlet.computeKernels">
+<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlelagrangiandirichlet.ParticleLagrangianDirichlet.computeKernels">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">computeKernels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">U_np</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">dU</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">P</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">K</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">):</span>
+        <span class="c1"># the nodal field values come first, the multipliers last</span>
+        <span class="n">nU</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span>
+        <span class="n">dU_U</span> <span class="o">=</span> <span class="n">dU</span><span class="p">[:</span><span class="n">nU</span><span class="p">]</span>
+        <span class="n">multipliers</span> <span class="o">=</span> <span class="n">dU</span><span class="p">[</span><span class="n">nU</span><span class="p">:]</span>
+        <span class="n">P_U</span> <span class="o">=</span> <span class="n">P</span><span class="p">[:</span><span class="n">nU</span><span class="p">]</span>
+        <span class="n">P_L</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="n">nU</span><span class="p">:]</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">penaltyForce</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">P_i</span><span class="p">)</span></div>
+        <span class="n">K</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">nDof</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nDof</span><span class="p">))</span>
+        <span class="n">K_UL</span> <span class="o">=</span> <span class="n">K</span><span class="p">[:</span><span class="n">nU</span><span class="p">,</span> <span class="n">nU</span><span class="p">:]</span>
+        <span class="n">K_LU</span> <span class="o">=</span> <span class="n">K</span><span class="p">[</span><span class="n">nU</span><span class="p">:,</span> <span class="p">:</span><span class="n">nU</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">reactionForce</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+
+        <span class="n">shapeFunctionsAtPoints</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_shapeFunctionsAtConstrainedPoints</span><span class="p">()</span>
+        <span class="n">nComponents</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_prescribedStepDelta</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">comp</span><span class="p">,</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">prescribedComponent</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_prescribedStepDelta</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+            <span class="c1"># comp counts the prescribed components, i is the component of the field</span>
+            <span class="n">dU_U_i</span> <span class="o">=</span> <span class="n">dU_U</span><span class="p">[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span>
+            <span class="n">P_U_i</span> <span class="o">=</span> <span class="n">P_U</span><span class="p">[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span>
+            <span class="n">K_UL_i</span> <span class="o">=</span> <span class="n">K_UL</span><span class="p">[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">,</span> <span class="p">:]</span>
+            <span class="n">K_LU_i</span> <span class="o">=</span> <span class="n">K_LU</span><span class="p">[:,</span> <span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span>
+
+            <span class="k">for</span> <span class="n">point</span><span class="p">,</span> <span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">nodeIdcs</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">shapeFunctionsAtPoints</span><span class="p">):</span>
+                <span class="n">lag</span> <span class="o">=</span> <span class="n">point</span> <span class="o">*</span> <span class="n">nComponents</span> <span class="o">+</span> <span class="n">comp</span>
+                <span class="n">multiplier</span> <span class="o">=</span> <span class="n">multipliers</span><span class="p">[</span><span class="n">lag</span><span class="p">]</span>
+
+                <span class="n">g</span> <span class="o">=</span> <span class="n">N</span> <span class="o">@</span> <span class="n">dU_U_i</span><span class="p">[</span><span class="n">nodeIdcs</span><span class="p">]</span> <span class="o">-</span> <span class="n">prescribedComponent</span> <span class="o">*</span> <span class="n">timeStep</span><span class="o">.</span><span class="n">stepProgressIncrement</span>
+                <span class="n">dg_dU_i</span> <span class="o">=</span> <span class="n">N</span>
+
+                <span class="n">P_U_i</span><span class="p">[</span><span class="n">nodeIdcs</span><span class="p">]</span> <span class="o">+=</span> <span class="n">multiplier</span> <span class="o">*</span> <span class="n">dg_dU_i</span>
+                <span class="n">P_L</span><span class="p">[</span><span class="n">lag</span><span class="p">]</span> <span class="o">+=</span> <span class="n">g</span>
+
+                <span class="n">K_UL_i</span><span class="p">[</span><span class="n">nodeIdcs</span><span class="p">,</span> <span class="n">lag</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dg_dU_i</span>
+                <span class="n">K_LU_i</span><span class="p">[</span><span class="n">lag</span><span class="p">,</span> <span class="n">nodeIdcs</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dg_dU_i</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">reactionForce</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">multiplier</span></div>
 </div>
 
 </pre></div>

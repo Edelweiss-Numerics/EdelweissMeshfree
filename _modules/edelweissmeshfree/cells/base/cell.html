@@ -135,8 +135,7 @@
 <span class="w">        </span><span class="sd">"""MPM cells in EdelweissMPM should be derived from this</span>
 <span class="sd">        base class in order to follow the general interface.</span>
 
-<span class="sd">        EdelweissMPM expects the layout of the internal and external load vectors, P, PExt, (and the stiffness)</span>
-<span class="sd">        to be of the form</span>
+<span class="sd">        EdelweissMeshfree expects the layout of the residual contribution P (and of the tangent) to be of the form</span>
 
 <span class="sd">        .. code-block:: console</span>
 
@@ -224,27 +223,36 @@
 <span class="sd">        """</span></div>
 
 
-<div class="viewcode-block" id="CellBase.computeMaterialPointKernels">
-<a class="viewcode-back" href="../../../../documentation/cells.html#edelweissmeshfree.cells.base.cell.CellBase.computeMaterialPointKernels">[docs]</a>
+<div class="viewcode-block" id="CellBase.computeKernels">
+<a class="viewcode-back" href="../../../../documentation/cells.html#edelweissmeshfree.cells.base.cell.CellBase.computeKernels">[docs]</a>
     <span class="nd">@abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">computeMaterialPointKernels</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">computeKernels</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">dU</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-        <span class="n">P</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
         <span class="n">K</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">P</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">U</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">dU</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
         <span class="n">timeTotal</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
         <span class="n">dTime</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Evaluate the kernel residual and stiffness for given time based for all assigned MaterialPoints.</span>
+<span class="w">        </span><span class="sd">"""Add the internal forces of all assigned material points to the residual, and their tangent: the</span>
+<span class="sd">        signature of :meth:`edelweissfe.elements.base.baseelement.BaseElement.computeKernels`, so that a solver</span>
+<span class="sd">        evaluates cells and elements alike.</span>
+
+<span class="sd">        A cell is incremental on the current configuration: its nodal values are increments, so a cell may read</span>
+<span class="sd">        ``dU``, but never ``U``. The increment has reached its material points by interpolation before, and their</span>
+<span class="sd">        state is what the cell integrates.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
+<span class="sd">        K</span>
+<span class="sd">            The tangent ``dP/dU`` to augment, the stiffness matrix.</span>
+<span class="sd">        P</span>
+<span class="sd">            The residual contribution to augment, the internal forces.</span>
+<span class="sd">        U</span>
+<span class="sd">            The current solution.</span>
 <span class="sd">        dU</span>
 <span class="sd">            The current solution increment.</span>
-<span class="sd">        P</span>
-<span class="sd">            The external load vector to be defined.</span>
-<span class="sd">        K</span>
-<span class="sd">            The stiffness matrix to be defined.</span>
 <span class="sd">        timeTotal</span>
 <span class="sd">            The current total time.</span>
 <span class="sd">        dTime</span>
@@ -264,7 +272,8 @@
         <span class="n">timeTotal</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
         <span class="n">dTime</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Compute bulk loads (body loads) for given time based for all assigned MaterialPoints.</span>
+<span class="w">        </span><span class="sd">"""Add the residual contribution of a body load on all assigned material points, the negative of the external</span>
+<span class="sd">        load :math:`-\\boldsymbol{f}_\\mathrm{ext}`, and its tangent, which is zero for a dead load.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -273,9 +282,9 @@
 <span class="sd">        load</span>
 <span class="sd">            The float (vector) describing the load.</span>
 <span class="sd">        P</span>
-<span class="sd">            The external load vector to be defined.</span>
+<span class="sd">            The residual contribution to augment, :math:`-\\boldsymbol{f}_\\mathrm{ext}`.</span>
 <span class="sd">        K</span>
-<span class="sd">            The stiffness matrix to be defined.</span>
+<span class="sd">            The tangent ``dP/dU`` to augment.</span>
 <span class="sd">        timeTotal</span>
 <span class="sd">            The current total time.</span>
 <span class="sd">        dTime</span>
@@ -297,7 +306,9 @@
         <span class="n">timeTotal</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
         <span class="n">dTime</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Compute distributed (surface) a for given time based for a specific assigned material point.</span>
+<span class="w">        </span><span class="sd">"""Add the residual contribution of a distributed (surface) load on a surface of one assigned material point,</span>
+<span class="sd">        the negative of the external load :math:`-\\boldsymbol{f}_\\mathrm{ext}`, and its tangent, which is nonzero</span>
+<span class="sd">        only for a load that follows the deformation.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -306,13 +317,13 @@
 <span class="sd">        surfaceID</span>
 <span class="sd">            The ID describing the surface of the material point.</span>
 <span class="sd">        materialPoint</span>
-<span class="sd">            The specific (already assigned) mateiral point for computing the surface load.</span>
+<span class="sd">            The specific (already assigned) material point for computing the surface load.</span>
 <span class="sd">        load</span>
 <span class="sd">            The float (vector) describing the load.</span>
 <span class="sd">        P</span>
-<span class="sd">            The external load vector to be defined.</span>
+<span class="sd">            The residual contribution to augment, :math:`-\\boldsymbol{f}_\\mathrm{ext}`.</span>
 <span class="sd">        K</span>
-<span class="sd">            The stiffness matrix to be defined.</span>
+<span class="sd">            The tangent ``dP/dU`` to augment.</span>
 <span class="sd">        timeTotal</span>
 <span class="sd">            The current total time.</span>
 <span class="sd">        dTime</span>

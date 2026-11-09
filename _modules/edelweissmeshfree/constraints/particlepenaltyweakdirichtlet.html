@@ -109,6 +109,9 @@
 <span class="sd">        If "center", the center of the particle is constrained. If a list, the vertices at the given indices are constrained.</span>
 <span class="sd">    """</span>
 
+    <span class="c1">#: Carries nothing from one increment to the next.</span>
+    <span class="n">checkpointedState</span> <span class="o">=</span> <span class="p">{}</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -205,14 +208,14 @@
         <span class="k">return</span> <span class="n">hasChanged</span></div>
 
 
-<div class="viewcode-block" id="ParticlePenaltyWeakDirichlet.applyConstraint">
-<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.applyConstraint">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">applyConstraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dU</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">PExt</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">V</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">):</span>
+<div class="viewcode-block" id="ParticlePenaltyWeakDirichlet.computeKernels">
+<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.computeKernels">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">computeKernels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">U_np</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">dU</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">P</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">K</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">prescribedComponent</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prescribedStepDelta</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">P_i</span> <span class="o">=</span> <span class="n">PExt</span><span class="p">[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span>
+            <span class="n">P_i</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span>
             <span class="n">dU_j</span> <span class="o">=</span> <span class="n">dU</span><span class="p">[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span>
 
-            <span class="n">K_ij</span> <span class="o">=</span> <span class="n">V</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">nDof</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nDof</span><span class="p">))[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">,</span> <span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span>
+            <span class="n">K_ij</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">nDof</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nDof</span><span class="p">))[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">,</span> <span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span>
 
             <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constrainedParticles</span><span class="p">:</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constrainVertices</span><span class="p">:</span>

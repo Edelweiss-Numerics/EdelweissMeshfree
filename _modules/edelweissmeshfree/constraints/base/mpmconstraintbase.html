@@ -75,27 +75,46 @@
   <h1>Source code for edelweissmeshfree.constraints.base.mpmconstraintbase</h1><div class="highlight"><pre>
 <span></span><span class="sd">"""</span>
 <span class="sd">Constraints are used to enforce certain conditions on the system. They are used to enforce boundary conditions, contact conditions, etc.</span>
-<span class="sd">Technically, constraints are implemented as a set of kernels, which are applied to the system matrix and the external load vector.</span>
-<span class="sd">In this regard, constraints are similar to elements, but they mey also use additional scalar variables to enforce the conditions.</span>
-<span class="sd">Unlike elements, they are not subject to external loads.</span>
+<span class="sd">Technically, a constraint is an entity of the equation system like an element: it adds a residual contribution and its</span>
+<span class="sd">tangent, and it may introduce additional scalar variables (e.g., Lagrange multipliers) to enforce its condition.</span>
+<span class="sd">Unlike elements, constraints are not subject to external loads.</span>
 <span class="sd">"""</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">abstractmethod</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.numerics.vijentitybase</span><span class="w"> </span><span class="kn">import</span> <span class="n">VIJEntityBase</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.points.node</span><span class="w"> </span><span class="kn">import</span> <span class="n">Node</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.timesteppers.timestep</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeStep</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.constraints.base.constraintbase</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConstraintBase</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.variables.scalarvariable</span><span class="w"> </span><span class="kn">import</span> <span class="n">ScalarVariable</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.models.mpmmodel</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPMModel</span>
 
 
 <div class="viewcode-block" id="MPMConstraintBase">
 <a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">MPMConstraintBase</span><span class="p">(</span><span class="n">ABC</span><span class="p">,</span> <span class="n">VIJEntityBase</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""The MPMConstraintBase class is an abstract base class for all constraints.</span>
-<span class="sd">    If you want to implement a new constraint, you have to inherit from this class."""</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MPMConstraintBase</span><span class="p">(</span><span class="n">ConstraintBase</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""The base class of the constraints of EdelweissMeshfree; implement a new constraint by deriving from it.</span>
+
+<span class="sd">    A meshfree constraint is an EdelweissFE constraint</span>
+<span class="sd">    (:class:`~edelweissfe.constraints.base.constraintbase.ConstraintBase`), and follows its rules:</span>
+
+<span class="sd">    - :meth:`~edelweissfe.constraints.base.constraintbase.ConstraintBase.computeKernels` ``(U_np, dU, P, K, timeStep)``</span>
+<span class="sd">      adds the constraint's residual contribution to ``P`` -- the *negative* of the force it exerts on its nodes,</span>
+<span class="sd">      what an element of the same mechanics would add as its internal force -- and its tangent ``K = dP/dU``.</span>
+<span class="sd">      See the EdelweissFE solver documentation, *The residual and the tangent*.</span>
+<span class="sd">    - The nodes of a meshfree constraint are those its particles or material points currently interpolate from, so</span>
+<span class="sd">      they change as the kernel functions and cells move: ``updateConnectivity`` finds them anew at the start of</span>
+<span class="sd">      every increment, and reports a change.</span>
+<span class="sd">    - A constraint may switch itself off in ``updateConnectivity``, e.g. a contact constraint whose particle is far</span>
+<span class="sd">      from the boundary: it sets</span>
+<span class="sd">      :attr:`~edelweissfe.constraints.base.constraintbase.ConstraintBase.withinReach`, and reports a change of</span>
+<span class="sd">      :attr:`~edelweissfe.constraints.base.constraintbase.ConstraintBase.active`. A constraint switched off from</span>
+<span class="sd">      outside, through ``active``, stays off whatever it finds.</span>
+<span class="sd">    - Every constraint declares the state it carries from one increment to the next, in ``checkpointedState``</span>
+<span class="sd">      (empty if it carries none), so that a restart can restore it.</span>
+
+<span class="sd">    The nodal values of the particles and of the cells are increments on the current configuration, so the</span>
+<span class="sd">    constraints here read ``dU``, the increment since the last converged state, and leave ``U_np`` unused.</span>
+
+<span class="sd">    A constraint that acts only in an explicit analysis, with forces and without a tangent, derives from</span>
+<span class="sd">    :class:`~edelweissmeshfree.constraints.base.mpmexplicitconstraintbase.MPMExplicitConstraintBase` instead.</span>
+<span class="sd">    """</span>
 
     <span class="nd">@property</span>
     <span class="nd">@abstractmethod</span>
@@ -108,165 +127,16 @@
 <span class="sd">            The name."""</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">active</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""Whether this constraint is active or not.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        bool</span>
-<span class="sd">            The truth value.</span>
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="kc">True</span>
-
-    <span class="nd">@property</span>
-    <span class="nd">@abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Node</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">"""The nodes this constraint is acting on.</span>
-<span class="sd">        Duplicates are _allowed_.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        list[Node]</span>
-<span class="sd">            The list of nodes."""</span>
-
-    <span class="nd">@property</span>
-    <span class="nd">@abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">fieldsOnNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">"""The fields on the nodes this constraint is acting on.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        list[list[str]]</span>
-<span class="sd">            The node-wise list of fields."""</span>
-
-    <span class="nd">@property</span>
-    <span class="nd">@abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">nDof</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""The total number of degrees of freedom this constraint is associated with.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        int</span>
-<span class="sd">            The total number of degrees of freedom."""</span>
-
-    <span class="nd">@property</span>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">scalarVariables</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">ScalarVariable</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">"""The list of assigned ScalarVariable.</span>
+<span class="w">        </span><span class="sd">"""The scalar variables (e.g., Lagrange multipliers) assigned to this constraint.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        list[ScalarVariable]</span>
-<span class="sd">            The list of scalar variables."""</span>
-
-<div class="viewcode-block" id="MPMConstraintBase.getNumberOfAdditionalNeededScalarVariables">
-<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.getNumberOfAdditionalNeededScalarVariables">[docs]</a>
-    <span class="nd">@abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">getNumberOfAdditionalNeededScalarVariables</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""Tell the framework how many scalar variables (e.g., Lagrangian multipliers)</span>
-<span class="sd">        this constraint needs.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        int</span>
-<span class="sd">            The number of requested ScalarVariable</span>
-<span class="sd">        """</span></div>
-
-
-<div class="viewcode-block" id="MPMConstraintBase.assignAdditionalScalarVariables">
-<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.assignAdditionalScalarVariables">[docs]</a>
-    <span class="nd">@abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">assignAdditionalScalarVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scalarVariables</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ScalarVariable</span><span class="p">]):</span>
-<span class="w">        </span><span class="sd">"""This is the list of constraint specific scalar variables which are assigned to this constraint.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        scalarVariables</span>
-<span class="sd">            The list of ScalarVariable to be assigned.</span>
-<span class="sd">        """</span></div>
-
-
-<div class="viewcode-block" id="MPMConstraintBase.updateConnectivity">
-<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.updateConnectivity">[docs]</a>
-    <span class="nd">@abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">updateConnectivity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">MPMModel</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""This method is called before each new timeStep, after material point connectivity was updated, but before the global equation system is created.</span>
-<span class="sd">        If the contribution to the global system changes, True is returned.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        model</span>
-<span class="sd">            The current model.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        bool</span>
-<span class="sd">            The truth value if the connectivity has changed.</span>
-<span class="sd">        """</span></div>
-
-
-<div class="viewcode-block" id="MPMConstraintBase.acceptLastState">
-<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.acceptLastState">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">acceptLastState</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Called by :meth:`~edelweissfe.models.femodel.FEModel.advanceToTime` (via</span>
-<span class="sd">        :meth:`~edelweissmeshfree.models.mpmmodel.MPMModel.advanceToTime`) when an increment is</span>
-<span class="sd">        accepted, so a stateful constraint can promote the state of the last (converged) Newton</span>
-<span class="sd">        iterate to its history.</span>
-
-<span class="sd">        The default implementation does nothing, which is correct for every stateless constraint</span>
-<span class="sd">        (i.e. every constraint that does not override this method)."""</span></div>
-
-
-<div class="viewcode-block" id="MPMConstraintBase.getRestartData">
-<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.getRestartData">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">getRestartData</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""Capture the state of this constraint for inclusion in a restart checkpoint.</span>
-
-<span class="sd">        The default implementation returns ``None``, indicating the constraint carries no</span>
-<span class="sd">        checkpointable internal state. Override this in stateful constraints.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        dict[str, np.ndarray] | None</span>
-<span class="sd">            A mapping from dataset names to NumPy arrays, or ``None`` if stateless.</span>
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="kc">None</span></div>
-
-
-<div class="viewcode-block" id="MPMConstraintBase.setRestartData">
-<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.setRestartData">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">setRestartData</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">restartData</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""Restore the state of this constraint from a restart checkpoint.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        restartData</span>
-<span class="sd">            The mapping previously returned by :meth:`getRestartData`.</span>
-<span class="sd">        """</span></div>
-
-
-<div class="viewcode-block" id="MPMConstraintBase.applyConstraint">
-<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.applyConstraint">[docs]</a>
-    <span class="nd">@abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">applyConstraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dU</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">PExt</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">V</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Apply the constraint, i.e., compute the 'kernels'. Add the contributions to the external load vector and the system matrix.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        dU</span>
-<span class="sd">            The current increment since the last time the constraint was applied.</span>
-<span class="sd">        PExt</span>
-<span class="sd">            The external load vector.</span>
-<span class="sd">        V</span>
-<span class="sd">            The system (stiffness) matrix.</span>
-<span class="sd">        timeStep</span>
-<span class="sd">            The current step and total time.</span>
-<span class="sd">        """</span></div>
-</div>
+<span class="sd">            The list of scalar variables."""</span></div>
 
 </pre></div>
 

@@ -113,7 +113,8 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">abstractmethod</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.stepactions.base.stepactionbase</span><span class="w"> </span><span class="kn">import</span> <span class="n">StepActionBase</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.numerics.dofmanager</span><span class="w"> </span><span class="kn">import</span> <span class="n">DofManager</span><span class="p">,</span> <span class="n">DofVector</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.stepactions.base.loadbase</span><span class="w"> </span><span class="kn">import</span> <span class="n">LoadBase</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.timesteppers.timestep</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeStep</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.sets.cellset</span><span class="w"> </span><span class="kn">import</span> <span class="n">CellSet</span>
@@ -121,10 +122,12 @@
 
 <div class="viewcode-block" id="MPMBodyLoadBase">
 <a class="viewcode-back" href="../../../../documentation/step_actions.html#edelweissmeshfree.stepactions.base.mpmbodyloadbase.MPMBodyLoadBase">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">MPMBodyLoadBase</span><span class="p">(</span><span class="n">StepActionBase</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""Base class for body loads.</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MPMBodyLoadBase</span><span class="p">(</span><span class="n">LoadBase</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Base class for body loads on the cells of the background grid, such as gravity.</span>
 
-<span class="sd">    If you want to implement a new body load, you should derive from this class.</span>
+<span class="sd">    It is an EdelweissFE load (:class:`~edelweissfe.stepactions.base.loadbase.LoadBase`): it assembles its own</span>
+<span class="sd">    residual contribution, the negative of the external load, in :meth:`assembleLoad`. If you want to implement a new</span>
+<span class="sd">    body load, you should derive from this class.</span>
 <span class="sd">    """</span>
 
     <span class="nd">@property</span>
@@ -165,6 +168,54 @@
 <span class="sd">        np.ndarray</span>
 <span class="sd">            The magnitude.</span>
 <span class="sd">        """</span></div>
+
+
+<div class="viewcode-block" id="MPMBodyLoadBase.assembleLoad">
+<a class="viewcode-back" href="../../../../documentation/step_actions.html#edelweissmeshfree.stepactions.base.mpmbodyloadbase.MPMBodyLoadBase.assembleLoad">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">assembleLoad</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">P</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span>
+        <span class="n">K</span><span class="p">,</span>
+        <span class="n">U_np</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span>
+        <span class="n">dU</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span>
+        <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">,</span>
+        <span class="n">dofManager</span><span class="p">:</span> <span class="n">DofManager</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Let every active cell of the cell set add the residual contribution of the body load, the negative of the</span>
+<span class="sd">        external load, and its tangent; see :meth:`~edelweissfe.stepactions.base.loadbase.LoadBase.assembleLoad`.</span>
+
+<span class="sd">        The active cells are those of the equation system, i.e. those the DOF manager numbers; a body load acts only</span>
+<span class="sd">        on them.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        P</span>
+<span class="sd">            The global residual contribution vector to augment.</span>
+<span class="sd">        K</span>
+<span class="sd">            The system matrix to augment, which hands out the block of a cell by ``K[cell]``; None for an explicit</span>
+<span class="sd">            solver, which needs no tangent.</span>
+<span class="sd">        U_np</span>
+<span class="sd">            The current global solution.</span>
+<span class="sd">        dU</span>
+<span class="sd">            The global solution increment.</span>
+<span class="sd">        timeStep</span>
+<span class="sd">            The current time step.</span>
+<span class="sd">        dofManager</span>
+<span class="sd">            The DOF manager of the equation system.</span>
+<span class="sd">        """</span>
+
+        <span class="n">loadVector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getCurrentLoad</span><span class="p">(</span><span class="n">timeStep</span><span class="p">)</span>
+        <span class="n">activeCells</span> <span class="o">=</span> <span class="n">dofManager</span><span class="o">.</span><span class="n">idcsOfCellsInDofVector</span>
+
+        <span class="c1"># summed in the order of the cell set</span>
+        <span class="k">for</span> <span class="n">cl</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cellSet</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">cl</span> <span class="ow">in</span> <span class="n">activeCells</span><span class="p">:</span>
+                <span class="n">Pc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">cl</span><span class="o">.</span><span class="n">nDof</span><span class="p">)</span>
+                <span class="n">Kc</span> <span class="o">=</span> <span class="n">K</span><span class="p">[</span><span class="n">cl</span><span class="p">]</span> <span class="k">if</span> <span class="n">K</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">cl</span><span class="o">.</span><span class="n">nDof</span> <span class="o">*</span> <span class="n">cl</span><span class="o">.</span><span class="n">nDof</span><span class="p">)</span>
+
+                <span class="n">cl</span><span class="o">.</span><span class="n">computeBodyLoad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loadType</span><span class="p">,</span> <span class="n">loadVector</span><span class="p">,</span> <span class="n">Pc</span><span class="p">,</span> <span class="n">Kc</span><span class="p">,</span> <span class="n">timeStep</span><span class="o">.</span><span class="n">totalTime</span><span class="p">,</span> <span class="n">timeStep</span><span class="o">.</span><span class="n">timeIncrement</span><span class="p">)</span>
+
+                <span class="n">P</span><span class="p">[</span><span class="n">cl</span><span class="p">]</span> <span class="o">+=</span> <span class="n">Pc</span></div>
 </div>
 
 </pre></div>

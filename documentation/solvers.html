@@ -174,7 +174,7 @@
 <li><p><strong>bodyLoads</strong> (<em>list</em>) – The list of bodyload StepActions.</p></li>
 <li><p><strong>distributedLoads</strong> (<em>list</em>) – The list of distributed load StepActions.</p></li>
 <li><p><strong>activeNodeSets</strong> – The list of (reduced) active NodeSets.</p></li>
-<li><p><strong>elements</strong> (<em>list</em>) – The list of elements.</p></li>
+<li><p><strong>elements</strong> (<em>list</em>) – The finite elements.</p></li>
 <li><p><strong>Un</strong> (<em>DofVector</em>) – The old solution vector.</p></li>
 <li><p><strong>activeCells</strong> (<em>list</em>) – The list of active cells.</p></li>
 <li><p><strong>cellElements</strong> (<em>list</em>) – The list of cell elements.</p></li>
@@ -321,12 +321,13 @@ assembly cost. See <a class="reference internal" href="#edelweissmeshfree.solver
 </table>
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._computeCells">
-<span class="sig-name descname"><span class="pre">_computeCells</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">activeCells_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">P</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">F</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">K</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dT</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theDofManager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/solvers/nqsmarmotparallel.html#NQSParallelForMarmot._computeCells"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._computeCells" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">_computeCells</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">activeCells_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">U_np</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">P</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">F</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">K</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dT</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theDofManager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/solvers/nqsmarmotparallel.html#NQSParallelForMarmot._computeCells"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._computeCells" title="Link to this definition"></a></dt>
 <dd><p>Evaluate all cells.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>activeCells</strong> – The list of (active) cells to be evaluated.</p></li>
+<li><p><strong>U_np</strong> (<em>DofVector</em>) – The current global solution vector.</p></li>
 <li><p><strong>dU</strong> (<em>DofVector</em>) – The current global solution increment vector.</p></li>
 <li><p><strong>P</strong> (<em>DofVector</em>) – The current global flux vector.</p></li>
 <li><p><strong>F</strong> (<em>DofVector</em>) – The accumulated nodal fluxes vector.</p></li>
@@ -357,12 +358,13 @@ assembly cost. See <a class="reference internal" href="#edelweissmeshfree.solver
 
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._computeParticles">
-<span class="sig-name descname"><span class="pre">_computeParticles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">particles_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">P</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">F</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">K</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dT</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theDofManager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/solvers/nqsmarmotparallel.html#NQSParallelForMarmot._computeParticles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._computeParticles" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">_computeParticles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">particles_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">U_np</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">P</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">F</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">K</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dT</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theDofManager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/solvers/nqsmarmotparallel.html#NQSParallelForMarmot._computeParticles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.solvers.nqsmarmotparallel.NQSParallelForMarmot._computeParticles" title="Link to this definition"></a></dt>
 <dd><p>Evaluate all particles.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>particles</strong> – The list of particles to be evaluated.</p></li>
+<li><p><strong>U_np</strong> (<em>DofVector</em>) – The current global solution vector.</p></li>
 <li><p><strong>dU</strong> (<em>DofVector</em>) – The current global solution increment vector.</p></li>
 <li><p><strong>P</strong> (<em>DofVector</em>) – The current global flux vector.</p></li>
 <li><p><strong>F</strong> (<em>DofVector</em>) – The accumulated nodal fluxes vector.</p></li>
@@ -621,15 +623,11 @@ order is alternated, so a warm-up or a drifting machine biases neither.</p>
 </table>
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.solvers.nqsmparclength.NonlinearQuasistaticMarmotArcLengthSolver._createNewtonCache">
-<span class="sig-name descname"><span class="pre">_createNewtonCache</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">theDofManager</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">particles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/solvers/nqsmparclength.html#NonlinearQuasistaticMarmotArcLengthSolver._createNewtonCache"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.solvers.nqsmparclength.NonlinearQuasistaticMarmotArcLengthSolver._createNewtonCache" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">_createNewtonCache</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">theDofManager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/solvers/nqsmparclength.html#NonlinearQuasistaticMarmotArcLengthSolver._createNewtonCache"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.solvers.nqsmparclength.NonlinearQuasistaticMarmotArcLengthSolver._createNewtonCache" title="Link to this definition"></a></dt>
 <dd><p>Create expensive objects, which may be reused if the global system does not change.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>theDofManager</strong> (<em>DofManager</em>) – The DofManager instance.</p></li>
-<li><p><strong>particles</strong> – The particles to register with the direct-to-CSR assembler, if one is in use. Forwarded
-to the base implementation; the arc-length cache below builds no assembler of its own.</p></li>
-</ul>
+<dd class="field-odd"><p><strong>theDofManager</strong> (<em>DofManager</em>) – The DofManager instance.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The collection of expensive objects.</p>

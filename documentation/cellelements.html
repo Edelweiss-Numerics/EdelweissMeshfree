@@ -17,6 +17,7 @@
       <script src="../_static/documentation_options.js?v=57c4c7c7"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -128,8 +129,7 @@ material point type, following a specific quadrature rule and order.</p>
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.cellelements.base.cellelement.</span></span><span class="sig-name descname"><span class="pre">CellElementBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cellElType</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cellElNumber</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quadratureType</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quadratureOrder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/cellelements/base/cellelement.html#CellElementBase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.cellelements.base.cellelement.CellElementBase" title="Link to this definition"></a></dt>
 <dd><p>MPM cells in EdelweissMPM should be derived from this
 base class in order to follow the general interface.</p>
-<p>EdelweissMPM expects the layout of the internal and external load vectors, P, PExt, (and the stiffness)
-to be of the form</p>
+<p>EdelweissMeshfree expects the layout of the residual contribution P (and of the tangent) to be of the form</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">[ node 1 - dofs field 1,</span>
 <span class="go">  node 1 - dofs field 2,</span>
 <span class="go">  node 1 - ... ,</span>
@@ -182,13 +182,13 @@ to be of the form</p>
 <td><p>Assign a list of material points which are currently residing within the cell.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeBodyLoad</span></code>(loadType, load, P, K, ...)</p></td>
-<td><p>Compute bulk loads (body loads) for given time based for all assigned MaterialPoints.</p></td>
+<td><p>Add the residual contribution of a body load on all assigned material points, the negative of the external load <span class="math notranslate nohighlight">\(-\boldsymbol{f}_\mathrm{ext}\)</span>, and its tangent, which is zero for a dead load.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeDistributedLoad</span></code>(loadType, surfaceID, ...)</p></td>
-<td><p>Compute distributed (surface) a for given time based for a specific assigned material point.</p></td>
+<td><p>Add the residual contribution of a distributed (surface) load on a surface of one assigned material point, the negative of the external load <span class="math notranslate nohighlight">\(-\boldsymbol{f}_\mathrm{ext}\)</span>, and its tangent, which is nonzero only for a load that follows the deformation.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeMaterialPointKernels</span></code>(dU, P, K, ...)</p></td>
-<td><p>Evaluate the kernel residual and stiffness for given time based for all assigned MaterialPoints.</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeKernels</span></code>(K, P, U, dU, timeTotal, dTime)</p></td>
+<td><p>Add the internal forces of all assigned material points to the residual, and their tangent: the signature of <code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissfe.elements.base.baseelement.BaseElement.computeKernels()</span></code>, so that a solver evaluates cells and elements alike.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getBoundingBox</span></code>()</p></td>
 <td><p>Get the bounding box min.</p></td>
@@ -319,8 +319,8 @@ This class is not intended to be used directly, but to be subclassed by the actu
 <p class="rubric">Methods</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeMaterialPointKernels</span></code>(dUc, Pc, Kc, ...)</p></td>
-<td><p>Evaluate residual and stiffness for given time, field, and field increment.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.cellelements.marmotcellelement.marmotcellelement.MarmotCellElementWrapper.computeKernels" title="edelweissmeshfree.cellelements.marmotcellelement.marmotcellelement.MarmotCellElementWrapper.computeKernels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeKernels</span></code></a>(Kc, Pc, Uc, dUc, timeNew, dTime)</p></td>
+<td><p>Add the internal forces of the material points to the residual, and their tangent; see <a class="reference internal" href="cells.html#edelweissmeshfree.cells.base.cell.CellBase.computeKernels" title="edelweissmeshfree.cells.base.cell.CellBase.computeKernels"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissmeshfree.cells.base.cell.CellBase.computeKernels()</span></code></a>.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.cellelements.marmotcellelement.marmotcellelement.MarmotCellElementWrapper.getRequestedMaterialPointCoordinates" title="edelweissmeshfree.cellelements.marmotcellelement.marmotcellelement.MarmotCellElementWrapper.getRequestedMaterialPointCoordinates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getRequestedMaterialPointCoordinates</span></code></a>()</p></td>
 <td><p>Get the coordinates of the material points in the cell.</p></td>
@@ -377,6 +377,15 @@ This class is not intended to be used directly, but to be subclassed by the actu
 </tbody>
 </table>
 <dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.cellelements.marmotcellelement.marmotcellelement.MarmotCellElementWrapper.computeKernels">
+<span class="sig-name descname"><span class="pre">computeKernels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Kc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Pc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Uc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dUc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeNew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dTime</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.cellelements.marmotcellelement.marmotcellelement.MarmotCellElementWrapper.computeKernels" title="Link to this definition"></a></dt>
+<dd><p>Add the internal forces of the material points to the residual, and their tangent; see
+<a class="reference internal" href="cells.html#edelweissmeshfree.cells.base.cell.CellBase.computeKernels" title="edelweissmeshfree.cells.base.cell.CellBase.computeKernels"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissmeshfree.cells.base.cell.CellBase.computeKernels()</span></code></a>. Unlike a cell, a cell element deforms like
+an element, so Marmot gets the current solution, not its increment. A failure in Marmot requests a cutback,
+as for an EdelweissFE element.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.cellelements.marmotcellelement.marmotcellelement.MarmotCellElementWrapper.getRequestedMaterialPointCoordinates">
 <span class="sig-name descname"><span class="pre">getRequestedMaterialPointCoordinates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.cellelements.marmotcellelement.marmotcellelement.MarmotCellElementWrapper.getRequestedMaterialPointCoordinates" title="Link to this definition"></a></dt>
 <dd><p>Get the coordinates of the material points in the cell.</p>
@@ -423,8 +432,8 @@ This class is not intended to be used directly, but to be subclassed by the actu
 <p class="rubric">Methods</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeMaterialPointKernels</span></code>(dUc, Pc, Kc, ...)</p></td>
-<td><p>Evaluate residual and stiffness for given time, field, and field increment.</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeKernels</span></code>(Kc, Pc, Uc, dUc, timeNew, dTime)</p></td>
+<td><p>Add the internal forces of the material points to the residual, and their tangent; see <a class="reference internal" href="cells.html#edelweissmeshfree.cells.base.cell.CellBase.computeKernels" title="edelweissmeshfree.cells.base.cell.CellBase.computeKernels"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissmeshfree.cells.base.cell.CellBase.computeKernels()</span></code></a>.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getRequestedMaterialPointCoordinates</span></code>()</p></td>
 <td><p>Get the coordinates of the material points in the cell.</p></td>

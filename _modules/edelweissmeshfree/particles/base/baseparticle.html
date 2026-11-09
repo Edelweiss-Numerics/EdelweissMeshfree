@@ -348,27 +348,35 @@
 <span class="sd">        """</span></div>
 
 
-<div class="viewcode-block" id="BaseParticle.computePhysicsKernels">
-<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computePhysicsKernels">[docs]</a>
+<div class="viewcode-block" id="BaseParticle.computeKernels">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeKernels">[docs]</a>
     <span class="nd">@abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">computePhysicsKernels</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">computeKernels</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">dU</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-        <span class="n">P</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
         <span class="n">K</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">P</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">U</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">dU</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
         <span class="n">timeTotal</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
         <span class="n">dTime</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Evaluate the kernel residual and stiffness for given time based for all assigned MaterialPoints.</span>
+<span class="w">        </span><span class="sd">"""Add the internal forces of the particle to the residual, and their tangent: the signature of</span>
+<span class="sd">        :meth:`edelweissfe.elements.base.baseelement.BaseElement.computeKernels`, so that a solver evaluates</span>
+<span class="sd">        particles and elements alike.</span>
+
+<span class="sd">        A particle is incremental on the current configuration: its kernel functions move with it, and their</span>
+<span class="sd">        nodal values are increments, so a particle reads ``dU``, not ``U``.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
+<span class="sd">        K</span>
+<span class="sd">            The tangent ``dP/dU`` to augment, the stiffness matrix.</span>
+<span class="sd">        P</span>
+<span class="sd">            The residual contribution to augment, the internal forces.</span>
+<span class="sd">        U</span>
+<span class="sd">            The current solution.</span>
 <span class="sd">        dU</span>
 <span class="sd">            The current solution increment.</span>
-<span class="sd">        P</span>
-<span class="sd">            The external load vector to be defined.</span>
-<span class="sd">        K</span>
-<span class="sd">            The stiffness matrix to be defined.</span>
 <span class="sd">        timeTotal</span>
 <span class="sd">            The current total time.</span>
 <span class="sd">        dTime</span>
@@ -388,7 +396,8 @@
         <span class="n">timeTotal</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
         <span class="n">dTime</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Compute bulk loads (body loads) for given time based for all assigned MaterialPoints.</span>
+<span class="w">        </span><span class="sd">"""Add the residual contribution of a body load on the particle, the negative of the external load</span>
+<span class="sd">        :math:`-\\boldsymbol{f}_\\mathrm{ext}`, and its tangent, which is zero for a dead load.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -397,9 +406,9 @@
 <span class="sd">        load</span>
 <span class="sd">            The float (vector) describing the load.</span>
 <span class="sd">        P</span>
-<span class="sd">            The external load vector to be defined.</span>
+<span class="sd">            The residual contribution to augment, :math:`-\\boldsymbol{f}_\\mathrm{ext}`.</span>
 <span class="sd">        K</span>
-<span class="sd">            The stiffness matrix to be defined.</span>
+<span class="sd">            The tangent ``dP/dU`` to augment.</span>
 <span class="sd">        timeTotal</span>
 <span class="sd">            The current total time.</span>
 <span class="sd">        dTime</span>
@@ -420,20 +429,22 @@
         <span class="n">timeTotal</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
         <span class="n">dTime</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Compute distributed (surface) a for given time based for a specific assigned material point.</span>
+<span class="w">        </span><span class="sd">"""Add the residual contribution of a distributed (surface) load on a surface of the particle, the negative of</span>
+<span class="sd">        the external load :math:`-\\boldsymbol{f}_\\mathrm{ext}`, and its tangent, which is nonzero only for a load</span>
+<span class="sd">        that follows the deformation.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        loadType</span>
 <span class="sd">            The type of load to be computed (e.g., 'pressure')</span>
 <span class="sd">        surfaceID</span>
-<span class="sd">            The ID describing the surface of the material point.</span>
+<span class="sd">            The ID describing the surface of the particle.</span>
 <span class="sd">        load</span>
 <span class="sd">            The float (vector) describing the load.</span>
 <span class="sd">        P</span>
-<span class="sd">            The external load vector to be defined.</span>
+<span class="sd">            The residual contribution to augment, :math:`-\\boldsymbol{f}_\\mathrm{ext}`.</span>
 <span class="sd">        K</span>
-<span class="sd">            The stiffness matrix to be defined.</span>
+<span class="sd">            The tangent ``dP/dU`` to augment.</span>
 <span class="sd">        timeTotal</span>
 <span class="sd">            The current total time.</span>
 <span class="sd">        dTime</span>

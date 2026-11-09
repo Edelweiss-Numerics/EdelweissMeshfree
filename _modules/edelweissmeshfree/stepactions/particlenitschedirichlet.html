@@ -1,0 +1,279 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>edelweissmeshfree.stepactions.particlenitschedirichlet &mdash; EdelweissMeshfree v26.11 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css?v=1d735308" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=57c4c7c7"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            EdelweissMeshfree
+              <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gallery.html">Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation/index.html">Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">EdelweissMeshfree</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">edelweissmeshfree.stepactions.particlenitschedirichlet</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for edelweissmeshfree.stepactions.particlenitschedirichlet</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1">#  ---------------------------------------------------------------------</span>
+<span class="c1">#</span>
+<span class="c1">#  _____    _      _              _</span>
+<span class="c1"># | ____|__| | ___| |_      _____(_)___ ___</span>
+<span class="c1"># |  _| / _` |/ _ \ \ \ /\ / / _ \ / __/ __|</span>
+<span class="c1"># | |__| (_| |  __/ |\ V  V /  __/ \__ \__ \</span>
+<span class="c1"># |_____\__,_|\___|_| \_/\_/_\___|_|___/___/</span>
+<span class="c1"># |  \/  | ___  ___| |__  / _|_ __ ___  ___</span>
+<span class="c1"># | |\/| |/ _ \/ __| '_ \| |_| '__/ _ \/ _ \</span>
+<span class="c1"># | |  | |  __/\__ \ | | |  _| | |  __/  __/</span>
+<span class="c1"># |_|  |_|\___||___/_| |_|_| |_|  \___|\___|</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1">#  Unit of Strength of Materials and Structural Analysis</span>
+<span class="c1">#  University of Innsbruck,</span>
+<span class="c1">#</span>
+<span class="c1">#  Research Group for Computational Mechanics of Materials</span>
+<span class="c1">#  Institute of Structural Engineering, BOKU University, Vienna</span>
+<span class="c1">#</span>
+<span class="c1">#  2023 - today</span>
+<span class="c1">#</span>
+<span class="c1">#  Matthias Neuner |  matthias.neuner@boku.ac.at</span>
+<span class="c1">#  Thomas Mader    |  thomas.mader@boku.ac.at</span>
+<span class="c1">#</span>
+<span class="c1">#  This file is part of EdelweissMeshfree.</span>
+<span class="c1">#</span>
+<span class="c1">#  This library is free software; you can redistribute it and/or</span>
+<span class="c1">#  modify it under the terms of the GNU Lesser General Public</span>
+<span class="c1">#  License as published by the Free Software Foundation; either</span>
+<span class="c1">#  version 2.1 of the License, or (at your option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1">#  The full text of the license can be found in the file LICENSE.md at</span>
+<span class="c1">#  the top level directory of EdelweissMeshfree.</span>
+<span class="c1">#  ---------------------------------------------------------------------</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.journal.journal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Journal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.surfaces.entitybasedsurface</span><span class="w"> </span><span class="kn">import</span> <span class="n">EntityBasedSurface</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.timesteppers.timestep</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeStep</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.models.mpmmodel</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPMModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.particles.base.baseparticle</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseParticle</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.stepactions.base.particledistributedloadbase</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ParticleDistributedLoadBase</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="ParticleNitscheDirichlet">
+<a class="viewcode-back" href="../../../documentation/step_actions.html#edelweissmeshfree.stepactions.particlenitschedirichlet.ParticleNitscheDirichlet">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ParticleNitscheDirichlet</span><span class="p">(</span><span class="n">ParticleDistributedLoadBase</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Weak Dirichlet boundary condition via (non-symmetric/incomplete) Nitsche's method.</span>
+
+<span class="sd">    Enforces prescribed displacement components on a particle boundary surface through the</span>
+<span class="sd">    particle's 'nitschedirichlet' distributed-load type, which assembles</span>
+
+<span class="sd">      - the CONSISTENCY term  -int_Gamma T . mask o ((S_dev + p I) DeltaF^-T (N dA)_Y)</span>
+<span class="sd">        (the boundary traction the weak form drops under weak Dirichlet enforcement), and</span>
+<span class="sd">      - the PENALTY term      +int_Gamma beta T mask o (u - g) dA</span>
+
+<span class="sd">    directly into the momentum residual -- no Lagrange multipliers or mortar fields are</span>
+<span class="sd">    needed, and the boundary traction is smooth by construction (no point-collocation</span>
+<span class="sd">    checkerboard). The adjoint (symmetry) term is omitted (theta = 0).</span>
+
+<span class="sd">    Unlike ParticleDistributedLoad, only the prescribed value g is ramped by the step</span>
+<span class="sd">    amplitude; the component mask and the penalty parameter beta are constant. The load</span>
+<span class="sd">    vector handed to the particle is [ mask (nDim) | g(t) (nDim) | beta ].</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    name</span>
+<span class="sd">        Name of the boundary condition.</span>
+<span class="sd">    model</span>
+<span class="sd">        The MPM model tree.</span>
+<span class="sd">    journal</span>
+<span class="sd">        The journal to write messages to.</span>
+<span class="sd">    particleSurface</span>
+<span class="sd">        The surface (faceID -&gt; particles) on which the condition acts.</span>
+<span class="sd">    prescribedComponents</span>
+<span class="sd">        Mapping component index -&gt; prescribed TOTAL value at step end, e.g. {0: 0.0, 1: 5.0}.</span>
+<span class="sd">        Components not listed remain traction-free (natural condition).</span>
+<span class="sd">    beta</span>
+<span class="sd">        Nitsche penalty parameter (force / area / displacement). A good scale in the</span>
+<span class="sd">        nearly incompressible regime is O(10) * K / h.</span>
+<span class="sd">    dimension</span>
+<span class="sd">        Spatial dimension (default 2).</span>
+<span class="sd">    f_t</span>
+<span class="sd">        Amplitude function of the prescribed value over step progress (default linear).</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="n">MPMModel</span><span class="p">,</span>
+        <span class="n">journal</span><span class="p">:</span> <span class="n">Journal</span><span class="p">,</span>
+        <span class="n">particleSurface</span><span class="p">:</span> <span class="n">EntityBasedSurface</span><span class="p">,</span>
+        <span class="n">prescribedComponents</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
+        <span class="n">beta</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">dimension</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="n">f_t</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dimension</span> <span class="o">=</span> <span class="n">dimension</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_particleSurface</span> <span class="o">=</span> <span class="n">particleSurface</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_beta</span> <span class="o">=</span> <span class="n">beta</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">dimension</span><span class="p">)</span>
+        <span class="n">gFinal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">dimension</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">component</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">prescribedComponents</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_mask</span><span class="p">[</span><span class="n">component</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+            <span class="n">gFinal</span><span class="p">[</span><span class="n">component</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_gAtStepStart</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">dimension</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_delta</span> <span class="o">=</span> <span class="n">gFinal</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_amplitude</span> <span class="o">=</span> <span class="n">f_t</span> <span class="k">if</span> <span class="n">f_t</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">t</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_idle</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># cached at every getCurrentParticleLoads call; lets reactionForce evaluate the</span>
+        <span class="c1"># boundary terms at the converged state without knowing the time step</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lastLoads</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">BaseParticle</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">loadType</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">"nitschedirichlet"</span>
+
+<div class="viewcode-block" id="ParticleNitscheDirichlet.applyAtStepEnd">
+<a class="viewcode-back" href="../../../documentation/step_actions.html#edelweissmeshfree.stepactions.particlenitschedirichlet.ParticleNitscheDirichlet.applyAtStepEnd">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">applyAtStepEnd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">stepMagnitude</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_idle</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">stepMagnitude</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_gAtStepStart</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gAtStepStart</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delta</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_amplitude</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_gAtStepStart</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gAtStepStart</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delta</span> <span class="o">*</span> <span class="n">stepMagnitude</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_delta</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_idle</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="ParticleNitscheDirichlet.getCurrentParticleLoads">
+<a class="viewcode-back" href="../../../documentation/step_actions.html#edelweissmeshfree.stepactions.particlenitschedirichlet.ParticleNitscheDirichlet.getCurrentParticleLoads">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getCurrentParticleLoads</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">BaseParticle</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">"""Assemble the per-particle load vectors [ mask | g(t) | beta ]."""</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_idle</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">timeStep</span><span class="o">.</span><span class="n">stepProgress</span>
+
+        <span class="n">g</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gAtStepStart</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delta</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_amplitude</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">loadVec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">_mask</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_beta</span><span class="p">]])</span>
+
+        <span class="n">particleLoads</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">surfaceID</span><span class="p">,</span> <span class="n">pSet</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_particleSurface</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">particleLoads</span> <span class="o">+=</span> <span class="p">[(</span><span class="n">p</span><span class="p">,</span> <span class="n">surfaceID</span><span class="p">,</span> <span class="n">loadVec</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pSet</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lastLoads</span> <span class="o">=</span> <span class="n">particleLoads</span>
+        <span class="k">return</span> <span class="n">particleLoads</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">reactionForce</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Total force transmitted through the constrained surface: the sum of the</span>
+<span class="sd">        assembled Nitsche boundary forces (consistency + penalty) over all nodes,</span>
+<span class="sd">        evaluated at the current particle state (call after the increment converged)."""</span>
+
+        <span class="n">nDim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dimension</span>
+        <span class="n">R</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nDim</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">p</span><span class="p">,</span> <span class="n">surfaceID</span><span class="p">,</span> <span class="n">loadVec</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lastLoads</span><span class="p">:</span>
+            <span class="n">Pc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">nDof</span><span class="p">)</span>
+            <span class="n">Kc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">nDof</span> <span class="o">*</span> <span class="n">p</span><span class="o">.</span><span class="n">nDof</span><span class="p">)</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">computeDistributedLoad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loadType</span><span class="p">,</span> <span class="n">surfaceID</span><span class="p">,</span> <span class="n">loadVec</span><span class="p">,</span> <span class="n">Pc</span><span class="p">,</span> <span class="n">Kc</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+            <span class="c1"># Pc stores the NEGATIVE applied force; per-node layout (u..., p, j)</span>
+            <span class="n">R</span> <span class="o">-=</span> <span class="n">Pc</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">nDof</span> <span class="o">//</span> <span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">nodes</span><span class="p">))[:,</span> <span class="p">:</span><span class="n">nDim</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">R</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Matthias Neuner.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -116,11 +116,14 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.models.mpmmodel</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPMModel</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.particles.base.baseparticle</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseParticle</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.sets.particleset</span><span class="w"> </span><span class="kn">import</span> <span class="n">ParticleSet</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.stepactions.base.particledistributedloadbase</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ParticleDistributedLoadBase</span><span class="p">,</span>
+<span class="p">)</span>
 
 
 <div class="viewcode-block" id="ParticleDistributedLoad">
 <a class="viewcode-back" href="../../../documentation/step_actions.html#edelweissmeshfree.stepactions.particledistributedload.ParticleDistributedLoad">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">ParticleDistributedLoad</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ParticleDistributedLoad</span><span class="p">(</span><span class="n">ParticleDistributedLoadBase</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    This is a distributed load for particles.</span>
 
@@ -177,6 +180,8 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">loadType</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loadType</span>
 
+<div class="viewcode-block" id="ParticleDistributedLoad.applyAtStepEnd">
+<a class="viewcode-back" href="../../../documentation/step_actions.html#edelweissmeshfree.stepactions.particledistributedload.ParticleDistributedLoad.applyAtStepEnd">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">applyAtStepEnd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">stepMagnitude</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_idle</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">stepMagnitude</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -185,7 +190,8 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_loadAtStepStart</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delta</span> <span class="o">*</span> <span class="n">stepMagnitude</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">_delta</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_idle</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_idle</span> <span class="o">=</span> <span class="kc">True</span></div>
+
 
 <div class="viewcode-block" id="ParticleDistributedLoad.getCurrentParticleLoads">
 <a class="viewcode-back" href="../../../documentation/step_actions.html#edelweissmeshfree.stepactions.particledistributedload.ParticleDistributedLoad.getCurrentParticleLoads">[docs]</a>

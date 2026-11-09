@@ -94,11 +94,33 @@
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
+<span class="sd">    name</span>
+<span class="sd">        The name of this constraint.</span>
+<span class="sd">    particle</span>
+<span class="sd">        The particle to which the constraint is applied.</span>
 <span class="sd">    implicit_function : function</span>
 <span class="sd">        Returns signed distance. Convention: Negative = Inside (Penetration).</span>
 <span class="sd">    gradient_function : function</span>
 <span class="sd">        Returns gradient vector. Convention: Points OUTWARD (Normal).</span>
+<span class="sd">    model</span>
+<span class="sd">        The MPM model instance.</span>
+<span class="sd">    location</span>
+<span class="sd">        Where the constraint acts on the particle: at its "center", at the faces given by faceIDs ("face"), or at the</span>
+<span class="sd">        vertices given by vertexIDs ("vertex").</span>
+<span class="sd">    faceIDs</span>
+<span class="sd">        The face ID(s) if location is "face"; face IDs start (Abaqus convention) at 1.</span>
+<span class="sd">    vertexIDs</span>
+<span class="sd">        The vertex ID(s) if location is "vertex".</span>
+<span class="sd">    penaltyParameter</span>
+<span class="sd">        The penalty stiffness parameter.</span>
+<span class="sd">    doProximityCheck</span>
+<span class="sd">        If True, the constraint is only active while one of its points is close to the surface.</span>
+<span class="sd">    proximityFactor</span>
+<span class="sd">        How close, as a multiple of the particle's characteristic length.</span>
 <span class="sd">    """</span>
+
+    <span class="c1">#: Carries nothing from one increment to the next.</span>
+    <span class="n">checkpointedState</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -126,7 +148,7 @@
 
         <span class="k">def</span><span class="w"> </span><span class="nf">_getConstraintLocations</span><span class="p">():</span>
             <span class="k">if</span> <span class="n">location</span> <span class="o">==</span> <span class="s2">"center"</span><span class="p">:</span>
-                <span class="p">[</span><span class="n">constraintLocation</span><span class="p">]</span> <span class="o">=</span> <span class="n">particle</span><span class="o">.</span><span class="n">getCenterCoordinates</span><span class="p">()</span>
+                <span class="n">constraintLocation</span> <span class="o">=</span> <span class="p">[</span><span class="n">particle</span><span class="o">.</span><span class="n">getCenterCoordinates</span><span class="p">()]</span>
             <span class="k">elif</span> <span class="n">location</span> <span class="o">==</span> <span class="s2">"face"</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">faceIDs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"faceID must be specified when location is 'face'."</span><span class="p">)</span>
@@ -152,8 +174,6 @@
                 <span class="n">particle</span><span class="o">.</span><span class="n">getVolumeUndeformed</span><span class="p">()</span> <span class="o">**</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_domainSize</span><span class="p">)</span> <span class="o">*</span> <span class="n">proximityFactor</span>
             <span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">isActive</span> <span class="o">=</span> <span class="kc">True</span>
-
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
@@ -173,10 +193,6 @@
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">scalarVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">list</span><span class="p">()</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">active</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">isActive</span>
 
 <div class="viewcode-block" id="ParticlePenaltyContactImplicitSurfaceConstraint.getNumberOfAdditionalNeededScalarVariables">
 <a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlepenaltyrigidbodycontact.ParticlePenaltyContactImplicitSurfaceConstraint.getNumberOfAdditionalNeededScalarVariables">[docs]</a>
@@ -199,35 +215,27 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span> <span class="o">=</span> <span class="n">nodes</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_constrained_points</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getConstraintLocations</span><span class="p">()</span>
 
-        <span class="n">wasActive</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">isActive</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">isActive</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">wasActive</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">active</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_doProximityCheck</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">isActive</span> <span class="o">=</span> <span class="kc">False</span>
-            <span class="k">for</span> <span class="n">p_coord</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constrained_points</span><span class="p">:</span>
-                <span class="n">dist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_implicit_function</span><span class="p">(</span><span class="n">p_coord</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">dist</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_particleCharacteristicLength_x_proximityFactor</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">isActive</span> <span class="o">=</span> <span class="kc">True</span>
-                    <span class="k">break</span>
+        <span class="c1"># within reach if one of the constrained points is close enough to the surface</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">withinReach</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_doProximityCheck</span> <span class="ow">or</span> <span class="nb">any</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_implicit_function</span><span class="p">(</span><span class="n">p_coord</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_particleCharacteristicLength_x_proximityFactor</span>
+            <span class="k">for</span> <span class="n">p_coord</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constrained_points</span>
+        <span class="p">)</span>
 
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">isActive</span> <span class="o">!=</span> <span class="n">wasActive</span><span class="p">:</span>
-                <span class="n">hasChanged</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="o">!=</span> <span class="n">wasActive</span><span class="p">:</span>
+            <span class="n">hasChanged</span> <span class="o">=</span> <span class="kc">True</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">isActive</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">active</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">reactionForce</span> <span class="o">=</span> <span class="mf">0.0</span>
 
         <span class="k">return</span> <span class="n">hasChanged</span></div>
 
 
-<div class="viewcode-block" id="ParticlePenaltyContactImplicitSurfaceConstraint.applyConstraint">
-<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlepenaltyrigidbodycontact.ParticlePenaltyContactImplicitSurfaceConstraint.applyConstraint">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">applyConstraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dU_</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">PExt</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">V</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">isActive</span><span class="p">:</span>
-            <span class="k">return</span>
-
-        <span class="n">K_UU</span> <span class="o">=</span> <span class="n">V</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">nDof</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nDof</span><span class="p">))</span>
-
-        <span class="n">dU</span> <span class="o">=</span> <span class="n">dU_</span>
+<div class="viewcode-block" id="ParticlePenaltyContactImplicitSurfaceConstraint.computeKernels">
+<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlepenaltyrigidbodycontact.ParticlePenaltyContactImplicitSurfaceConstraint.computeKernels">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">computeKernels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">U_np</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">dU</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">P</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">K</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">):</span>
+        <span class="n">K_UU</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">nDof</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nDof</span><span class="p">))</span>
 
         <span class="k">for</span> <span class="n">constrained_point</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constrained_points</span><span class="p">:</span>
 
@@ -264,7 +272,7 @@
                 <span class="n">dg_dU</span><span class="p">[</span><span class="n">start_idx</span> <span class="p">:</span> <span class="n">start_idx</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span> <span class="o">=</span> <span class="n">N_vec</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">constraint_vec</span>
 
             <span class="c1"># Update Force (Using += just like original)</span>
-            <span class="n">PExt</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_penaltyParameter</span> <span class="o">*</span> <span class="n">dg_dU</span> <span class="o">*</span> <span class="n">g</span>
+            <span class="n">P</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_penaltyParameter</span> <span class="o">*</span> <span class="n">dg_dU</span> <span class="o">*</span> <span class="n">g</span>
 
             <span class="c1"># Update Stiffness (Using += just like original)</span>
             <span class="n">K_update</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_penaltyParameter</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">dg_dU</span><span class="p">,</span> <span class="n">dg_dU</span><span class="p">)</span>

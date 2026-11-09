@@ -210,6 +210,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_computeCells</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">activeCells_</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+        <span class="n">U_np</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span>
         <span class="n">dU</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span>
         <span class="n">P</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span>
         <span class="n">F</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span>
@@ -223,8 +224,9 @@
             <span class="c1"># direct path does not have. Fall back to the base class's sequential loop, which goes</span>
             <span class="c1"># through the contribution object: cells are ~0.0002 s of a 3.4 s assembly here, so the</span>
             <span class="c1"># threading is not worth a second kernel.</span>
-            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_computeCells</span><span class="p">(</span><span class="n">activeCells_</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">dT</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">)</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_computeCells</span><span class="p">(</span><span class="n">activeCells_</span><span class="p">,</span> <span class="n">U_np</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">dT</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">)</span>
 
+        <span class="c1"># Marmot cells are incremental: the kernel hands them the solution increment only.</span>
         <span class="k">return</span> <span class="n">computeMarmotCellsInParallel</span><span class="p">(</span>
             <span class="n">activeCells_</span><span class="p">,</span>
             <span class="n">dU</span><span class="p">,</span>
@@ -244,6 +246,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_computeParticles</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">particles_</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+        <span class="n">U_np</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span>
         <span class="n">dU</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span>
         <span class="n">P</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span>
         <span class="n">F</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span>
@@ -252,6 +255,7 @@
         <span class="n">dT</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
         <span class="n">theDofManager</span><span class="p">:</span> <span class="n">DofManager</span><span class="p">,</span>
     <span class="p">):</span>
+        <span class="c1"># Marmot particles are incremental: the kernels hand them the solution increment only.</span>
         <span class="k">if</span> <span class="n">K</span><span class="o">.</span><span class="n">vijArray</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_computeParticlesIntoCSR</span><span class="p">(</span><span class="n">particles_</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">dT</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">)</span>
 
@@ -385,7 +389,7 @@
         <span class="c1"># ---- evaluation 1: the production path, untouched -------------------------------------</span>
         <span class="n">computeMarmotParticlesInParallel</span><span class="p">(</span><span class="n">particles_</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">K_VIJ</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">dT</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">numThreads</span><span class="p">)</span>
 
-        <span class="c1"># cells and elements may have written before us, so the particle contribution is the delta</span>
+        <span class="c1"># cells and cell elements may have written before us, so the particle contribution is the delta</span>
         <span class="n">VParticles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ascontiguousarray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">K_VIJ</span><span class="p">)</span> <span class="o">-</span> <span class="n">VBefore</span><span class="p">)</span>
         <span class="n">PParticles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">P</span><span class="p">)</span> <span class="o">-</span> <span class="n">PBefore</span>
 
@@ -718,7 +722,7 @@
         <span class="n">particles</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">particles_</span><span class="p">)</span>
         <span class="n">entityIds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">_directCSREntityIds</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">particles</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">intc</span><span class="p">)</span>
 
-        <span class="c1"># cells and elements may already have contributed, and the benchmark clears the array</span>
+        <span class="c1"># cells and cell elements may already have contributed, and the benchmark clears the array</span>
         <span class="n">VBefore</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">K_VIJ</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="n">PDiscard</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>

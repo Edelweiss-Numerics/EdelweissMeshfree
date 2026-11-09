@@ -108,6 +108,9 @@
 <span class="sd">        The penalty parameter value.</span>
 <span class="sd">    """</span>
 
+    <span class="c1">#: Carries nothing from one increment to the next.</span>
+    <span class="n">checkpointedState</span> <span class="o">=</span> <span class="p">{}</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -200,19 +203,21 @@
         <span class="k">return</span> <span class="n">hasChanged</span></div>
 
 
-<div class="viewcode-block" id="PenaltyConstrainMP2Node.applyConstraint">
-<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.applyConstraint">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">applyConstraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dU</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">PExt</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">V</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Apply the penalty constraint to the residual and stiffness matrix.</span>
+<div class="viewcode-block" id="PenaltyConstrainMP2Node.computeKernels">
+<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.computeKernels">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">computeKernels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">U_np</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">dU</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">P</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">K</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Add the residual contribution of the penalty constraint, and its tangent.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
+<span class="sd">        U_np</span>
+<span class="sd">            The current solution; unused, the constraint acts on the increment.</span>
 <span class="sd">        dU</span>
-<span class="sd">            The displacement vector.</span>
-<span class="sd">        PExt</span>
-<span class="sd">            The external force vector.</span>
-<span class="sd">        V</span>
-<span class="sd">            The stiffness matrix.</span>
+<span class="sd">            The displacement increment.</span>
+<span class="sd">        P</span>
+<span class="sd">            The residual contribution to augment.</span>
+<span class="sd">        K</span>
+<span class="sd">            The tangent to augment.</span>
 <span class="sd">        timeStep</span>
 <span class="sd">            The time step.</span>
 <span class="sd">        """</span>
@@ -220,10 +225,10 @@
         <span class="c1"># loop over the prescribed components</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prescribedComponents</span><span class="p">:</span>
 
-            <span class="n">P_i</span> <span class="o">=</span> <span class="n">PExt</span><span class="p">[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span>  <span class="c1"># reshape the force vector accounting for the ith component</span>
+            <span class="n">P_i</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span>  <span class="c1"># reshape the residual vector accounting for the ith component</span>
             <span class="n">dU_j</span> <span class="o">=</span> <span class="n">dU</span><span class="p">[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span>  <span class="c1"># reshape the displacement vector accounting for the ith component</span>
 
-            <span class="n">K_ij</span> <span class="o">=</span> <span class="n">V</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">nDof</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nDof</span><span class="p">))[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">,</span> <span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span>
+            <span class="n">K_ij</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">nDof</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nDof</span><span class="p">))[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">,</span> <span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span>
 
             <span class="n">masterNodeIndex</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_slaveNodes</span><span class="p">)</span>  <span class="c1"># index of the master node is the last one</span>
 

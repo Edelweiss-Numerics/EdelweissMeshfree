@@ -127,9 +127,12 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="module-edelweissmeshfree.materialpoints.base.mp">
-<span id="material-points"></span><h1>Material Points<a class="headerlink" href="#module-edelweissmeshfree.materialpoints.base.mp" title="Link to this heading"></a></h1>
-<p>Material points are the basic building blocks of the material point method. They are used to represent the material
+  <section id="material-points">
+<h1>Material Points<a class="headerlink" href="#material-points" title="Link to this heading"></a></h1>
+<p>A material point integrates its material for the increment it received from its cells in <code class="docutils literal notranslate"><span class="pre">computeYourself</span></code>. A
+Marmot material point whose material cannot integrate the increment – Marmot throws – requests a cutback
+(EdelweissFE’s <code class="docutils literal notranslate"><span class="pre">CutbackRequest</span></code>), as an EdelweissFE element does, and the solver retries the increment smaller.</p>
+<p id="module-edelweissmeshfree.materialpoints.base.mp">Material points are the basic building blocks of the material point method. They are used to represent the material
 properties of a continuum. Furthermore, material points are used to store the material properties and state variables of a continuum
 at a specific location in space and time. Material points are used to compute the material response of the continuum
 and to transfer the material properties to the grid.</p>

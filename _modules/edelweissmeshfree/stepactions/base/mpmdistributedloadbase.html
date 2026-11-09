@@ -112,7 +112,8 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">abstractmethod</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.stepactions.base.stepactionbase</span><span class="w"> </span><span class="kn">import</span> <span class="n">StepActionBase</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.numerics.dofmanager</span><span class="w"> </span><span class="kn">import</span> <span class="n">DofManager</span><span class="p">,</span> <span class="n">DofVector</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.stepactions.base.loadbase</span><span class="w"> </span><span class="kn">import</span> <span class="n">LoadBase</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.timesteppers.timestep</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeStep</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.materialpoints.base.mp</span><span class="w"> </span><span class="kn">import</span> <span class="n">MaterialPointBase</span>
@@ -121,7 +122,11 @@
 
 <div class="viewcode-block" id="MPMDistributedLoadBase">
 <a class="viewcode-back" href="../../../../documentation/step_actions.html#edelweissmeshfree.stepactions.base.mpmdistributedloadbase.MPMDistributedLoadBase">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">MPMDistributedLoadBase</span><span class="p">(</span><span class="n">StepActionBase</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MPMDistributedLoadBase</span><span class="p">(</span><span class="n">LoadBase</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Base class for distributed (surface) loads carried by material points: each cell a loaded material point lies</span>
+<span class="sd">    in integrates the load. It is an EdelweissFE load (:class:`~edelweissfe.stepactions.base.loadbase.LoadBase`): it</span>
+<span class="sd">    assembles its own residual contribution, the negative of the external load, in :meth:`assembleLoad`."""</span>
+
     <span class="nd">@property</span>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">mpSet</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MaterialPointSet</span><span class="p">:</span>
@@ -164,6 +169,57 @@
 <span class="sd">                - the surface ID.</span>
 <span class="sd">                - the load vector.</span>
 <span class="sd">        """</span></div>
+
+
+<div class="viewcode-block" id="MPMDistributedLoadBase.assembleLoad">
+<a class="viewcode-back" href="../../../../documentation/step_actions.html#edelweissmeshfree.stepactions.base.mpmdistributedloadbase.MPMDistributedLoadBase.assembleLoad">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">assembleLoad</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">P</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span>
+        <span class="n">K</span><span class="p">,</span>
+        <span class="n">U_np</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span>
+        <span class="n">dU</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span>
+        <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">,</span>
+        <span class="n">dofManager</span><span class="p">:</span> <span class="n">DofManager</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Let the cells of every loaded material point add the residual contribution of the load the material point</span>
+<span class="sd">        carries, the negative of the external load, and its tangent; see</span>
+<span class="sd">        :meth:`~edelweissfe.stepactions.base.loadbase.LoadBase.assembleLoad`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        P</span>
+<span class="sd">            The global residual contribution vector to augment.</span>
+<span class="sd">        K</span>
+<span class="sd">            The system matrix to augment, which hands out the block of a cell by ``K[cell]``; None for an explicit</span>
+<span class="sd">            solver, which needs no tangent.</span>
+<span class="sd">        U_np</span>
+<span class="sd">            The current global solution.</span>
+<span class="sd">        dU</span>
+<span class="sd">            The global solution increment.</span>
+<span class="sd">        timeStep</span>
+<span class="sd">            The current time step.</span>
+<span class="sd">        dofManager</span>
+<span class="sd">            The DOF manager of the equation system.</span>
+<span class="sd">        """</span>
+
+        <span class="k">for</span> <span class="n">mp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpSet</span><span class="p">:</span>
+            <span class="n">surfaceID</span><span class="p">,</span> <span class="n">loadVector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getCurrentMaterialPointLoad</span><span class="p">(</span><span class="n">mp</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">cl</span> <span class="ow">in</span> <span class="n">mp</span><span class="o">.</span><span class="n">assignedCells</span><span class="p">:</span>
+                <span class="n">Pc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">cl</span><span class="o">.</span><span class="n">nDof</span><span class="p">)</span>
+                <span class="n">Kc</span> <span class="o">=</span> <span class="n">K</span><span class="p">[</span><span class="n">cl</span><span class="p">]</span> <span class="k">if</span> <span class="n">K</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">cl</span><span class="o">.</span><span class="n">nDof</span> <span class="o">*</span> <span class="n">cl</span><span class="o">.</span><span class="n">nDof</span><span class="p">)</span>
+                <span class="n">cl</span><span class="o">.</span><span class="n">computeDistributedLoad</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">loadType</span><span class="p">,</span>
+                    <span class="n">surfaceID</span><span class="p">,</span>
+                    <span class="n">mp</span><span class="p">,</span>
+                    <span class="n">loadVector</span><span class="p">,</span>
+                    <span class="n">Pc</span><span class="p">,</span>
+                    <span class="n">Kc</span><span class="p">,</span>
+                    <span class="n">timeStep</span><span class="o">.</span><span class="n">totalTime</span><span class="p">,</span>
+                    <span class="n">timeStep</span><span class="o">.</span><span class="n">timeIncrement</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="n">P</span><span class="p">[</span><span class="n">cl</span><span class="p">]</span> <span class="o">+=</span> <span class="n">Pc</span></div>
 </div>
 
 </pre></div>

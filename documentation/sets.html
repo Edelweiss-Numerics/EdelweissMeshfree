@@ -231,71 +231,71 @@ It has a label, and a list containing unique cell elements.</p>
 <span class="target" id="module-edelweissmeshfree.sets.materialpointset"></span><dl class="py class">
 <dt class="sig sig-object py" id="edelweissmeshfree.sets.materialpointset.MaterialPointSet">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.sets.materialpointset.</span></span><span class="sig-name descname"><span class="pre">MaterialPointSet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mps</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/sets/materialpointset.html#MaterialPointSet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.sets.materialpointset.MaterialPointSet" title="Link to this definition"></a></dt>
-<dd><p>A basic node set.
-It has a label, and a list containing the unique nodes.</p>
+<dd><p>A basic material point set.
+It has a name, and contains the unique material points in the order in which they were given.</p>
+<p>That order is the order of iteration, so it is reproducible from run to run: the material point managers
+hand the material points to their cells in this order, and the loads and constraints defined on a set sum
+their contributions in this order. (A plain set iterates in the order of memory addresses, which changes
+from run to run, and with it the rounding of these sums.)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>label</strong> – The unique label for this element set.</p></li>
-<li><p><strong>nodes</strong> – A list of nodes.</p></li>
-<li><p><strong>name</strong> (<em>str</em>)</p></li>
-<li><p><strong>mps</strong> (<em>list</em>)</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – The unique name for this material point set.</p></li>
+<li><p><strong>mps</strong> – The material points, in the order of iteration.</p></li>
 </ul>
 </dd>
 </dl>
 <p class="rubric">Methods</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">add</span></code>(object, /)</p></td>
-<td><p>Add an element to a set.</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">add</span></code>(item_s)</p></td>
+<td><p>Add an item or an iterable of items to the OrderedSet</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">clear</span></code>(/)</p></td>
-<td><p>Remove all elements from this set.</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">checkObjectType</span></code>(obj)</p></td>
+<td><p>Checks if the object type is allowed in the OrderedSet</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">copy</span></code>(/)</p></td>
-<td><p>Return a shallow copy of a set.</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">clear</span></code>()</p></td>
+<td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">difference</span></code>(*others)</p></td>
-<td><p>Return a new set with elements in the set that are not in the others.</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">forceIter</span></code>(item_s)</p></td>
+<td><p>Return an iterator object for item_s even if item_s itself is not iterable</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">difference_update</span></code>(*others)</p></td>
-<td><p>Update the set, removing elements found in others.</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get</span></code>(k[,d])</p></td>
+<td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">discard</span></code>(object, /)</p></td>
-<td><p>Remove an element from a set if it is a member.</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">items</span></code>()</p></td>
+<td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">intersection</span></code>(*others)</p></td>
-<td><p>Return a new set with elements common to the set and all others.</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">keys</span></code>()</p></td>
+<td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">intersection_update</span></code>(*others)</p></td>
-<td><p>Update the set, keeping only elements found in it and all others.</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">pop</span></code>(k[,d])</p></td>
+<td><p>value.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">isdisjoint</span></code>(other, /)</p></td>
-<td><p>Return True if two sets have a null intersection.</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">popitem</span></code>()</p></td>
+<td><p>as a 2-tuple; but raise KeyError if D is empty.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">issubset</span></code>(other, /)</p></td>
-<td><p>Report whether another set contains this set.</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">replaceMembers</span></code>(item_s)</p></td>
+<td><p>Replace all members in-place, preserving this object's identity.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">issuperset</span></code>(other, /)</p></td>
-<td><p>Report whether this set contains another set.</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setdefault</span></code>(k[,d])</p></td>
+<td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">pop</span></code>(/)</p></td>
-<td><p>Remove and return an arbitrary set element.</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">update</span></code>([E, ]**F)</p></td>
+<td><p>If E present and has a .keys() method, does:</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove</span></code>(object, /)</p></td>
-<td><p>Remove an element from a set; it must be a member.</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">values</span></code>()</p></td>
+<td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">symmetric_difference</span></code>(other, /)</p></td>
-<td><p>Return a new set with elements in either the set or other but not both.</p></td>
+</tbody>
+</table>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><strong>copy</strong></p></td>
+<td></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">symmetric_difference_update</span></code>(other, /)</p></td>
-<td><p>Update the set, keeping only elements found in either set, but not in both.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">union</span></code>(*others)</p></td>
-<td><p>Return a new set with elements from the set and all others.</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">update</span></code>(*others)</p></td>
-<td><p>Update the set, adding elements from all others.</p></td>
+<tr class="row-even"><td><p><strong>fromkeys</strong></p></td>
+<td></td>
 </tr>
 </tbody>
 </table>
