@@ -13,7 +13,7 @@ from edelweissfe.numerics.parallelizationutilities import (
 from edelweissfe.sets.nodeset import NodeSet
 from edelweissfe.solvers.base.parallelelementcomputation import chunked_iterable
 from edelweissfe.stepactions.base.dirichletbase import DirichletBase
-from edelweissfe.stepactions.base.stepactionbase import StepActionBase
+from edelweissfe.stepactions.base.loadbase import LoadBase
 from edelweissfe.timesteppers.timestep import TimeStep
 from edelweissfe.utils.exceptions import DivergingSolution
 from numpy import ndarray
@@ -28,12 +28,6 @@ from edelweissmeshfree.numerics.systemmatrixcontribution import (
 )
 from edelweissmeshfree.particles.base.baseparticle import BaseParticle
 from edelweissmeshfree.solvers.base.nonlinearsolverbase import BaseNonlinearSolver
-from edelweissmeshfree.stepactions.base.mpmdistributedloadbase import (
-    MPMDistributedLoadBase,
-)
-from edelweissmeshfree.stepactions.particledistributedload import (
-    ParticleDistributedLoad,
-)
 
 
 class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
@@ -62,161 +56,41 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
     ) -> tuple[DofVector, DofVector, dict, tuple]:
         pass
 
-    @performancetiming.timeit("compute body loads")
-    def _computeBodyLoads(
+    @performancetiming.timeit("assemble loads")
+    def _assembleLoads(
         self,
-        bodyForces: list[StepActionBase],
-        PExt: DofVector,
-        K: VIJSystemMatrix,
-        timeStep: TimeStep,
-        theDofManager,
-        activeCells,
-    ) -> tuple[DofVector, VIJSystemMatrix]:
-        """Loop over all body forces loads acting on cells, and evaluate them on the active ones.
-        Assembles into the global external load vector and the system matrix.
-
-        Parameters
-        ----------
-        bodyForces
-            The list of body loads.
-        PExt
-            The external load vector to be augmented.
-        K
-            The system matrix to be augmented.
-        timeStep
-            The current time increment.
-        theDofManager
-            The DofManager instance.
-        activeCells
-            The list of active cells. A body load acts only on the cells of its cell set that are active.
-
-        Returns
-        -------
-        tuple[DofVector,VIJSystemMatrix]
-            The augmented load vector and system matrix.
-        """
-
-        # for the membership test only; the contributions are summed in the order of each load's cell set
-        activeCellsLookup = set(activeCells)
-
-        for bForce in bodyForces:
-            loadVector = bForce.getCurrentLoad(timeStep)
-            bLoadType = bForce.loadType
-
-            for cl in bForce.cellSet:
-                if cl in activeCellsLookup:
-                    Pc = np.zeros(cl.nDof)
-                    Kc = K[theDofManager.idcsOfCellsInDofVector[cl]]
-
-                    cl.computeBodyLoad(bLoadType, loadVector, Pc, Kc, timeStep.totalTime, timeStep.timeIncrement)
-
-                    PExt[cl] += Pc
-
-        return PExt, K
-
-    @performancetiming.timeit("compute distributed loads")
-    def _computeCellDistributedLoads(
-        self,
-        distributedLoads: list[MPMDistributedLoadBase],
-        PExt: DofVector,
+        loads: list[LoadBase],
+        U_np: DofVector,
+        dU: DofVector,
+        P: DofVector,
         K: SystemMatrixContributionBase,
         timeStep: TimeStep,
-        theDofManager,
-    ) -> tuple[DofVector, VIJSystemMatrix]:
-        """Loop over all body forces loads acting on elements, and evaluate them.
-        Assembles into the global external load vector and the system matrix.
+        theDofManager: DofManager,
+    ):
+        """Assemble the residual contributions of all loads, the negative of the external loads, and their tangents:
+        every load knows where it acts -- on cells, on material points, on particle faces -- and assembles itself, see
+        :meth:`~edelweissfe.stepactions.base.loadbase.LoadBase.assembleLoad`.
 
         Parameters
         ----------
-        distributedLoads
-            The list of distributed loads.
-        PExt
-            The external load vector to be augmented.
+        loads
+            The loads, in the order in which their contributions are summed.
+        U_np
+            The current global solution vector.
+        dU
+            The current global solution increment vector.
+        P
+            The load vector to be augmented.
         K
             Where each entity writes its stiffness contribution.
         timeStep
             The current time increment.
         theDofManager
             The DofManager instance.
-
-        Returns
-        -------
-        tuple[DofVector,VIJSystemMatrix]
-            The augmented load vector and system matrix.
         """
 
-        for distributedLoad in distributedLoads:
-            for mp in distributedLoad.mpSet:
-                surfaceID, loadVector = distributedLoad.getCurrentMaterialPointLoad(mp, timeStep)
-
-                for cl in mp.assignedCells:
-                    Pc = np.zeros(cl.nDof)
-                    Kc = K[cl]
-                    cl.computeDistributedLoad(
-                        distributedLoad.loadType,
-                        surfaceID,
-                        mp,
-                        loadVector,
-                        Pc,
-                        Kc,
-                        timeStep.totalTime,
-                        timeStep.timeIncrement,
-                    )
-                    PExt[cl] += Pc
-
-        return PExt, K
-
-    @performancetiming.timeit("compute distributed loads")
-    def _computeParticleDistributedLoads(
-        self,
-        distributedLoads: list[ParticleDistributedLoad],
-        PExt: DofVector,
-        K: SystemMatrixContributionBase,
-        timeStep: TimeStep,
-        theDofManager,
-    ) -> tuple[DofVector, VIJSystemMatrix]:
-        """Loop over all body forces loads acting on elements, and evaluate them.
-        Assembles into the global external load vector and the system matrix.
-
-        Parameters
-        ----------
-        distributedLoads
-            The list of distributed loads.
-        PExt
-            The external load vector to be augmented.
-        K
-            Where each entity writes its stiffness contribution.
-        timeStep
-            The current time increment.
-        theDofManager
-            The DofManager instance.
-
-        Returns
-        -------
-        tuple[DofVector,VIJSystemMatrix]
-            The augmented load vector and system matrix.
-        """
-
-        for distributedLoad in distributedLoads:
-
-            # surfaceID, loadVector = distributedLoad.getCurrentLoad(None, timeStep)
-            # for p in distributedLoad.particles:
-            for p, surfaceID, loadVector in distributedLoad.getCurrentParticleLoads(timeStep):
-                Pc = np.zeros(p.nDof)
-                Kc = K[p]
-                p.computeDistributedLoad(
-                    distributedLoad.loadType,
-                    surfaceID,
-                    loadVector,
-                    Pc,
-                    Kc,
-                    timeStep.totalTime,
-                    timeStep.timeIncrement,
-                )
-
-                PExt[p] += Pc
-
-        return PExt, K
+        for load in loads:
+            load.assembleLoad(P, K, U_np, dU, timeStep, theDofManager)
 
     @performancetiming.timeit("dirichlet on CSR")
     def _applyDirichletKCsr(
@@ -546,6 +420,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
     def _computeCells(
         self,
         activeCells: list,
+        U_np: DofVector,
         dU: DofVector,
         P: DofVector,
         F: DofVector,
@@ -560,6 +435,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         ----------
         activeCells
             The list of (active) cells to be evaluated.
+        U_np
+            The current global solution vector.
         dU
             The current global solution increment vector.
         P
@@ -576,10 +453,9 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             The DofManager instance.
         """
         for c in activeCells:
-            dUc = dU[c]
             Pc = np.zeros(c.nDof)
             Kc = K[c]
-            c.computeMaterialPointKernels(dUc, Pc, Kc, time, dT)
+            c.computeKernels(Kc, Pc, U_np[c], dU[c], time, dT)
             P[c] += Pc
             F[c] += abs(Pc)
 
@@ -587,8 +463,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
     def _computeElements(
         self,
         elements: list,
+        U_np: DofVector,
         dU: DofVector,
-        Un: DofVector,
         P: DofVector,
         F: DofVector,
         K: SystemMatrixContributionBase,
@@ -605,10 +481,10 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         ----------
         elements
             The list of elements to be evaluated.
+        U_np
+            The current global solution vector.
         dU
             The current global solution increment vector.
-        Un
-            The previous global solution vector.
         P
             The current global internal force vector.
         F
@@ -624,9 +500,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         """
 
         for el in elements:
-            dUEl = dU[el]
             PEl = np.zeros(el.nDof)
-            el.computeKernels(K[el], PEl, Un[el] + dUEl, dUEl, time, dT)
+            el.computeKernels(K[el], PEl, U_np[el], dU[el], time, dT)
             P[el] += PEl
             F[el] += abs(PEl)
 
@@ -634,8 +509,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
     def _computeCellElements(
         self,
         elements: list,
+        U_np: DofVector,
         dU: DofVector,
-        Un: DofVector,
         P: DofVector,
         F: DofVector,
         K: SystemMatrixContributionBase,
@@ -643,16 +518,16 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         dT: float,
         theDofManager: DofManager,
     ):
-        """Evaluate all cells.
+        """Evaluate all cell elements.
 
         Parameters
         ----------
         elements
             The list of elements to be evaluated.
+        U_np
+            The current global solution vector.
         dU
             The current global solution increment vector.
-        Un
-            The previous global solution vector.
         P
             The current global flux vector.
         F
@@ -668,12 +543,9 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         """
 
         for el in elements:
-            dUEl = dU[el]
-            UEln = Un[el]
-            UElnp = UEln + dUEl
             PEl = np.zeros(el.nDof)
             KEl = K[el]
-            el.computeMaterialPointKernels(UElnp, PEl, KEl, time, dT)
+            el.computeKernels(KEl, PEl, U_np[el], dU[el], time, dT)
             P[el] += PEl
             F[el] += abs(PEl)
 
@@ -681,6 +553,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
     def _computeParticles(
         self,
         particles: Iterable[BaseParticle],
+        U_np: DofVector,
         dU: DofVector,
         P: DofVector,
         F: DofVector,
@@ -695,6 +568,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         ----------
         particles
             The list of particles to be evaluated.
+        U_np
+            The current global solution vector.
         dU
             The current global solution increment vector.
         P
@@ -724,10 +599,9 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         def computeParticlesWorker(particleChunk):
             for particle in particleChunk:
                 PP = scatter_P[particle]
-                dUP = dU[particle]
                 KP = K[particle]
 
-                particle.computePhysicsKernels(dUP, PP, KP, time, dT)
+                particle.computeKernels(KP, PP, U_np[particle], dU[particle], time, dT)
 
         numThreads = getNumberOfThreads() if isFreeThreadingSupported() else 1
 
@@ -742,14 +616,23 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
 
     @performancetiming.timeit("computation constraints")
     def _computeConstraints(
-        self, constraints: list, dU: DofVector, P: DofVector, K: SystemMatrixContributionBase, timeStep: TimeStep
+        self,
+        constraints: list,
+        U_np: DofVector,
+        dU: DofVector,
+        P: DofVector,
+        K: SystemMatrixContributionBase,
+        timeStep: TimeStep,
     ):
-        """Evaluate all constraints.
+        """Evaluate all active constraints: each adds its residual contribution and its tangent, see
+        :meth:`~edelweissfe.constraints.base.constraintbase.ConstraintBase.computeKernels`.
 
         Parameters
         ----------
         constraints
             The list of constraints to be evaluated.
+        U_np
+            The current global solution vector.
         dU
             The current global solution increment vector.
         P
@@ -761,10 +644,9 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         """
         for c in constraints:
             if c.active:
-                dUc = dU[c]
                 Pc = np.zeros(c.nDof)
                 Kc = K[c]
-                c.applyConstraint(dUc, Pc, Kc, timeStep)
+                c.computeKernels(U_np[c], dU[c], Pc, Kc, timeStep)
                 P[c] += Pc
 
     @performancetiming.timeit("instancing csr generator")

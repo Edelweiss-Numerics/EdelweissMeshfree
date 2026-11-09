@@ -1,6 +1,17 @@
 Cells
 =====
 
+A cell enters the equation system like an EdelweissFE element: its ``computeKernels(K, P, U, dU, time, dT)``, with the
+argument order of :meth:`edelweissfe.elements.base.baseelement.BaseElement.computeKernels`, adds the internal forces
+of the material points it holds to the residual :math:`\mathbf{P}`, and their tangent to :math:`\mathbf{K}`. So a
+solver evaluates cells, cell elements, particles and elements alike. A cell is incremental on the current
+configuration: its nodal values are increments, so it may read ``dU`` but never ``U``. A cell element deforms like an
+element, and reads ``U``.
+
+A Marmot cell that fails -- Marmot throws -- requests a cutback (EdelweissFE's ``CutbackRequest``), as an EdelweissFE
+element does, and the solver retries the increment smaller. So do the Marmot material points and particles, and the
+threaded Marmot kernels of ``NQSParallelForMarmot``.
+
 .. automodule:: edelweissmeshfree.cells.base.cell
    :members:
    :private-members:

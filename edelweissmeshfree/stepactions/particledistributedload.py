@@ -41,9 +41,12 @@ from edelweissfe.timesteppers.timestep import TimeStep
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.particles.base.baseparticle import BaseParticle
 from edelweissmeshfree.sets.particleset import ParticleSet
+from edelweissmeshfree.stepactions.base.particledistributedloadbase import (
+    ParticleDistributedLoadBase,
+)
 
 
-class ParticleDistributedLoad:
+class ParticleDistributedLoad(ParticleDistributedLoadBase):
     """
     This is a distributed load for particles.
 

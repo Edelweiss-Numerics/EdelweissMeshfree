@@ -56,6 +56,9 @@ class ParticlePenaltyContactCartesianBoundaryConstraint(MPMConstraintBase):
         The factor to multiply the particle characteristic length for proximity checking.
     """
 
+    #: Carries nothing from one increment to the next.
+    checkpointedState = {}
+
     def __init__(
         self,
         name: str,
@@ -138,8 +141,6 @@ class ParticlePenaltyContactCartesianBoundaryConstraint(MPMConstraintBase):
                 particle.getVolumeUndeformed() ** (1.0 / domainSize) * proximityFactor
             )
 
-        self.isActive = True
-
     @property
     def name(self) -> str:
         return self._name
@@ -166,10 +167,6 @@ class ParticlePenaltyContactCartesianBoundaryConstraint(MPMConstraintBase):
     ) -> list:
         return list()
 
-    @property
-    def active(self) -> bool:
-        return self.isActive
-
     def getNumberOfAdditionalNeededScalarVariables(
         self,
     ) -> int:
@@ -193,49 +190,31 @@ class ParticlePenaltyContactCartesianBoundaryConstraint(MPMConstraintBase):
         # get the current constrained points, as the particle may have moved
         self._constrained_points = self._getConstraintLocations()
 
-        wasActive = self.isActive
-        self.isActive = True
+        wasActive = self.active
 
-        if self._doProximityCheck:
-            # check if any of the constrained points is within proximity to the boundary
-            self.isActive = False
+        # within reach if one of the constrained points is close enough to the boundary
+        self.withinReach = not self._doProximityCheck or any(
+            abs(constrained_point[self._component] - self._boundaryPosition)
+            <= self._particleCharacteristicLength_x_proximityFactor
+            for constrained_point in self._constrained_points
+        )
 
-            for constrained_point in self._constrained_points:
-                constrained_point_j = constrained_point[self._component]
-                distanceToBoundary = abs(constrained_point_j - self._boundaryPosition)
-                if distanceToBoundary > self._particleCharacteristicLength_x_proximityFactor:
-                    # not close enough to boundary
-                    hasChanged = wasActive is not False
-                    self.isActive = False
-                else:
-                    # close enough to boundary
-                    hasChanged = wasActive is not True
-                    self.isActive = True
+        if self.active != wasActive:
+            hasChanged = True
 
-                if self.isActive:
-                    # no need to check other points, one is enough
-                    break
-
-        if not self.isActive:
+        if not self.active:
             self.reactionForce = 0.0
 
         return hasChanged
 
-    def applyConstraint(self, dU_: np.ndarray, PExt: np.ndarray, V: np.ndarray, timeStep: TimeStep):
+    def computeKernels(self, U_np: np.ndarray, dU: np.ndarray, P: np.ndarray, K: np.ndarray, timeStep: TimeStep):
 
-        if not self.isActive:
-            return
-
-        dU_U = dU_
-        PExt_U = PExt
-
-        K = V.reshape((self.nDof, self.nDof))
-        K_UU = K
+        K_UU = K.reshape((self.nDof, self.nDof))
 
         i = self._component
 
-        P_U_i = PExt_U[i :: self._fieldSize]
-        dU_U_j = dU_U[i :: self._fieldSize]
+        P_U_i = P[i :: self._fieldSize]
+        dU_U_j = dU[i :: self._fieldSize]
         K_UU_ij = K_UU[i :: self._fieldSize, i :: self._fieldSize]
 
         penaltyForce = 0.0
