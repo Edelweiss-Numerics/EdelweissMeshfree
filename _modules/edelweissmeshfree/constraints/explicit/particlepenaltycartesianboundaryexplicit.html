@@ -91,15 +91,19 @@
 <div class="viewcode-block" id="ParticlePenaltyCartesianBoundaryConstraintExplicit">
 <a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit.ParticlePenaltyCartesianBoundaryConstraintExplicit">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ParticlePenaltyCartesianBoundaryConstraintExplicit</span><span class="p">(</span><span class="n">MPMExplicitConstraintBase</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">    This class implements a Penalty contact boundary constraint for EXPLICIT simulations.</span>
 <span class="sd">    It prevents a particle from penetrating a defined boundary surface by applying</span>
 <span class="sd">    penalty forces directly to the grid nodes.</span>
 
 <span class="sd">    The constraint is applied based on the current position of the particle relative to the boundary.</span>
-<span class="sd">    If penetration is detected:</span>
-<span class="sd">        F_penalty = -k * g * n</span>
-<span class="sd">    where g is penetration depth, k is penalty parameter, n is normal.</span>
+<span class="sd">    If penetration is detected, the penalty force is</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \boldsymbol{F}_{\mathrm{penalty}} = -k\, g\, \boldsymbol{n},</span>
+
+<span class="sd">    where :math:`g` is the penetration depth, :math:`k` the penalty parameter and :math:`\boldsymbol{n}` the normal.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>

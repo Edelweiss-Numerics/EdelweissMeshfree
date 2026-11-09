@@ -115,6 +115,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.constraints.base.constraintbase</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConstraintBase</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.numerics.dofmanager</span><span class="w"> </span><span class="kn">import</span> <span class="n">DofManager</span><span class="p">,</span> <span class="n">DofVector</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.outputmanagers.base.outputmanagerbase</span><span class="w"> </span><span class="kn">import</span> <span class="n">OutputManagerBase</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.stepactions.base.arclengthcontrollerbase</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArcLengthControllerBase</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.stepactions.base.dirichletbase</span><span class="w"> </span><span class="kn">import</span> <span class="n">DirichletBase</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.timesteppers.timestep</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeStep</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.utils.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">DivergingSolution</span><span class="p">,</span> <span class="n">ReachedMaxIterations</span>
@@ -128,9 +129,6 @@
     <span class="n">BaseParticleManager</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.solvers.nqsmarmotparallel</span><span class="w"> </span><span class="kn">import</span> <span class="n">NQSParallelForMarmot</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.stepactions.base.arclengthcontrollerbase</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">ArcLengthControllerBase</span><span class="p">,</span>
-<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.stepactions.base.mpmbodyloadbase</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPMBodyLoadBase</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.stepactions.base.mpmdistributedloadbase</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">MPMDistributedLoadBase</span><span class="p">,</span>

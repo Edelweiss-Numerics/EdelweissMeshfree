@@ -182,12 +182,19 @@
 
 <div class="viewcode-block" id="ParticleDistributedLoad.applyAtStepEnd">
 <a class="viewcode-back" href="../../../documentation/step_actions.html#edelweissmeshfree.stepactions.particledistributedload.ParticleDistributedLoad.applyAtStepEnd">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">applyAtStepEnd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">stepMagnitude</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">applyAtStepEnd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">loadParameter</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Keep the value the load reached at the end of the step, from which the next step starts; see</span>
+<span class="sd">        :meth:`~edelweissfe.stepactions.base.loadbase.LoadBase.applyAtStepEnd`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        model</span>
+<span class="sd">            The current state of the model.</span>
+<span class="sd">        loadParameter</span>
+<span class="sd">            The load parameter an arc length step ended at; None for a step that follows the amplitude.</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_idle</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">stepMagnitude</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_loadAtStepStart</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delta</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_amplitude</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_loadAtStepStart</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delta</span> <span class="o">*</span> <span class="n">stepMagnitude</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_loadAtStepStart</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delta</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">amplitudeAtStepEnd</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_amplitude</span><span class="p">,</span> <span class="n">loadParameter</span><span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">_delta</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_idle</span> <span class="o">=</span> <span class="kc">True</span></div>

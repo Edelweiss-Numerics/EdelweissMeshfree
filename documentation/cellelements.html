@@ -127,28 +127,18 @@ material point type, following a specific quadrature rule and order.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="edelweissmeshfree.cellelements.base.cellelement.CellElementBase">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.cellelements.base.cellelement.</span></span><span class="sig-name descname"><span class="pre">CellElementBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cellElType</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cellElNumber</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quadratureType</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quadratureOrder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/cellelements/base/cellelement.html#CellElementBase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.cellelements.base.cellelement.CellElementBase" title="Link to this definition"></a></dt>
-<dd><p>MPM cells in EdelweissMPM should be derived from this
-base class in order to follow the general interface.</p>
-<p>EdelweissMeshfree expects the layout of the residual contribution P (and of the tangent) to be of the form</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">[ node 1 - dofs field 1,</span>
-<span class="go">  node 1 - dofs field 2,</span>
-<span class="go">  node 1 - ... ,</span>
-<span class="go">  node 1 - dofs field n,</span>
-<span class="go">  node 2 - dofs field 1,</span>
-<span class="go">  ... ,</span>
-<span class="go">  node N - dofs field n].</span>
-</pre></div>
-</div>
+<dd><p>The base class for all CellElements.
+If you want to implement a new CellElement, you have to inherit from this class.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>cellType</strong> – A string identifying the requested element formulation.</p></li>
 <li><p><strong>cellNumber</strong> – A unique integer label used for all kinds of purposes.</p></li>
-<li><p><strong>nodes</strong> (<em>list</em><em>[</em><em>Node</em><em>]</em>) – The list of Nodes assigned to this cell.</p></li>
+<li><p><strong>nodes</strong> (<em>list</em><em>[</em><em>Node</em><em>]</em>) – The list of nodes assigned to this cell.</p></li>
+<li><p><strong>quadratureType</strong> (<em>str</em>) – A string identifying the requested quadrature type.</p></li>
+<li><p><strong>quadratureOrder</strong> (<em>int</em>) – The order of the quadrature rule.</p></li>
 <li><p><strong>cellElType</strong> (<em>str</em>)</p></li>
 <li><p><strong>cellElNumber</strong> (<em>int</em>)</p></li>
-<li><p><strong>quadratureType</strong> (<em>str</em>)</p></li>
-<li><p><strong>quadratureOrder</strong> (<em>int</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Attributes<span class="colon">:</span></dt>

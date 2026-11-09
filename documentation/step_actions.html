@@ -17,7 +17,6 @@
       <script src="../_static/documentation_options.js?v=57c4c7c7"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
-      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -85,7 +84,6 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#arclength-control">Arclength control</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#module-edelweissmeshfree.stepactions.base.arclengthcontrollerbase"><code class="docutils literal notranslate"><span class="pre">ArclengthControllerBase</span></code> class</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-edelweissmeshfree.stepactions.indirectcontrol"><code class="docutils literal notranslate"><span class="pre">Indirect</span> <span class="pre">control</span></code> class</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-edelweissmeshfree.stepactions.particleindirectcontrol"><code class="docutils literal notranslate"><span class="pre">Particle</span> <span class="pre">indirect</span> <span class="pre">control</span></code> class</a></li>
 </ul>
@@ -322,8 +320,8 @@ solver, which needs no tangent.</p></li>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtIncrementStart</span></code>(model, timeStep)</p></td>
 <td><p>Is called when a step increment starts.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.stepactions.bodyload.BodyLoad.applyAtStepEnd" title="edelweissmeshfree.stepactions.bodyload.BodyLoad.applyAtStepEnd"><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtStepEnd</span></code></a>(model[, stepMagnitude])</p></td>
-<td><p>Keep the value the load reached at the end of the step, from which the next step starts, and go idle until a later step declares a change again.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.stepactions.bodyload.BodyLoad.applyAtStepEnd" title="edelweissmeshfree.stepactions.bodyload.BodyLoad.applyAtStepEnd"><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtStepEnd</span></code></a>(model[, loadParameter])</p></td>
+<td><p>Keep the value the load reached at the end of the step, from which the next step starts; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">applyAtStepEnd()</span></code>.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtStepStart</span></code>(model)</p></td>
 <td><p>Is called when a step starts.</p></td>
@@ -353,18 +351,14 @@ solver, which needs no tangent.</p></li>
 </table>
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.stepactions.bodyload.BodyLoad.applyAtStepEnd">
-<span class="sig-name descname"><span class="pre">applyAtStepEnd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepMagnitude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/bodyload.html#BodyLoad.applyAtStepEnd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.bodyload.BodyLoad.applyAtStepEnd" title="Link to this definition"></a></dt>
-<dd><p>Keep the value the load reached at the end of the step, from which the next step starts, and go idle until
-a later step declares a change again.</p>
-<p>A step that follows the amplitudes ends at <span class="math notranslate nohighlight">\(f(1)\)</span>. An arc length step (see <span class="xref std std-ref">arc-length-control</span>)
-applies <span class="math notranslate nohighlight">\(f(0) + \lambda \, (f(1) - f(0))\)</span>, the change over the step scaled by its load parameter
-<span class="math notranslate nohighlight">\(\lambda\)</span>, and the load keeps exactly that: the factor of the change is
-<code class="xref py py-meth docutils literal notranslate"><span class="pre">amplitudeAtStepEnd()</span></code>.</p>
+<span class="sig-name descname"><span class="pre">applyAtStepEnd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loadParameter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/bodyload.html#BodyLoad.applyAtStepEnd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.bodyload.BodyLoad.applyAtStepEnd" title="Link to this definition"></a></dt>
+<dd><p>Keep the value the load reached at the end of the step, from which the next step starts; see
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">applyAtStepEnd()</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>model</strong> – The current state of the model.</p></li>
-<li><p><strong>loadParameter</strong> – The load parameter an arc length step ended at; None for a step that follows the amplitudes.</p></li>
+<li><p><strong>loadParameter</strong> (<em>float</em><em> | </em><em>None</em>) – The load parameter an arc length step ended at; None for a step that follows the amplitude.</p></li>
 </ul>
 </dd>
 </dl>
@@ -607,8 +601,8 @@ Accordingly, the load vector already includes the surface vector defintion.</p>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtIncrementStart</span></code>(model, timeStep)</p></td>
 <td><p>Is called when a step increment starts.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.stepactions.distributedload.MaterialPointPointWiseDistributedLoad.applyAtStepEnd" title="edelweissmeshfree.stepactions.distributedload.MaterialPointPointWiseDistributedLoad.applyAtStepEnd"><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtStepEnd</span></code></a>(model[, stepMagnitude])</p></td>
-<td><p>Keep the value the load reached at the end of the step, from which the next step starts, and go idle until a later step declares a change again.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.stepactions.distributedload.MaterialPointPointWiseDistributedLoad.applyAtStepEnd" title="edelweissmeshfree.stepactions.distributedload.MaterialPointPointWiseDistributedLoad.applyAtStepEnd"><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtStepEnd</span></code></a>(model[, loadParameter])</p></td>
+<td><p>Keep the value the load reached at the end of the step, from which the next step starts; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">applyAtStepEnd()</span></code>.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtStepStart</span></code>(model)</p></td>
 <td><p>Is called when a step starts.</p></td>
@@ -638,18 +632,14 @@ Accordingly, the load vector already includes the surface vector defintion.</p>
 </table>
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.stepactions.distributedload.MaterialPointPointWiseDistributedLoad.applyAtStepEnd">
-<span class="sig-name descname"><span class="pre">applyAtStepEnd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepMagnitude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/distributedload.html#MaterialPointPointWiseDistributedLoad.applyAtStepEnd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.distributedload.MaterialPointPointWiseDistributedLoad.applyAtStepEnd" title="Link to this definition"></a></dt>
-<dd><p>Keep the value the load reached at the end of the step, from which the next step starts, and go idle until
-a later step declares a change again.</p>
-<p>A step that follows the amplitudes ends at <span class="math notranslate nohighlight">\(f(1)\)</span>. An arc length step (see <span class="xref std std-ref">arc-length-control</span>)
-applies <span class="math notranslate nohighlight">\(f(0) + \lambda \, (f(1) - f(0))\)</span>, the change over the step scaled by its load parameter
-<span class="math notranslate nohighlight">\(\lambda\)</span>, and the load keeps exactly that: the factor of the change is
-<code class="xref py py-meth docutils literal notranslate"><span class="pre">amplitudeAtStepEnd()</span></code>.</p>
+<span class="sig-name descname"><span class="pre">applyAtStepEnd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loadParameter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/distributedload.html#MaterialPointPointWiseDistributedLoad.applyAtStepEnd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.distributedload.MaterialPointPointWiseDistributedLoad.applyAtStepEnd" title="Link to this definition"></a></dt>
+<dd><p>Keep the value the load reached at the end of the step, from which the next step starts; see
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">applyAtStepEnd()</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>model</strong> – The current state of the model.</p></li>
-<li><p><strong>loadParameter</strong> – The load parameter an arc length step ended at; None for a step that follows the amplitudes.</p></li>
+<li><p><strong>loadParameter</strong> (<em>float</em><em> | </em><em>None</em>) – The load parameter an arc length step ended at; None for a step that follows the amplitude.</p></li>
 </ul>
 </dd>
 </dl>
@@ -878,8 +868,8 @@ explicit solver, which needs no tangent.</p></li>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtIncrementStart</span></code>(model, timeStep)</p></td>
 <td><p>Is called when a step increment starts.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.stepactions.particledistributedload.ParticleDistributedLoad.applyAtStepEnd" title="edelweissmeshfree.stepactions.particledistributedload.ParticleDistributedLoad.applyAtStepEnd"><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtStepEnd</span></code></a>(model[, stepMagnitude])</p></td>
-<td><p>Keep the value the load reached at the end of the step, from which the next step starts, and go idle until a later step declares a change again.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.stepactions.particledistributedload.ParticleDistributedLoad.applyAtStepEnd" title="edelweissmeshfree.stepactions.particledistributedload.ParticleDistributedLoad.applyAtStepEnd"><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtStepEnd</span></code></a>(model[, loadParameter])</p></td>
+<td><p>Keep the value the load reached at the end of the step, from which the next step starts; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">applyAtStepEnd()</span></code>.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtStepStart</span></code>(model)</p></td>
 <td><p>Is called when a step starts.</p></td>
@@ -909,18 +899,14 @@ explicit solver, which needs no tangent.</p></li>
 </table>
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.stepactions.particledistributedload.ParticleDistributedLoad.applyAtStepEnd">
-<span class="sig-name descname"><span class="pre">applyAtStepEnd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepMagnitude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/particledistributedload.html#ParticleDistributedLoad.applyAtStepEnd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.particledistributedload.ParticleDistributedLoad.applyAtStepEnd" title="Link to this definition"></a></dt>
-<dd><p>Keep the value the load reached at the end of the step, from which the next step starts, and go idle until
-a later step declares a change again.</p>
-<p>A step that follows the amplitudes ends at <span class="math notranslate nohighlight">\(f(1)\)</span>. An arc length step (see <span class="xref std std-ref">arc-length-control</span>)
-applies <span class="math notranslate nohighlight">\(f(0) + \lambda \, (f(1) - f(0))\)</span>, the change over the step scaled by its load parameter
-<span class="math notranslate nohighlight">\(\lambda\)</span>, and the load keeps exactly that: the factor of the change is
-<code class="xref py py-meth docutils literal notranslate"><span class="pre">amplitudeAtStepEnd()</span></code>.</p>
+<span class="sig-name descname"><span class="pre">applyAtStepEnd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loadParameter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/particledistributedload.html#ParticleDistributedLoad.applyAtStepEnd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.particledistributedload.ParticleDistributedLoad.applyAtStepEnd" title="Link to this definition"></a></dt>
+<dd><p>Keep the value the load reached at the end of the step, from which the next step starts; see
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">applyAtStepEnd()</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>model</strong> – The current state of the model.</p></li>
-<li><p><strong>loadParameter</strong> – The load parameter an arc length step ended at; None for a step that follows the amplitudes.</p></li>
+<li><p><strong>loadParameter</strong> (<em>float</em><em> | </em><em>None</em>) – The load parameter an arc length step ended at; None for a step that follows the amplitude.</p></li>
 </ul>
 </dd>
 </dl>
@@ -972,15 +958,13 @@ applies <span class="math notranslate nohighlight">\(f(0) + \lambda \, (f(1) - f
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>name</strong> (<em>str</em>) – Name of the distributed load.</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – Name of the boundary condition.</p></li>
 <li><p><strong>nSet</strong> (<em>NodeSet</em>) – The node set to apply the BC to.</p></li>
 <li><p><strong>field</strong> (<em>str</em>) – The field to apply the BC to.</p></li>
+<li><p><strong>values</strong> (<em>dict</em>) – The prescribed increment of the field over the step, by component.</p></li>
 <li><p><strong>model</strong> (<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel"><em>MPMModel</em></a>) – The MPM model tree.</p></li>
 <li><p><strong>journal</strong> (<em>Journal</em>) – The journal to write messages to.</p></li>
-<li><p><strong>cells</strong> (<a class="reference internal" href="sets.html#edelweissmeshfree.sets.cellset.CellSet" title="edelweissmeshfree.sets.cellset.CellSet"><em>CellSet</em></a>) – The cells to apply the distributed load to.</p></li>
-<li><p><strong>bodyLoadType</strong> (<em>str</em>) – The type of the body load, e.g., “gravity”.</p></li>
-<li><p><strong>loadVector</strong> (<em>np.ndarray</em>) – The load vector to apply to the particles.</p></li>
-<li><p><strong>f_t</strong> (<em>Callable</em><em>[</em><em>[</em><em>float</em><em>]</em><em>, </em><em>float</em><em>]</em>) – The amplitude function of the distributed load.</p></li>
+<li><p><strong>f_t</strong> (<em>Callable</em><em>[</em><em>[</em><em>float</em><em>]</em><em>, </em><em>float</em><em>]</em>) – The amplitude of the prescribed increment over the step progress.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Attributes<span class="colon">:</span></dt>
@@ -1148,8 +1132,8 @@ nearly incompressible regime is O(10) * K / h.</p></li>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtIncrementStart</span></code>(model, timeStep)</p></td>
 <td><p>Is called when a step increment starts.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.stepactions.particlenitschedirichlet.ParticleNitscheDirichlet.applyAtStepEnd" title="edelweissmeshfree.stepactions.particlenitschedirichlet.ParticleNitscheDirichlet.applyAtStepEnd"><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtStepEnd</span></code></a>(model[, stepMagnitude])</p></td>
-<td><p>Keep the value the load reached at the end of the step, from which the next step starts, and go idle until a later step declares a change again.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.stepactions.particlenitschedirichlet.ParticleNitscheDirichlet.applyAtStepEnd" title="edelweissmeshfree.stepactions.particlenitschedirichlet.ParticleNitscheDirichlet.applyAtStepEnd"><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtStepEnd</span></code></a>(model[, loadParameter])</p></td>
+<td><p>Keep the prescribed value reached at the end of the step, from which the next step starts; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">applyAtStepEnd()</span></code>.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtStepStart</span></code>(model)</p></td>
 <td><p>Is called when a step starts.</p></td>
@@ -1179,18 +1163,14 @@ nearly incompressible regime is O(10) * K / h.</p></li>
 </table>
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.stepactions.particlenitschedirichlet.ParticleNitscheDirichlet.applyAtStepEnd">
-<span class="sig-name descname"><span class="pre">applyAtStepEnd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepMagnitude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/particlenitschedirichlet.html#ParticleNitscheDirichlet.applyAtStepEnd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.particlenitschedirichlet.ParticleNitscheDirichlet.applyAtStepEnd" title="Link to this definition"></a></dt>
-<dd><p>Keep the value the load reached at the end of the step, from which the next step starts, and go idle until
-a later step declares a change again.</p>
-<p>A step that follows the amplitudes ends at <span class="math notranslate nohighlight">\(f(1)\)</span>. An arc length step (see <span class="xref std std-ref">arc-length-control</span>)
-applies <span class="math notranslate nohighlight">\(f(0) + \lambda \, (f(1) - f(0))\)</span>, the change over the step scaled by its load parameter
-<span class="math notranslate nohighlight">\(\lambda\)</span>, and the load keeps exactly that: the factor of the change is
-<code class="xref py py-meth docutils literal notranslate"><span class="pre">amplitudeAtStepEnd()</span></code>.</p>
+<span class="sig-name descname"><span class="pre">applyAtStepEnd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loadParameter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/particlenitschedirichlet.html#ParticleNitscheDirichlet.applyAtStepEnd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.particlenitschedirichlet.ParticleNitscheDirichlet.applyAtStepEnd" title="Link to this definition"></a></dt>
+<dd><p>Keep the prescribed value reached at the end of the step, from which the next step starts; see
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">applyAtStepEnd()</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>model</strong> – The current state of the model.</p></li>
-<li><p><strong>loadParameter</strong> – The load parameter an arc length step ended at; None for a step that follows the amplitudes.</p></li>
+<li><p><strong>loadParameter</strong> (<em>float</em><em> | </em><em>None</em>) – The load parameter an arc length step ended at; None for a step that follows the amplitude.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1243,87 +1223,9 @@ evaluated at the current particle state (call after the increment converged).</p
 </section>
 <section id="arclength-control">
 <h2>Arclength control<a class="headerlink" href="#arclength-control" title="Link to this heading"></a></h2>
-<section id="module-edelweissmeshfree.stepactions.base.arclengthcontrollerbase">
-<span id="arclengthcontrollerbase-class"></span><h3><code class="docutils literal notranslate"><span class="pre">ArclengthControllerBase</span></code> class<a class="headerlink" href="#module-edelweissmeshfree.stepactions.base.arclengthcontrollerbase" title="Link to this heading"></a></h3>
-<dl class="py class">
-<dt class="sig sig-object py" id="edelweissmeshfree.stepactions.base.arclengthcontrollerbase.ArcLengthControllerBase">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.stepactions.base.arclengthcontrollerbase.</span></span><span class="sig-name descname"><span class="pre">ArcLengthControllerBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">definition</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jobInfo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fieldOutputController</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">journal</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/base/arclengthcontrollerbase.html#ArcLengthControllerBase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.base.arclengthcontrollerbase.ArcLengthControllerBase" title="Link to this definition"></a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Attributes<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>checkpointedState</strong></dt><dd></dd>
-<dt><strong>schema</strong></dt><dd></dd>
-</dl>
-</dd>
-<dt class="field-even">Parameters<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
-<li><p><strong>name</strong> (<em>str</em>)</p></li>
-<li><p><strong>definition</strong> (<em>dict</em>)</p></li>
-<li><p><strong>jobInfo</strong> (<em>dict</em>)</p></li>
-<li><p><strong>model</strong> (<em>FEModel</em>)</p></li>
-<li><p><strong>fieldOutputController</strong> (<em>FieldOutputController</em>)</p></li>
-<li><p><strong>journal</strong> (<em>Journal</em>)</p></li>
-</ul>
-</dd>
-</dl>
-<p class="rubric">Methods</p>
-<table class="autosummary longtable docutils align-default">
-<tbody>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtIncrementStart</span></code>(model, timeStep)</p></td>
-<td><p>Is called when a step increment starts.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtStepEnd</span></code>(model)</p></td>
-<td><p>Is called when a step successfully finished.</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtStepStart</span></code>(model)</p></td>
-<td><p>Is called when a step starts.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.stepactions.base.arclengthcontrollerbase.ArcLengthControllerBase.computeDDLambda" title="edelweissmeshfree.stepactions.base.arclengthcontrollerbase.ArcLengthControllerBase.computeDDLambda"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeDDLambda</span></code></a>(dU, ddU_0, ddU_f, timeStep, ...)</p></td>
-<td><p>This method is response for compute the correction to dLamba, i.e., the increment of the arc length parameter.</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fromStepActionDefinition</span></code>(name, definition, ...)</p></td>
-<td><p>Create this step action from a parsed <code class="docutils literal notranslate"><span class="pre">.inp</span></code> step action definition.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getRestartData</span></code>()</p></td>
-<td><p>The state this step action carries; by default the attributes declared in <code class="xref py py-attr docutils literal notranslate"><span class="pre">checkpointedState</span></code>.</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setRestartData</span></code>(data)</p></td>
-<td><p>Restore the state <code class="xref py py-meth docutils literal notranslate"><span class="pre">getRestartData()</span></code> returned.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateStepAction</span></code>(definition, jobInfo, model, ...)</p></td>
-<td><p>Is called when an updated definition is present for a new step.</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateStepActionFromDefinition</span></code>(definition, ...)</p></td>
-<td><p>Update this step action from a parsed <code class="docutils literal notranslate"><span class="pre">.inp</span></code> step action definition.</p></td>
-</tr>
-</tbody>
-</table>
-<dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.stepactions.base.arclengthcontrollerbase.ArcLengthControllerBase.computeDDLambda">
-<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">computeDDLambda</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ddU_0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ddU_f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dofManager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/base/arclengthcontrollerbase.html#ArcLengthControllerBase.computeDDLambda"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.base.arclengthcontrollerbase.ArcLengthControllerBase.computeDDLambda" title="Link to this definition"></a></dt>
-<dd><p>This method is response for compute the correction to dLamba, i.e., the increment of the arc length parameter.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>dU</strong> (<em>DofVector</em>) – The current increment of the solution.</p></li>
-<li><p><strong>ddU_0</strong> (<em>DofVector</em>) – The current dead increment of the solution.</p></li>
-<li><p><strong>ddU_f</strong> (<em>DofVector</em>) – The current reference increment of the solution.</p></li>
-<li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The current time increment.</p></li>
-<li><p><strong>dofManager</strong> (<em>DofManager</em>) – The DofManager instance.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The correction ddLambda to dLambda.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>float</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-</section>
+<p>The arc length controllers are EdelweissFE’s
+(<code class="xref py py-class docutils literal notranslate"><span class="pre">ArcLengthControllerBase</span></code>), so that EdelweissFE’s arc
+length solver <code class="docutils literal notranslate"><span class="pre">NISTPArcLength</span></code> takes them by their name.</p>
 <section id="module-edelweissmeshfree.stepactions.indirectcontrol">
 <span id="indirect-control-class"></span><h3><code class="docutils literal notranslate"><span class="pre">Indirect</span> <span class="pre">control</span></code> class<a class="headerlink" href="#module-edelweissmeshfree.stepactions.indirectcontrol" title="Link to this heading"></a></h3>
 <dl class="py class">
@@ -1363,19 +1265,22 @@ evaluated at the current particle state (call after the increment converged).</p
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.computeDDLambda" title="edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.computeDDLambda"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeDDLambda</span></code></a>(dU, ddU_0, ddU_f, timeStep, ...)</p></td>
 <td><p>This method is called by an arc length solver for computing the correction to the arc length parameter.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fromStepActionDefinition</span></code>(name, definition, ...)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.finishIncrement" title="edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.finishIncrement"><code class="xref py py-obj docutils literal notranslate"><span class="pre">finishIncrement</span></code></a>(U, dU, dLambda, timeStep, ...)</p></td>
+<td><p>Called by the arc length solver once an increment has converged; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">finishIncrement()</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fromStepActionDefinition</span></code>(name, definition, ...)</p></td>
 <td><p>Create this step action from a parsed <code class="docutils literal notranslate"><span class="pre">.inp</span></code> step action definition.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getRestartData</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getRestartData</span></code>()</p></td>
 <td><p>The state this step action carries; by default the attributes declared in <code class="xref py py-attr docutils literal notranslate"><span class="pre">checkpointedState</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setRestartData</span></code>(data)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setRestartData</span></code>(data)</p></td>
 <td><p>Restore the state <code class="xref py py-meth docutils literal notranslate"><span class="pre">getRestartData()</span></code> returned.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateStepAction</span></code>(definition, jobInfo, model, ...)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateStepAction</span></code>(definition, jobInfo, model, ...)</p></td>
 <td><p>Is called when an updated definition is present for a new step.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateStepActionFromDefinition</span></code>(definition, ...)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateStepActionFromDefinition</span></code>(definition, ...)</p></td>
 <td><p>Update this step action from a parsed <code class="docutils literal notranslate"><span class="pre">.inp</span></code> step action definition.</p></td>
 </tr>
 </tbody>
@@ -1411,6 +1316,25 @@ correction to the arc length parameter.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.finishIncrement">
+<span class="sig-name descname"><span class="pre">finishIncrement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">U</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dLambda</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dofManager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/indirectcontrol.html#IndirectControl.finishIncrement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.finishIncrement" title="Link to this definition"></a></dt>
+<dd><p>Called by the arc length solver once an increment has converged; see
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">finishIncrement()</span></code>. This
+controller keeps nothing from one increment to the next: its target is the arc length of the whole step.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>U</strong> (<em>DofVector</em>) – The solution at the start of the increment.</p></li>
+<li><p><strong>dU</strong> (<em>DofVector</em>) – The converged increment of the solution.</p></li>
+<li><p><strong>dLambda</strong> (<em>float</em>) – The converged increment of the load parameter.</p></li>
+<li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The converged time step.</p></li>
+<li><p><strong>dofManager</strong> (<em>DofManager</em>) – The dof manager of the current equation system.</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -1478,19 +1402,22 @@ module for indirect (displacement) controlled simulations.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.stepactions.particleindirectcontrol.IndirectControl.computeDDLambda" title="edelweissmeshfree.stepactions.particleindirectcontrol.IndirectControl.computeDDLambda"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeDDLambda</span></code></a>(dU, ddU_0, ddU_f, timeStep, ...)</p></td>
 <td><p>This method is called by an arc length solver for computing the correction to the arc length parameter.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fromStepActionDefinition</span></code>(name, definition, ...)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.stepactions.particleindirectcontrol.IndirectControl.finishIncrement" title="edelweissmeshfree.stepactions.particleindirectcontrol.IndirectControl.finishIncrement"><code class="xref py py-obj docutils literal notranslate"><span class="pre">finishIncrement</span></code></a>(U, dU, dLambda, timeStep, ...)</p></td>
+<td><p>Called by the arc length solver once an increment has converged; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">finishIncrement()</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fromStepActionDefinition</span></code>(name, definition, ...)</p></td>
 <td><p>Create this step action from a parsed <code class="docutils literal notranslate"><span class="pre">.inp</span></code> step action definition.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getRestartData</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getRestartData</span></code>()</p></td>
 <td><p>The state this step action carries; by default the attributes declared in <code class="xref py py-attr docutils literal notranslate"><span class="pre">checkpointedState</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setRestartData</span></code>(data)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setRestartData</span></code>(data)</p></td>
 <td><p>Restore the state <code class="xref py py-meth docutils literal notranslate"><span class="pre">getRestartData()</span></code> returned.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateStepAction</span></code>(definition, jobInfo, model, ...)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateStepAction</span></code>(definition, jobInfo, model, ...)</p></td>
 <td><p>Is called when an updated definition is present for a new step.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateStepActionFromDefinition</span></code>(definition, ...)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateStepActionFromDefinition</span></code>(definition, ...)</p></td>
 <td><p>Update this step action from a parsed <code class="docutils literal notranslate"><span class="pre">.inp</span></code> step action definition.</p></td>
 </tr>
 </tbody>
@@ -1526,6 +1453,25 @@ correction to the arc length parameter.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.stepactions.particleindirectcontrol.IndirectControl.finishIncrement">
+<span class="sig-name descname"><span class="pre">finishIncrement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">U</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dLambda</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dofManager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/particleindirectcontrol.html#IndirectControl.finishIncrement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.particleindirectcontrol.IndirectControl.finishIncrement" title="Link to this definition"></a></dt>
+<dd><p>Called by the arc length solver once an increment has converged; see
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">finishIncrement()</span></code>. This
+controller keeps nothing from one increment to the next: its target is the arc length of the whole step.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>U</strong> (<em>DofVector</em>) – The solution at the start of the increment.</p></li>
+<li><p><strong>dU</strong> (<em>DofVector</em>) – The converged increment of the solution.</p></li>
+<li><p><strong>dLambda</strong> (<em>float</em>) – The converged increment of the load parameter.</p></li>
+<li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The converged time step.</p></li>
+<li><p><strong>dofManager</strong> (<em>DofManager</em>) – The dof manager of the current equation system.</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>

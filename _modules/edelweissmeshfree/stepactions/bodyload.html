@@ -118,29 +118,30 @@
 <div class="viewcode-block" id="BodyLoad">
 <a class="viewcode-back" href="../../../documentation/step_actions.html#edelweissmeshfree.stepactions.bodyload.BodyLoad">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">BodyLoad</span><span class="p">(</span><span class="n">MPMBodyLoadBase</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">journal</span><span class="p">,</span> <span class="n">cells</span><span class="p">,</span> <span class="n">bodyLoadType</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">loadVector</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        This is a classical body load for MPM models.</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    This is a classical body load for MPM models.</span>
 
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        name : str</span>
-<span class="sd">            Name of the distributed load.</span>
-<span class="sd">        model : MPMModel</span>
-<span class="sd">            The MPM model tree.</span>
-<span class="sd">        journal : Journal</span>
-<span class="sd">            The journal to write messages to.</span>
-<span class="sd">        cells: CellSet</span>
-<span class="sd">            The cells to apply the distributed load to.</span>
-<span class="sd">        bodyLoadType: str</span>
-<span class="sd">            The type of the body load, e.g., "gravity".</span>
-<span class="sd">        loadVector : np.ndarray</span>
-<span class="sd">            The load vector to apply to the particles.</span>
-<span class="sd">        **kwargs</span>
-<span class="sd">            Additional keyword arguments. The following are supported:</span>
-<span class="sd">            - f_t : Callable[[float], float]</span>
-<span class="sd">                The amplitude function of the distributed load.</span>
-<span class="sd">        """</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    name : str</span>
+<span class="sd">        Name of the distributed load.</span>
+<span class="sd">    model : MPMModel</span>
+<span class="sd">        The MPM model tree.</span>
+<span class="sd">    journal : Journal</span>
+<span class="sd">        The journal to write messages to.</span>
+<span class="sd">    cells: CellSet</span>
+<span class="sd">        The cells to apply the distributed load to.</span>
+<span class="sd">    bodyLoadType: str</span>
+<span class="sd">        The type of the body load, e.g., "gravity".</span>
+<span class="sd">    loadVector : np.ndarray</span>
+<span class="sd">        The load vector to apply to the particles.</span>
+<span class="sd">    **kwargs</span>
+<span class="sd">        Additional keyword arguments. The following are supported:</span>
+<span class="sd">        - f_t : Callable[[float], float]</span>
+<span class="sd">            The amplitude function of the distributed load.</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">journal</span><span class="p">,</span> <span class="n">cells</span><span class="p">,</span> <span class="n">bodyLoadType</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">loadVector</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_loadVector</span> <span class="o">=</span> <span class="n">loadVector</span>
@@ -169,14 +170,19 @@
 
 <div class="viewcode-block" id="BodyLoad.applyAtStepEnd">
 <a class="viewcode-back" href="../../../documentation/step_actions.html#edelweissmeshfree.stepactions.bodyload.BodyLoad.applyAtStepEnd">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">applyAtStepEnd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">stepMagnitude</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">applyAtStepEnd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">loadParameter</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Keep the value the load reached at the end of the step, from which the next step starts; see</span>
+<span class="sd">        :meth:`~edelweissfe.stepactions.base.loadbase.LoadBase.applyAtStepEnd`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        model</span>
+<span class="sd">            The current state of the model.</span>
+<span class="sd">        loadParameter</span>
+<span class="sd">            The load parameter an arc length step ended at; None for a step that follows the amplitude.</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_idle</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">stepMagnitude</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="c1"># standard case</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_loadAtStepStart</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delta</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_amplitude</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># set the 'actual' increment manually, e.g. for arc length method</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_loadAtStepStart</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delta</span> <span class="o">*</span> <span class="n">stepMagnitude</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_loadAtStepStart</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delta</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">amplitudeAtStepEnd</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_amplitude</span><span class="p">,</span> <span class="n">loadParameter</span><span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">_delta</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_idle</span> <span class="o">=</span> <span class="kc">True</span></div>

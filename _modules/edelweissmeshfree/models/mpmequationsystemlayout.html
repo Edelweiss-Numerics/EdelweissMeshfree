@@ -1,0 +1,288 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>edelweissmeshfree.models.mpmequationsystemlayout &mdash; EdelweissMeshfree v26.11 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css?v=1d735308" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=57c4c7c7"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            EdelweissMeshfree
+              <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gallery.html">Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation/index.html">Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">EdelweissMeshfree</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">edelweissmeshfree.models.mpmequationsystemlayout</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for edelweissmeshfree.models.mpmequationsystemlayout</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1">#  ---------------------------------------------------------------------</span>
+<span class="c1">#</span>
+<span class="c1">#  _____    _      _              _</span>
+<span class="c1"># | ____|__| | ___| |_      _____(_)___ ___</span>
+<span class="c1"># |  _| / _` |/ _ \ \ \ /\ / / _ \ / __/ __|</span>
+<span class="c1"># | |__| (_| |  __/ |\ V  V /  __/ \__ \__ \</span>
+<span class="c1"># |_____\__,_|\___|_| \_/\_/_\___|_|___/___/</span>
+<span class="c1"># |  \/  | ___  ___| |__  / _|_ __ ___  ___</span>
+<span class="c1"># | |\/| |/ _ \/ __| '_ \| |_| '__/ _ \/ _ \</span>
+<span class="c1"># | |  | |  __/\__ \ | | |  _| | |  __/  __/</span>
+<span class="c1"># |_|  |_|\___||___/_| |_|_| |_|  \___|\___|</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1">#  Unit of Strength of Materials and Structural Analysis</span>
+<span class="c1">#  University of Innsbruck,</span>
+<span class="c1">#</span>
+<span class="c1">#  Research Group for Computational Mechanics of Materials</span>
+<span class="c1">#  Institute of Structural Engineering, BOKU University, Vienna</span>
+<span class="c1">#</span>
+<span class="c1">#  2023 - today</span>
+<span class="c1">#</span>
+<span class="c1">#  Matthias Neuner |  matthias.neuner@boku.ac.at</span>
+<span class="c1">#  Thomas Mader    |  thomas.mader@bokut.ac.at</span>
+<span class="c1">#</span>
+<span class="c1">#  This file is part of EdelweissMeshfree.</span>
+<span class="c1">#</span>
+<span class="c1">#  This library is free software; you can redistribute it and/or</span>
+<span class="c1">#  modify it under the terms of the GNU Lesser General Public</span>
+<span class="c1">#  License as published by the Free Software Foundation; either</span>
+<span class="c1">#  version 2.1 of the License, or (at your option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1">#  The full text of the license can be found in the file LICENSE.md at</span>
+<span class="c1">#  the top level directory of EdelweissMeshfree.</span>
+<span class="c1">#  ---------------------------------------------------------------------</span>
+
+<span class="sd">"""What the equation system of a material point or RKPM model is made of: the answer an</span>
+<span class="sd">:class:`~edelweissmeshfree.models.mpmmodel.MPMModel` gives EdelweissFE's implicit solvers whenever they (re)build</span>
+<span class="sd">their equation system, see :meth:`~edelweissmeshfree.models.mpmmodel.MPMModel.buildEquationSystem`."""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.models.equationsystemlayout</span><span class="w"> </span><span class="kn">import</span> <span class="n">EquationSystemLayout</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.numerics.dofmanager</span><span class="w"> </span><span class="kn">import</span> <span class="n">DofManager</span><span class="p">,</span> <span class="n">DofVector</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.sets.nodeset</span><span class="w"> </span><span class="kn">import</span> <span class="n">NodeSet</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.timesteppers.timestep</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeStep</span>
+
+
+<div class="viewcode-block" id="MPMEquationSystemLayout">
+<a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MPMEquationSystemLayout</span><span class="p">(</span><span class="n">EquationSystemLayout</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""The layout of the equation system of a meshfree model, on its active domain: the background cells that hold</span>
+<span class="sd">    material points, the nodes these cells and the particles' kernel functions reach, and the finite elements with</span>
+<span class="sd">    their nodes.</span>
+
+<span class="sd">    Two kinds of nodes take part. The nodes of finite elements (and of cell elements) carry their total solution from</span>
+<span class="sd">    increment to increment, as in a finite element model. The nodes of the grid and of the kernel functions do not: the</span>
+<span class="sd">    material point method and RKPM are incremental on the current configuration -- the cells are reset after every</span>
+<span class="sd">    increment, and the kernel functions move with their particles, while the state lives in the material points and</span>
+<span class="sd">    particles. Their nodal values are the coefficients of one increment, and start every rebuilt equation system at</span>
+<span class="sd">    zero.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model</span>
+<span class="sd">        The model.</span>
+<span class="sd">    dofManager</span>
+<span class="sd">        The numbering of the degrees of freedom of the active domain.</span>
+<span class="sd">    elements</span>
+<span class="sd">        The finite elements, the active cells, the cell elements and the particles, in the order in which the solver</span>
+<span class="sd">        computes them.</span>
+<span class="sd">    activeCells</span>
+<span class="sd">        The cells that hold material points, sorted by their number.</span>
+<span class="sd">    nodesWithPersistentFieldValues</span>
+<span class="sd">        The nodes that carry their total solution from increment to increment: those of the finite elements and of</span>
+<span class="sd">        the cell elements.</span>
+<span class="sd">    activeNodeFields</span>
+<span class="sd">        The node fields on the nodes of the active domain, which the DOF manager numbers.</span>
+<span class="sd">    modelForLinearSolver</span>
+<span class="sd">        The model reduced to its active domain, for the linear solver.</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">,</span>
+        <span class="n">dofManager</span><span class="p">:</span> <span class="n">DofManager</span><span class="p">,</span>
+        <span class="n">elements</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+        <span class="n">activeCells</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+        <span class="n">nodesWithPersistentFieldValues</span><span class="p">:</span> <span class="n">NodeSet</span><span class="p">,</span>
+        <span class="n">activeNodeFields</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+        <span class="n">modelForLinearSolver</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">dofManager</span><span class="p">,</span> <span class="n">elements</span><span class="p">)</span>
+        <span class="c1">#: The cells that hold material points, sorted by their number.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">activeCells</span> <span class="o">=</span> <span class="n">activeCells</span>
+        <span class="c1">#: The nodes that carry their total solution from increment to increment.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nodesWithPersistentFieldValues</span> <span class="o">=</span> <span class="n">nodesWithPersistentFieldValues</span>
+        <span class="c1">#: The node fields on the nodes of the active domain.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">activeNodeFields</span> <span class="o">=</span> <span class="n">activeNodeFields</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">modelForLinearSolver</span> <span class="o">=</span> <span class="n">modelForLinearSolver</span>
+
+<div class="viewcode-block" id="MPMEquationSystemLayout.writeSolutionToDofVector">
+<a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.writeSolutionToDofVector">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">writeSolutionToDofVector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">U</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DofVector</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Write the solution the model carries from increment to increment into the solution vector of a (re)built</span>
+<span class="sd">        equation system: the entry ``U`` of the node fields at the nodes of finite elements and cell elements, and the</span>
+<span class="sd">        values of the scalar variables. The nodes of the grid and of the kernel functions start at zero; see</span>
+<span class="sd">        :class:`MPMEquationSystemLayout`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        U</span>
+<span class="sd">            The solution vector of the equation system, zero, overwritten.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        DofVector</span>
+<span class="sd">            The solution vector.</span>
+<span class="sd">        """</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodesWithPersistentFieldValues</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">nodeField</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">nodeFields</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="n">U</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">writeNodeFieldToDofVector</span><span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">nodeField</span><span class="p">,</span> <span class="s2">"U"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodesWithPersistentFieldValues</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">writeScalarVariablesToDofVector</span><span class="p">(</span><span class="n">U</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MPMEquationSystemLayout.writeResultsToModel">
+<a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.writeResultsToModel">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">writeResultsToModel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">U</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span> <span class="n">dU</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span> <span class="n">P</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Write the results of a converged increment to the model: the solution ``U``, its increment ``dU`` and the</span>
+<span class="sd">        reaction ``P`` to the node fields of the active domain, from there to the node fields of the model, whose nodes</span>
+<span class="sd">        outside the active domain get zero, and the solution to the scalar variables.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        U</span>
+<span class="sd">            The solution.</span>
+<span class="sd">        dU</span>
+<span class="sd">            The increment of the solution.</span>
+<span class="sd">        P</span>
+<span class="sd">            The reaction, the sum of the elements', cells' and particles' internal forces.</span>
+<span class="sd">        """</span>
+
+        <span class="k">for</span> <span class="n">activeNodeField</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">activeNodeFields</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">writeDofVectorToNodeField</span><span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">activeNodeField</span><span class="p">,</span> <span class="s2">"U"</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">writeDofVectorToNodeField</span><span class="p">(</span><span class="n">P</span><span class="p">,</span> <span class="n">activeNodeField</span><span class="p">,</span> <span class="s2">"P"</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">writeDofVectorToNodeField</span><span class="p">(</span><span class="n">dU</span><span class="p">,</span> <span class="n">activeNodeField</span><span class="p">,</span> <span class="s2">"dU"</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">nodeFields</span><span class="p">[</span><span class="n">activeNodeField</span><span class="o">.</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">copyEntriesFromOther</span><span class="p">(</span><span class="n">activeNodeField</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">writeDofVectorToScalarVariables</span><span class="p">(</span><span class="n">U</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MPMEquationSystemLayout.updateMaterialPoints">
+<a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.updateMaterialPoints">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">updateMaterialPoints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dU</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Update the material points with the trial solution increment, before the solver computes the cells, which</span>
+<span class="sd">        integrate them: the material points return to their converged state, every active cell (and cell element)</span>
+<span class="sd">        interpolates the solution increment to the material points it holds, and the material points evaluate their</span>
+<span class="sd">        material.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dU</span>
+<span class="sd">            The trial solution increment.</span>
+<span class="sd">        timeStep</span>
+<span class="sd">            The time step.</span>
+<span class="sd">        """</span>
+
+        <span class="n">time</span> <span class="o">=</span> <span class="n">timeStep</span><span class="o">.</span><span class="n">totalTime</span>
+        <span class="n">dT</span> <span class="o">=</span> <span class="n">timeStep</span><span class="o">.</span><span class="n">timeIncrement</span>
+
+        <span class="k">for</span> <span class="n">materialPoint</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">materialPoints</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">materialPoint</span><span class="o">.</span><span class="n">prepareYourself</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">dT</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">activeCells</span><span class="p">:</span>
+            <span class="n">cell</span><span class="o">.</span><span class="n">interpolateFieldsToMaterialPoints</span><span class="p">(</span><span class="n">dU</span><span class="p">[</span><span class="n">cell</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">cellElement</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">cellElements</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">cellElement</span><span class="o">.</span><span class="n">interpolateFieldsToMaterialPoints</span><span class="p">(</span><span class="n">dU</span><span class="p">[</span><span class="n">cellElement</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">materialPoint</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">materialPoints</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">materialPoint</span><span class="o">.</span><span class="n">computeYourself</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">dT</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Matthias Neuner.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

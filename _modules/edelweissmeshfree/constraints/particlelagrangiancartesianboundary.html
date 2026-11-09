@@ -89,15 +89,20 @@
 <div class="viewcode-block" id="ParticleLagrangianContactCartesianBoundaryConstraint">
 <a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlelagrangiancartesianboundary.ParticleLagrangianContactCartesianBoundaryConstraint">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ParticleLagrangianContactCartesianBoundaryConstraint</span><span class="p">(</span><span class="n">MPMConstraintBase</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">    This class implements a Lagrangian contact boundary constraint.</span>
 <span class="sd">    It prevents a particle from penetrating a defined boundary surface.</span>
 <span class="sd">    The constraint is applied using Lagrange multipliers to enforce the contact condition.</span>
 <span class="sd">    Only cartesian planes are supported as boundary surfaces.</span>
 
-<span class="sd">    The constraint equation is defined as:</span>
-<span class="sd">        g = n . (x - x_boundary) &lt;= 0</span>
-<span class="sd">    where n is the orientation of boundary, x is the particle position, and x_boundary is the boundary position.</span>
+<span class="sd">    The constraint equation is defined as</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        g = \boldsymbol{n} \cdot (\boldsymbol{x} - \boldsymbol{x}_{\mathrm{boundary}}) \leq 0,</span>
+
+<span class="sd">    where :math:`\boldsymbol{n}` is the orientation of the boundary, :math:`\boldsymbol{x}` the particle position, and</span>
+<span class="sd">    :math:`\boldsymbol{x}_{\mathrm{boundary}}` the boundary position.</span>
 
 <span class="sd">    The orientation is determined based on the initial position of the particle relative to the boundary.</span>
 

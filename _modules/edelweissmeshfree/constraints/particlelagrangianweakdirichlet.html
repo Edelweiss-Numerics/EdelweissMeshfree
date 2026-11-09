@@ -89,28 +89,66 @@
 <div class="viewcode-block" id="ParticleLagrangianWeakDirichlet">
 <a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlelagrangianweakdirichlet.ParticleLagrangianWeakDirichlet">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ParticleLagrangianWeakDirichlet</span><span class="p">(</span><span class="n">MPMConstraintBase</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""</span>
-<span class="sd">    This is an implementation of weak Dirichlet boundary conditions using a penalty formulation.</span>
-<span class="sd">    It constrains a material point field increment.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Prescribes the increment of a field at one point of one particle -- its center, the center of one of its faces,</span>
+<span class="sd">    or one of its vertices -- with Lagrange multipliers.</span>
+
+<span class="sd">    It is the Lagrange multiplier counterpart of</span>
+<span class="sd">    :class:`~edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet`. A penalty</span>
+<span class="sd">    spring enforces the prescribed value only approximately, the more closely the stiffer it is; a multiplier enforces</span>
+<span class="sd">    it exactly, at the cost of one more unknown per prescribed component, and of a zero block on the diagonal of the</span>
+<span class="sd">    tangent. To constrain a set of particles, create one constraint per particle with</span>
+<span class="sd">    :func:`ParticleLagrangianWeakDirichletOnParticleSetFactory`: every constraint couples only the nodes of its own</span>
+<span class="sd">    particle, so its tangent block stays small, where one constraint on all particles would couple all nodes of the set</span>
+<span class="sd">    in one dense block.</span>
+
+<span class="sd">    A particle interpolates the field from the nodes of its kernel functions, as an increment on the current</span>
+<span class="sd">    configuration: :math:`u(\boldsymbol{x}) = \boldsymbol{N}(\boldsymbol{x}) \cdot \Delta\mathbf{U}`. At the</span>
+<span class="sd">    constrained point :math:`\boldsymbol{x}_c` and for every prescribed component :math:`i`, a multiplier</span>
+<span class="sd">    :math:`\lambda_i` enforces</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        g_i = \boldsymbol{N}(\boldsymbol{x}_c) \cdot \Delta\mathbf{U}_i - \Delta\bar{u}_i = 0,</span>
+
+<span class="sd">    where :math:`\Delta\bar{u}_i` is the share of the step's prescribed increment that falls into the current</span>
+<span class="sd">    increment. Following the rule of every constraint (see</span>
+<span class="sd">    :class:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase`), the constraint adds</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \mathbf{P}_{U_i} \mathrel{+}= \lambda_i\, \boldsymbol{N}(\boldsymbol{x}_c), \qquad</span>
+<span class="sd">        P_{\lambda_i} \mathrel{+}= g_i, \qquad</span>
+<span class="sd">        \mathbf{K}_{U_i \lambda_i} \mathrel{+}= \boldsymbol{N}(\boldsymbol{x}_c), \qquad</span>
+<span class="sd">        \mathbf{K}_{\lambda_i U_i} \mathrel{+}= \boldsymbol{N}(\boldsymbol{x}_c)^T,</span>
+
+<span class="sd">    so that it acts on the particle with the point force :math:`-\lambda_i` at :math:`\boldsymbol{x}_c`. The tangent is</span>
+<span class="sd">    symmetric, as the constraint stems from the potential :math:`\sum_i \lambda_i g_i`. ``reactionForce`` holds, per</span>
+<span class="sd">    component of the field, the multiplier: the force with which the particle acts on the constraint.</span>
+
+<span class="sd">    The multipliers are ordered as the components in ``prescribedStepDelta``.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    name</span>
 <span class="sd">        The name of this constraint.</span>
 <span class="sd">    constrainedParticle</span>
-<span class="sd">        The particle whose field value is to be constrained.</span>
-<span class="sd">    constrainedLocation</span>
-<span class="sd">        The location on the particle to apply the constraint. Can be "center" or a vertex</span>
-<span class="sd">        index (0 to number of vertices - 1).</span>
+<span class="sd">        The particle whose field is to be constrained.</span>
 <span class="sd">    field</span>
 <span class="sd">        The field this constraint is acting on.</span>
 <span class="sd">    prescribedStepDelta</span>
-<span class="sd">        A dictionary mapping field component indices to their prescribed step increments.</span>
+<span class="sd">        The prescribed increment of the field over the step, by component.</span>
 <span class="sd">    model</span>
 <span class="sd">        The full MPMModel instance.</span>
+<span class="sd">    location</span>
+<span class="sd">        The point of the particle to constrain: ``"center"``, ``"face"`` (the center of the face ``faceID``) or</span>
+<span class="sd">        ``"vertex"`` (the vertex ``vertexID``).</span>
+<span class="sd">    faceID</span>
+<span class="sd">        The face whose center is constrained, if ``location`` is ``"face"``.</span>
+<span class="sd">    vertexID</span>
+<span class="sd">        The vertex that is constrained, if ``location`` is ``"vertex"``.</span>
 <span class="sd">    """</span>
 
-    <span class="c1">#: Carries nothing from one increment to the next.</span>
+    <span class="c1">#: Carries nothing from one increment to the next: the multipliers are unknowns of every increment.</span>
     <span class="n">checkpointedState</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
@@ -119,7 +157,7 @@
         <span class="n">constrainedParticle</span><span class="p">:</span> <span class="n">BaseParticle</span><span class="p">,</span>
         <span class="n">field</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">prescribedStepDelta</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
-        <span class="n">model</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="n">MPMModel</span><span class="p">,</span>
         <span class="n">location</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"center"</span><span class="p">,</span>
         <span class="n">faceID</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">vertexID</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -131,23 +169,22 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span> <span class="o">=</span> <span class="n">getFieldSize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_field</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">domainSize</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
 
-        <span class="k">def</span><span class="w"> </span><span class="nf">_getConstraintLocation</span><span class="p">():</span>
-            <span class="n">particle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constrainedParticle</span>
-            <span class="k">if</span> <span class="n">location</span> <span class="o">==</span> <span class="s2">"center"</span><span class="p">:</span>
-                <span class="n">constraintLocation</span> <span class="o">=</span> <span class="n">particle</span><span class="o">.</span><span class="n">getCenterCoordinates</span><span class="p">()</span>
-            <span class="k">elif</span> <span class="n">location</span> <span class="o">==</span> <span class="s2">"face"</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">faceID</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"faceID must be specified when location is 'face'."</span><span class="p">)</span>
-                <span class="n">constraintLocation</span> <span class="o">=</span> <span class="n">particle</span><span class="o">.</span><span class="n">getFaceCoordinates</span><span class="p">(</span><span class="n">faceID</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">location</span> <span class="o">==</span> <span class="s2">"vertex"</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">vertexID</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"vertexID must be specified when location is 'vertex'."</span><span class="p">)</span>
-                <span class="n">constraintLocation</span> <span class="o">=</span> <span class="n">particle</span><span class="o">.</span><span class="n">getVertexCoordinates</span><span class="p">()[</span><span class="n">vertexID</span><span class="p">]</span>
-            <span class="k">return</span> <span class="n">constraintLocation</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">_getConstraintLocation</span> <span class="o">=</span> <span class="n">_getConstraintLocation</span>
+        <span class="k">if</span> <span class="n">location</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"center"</span><span class="p">,</span> <span class="s2">"face"</span><span class="p">,</span> <span class="s2">"vertex"</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Constraint '</span><span class="si">{:}</span><span class="s2">': location must be 'center', 'face' or 'vertex'."</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">location</span> <span class="o">==</span> <span class="s2">"face"</span> <span class="ow">and</span> <span class="n">faceID</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Constraint '</span><span class="si">{:}</span><span class="s2">': faceID must be specified when location is 'face'."</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">location</span> <span class="o">==</span> <span class="s2">"vertex"</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">vertexID</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">"Constraint '</span><span class="si">{:}</span><span class="s2">': vertexID must be one vertex index when location is 'vertex'."</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_location</span> <span class="o">=</span> <span class="n">location</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_faceID</span> <span class="o">=</span> <span class="n">faceID</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_vertexID</span> <span class="o">=</span> <span class="n">vertexID</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_prescribedStepDelta</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Constraint '</span><span class="si">{:}</span><span class="s2">' constrains nothing: it needs prescribed components."</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">reactionForce</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">)</span>
 
     <span class="nd">@property</span>
@@ -193,7 +230,6 @@
 <div class="viewcode-block" id="ParticleLagrangianWeakDirichlet.updateConnectivity">
 <a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlelagrangianweakdirichlet.ParticleLagrangianWeakDirichlet.updateConnectivity">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">updateConnectivity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
-
         <span class="n">nodes</span> <span class="o">=</span> <span class="p">{</span>
             <span class="n">n</span><span class="p">:</span> <span class="n">i</span>
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span>
@@ -201,70 +237,69 @@
             <span class="p">)</span>
         <span class="p">}</span>
 
-        <span class="n">hasChanged</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="k">if</span> <span class="n">nodes</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="p">:</span>
-            <span class="n">hasChanged</span> <span class="o">=</span> <span class="kc">True</span>
-
+        <span class="n">hasChanged</span> <span class="o">=</span> <span class="n">nodes</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span> <span class="o">=</span> <span class="n">nodes</span>
 
         <span class="k">return</span> <span class="n">hasChanged</span></div>
 
 
+<div class="viewcode-block" id="ParticleLagrangianWeakDirichlet._constrainedPointCoordinates">
+<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlelagrangianweakdirichlet.ParticleLagrangianWeakDirichlet._constrainedPointCoordinates">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_constrainedPointCoordinates</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The current coordinates of the constrained point of the particle.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            The coordinates of the center, of the center of the face, or of the vertex.</span>
+<span class="sd">        """</span>
+
+        <span class="n">particle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constrainedParticle</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_location</span> <span class="o">==</span> <span class="s2">"center"</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">particle</span><span class="o">.</span><span class="n">getCenterCoordinates</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_location</span> <span class="o">==</span> <span class="s2">"face"</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">particle</span><span class="o">.</span><span class="n">getFaceCoordinates</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_faceID</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">particle</span><span class="o">.</span><span class="n">getVertexCoordinates</span><span class="p">()[</span><span class="bp">self</span><span class="o">.</span><span class="n">_vertexID</span><span class="p">]</span></div>
+
+
 <div class="viewcode-block" id="ParticleLagrangianWeakDirichlet.computeKernels">
 <a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlelagrangianweakdirichlet.ParticleLagrangianWeakDirichlet.computeKernels">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">computeKernels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">U_np</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">dU</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">P</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">K</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">):</span>
-
-        <span class="n">dU_U</span> <span class="o">=</span> <span class="n">dU</span><span class="p">[:</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span><span class="p">]</span>
-        <span class="n">dU_L</span> <span class="o">=</span> <span class="n">dU</span><span class="p">[</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span> <span class="p">:]</span>
-        <span class="n">P_U</span> <span class="o">=</span> <span class="n">P</span><span class="p">[:</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span><span class="p">]</span>
-        <span class="n">P_L</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span> <span class="p">:]</span>
+        <span class="c1"># the nodal field values come first, the multipliers last</span>
+        <span class="n">nU</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span>
+        <span class="n">dU_U</span> <span class="o">=</span> <span class="n">dU</span><span class="p">[:</span><span class="n">nU</span><span class="p">]</span>
+        <span class="n">multipliers</span> <span class="o">=</span> <span class="n">dU</span><span class="p">[</span><span class="n">nU</span><span class="p">:]</span>
+        <span class="n">P_U</span> <span class="o">=</span> <span class="n">P</span><span class="p">[:</span><span class="n">nU</span><span class="p">]</span>
+        <span class="n">P_L</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="n">nU</span><span class="p">:]</span>
 
         <span class="n">K</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">nDof</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nDof</span><span class="p">))</span>
-
-        <span class="c1"># K_UU = K[:-self._nLagrangianMultipliers, :-self._nLagrangianMultipliers]</span>
-        <span class="n">K_UL</span> <span class="o">=</span> <span class="n">K</span><span class="p">[:</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span><span class="p">,</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span> <span class="p">:]</span>
-        <span class="n">K_LU</span> <span class="o">=</span> <span class="n">K</span><span class="p">[</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span> <span class="p">:,</span> <span class="p">:</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span><span class="p">]</span>
-        <span class="c1"># K_LL = K[-self._nLagrangianMultipliers:, -self._nLagrangianMultipliers:]</span>
+        <span class="n">K_UL</span> <span class="o">=</span> <span class="n">K</span><span class="p">[:</span><span class="n">nU</span><span class="p">,</span> <span class="n">nU</span><span class="p">:]</span>
+        <span class="n">K_LU</span> <span class="o">=</span> <span class="n">K</span><span class="p">[</span><span class="n">nU</span><span class="p">:,</span> <span class="p">:</span><span class="n">nU</span><span class="p">]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">reactionForce</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
-        <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constrainedParticle</span>
 
-        <span class="c1"># if self._constrainedLocation == "center":</span>
-        <span class="c1">#     constrainedCoordinates = p.getCenterCoordinates()</span>
-        <span class="c1"># elif isinstance(self._constrainedLocation, int):</span>
-        <span class="c1">#     constrainedCoordinates = p.getVertexCoordinates()[self._constrainedLocation]</span>
-
-        <span class="n">constrainedCoordinates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getConstraintLocation</span><span class="p">()</span>
+        <span class="n">particle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constrainedParticle</span>
+        <span class="n">N</span> <span class="o">=</span> <span class="n">particle</span><span class="o">.</span><span class="n">getInterpolationVector</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_constrainedPointCoordinates</span><span class="p">())</span>
+        <span class="n">nodeIdcs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="p">[</span><span class="n">kf</span><span class="o">.</span><span class="n">node</span><span class="p">]</span> <span class="k">for</span> <span class="n">kf</span> <span class="ow">in</span> <span class="n">particle</span><span class="o">.</span><span class="n">kernelFunctions</span><span class="p">]</span>
 
         <span class="k">for</span> <span class="n">lag</span><span class="p">,</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">prescribedComponent</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_prescribedStepDelta</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
-            <span class="c1"># lag is the lagrange multiplier index</span>
-            <span class="c1"># i is the field component index</span>
-            <span class="c1"># prescribedComponent is the prescribed increment for this step</span>
-
+            <span class="c1"># lag counts the multipliers, i is the component of the field</span>
+            <span class="n">dU_U_i</span> <span class="o">=</span> <span class="n">dU_U</span><span class="p">[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span>
             <span class="n">P_U_i</span> <span class="o">=</span> <span class="n">P_U</span><span class="p">[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span>
-            <span class="n">dU_U_j</span> <span class="o">=</span> <span class="n">dU_U</span><span class="p">[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span>
+            <span class="n">K_UL_i</span> <span class="o">=</span> <span class="n">K_UL</span><span class="p">[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">,</span> <span class="p">:]</span>
+            <span class="n">K_LU_i</span> <span class="o">=</span> <span class="n">K_LU</span><span class="p">[:,</span> <span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span>
+            <span class="n">multiplier</span> <span class="o">=</span> <span class="n">multipliers</span><span class="p">[</span><span class="n">lag</span><span class="p">]</span>
 
-            <span class="n">K_UL_j</span> <span class="o">=</span> <span class="n">K_UL</span><span class="p">[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">,</span> <span class="p">:]</span>
-            <span class="n">K_LU_j</span> <span class="o">=</span> <span class="n">K_LU</span><span class="p">[:,</span> <span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span>
+            <span class="n">g</span> <span class="o">=</span> <span class="n">N</span> <span class="o">@</span> <span class="n">dU_U_i</span><span class="p">[</span><span class="n">nodeIdcs</span><span class="p">]</span> <span class="o">-</span> <span class="n">prescribedComponent</span> <span class="o">*</span> <span class="n">timeStep</span><span class="o">.</span><span class="n">stepProgressIncrement</span>
+            <span class="n">dg_dU_i</span> <span class="o">=</span> <span class="n">N</span>
 
-            <span class="n">dL_l</span> <span class="o">=</span> <span class="n">dU_L</span><span class="p">[</span><span class="n">lag</span><span class="p">]</span>
+            <span class="n">P_U_i</span><span class="p">[</span><span class="n">nodeIdcs</span><span class="p">]</span> <span class="o">+=</span> <span class="n">multiplier</span> <span class="o">*</span> <span class="n">dg_dU_i</span>
+            <span class="n">P_L</span><span class="p">[</span><span class="n">lag</span><span class="p">]</span> <span class="o">+=</span> <span class="n">g</span>
 
-            <span class="n">N</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">getInterpolationVector</span><span class="p">(</span><span class="n">constrainedCoordinates</span><span class="p">)</span>
+            <span class="n">K_UL_i</span><span class="p">[</span><span class="n">nodeIdcs</span><span class="p">,</span> <span class="n">lag</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dg_dU_i</span>
+            <span class="n">K_LU_i</span><span class="p">[</span><span class="n">lag</span><span class="p">,</span> <span class="n">nodeIdcs</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dg_dU_i</span>
 
-            <span class="n">nodeIdcs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="p">[</span><span class="n">kf</span><span class="o">.</span><span class="n">node</span><span class="p">]</span> <span class="k">for</span> <span class="n">kf</span> <span class="ow">in</span> <span class="n">p</span><span class="o">.</span><span class="n">kernelFunctions</span><span class="p">]</span>
-
-            <span class="n">mpValue</span> <span class="o">=</span> <span class="n">N</span> <span class="o">@</span> <span class="n">dU_U_j</span><span class="p">[</span><span class="n">nodeIdcs</span><span class="p">]</span>
-
-            <span class="n">g_l</span> <span class="o">=</span> <span class="n">mpValue</span> <span class="o">-</span> <span class="n">prescribedComponent</span> <span class="o">*</span> <span class="n">timeStep</span><span class="o">.</span><span class="n">stepProgressIncrement</span>
-            <span class="n">dg_l_dU_j</span> <span class="o">=</span> <span class="n">N</span>
-
-            <span class="n">P_U_i</span><span class="p">[</span><span class="n">nodeIdcs</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dL_l</span> <span class="o">*</span> <span class="n">dg_l_dU_j</span>
-            <span class="n">P_L</span><span class="p">[</span><span class="n">lag</span><span class="p">]</span> <span class="o">+=</span> <span class="n">g_l</span>
-
-            <span class="n">K_UL_j</span><span class="p">[</span><span class="n">nodeIdcs</span><span class="p">,</span> <span class="n">lag</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dg_l_dU_j</span>
-            <span class="n">K_LU_j</span><span class="p">[</span><span class="n">lag</span><span class="p">,</span> <span class="n">nodeIdcs</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dg_l_dU_j</span>
-
-            <span class="bp">self</span><span class="o">.</span><span class="n">reactionForce</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dL_l</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reactionForce</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">multiplier</span></div>
 </div>
 
 
@@ -279,34 +314,36 @@
     <span class="n">model</span><span class="p">:</span> <span class="n">MPMModel</span><span class="p">,</span>
     <span class="n">location</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"center"</span><span class="p">,</span>
     <span class="n">faceID</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">vertexID</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<span class="p">):</span>
-<span class="w">    </span><span class="sd">"""</span>
-<span class="sd">    Factory function to create ParticleLagrangianWeakDirichlet constraints on a collection of particles.</span>
+    <span class="n">vertexID</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ParticleLagrangianWeakDirichlet</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Creates one :class:`ParticleLagrangianWeakDirichlet` per particle of a collection, all constraining the same</span>
+<span class="sd">    point of their particles.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    baseName</span>
-<span class="sd">        The base name for the constraints.</span>
+<span class="sd">        The base name of the constraints.</span>
 <span class="sd">    particleCollection</span>
-<span class="sd">        An iterable collection of particles or an EntityBasedSurface.</span>
+<span class="sd">        The particles to constrain, or an EntityBasedSurface, whose particles are constrained at the faces it names.</span>
 <span class="sd">    field</span>
 <span class="sd">        The field to be constrained.</span>
 <span class="sd">    prescribedStepDelta</span>
-<span class="sd">        A dictionary mapping field component indices to their prescribed step increments.</span>
+<span class="sd">        The prescribed increment of the field over the step, by component.</span>
 <span class="sd">    model</span>
 <span class="sd">        The MPMModel instance.</span>
 <span class="sd">    location</span>
-<span class="sd">        The location on the particle to apply the constraint. Can be "center", "face", or "vertex".</span>
+<span class="sd">        The point of every particle to constrain: ``"center"``, ``"face"`` or ``"vertex"``.</span>
 <span class="sd">    faceID</span>
-<span class="sd">        The face ID if location is "face" and if particleCollection is not an EntityBasedSurface.</span>
+<span class="sd">        The face whose center is constrained, if ``location`` is ``"face"`` and ``particleCollection`` is not an</span>
+<span class="sd">        EntityBasedSurface.</span>
 <span class="sd">    vertexID</span>
-<span class="sd">        The vertex ID if location is "vertex".</span>
+<span class="sd">        The vertex that is constrained, if ``location`` is ``"vertex"``. To constrain several vertices of every</span>
+<span class="sd">        particle, call this factory once per vertex.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    dict</span>
-<span class="sd">        A dictionary mapping constraint names to ParticleLagrangianWeakDirichlet instances.</span>
+<span class="sd">    dict[str, ParticleLagrangianWeakDirichlet]</span>
+<span class="sd">        The constraints, by name.</span>
 <span class="sd">    """</span>
 
     <span class="n">constraints</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
@@ -315,26 +352,20 @@
         <span class="k">for</span> <span class="n">faceID</span><span class="p">,</span> <span class="n">particles</span> <span class="ow">in</span> <span class="n">particleCollection</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">particles</span><span class="p">):</span>
                 <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">baseName</span><span class="si">}</span><span class="s2">_face</span><span class="si">{</span><span class="n">faceID</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">"</span>
-                <span class="n">constraint</span> <span class="o">=</span> <span class="n">ParticleLagrangianWeakDirichlet</span><span class="p">(</span>
+                <span class="n">constraints</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">ParticleLagrangianWeakDirichlet</span><span class="p">(</span>
                     <span class="n">name</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">prescribedStepDelta</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">location</span><span class="p">,</span> <span class="n">faceID</span>
                 <span class="p">)</span>
-                <span class="n">constraints</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">constraint</span>
         <span class="k">return</span> <span class="n">constraints</span>
 
-    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">particleCollection</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">):</span>
-
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">particleCollection</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">particleCollection</span><span class="p">):</span>
             <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">baseName</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">"</span>
-            <span class="n">constraint</span> <span class="o">=</span> <span class="n">ParticleLagrangianWeakDirichlet</span><span class="p">(</span>
+            <span class="n">constraints</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">ParticleLagrangianWeakDirichlet</span><span class="p">(</span>
                 <span class="n">name</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">prescribedStepDelta</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">location</span><span class="p">,</span> <span class="n">faceID</span><span class="p">,</span> <span class="n">vertexID</span>
             <span class="p">)</span>
-            <span class="n">constraints</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">constraint</span>
-
         <span class="k">return</span> <span class="n">constraints</span>
 
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"particleCollection must be a list of particles or an EntityBasedSurface."</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">constraints</span></div>
+    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"particleCollection must be a list of particles or an EntityBasedSurface."</span><span class="p">)</span></div>
 
 </pre></div>
 

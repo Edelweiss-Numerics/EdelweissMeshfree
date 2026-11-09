@@ -105,7 +105,7 @@
 <span class="sd">      from the boundary: it sets</span>
 <span class="sd">      :attr:`~edelweissfe.constraints.base.constraintbase.ConstraintBase.withinReach`, and reports a change of</span>
 <span class="sd">      :attr:`~edelweissfe.constraints.base.constraintbase.ConstraintBase.active`. A constraint switched off from</span>
-<span class="sd">      outside, through ``active``, stays off whatever it finds.</span>
+<span class="sd">      outside, through ``active``, stays off whatever it finds, and rests: the model does not locate it anew.</span>
 <span class="sd">    - Every constraint declares the state it carries from one increment to the next, in ``checkpointedState``</span>
 <span class="sd">      (empty if it carries none), so that a restart can restore it.</span>
 

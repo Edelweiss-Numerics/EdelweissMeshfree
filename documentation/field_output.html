@@ -75,6 +75,11 @@
 <li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.fieldoutput.fieldoutput.ParticleFieldOutput.updateResults"><code class="docutils literal notranslate"><span class="pre">ParticleFieldOutput.updateResults()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="#edelweissmeshfree.fieldoutput.mpresultcollector.MaterialPointResultCollector"><code class="docutils literal notranslate"><span class="pre">MaterialPointResultCollector</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.fieldoutput.mpresultcollector.MaterialPointResultCollector.getCurrentResults"><code class="docutils literal notranslate"><span class="pre">MaterialPointResultCollector.getCurrentResults()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.fieldoutput.mpresultcollector.MaterialPointResultCollector.update"><code class="docutils literal notranslate"><span class="pre">MaterialPointResultCollector.update()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="meshfree.html">Meshfree utilities</a></li>
@@ -366,7 +371,64 @@ Will use the current solution and reaction vector if result is a nodal result.</
 
 </dd></dl>
 
-<span class="target" id="module-edelweissmeshfree.fieldoutput.mpresultcollector"></span></section>
+<span class="target" id="module-edelweissmeshfree.fieldoutput.mpresultcollector"></span><dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.fieldoutput.mpresultcollector.MaterialPointResultCollector">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.fieldoutput.mpresultcollector.</span></span><span class="sig-name descname"><span class="pre">MaterialPointResultCollector</span></span><a class="headerlink" href="#edelweissmeshfree.fieldoutput.mpresultcollector.MaterialPointResultCollector" title="Link to this definition"></a></dt>
+<dd><p>A cdef class for collecting materialPoint results (by using the permanent results pointer (i.e., a numpy array)
+in large array of all materialPoints and all quadrature points.</p>
+<p>Collecting materialPointal results may be a performance critical part.
+This cdef class allows for the efficient gathering.
+A 3D array is assembled if multiple quadrature points are requested (shape <code class="docutils literal notranslate"><span class="pre">[materialPoints,</span> <span class="pre">quadraturePoints,</span> <span class="pre">resultVector]</span></code> )
+or a 2D array for one quadrature point ( shape <code class="docutils literal notranslate"><span class="pre">[materialPoints,</span> <span class="pre">resultVector]</span></code> ).</p>
+<p>Method <code class="xref py py-func docutils literal notranslate"><span class="pre">getCurrentResults()</span></code> updates the assembly array and passes it back.</p>
+<p>The caller is responsible to make a copy of it, if persistent results are needed!</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>materialPoints</strong> – The list of materialPoints for which the results should be collected.</p></li>
+<li><p><strong>result</strong> – The name of the requested result.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Attributes<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>resultsTable</strong></dt><dd></dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.fieldoutput.mpresultcollector.MaterialPointResultCollector.getCurrentResults" title="edelweissmeshfree.fieldoutput.mpresultcollector.MaterialPointResultCollector.getCurrentResults"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getCurrentResults</span></code></a>()</p></td>
+<td><p>Update and get current results.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.fieldoutput.mpresultcollector.MaterialPointResultCollector.update" title="edelweissmeshfree.fieldoutput.mpresultcollector.MaterialPointResultCollector.update"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update</span></code></a>()</p></td>
+<td><p>Update all results.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.fieldoutput.mpresultcollector.MaterialPointResultCollector.getCurrentResults">
+<span class="sig-name descname"><span class="pre">getCurrentResults</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.fieldoutput.mpresultcollector.MaterialPointResultCollector.getCurrentResults" title="Link to this definition"></a></dt>
+<dd><p>Update and get current results.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The results array.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.fieldoutput.mpresultcollector.MaterialPointResultCollector.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.fieldoutput.mpresultcollector.MaterialPointResultCollector.update" title="Link to this definition"></a></dt>
+<dd><p>Update all results.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
 
 
            </div>

@@ -114,28 +114,21 @@
 <dl class="py class">
 <dt class="sig sig-object py" id="edelweissmeshfree.outputmanagers.ensight.OutputManager">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.outputmanagers.ensight.</span></span><span class="sig-name descname"><span class="pre">OutputManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fieldOutputController</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">journal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotter</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">exportCellSetParts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exportCellElementSetParts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exportMPSetParts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exportParticleSetParts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">configuration</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">EnsightSchema(perNode=(),</span> <span class="pre">perElement=(),</span> <span class="pre">configurations=(),</span> <span class="pre">intermediateSaveInterval=None,</span> <span class="pre">minDTForOutput=None)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/outputmanagers/ensight.html#OutputManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.outputmanagers.ensight.OutputManager" title="Link to this definition"></a></dt>
-<dd><p>Constructible standalone, with no parser involvement. Options arrive as an
-already-validated, already-typed schema instance.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>name</strong> (<em>str</em>) – The name of this output manager.</p></li>
-<li><p><strong>model</strong> – The model tree.</p></li>
-<li><p><strong>fieldOutputController</strong> – The field output controller instance.</p></li>
-<li><p><strong>journal</strong> – The journal instance for logging.</p></li>
-<li><p><strong>plotter</strong> – The plotter instance.</p></li>
-<li><p><strong>configuration</strong> (<em>EnsightSchema</em>) – The options this output manager accepts, including its <code class="docutils literal notranslate"><span class="pre">&gt;&gt;perNode</span></code>, <code class="docutils literal notranslate"><span class="pre">&gt;&gt;perElement</span></code>
-and <code class="docutils literal notranslate"><span class="pre">&gt;&gt;configuration</span></code> blocks.</p></li>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Attributes<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>checkpointedState</strong></dt><dd></dd>
+</dl>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>)</p></li>
 <li><p><strong>exportCellSetParts</strong> (<em>bool</em>)</p></li>
 <li><p><strong>exportCellElementSetParts</strong> (<em>bool</em>)</p></li>
 <li><p><strong>exportMPSetParts</strong> (<em>bool</em>)</p></li>
 <li><p><strong>exportParticleSetParts</strong> (<em>bool</em>)</p></li>
+<li><p><strong>configuration</strong> (<em>EnsightSchema</em>)</p></li>
 </ul>
-</dd>
-<dt class="field-even">Attributes<span class="colon">:</span></dt>
-<dd class="field-even"><dl class="simple">
-<dt><strong>checkpointedState</strong></dt><dd></dd>
-</dl>
 </dd>
 </dl>
 <p class="rubric">Methods</p>

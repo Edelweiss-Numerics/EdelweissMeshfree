@@ -122,6 +122,8 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">prettytable</span><span class="w"> </span><span class="kn">import</span> <span class="n">PrettyTable</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.fields.nodefield</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPMNodeField</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.models.mpmequationsystemlayout</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPMEquationSystemLayout</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.numerics.dofmanager</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPMDofManager</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.sets.cellelementset</span><span class="w"> </span><span class="kn">import</span> <span class="n">CellElementSet</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.sets.cellset</span><span class="w"> </span><span class="kn">import</span> <span class="n">CellSet</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.sets.materialpointset</span><span class="w"> </span><span class="kn">import</span> <span class="n">MaterialPointSet</span>
@@ -155,6 +157,13 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">meshfreeKernelFunctions</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1">#: The collection of MeshfreeKernelFunctions in the present model.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">particleKernelDomains</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1">#: The collection of ParticleKernelDomains in the present model.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vertexSets</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1">#: The collection of VertexSets for per particle in the present model.</span>
+        <span class="c1">#: The managers that assign the material points to the cells they lie in, see :meth:`updateConnectivity`.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mpmManagers</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1">#: The managers that assign the particles to the kernel functions they reach, see :meth:`updateConnectivity`.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">particleManagers</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1">#: The variationally consistent integration managers, which correct the particles' test functions after every</span>
+        <span class="c1">#: update of the connectivity, see :meth:`updateConnectivity`.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vciManagers</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">dimension</span><span class="p">)</span>
 
@@ -362,6 +371,129 @@
         <span class="k">return</span> <span class="n">theNodeFields</span></div>
 
 
+<div class="viewcode-block" id="MPMModel.updateConnectivity">
+<a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">updateConnectivity</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Bring the coupling of the degrees of freedom up to date with the converged state, before an increment; see</span>
+<span class="sd">        :meth:`~edelweissfe.models.femodel.FEModel.updateConnectivity`. Called by EdelweissFE's solvers at the start</span>
+<span class="sd">        of every increment and of every retry after a cutback.</span>
+
+<span class="sd">        First the managers assign the material points to the cells they lie in (:attr:`mpmManagers`) and the particles</span>
+<span class="sd">        to the kernel functions they reach (:attr:`particleManagers`), each from its converged state: a failed attempt</span>
+<span class="sd">        may have left a trial state behind. Then the constraints follow, which couple the nodes the managers have just</span>
+<span class="sd">        assigned. Finally, the test functions of the particles are corrected for the new connectivity</span>
+<span class="sd">        (:attr:`vciManagers`).</span>
+
+<span class="sd">        A change of the active domain is a change of the coupling, not of the mesh: no node is created or moved, so the</span>
+<span class="sd">        solver rebuilds its equation system, but does not re-equilibrate.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">            True if a coupling changed, so that the equation system has to be rebuilt.</span>
+<span class="sd">        """</span>
+
+        <span class="n">connectivityChanged</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpmManagers</span><span class="p">:</span>
+            <span class="c1"># The arguments are those of the converged state; no material point reads them here.</span>
+            <span class="k">for</span> <span class="n">materialPoint</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">materialPoints</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="n">materialPoint</span><span class="o">.</span><span class="n">prepareYourself</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">time</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">mpmManager</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpmManagers</span><span class="p">:</span>
+                <span class="n">connectivityChanged</span> <span class="o">|=</span> <span class="n">mpmManager</span><span class="o">.</span><span class="n">updateConnectivity</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">particleManagers</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">particle</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="n">particle</span><span class="o">.</span><span class="n">prepareYourself</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">time</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">particleManager</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">particleManagers</span><span class="p">:</span>
+                <span class="n">connectivityChanged</span> <span class="o">|=</span> <span class="n">particleManager</span><span class="o">.</span><span class="n">updateConnectivity</span><span class="p">()</span>
+
+        <span class="n">connectivityChanged</span> <span class="o">|=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">updateConnectivity</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">vciManager</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">vciManagers</span><span class="p">:</span>
+            <span class="n">vciManager</span><span class="o">.</span><span class="n">computeVCICorrections</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">connectivityChanged</span></div>
+
+
+<div class="viewcode-block" id="MPMModel.buildEquationSystem">
+<a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.buildEquationSystem">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">buildEquationSystem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">withSystemMatrix</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MPMEquationSystemLayout</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Lay out the equation system of the model on its active domain; see</span>
+<span class="sd">        :meth:`~edelweissfe.models.femodel.FEModel.buildEquationSystem` and :class:`MPMEquationSystemLayout`.</span>
+
+<span class="sd">        The active domain consists of the cells that hold material points, the nodes these cells and the particles'</span>
+<span class="sd">        kernel functions reach, and the finite elements and cell elements with their nodes. Its degrees of freedom are</span>
+<span class="sd">        numbered on the active nodes; the model's node sets are located on their nodes in the active domain. The</span>
+<span class="sd">        elements the solver computes are the finite elements, the active cells, the cell elements and the particles.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        withSystemMatrix</span>
+<span class="sd">            False for an explicit solver, which assembles no system matrix.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        MPMEquationSystemLayout</span>
+<span class="sd">            The layout of the equation system.</span>
+<span class="sd">        """</span>
+
+        <span class="n">activeCells</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">activeCellsOf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mpmManagers</span><span class="p">)</span>
+        <span class="n">nodesWithPersistentFieldValues</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">activeNodeFields</span><span class="p">,</span> <span class="n">activeNodeSets</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembleActiveDomain</span><span class="p">(</span><span class="n">activeCells</span><span class="p">)</span>
+        <span class="n">constraints</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">activeConstraints</span><span class="p">()</span>
+
+        <span class="n">dofManager</span> <span class="o">=</span> <span class="n">MPMDofManager</span><span class="p">(</span>
+            <span class="n">activeNodeFields</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span>
+            <span class="p">[</span><span class="n">scalarVariable</span> <span class="k">for</span> <span class="n">constraint</span> <span class="ow">in</span> <span class="n">constraints</span> <span class="k">for</span> <span class="n">scalarVariable</span> <span class="ow">in</span> <span class="n">constraint</span><span class="o">.</span><span class="n">scalarVariables</span><span class="p">],</span>
+            <span class="n">elements</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span>
+            <span class="n">constraints</span><span class="o">=</span><span class="n">constraints</span><span class="p">,</span>
+            <span class="n">nodeSets</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nodeSets</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span>
+            <span class="n">cells</span><span class="o">=</span><span class="n">activeCells</span><span class="p">,</span>
+            <span class="n">cellElements</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cellElements</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span>
+            <span class="n">particles</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span>
+            <span class="n">initializeVIJPattern</span><span class="o">=</span><span class="n">withSystemMatrix</span><span class="p">,</span>
+            <span class="n">determiningIndexToHostObjectMappping</span><span class="o">=</span><span class="n">withSystemMatrix</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">MPMEquationSystemLayout</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">dofManager</span><span class="p">,</span>
+            <span class="p">[</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="o">*</span><span class="n">activeCells</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">cellElements</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="o">.</span><span class="n">values</span><span class="p">()],</span>
+            <span class="n">activeCells</span><span class="p">,</span>
+            <span class="n">nodesWithPersistentFieldValues</span><span class="p">,</span>
+            <span class="n">activeNodeFields</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_reducedToActiveDomain</span><span class="p">(</span><span class="n">activeCells</span><span class="p">,</span> <span class="n">activeNodeFields</span><span class="p">,</span> <span class="n">activeNodeSets</span><span class="p">),</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MPMModel.activeCellsOf">
+<a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.activeCellsOf">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">activeCellsOf</span><span class="p">(</span><span class="n">mpmManagers</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The cells that are active in any of the MPM managers.</span>
+
+<span class="sd">        Cells define no ``__hash__``, so a set of them iterates in an address-dependent order that differs between runs.</span>
+<span class="sd">        The order of the active cells fixes their blocks in the system matrix and the order in which their</span>
+<span class="sd">        contributions are summed, so the cells are sorted by their unique number.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mpmManagers</span>
+<span class="sd">            The MPM managers.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list</span>
+<span class="sd">            The active cells, each once, sorted by cell number.</span>
+<span class="sd">        """</span>
+
+        <span class="n">activeCells</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">mpmManager</span> <span class="ow">in</span> <span class="n">mpmManagers</span><span class="p">:</span>
+            <span class="n">activeCells</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">mpmManager</span><span class="o">.</span><span class="n">getActiveCells</span><span class="p">())</span>
+
+        <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">activeCells</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">cell</span><span class="p">:</span> <span class="n">cell</span><span class="o">.</span><span class="n">cellNumber</span><span class="p">)</span></div>
+
+
 <div class="viewcode-block" id="MPMModel.getActiveSubModel">
 <a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.getActiveSubModel">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">getActiveSubModel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -377,14 +509,39 @@
 <span class="sd">            The active sub model.</span>
 <span class="sd">        """</span>
 
-        <span class="n">activeCells</span> <span class="o">=</span> <span class="p">{</span><span class="n">cell</span><span class="o">.</span><span class="n">number</span><span class="p">:</span> <span class="n">cell</span> <span class="k">for</span> <span class="n">mp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">materialPoints</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="n">mp</span><span class="o">.</span><span class="n">cells</span><span class="p">}</span>
+        <span class="n">activeCells</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+            <span class="p">{</span><span class="n">cell</span> <span class="k">for</span> <span class="n">mp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">materialPoints</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="n">mp</span><span class="o">.</span><span class="n">cells</span><span class="p">},</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">cell</span><span class="p">:</span> <span class="n">cell</span><span class="o">.</span><span class="n">cellNumber</span>
+        <span class="p">)</span>
 
         <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">reducedNodeFields</span><span class="p">,</span> <span class="n">reducedNodeSets</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembleActiveDomain</span><span class="p">(</span><span class="n">activeCells</span><span class="p">)</span>
 
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reducedToActiveDomain</span><span class="p">(</span><span class="n">activeCells</span><span class="p">,</span> <span class="n">reducedNodeFields</span><span class="p">,</span> <span class="n">reducedNodeSets</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MPMModel._reducedToActiveDomain">
+<a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel._reducedToActiveDomain">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_reducedToActiveDomain</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">activeCells</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">activeNodeFields</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">activeNodeSets</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""A shallow copy of the model, reduced to its active domain: its cells, node fields and node sets.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        activeCells</span>
+<span class="sd">            The active cells.</span>
+<span class="sd">        activeNodeFields</span>
+<span class="sd">            The node fields on the active nodes.</span>
+<span class="sd">        activeNodeSets</span>
+<span class="sd">            The node sets reduced onto the active nodes.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        MPMModel</span>
+<span class="sd">            The reduced model.</span>
+<span class="sd">        """</span>
+
         <span class="n">activeModel</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="n">activeModel</span><span class="o">.</span><span class="n">nodeSets</span> <span class="o">=</span> <span class="n">reducedNodeSets</span>
-        <span class="n">activeModel</span><span class="o">.</span><span class="n">nodeFields</span> <span class="o">=</span> <span class="n">reducedNodeFields</span>
-        <span class="n">activeModel</span><span class="o">.</span><span class="n">cells</span> <span class="o">=</span> <span class="n">activeCells</span>
+        <span class="n">activeModel</span><span class="o">.</span><span class="n">nodeSets</span> <span class="o">=</span> <span class="n">activeNodeSets</span>
+        <span class="n">activeModel</span><span class="o">.</span><span class="n">nodeFields</span> <span class="o">=</span> <span class="n">activeNodeFields</span>
+        <span class="n">activeModel</span><span class="o">.</span><span class="n">cells</span> <span class="o">=</span> <span class="p">{</span><span class="n">cell</span><span class="o">.</span><span class="n">cellNumber</span><span class="p">:</span> <span class="n">cell</span> <span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="n">activeCells</span><span class="p">}</span>
 
         <span class="k">return</span> <span class="n">activeModel</span></div>
 

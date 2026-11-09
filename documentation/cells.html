@@ -731,24 +731,16 @@ and stiffness matrices from material point contributions.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="edelweissmeshfree.cells.pythoncell.cell.PythonCell">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.cells.pythoncell.cell.</span></span><span class="sig-name descname"><span class="pre">PythonCell</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cellType</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cellNumber</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/cells/pythoncell/cell.html#PythonCell"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell" title="Link to this definition"></a></dt>
-<dd><p>MPM cells in EdelweissMPM should be derived from this
-base class in order to follow the general interface.</p>
-<p>EdelweissMeshfree expects the layout of the residual contribution P (and of the tangent) to be of the form</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">[ node 1 - dofs field 1,</span>
-<span class="go">  node 1 - dofs field 2,</span>
-<span class="go">  node 1 - ... ,</span>
-<span class="go">  node 1 - dofs field n,</span>
-<span class="go">  node 2 - dofs field 1,</span>
-<span class="go">  ... ,</span>
-<span class="go">  node N - dofs field n].</span>
-</pre></div>
-</div>
+<dd><p>A pure Python bilinear Quad4 cell for 2D displacement problems.</p>
+<p>This cell computes shape functions and their gradients to:
+- Interpolate displacement increments from nodes to material points
+- Assemble internal force vectors and stiffness matrices from material point stress/tangent</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>cellType</strong> (<em>str</em>) – A string identifying the requested element formulation.</p></li>
-<li><p><strong>cellNumber</strong> (<em>int</em>) – A unique integer label used for all kinds of purposes.</p></li>
-<li><p><strong>nodes</strong> (<em>list</em><em>[</em><em>Node</em><em>]</em>) – The list of Nodes assigned to this cell.</p></li>
+<li><p><strong>cellType</strong> (<em>str</em>) – A string identifying the cell formulation (unused for this implementation).</p></li>
+<li><p><strong>cellNumber</strong> (<em>int</em>) – A unique integer label.</p></li>
+<li><p><strong>nodes</strong> (<em>list</em><em>[</em><em>Node</em><em>]</em>) – The list of 4 Nodes assigned to this cell.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Attributes<span class="colon">:</span></dt>
