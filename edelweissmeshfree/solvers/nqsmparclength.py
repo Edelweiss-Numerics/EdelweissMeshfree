@@ -317,7 +317,6 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
 
             self._prepareMaterialPoints(materialPoints, timeStep.totalTime, timeStep.timeIncrement)
             self._interpolateFieldsToMaterialPoints(activeCells, dU)
-            self._interpolateFieldsToMaterialPoints(elements, dU)
             self._computeMaterialPoints(materialPoints, timeStep.totalTime, timeStep.timeIncrement)
             self._computeCells(activeCells, dU, PInt, F, K, timeStep.totalTime, timeStep.timeIncrement, theDofManager)
             self._computeElements(
@@ -467,16 +466,13 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
             return dU, PInt, iterationHistory, newtonCache
 
     @performancetiming.timeit("creation newton cache")
-    def _createNewtonCache(self, theDofManager: DofManager, particles=()) -> tuple:
+    def _createNewtonCache(self, theDofManager: DofManager) -> tuple:
         """Create expensive objects, which may be reused if the global system does not change.
 
         Parameters
         ----------
         theDofManager
             The DofManager instance.
-        particles
-            The particles to register with the direct-to-CSR assembler, if one is in use. Forwarded
-            to the base implementation; the arc-length cache below builds no assembler of its own.
 
         Returns
         -------
@@ -486,7 +482,7 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
         arcLengthController = self._arcLengthController
 
         if arcLengthController is None:
-            return super()._createNewtonCache(theDofManager, particles)
+            return super()._createNewtonCache(theDofManager)
 
         K_VIJ = theDofManager.constructVIJSystemMatrix()
         csrGenerator = self._makeCachedCOOToCSRGenerator(K_VIJ)
