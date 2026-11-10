@@ -161,8 +161,9 @@ An RKPM model, alone or coupled with finite elements (see :doc:`coupled_rkpm_fe`
 EdelweissFE's ``NID`` (or ``NIDParallel``), with the Newmark-beta scheme: the solver options ``newmarkBeta`` and
 ``newmarkGamma`` (default :math:`1/4, 1/2`, the average acceleration rule) are the one source of the parameters, which
 the solver passes on to the particles at the start of every step. The nodes of the finite elements are integrated by
-the solver with their consistent mass. Where the inertia of the particles is integrated, the solver option
-``inertia`` selects:
+the solver with their consistent mass. The particles are what EdelweissFE calls entities that integrate their own
+inertia: they carry their state, velocity and acceleration included, in themselves. Where their inertia is integrated,
+the solver option ``inertia`` selects (``entities``: in the particles):
 
 .. code-block:: python
 
