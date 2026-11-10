@@ -74,7 +74,7 @@ from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
 from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
     MarmotParticleWrapper,
 )
-from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
+from edelweissmeshfree.solvers.deprecated.nqs import NonlinearQuasistaticSolver
 
 #: The left end is held in place, ...
 LEFT = {0: 0.0, 1: 0.0}

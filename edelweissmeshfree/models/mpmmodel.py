@@ -37,12 +37,12 @@
 import copy
 
 import h5py
-import numpy as np
 from edelweissfe.config.phenomena import getFieldSize, phenomena
 from edelweissfe.journal.journal import Journal
 from edelweissfe.models.femodel import FEModel
 from edelweissfe.sets.elementset import ElementSet
 from edelweissfe.sets.nodeset import NodeSet
+from edelweissfe.utils.exceptions import RestartError
 from edelweissfe.variables.fieldvariable import FieldVariable
 from prettytable import PrettyTable
 
@@ -531,38 +531,52 @@ class MPMModel(FEModel):
         return prettytable
 
     def writeRestart(self, restartFile: h5py.File):
-        """Write the current state of the model to a restart file.
+        """Write the converged state of the model to a restart checkpoint: EdelweissFE's model state (see
+        :meth:`~edelweissfe.models.femodel.FEModel.writeRestart`), and the state of every material point and particle.
+
+        The material point method and RKPM are updated-Lagrangian: the material points and particles carry the state,
+        and their positions follow from it. The connectivity -- which cells hold which material points, which kernel
+        functions reach which particles, where bonded kernel functions sit -- follows from the positions, and is
+        rebuilt by the first connectivity update of the resumed run (:meth:`updateConnectivity`), as before every
+        increment.
 
         Parameters
         ----------
-        fileName
-            The name of the restart file.
+        restartFile
+            An open, writable :class:`h5py.File` (or group) to write the checkpoint into.
         """
 
         super().writeRestart(restartFile)
 
-        f = restartFile
+        materialPointsGroup = restartFile.create_group("materialPoints")
+        for materialPoint in self.materialPoints.values():
+            materialPointsGroup.create_dataset(str(materialPoint.number), data=materialPoint.getRestartData())
 
-        # particles
-        f.create_group("particles")
-        for p in self.particles.values():
-            theData = p.getRestartData()
-            f["particles"].create_dataset(str(p.number), data=theData)
+        particlesGroup = restartFile.create_group("particles")
+        for particle in self.particles.values():
+            particlesGroup.create_dataset(str(particle.number), data=particle.getRestartData())
 
-    def readRestart(self, restartFile: h5py.File):
-        """Read the state of the model from a restart file.
+    def readRestart(self, restartFile: h5py.File, journal: Journal = None):
+        """Read the state of the model from a restart checkpoint written by :meth:`writeRestart`.
+
+        The model must have been built as for the checkpointed run, and :meth:`prepareYourself` called.
 
         Parameters
         ----------
-        fileName
-            The name of the restart file.
+        restartFile
+            An open, readable :class:`h5py.File` (or group) to read the checkpoint from.
+        journal
+            The journal, for the progress messages of the topology replay.
         """
 
-        super().readRestart(restartFile)
+        super().readRestart(restartFile, journal)
 
-        f = restartFile
-
-        # particles
-        for p in self.particles.values():
-            theData = f["particles"][str(p.number)]
-            p.readRestartData(np.asarray(theData))
+        for entities, groupName in ((self.materialPoints, "materialPoints"), (self.particles, "particles")):
+            if groupName not in restartFile:
+                raise RestartError("the checkpoint holds no state of the {:} of an MPMModel".format(groupName))
+            group = restartFile[groupName]
+            for number, entity in entities.items():
+                key = str(entity.number)
+                if key not in group:
+                    raise RestartError("the checkpoint holds no state for {:} {:}".format(groupName, number))
+                entity.readRestartData(group[key][()])

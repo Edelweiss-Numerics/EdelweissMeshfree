@@ -39,9 +39,10 @@ import argparse
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 import pytest
-from edelweissfe.config.linsolve import getLinSolverByName
 from edelweissfe.journal.journal import Journal
-from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
+from edelweissfe.solvers.nonlinearimplicitstatic import NIST
+from edelweissfe.steps.adaptivestep import AdaptiveStep
+from edelweissfe.steps.stepmanager import StepActionCollection
 from edelweissfe.utils.exceptions import StepFailed
 
 from edelweissmeshfree.constraints.particlepenaltyweakdirichtlet import (
@@ -71,7 +72,10 @@ from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
 from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
     MarmotParticleWrapper,
 )
-from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
+from edelweissmeshfree.solvers.meshfreeconvergencecriterion import (
+    jobInfoWithMeshfreeTolerances,
+    meshfreeCriterionOptions,
+)
 
 # from edelweissmeshfree.generators.rectangularparticlegridgenerator import (
 #     generateRectangularParticleGrid,
@@ -315,35 +319,42 @@ def run_sim(no_limit=False):
         dirichletRight,
     ]
 
-    incSize = 5e-2
-    adaptiveTimeStepper = AdaptiveTimeStepper(
-        0.0,
-        1.0,
-        incSize,
-        incSize,
-        incSize / 1e8,
-        11 if not no_limit else 10000,
+    for constraint in dirichlets:
+        theModel.constraints[constraint.name] = constraint
+    theModel.particleManagers.append(theParticleManager)
+
+    jobInfo = jobInfoWithMeshfreeTolerances(
+        fluxResidualTolerance=5e-3, absoluteFluxResidualTolerance=1e-12, fieldCorrectionTolerance=1e-9
+    )
+    solver = NIST(
+        jobInfo,
         theJournal,
+        linsolver="pardiso",
+        **meshfreeCriterionOptions
+        | {"lineSearch": True, "lineSearchAfterIterations": 4, "lineSearchEveryIterations": 3},
+    )
+    # The particles integrate their motion in time themselves, which an increment of size zero cannot be.
+    incSize = 5e-2
+    step = AdaptiveStep(
+        0,
+        theModel,
+        fieldOutputController,
+        theJournal,
+        jobInfo,
+        solver,
+        [ensightOutput],
+        StepActionCollection(),
+        startInc=incSize,
+        maxInc=incSize,
+        minInc=incSize / 1e8,
+        # the test stops after eleven increments; run the script with --no-limit to go to the end of the step
+        maxNumInc=11 if not no_limit else 10000,
+        maxIter=13,
+        criticalIter=7,
+        maxGrowIter=4,
         increaseFactor=1.5,
         makeZeroIncrementFirst=False,
     )
-
-    nonlinearSolver = NonlinearQuasistaticSolver(theJournal)
-
-    iterationOptions = dict()
-
-    iterationOptions["max. iterations"] = 13
-    iterationOptions["critical iterations"] = 7
-    iterationOptions["allowed residual growths"] = 4
-    iterationOptions["default relative flux residual tolerance"] = 5e-3
-    iterationOptions["default absolute flux residual tolerance"] = 1e-12
-    iterationOptions["default absolute field correction tolerance"] = 1e-9
-    iterationOptions["line search"] = True
-    iterationOptions["line search after n iterations"] = 4
-    iterationOptions["line search every n iterations"] = 3
-    # iterationOptions["fall back to quasi Newton after n residual growths"] = False
-
-    linearSolver = getLinSolverByName("pardiso", {})
 
     for p in theModel.particleSets["projectile_all"]:
         v = p.getResultArray("velocity")
@@ -351,23 +362,11 @@ def run_sim(no_limit=False):
         p.acceptStateAndPosition()
 
     try:
-        nonlinearSolver.solveStep(
-            adaptiveTimeStepper,
-            linearSolver,
-            theModel,
-            fieldOutputController,
-            outputManagers=[ensightOutput],
-            particleManagers=[theParticleManager],
-            constraints=dirichlets,
-            userIterationOptions=iterationOptions,
-        )
+        step.solve()
 
     except StepFailed as e:
         theJournal.message(f"Step failed: {str(e)}", "error")
-        if not no_limit:
-            theJournal.message(
-                "This is an expected behaviour for this test. Rerun with --no-limit to run until the end.", "error"
-            )
+        raise
 
     finally:
         fieldOutputController.finalizeJob()

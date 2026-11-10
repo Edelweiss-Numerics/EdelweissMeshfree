@@ -69,6 +69,9 @@ class IndirectControl(ArcLengthControllerBase):
         The journal instance for logging purposes.
         """
 
+    #: The arc length reached by the steps before.
+    checkpointedState = {"_currentL0": float}
+
     def __init__(
         self,
         name: str,

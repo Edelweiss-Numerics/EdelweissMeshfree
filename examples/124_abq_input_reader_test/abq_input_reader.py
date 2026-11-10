@@ -65,7 +65,7 @@ from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
 from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
     MarmotParticleWrapper,
 )
-from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
+from edelweissmeshfree.solvers.deprecated.nqs import NonlinearQuasistaticSolver
 from edelweissmeshfree.stepactions.particledistributedload import (
     ParticleDistributedLoad,
 )
@@ -73,7 +73,7 @@ from edelweissmeshfree.stepactions.particledistributedload import (
 # import gstools
 
 
-# from edelweissmeshfree.solvers.nqsmparclength import NonlinearQuasistaticMarmotArcLengthSolver
+# from edelweissmeshfree.solvers.deprecated.nqsmparclength import NonlinearQuasistaticMarmotArcLengthSolver
 
 
 def run_sim(

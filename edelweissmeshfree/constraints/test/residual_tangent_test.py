@@ -118,7 +118,7 @@ def _particle(nodes, center) -> ParticleStandIn:
 
 def _withMultipliers(constraint):
     constraint.assignAdditionalScalarVariables(
-        [ScalarVariable() for i in range(constraint.getNumberOfAdditionalNeededScalarVariables())]
+        [ScalarVariable("lambda_{:}".format(i)) for i in range(constraint.getNumberOfAdditionalNeededScalarVariables())]
     )
     return constraint
 

@@ -39,12 +39,10 @@ import argparse
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 import pytest
-from edelweissfe.config.linsolve import getLinSolverByName
 from edelweissfe.journal.journal import Journal
 from edelweissfe.solvers.nonlinearimplicitstatic import NIST
 from edelweissfe.steps.adaptivestep import AdaptiveStep
 from edelweissfe.steps.stepmanager import StepActionCollection
-from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
 from edelweissfe.utils.exceptions import StepFailed
 
 from edelweissmeshfree.constraints.particlepenaltyweakdirichtlet import (
@@ -78,21 +76,15 @@ from edelweissmeshfree.solvers.meshfreeconvergencecriterion import (
     jobInfoWithMeshfreeTolerances,
     meshfreeCriterionOptions,
 )
-from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
 
 # from edelweissmeshfree.generators.rectangularparticlegridgenerator import (
 #     generateRectangularParticleGrid,
 # )
 
 
-def run_sim(withEdelweissFESolver: bool = False):
-    """Solve the example with the deprecated meshfree solver, or with EdelweissFE's NIST, which solves the same model.
-
-    Parameters
-    ----------
-    withEdelweissFESolver
-        Solve with EdelweissFE's NIST, set up from Python with the convergence criterion of the deprecated solver.
-    """
+def run_sim():
+    """Solve the example with EdelweissFE's NIST: RKPM particles bonded to their kernel functions, with variationally
+    consistent integration."""
     dimension = 2
 
     # set nump linewidth to 200:
@@ -202,18 +194,6 @@ def run_sim(withEdelweissFESolver: bool = False):
     ]
 
     incSize = 2e-1
-    adaptiveTimeStepper = AdaptiveTimeStepper(0.0, 1.0, incSize, incSize, incSize / 1, 50, theJournal)
-
-    # nonlinearSolver = NQSParallelForMarmot(theJournal)
-    nonlinearSolver = NonlinearQuasistaticSolver(theJournal)
-
-    iterationOptions = dict()
-
-    iterationOptions["max. iterations"] = 15
-    iterationOptions["critical iterations"] = 3
-    iterationOptions["allowed residual growths"] = 10
-
-    linearSolver = getLinSolverByName("pardiso", {})
 
     from edelweissmeshfree.meshfree.vci import (
         BoundaryParticleDefinition,
@@ -239,49 +219,35 @@ def run_sim(withEdelweissFESolver: bool = False):
         "pressureTop", theModel, theJournal, theModel.surfaces["rectangular_grid_top"], "pressure", np.array([-5.0])
     )
 
+    # The model holds its managers and constraints, the load is a step action of the step.
+    theModel.particleManagers.append(theParticleManager)
+    theModel.vciManagers.append(vciManager)
+    for constraint in dirichlets:
+        theModel.constraints[constraint.name] = constraint
+    stepActions = StepActionCollection()
+    stepActions["distributedload"][pressureTop.name] = pressureTop
+
+    jobInfo = jobInfoWithMeshfreeTolerances()
+    step = AdaptiveStep(
+        0,
+        theModel,
+        fieldOutputController,
+        theJournal,
+        jobInfo,
+        NIST(jobInfo, theJournal, linsolver="pardiso", **meshfreeCriterionOptions),
+        [ensightOutput],
+        stepActions,
+        startInc=incSize,
+        maxInc=incSize,
+        minInc=incSize,
+        maxNumInc=50,
+        maxIter=15,
+        criticalIter=3,
+        maxGrowIter=10,
+    )
+
     try:
-        if withEdelweissFESolver:
-            # The model holds its managers and constraints, the load is a step action of the step.
-            theModel.particleManagers.append(theParticleManager)
-            theModel.vciManagers.append(vciManager)
-            for constraint in dirichlets:
-                theModel.constraints[constraint.name] = constraint
-            stepActions = StepActionCollection()
-            stepActions["distributedload"][pressureTop.name] = pressureTop
-
-            jobInfo = jobInfoWithMeshfreeTolerances()
-            step = AdaptiveStep(
-                0,
-                theModel,
-                fieldOutputController,
-                theJournal,
-                jobInfo,
-                NIST(jobInfo, theJournal, linsolver="pardiso", **meshfreeCriterionOptions),
-                [],
-                stepActions,
-                startInc=incSize,
-                maxInc=incSize,
-                minInc=incSize,
-                maxNumInc=50,
-                maxIter=iterationOptions["max. iterations"],
-                criticalIter=iterationOptions["critical iterations"],
-                maxGrowIter=iterationOptions["allowed residual growths"],
-            )
-            step.solve()
-        else:
-            nonlinearSolver.solveStep(
-                adaptiveTimeStepper,
-                linearSolver,
-                theModel,
-                fieldOutputController,
-                outputManagers=[ensightOutput],
-                particleManagers=[theParticleManager],
-                constraints=dirichlets,
-                userIterationOptions=iterationOptions,
-                particleDistributedLoads=[pressureTop],
-                vciManagers=[vciManager],
-            )
-
+        step.solve()
     except StepFailed as e:
         theJournal.message(f"Step failed: {str(e)}", "error")
         raise
@@ -316,25 +282,6 @@ def test_sim(assert_gold):
     warnings.filterwarnings("ignore")
 
     theModel, fieldOutputController = run_sim()
-
-    res = fieldOutputController.fieldOutputs["displacement"].getLastResult()
-
-    gold = np.loadtxt("gold.csv")
-
-    assert_gold(res, gold, rtol=1e-12)
-
-
-def test_sim_with_edelweissfe_solver(assert_gold):
-    """The same model, solved by EdelweissFE's NIST with the convergence criterion of the deprecated solver."""
-
-    import matplotlib
-
-    matplotlib.use("Agg")
-    import warnings
-
-    warnings.filterwarnings("ignore")
-
-    theModel, fieldOutputController = run_sim(withEdelweissFESolver=True)
 
     res = fieldOutputController.fieldOutputs["displacement"].getLastResult()
 

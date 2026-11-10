@@ -70,6 +70,9 @@ class ParticleDistributedLoad(ParticleDistributedLoadBase):
             The amplitude function of the distributed load.
     """
 
+    #: The load accumulated by the steps before, this step's increment, and whether it is idle.
+    checkpointedState = {"_loadAtStepStart": np.ndarray, "_delta": np.ndarray, "_idle": bool}
+
     def __init__(
         self,
         name: str,

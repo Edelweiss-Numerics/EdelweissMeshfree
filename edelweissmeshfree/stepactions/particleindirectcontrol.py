@@ -73,6 +73,9 @@ class IndirectControl(ArcLengthControllerBase):
         A function for the time dependent scaling of the arc length parameter.
         """
 
+    #: The arc length reached by the steps before.
+    checkpointedState = {"_currentL0": float}
+
     def __init__(
         self,
         name: str,

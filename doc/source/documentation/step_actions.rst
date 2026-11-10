@@ -64,12 +64,10 @@ Neumann boundary conditions
 Dirichlet boundary conditions
 -----------------------------
 
-``Dirichlet`` class
-*******************
-
-.. automodule:: edelweissmeshfree.stepactions.dirichlet
-   :members:
-   :private-members:
+A Dirichlet boundary condition on the nodes of a node set is EdelweissFE's
+:class:`~edelweissfe.stepactions.dirichlet.StepAction`, constructed from Python with the node set, the field and the
+prescribed components. A solver prescribes the nodes of the set that lie in the active domain (see
+:meth:`~edelweissfe.numerics.dofmanager.DofManager.locateFieldOnNodeSet`).
 
 ``ParticleNitscheDirichlet`` class
 **********************************

@@ -30,9 +30,10 @@ import argparse
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 import pytest
-from edelweissfe.config.linsolve import getLinSolverByName
 from edelweissfe.journal.journal import Journal
-from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
+from edelweissfe.solvers.nonlinearimplicitstatic import NIST
+from edelweissfe.steps.adaptivestep import AdaptiveStep
+from edelweissfe.steps.stepmanager import StepActionCollection
 from edelweissfe.utils.exceptions import StepFailed
 
 from edelweissmeshfree.constraints.particlepenaltyweakdirichtlet import (
@@ -56,7 +57,10 @@ from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
 from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
     MarmotParticleWrapper,
 )
-from edelweissmeshfree.solvers.nqs import NonlinearQuasistaticSolver
+from edelweissmeshfree.solvers.meshfreeconvergencecriterion import (
+    jobInfoWithMeshfreeTolerances,
+    meshfreeCriterionOptions,
+)
 
 
 def run_sim():
@@ -203,22 +207,6 @@ def run_sim():
 
     dirichlets = [dirchletBottom]
 
-    incSize = 1e-1
-    adaptiveTimeStepper = AdaptiveTimeStepper(0.0, 1.0, incSize, incSize, incSize / 1, 500, theJournal)
-
-    # nonlinearSolver = NQSParallelForMarmot(theJournal)
-    nonlinearSolver = NonlinearQuasistaticSolver(theJournal)
-
-    iterationOptions = {
-        "default relative flux residual tolerance": 1e-8,
-        "default relative flux residual tolerance alt.": 1e-6,
-        "default relative field correction tolerance": 1e-9,
-        "default absolute flux residual tolerance": 1e-14,
-        "default absolute field correction tolerance": 1e-14,
-    }
-
-    linearSolver = getLinSolverByName("pardiso", {})
-
     from edelweissmeshfree.stepactions.particledistributedload import (
         ParticleDistributedLoad,
     )
@@ -232,23 +220,46 @@ def run_sim():
         np.array([-5e2]),
     )
 
-    from edelweissmeshfree.numerics.predictors.quadraticpredictor import (
-        QuadraticPredictor,
+    for constraint in dirichlets:
+        theModel.constraints[constraint.name] = constraint
+    theModel.particleManagers.append(theParticleManager)
+    stepActions = StepActionCollection()
+    stepActions["distributedload"][pressureTop.name] = pressureTop
+
+    jobInfo = jobInfoWithMeshfreeTolerances(
+        fluxResidualTolerance=1e-8, fluxResidualToleranceAlternative=1e-6, relativeFieldCorrectionTolerance=1e-9
+    )
+    solver = NIST(
+        jobInfo,
+        theJournal,
+        linsolver="pardiso",
+        **meshfreeCriterionOptions
+        | {
+            # a quadratic prediction, retried without if it fails, and kept while the rebuilt equation systems number
+            # the degrees of freedom as before
+            "extrapolation": "quadratic",
+            "retryWithoutExtrapolation": True,
+            "extrapolateAcrossConnectivityChange": True,
+        },
+    )
+    incSize = 1e-1
+    step = AdaptiveStep(
+        0,
+        theModel,
+        fieldOutputController,
+        theJournal,
+        jobInfo,
+        solver,
+        [ensightOutput],
+        stepActions,
+        startInc=incSize,
+        maxInc=incSize,
+        minInc=incSize,
+        maxNumInc=500,
     )
 
     try:
-        nonlinearSolver.solveStep(
-            adaptiveTimeStepper,
-            linearSolver,
-            theModel,
-            fieldOutputController,
-            outputManagers=[ensightOutput],
-            particleManagers=[theParticleManager],
-            constraints=dirichlets,
-            userIterationOptions=iterationOptions,
-            particleDistributedLoads=[pressureTop],
-            predictor=QuadraticPredictor(),
-        )
+        step.solve()
 
     except StepFailed as e:
         theJournal.message(f"Step failed: {str(e)}", "error")

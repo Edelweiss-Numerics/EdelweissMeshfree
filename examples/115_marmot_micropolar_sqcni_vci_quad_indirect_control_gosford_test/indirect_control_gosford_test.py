@@ -74,7 +74,7 @@ from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
 from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
     MarmotParticleWrapper,
 )
-from edelweissmeshfree.solvers.nqsmparclength import (
+from edelweissmeshfree.solvers.deprecated.nqsmparclength import (
     NonlinearQuasistaticMarmotArcLengthSolver,
 )
 from edelweissmeshfree.stepactions.particledistributedload import (

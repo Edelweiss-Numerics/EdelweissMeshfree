@@ -38,6 +38,7 @@
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 from edelweissfe.constraints.base.constraintbase import ConstraintBase
+from edelweissfe.numerics.csrgeneratorv2 import CSRGenerator
 from edelweissfe.numerics.dofmanager import DofManager, DofVector
 from edelweissfe.numerics.systemmatrixassembly import VIJSystemMatrixAssembly
 from edelweissfe.outputmanagers.base.outputmanagerbase import OutputManagerBase
@@ -49,11 +50,11 @@ from edelweissfe.utils.fieldoutput import FieldOutputController
 
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.mpmmanagers.base.mpmmanagerbase import MPMManagerBase
-from edelweissmeshfree.numerics.predictors.basepredictor import BasePredictor
 from edelweissmeshfree.particlemanagers.base.baseparticlemanager import (
     BaseParticleManager,
 )
-from edelweissmeshfree.solvers.nqsmarmotparallel import NQSParallelForMarmot
+from edelweissmeshfree.solvers.deprecated.nqs import NonlinearQuasistaticSolver
+from edelweissmeshfree.solvers.deprecated.predictors.basepredictor import BasePredictor
 from edelweissmeshfree.stepactions.base.mpmbodyloadbase import MPMBodyLoadBase
 from edelweissmeshfree.stepactions.base.mpmdistributedloadbase import (
     MPMDistributedLoadBase,
@@ -63,9 +64,13 @@ from edelweissmeshfree.stepactions.particledistributedload import (
 )
 
 
-class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
-    """This is the serial nonlinear implicit quasi static solver.
+class NonlinearQuasistaticMarmotArcLengthSolver(NonlinearQuasistaticSolver):
+    """This is the nonlinear implicit quasi static arc length solver of EdelweissMeshfree.
 
+    .. deprecated::
+        Use EdelweissFE's :class:`~edelweissfe.solvers.nonlinearimplicitstaticparallelarclength.NISTPArcLength`,
+        which solves an :class:`~edelweissmeshfree.models.mpmmodel.MPMModel` (see
+        :mod:`edelweissmeshfree.solvers.deprecated`).
 
     Parameters
     ----------
@@ -74,6 +79,9 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
     """
 
     identification = "MPM-NQS-ArcLength"
+
+    #: The EdelweissFE solver that replaces this one, named in the deprecation warning.
+    replacedBy = "EdelweissFE's NISTPArcLength"
 
     def solveStep(
         self,
@@ -180,7 +188,6 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
         bodyLoads: list,
         distributedLoads: list,
         particleDistributedLoads: list,
-        reducedNodeSets: list,
         elements: list,
         Un: DofVector,
         activeCells: list,
@@ -208,8 +215,6 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
             The list of bodyload StepActions.
         distributedLoads
             The list of distributed load StepActions.
-        activeNodeSets
-            The list of (reduced) active NodeSets.
         activeCells
             The list of active cells.
         materialPoints
@@ -248,7 +253,6 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
                 bodyLoads,
                 distributedLoads,
                 particleDistributedLoads,
-                reducedNodeSets,
                 elements,
                 Un,
                 activeCells,
@@ -343,16 +347,12 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
             K_VIJ[:] += K_VIJ_0
             K_VIJ[:] += (Lambda + dLambda) * K_VIJ_f
 
-            Rhs_f = self._applyDirichlet(referenceTimeStep, Rhs_f, dirichlets, reducedNodeSets, theDofManager)
+            Rhs_f = self._applyDirichlet(referenceTimeStep, Rhs_f, dirichlets, theDofManager)
             if iterationCounter == 0 and dirichlets:
-                Rhs_0 = self._applyDirichlet(timeStep, Rhs_0, dirichlets, reducedNodeSets, theDofManager)
+                Rhs_0 = self._applyDirichlet(timeStep, Rhs_0, dirichlets, theDofManager)
             else:
                 for dirichlet in dirichlets:
-                    Rhs_0[
-                        self._findDirichletIndices(
-                            theDofManager, dirichlet, reducedNodeSet=reducedNodeSets[dirichlet.nSet]
-                        )
-                    ] = 0.0
+                    Rhs_0[self._findDirichletIndices(theDofManager, dirichlet)] = 0.0
 
                 incrementResidualHistory = self._computeResiduals(
                     Rhs_0, ddU, dU, F, incrementResidualHistory, theDofManager
@@ -393,7 +393,7 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
                     raise ReachedMaxIterations("Reached max. iterations in current increment, cutting back")
 
             K_CSR = self._VIJtoCSR(K_VIJ, csrGenerator, useInPlace=True)
-            K_CSR = self._applyDirichletKCsr(K_CSR, dirichlets, theDofManager, reducedNodeSets)
+            K_CSR = self._applyDirichletKCsr(K_CSR, dirichlets, theDofManager)
 
             # solve 2 eq. systems at once:
             ddU_ = self._linearSolve(K_CSR, Rhs_, linearSolver)
@@ -426,11 +426,7 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
                     _assembleArcLengthSystem(dU + ddU_linesearch, dLambda + alpha * ddLambda)
                     Rhs_trial = Rhs_0.copy()
                     for dirichlet in dirichlets:
-                        Rhs_trial[
-                            self._findDirichletIndices(
-                                theDofManager, dirichlet, reducedNodeSet=reducedNodeSets[dirichlet.nSet]
-                            )
-                        ] = 0.0
+                        Rhs_trial[self._findDirichletIndices(theDofManager, dirichlet)] = 0.0
                     return Rhs_trial
 
                 ddU_new = self._quadraticLineSearch(_arcResidualCallback, ddU, alphas)
@@ -474,7 +470,7 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
         if arcLengthController is None:
             return super()._createNewtonCache(theDofManager)
 
-        csrGenerator = self._makeCachedCOOToCSRGenerator(theDofManager)
+        csrGenerator = CSRGenerator(theDofManager)
         dU = theDofManager.constructDofVector()
         Rhs_ = np.tile(theDofManager.constructDofVector(), (2, 1)).T  # 2 RHSs
         F = theDofManager.constructDofVector()
@@ -495,11 +491,6 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NQSParallelForMarmot):
             VIJSystemMatrixAssembly(csrGenerator, theDofManager, 1),
             VIJSystemMatrixAssembly(csrGenerator, theDofManager, 1),
         )
-
-        # this cache carries three VIJ matrices and no direct-to-CSR assembler; cleared explicitly so
-        # a stale one from a previous connectivity cannot be reached from the arc-length path
-        self._directCSRAssembler = None
-        self._directCSREntityIds = None
 
         return newtonCache
 
