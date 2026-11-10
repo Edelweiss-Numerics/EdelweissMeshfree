@@ -767,34 +767,31 @@ For higher order (non point) particles, the surface vector might be omitted and 
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getResultArray" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getResultArray"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getResultArray</span></code></a>(result[, getPersistentView, qp])</p></td>
 <td><p>Get the array of a result, possibly as a persistent view which is continiously updated by the underlying MarmotParticle.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getVIJContributionSize" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getVIJContributionSize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVIJContributionSize</span></code></a>()</p></td>
-<td><p>Return the number of entries this entity contributes to the VIJ (COO) system matrix.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getVertexCoordinates" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getVertexCoordinates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVertexCoordinates</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getVertexCoordinates" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getVertexCoordinates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVertexCoordinates</span></code></a>()</p></td>
 <td><p>Get the underlying MarmotParticle vertex coordinates.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getVolumeUndeformed" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getVolumeUndeformed"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVolumeUndeformed</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getVolumeUndeformed" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getVolumeUndeformed"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVolumeUndeformed</span></code></a>()</p></td>
 <td><p>Get the underlying MarmotParticle undeformed volume.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.initializeVIJContribution" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.initializeVIJContribution"><code class="xref py py-obj docutils literal notranslate"><span class="pre">initializeVIJContribution</span></code></a>(idcs, I_, J_, offset)</p></td>
-<td><p>Initialize the I and J arrays for the VIJ (COO) system matrix assembly.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.localEntriesOfBlock" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.localEntriesOfBlock"><code class="xref py py-obj docutils literal notranslate"><span class="pre">localEntriesOfBlock</span></code></a>()</p></td>
+<td><p>The entries of the dense block, see <code class="xref py py-func docutils literal notranslate"><span class="pre">denseBlockLocalEntries()</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.readRestartData" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.readRestartData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">readRestartData</span></code></a>(data)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.readRestartData" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.readRestartData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">readRestartData</span></code></a>(data)</p></td>
 <td><p>Restore the state <code class="xref py py-meth docutils literal notranslate"><span class="pre">getRestartData()</span></code> returned.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setInitialCondition" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setInitialCondition"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setInitialCondition</span></code></a>(stateType, value)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setInitialCondition" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setInitialCondition"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setInitialCondition</span></code></a>(stateType, value)</p></td>
 <td><p>Set initial condition of the particle.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setProperties" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setProperties"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setProperties</span></code></a>(properties)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setProperties" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setProperties"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setProperties</span></code></a>(properties)</p></td>
 <td><p>Set a list of properties of the particle.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setProperty" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setProperty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setProperty</span></code></a>(propertyName, value)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setProperty" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setProperty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setProperty</span></code></a>(propertyName, value)</p></td>
 <td><p>Set a property of the particle.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.shapeVIJContribution" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.shapeVIJContribution"><code class="xref py py-obj docutils literal notranslate"><span class="pre">shapeVIJContribution</span></code></a>(flat_view)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.shapeBlock" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.shapeBlock"><code class="xref py py-obj docutils literal notranslate"><span class="pre">shapeBlock</span></code></a>(values)</p></td>
 <td><p>Keep the view flat for Cython 1-D memoryview compatibility.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.updatePhysicsExplicit" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.updatePhysicsExplicit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updatePhysicsExplicit</span></code></a>(dUc, timeNew, dTime)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.updatePhysicsExplicit" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.updatePhysicsExplicit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updatePhysicsExplicit</span></code></a>(dUc, timeNew, dTime)</p></td>
 <td><p>Take the solution increment; see <a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.updatePhysicsExplicit" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.updatePhysicsExplicit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissmeshfree.particles.base.baseparticle.BaseParticle.updatePhysicsExplicit()</span></code></a>.</p></td>
 </tr>
 </tbody>
@@ -907,17 +904,6 @@ updated by the underlying MarmotParticle.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getVIJContributionSize">
-<span class="sig-name descname"><span class="pre">getVIJContributionSize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getVIJContributionSize" title="Link to this definition"></a></dt>
-<dd><p>Return the number of entries this entity contributes to the VIJ (COO) system matrix.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getVertexCoordinates">
 <span class="sig-name descname"><span class="pre">getVertexCoordinates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getVertexCoordinates" title="Link to this definition"></a></dt>
 <dd><p>Get the underlying MarmotParticle vertex coordinates.</p>
@@ -930,20 +916,13 @@ updated by the underlying MarmotParticle.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.initializeVIJContribution">
-<span class="sig-name descname"><span class="pre">initializeVIJContribution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">I_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">J_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.initializeVIJContribution" title="Link to this definition"></a></dt>
-<dd><p>Initialize the I and J arrays for the VIJ (COO) system matrix assembly.</p>
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.localEntriesOfBlock">
+<span class="sig-name descname"><span class="pre">localEntriesOfBlock</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.localEntriesOfBlock" title="Link to this definition"></a></dt>
+<dd><p>The entries of the dense block, see
+<code class="xref py py-func docutils literal notranslate"><span class="pre">denseBlockLocalEntries()</span></code>.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>idcs</strong> (<em>ndarray</em>)</p></li>
-<li><p><strong>I_</strong> (<em>ndarray</em>)</p></li>
-<li><p><strong>J_</strong> (<em>ndarray</em>)</p></li>
-<li><p><strong>offset</strong> (<em>int</em>)</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>None</p>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[<em>ndarray</em>, <em>ndarray</em>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -974,12 +953,12 @@ from its state, and is brought to it as at the start of an increment (see <code 
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.shapeVIJContribution">
-<span class="sig-name descname"><span class="pre">shapeVIJContribution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">flat_view</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.shapeVIJContribution" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.shapeBlock">
+<span class="sig-name descname"><span class="pre">shapeBlock</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">values</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.shapeBlock" title="Link to this definition"></a></dt>
 <dd><p>Keep the view flat for Cython 1-D memoryview compatibility.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>flat_view</strong> (<em>ndarray</em>)</p>
+<dd class="field-odd"><p><strong>values</strong> (<em>ndarray</em>)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><em>ndarray</em></p>

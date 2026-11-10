@@ -225,20 +225,17 @@ base class in order to follow the general interface.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase.getInterpolationVector" title="edelweissmeshfree.cells.base.cell.CellBase.getInterpolationVector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getInterpolationVector</span></code></a>(coordinate)</p></td>
 <td><p>Get the interpolation vector for a given global coordinate.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVIJContributionSize</span></code>()</p></td>
-<td><p>Return the number of entries this entity contributes to the VIJ (COO) system matrix.</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">initializeVIJContribution</span></code>(idcs, I_, J_, offset)</p></td>
-<td><p>Fill the global <code class="docutils literal notranslate"><span class="pre">I</span></code> and <code class="docutils literal notranslate"><span class="pre">J</span></code> index arrays for this constraint's VIJ contribution.</p></td>
-</tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase.interpolateSolutionContributionToMaterialPoints" title="edelweissmeshfree.cells.base.cell.CellBase.interpolateSolutionContributionToMaterialPoints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">interpolateSolutionContributionToMaterialPoints</span></code></a>(dU)</p></td>
 <td><p>Interpolate field solutions to the assigned MaterialPoints.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase.isCoordinateInCell" title="edelweissmeshfree.cells.base.cell.CellBase.isCoordinateInCell"><code class="xref py py-obj docutils literal notranslate"><span class="pre">isCoordinateInCell</span></code></a>(coordinate)</p></td>
 <td><p>Check if a given coordinate is located within this cell.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">shapeVIJContribution</span></code>(flat_view)</p></td>
-<td><p>Shape the flat VIJ values slice for this entity.</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">localEntriesOfBlock</span></code>()</p></td>
+<td><p>The local row and column of every value of the entity's block, in the order of the values.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">shapeBlock</span></code>(values)</p></td>
+<td><p>The entity's view of the flat array of the values of its block, which it writes its tangent into.</p></td>
 </tr>
 </tbody>
 </table>
@@ -474,13 +471,10 @@ Rather, it is used as a base class for the specific cell types, such as Lagrangi
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.computeKernels" title="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.computeKernels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeKernels</span></code></a>(Kc, Pc, Uc, dUc, timeNew, dTime)</p></td>
 <td><p>Add the internal forces of the assigned material points to the residual, and their tangent; see <a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase.computeKernels" title="edelweissmeshfree.cells.base.cell.CellBase.computeKernels"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissmeshfree.cells.base.cell.CellBase.computeKernels()</span></code></a>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.getVIJContributionSize" title="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.getVIJContributionSize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVIJContributionSize</span></code></a>()</p></td>
-<td><p>Return the number of entries this entity contributes to the VIJ (COO) system matrix.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.localEntriesOfBlock" title="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.localEntriesOfBlock"><code class="xref py py-obj docutils literal notranslate"><span class="pre">localEntriesOfBlock</span></code></a>()</p></td>
+<td><p>The entries of the dense block, see <code class="xref py py-func docutils literal notranslate"><span class="pre">denseBlockLocalEntries()</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.initializeVIJContribution" title="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.initializeVIJContribution"><code class="xref py py-obj docutils literal notranslate"><span class="pre">initializeVIJContribution</span></code></a>(idcs, I_, J_, offset)</p></td>
-<td><p>Initialize the I and J arrays for the VIJ (COO) system matrix assembly.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.shapeVIJContribution" title="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.shapeVIJContribution"><code class="xref py py-obj docutils literal notranslate"><span class="pre">shapeVIJContribution</span></code></a>(flat_view)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.shapeBlock" title="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.shapeBlock"><code class="xref py py-obj docutils literal notranslate"><span class="pre">shapeBlock</span></code></a>(values)</p></td>
 <td><p>Keep the view flat for Cython 1-D memoryview compatibility.</p></td>
 </tr>
 </tbody>
@@ -525,42 +519,24 @@ solution increment. A failure in Marmot requests a cutback, as for an EdelweissF
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.getVIJContributionSize">
-<span class="sig-name descname"><span class="pre">getVIJContributionSize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.getVIJContributionSize" title="Link to this definition"></a></dt>
-<dd><p>Return the number of entries this entity contributes to the VIJ (COO) system matrix.</p>
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.localEntriesOfBlock">
+<span class="sig-name descname"><span class="pre">localEntriesOfBlock</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.localEntriesOfBlock" title="Link to this definition"></a></dt>
+<dd><p>The entries of the dense block, see
+<code class="xref py py-func docutils literal notranslate"><span class="pre">denseBlockLocalEntries()</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int</p>
+<dd class="field-odd"><p>tuple[<em>ndarray</em>, <em>ndarray</em>]</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.initializeVIJContribution">
-<span class="sig-name descname"><span class="pre">initializeVIJContribution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">I_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">J_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.initializeVIJContribution" title="Link to this definition"></a></dt>
-<dd><p>Initialize the I and J arrays for the VIJ (COO) system matrix assembly.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>idcs</strong> (<em>ndarray</em>)</p></li>
-<li><p><strong>I_</strong> (<em>ndarray</em>)</p></li>
-<li><p><strong>J_</strong> (<em>ndarray</em>)</p></li>
-<li><p><strong>offset</strong> (<em>int</em>)</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.shapeVIJContribution">
-<span class="sig-name descname"><span class="pre">shapeVIJContribution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">flat_view</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.shapeVIJContribution" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.shapeBlock">
+<span class="sig-name descname"><span class="pre">shapeBlock</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">values</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.shapeBlock" title="Link to this definition"></a></dt>
 <dd><p>Keep the view flat for Cython 1-D memoryview compatibility.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>flat_view</strong> (<em>ndarray</em>)</p>
+<dd class="field-odd"><p><strong>values</strong> (<em>ndarray</em>)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><em>ndarray</em></p>
@@ -619,13 +595,10 @@ for managing the material points associated with the cell.</p>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeKernels</span></code>(Kc, Pc, Uc, dUc, timeNew, dTime)</p></td>
 <td><p>Add the internal forces of the assigned material points to the residual, and their tangent; see <a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase.computeKernels" title="edelweissmeshfree.cells.base.cell.CellBase.computeKernels"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissmeshfree.cells.base.cell.CellBase.computeKernels()</span></code></a>.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVIJContributionSize</span></code>()</p></td>
-<td><p>Return the number of entries this entity contributes to the VIJ (COO) system matrix.</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">localEntriesOfBlock</span></code>()</p></td>
+<td><p>The entries of the dense block, see <code class="xref py py-func docutils literal notranslate"><span class="pre">denseBlockLocalEntries()</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">initializeVIJContribution</span></code>(idcs, I_, J_, offset)</p></td>
-<td><p>Initialize the I and J arrays for the VIJ (COO) system matrix assembly.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">shapeVIJContribution</span></code>(flat_view)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">shapeBlock</span></code>(values)</p></td>
 <td><p>Keep the view flat for Cython 1-D memoryview compatibility.</p></td>
 </tr>
 </tbody>
@@ -696,13 +669,10 @@ and their derivatives at a given point.</p>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeKernels</span></code>(Kc, Pc, Uc, dUc, timeNew, dTime)</p></td>
 <td><p>Add the internal forces of the assigned material points to the residual, and their tangent; see <a class="reference internal" href="#edelweissmeshfree.cells.base.cell.CellBase.computeKernels" title="edelweissmeshfree.cells.base.cell.CellBase.computeKernels"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissmeshfree.cells.base.cell.CellBase.computeKernels()</span></code></a>.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVIJContributionSize</span></code>()</p></td>
-<td><p>Return the number of entries this entity contributes to the VIJ (COO) system matrix.</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">localEntriesOfBlock</span></code>()</p></td>
+<td><p>The entries of the dense block, see <code class="xref py py-func docutils literal notranslate"><span class="pre">denseBlockLocalEntries()</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">initializeVIJContribution</span></code>(idcs, I_, J_, offset)</p></td>
-<td><p>Initialize the I and J arrays for the VIJ (COO) system matrix assembly.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">shapeVIJContribution</span></code>(flat_view)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">shapeBlock</span></code>(values)</p></td>
 <td><p>Keep the view flat for Cython 1-D memoryview compatibility.</p></td>
 </tr>
 </tbody>
@@ -807,12 +777,6 @@ and stiffness matrices from material point contributions.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell.getInterpolationVector" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.getInterpolationVector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getInterpolationVector</span></code></a>(coordinate)</p></td>
 <td><p>Get the interpolation vector for a given global coordinate.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVIJContributionSize</span></code>()</p></td>
-<td><p>Return the number of entries this entity contributes to the VIJ (COO) system matrix.</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">initializeVIJContribution</span></code>(idcs, I_, J_, offset)</p></td>
-<td><p>Fill the global <code class="docutils literal notranslate"><span class="pre">I</span></code> and <code class="docutils literal notranslate"><span class="pre">J</span></code> index arrays for this constraint's VIJ contribution.</p></td>
-</tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell.interpolateFieldsToMaterialPoints" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.interpolateFieldsToMaterialPoints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">interpolateFieldsToMaterialPoints</span></code></a>(dU)</p></td>
 <td><p>Interpolate nodal displacement increments to material points.</p></td>
 </tr>
@@ -822,8 +786,11 @@ and stiffness matrices from material point contributions.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.cells.pythoncell.cell.PythonCell.isCoordinateInCell" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.isCoordinateInCell"><code class="xref py py-obj docutils literal notranslate"><span class="pre">isCoordinateInCell</span></code></a>(coordinate)</p></td>
 <td><p>Check if a given coordinate is located within this cell.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">shapeVIJContribution</span></code>(flat_view)</p></td>
-<td><p>Shape the flat VIJ values slice for this entity.</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">localEntriesOfBlock</span></code>()</p></td>
+<td><p>The local row and column of every value of the entity's block, in the order of the values.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">shapeBlock</span></code>(values)</p></td>
+<td><p>The entity's view of the flat array of the values of its block, which it writes its tangent into.</p></td>
 </tr>
 </tbody>
 </table>

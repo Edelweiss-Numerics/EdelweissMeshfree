@@ -118,11 +118,17 @@ the offset map and the C++ core; this page is about choosing between the two for
 <h2>Why assembly is a memory problem<a class="headerlink" href="#why-assembly-is-a-memory-problem" title="Link to this heading"></a></h2>
 <p>Every particle contributes a dense block over the kernel functions in its support, and the supports of neighbouring
 particles overlap heavily, so many blocks add to the same entry of the matrix. The default path, <code class="docutils literal notranslate"><span class="pre">vij</span></code>, writes each
-block into its own slice of one <strong>VIJ staging array</strong>, and sums the duplicates into CSR afterwards. The staging array
-and its gather map therefore grow with the number of contributions, not with the number of entries of the matrix:
-with a large support, they are many times larger than the matrix they produce.</p>
-<p>The other path, <code class="docutils literal notranslate"><span class="pre">direct</span></code>, gives every contribution its destination in the CSR matrix in advance, and scatters it
-there. No staging array exists at all.</p>
+block into its own slice of one <strong>VIJ staging array</strong>, with the global row and column of every value, and sums the
+duplicates into CSR afterwards. The staging array, its row and column indices and its gather map therefore grow with
+the number of contributions, not with the number of entries of the matrix: with a large support, they are many times
+larger than the matrix they produce.</p>
+<p>The other path, <code class="docutils literal notranslate"><span class="pre">direct</span></code>, derives the CSR pattern from the DOF lists of the cells and particles themselves, gives
+every contribution its destination in the CSR matrix in advance, and scatters it there. Neither a staging array nor
+the row and column indices of the contributions exist at all.</p>
+<p>A cell or a particle couples all its degrees of freedom: its block is the dense <code class="docutils literal notranslate"><span class="pre">nDof</span> <span class="pre">x</span> <span class="pre">nDof</span></code> matrix, column-major,
+in its own DOF numbering (EdelweissFE’s
+<code class="xref py py-class docutils literal notranslate"><span class="pre">SystemMatrixContributorBase</span></code>). The Marmot cells and particles,
+extension types outside that base class, declare it themselves.</p>
 </section>
 <section id="switching-it-on">
 <h2>Switching it on<a class="headerlink" href="#switching-it-on" title="Link to this heading"></a></h2>

@@ -113,7 +113,6 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">edelweissfe.utils.performancetiming</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">performancetiming</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.constraints.base.constraintbase</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConstraintBase</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.numerics.csrgeneratorv2</span><span class="w"> </span><span class="kn">import</span> <span class="n">CSRGenerator</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.numerics.dofmanager</span><span class="w"> </span><span class="kn">import</span> <span class="n">DofManager</span><span class="p">,</span> <span class="n">DofVector</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.numerics.systemmatrixassembly</span><span class="w"> </span><span class="kn">import</span> <span class="n">VIJSystemMatrixAssembly</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.outputmanagers.base.outputmanagerbase</span><span class="w"> </span><span class="kn">import</span> <span class="n">OutputManagerBase</span>
@@ -358,15 +357,13 @@
 
         <span class="c1"># if not newtonCache:</span>
         <span class="c1">#     newtonCache = self._createArcLengthNewtonCache(theDofManager)</span>
-        <span class="n">K</span><span class="p">,</span> <span class="n">csrGenerator</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">Rhs_</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">PInt</span><span class="p">,</span> <span class="n">PExt</span><span class="p">,</span> <span class="n">PExt_0</span><span class="p">,</span> <span class="n">PExt_f</span><span class="p">,</span> <span class="n">K_0</span><span class="p">,</span> <span class="n">K_f</span> <span class="o">=</span> <span class="n">newtonCache</span>
+        <span class="n">K</span><span class="p">,</span> <span class="n">csrGenerator</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">Rhs_</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">PInt</span><span class="p">,</span> <span class="n">PExt</span><span class="p">,</span> <span class="n">PExt_0</span><span class="p">,</span> <span class="n">PExt_f</span><span class="p">,</span> <span class="n">K_VIJ_0</span><span class="p">,</span> <span class="n">K_VIJ_f</span> <span class="o">=</span> <span class="n">newtonCache</span>
 
         <span class="c1"># The contributors write through the contribution objects; the arc-length combination of the</span>
         <span class="c1"># dead and reference load stiffnesses is array arithmetic and needs the arrays underneath. This</span>
         <span class="c1"># solver is therefore VIJ-only, which is why _createNewtonCache below builds three staging</span>
         <span class="c1"># arrays and no direct-to-CSR assembler.</span>
         <span class="n">K_VIJ</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">vijArray</span>
-        <span class="n">K_VIJ_0</span> <span class="o">=</span> <span class="n">K_0</span><span class="o">.</span><span class="n">vijArray</span>
-        <span class="n">K_VIJ_f</span> <span class="o">=</span> <span class="n">K_f</span><span class="o">.</span><span class="n">vijArray</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dUGuess</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
             <span class="n">dU_temp</span><span class="p">,</span> <span class="n">dLambda_temp</span> <span class="o">=</span> <span class="n">dUGuess</span>
@@ -412,8 +409,8 @@
 
             <span class="c1"># the loads twice: at the start of the step (the dead load) and at its end (the reference load)</span>
             <span class="n">loads</span> <span class="o">=</span> <span class="p">[</span><span class="o">*</span><span class="n">bodyLoads</span><span class="p">,</span> <span class="o">*</span><span class="n">distributedLoads</span><span class="p">,</span> <span class="o">*</span><span class="n">particleDistributedLoads</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_assembleLoads</span><span class="p">(</span><span class="n">loads</span><span class="p">,</span> <span class="n">U_np</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">PExt_0</span><span class="p">,</span> <span class="n">K_0</span><span class="p">,</span> <span class="n">zeroTimeStep</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_assembleLoads</span><span class="p">(</span><span class="n">loads</span><span class="p">,</span> <span class="n">U_np</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">PExt_f</span><span class="p">,</span> <span class="n">K_f</span><span class="p">,</span> <span class="n">referenceTimeStep</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_assembleLoads</span><span class="p">(</span><span class="n">loads</span><span class="p">,</span> <span class="n">U_np</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">PExt_0</span><span class="p">,</span> <span class="n">K_VIJ_0</span><span class="p">,</span> <span class="n">zeroTimeStep</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_assembleLoads</span><span class="p">(</span><span class="n">loads</span><span class="p">,</span> <span class="n">U_np</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">PExt_f</span><span class="p">,</span> <span class="n">K_VIJ_f</span><span class="p">,</span> <span class="n">referenceTimeStep</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">)</span>
 
             <span class="n">PExt_f</span> <span class="o">-=</span> <span class="n">PExt_0</span>  <span class="c1"># and subtract the dead part, since we are only interested in the homogeneous linear part</span>
             <span class="n">K_VIJ_f</span> <span class="o">-=</span> <span class="n">K_VIJ_0</span>
@@ -555,7 +552,7 @@
         <span class="k">if</span> <span class="n">arcLengthController</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_createNewtonCache</span><span class="p">(</span><span class="n">theDofManager</span><span class="p">)</span>
 
-        <span class="n">csrGenerator</span> <span class="o">=</span> <span class="n">CSRGenerator</span><span class="p">(</span><span class="n">theDofManager</span><span class="p">)</span>
+        <span class="n">K</span> <span class="o">=</span> <span class="n">VIJSystemMatrixAssembly</span><span class="p">(</span><span class="n">theDofManager</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
         <span class="n">dU</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
         <span class="n">Rhs_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">theDofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">(),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>  <span class="c1"># 2 RHSs</span>
         <span class="n">F</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
@@ -563,9 +560,11 @@
         <span class="n">PExt</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
         <span class="n">PExt_0</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
         <span class="n">PExt_f</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+        <span class="c1"># the stiffnesses of the dead and of the reference load: value arrays in K's VIJ layout, which K's generator</span>
+        <span class="c1"># gathers</span>
         <span class="n">newtonCache</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">VIJSystemMatrixAssembly</span><span class="p">(</span><span class="n">csrGenerator</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
-            <span class="n">csrGenerator</span><span class="p">,</span>
+            <span class="n">K</span><span class="p">,</span>
+            <span class="n">K</span><span class="o">.</span><span class="n">csrGenerator</span><span class="p">,</span>
             <span class="n">dU</span><span class="p">,</span>
             <span class="n">Rhs_</span><span class="p">,</span>
             <span class="n">F</span><span class="p">,</span>
@@ -573,8 +572,8 @@
             <span class="n">PExt</span><span class="p">,</span>
             <span class="n">PExt_0</span><span class="p">,</span>
             <span class="n">PExt_f</span><span class="p">,</span>
-            <span class="n">VIJSystemMatrixAssembly</span><span class="p">(</span><span class="n">csrGenerator</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
-            <span class="n">VIJSystemMatrixAssembly</span><span class="p">(</span><span class="n">csrGenerator</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="n">K</span><span class="o">.</span><span class="n">constructVIJSystemMatrix</span><span class="p">(),</span>
+            <span class="n">K</span><span class="o">.</span><span class="n">constructVIJSystemMatrix</span><span class="p">(),</span>
         <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">newtonCache</span></div>

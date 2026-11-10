@@ -201,20 +201,17 @@ If you want to implement a new CellElement, you have to inherit from this class.
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.cellelements.base.cellelement.CellElementBase.getRequestedMaterialPointVolumes" title="edelweissmeshfree.cellelements.base.cellelement.CellElementBase.getRequestedMaterialPointVolumes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getRequestedMaterialPointVolumes</span></code></a>()</p></td>
 <td><p>Get the list of the requested material point volumes.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVIJContributionSize</span></code>()</p></td>
-<td><p>Return the number of entries this entity contributes to the VIJ (COO) system matrix.</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">initializeVIJContribution</span></code>(idcs, I_, J_, offset)</p></td>
-<td><p>Fill the global <code class="docutils literal notranslate"><span class="pre">I</span></code> and <code class="docutils literal notranslate"><span class="pre">J</span></code> index arrays for this constraint's VIJ contribution.</p></td>
-</tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">interpolateSolutionContributionToMaterialPoints</span></code>(dU)</p></td>
 <td><p>Interpolate field solutions to the assigned MaterialPoints.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">isCoordinateInCell</span></code>(coordinate)</p></td>
 <td><p>Check if a given coordinate is located within this cell.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">shapeVIJContribution</span></code>(flat_view)</p></td>
-<td><p>Shape the flat VIJ values slice for this entity.</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">localEntriesOfBlock</span></code>()</p></td>
+<td><p>The local row and column of every value of the entity's block, in the order of the values.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">shapeBlock</span></code>(values)</p></td>
+<td><p>The entity's view of the flat array of the values of its block, which it writes its tangent into.</p></td>
 </tr>
 </tbody>
 </table>
@@ -326,13 +323,10 @@ This class is not intended to be used directly, but to be subclassed by the actu
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.cellelements.marmotcellelement.marmotcellelement.MarmotCellElementWrapper.getRequestedMaterialPointVolumes" title="edelweissmeshfree.cellelements.marmotcellelement.marmotcellelement.MarmotCellElementWrapper.getRequestedMaterialPointVolumes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getRequestedMaterialPointVolumes</span></code></a>()</p></td>
 <td><p>Get the volumes of the material points in the cell.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVIJContributionSize</span></code>()</p></td>
-<td><p>Return the number of entries this entity contributes to the VIJ (COO) system matrix.</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">localEntriesOfBlock</span></code>()</p></td>
+<td><p>The entries of the dense block, see <code class="xref py py-func docutils literal notranslate"><span class="pre">denseBlockLocalEntries()</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">initializeVIJContribution</span></code>(idcs, I_, J_, offset)</p></td>
-<td><p>Initialize the I and J arrays for the VIJ (COO) system matrix assembly.</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">shapeVIJContribution</span></code>(flat_view)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">shapeBlock</span></code>(values)</p></td>
 <td><p>Keep the view flat for Cython 1-D memoryview compatibility.</p></td>
 </tr>
 </tbody>
@@ -441,13 +435,10 @@ as for an EdelweissFE element.</p>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getRequestedMaterialPointVolumes</span></code>()</p></td>
 <td><p>Get the volumes of the material points in the cell.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVIJContributionSize</span></code>()</p></td>
-<td><p>Return the number of entries this entity contributes to the VIJ (COO) system matrix.</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">localEntriesOfBlock</span></code>()</p></td>
+<td><p>The entries of the dense block, see <code class="xref py py-func docutils literal notranslate"><span class="pre">denseBlockLocalEntries()</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">initializeVIJContribution</span></code>(idcs, I_, J_, offset)</p></td>
-<td><p>Initialize the I and J arrays for the VIJ (COO) system matrix assembly.</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">shapeVIJContribution</span></code>(flat_view)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">shapeBlock</span></code>(values)</p></td>
 <td><p>Keep the view flat for Cython 1-D memoryview compatibility.</p></td>
 </tr>
 </tbody>

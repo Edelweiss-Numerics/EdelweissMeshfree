@@ -153,7 +153,7 @@ for nodes and scalar degrees of freedom, and it manages the fields.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.assembleActiveDomain" title="edelweissmeshfree.models.mpmmodel.MPMModel.assembleActiveDomain"><code class="xref py py-obj docutils literal notranslate"><span class="pre">assembleActiveDomain</span></code></a>(activeCells)</p></td>
 <td><p>Gather the active Nodes, and the NodeFields and NodeSets reduced onto them.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.buildEquationSystem" title="edelweissmeshfree.models.mpmmodel.MPMModel.buildEquationSystem"><code class="xref py py-obj docutils literal notranslate"><span class="pre">buildEquationSystem</span></code></a>([withSystemMatrix])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.buildEquationSystem" title="edelweissmeshfree.models.mpmmodel.MPMModel.buildEquationSystem"><code class="xref py py-obj docutils literal notranslate"><span class="pre">buildEquationSystem</span></code></a>()</p></td>
 <td><p>Lay out the equation system of the model on its active domain; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">buildEquationSystem()</span></code> and <code class="xref py py-class docutils literal notranslate"><span class="pre">MPMEquationSystemLayout</span></code>.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.createElement" title="edelweissmeshfree.models.mpmmodel.MPMModel.createElement"><code class="xref py py-obj docutils literal notranslate"><span class="pre">createElement</span></code></a>(element)</p></td>
@@ -497,7 +497,7 @@ not agree with the cells reachable from <code class="docutils literal notranslat
 
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.buildEquationSystem">
-<span class="sig-name descname"><span class="pre">buildEquationSystem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">withSystemMatrix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmmodel.html#MPMModel.buildEquationSystem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.buildEquationSystem" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">buildEquationSystem</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmmodel.html#MPMModel.buildEquationSystem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.buildEquationSystem" title="Link to this definition"></a></dt>
 <dd><p>Lay out the equation system of the model on its active domain; see
 <code class="xref py py-meth docutils literal notranslate"><span class="pre">buildEquationSystem()</span></code> and <code class="xref py py-class docutils literal notranslate"><span class="pre">MPMEquationSystemLayout</span></code>.</p>
 <p>The active domain consists of the cells that hold material points, the nodes these cells and the particles’
@@ -505,14 +505,11 @@ kernel functions reach, and the finite elements and cell elements with their nod
 numbered on the active nodes; the model’s node sets are located on their nodes in the active domain. The
 elements the solver computes are the finite elements, the active cells, the cell elements and the particles.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>withSystemMatrix</strong> (<em>bool</em>) – False for an explicit solver, which assembles no system matrix.</p>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The layout of the equation system.</p>
 </dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The layout of the equation system.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout" title="edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout">MPMEquationSystemLayout</a></p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout" title="edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout">MPMEquationSystemLayout</a></p>
 </dd>
 </dl>
 </dd></dl>

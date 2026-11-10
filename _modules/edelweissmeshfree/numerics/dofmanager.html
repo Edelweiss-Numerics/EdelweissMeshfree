@@ -141,8 +141,6 @@
 <span class="sd">        A list of cell elements.</span>
 <span class="sd">    particles : list</span>
 <span class="sd">        The list of particles (RKPM).</span>
-<span class="sd">    initializeVIJPattern : bool</span>
-<span class="sd">        A flag indicating whether the VIJ pattern should be initialized.</span>
 <span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
@@ -155,9 +153,7 @@
         <span class="n">cells</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[],</span>
         <span class="n">cellElements</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[],</span>
         <span class="n">particles</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[],</span>
-        <span class="n">initializeVIJPattern</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">initializeAccumulatedNodalFluxesFieldwise</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="n">determiningIndexToHostObjectMappping</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="p">):</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
@@ -166,28 +162,23 @@
             <span class="n">elements</span><span class="p">,</span>
             <span class="n">constraints</span><span class="p">,</span>
             <span class="n">nodeSets</span><span class="p">,</span>
-            <span class="n">initializeVIJPattern</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">initializeAccumulatedNodalFluxesFieldwise</span><span class="o">=</span><span class="n">initializeAccumulatedNodalFluxesFieldwise</span><span class="p">,</span>
-            <span class="n">determiningIndexToHostObjectMappping</span><span class="o">=</span><span class="n">determiningIndexToHostObjectMappping</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">accumulatedCellNDof</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_accumulatedCellVIJSize</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_nAccumulatedNodalFluxesFieldwiseFromCells</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">largestNumberOfCellNDof</span><span class="p">,</span>
         <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gatherCellsInformation</span><span class="p">(</span><span class="n">cells</span><span class="p">)</span>
 
         <span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">accumulatedCellElementNDof</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_accumulatedCellElementVIJSize</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_nAccumulatedNodalFluxesFieldwiseFromCellElements</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">largestNumberOfCellElementNDof</span><span class="p">,</span>
         <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gatherCellsInformation</span><span class="p">(</span><span class="n">cellElements</span><span class="p">)</span>
 
         <span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">accumulatedParticleNDof</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_accumulatedParticleVIJSize</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_nAccumulatedNodalFluxesFieldwiseFromParticles</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">largestNumberOfParticleNDof</span><span class="p">,</span>
         <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gatherCellsInformation</span><span class="p">(</span><span class="n">particles</span><span class="p">)</span>
@@ -211,19 +202,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfHigherOrderEntitiesInDofVector</span> <span class="o">|=</span> <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfCellElementsInDofVector</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfHigherOrderEntitiesInDofVector</span> <span class="o">|=</span> <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfParticlesInDofVector</span>
 
-        <span class="k">if</span> <span class="n">initializeVIJPattern</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_sizeVIJ</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_accumulatedElementVIJSize</span>
-                <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_accumulatedConstraintVIJSize</span>
-                <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_accumulatedCellVIJSize</span>
-                <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_accumulatedCellElementVIJSize</span>
-                <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_accumulatedParticleVIJSize</span>
-            <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">I</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">J</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfHigherOrderEntitiesInVIJ</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initializeVIJPattern</span><span class="p">()</span>
-
 <div class="viewcode-block" id="MPMDofManager._gatherCellsInformation">
 <a class="viewcode-back" href="../../../documentation/numeric_tools.html#edelweissmeshfree.numerics.dofmanager.MPMDofManager._gatherCellsInformation">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_gatherCellsInformation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entities</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_gatherCellsInformation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entities</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""Generates some auxiliary information,</span>
 <span class="sd">        which may be required by some modules of EdelweissFE.</span>
 
@@ -234,10 +215,9 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        tuple[int,int]</span>
+<span class="sd">        tuple[int, dict, int]</span>
 <span class="sd">            The tuple of</span>
 <span class="sd">                - number of accumulated elemental degrees of freedom.</span>
-<span class="sd">                - number of accumulated system matrix sizes.</span>
 <span class="sd">                - the number of  acummulated fluxes Σ_entities Σ_nodes ( nDof (field) ) for Abaqus-like convergence tests.</span>
 <span class="sd">                - largest occuring number of dofs on any element.</span>
 <span class="sd">        """</span>

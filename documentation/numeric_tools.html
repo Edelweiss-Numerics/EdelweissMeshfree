@@ -114,7 +114,7 @@ problems.</p>
 <span id="dofmanager-class"></span><h2><code class="docutils literal notranslate"><span class="pre">DofManager</span></code> class<a class="headerlink" href="#module-edelweissmeshfree.numerics.dofmanager" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.numerics.dofmanager.</span></span><span class="sig-name descname"><span class="pre">MPMDofManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodeFields</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scalarVariables</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elements</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constraints</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeSets</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cells</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cellElements</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">particles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initializeVIJPattern</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initializeAccumulatedNodalFluxesFieldwise</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">determiningIndexToHostObjectMappping</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/numerics/dofmanager.html#MPMDofManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.numerics.dofmanager.</span></span><span class="sig-name descname"><span class="pre">MPMDofManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodeFields</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scalarVariables</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elements</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constraints</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeSets</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cells</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cellElements</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">particles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initializeAccumulatedNodalFluxesFieldwise</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/numerics/dofmanager.html#MPMDofManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager" title="Link to this definition"></a></dt>
 <dd><p>A DofManager class for the Material Point Method.
 Derived from DofManager, it is used to manage the degrees of freedom of the model
 and to provide the necessary information for the assembly of the global system matrix.</p>
@@ -129,9 +129,7 @@ and to provide the necessary information for the assembly of the global system m
 <li><p><strong>cells</strong> (<em>list</em>) – A list of cells.</p></li>
 <li><p><strong>cellElements</strong> (<em>list</em>) – A list of cell elements.</p></li>
 <li><p><strong>particles</strong> (<em>list</em>) – The list of particles (RKPM).</p></li>
-<li><p><strong>initializeVIJPattern</strong> (<em>bool</em>) – A flag indicating whether the VIJ pattern should be initialized.</p></li>
 <li><p><strong>initializeAccumulatedNodalFluxesFieldwise</strong> (<em>bool</em>)</p></li>
-<li><p><strong>determiningIndexToHostObjectMappping</strong> (<em>bool</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Attributes<span class="colon">:</span></dt>
@@ -148,6 +146,11 @@ that two systems with as many scalar variables may number different ones.</p>
 holds it together with the vectors it numbers. Computed at the first request; the numbering of a DofManager
 does not change.</p>
 </dd>
+<dt><strong>indexToHostObjectMapping</strong></dt><dd><p>The node of every index of a field variable in the DofVector, built on first use: only the report of the
+largest residual of an implicit solver reads it (through <a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.getNodeForIndexInDofVector" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.getNodeForIndexInDofVector"><code class="xref py py-meth docutils literal notranslate"><span class="pre">getNodeForIndexInDofVector()</span></code></a>), while building it
+costs a pass over every degree of freedom, which a DOF manager that is never asked – one of the many an explicit
+solver builds over a run, say – does not pay.</p>
+</dd>
 </dl>
 </dd>
 </dl>
@@ -157,34 +160,31 @@ does not change.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.constructDofVector" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.constructDofVector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">constructDofVector</span></code></a>()</p></td>
 <td><p>Construct a vector with size=nDof and which has knowledge about the location of each entity.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.constructVIJSystemMatrix" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.constructVIJSystemMatrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">constructVIJSystemMatrix</span></code></a>()</p></td>
-<td><p>Construct a VIJ (COO) Sparse System matrix object, which also has knowledge about the location of each entity.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.getNodeForIndexInDofVector" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.getNodeForIndexInDofVector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getNodeForIndexInDofVector</span></code></a>(index)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.getNodeForIndexInDofVector" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.getNodeForIndexInDofVector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getNodeForIndexInDofVector</span></code></a>(index)</p></td>
 <td><p>Find the node for a given index in the equuation system.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.locateFieldOnNodeSet" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.locateFieldOnNodeSet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">locateFieldOnNodeSet</span></code></a>(field, nodeSet)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.locateFieldOnNodeSet" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.locateFieldOnNodeSet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">locateFieldOnNodeSet</span></code></a>(field, nodeSet)</p></td>
 <td><p>Where the degrees of freedom of a field on the nodes of a node set lie in the DofVector, e.g. those a Dirichlet boundary condition prescribes, or those a node force acts on.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.refreshConstraintIndices" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.refreshConstraintIndices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">refreshConstraintIndices</span></code></a>(constraints)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.refreshConstraintIndices" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.refreshConstraintIndices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">refreshConstraintIndices</span></code></a>(constraints)</p></td>
 <td><p>Re-locate the constraints' degrees of freedom after their connectivity changed.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.updateConstraints" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.updateConstraints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConstraints</span></code></a>(constraints)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.updateConstraints" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.updateConstraints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConstraints</span></code></a>(constraints)</p></td>
 <td><p>Updates the connectivity mapping for constraints in a serial loop.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.updateParticles" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.updateParticles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateParticles</span></code></a>(particles)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.updateParticles" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.updateParticles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateParticles</span></code></a>(particles)</p></td>
 <td><p>Updates the connectivity mapping for the given particles without rebuilding the entire DofManager structure.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeDofVectorToNodeField" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeDofVectorToNodeField"><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeDofVectorToNodeField</span></code></a>(dofVector, ...[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeDofVectorToNodeField" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeDofVectorToNodeField"><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeDofVectorToNodeField</span></code></a>(dofVector, ...[, ...])</p></td>
 <td><p>Write the values of a NodeField from the respective locations in a given DofVector; the counterpart of <a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeNodeFieldToDofVector" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeNodeFieldToDofVector"><code class="xref py py-meth docutils literal notranslate"><span class="pre">writeNodeFieldToDofVector()</span></code></a>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeDofVectorToScalarVariables" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeDofVectorToScalarVariables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeDofVectorToScalarVariables</span></code></a>(dofVector)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeDofVectorToScalarVariables" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeDofVectorToScalarVariables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeDofVectorToScalarVariables</span></code></a>(dofVector)</p></td>
 <td><p>Set the values of the scalar variables of this equation system from their locations in a given DofVector; the counterpart of <a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeScalarVariablesToDofVector" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeScalarVariablesToDofVector"><code class="xref py py-meth docutils literal notranslate"><span class="pre">writeScalarVariablesToDofVector()</span></code></a>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeNodeFieldToDofVector" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeNodeFieldToDofVector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeNodeFieldToDofVector</span></code></a>(dofVector, ...[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeNodeFieldToDofVector" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeNodeFieldToDofVector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeNodeFieldToDofVector</span></code></a>(dofVector, ...[, ...])</p></td>
 <td><p>Write the current values of an entire NodeField to the respective locations in a given DofVector.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeScalarVariablesToDofVector" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeScalarVariablesToDofVector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeScalarVariablesToDofVector</span></code></a>(dofVector)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeScalarVariablesToDofVector" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeScalarVariablesToDofVector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeScalarVariablesToDofVector</span></code></a>(dofVector)</p></td>
 <td><p>Write the values of the scalar variables of this equation system to their locations in a given DofVector.</p></td>
 </tr>
 </tbody>
@@ -239,7 +239,7 @@ of that name.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager._computeAccumulatedNodalFluxesFieldWise">
 <span class="sig-name descname"><span class="pre">_computeAccumulatedNodalFluxesFieldWise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fields</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager._computeAccumulatedNodalFluxesFieldWise" title="Link to this definition"></a></dt>
-<dd><p>For the VIJ (COO) system matrix and the Abaqus like convergence test,
+<dd><p>For the Abaqus like convergence test,
 the number of dofs ‘entity-wise’ is needed:
 = Σ_(elements+constraints) Σ_nodes ( nDof (field) ).</p>
 <dl class="field-list simple">
@@ -290,7 +290,6 @@ which may be required by some modules of EdelweissFE.</p>
 <dd class="field-even"><p><dl class="simple">
 <dt>The tuple of</dt><dd><ul class="simple">
 <li><p>number of accumulated elemental degrees of freedom.</p></li>
-<li><p>number of accumulated system matrix sizes.</p></li>
 <li><p>the number of  acummulated fluxes Σ_entities Σ_nodes ( nDof (field) ) for Abaqus-like convergence tests.</p></li>
 <li><p>largest occuring number of dofs on any element.</p></li>
 </ul>
@@ -299,7 +298,7 @@ which may be required by some modules of EdelweissFE.</p>
 </p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple[int,int]</p>
+<dd class="field-odd"><p>tuple[int, dict, int]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -317,7 +316,6 @@ which may be required by some modules of EdelweissFE.</p>
 <dd class="field-even"><p><dl class="simple">
 <dt>The tuple of</dt><dd><ul class="simple">
 <li><p>number of accumulated elemental degrees of freedom.</p></li>
-<li><p>number of accumulated system matrix sizes.</p></li>
 <li><p>the number of  acummulated fluxes Σ_entities Σ_nodes ( nDof (field) ) for Abaqus-like convergence tests.</p></li>
 <li><p>largest occuring number of dofs on any element.</p></li>
 </ul>
@@ -326,7 +324,7 @@ which may be required by some modules of EdelweissFE.</p>
 </p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple[int,int]</p>
+<dd class="field-odd"><p>tuple[int, dict, int]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -344,7 +342,6 @@ which may be required by some modules of EdelweissFE.</p>
 <dd class="field-even"><p><dl class="simple">
 <dt>The tuple of</dt><dd><ul class="simple">
 <li><p>number of accumulated elemental degrees of freedom.</p></li>
-<li><p>number of accumulated system matrix sizes.</p></li>
 <li><p>the number of  acummulated fluxes Σ_entities Σ_nodes ( nDof (field) ) for Abaqus-like convergence tests.</p></li>
 <li><p>largest occuring number of dofs on any element.</p></li>
 </ul>
@@ -353,26 +350,7 @@ which may be required by some modules of EdelweissFE.</p>
 </p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple[int,int]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager._initializeVIJPattern">
-<span class="sig-name descname"><span class="pre">_initializeVIJPattern</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager._initializeVIJPattern" title="Link to this definition"></a></dt>
-<dd><p>Generate the IJ pattern for VIJ (COO) system matrices.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><ul class="simple">
-<li><p>I vector</p></li>
-<li><p>J vector</p></li>
-<li><p>the entities to system matrix entry mapping.</p></li>
-</ul>
-</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>tuple</p>
+<dd class="field-odd"><p>tuple[int, dict, int]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -583,21 +561,6 @@ the location of each entity.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>DofVector</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager.constructVIJSystemMatrix">
-<span class="sig-name descname"><span class="pre">constructVIJSystemMatrix</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.constructVIJSystemMatrix" title="Link to this definition"></a></dt>
-<dd><p>Construct a VIJ (COO) Sparse System matrix object, which also has knowledge about
-the location of each entity.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The system Matrix.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>VIJSystemMatrix</p>
 </dd>
 </dl>
 </dd></dl>
@@ -896,15 +859,18 @@ does not change.</p>
 <dd><p>Dictionary mapping scalar variables to all indices in the DofVector</p>
 </dd></dl>
 
-<dl class="py attribute">
+<dl class="py property">
 <dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager.indexToHostObjectMapping">
-<span class="sig-name descname"><span class="pre">indexToHostObjectMapping</span></span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.indexToHostObjectMapping" title="Link to this definition"></a></dt>
-<dd><p>Reverse dictionary mapping an index to its Host object (e.g., a Node).</p>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>Not read within EdelweissFE (kept for external callers); building it costs a pass over
-every degree of freedom.</p>
-</div>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">indexToHostObjectMapping</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Node</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.indexToHostObjectMapping" title="Link to this definition"></a></dt>
+<dd><p>only the report of the
+largest residual of an implicit solver reads it (through <a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.getNodeForIndexInDofVector" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.getNodeForIndexInDofVector"><code class="xref py py-meth docutils literal notranslate"><span class="pre">getNodeForIndexInDofVector()</span></code></a>), while building it
+costs a pass over every degree of freedom, which a DOF manager that is never asked – one of the many an explicit
+solver builds over a run, say – does not pay.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The node of every index of a field variable in the DofVector, built on first use</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py attribute">

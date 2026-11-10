@@ -463,7 +463,7 @@
 
 <div class="viewcode-block" id="MPMModel.buildEquationSystem">
 <a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.buildEquationSystem">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">buildEquationSystem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">withSystemMatrix</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MPMEquationSystemLayout</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">buildEquationSystem</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MPMEquationSystemLayout</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Lay out the equation system of the model on its active domain; see</span>
 <span class="sd">        :meth:`~edelweissfe.models.femodel.FEModel.buildEquationSystem` and :class:`MPMEquationSystemLayout`.</span>
 
@@ -471,11 +471,6 @@
 <span class="sd">        kernel functions reach, and the finite elements and cell elements with their nodes. Its degrees of freedom are</span>
 <span class="sd">        numbered on the active nodes; the model's node sets are located on their nodes in the active domain. The</span>
 <span class="sd">        elements the solver computes are the finite elements, the active cells, the cell elements and the particles.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        withSystemMatrix</span>
-<span class="sd">            False for an explicit solver, which assembles no system matrix.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -498,8 +493,6 @@
             <span class="n">cells</span><span class="o">=</span><span class="n">activeCells</span><span class="p">,</span>
             <span class="n">cellElements</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cellElements</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span>
             <span class="n">particles</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span>
-            <span class="n">initializeVIJPattern</span><span class="o">=</span><span class="n">withSystemMatrix</span><span class="p">,</span>
-            <span class="n">determiningIndexToHostObjectMappping</span><span class="o">=</span><span class="n">withSystemMatrix</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">MPMEquationSystemLayout</span><span class="p">(</span>

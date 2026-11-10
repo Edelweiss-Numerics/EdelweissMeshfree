@@ -376,7 +376,7 @@
             <span class="k">return</span>
 
         <span class="n">model</span><span class="o">.</span><span class="n">updateConnectivity</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_adoptLayout</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">buildEquationSystem</span><span class="p">(</span><span class="n">withSystemMatrix</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_adoptLayout</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">buildEquationSystem</span><span class="p">())</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_netForce</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># resumed: the checkpoint holds the vectors of the equation system just rebuilt from the same state</span>
@@ -564,7 +564,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_V</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_asDofVector</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_V</span><span class="p">)</span>
             <span class="k">return</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_adoptLayout</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">buildEquationSystem</span><span class="p">(</span><span class="n">withSystemMatrix</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_adoptLayout</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">buildEquationSystem</span><span class="p">())</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_adoptLayout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layout</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""Work on a (re)built layout: vectors sized and located by its DOF manager, and the velocity of its nodes read</span>
