@@ -898,8 +898,8 @@ the cell elements.</p></li>
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.numbersTheSameNodesAs" title="edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.numbersTheSameNodesAs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">numbersTheSameNodesAs</span></code></a>(other)</p></td>
 <td><p>Whether this layout numbers the same nodes, with the same fields, in the same order as another one, so that a vector of the other layout means the same here, entry by entry.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">readStateFromModel</span></code>(U[, V, A, dynamicFields])</p></td>
-<td><p>Read the state the model carries from increment to increment into the vectors of a (re)built equation system, from which the next increment starts (see the documentation page <em>Node field results</em>): the solution <code class="docutils literal notranslate"><span class="pre">U</span></code>, and, for a solver that integrates in time, the velocity <code class="docutils literal notranslate"><span class="pre">V</span></code> and the acceleration <code class="docutils literal notranslate"><span class="pre">A</span></code>.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.readStateFromModel" title="edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.readStateFromModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">readStateFromModel</span></code></a>(U[, V, A, dynamicFields])</p></td>
+<td><p>Read the state the model carries from increment to increment into the vectors of a (re)built equation system: the entry <code class="docutils literal notranslate"><span class="pre">U</span></code> of the node fields at the nodes of finite elements and cell elements, and the values of the scalar variables.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.relocateParticlesAndConstraints" title="edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.relocateParticlesAndConstraints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">relocateParticlesAndConstraints</span></code></a>()</p></td>
 <td><p>Follow a change of the connectivity that leaves the active nodes as they are (see <a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.activeNodesAreFixed" title="edelweissmeshfree.models.mpmmodel.MPMModel.activeNodesAreFixed"><code class="xref py py-attr docutils literal notranslate"><span class="pre">activeNodesAreFixed</span></code></a>): the numbering of the nodes stands, so only the particles whose kernel functions changed, and the active constraints, are located anew in the DOF vector.</p></td>
@@ -907,16 +907,13 @@ the cell elements.</p></li>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.updateMaterialPoints" title="edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.updateMaterialPoints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateMaterialPoints</span></code></a>(dU, timeStep, forEachChunk)</p></td>
 <td><p>Update the material points with the trial solution increment, before the solver computes the cells, which integrate them: the material points return to their converged state, every active cell (and cell element) interpolates the solution increment to the material points it holds, and the material points evaluate their material.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.writeResultsToModel" title="edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.writeResultsToModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeResultsToModel</span></code></a>(U, dU, P)</p></td>
-<td><p>Write the results of a converged increment to the model: the solution <code class="docutils literal notranslate"><span class="pre">U</span></code>, its increment <code class="docutils literal notranslate"><span class="pre">dU</span></code> and the reaction <code class="docutils literal notranslate"><span class="pre">P</span></code> to the node fields of the active domain, from there to the node fields of the model, whose nodes outside the active domain get zero, and the solution to the scalar variables.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.writeResultsToModel" title="edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.writeResultsToModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeResultsToModel</span></code></a>(U, dU, P[, V, A, ...])</p></td>
+<td><p>Write the results of an accepted increment to the model: the solution <code class="docutils literal notranslate"><span class="pre">U</span></code>, its increment <code class="docutils literal notranslate"><span class="pre">dU</span></code> and the internal force <code class="docutils literal notranslate"><span class="pre">P</span></code> to the node fields of the active domain, from there to the node fields of the model, whose nodes outside the active domain get zero, and the solution to the scalar variables.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.writeSolutionToDofVector" title="edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.writeSolutionToDofVector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeSolutionToDofVector</span></code></a>(U)</p></td>
-<td><p>Write the solution the model carries from increment to increment into the solution vector of a (re)built equation system: the entry <code class="docutils literal notranslate"><span class="pre">U</span></code> of the node fields at the nodes of finite elements and cell elements, and the values of the scalar variables.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.writeVelocityAndAccelerationToModel" title="edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.writeVelocityAndAccelerationToModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeVelocityAndAccelerationToModel</span></code></a>(V, A[, ...])</p></td>
+<td><p>Not supported: EdelweissFE's solvers do not integrate a meshfree model in time.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeVelocityAndAccelerationToModel</span></code>(V, A[, ...])</p></td>
-<td><p>Write the velocity and the acceleration to the entries <code class="docutils literal notranslate"><span class="pre">V</span></code> and <code class="docutils literal notranslate"><span class="pre">A</span></code> of the node fields: at acceptance, as part of <a class="reference internal" href="#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.writeResultsToModel" title="edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.writeResultsToModel"><code class="xref py py-meth docutils literal notranslate"><span class="pre">writeResultsToModel()</span></code></a>, and when a solver completes the state an increment starts from, e.g. the acceleration the implicit dynamic solver computes from equilibrium at the start of a step.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">zeroIncrementalCoefficients</span></code>(U)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">zeroIncrementalCoefficients</span></code>(U)</p></td>
 <td><p>Set the degrees of freedom of the nodes that carry no total solution to zero in the solution vector of a converged increment, before its results are written to the model: these <em>incremental</em> degrees of freedom are the coefficients of one increment, and every increment starts them at zero (see the documentation page <em>Node field results</em>).</p></td>
 </tr>
 </tbody>
@@ -935,6 +932,28 @@ a vector of the other layout means the same here, entry by entry.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.readStateFromModel">
+<span class="sig-name descname"><span class="pre">readStateFromModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">U</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">V</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">A</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dynamicFields</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmequationsystemlayout.html#MPMEquationSystemLayout.readStateFromModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.readStateFromModel" title="Link to this definition"></a></dt>
+<dd><p>Read the state the model carries from increment to increment into the vectors of a (re)built equation
+system: the entry <code class="docutils literal notranslate"><span class="pre">U</span></code> of the node fields at the nodes of finite elements and cell elements, and the values of
+the scalar variables. The nodes of the grid and of the kernel functions start at zero; see
+<a class="reference internal" href="#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout" title="edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout"><code class="xref py py-class docutils literal notranslate"><span class="pre">MPMEquationSystemLayout</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>U</strong> (<em>DofVector</em>) – The solution vector of the equation system, zero, overwritten.</p></li>
+<li><p><strong>V</strong> (<em>DofVector</em>) – The velocity vector of a solver that integrates in time; not supported, must be None.</p></li>
+<li><p><strong>A</strong> (<em>DofVector</em>) – The acceleration vector of a solver that integrates in time; not supported, must be None.</p></li>
+<li><p><strong>dynamicFields</strong> (<em>list</em>) – The names of the fields whose velocity and acceleration are read; unused.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>NotImplementedError</strong> – If a velocity or an acceleration is to be read.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -970,37 +989,41 @@ solver’s loop over chunks, on its threads for a parallel solver.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.writeResultsToModel">
-<span class="sig-name descname"><span class="pre">writeResultsToModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">U</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">P</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmequationsystemlayout.html#MPMEquationSystemLayout.writeResultsToModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.writeResultsToModel" title="Link to this definition"></a></dt>
-<dd><p>Write the results of a converged increment to the model: the solution <code class="docutils literal notranslate"><span class="pre">U</span></code>, its increment <code class="docutils literal notranslate"><span class="pre">dU</span></code> and the
-reaction <code class="docutils literal notranslate"><span class="pre">P</span></code> to the node fields of the active domain, from there to the node fields of the model, whose nodes
-outside the active domain get zero, and the solution to the scalar variables.</p>
+<span class="sig-name descname"><span class="pre">writeResultsToModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">U</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">P</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">V</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">A</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dynamicFields</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmequationsystemlayout.html#MPMEquationSystemLayout.writeResultsToModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.writeResultsToModel" title="Link to this definition"></a></dt>
+<dd><p>Write the results of an accepted increment to the model: the solution <code class="docutils literal notranslate"><span class="pre">U</span></code>, its increment <code class="docutils literal notranslate"><span class="pre">dU</span></code> and the
+internal force <code class="docutils literal notranslate"><span class="pre">P</span></code> to the node fields of the active domain, from there to the node fields of the model, whose
+nodes outside the active domain get zero, and the solution to the scalar variables.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>U</strong> (<em>DofVector</em>) – The solution.</p></li>
 <li><p><strong>dU</strong> (<em>DofVector</em>) – The increment of the solution.</p></li>
-<li><p><strong>P</strong> (<em>DofVector</em>) – The reaction, the sum of the elements’, cells’ and particles’ internal forces.</p></li>
+<li><p><strong>P</strong> (<em>DofVector</em>) – The internal force, the sum of the elements’, cells’ and particles’ residual contributions.</p></li>
+<li><p><strong>V</strong> (<em>DofVector</em>) – The velocity of a solver that integrates in time; not supported, must be None.</p></li>
+<li><p><strong>A</strong> (<em>DofVector</em>) – The acceleration of a solver that integrates in time; not supported, must be None.</p></li>
+<li><p><strong>dynamicFields</strong> (<em>list</em>) – The names of the fields whose velocity and acceleration are written; unused.</p></li>
 </ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>NotImplementedError</strong> – If a velocity or an acceleration is to be written.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.writeSolutionToDofVector">
-<span class="sig-name descname"><span class="pre">writeSolutionToDofVector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">U</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmequationsystemlayout.html#MPMEquationSystemLayout.writeSolutionToDofVector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.writeSolutionToDofVector" title="Link to this definition"></a></dt>
-<dd><p>Write the solution the model carries from increment to increment into the solution vector of a (re)built
-equation system: the entry <code class="docutils literal notranslate"><span class="pre">U</span></code> of the node fields at the nodes of finite elements and cell elements, and the
-values of the scalar variables. The nodes of the grid and of the kernel functions start at zero; see
-<a class="reference internal" href="#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout" title="edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout"><code class="xref py py-class docutils literal notranslate"><span class="pre">MPMEquationSystemLayout</span></code></a>.</p>
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.writeVelocityAndAccelerationToModel">
+<span class="sig-name descname"><span class="pre">writeVelocityAndAccelerationToModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">V</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">A</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dynamicFields</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmequationsystemlayout.html#MPMEquationSystemLayout.writeVelocityAndAccelerationToModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.writeVelocityAndAccelerationToModel" title="Link to this definition"></a></dt>
+<dd><p>Not supported: EdelweissFE’s solvers do not integrate a meshfree model in time.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>U</strong> (<em>DofVector</em>) – The solution vector of the equation system, zero, overwritten.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>V</strong> (<em>DofVector</em>) – The velocity; must be None.</p></li>
+<li><p><strong>A</strong> (<em>DofVector</em>) – The acceleration; must be None.</p></li>
+<li><p><strong>dynamicFields</strong> (<em>list</em>) – The names of the fields whose velocity and acceleration are written; unused.</p></li>
+</ul>
 </dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The solution vector.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>DofVector</p>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>NotImplementedError</strong> – If a velocity or an acceleration is to be written.</p>
 </dd>
 </dl>
 </dd></dl>
