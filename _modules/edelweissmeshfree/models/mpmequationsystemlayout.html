@@ -122,6 +122,11 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.sets.nodeset</span><span class="w"> </span><span class="kn">import</span> <span class="n">NodeSet</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.timesteppers.timestep</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeStep</span>
 
+<span class="c1">#: The lumped mass of a node below this fraction of the largest one is zero up to round-off: the particles reach its</span>
+<span class="c1">#: kernel function only where it vanishes. A solver that divides by it would give the node an acceleration of round-off</span>
+<span class="c1">#: over round-off.</span>
+<span class="n">MASS_AT_ROUND_OFF</span> <span class="o">=</span> <span class="mf">1e-12</span>
+
 
 <div class="viewcode-block" id="MPMEquationSystemLayout">
 <a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout">[docs]</a>
@@ -190,6 +195,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">modelForLinearSolver</span> <span class="o">=</span> <span class="n">modelForLinearSolver</span>
         <span class="c1">#: The material points of the model, a list the solver hands out in chunks.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">materialPoints</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">materialPoints</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="c1">#: The particles of the model, a list the solver hands out in chunks.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">particles</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">particles</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
         <span class="c1">#: The active cells and the cell elements, which interpolate the solution to the material points they hold.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cellsInterpolatingToMaterialPoints</span> <span class="o">=</span> <span class="n">activeCells</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">cellElements</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
 
@@ -276,24 +283,109 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">writeDofVectorToNodeField</span><span class="p">(</span><span class="n">dofVector</span><span class="p">,</span> <span class="n">nodeField</span><span class="p">,</span> <span class="n">entry</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">activeNodes</span><span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="MPMEquationSystemLayout.dofsWithNodalInertia">
+<a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.dofsWithNodalInertia">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">dofsWithNodalInertia</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fieldNames</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The degrees of freedom of the given fields whose inertia is that of the nodes: those of the nodes that carry</span>
+<span class="sd">        their total solution, i.e. of the finite elements (and cell elements), whose mass the elements assemble. The</span>
+<span class="sd">        nodes of the kernel functions are left out: the particles carry the state, and with it the inertia, which they</span>
+<span class="sd">        integrate themselves, or which a solver lumps to these nodes (see :meth:`assembleLumpedMassOfEntitiesWithOwnInertia`).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fieldNames</span>
+<span class="sd">            The names of the fields.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            The indices of the degrees of freedom in the vectors of the equation system, sorted.</span>
+<span class="sd">        """</span>
+
+        <span class="n">isWithNodalInertia</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">nDof</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodesWithPersistentFieldValues</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">fieldName</span> <span class="ow">in</span> <span class="n">fieldNames</span><span class="p">:</span>
+                <span class="n">indices</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">locateFieldOnNodeSet</span><span class="p">(</span><span class="n">fieldName</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodesWithPersistentFieldValues</span><span class="p">)</span>
+                <span class="n">isWithNodalInertia</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">flatnonzero</span><span class="p">(</span><span class="n">isWithNodalInertia</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MPMEquationSystemLayout.assembleLumpedMassOfEntitiesWithOwnInertia">
+<a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.assembleLumpedMassOfEntitiesWithOwnInertia">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">assembleLumpedMassOfEntitiesWithOwnInertia</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">forEachChunk</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">list</span><span class="p">,</span> <span class="n">Callable</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DofVector</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The lumped mass of the particles at the nodes of their current kernel functions,</span>
+<span class="sd">        :math:`m_A = \\sum_p \\rho_0\\, V_{0,p}\\, T_A(\\boldsymbol{x}_p)`, as each particle reports it</span>
+<span class="sd">        (``computeLumpedInertia``), summed over the particles; see</span>
+<span class="sd">        :meth:`~edelweissfe.models.equationsystemlayout.EquationSystemLayout.assembleLumpedMassOfEntitiesWithOwnInertia`. The one</span>
+<span class="sd">        assembly of this mass: the explicit solver divides by it, the implicit dynamic solver adds it to the mass of</span>
+<span class="sd">        the nodes when it integrates the particles' inertia there.</span>
+
+<span class="sd">        A node carries inertia if its mass is positive beyond round-off, more than</span>
+<span class="sd">        :data:`~edelweissmeshfree.models.mpmequationsystemlayout.MASS_AT_ROUND_OFF` of the largest one; every other node</span>
+<span class="sd">        gets zero, the mass of a node without inertia, which both solvers take as such.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        forEachChunk</span>
+<span class="sd">            The solver's loop over chunks of independent entities: the particles are evaluated in it, each into its own</span>
+<span class="sd">            part of a scatter vector.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        DofVector | None</span>
+<span class="sd">            The lumped mass, one value per degree of freedom; None if the model has no particles.</span>
+<span class="sd">        """</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">M</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+        <span class="n">M</span><span class="p">[:]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">scatterM</span> <span class="o">=</span> <span class="n">M</span><span class="o">.</span><span class="n">createScatterVector</span><span class="p">()</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">assemble</span><span class="p">(</span><span class="n">particles</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">particle</span> <span class="ow">in</span> <span class="n">particles</span><span class="p">:</span>
+                <span class="n">particle</span><span class="o">.</span><span class="n">computeLumpedInertia</span><span class="p">(</span><span class="n">scatterM</span><span class="p">[</span><span class="n">particle</span><span class="p">])</span>
+
+        <span class="n">forEachChunk</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="p">,</span> <span class="n">assemble</span><span class="p">)</span>
+        <span class="n">scatterM</span><span class="o">.</span><span class="n">assembleInto</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">M</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+            <span class="n">M</span><span class="p">[</span><span class="n">M</span> <span class="o">&lt;=</span> <span class="n">MASS_AT_ROUND_OFF</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">M</span><span class="p">)]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+        <span class="k">return</span> <span class="n">M</span></div>
+
+
 <div class="viewcode-block" id="MPMEquationSystemLayout.carriersOfTheMotion">
 <a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.carriersOfTheMotion">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">carriersOfTheMotion</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""Where the model holds the motion of its particles; see</span>
 <span class="sd">        :meth:`~edelweissfe.models.equationsystemlayout.EquationSystemLayout.carriersOfTheMotion`.</span>
-<span class="sd">        ``"nodes"`` if an incremental node of the active domain carries a velocity or an acceleration in the entries</span>
+<span class="sd">        ``"entities"`` if a particle that integrates its inertia (one with Newmark parameters) carries a velocity or an</span>
+<span class="sd">        acceleration in its state, ``"nodes"`` if an incremental node of the active domain carries one in the entries</span>
 <span class="sd">        ``V`` and ``A`` of the model's node fields.</span>
 
-<span class="sd">        The explicit solver keeps the motion there: the velocity of the nodes is its state, and every particle takes its</span>
-<span class="sd">        own from them as it advances.</span>
+<span class="sd">        The implicit dynamic solver keeps the motion in the particles with ``inertia=entities``, at the nodes</span>
+<span class="sd">        with ``inertia=nodes``. The explicit solver keeps it in both: the velocity of the nodes is its state,</span>
+<span class="sd">        and every particle takes its own from them as it advances.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        set[str]</span>
-<span class="sd">            ``"nodes"``, or none.</span>
+<span class="sd">            ``"entities"``, ``"nodes"``, both or none.</span>
 <span class="sd">        """</span>
 
         <span class="n">carriers</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">particle</span><span class="o">.</span><span class="n">getResultArray</span><span class="p">(</span><span class="s2">"velocity"</span><span class="p">))</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">particle</span><span class="o">.</span><span class="n">getResultArray</span><span class="p">(</span><span class="s2">"acceleration"</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">particle</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">particles</span>
+            <span class="k">if</span> <span class="s2">"newmark-beta beta"</span> <span class="ow">in</span> <span class="n">particle</span><span class="o">.</span><span class="n">propertyNames</span>
+        <span class="p">):</span>
+            <span class="n">carriers</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">"entities"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">incrementalNodes</span><span class="p">:</span>
             <span class="n">rate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>

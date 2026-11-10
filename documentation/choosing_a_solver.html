@@ -58,6 +58,7 @@
 <li class="toctree-l2"><a class="reference internal" href="solvers.html">Solvers</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Choosing a solver</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#the-nonlinear-solver">The nonlinear solver</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#implicit-dynamics">Implicit dynamics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#explicit-dynamics">Explicit dynamics</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#why-it-is-not-edelweissfe-s-explicit-solver-ned">Why it is not EdelweissFE’s explicit solver <code class="docutils literal notranslate"><span class="pre">NED</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#what-to-know">What to know</a></li>
@@ -151,10 +152,18 @@ the solver asks the model</em>), and the model answers with its active domain.</
 <td><p>a quasi-static step under arc length control, e.g. past a limit point; the controller is a step action, named by
 the solver option <code class="docutils literal notranslate"><span class="pre">arcLengthController</span></code></p></td>
 </tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">NID</span></code></p></td>
+<td><p>an implicit dynamic step (Newmark-beta) of an RKPM model, also coupled with finite elements; see
+<a class="reference internal" href="#implicit-dynamics">Implicit dynamics</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">NIDParallel</span></code></p></td>
+<td><p>the same, computed on all threads</p></td>
+</tr>
 </tbody>
 </table>
 <p>The state a quasi-static step accepts is at rest: the velocity <code class="docutils literal notranslate"><span class="pre">V</span></code> and the acceleration <code class="docutils literal notranslate"><span class="pre">A</span></code> of every node are zero
-(see EdelweissFE’s “Node field results”).</p>
+(see EdelweissFE’s “Node field results”). A quasi-static solver gives the particles the Newmark parameters zero at the
+start of every step, so they carry no inertia, whatever they were given before.</p>
 <p>A simulation is set up from Python as any EdelweissFE step. The model holds what defines its connectivity – the
 managers that assign material points to cells (<code class="docutils literal notranslate"><span class="pre">mpmManagers</span></code>) and particles to kernel functions
 (<code class="docutils literal notranslate"><span class="pre">particleManagers</span></code>), the managers of the variationally consistent integration (<code class="docutils literal notranslate"><span class="pre">vciManagers</span></code>), and the
@@ -244,6 +253,10 @@ solver, a time stepper without the zero increment (<code class="docutils literal
 <code class="docutils literal notranslate"><span class="pre">MeshfreeExplicitDynamic</span></code>: its step starts with the zero increment, which evaluates the forces of the
 configuration the step starts from, and takes its velocity (see <a class="reference internal" href="#explicit-dynamics">Explicit dynamics</a>)</p></td>
 </tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">particle.setProperty(&quot;newmark-beta</span> <span class="pre">beta&quot;,</span> <span class="pre">...)</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;newmark-beta</span> <span class="pre">gamma&quot;</span></code> under a quasi-static solver</p></td>
+<td><p>the solver <code class="docutils literal notranslate"><span class="pre">NID</span></code> with its options <code class="docutils literal notranslate"><span class="pre">newmarkBeta</span></code>, <code class="docutils literal notranslate"><span class="pre">newmarkGamma</span></code> (see <a class="reference internal" href="#implicit-dynamics">Implicit dynamics</a>); the
+implicit solvers set the particles’ Newmark parameters themselves</p></td>
+</tr>
 </tbody>
 </table>
 <p><strong>Restart.</strong> EdelweissFE’s restart output manager writes a checkpoint of the converged state; an <code class="docutils literal notranslate"><span class="pre">MPMModel</span></code> adds the
@@ -284,6 +297,75 @@ was not exact.</p></li>
 <li><p>The scalar variables, e.g. Lagrange multipliers, are checked for convergence with EdelweissFE’s tolerances.</p></li>
 </ul>
 <p>The former solvers are kept, deprecated, in <a class="reference internal" href="solvers.html#module-edelweissmeshfree.solvers.deprecated" title="edelweissmeshfree.solvers.deprecated"><code class="xref py py-mod docutils literal notranslate"><span class="pre">edelweissmeshfree.solvers.deprecated</span></code></a>.</p>
+</section>
+<section id="implicit-dynamics">
+<h2>Implicit dynamics<a class="headerlink" href="#implicit-dynamics" title="Link to this heading"></a></h2>
+<p>An RKPM model, alone or coupled with finite elements (see <a class="reference internal" href="coupled_rkpm_fe.html"><span class="doc">Coupled RKPM + FE</span></a>), is solved in implicit dynamics by
+EdelweissFE’s <code class="docutils literal notranslate"><span class="pre">NID</span></code> (or <code class="docutils literal notranslate"><span class="pre">NIDParallel</span></code>), with the Newmark-beta scheme: the solver options <code class="docutils literal notranslate"><span class="pre">newmarkBeta</span></code> and
+<code class="docutils literal notranslate"><span class="pre">newmarkGamma</span></code> (default <span class="math notranslate nohighlight">\(1/4, 1/2\)</span>, the average acceleration rule) are the one source of the parameters, which
+the solver passes on to the particles at the start of every step. The nodes of the finite elements are integrated by
+the solver with their consistent mass. The particles are what EdelweissFE calls entities that integrate their own
+inertia: they carry their state, velocity and acceleration included, in themselves. Where their inertia is integrated,
+the solver option <code class="docutils literal notranslate"><span class="pre">inertia</span></code> selects (<code class="docutils literal notranslate"><span class="pre">entities</span></code>: in the particles):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.solvers.nonlinearimplicitdynamic</span><span class="w"> </span><span class="kn">import</span> <span class="n">NonlinearImplicitDynamic</span>
+
+<span class="n">solver</span> <span class="o">=</span> <span class="n">NonlinearImplicitDynamic</span><span class="p">(</span>
+    <span class="n">jobInfo</span><span class="p">,</span> <span class="n">journal</span><span class="p">,</span> <span class="n">linsolver</span><span class="o">=</span><span class="s2">"pardiso"</span><span class="p">,</span> <span class="n">newmarkBeta</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="n">newmarkGamma</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">inertia</span><span class="o">=</span><span class="s2">"entities"</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">meshfreeCriterionOptions</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<table class="docutils align-default" style="width: 100%">
+<colgroup>
+<col style="width: 15.0%" />
+<col style="width: 45.0%" />
+<col style="width: 40.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p><code class="docutils literal notranslate"><span class="pre">inertia</span></code></p></th>
+<th class="head"><p>What integrates the particles’ inertia</p></th>
+<th class="head"><p>What to know</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">entities</span></code> (default)</p></td>
+<td><p>Each particle, at its own evaluation points, with the solver’s <span class="math notranslate nohighlight">\(\beta, \gamma\)</span>: its inertial force
+<span class="math notranslate nohighlight">\(\rho_0 V_0 T_A \boldsymbol{a}\)</span> is part of its residual, and its velocity and acceleration are part of
+its state (and of a restart checkpoint). Nothing is projected between particles and nodes; the inertia sits
+where the state lives.</p></td>
+<td><p>The particles start from the acceleration in their state, zero at first, not from equilibrium: a load applied
+suddenly at the start enters at first order in time. The kinetic energy and momentum <code class="docutils literal notranslate"><span class="pre">NID</span></code> reports cover the
+nodes of the finite elements only. With VCI, the particles’ mass <span class="math notranslate nohighlight">\(\sum_p \rho_0 V_0 T_A N_B\)</span> is not
+symmetric, so the discrete energy is not exactly conserved.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nodes</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">NID</span></code>, at the nodes of the kernel functions, with the particles’ lumped mass (the one the explicit solver
+divides by, assembled anew in every increment, since the particles move); the particles are quasi-static.
+The velocity and the acceleration of these nodes are the model’s <code class="docutils literal notranslate"><span class="pre">V</span></code> and <code class="docutils literal notranslate"><span class="pre">A</span></code>, carried by node from one
+increment to the next; a node that has just become active starts at rest, and a node without positive mass is
+quasi-static.</p></td>
+<td><p>The error of the explicit solver: the nodal velocity and acceleration are coefficients of the kernel functions
+of the increment they were computed on, and lose that meaning when the support of the particles changes.
+The acceleration at the start of a step is computed from equilibrium, for these nodes as for every node.</p></td>
+</tr>
+</tbody>
+</table>
+<p>The two keep the motion of the particles in different places: <code class="docutils literal notranslate"><span class="pre">entities</span></code> in the particles’ state, <code class="docutils literal notranslate"><span class="pre">nodes</span></code> in the
+velocity and acceleration of the kernel functions’ nodes. Nothing transfers the motion from the one to the other (a
+projection from the particles to the nodes is not offered: it works poorly). A step whose mode would take the motion
+from where the model does not hold it therefore refuses to start: <code class="docutils literal notranslate"><span class="pre">nodes</span></code> after a step in <code class="docutils literal notranslate"><span class="pre">entities</span></code>, or after an
+initial velocity given to the particles, and <code class="docutils literal notranslate"><span class="pre">entities</span></code> after a step in <code class="docutils literal notranslate"><span class="pre">nodes</span></code>. Keep the mode of the step before,
+or let a quasi-static step bring the model to rest in between. After the explicit solver, which keeps the motion in
+both places, either mode may follow.</p>
+<p>In both, <code class="docutils literal notranslate"><span class="pre">P</span></code> is the internal force with the inertial force (see EdelweissFE’s “Node field results”): the particles’
+own in <code class="docutils literal notranslate"><span class="pre">entities</span></code>, the solver’s at the nodes in <code class="docutils literal notranslate"><span class="pre">nodes</span></code>. The zero increment before the first increment of a step
+is skipped, with the state kept: nothing moves in zero time (a zero-length increment adds no inertia in the particles
+either, see Marmot’s documentation of the particles). Models of the material point method are refused: material
+points carry no inertia of their own, and the background grid is reset in every increment.</p>
+<p>Examples 118, 119 (a sudden pressure on a cantilever) and 123 (a projectile hitting a plate) run on <code class="docutils literal notranslate"><span class="pre">NID</span></code> with
+<code class="docutils literal notranslate"><span class="pre">entities</span></code>. Example 180 checks both modes against the period of a cantilever of finite elements and of the
+Euler-Bernoulli beam, example 170 against the dynamic response of a finite element cantilever, across the ties of a
+coupled model.</p>
 </section>
 <section id="explicit-dynamics">
 <h2>Explicit dynamics<a class="headerlink" href="#explicit-dynamics" title="Link to this heading"></a></h2>
@@ -331,9 +413,10 @@ energy balance need what particles do not provide, so the increment is chosen by
 <ul class="simple">
 <li><p><strong>The zero increment.</strong> The first increment of a step must be the zero increment (the default of a step): it
 assembles the lumped mass of the configuration the step starts from. If the model holds the motion at its nodes
-(after a step of this solver), the step continues it as <code class="docutils literal notranslate"><span class="pre">NED</span></code> does: from the velocity of the nodes and the net
-force of their acceleration. Otherwise it evaluates the forces of the configuration and projects the velocity from
-the particles’ momentum, e.g. the initial velocity given to the particles.</p></li>
+(after a step of this solver, or of <code class="docutils literal notranslate"><span class="pre">NID</span></code> integrating the inertia at the nodes), the step continues it as <code class="docutils literal notranslate"><span class="pre">NED</span></code>
+does: from the velocity of the nodes and the net force of their acceleration. Otherwise it evaluates the forces of
+the configuration and projects the velocity from the particles’ momentum: the initial velocity given to the
+particles, or the velocity of a step of <code class="docutils literal notranslate"><span class="pre">NID</span></code> that integrated the inertia in the particles.</p></li>
 <li><p><strong>The velocity</strong> of the kernel functions’ nodes is the model’s: it is written to the entry <code class="docutils literal notranslate"><span class="pre">V</span></code> of the node fields
 at acceptance, and read back by node whenever the equation system is rebuilt, also at the start of a step. A node
 keeps its velocity while the active nodes change around it, and a node that has just become active starts at rest.
@@ -352,7 +435,7 @@ functions carry no total solution. <code class="docutils literal notranslate"><s
 a change of the connectivity only locates the changed particles and the constraints anew; otherwise the equation
 system is rebuilt.</p></li>
 <li><p><strong>Nodes without mass.</strong> A kernel function that the particles reach only where it vanishes has no positive lumped
-mass; its node has no equation of motion and keeps a zero velocity.</p></li>
+mass; its node has no equation of motion and has no velocity, also after it lost its mass while it moved.</p></li>
 <li><p><strong>A particle that cannot take an increment</strong> ends the step with <code class="docutils literal notranslate"><span class="pre">StepFailed</span></code>: the increment is set by stability,
 not by convergence, so it is not cut back.</p></li>
 <li><p><strong>Pressure.</strong> A particle pressure is assembled as in implicit runs: as for the finite elements, a positive pressure

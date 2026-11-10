@@ -162,13 +162,14 @@
 <span class="sd">configuration the step starts from. Where the step takes the motion from, the model says</span>
 <span class="sd">(:meth:`~edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.carriersOfTheMotion`):</span>
 
-<span class="sd">- If the model holds the motion at its nodes -- after a step of this solver -- the step continues it as NED does. It</span>
-<span class="sd">  starts from the velocity of the nodes, carried by node as in every rebuild, and from the net force of their</span>
-<span class="sd">  acceleration, :math:`\\boldsymbol{f} = \\boldsymbol{M} \\boldsymbol{a}`. The force evaluated at the zero increment</span>
-<span class="sd">  would not do: the particles have taken a zero-length increment, and the stabilization of their integration refers</span>
-<span class="sd">  to the increment taken last.</span>
-<span class="sd">- Otherwise -- at the start of an analysis, with the initial velocity given to the particles, or after a quasi-static</span>
-<span class="sd">  step -- it evaluates the forces of the configuration and projects the velocity from the particles' momentum.</span>
+<span class="sd">- If the model holds the motion at its nodes -- after a step of this solver, or of NID integrating the inertia at the</span>
+<span class="sd">  nodes -- the step continues it as NED does. It starts from the velocity of the nodes, carried by node as in every</span>
+<span class="sd">  rebuild, and from the net force of their acceleration, :math:`\\boldsymbol{f} = \\boldsymbol{M} \\boldsymbol{a}`.</span>
+<span class="sd">  The force evaluated at the zero increment would not do: the particles have taken a zero-length increment, and the</span>
+<span class="sd">  stabilization of their integration refers to the increment taken last.</span>
+<span class="sd">- Otherwise -- at the start of an analysis, with the initial velocity given to the particles, after a quasi-static step,</span>
+<span class="sd">  or after NID integrating the inertia in the particles -- it evaluates the forces of the configuration and projects the</span>
+<span class="sd">  velocity from the particles' momentum.</span>
 
 <span class="sd">The first increment of motion is then the leapfrog's half step from that velocity. After a step of this solver, the</span>
 <span class="sd">leapfrog continues as though the two steps were one. A resumed step continues from the velocity of the model and the</span>
@@ -502,6 +503,10 @@
         <span class="k">elif</span> <span class="n">firstEvaluationOfStep</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="s2">"projectVelocityEveryIncrement"</span><span class="p">]:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_V</span> <span class="o">=</span> <span class="n">momentum</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_Minv</span>
 
+        <span class="c1"># A node without inertia has no equation of motion, so it has no velocity: not even the one it carried while it</span>
+        <span class="c1"># still had a mass, which the update would otherwise keep, as it adds nothing there.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_V</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_Minv</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
         <span class="k">with</span> <span class="n">performancetiming</span><span class="o">.</span><span class="n">timeit</span><span class="p">(</span><span class="s2">"write results to nodes"</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_layout</span><span class="o">.</span><span class="n">writeResultsToModel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_noSolution</span><span class="p">(),</span> <span class="kc">None</span><span class="p">,</span> <span class="n">internalAndInertialForce</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_layout</span><span class="o">.</span><span class="n">writeVelocityAndAccelerationToModel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_V</span><span class="p">,</span> <span class="n">acceleration</span><span class="p">)</span></div>
@@ -630,8 +635,10 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_evaluate</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">MPMModel</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">DofVector</span><span class="p">,</span> <span class="n">DofVector</span><span class="p">,</span> <span class="n">DofVector</span><span class="p">,</span> <span class="n">DofVector</span><span class="p">,</span> <span class="n">DofVector</span><span class="p">,</span> <span class="n">DofVector</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">"""Evaluate at the configuration just accepted: the particles' internal forces, lumped masses and lumped</span>
-<span class="sd">        momenta, on all threads, then the loads and constraints. All of them add residual contributions (an internal</span>
+<span class="w">        </span><span class="sd">"""Evaluate at the configuration just accepted: the particles' internal forces and lumped momenta, on all</span>
+<span class="sd">        threads, their lumped mass (see</span>
+<span class="sd">        :meth:`~edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.assembleLumpedMassOfEntitiesWithOwnInertia`),</span>
+<span class="sd">        then the loads and constraints. All of them add residual contributions (an internal</span>
 <span class="sd">        force, the negative of an external one), and the net force is their negative.</span>
 
 <span class="sd">        Parameters</span>
@@ -654,25 +661,24 @@
 
         <span class="n">dofManager</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_layout</span><span class="o">.</span><span class="n">dofManager</span>
         <span class="n">R</span> <span class="o">=</span> <span class="n">dofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
-        <span class="n">M</span> <span class="o">=</span> <span class="n">dofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
         <span class="n">momentum</span> <span class="o">=</span> <span class="n">dofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
-        <span class="n">R</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">M</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">momentum</span><span class="p">[:]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">R</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">momentum</span><span class="p">[:]</span> <span class="o">=</span> <span class="mf">0.0</span>
 
         <span class="n">scatterR</span> <span class="o">=</span> <span class="n">R</span><span class="o">.</span><span class="n">createScatterVector</span><span class="p">()</span>
-        <span class="n">scatterM</span> <span class="o">=</span> <span class="n">M</span><span class="o">.</span><span class="n">createScatterVector</span><span class="p">()</span>
         <span class="n">scatterMomentum</span> <span class="o">=</span> <span class="n">momentum</span><span class="o">.</span><span class="n">createScatterVector</span><span class="p">()</span>
 
         <span class="k">def</span><span class="w"> </span><span class="nf">evaluate</span><span class="p">(</span><span class="n">particles</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">particle</span> <span class="ow">in</span> <span class="n">particles</span><span class="p">:</span>
                 <span class="n">particle</span><span class="o">.</span><span class="n">computePhysicsKernelsExplicit</span><span class="p">(</span><span class="n">scatterR</span><span class="p">[</span><span class="n">particle</span><span class="p">])</span>
-                <span class="n">particle</span><span class="o">.</span><span class="n">computeLumpedInertia</span><span class="p">(</span><span class="n">scatterM</span><span class="p">[</span><span class="n">particle</span><span class="p">])</span>
                 <span class="n">particle</span><span class="o">.</span><span class="n">computeLumpedMomentum</span><span class="p">(</span><span class="n">scatterMomentum</span><span class="p">[</span><span class="n">particle</span><span class="p">])</span>
 
         <span class="n">mapChunksInParallel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_particles</span><span class="p">,</span> <span class="n">evaluate</span><span class="p">)</span>
 
         <span class="n">scatterR</span><span class="o">.</span><span class="n">assembleInto</span><span class="p">(</span><span class="n">R</span><span class="p">)</span>
-        <span class="n">scatterM</span><span class="o">.</span><span class="n">assembleInto</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
         <span class="n">scatterMomentum</span><span class="o">.</span><span class="n">assembleInto</span><span class="p">(</span><span class="n">momentum</span><span class="p">)</span>
+
+        <span class="c1"># the one assembly of the particles' lumped mass, which the implicit dynamic solver uses as well</span>
+        <span class="n">M</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_layout</span><span class="o">.</span><span class="n">assembleLumpedMassOfEntitiesWithOwnInertia</span><span class="p">(</span><span class="n">mapChunksInParallel</span><span class="p">)</span>
 
         <span class="n">internalForce</span> <span class="o">=</span> <span class="n">dofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
         <span class="n">internalForce</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">R</span>
@@ -687,7 +693,8 @@
         <span class="n">np</span><span class="o">.</span><span class="n">negative</span><span class="p">(</span><span class="n">R</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">P</span><span class="p">)</span>
 
         <span class="c1"># A node whose kernel function the particles reach only where it vanishes has no positive mass (exactly zero,</span>
-        <span class="c1"># or zero up to round-off): it carries no inertia, hence no equation of motion, and keeps a zero velocity.</span>
+        <span class="c1"># or zero up to round-off): it carries no inertia, hence no equation of motion, and gets no velocity (see</span>
+        <span class="c1"># acceptIncrement).</span>
         <span class="n">Minv</span> <span class="o">=</span> <span class="n">dofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
         <span class="n">Minv</span><span class="p">[:]</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="n">hasInertia</span> <span class="o">=</span> <span class="n">M</span> <span class="o">&gt;</span> <span class="mf">0.0</span>

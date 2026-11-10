@@ -327,6 +327,40 @@
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">advanceToTime</span><span class="p">(</span><span class="n">time</span><span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="MPMModel.setNewmarkParametersOfEntities">
+<a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.setNewmarkParametersOfEntities">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setNewmarkParametersOfEntities</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">beta</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">gamma</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Give the particles the Newmark parameters of the solver, at the start of every step of an implicit solver;</span>
+<span class="sd">        see :meth:`~edelweissfe.models.femodel.FEModel.setNewmarkParametersOfEntities`. Each particle integrates the</span>
+<span class="sd">        Newmark scheme at its own evaluation points, with its velocity and acceleration in its state; with</span>
+<span class="sd">        :math:`\\beta = \\gamma = 0`, which every quasi-static solver passes, it carries no inertia. A particle without</span>
+<span class="sd">        the properties ``newmark-beta beta`` and ``newmark-beta gamma`` has no inertia to integrate: it is accepted by a</span>
+<span class="sd">        quasi-static solver, and refused by a dynamic one.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        beta</span>
+<span class="sd">            The Newmark parameter :math:`\\beta`; 0 for no inertia.</span>
+<span class="sd">        gamma</span>
+<span class="sd">            The Newmark parameter :math:`\\gamma`; 0 for no inertia.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If a particle without Newmark parameters is to integrate its inertia.</span>
+<span class="sd">        """</span>
+
+        <span class="k">for</span> <span class="n">particle</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">if</span> <span class="s2">"newmark-beta beta"</span> <span class="ow">in</span> <span class="n">particle</span><span class="o">.</span><span class="n">propertyNames</span><span class="p">:</span>
+                <span class="n">particle</span><span class="o">.</span><span class="n">setProperty</span><span class="p">(</span><span class="s2">"newmark-beta beta"</span><span class="p">,</span> <span class="n">beta</span><span class="p">)</span>
+                <span class="n">particle</span><span class="o">.</span><span class="n">setProperty</span><span class="p">(</span><span class="s2">"newmark-beta gamma"</span><span class="p">,</span> <span class="n">gamma</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">beta</span> <span class="o">!=</span> <span class="mf">0.0</span> <span class="ow">or</span> <span class="n">gamma</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">"Particle </span><span class="si">{:}</span><span class="s2"> has no Newmark parameters, so it cannot integrate its inertia in time; solve the model "</span>
+                    <span class="s2">"with a quasi-static solver."</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">particle</span><span class="o">.</span><span class="n">number</span><span class="p">)</span>
+                <span class="p">)</span></div>
+
+
     <span class="k">def</span><span class="w"> </span><span class="nf">goToPreviousTimeStep</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
         <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>

@@ -58,6 +58,7 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#mpmequationsystemlayout-class"><code class="docutils literal notranslate"><span class="pre">MPMEquationSystemLayout</span></code> class</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout"><code class="docutils literal notranslate"><span class="pre">MPMEquationSystemLayout</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.models.mpmequationsystemlayout.MASS_AT_ROUND_OFF"><code class="docutils literal notranslate"><span class="pre">MASS_AT_ROUND_OFF</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -177,7 +178,7 @@ for nodes and scalar degrees of freedom, and it manages the fields.</p>
 <td><p>Remove an element from the model.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.setNewmarkParametersOfEntities" title="edelweissmeshfree.models.mpmmodel.MPMModel.setNewmarkParametersOfEntities"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setNewmarkParametersOfEntities</span></code></a>(beta, gamma)</p></td>
-<td><p>Give the entities that integrate their own inertia in time the Newmark parameters of the solver: called by <code class="docutils literal notranslate"><span class="pre">NIST</span></code> and every solver derived from it -- the implicit solvers and <code class="docutils literal notranslate"><span class="pre">NEST</span></code> -- at the start of every step, so that the solver is the one source of the parameters.</p></td>
+<td><p>Give the particles the Newmark parameters of the solver, at the start of every step of an implicit solver; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">setNewmarkParametersOfEntities()</span></code>.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity" title="edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code></a>()</p></td>
 <td><p>Bring the coupling of the degrees of freedom up to date with the converged state, before an increment; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code>.</p></td>
@@ -602,21 +603,22 @@ and initializes elements.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.setNewmarkParametersOfEntities">
-<span class="sig-name descname"><span class="pre">setNewmarkParametersOfEntities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.setNewmarkParametersOfEntities" title="Link to this definition"></a></dt>
-<dd><p>Give the entities that integrate their own inertia in time the Newmark parameters of the solver: called by
-<code class="docutils literal notranslate"><span class="pre">NIST</span></code> and every solver derived from it – the implicit solvers and <code class="docutils literal notranslate"><span class="pre">NEST</span></code> – at the start of every step,
-so that the solver is the one source of the parameters. With <span class="math notranslate nohighlight">\(\beta = \gamma = 0\)</span>, which every
-quasi-static solver passes, such an entity carries no inertia.</p>
-<p>In a finite element model, no entity integrates its own inertia: the elements report their mass, and a
-dynamic solver integrates the nodes. An entity that carries its state in itself, velocity and acceleration
-included, integrates the Newmark scheme at its own evaluation points; a model with such entities passes the
-parameters on to them.</p>
+<span class="sig-name descname"><span class="pre">setNewmarkParametersOfEntities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmmodel.html#MPMModel.setNewmarkParametersOfEntities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.setNewmarkParametersOfEntities" title="Link to this definition"></a></dt>
+<dd><p>Give the particles the Newmark parameters of the solver, at the start of every step of an implicit solver;
+see <code class="xref py py-meth docutils literal notranslate"><span class="pre">setNewmarkParametersOfEntities()</span></code>. Each particle integrates the
+Newmark scheme at its own evaluation points, with its velocity and acceleration in its state; with
+<span class="math notranslate nohighlight">\(\beta = \gamma = 0\)</span>, which every quasi-static solver passes, it carries no inertia. A particle without
+the properties <code class="docutils literal notranslate"><span class="pre">newmark-beta</span> <span class="pre">beta</span></code> and <code class="docutils literal notranslate"><span class="pre">newmark-beta</span> <span class="pre">gamma</span></code> has no inertia to integrate: it is accepted by a
+quasi-static solver, and refused by a dynamic one.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>beta</strong> (<em>float</em>) – The Newmark parameter <span class="math notranslate nohighlight">\(\beta\)</span>; 0 for no inertia.</p></li>
 <li><p><strong>gamma</strong> (<em>float</em>) – The Newmark parameter <span class="math notranslate nohighlight">\(\gamma\)</span>; 0 for no inertia.</p></li>
 </ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If a particle without Newmark parameters is to integrate its inertia.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -943,14 +945,14 @@ the cell elements.</p></li>
 <p class="rubric">Methods</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">assembleLumpedMassOfEntitiesWithOwnInertia</span></code>(...)</p></td>
-<td><p>The lumped (diagonal) mass, at the nodes they couple, of the entities that integrate their own inertia (see <code class="xref py py-meth docutils literal notranslate"><span class="pre">setNewmarkParametersOfEntities()</span></code>): what the implicit dynamic solver adds to the mass of the nodes when it integrates the inertia of these entities there instead (option <code class="docutils literal notranslate"><span class="pre">inertia=nodes</span></code>).</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.assembleLumpedMassOfEntitiesWithOwnInertia" title="edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.assembleLumpedMassOfEntitiesWithOwnInertia"><code class="xref py py-obj docutils literal notranslate"><span class="pre">assembleLumpedMassOfEntitiesWithOwnInertia</span></code></a>(...)</p></td>
+<td><p>The lumped mass of the particles at the nodes of their current kernel functions, <span class="math notranslate nohighlight">\(m_A = \sum_p \rho_0\, V_{0,p}\, T_A(\boldsymbol{x}_p)\)</span>, as each particle reports it (<code class="docutils literal notranslate"><span class="pre">computeLumpedInertia</span></code>), summed over the particles; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleLumpedMassOfEntitiesWithOwnInertia()</span></code>.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.carriersOfTheMotion" title="edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.carriersOfTheMotion"><code class="xref py py-obj docutils literal notranslate"><span class="pre">carriersOfTheMotion</span></code></a>()</p></td>
 <td><p>Where the model holds the motion of its particles; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">carriersOfTheMotion()</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">dofsWithNodalInertia</span></code>(fieldNames)</p></td>
-<td><p>The degrees of freedom of the given fields whose inertia is that of the nodes, i.e. the mass the elements assemble: those the implicit dynamic solver integrates in time with its own Newmark scheme.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.dofsWithNodalInertia" title="edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.dofsWithNodalInertia"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dofsWithNodalInertia</span></code></a>(fieldNames)</p></td>
+<td><p>The degrees of freedom of the given fields whose inertia is that of the nodes: those of the nodes that carry their total solution, i.e. of the finite elements (and cell elements), whose mass the elements assemble.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.readEntryOfNodeField" title="edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.readEntryOfNodeField"><code class="xref py py-obj docutils literal notranslate"><span class="pre">readEntryOfNodeField</span></code></a>(dofVector, nodeField, entry)</p></td>
 <td><p>Read one entry of one node field of the model into a vector of the equation system, by node; every read of <code class="xref py py-meth docutils literal notranslate"><span class="pre">readStateFromModel()</span></code> goes through here.</p></td>
@@ -982,20 +984,68 @@ the cell elements.</p></li>
 </tbody>
 </table>
 <dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.assembleLumpedMassOfEntitiesWithOwnInertia">
+<span class="sig-name descname"><span class="pre">assembleLumpedMassOfEntitiesWithOwnInertia</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">forEachChunk</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmequationsystemlayout.html#MPMEquationSystemLayout.assembleLumpedMassOfEntitiesWithOwnInertia"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.assembleLumpedMassOfEntitiesWithOwnInertia" title="Link to this definition"></a></dt>
+<dd><p>The lumped mass of the particles at the nodes of their current kernel functions,
+<span class="math notranslate nohighlight">\(m_A = \sum_p \rho_0\, V_{0,p}\, T_A(\boldsymbol{x}_p)\)</span>, as each particle reports it
+(<code class="docutils literal notranslate"><span class="pre">computeLumpedInertia</span></code>), summed over the particles; see
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleLumpedMassOfEntitiesWithOwnInertia()</span></code>. The one
+assembly of this mass: the explicit solver divides by it, the implicit dynamic solver adds it to the mass of
+the nodes when it integrates the particles’ inertia there.</p>
+<p>A node carries inertia if its mass is positive beyond round-off, more than
+<a class="reference internal" href="#edelweissmeshfree.models.mpmequationsystemlayout.MASS_AT_ROUND_OFF" title="edelweissmeshfree.models.mpmequationsystemlayout.MASS_AT_ROUND_OFF"><code class="xref py py-data docutils literal notranslate"><span class="pre">MASS_AT_ROUND_OFF</span></code></a> of the largest one; every other node
+gets zero, the mass of a node without inertia, which both solvers take as such.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>forEachChunk</strong> (<em>Callable</em><em>[</em><em>[</em><em>list</em><em>, </em><em>Callable</em><em>]</em><em>, </em><em>None</em><em>]</em>) – The solver’s loop over chunks of independent entities: the particles are evaluated in it, each into its own
+part of a scatter vector.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The lumped mass, one value per degree of freedom; None if the model has no particles.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>DofVector | None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.carriersOfTheMotion">
 <span class="sig-name descname"><span class="pre">carriersOfTheMotion</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmequationsystemlayout.html#MPMEquationSystemLayout.carriersOfTheMotion"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.carriersOfTheMotion" title="Link to this definition"></a></dt>
 <dd><p>Where the model holds the motion of its particles; see
 <code class="xref py py-meth docutils literal notranslate"><span class="pre">carriersOfTheMotion()</span></code>.
-<code class="docutils literal notranslate"><span class="pre">&quot;nodes&quot;</span></code> if an incremental node of the active domain carries a velocity or an acceleration in the entries
+<code class="docutils literal notranslate"><span class="pre">&quot;entities&quot;</span></code> if a particle that integrates its inertia (one with Newmark parameters) carries a velocity or an
+acceleration in its state, <code class="docutils literal notranslate"><span class="pre">&quot;nodes&quot;</span></code> if an incremental node of the active domain carries one in the entries
 <code class="docutils literal notranslate"><span class="pre">V</span></code> and <code class="docutils literal notranslate"><span class="pre">A</span></code> of the model’s node fields.</p>
-<p>The explicit solver keeps the motion there: the velocity of the nodes is its state, and every particle takes its
-own from them as it advances.</p>
+<p>The implicit dynamic solver keeps the motion in the particles with <code class="docutils literal notranslate"><span class="pre">inertia=entities</span></code>, at the nodes
+with <code class="docutils literal notranslate"><span class="pre">inertia=nodes</span></code>. The explicit solver keeps it in both: the velocity of the nodes is its state,
+and every particle takes its own from them as it advances.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">&quot;nodes&quot;</span></code>, or none.</p>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">&quot;entities&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;nodes&quot;</span></code>, both or none.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>set[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.dofsWithNodalInertia">
+<span class="sig-name descname"><span class="pre">dofsWithNodalInertia</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fieldNames</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmequationsystemlayout.html#MPMEquationSystemLayout.dofsWithNodalInertia"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.dofsWithNodalInertia" title="Link to this definition"></a></dt>
+<dd><p>The degrees of freedom of the given fields whose inertia is that of the nodes: those of the nodes that carry
+their total solution, i.e. of the finite elements (and cell elements), whose mass the elements assemble. The
+nodes of the kernel functions are left out: the particles carry the state, and with it the inertia, which they
+integrate themselves, or which a solver lumps to these nodes (see <a class="reference internal" href="#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.assembleLumpedMassOfEntitiesWithOwnInertia" title="edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.assembleLumpedMassOfEntitiesWithOwnInertia"><code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleLumpedMassOfEntitiesWithOwnInertia()</span></code></a>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>fieldNames</strong> (<em>list</em>) – The names of the fields.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The indices of the degrees of freedom in the vectors of the equation system, sorted.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1121,6 +1171,25 @@ the grid and of the kernel functions that no finite element or cell element shar
 <dd><p>The nodes that carry their total solution from increment to increment.</p>
 </dd></dl>
 
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.particles">
+<span class="sig-name descname"><span class="pre">particles</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.particles" title="Link to this definition"></a></dt>
+<dd><p>The particles of the model, a list the solver hands out in chunks.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmequationsystemlayout.MASS_AT_ROUND_OFF">
+<span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.models.mpmequationsystemlayout.</span></span><span class="sig-name descname"><span class="pre">MASS_AT_ROUND_OFF</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1e-12</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmequationsystemlayout.MASS_AT_ROUND_OFF" title="Link to this definition"></a></dt>
+<dd><p>the particles reach its
+kernel function only where it vanishes. A solver that divides by it would give the node an acceleration of round-off
+over round-off.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The lumped mass of a node below this fraction of the largest one is zero up to round-off</p>
+</dd>
+</dl>
 </dd></dl>
 
 </section>
