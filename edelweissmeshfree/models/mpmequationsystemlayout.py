@@ -138,33 +138,49 @@ class MPMEquationSystemLayout(EquationSystemLayout):
         )
         self.dofManager.updateConstraints(self.model.activeConstraints())
 
-    def writeSolutionToDofVector(self, U: DofVector) -> DofVector:
-        """Write the solution the model carries from increment to increment into the solution vector of a (re)built
-        equation system: the entry ``U`` of the node fields at the nodes of finite elements and cell elements, and the
-        values of the scalar variables. The nodes of the grid and of the kernel functions start at zero; see
+    def readStateFromModel(self, U: DofVector, V: DofVector = None, A: DofVector = None, dynamicFields: list = None):
+        """Read the state the model carries from increment to increment into the vectors of a (re)built equation
+        system: the entry ``U`` of the node fields at the nodes of finite elements and cell elements, and the values of
+        the scalar variables. The nodes of the grid and of the kernel functions start at zero; see
         :class:`MPMEquationSystemLayout`.
 
         Parameters
         ----------
         U
             The solution vector of the equation system, zero, overwritten.
+        V
+            The velocity vector of a solver that integrates in time; not supported, must be None.
+        A
+            The acceleration vector of a solver that integrates in time; not supported, must be None.
+        dynamicFields
+            The names of the fields whose velocity and acceleration are read; unused.
 
-        Returns
-        -------
-        DofVector
-            The solution vector.
+        Raises
+        ------
+        NotImplementedError
+            If a velocity or an acceleration is to be read.
         """
+
+        self._refuseVelocityAndAcceleration(V, A)
 
         if self.nodesWithPersistentFieldValues:
             for nodeField in self.model.nodeFields.values():
-                U = self.dofManager.writeNodeFieldToDofVector(U, nodeField, "U", self.nodesWithPersistentFieldValues)
+                self.dofManager.writeNodeFieldToDofVector(U, nodeField, "U", self.nodesWithPersistentFieldValues)
 
-        return self.dofManager.writeScalarVariablesToDofVector(U)
+        self.dofManager.writeScalarVariablesToDofVector(U)
 
-    def writeResultsToModel(self, U: DofVector, dU: DofVector, P: DofVector):
-        """Write the results of a converged increment to the model: the solution ``U``, its increment ``dU`` and the
-        reaction ``P`` to the node fields of the active domain, from there to the node fields of the model, whose nodes
-        outside the active domain get zero, and the solution to the scalar variables.
+    def writeResultsToModel(
+        self,
+        U: DofVector,
+        dU: DofVector,
+        P: DofVector,
+        V: DofVector = None,
+        A: DofVector = None,
+        dynamicFields: list = None,
+    ):
+        """Write the results of an accepted increment to the model: the solution ``U``, its increment ``dU`` and the
+        internal force ``P`` to the node fields of the active domain, from there to the node fields of the model, whose
+        nodes outside the active domain get zero, and the solution to the scalar variables.
 
         Parameters
         ----------
@@ -173,8 +189,21 @@ class MPMEquationSystemLayout(EquationSystemLayout):
         dU
             The increment of the solution.
         P
-            The reaction, the sum of the elements', cells' and particles' internal forces.
+            The internal force, the sum of the elements', cells' and particles' residual contributions.
+        V
+            The velocity of a solver that integrates in time; not supported, must be None.
+        A
+            The acceleration of a solver that integrates in time; not supported, must be None.
+        dynamicFields
+            The names of the fields whose velocity and acceleration are written; unused.
+
+        Raises
+        ------
+        NotImplementedError
+            If a velocity or an acceleration is to be written.
         """
+
+        self._refuseVelocityAndAcceleration(V, A)
 
         for activeNodeField in self.activeNodeFields.values():
             self.dofManager.writeDofVectorToNodeField(U, activeNodeField, "U")
@@ -183,6 +212,50 @@ class MPMEquationSystemLayout(EquationSystemLayout):
             self.model.nodeFields[activeNodeField.name].copyEntriesFromOther(activeNodeField)
 
         self.dofManager.writeDofVectorToScalarVariables(U)
+
+    def writeVelocityAndAccelerationToModel(self, V: DofVector, A: DofVector, dynamicFields: list = None):
+        """Not supported: EdelweissFE's solvers do not integrate a meshfree model in time.
+
+        Parameters
+        ----------
+        V
+            The velocity; must be None.
+        A
+            The acceleration; must be None.
+        dynamicFields
+            The names of the fields whose velocity and acceleration are written; unused.
+
+        Raises
+        ------
+        NotImplementedError
+            If a velocity or an acceleration is to be written.
+        """
+
+        self._refuseVelocityAndAcceleration(V, A)
+
+    @staticmethod
+    def _refuseVelocityAndAcceleration(V: DofVector | None, A: DofVector | None):
+        """Refuse a velocity or an acceleration: the velocity and the acceleration of a meshfree model do not pass
+        through this layout.
+
+        Parameters
+        ----------
+        V
+            The velocity, or None.
+        A
+            The acceleration, or None.
+
+        Raises
+        ------
+        NotImplementedError
+            If either is given.
+        """
+
+        if V is not None or A is not None:
+            raise NotImplementedError(
+                "the velocity and the acceleration of a meshfree model do not pass through its equation system "
+                "layout: EdelweissFE's dynamic solvers do not integrate a meshfree model in time"
+            )
 
     def updateMaterialPoints(self, dU: DofVector, timeStep: TimeStep, forEachChunk: Callable[[list, Callable], None]):
         """Update the material points with the trial solution increment, before the solver computes the cells, which
