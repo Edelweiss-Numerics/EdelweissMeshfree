@@ -56,6 +56,7 @@
 <li class="toctree-l2"><a class="reference internal" href="mpm/material_points.html">Material Points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="solvers.html">Solvers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="choosing_a_solver.html">Choosing a solver</a></li>
+<li class="toctree-l2"><a class="reference internal" href="coupled_rkpm_fe.html">Coupled RKPM + FE</a></li>
 <li class="toctree-l2"><a class="reference internal" href="assembly.html">System matrix assembly</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mpm/material_point_managers.html">Material Point Managers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="model_generators.html">Model generators</a></li>
@@ -132,12 +133,21 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="solvers.html">Solvers</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="solvers.html#edelweissfe-s-implicit-solvers">EdelweissFE’s implicit solvers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="solvers.html#module-edelweissmeshfree.solvers.meshfreeexplicitdynamic">The explicit solver</a></li>
 <li class="toctree-l2"><a class="reference internal" href="solvers.html#module-edelweissmeshfree.solvers.deprecated">Deprecated implicit solvers</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="choosing_a_solver.html">Choosing a solver</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="choosing_a_solver.html#the-nonlinear-solver">The nonlinear solver</a></li>
+<li class="toctree-l2"><a class="reference internal" href="choosing_a_solver.html#explicit-dynamics">Explicit dynamics</a></li>
 <li class="toctree-l2"><a class="reference internal" href="choosing_a_solver.html#choosing-a-linear-solver">Choosing a linear solver</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="coupled_rkpm_fe.html">Coupled RKPM + FE</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="coupled_rkpm_fe.html#two-kinds-of-nodes-in-one-equation-system">Two kinds of nodes in one equation system</a></li>
+<li class="toctree-l2"><a class="reference internal" href="coupled_rkpm_fe.html#the-tie-between-the-two-domains">The tie between the two domains</a></li>
+<li class="toctree-l2"><a class="reference internal" href="coupled_rkpm_fe.html#building-a-coupled-model">Building a coupled model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="coupled_rkpm_fe.html#the-example">The example</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="assembly.html">System matrix assembly</a><ul>
@@ -219,6 +229,7 @@
 <li class="toctree-l2"><a class="reference internal" href="constraints.html#module-edelweissmeshfree.constraints.particlelagrangianweakdirichlet"><code class="docutils literal notranslate"><span class="pre">ParticleLagrangianWeakDirichlet</span></code> constraint class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="constraints.html#module-edelweissmeshfree.constraints.particlelagrangiancartesianboundary"><code class="docutils literal notranslate"><span class="pre">ParticleLagrangianCartesianBoundary</span></code> constraint class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="constraints.html#module-edelweissmeshfree.constraints.particlemortarweakdirichlet"><code class="docutils literal notranslate"><span class="pre">ParticleMortarWeakDirichlet</span></code> constraint class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="constraints.html#particlefiniteelementmortartie-constraint-class"><code class="docutils literal notranslate"><span class="pre">ParticleFiniteElementMortarTie</span></code> constraint class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="constraints.html#constraints-for-explicit-analyses">Constraints for explicit analyses</a></li>
 </ul>
 </li>

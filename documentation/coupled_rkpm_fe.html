@@ -1,0 +1,223 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Coupled RKPM + FE &mdash; EdelweissMeshfree v26.11 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=1d735308" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=57c4c7c7"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="System matrix assembly" href="assembly.html" />
+    <link rel="prev" title="Choosing a solver" href="choosing_a_solver.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            EdelweissMeshfree
+              <img src="../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../gallery.html">Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="organization.html">Code organization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html">Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cells.html">Cells</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cellelements.html">Cellelements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpm/material_points.html">Material Points</a></li>
+<li class="toctree-l2"><a class="reference internal" href="solvers.html">Solvers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="choosing_a_solver.html">Choosing a solver</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Coupled RKPM + FE</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#two-kinds-of-nodes-in-one-equation-system">Two kinds of nodes in one equation system</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-tie-between-the-two-domains">The tie between the two domains</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#building-a-coupled-model">Building a coupled model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-example">The example</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="assembly.html">System matrix assembly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpm/material_point_managers.html">Material Point Managers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="model_generators.html">Model generators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="particles.html">Particles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="particle_managers.html">Particle managers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="points_and_fields.html">Points and fields</a></li>
+<li class="toctree-l2"><a class="reference internal" href="field_output.html">Field output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meshfree.html">Meshfree utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sets.html">Sets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="step_actions.html">Step actions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="constraints.html">Constraints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="numeric_tools.html">Numerical tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="output_managers.html">Output managers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="configuration.html">Configuration and Libraries</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">EdelweissMeshfree</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Documentation</a></li>
+      <li class="breadcrumb-item active">Coupled RKPM + FE</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/documentation/coupled_rkpm_fe.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="coupled-rkpm-fe">
+<h1>Coupled RKPM + FE<a class="headerlink" href="#coupled-rkpm-fe" title="Link to this heading"></a></h1>
+<p>An <a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">MPMModel</span></code></a> may hold finite elements next to its particles: e.g. a
+structure of finite elements with an RKPM domain where the material is expected to deform strongly. Both are solved
+together, as one equation system, by EdelweissFE’s implicit static solvers (see <a class="reference internal" href="choosing_a_solver.html"><span class="doc">Choosing a solver</span></a>). The time
+integration is quasi-static.</p>
+<section id="two-kinds-of-nodes-in-one-equation-system">
+<h2>Two kinds of nodes in one equation system<a class="headerlink" href="#two-kinds-of-nodes-in-one-equation-system" title="Link to this heading"></a></h2>
+<p>The model numbers the nodes of the finite elements and the nodes of the kernel functions in one equation system,
+the elements first, then the particles (<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel.buildEquationSystem" title="edelweissmeshfree.models.mpmmodel.MPMModel.buildEquationSystem"><code class="xref py py-meth docutils literal notranslate"><span class="pre">buildEquationSystem()</span></code></a>). The
+two kinds of nodes hold different things:</p>
+<ul class="simple">
+<li><p>the nodes of the finite elements carry their <strong>total</strong> displacement from increment to increment, as in any finite
+element model;</p></li>
+<li><p>the nodes of the kernel functions carry the <strong>coefficients of one increment</strong>: RKPM is updated-Lagrangian, the
+kernel functions move with their particles, and the state lives in the particles. A rebuilt equation system starts
+them at zero.</p></li>
+</ul>
+<p><a class="reference internal" href="models.html#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout" title="edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout"><code class="xref py py-class docutils literal notranslate"><span class="pre">MPMEquationSystemLayout</span></code></a> passes the solution between the
+model and the solver’s vectors accordingly. The model writes back the solution <code class="docutils literal notranslate"><span class="pre">U</span></code>, the increment <code class="docutils literal notranslate"><span class="pre">dU</span></code> and the
+reaction <code class="docutils literal notranslate"><span class="pre">P</span></code> of every node (see EdelweissFE’s “Node field results” for the meaning of these entries).</p>
+</section>
+<section id="the-tie-between-the-two-domains">
+<h2>The tie between the two domains<a class="headerlink" href="#the-tie-between-the-two-domains" title="Link to this heading"></a></h2>
+<p>The two domains do not share nodes. Sharing a node would not tie them: the reproducing kernel shape functions are not
+interpolating, so the value at a kernel node is not the displacement there, while an element interprets the same
+value as the displacement of its node. Instead, a constraint ties the two displacement fields along the interface,
+<a class="reference internal" href="constraints.html#edelweissmeshfree.constraints.particlefiniteelementmortartie.ParticleFiniteElementMortarTie" title="edelweissmeshfree.constraints.particlefiniteelementmortartie.ParticleFiniteElementMortarTie"><code class="xref py py-class docutils literal notranslate"><span class="pre">ParticleFiniteElementMortarTie</span></code></a>:</p>
+<ul class="simple">
+<li><p><strong>in the weak (mortar) sense</strong>: the difference of the displacements of the two sides, weighted by the shape functions
+of the element edges, integrates to zero. A displacement field that both sides represent exactly – a linear one –
+is tied exactly;</p></li>
+<li><p><strong>with Lagrange multipliers</strong>: one per interface node and component, the interface traction, interpolated like the
+displacement of the element edges. Unlike a penalty factor, they leave no gap and need no parameter;</p></li>
+<li><p><strong>incrementally, on the current configuration</strong>: the tie couples the increments of both sides, on the configuration
+at the start of the increment, where RKPM defines its shape functions. The integrals are computed anew at the start
+of every increment, in <code class="docutils literal notranslate"><span class="pre">updateConnectivity</span></code>, and the tie is linear during the increment.</p></li>
+</ul>
+<p>The finite element side of the interface consists of the edges of quadratic elements, given by their nodes in order:
+corner, midside, corner, … The tie checks the order on the geometry: every midside node must lie near the middle of
+its corners, and the interface must not turn back at a corner node. A node set in the order of its labels, with the
+corner nodes numbered before the midside nodes, is refused. The RKPM side is given by the particles along the
+interface. The interface nodes of the finite elements carry the multipliers; they must not carry a Dirichlet boundary
+condition too.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.constraints.particlefiniteelementmortartie</span><span class="w"> </span><span class="kn">import</span> <span class="n">ParticleFiniteElementMortarTie</span>
+
+<span class="n">model</span><span class="o">.</span><span class="n">constraints</span><span class="p">[</span><span class="s2">"tie"</span><span class="p">]</span> <span class="o">=</span> <span class="n">ParticleFiniteElementMortarTie</span><span class="p">(</span>
+    <span class="s2">"tie"</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">particleSets</span><span class="p">[</span><span class="s2">"rkpm_left"</span><span class="p">],</span> <span class="n">model</span><span class="o">.</span><span class="n">nodeSets</span><span class="p">[</span><span class="s2">"fe_right"</span><span class="p">]</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>The constraint must be part of the model before <code class="docutils literal notranslate"><span class="pre">model.prepareYourself</span></code>, which creates the multipliers.</p>
+</section>
+<section id="building-a-coupled-model">
+<h2>Building a coupled model<a class="headerlink" href="#building-a-coupled-model" title="Link to this heading"></a></h2>
+<p>The finite elements come from EdelweissFE’s generators, inside a topology change; the kernel functions get node
+labels after those of the elements; the sections of the elements are assigned by <code class="docutils literal notranslate"><span class="pre">model.prepareYourself</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">model</span><span class="o">.</span><span class="n">topology</span><span class="o">.</span><span class="n">changes</span><span class="p">():</span>
+    <span class="n">PlaneRectQuadGenerator</span><span class="p">(</span>
+        <span class="s2">"fe"</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">journal</span><span class="p">,</span>
+        <span class="n">configuration</span><span class="o">=</span><span class="n">PlaneRectQuadSchema</span><span class="p">(</span><span class="n">x0</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">length</span><span class="o">=</span><span class="mf">3.0</span><span class="p">,</span> <span class="n">h</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">nX</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">nY</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">elType</span><span class="o">=</span><span class="s2">"CPE8UL"</span><span class="p">),</span>
+    <span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">sections</span><span class="p">[</span><span class="s2">"fe"</span><span class="p">]</span> <span class="o">=</span> <span class="n">PlaneSection</span><span class="p">(</span>
+    <span class="s2">"fe"</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"CompressibleNeoHooke"</span><span class="p">,</span> <span class="s2">"properties"</span><span class="p">:</span> <span class="n">materialProperties</span><span class="p">},</span>
+    <span class="p">[</span><span class="n">model</span><span class="o">.</span><span class="n">elementSets</span><span class="p">[</span><span class="s2">"fe_all"</span><span class="p">]],</span> <span class="n">configuration</span><span class="o">=</span><span class="n">PlaneSectionSchema</span><span class="p">(</span><span class="n">thickness</span><span class="o">=</span><span class="mf">1.0</span><span class="p">),</span>
+<span class="p">)</span>
+
+<span class="n">generateRectangularKernelFunctionGrid</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">journal</span><span class="p">,</span> <span class="n">kernelFunctionFactory</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span>
+                                      <span class="n">firstKernelFunctionNumber</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Dirichlet boundary conditions on finite element nodes are EdelweissFE’s <code class="docutils literal notranslate"><span class="pre">dirichlet</span></code> step actions, as in a finite
+element model.</p>
+</section>
+<section id="the-example">
+<h2>The example<a class="headerlink" href="#the-example" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">examples/170_coupled_rkpm_fe_cantilever_test</span></code> is a cantilever whose middle part is an RKPM domain between two parts
+of quadratic finite strain elements, clamped and deflected at finite element nodes, and solved by <code class="docutils literal notranslate"><span class="pre">NISTParallel</span></code>.
+Its independent check is the same cantilever made of finite elements only: the coupled model reproduces its tip
+reaction and its deflection line, and both approach the same limit as the elements and particles are refined.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="choosing_a_solver.html" class="btn btn-neutral float-left" title="Choosing a solver" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="assembly.html" class="btn btn-neutral float-right" title="System matrix assembly" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Matthias Neuner.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

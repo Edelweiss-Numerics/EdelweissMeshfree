@@ -141,6 +141,11 @@
 
 <span class="sd">    is smooth by construction: no alternating point forces, no pressure checkerboard.</span>
 
+<span class="sd">    The field values u_i(x_q) are increments on the current configuration, and ubar_i is the share of the step's</span>
+<span class="sd">    prescribed increment that falls into the current increment, so the condition is one on increments. The multipliers</span>
+<span class="sd">    lambda_ik are totals: the traction that balances the total stresses of the particles, read from ``U_np``, where it</span>
+<span class="sd">    continues from the last converged increment.</span>
+
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    name</span>
@@ -157,7 +162,7 @@
 <span class="sd">        Highest polynomial order of the multiplier field per constrained component.</span>
 <span class="sd">    """</span>
 
-    <span class="c1">#: Carries nothing from one increment to the next.</span>
+    <span class="c1">#: The multipliers are scalar variables of the model, which the model's checkpoint holds.</span>
     <span class="n">checkpointedState</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
@@ -267,9 +272,11 @@
 <div class="viewcode-block" id="ParticleMortarWeakDirichlet.computeKernels">
 <a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlemortarweakdirichlet.ParticleMortarWeakDirichlet.computeKernels">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">computeKernels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">U_np</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">dU</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">P</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">K</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">):</span>
+        <span class="c1"># the nodal field values come first, the multipliers last; the nodal values are increments, the multipliers</span>
+        <span class="c1"># totals</span>
         <span class="n">nL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span>
         <span class="n">dU_U</span> <span class="o">=</span> <span class="n">dU</span><span class="p">[:</span><span class="o">-</span><span class="n">nL</span><span class="p">]</span>
-        <span class="n">dU_L</span> <span class="o">=</span> <span class="n">dU</span><span class="p">[</span><span class="o">-</span><span class="n">nL</span><span class="p">:]</span>
+        <span class="n">multipliers</span> <span class="o">=</span> <span class="n">U_np</span><span class="p">[</span><span class="o">-</span><span class="n">nL</span><span class="p">:]</span>
         <span class="n">P_U</span> <span class="o">=</span> <span class="n">P</span><span class="p">[:</span><span class="o">-</span><span class="n">nL</span><span class="p">]</span>
         <span class="n">P_L</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="o">-</span><span class="n">nL</span><span class="p">:]</span>
 
@@ -302,22 +309,22 @@
 
             <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nModes</span><span class="p">):</span>
                 <span class="n">lag</span> <span class="o">=</span> <span class="n">comp</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nModes</span> <span class="o">+</span> <span class="n">k</span>
-                <span class="n">dL_l</span> <span class="o">=</span> <span class="n">dU_L</span><span class="p">[</span><span class="n">lag</span><span class="p">]</span>
+                <span class="n">multiplier</span> <span class="o">=</span> <span class="n">multipliers</span><span class="p">[</span><span class="n">lag</span><span class="p">]</span>
 
                 <span class="n">wPk</span> <span class="o">=</span> <span class="n">w</span> <span class="o">*</span> <span class="n">P_legendre</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
-                <span class="n">g_l</span> <span class="o">=</span> <span class="n">wPk</span> <span class="o">@</span> <span class="n">gap_q</span>
-                <span class="n">dg_l_dU</span> <span class="o">=</span> <span class="n">wPk</span> <span class="o">@</span> <span class="n">B</span>
+                <span class="n">g</span> <span class="o">=</span> <span class="n">wPk</span> <span class="o">@</span> <span class="n">gap_q</span>
+                <span class="n">dg_dU</span> <span class="o">=</span> <span class="n">wPk</span> <span class="o">@</span> <span class="n">B</span>
 
-                <span class="n">P_U_i</span> <span class="o">+=</span> <span class="n">dL_l</span> <span class="o">*</span> <span class="n">dg_l_dU</span>
-                <span class="n">P_L</span><span class="p">[</span><span class="n">lag</span><span class="p">]</span> <span class="o">+=</span> <span class="n">g_l</span>
+                <span class="n">P_U_i</span> <span class="o">+=</span> <span class="n">multiplier</span> <span class="o">*</span> <span class="n">dg_dU</span>
+                <span class="n">P_L</span><span class="p">[</span><span class="n">lag</span><span class="p">]</span> <span class="o">+=</span> <span class="n">g</span>
 
-                <span class="n">K_UL_j</span><span class="p">[:,</span> <span class="n">lag</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dg_l_dU</span>
-                <span class="n">K_LU_j</span><span class="p">[</span><span class="n">lag</span><span class="p">,</span> <span class="p">:]</span> <span class="o">+=</span> <span class="n">dg_l_dU</span>
+                <span class="n">K_UL_j</span><span class="p">[:,</span> <span class="n">lag</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dg_dU</span>
+                <span class="n">K_LU_j</span><span class="p">[</span><span class="n">lag</span><span class="p">,</span> <span class="p">:]</span> <span class="o">+=</span> <span class="n">dg_dU</span>
 
                 <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="c1"># P_0 = 1: the zeroth multiplier is the resultant of the (normalized)</span>
                     <span class="c1"># traction distribution</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">reactionForce</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dL_l</span></div>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">reactionForce</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">multiplier</span></div>
 </div>
 
 

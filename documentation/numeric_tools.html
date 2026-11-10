@@ -56,6 +56,7 @@
 <li class="toctree-l2"><a class="reference internal" href="mpm/material_points.html">Material Points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="solvers.html">Solvers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="choosing_a_solver.html">Choosing a solver</a></li>
+<li class="toctree-l2"><a class="reference internal" href="coupled_rkpm_fe.html">Coupled RKPM + FE</a></li>
 <li class="toctree-l2"><a class="reference internal" href="assembly.html">System matrix assembly</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mpm/material_point_managers.html">Material Point Managers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="model_generators.html">Model generators</a></li>
@@ -174,8 +175,8 @@ does not change.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.updateParticles" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.updateParticles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateParticles</span></code></a>(particles)</p></td>
 <td><p>Updates the connectivity mapping for the given particles without rebuilding the entire DofManager structure.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeDofVectorToNodeField" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeDofVectorToNodeField"><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeDofVectorToNodeField</span></code></a>(dofVector, ...)</p></td>
-<td><p>Write the current values of an entire NodeField from the respective locations in a given DofVector.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeDofVectorToNodeField" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeDofVectorToNodeField"><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeDofVectorToNodeField</span></code></a>(dofVector, ...[, ...])</p></td>
+<td><p>Write the values of a NodeField from the respective locations in a given DofVector; the counterpart of <a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeNodeFieldToDofVector" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeNodeFieldToDofVector"><code class="xref py py-meth docutils literal notranslate"><span class="pre">writeNodeFieldToDofVector()</span></code></a>.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeDofVectorToScalarVariables" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeDofVectorToScalarVariables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeDofVectorToScalarVariables</span></code></a>(dofVector)</p></td>
 <td><p>Set the values of the scalar variables of this equation system from their locations in a given DofVector; the counterpart of <a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeScalarVariablesToDofVector" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeScalarVariablesToDofVector"><code class="xref py py-meth docutils literal notranslate"><span class="pre">writeScalarVariablesToDofVector()</span></code></a>.</p></td>
@@ -206,6 +207,31 @@ entity.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager._checkNodeFieldAccess">
+<span class="sig-name descname"><span class="pre">_checkNodeFieldAccess</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodeField</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resultName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wholeField</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager._checkNodeFieldAccess" title="Link to this definition"></a></dt>
+<dd><p>Refuse an access to a node field entry this DofManager cannot serve: an entry no node field holds, a field
+it does not number, or – for an access to the field as a whole, which addresses its rows by position – a
+node field other than the one it numbers, even of the same name (e.g. the node field of the model, while
+this DofManager numbers that of an active domain).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nodeField</strong> (<em>NodeField</em>) – The NodeField accessed.</p></li>
+<li><p><strong>resultName</strong> (<em>str</em>) – The entry accessed.</p></li>
+<li><p><strong>wholeField</strong> (<em>bool</em>) – Whether the field is accessed as a whole, rather than on the nodes of a node set.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>KeyError</strong> – If the entry is not one of <code class="xref py py-attr docutils literal notranslate"><span class="pre">NodeField.ENTRIES</span></code>.</p></li>
+<li><p><strong>ValueError</strong> – If this DofManager does not number the field, or, for an access as a whole, numbers another node field
+of that name.</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -437,6 +463,31 @@ dictionary holds the entities in the order they were given.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager._locateNodeFieldOnNodeSet">
+<span class="sig-name descname"><span class="pre">_locateNodeFieldOnNodeSet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodeField</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeSet</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager._locateNodeFieldOnNodeSet" title="Link to this definition"></a></dt>
+<dd><p>Where the values of a NodeField on the nodes of a node set lie, in the DofVector and in the NodeField: the
+nodes of the set whose field is part of this equation system (see <a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.locateFieldOnNodeSet" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.locateFieldOnNodeSet"><code class="xref py py-meth docutils literal notranslate"><span class="pre">locateFieldOnNodeSet()</span></code></a>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nodeField</strong> (<em>NodeField</em>) – The NodeField.</p></li>
+<li><p><strong>nodeSet</strong> (<em>NodeSet</em>) – The NodeSet.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>The indices of the degrees of freedom in the DofVector, node after node.</p></li>
+<li><p>The rows of these nodes in the NodeField, in the same order.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[np.ndarray, list]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager._locateParticlesInDofVector">
 <span class="sig-name descname"><span class="pre">_locateParticlesInDofVector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">particles</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/numerics/dofmanager.html#MPMDofManager._locateParticlesInDofVector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager._locateParticlesInDofVector" title="Link to this definition"></a></dt>
 <dd><p>Creates a dictionary containing the location (indices) of each particle
@@ -659,14 +710,21 @@ to be rebuilt from scratch instead.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeDofVectorToNodeField">
-<span class="sig-name descname"><span class="pre">writeDofVectorToNodeField</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dofVector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeField</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resultName</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeDofVectorToNodeField" title="Link to this definition"></a></dt>
-<dd><p>Write the current values of an entire NodeField from the respective locations in a given DofVector.</p>
+<span class="sig-name descname"><span class="pre">writeDofVectorToNodeField</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dofVector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeField</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resultName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeSet</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeDofVectorToNodeField" title="Link to this definition"></a></dt>
+<dd><p>Write the values of a NodeField from the respective locations in a given DofVector; the counterpart of
+<a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeNodeFieldToDofVector" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeNodeFieldToDofVector"><code class="xref py py-meth docutils literal notranslate"><span class="pre">writeNodeFieldToDofVector()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>dofVector</strong> – The source DofVector.</p></li>
-<li><p><strong>nodeField</strong> – The NodeField to get the updated values.</p></li>
-<li><p><strong>resultname</strong> – The name of the value entries held by the NodeField.</p></li>
+<li><p><strong>dofVector</strong> (<em>DofVector</em>) – The source DofVector.</p></li>
+<li><p><strong>nodeField</strong> (<em>NodeField</em>) – The NodeField to get the updated values. Written as a whole, it must be the one this DofManager numbers
+(see <code class="xref py py-attr docutils literal notranslate"><span class="pre">numberedNodeFields</span></code>); written on a node set, any node field of a field this DofManager numbers,
+since its rows are then found by node.</p></li>
+<li><p><strong>resultName</strong> (<em>str</em>) – The entry of the NodeField to write, one of
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">NodeField.ENTRIES</span></code>.</p></li>
+<li><p><strong>nodeSet</strong> (<em>NodeSet</em>) – The NodeSet to write: its nodes whose field is part of this equation system (see
+<a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.locateFieldOnNodeSet" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.locateFieldOnNodeSet"><code class="xref py py-meth docutils literal notranslate"><span class="pre">locateFieldOnNodeSet()</span></code></a>); the other rows of the NodeField keep their values. If None, all nodes of the
+NodeField are written.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -674,6 +732,13 @@ to be rebuilt from scratch instead.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>NodeField</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>KeyError</strong> – If the entry is not one a node field holds.</p></li>
+<li><p><strong>ValueError</strong> – If this DofManager does not number the field, or, written as a whole, numbers another NodeField of that
+name.</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -699,11 +764,13 @@ does not number keeps its value.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>dofVector</strong> (<em>DofVector</em>) – The result DofVector.</p></li>
-<li><p><strong>nodeField</strong> (<em>NodeField</em>) – The NodeField holding the values.</p></li>
-<li><p><strong>resultname</strong> – The name of the value entries held by the NodeField.</p></li>
+<li><p><strong>nodeField</strong> (<em>NodeField</em>) – The NodeField holding the values. Read as a whole, it must be the one this DofManager numbers (see
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">numberedNodeFields</span></code>); read on a node set, any node field of a field this DofManager numbers, since
+its rows are then found by node.</p></li>
+<li><p><strong>resultName</strong> (<em>str</em>) – The entry of the NodeField to read, one of
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">NodeField.ENTRIES</span></code>.</p></li>
 <li><p><strong>NodeSet</strong> – The NodeSet to consider: its nodes whose field is part of this equation system (see
 <a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.locateFieldOnNodeSet" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.locateFieldOnNodeSet"><code class="xref py py-meth docutils literal notranslate"><span class="pre">locateFieldOnNodeSet()</span></code></a>). If None, all nodes of the NodeField are considered.</p></li>
-<li><p><strong>resultName</strong> (<em>str</em>)</p></li>
 <li><p><strong>nodeSet</strong> (<em>NodeSet</em>)</p></li>
 </ul>
 </dd>
@@ -712,6 +779,12 @@ does not number keeps its value.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>DofVector</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>KeyError</strong> – If the entry is not one a node field holds.</p></li>
+<li><p><strong>ValueError</strong> – If this DofManager does not number the field, or, read as a whole, numbers another NodeField of that name.</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>

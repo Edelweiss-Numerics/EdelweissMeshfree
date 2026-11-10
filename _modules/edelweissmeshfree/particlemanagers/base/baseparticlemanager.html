@@ -127,6 +127,12 @@
 <span class="sd">    The BaseParticleManager class is an abstract base class for all particle managers.</span>
 <span class="sd">    If you want to implement a new particle manager, you have to inherit from this class."""</span>
 
+    <span class="c1">#: Whether every kernel function is bonded to a particle and moves with it. A bonded kernel function always covers</span>
+    <span class="c1">#: its own particle, so the set of nodes the particles reach cannot change, only which particle reaches which node.</span>
+    <span class="c1">#: A manager that bonds them sets it in its constructor; False otherwise, which is always safe: a solver then</span>
+    <span class="c1">#: assumes the nodes may change.</span>
+    <span class="n">kernelFunctionsAreBondedToParticles</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+
 <div class="viewcode-block" id="BaseParticleManager.updateConnectivity">
 <a class="viewcode-back" href="../../../../documentation/particle_managers.html#edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager.updateConnectivity">[docs]</a>
     <span class="nd">@abstractmethod</span>

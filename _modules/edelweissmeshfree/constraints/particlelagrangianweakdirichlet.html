@@ -122,8 +122,12 @@
 <span class="sd">        \mathbf{K}_{\lambda_i U_i} \mathrel{+}= \boldsymbol{N}(\boldsymbol{x}_c)^T,</span>
 
 <span class="sd">    so that it acts on the particle with the point force :math:`-\lambda_i` at :math:`\boldsymbol{x}_c`. The tangent is</span>
-<span class="sd">    symmetric, as the constraint stems from the potential :math:`\sum_i \lambda_i g_i`. ``reactionForce`` holds, per</span>
-<span class="sd">    component of the field, the multiplier: the force with which the particle acts on the constraint.</span>
+<span class="sd">    symmetric, as the constraint stems from the potential :math:`\sum_i \lambda_i g_i`.</span>
+
+<span class="sd">    The condition :math:`g_i` is one on increments, the multiplier :math:`\lambda_i` is a total: the point force that</span>
+<span class="sd">    balances the total stress of the particle, read from ``U_np``, where it continues from the last converged</span>
+<span class="sd">    increment. ``reactionForce`` holds, per component of the field, the multiplier: the force with which the particle</span>
+<span class="sd">    acts on the constraint.</span>
 
 <span class="sd">    The multipliers are ordered as the components in ``prescribedStepDelta``.</span>
 
@@ -148,7 +152,7 @@
 <span class="sd">        The vertex that is constrained, if ``location`` is ``"vertex"``.</span>
 <span class="sd">    """</span>
 
-    <span class="c1">#: Carries nothing from one increment to the next: the multipliers are unknowns of every increment.</span>
+    <span class="c1">#: The multipliers are scalar variables of the model, which the model's checkpoint holds.</span>
     <span class="n">checkpointedState</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
@@ -265,10 +269,11 @@
 <div class="viewcode-block" id="ParticleLagrangianWeakDirichlet.computeKernels">
 <a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlelagrangianweakdirichlet.ParticleLagrangianWeakDirichlet.computeKernels">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">computeKernels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">U_np</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">dU</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">P</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">K</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">):</span>
-        <span class="c1"># the nodal field values come first, the multipliers last</span>
+        <span class="c1"># the nodal field values come first, the multipliers last; the nodal values are increments, the multipliers</span>
+        <span class="c1"># totals</span>
         <span class="n">nU</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span>
         <span class="n">dU_U</span> <span class="o">=</span> <span class="n">dU</span><span class="p">[:</span><span class="n">nU</span><span class="p">]</span>
-        <span class="n">multipliers</span> <span class="o">=</span> <span class="n">dU</span><span class="p">[</span><span class="n">nU</span><span class="p">:]</span>
+        <span class="n">multipliers</span> <span class="o">=</span> <span class="n">U_np</span><span class="p">[</span><span class="n">nU</span><span class="p">:]</span>
         <span class="n">P_U</span> <span class="o">=</span> <span class="n">P</span><span class="p">[:</span><span class="n">nU</span><span class="p">]</span>
         <span class="n">P_L</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="n">nU</span><span class="p">:]</span>
 

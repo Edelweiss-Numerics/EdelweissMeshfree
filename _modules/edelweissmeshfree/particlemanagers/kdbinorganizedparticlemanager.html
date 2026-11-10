@@ -268,7 +268,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_meshfreeKernelFunctions</span> <span class="o">=</span> <span class="n">particleKernelDomain</span><span class="o">.</span><span class="n">meshfreeKernelFunctions</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_particles</span> <span class="o">=</span> <span class="n">particleKernelDomain</span><span class="o">.</span><span class="n">particles</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_dimension</span> <span class="o">=</span> <span class="n">dimension</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_bondParticlesToKernelFunctions</span> <span class="o">=</span> <span class="n">bondParticlesToKernelFunctions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kernelFunctionsAreBondedToParticles</span> <span class="o">=</span> <span class="n">bondParticlesToKernelFunctions</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_journal</span> <span class="o">=</span> <span class="n">journal</span>
 
         <span class="k">if</span> <span class="n">isFreeThreadingSupported</span><span class="p">():</span>
@@ -303,7 +303,7 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"randomlyShiftPartliceShapeFunctions must be a boolean or a float."</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_randomlyShiftPartliceShapeFunctions</span> <span class="o">=</span> <span class="n">randomlyShiftPartliceShapeFunctions</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bondParticlesToKernelFunctions</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernelFunctionsAreBondedToParticles</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_particles</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_meshfreeKernelFunctions</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"The number of particles and kernel functions must be equal."</span><span class="p">)</span>
 
@@ -388,7 +388,7 @@
 <span class="sd">            True if any particle's set of kernel functions changed.</span>
 <span class="sd">        """</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bondParticlesToKernelFunctions</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernelFunctionsAreBondedToParticles</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_moveKernelFunctionsToTheirParticles</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_aSearchIsDue</span><span class="p">():</span>
@@ -396,7 +396,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_particlesWithChangedKernelFunctions</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">return</span> <span class="kc">False</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bondParticlesToKernelFunctions</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernelFunctionsAreBondedToParticles</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">signalizeKernelFunctionUpdate</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_searchForCoveringKernelFunctions</span><span class="p">()</span>

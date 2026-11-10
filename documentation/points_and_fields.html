@@ -56,6 +56,7 @@
 <li class="toctree-l2"><a class="reference internal" href="mpm/material_points.html">Material Points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="solvers.html">Solvers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="choosing_a_solver.html">Choosing a solver</a></li>
+<li class="toctree-l2"><a class="reference internal" href="coupled_rkpm_fe.html">Coupled RKPM + FE</a></li>
 <li class="toctree-l2"><a class="reference internal" href="assembly.html">System matrix assembly</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mpm/material_point_managers.html">Material Point Managers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="model_generators.html">Model generators</a></li>
@@ -144,16 +145,13 @@ It has a label, a spatial position, and may be associated with an arbitrary numb
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">copyEntriesFromOther</span></code>(other[, fieldValueEntries])</p></td>
 <td><p>Copy values from another NodeField.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">createFieldValueEntry</span></code>(name)</p></td>
-<td><p>Add an empty entry with given name for the field, e.g, 'U' or 'P' for flux or effort entries.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">indexOfNode</span></code>(node)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">indexOfNode</span></code>(node)</p></td>
 <td><p>The row index of a node's entries within this field's value arrays.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">resize</span></code>(nodes)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">resize</span></code>(nodes)</p></td>
 <td><p>Resize this NodeField in-place for a new list of associated nodes, preserving values for every node identity present both before and after the resize (e.g. AMR-retained nodes keep their converged state; new nodes get a zeroed entry until a caller fills it in, e.g. with an interpolated warm start).</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">subset</span></code>(subset)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">subset</span></code>(subset)</p></td>
 <td><p>Get a view on a subset of the field.</p></td>
 </tr>
 </tbody>
@@ -172,16 +170,13 @@ It has a label, a spatial position, and may be associated with an arbitrary numb
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">copyEntriesFromOther</span></code>(other[, fieldValueEntries])</p></td>
 <td><p>Copy values from another NodeField.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">createFieldValueEntry</span></code>(name)</p></td>
-<td><p>Add an empty entry with given name for the field, e.g, 'U' or 'P' for flux or effort entries.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">indexOfNode</span></code>(node)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">indexOfNode</span></code>(node)</p></td>
 <td><p>The row index of a node's entries within this field's value arrays.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">resize</span></code>(nodes)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">resize</span></code>(nodes)</p></td>
 <td><p>Resize this NodeField in-place for a new list of associated nodes, preserving values for every node identity present both before and after the resize (e.g. AMR-retained nodes keep their converged state; new nodes get a zeroed entry until a caller fills it in, e.g. with an interpolated warm start).</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">subset</span></code>(subset)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">subset</span></code>(subset)</p></td>
 <td><p>Get a view on a subset of the field.</p></td>
 </tr>
 </tbody>

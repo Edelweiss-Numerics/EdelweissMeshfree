@@ -140,7 +140,8 @@
 <span class="sd">    distributedLoadType : str</span>
 <span class="sd">        The type of the distributed load, e.g., "pressure".</span>
 <span class="sd">    loadVector : np.ndarray</span>
-<span class="sd">        The load vector to apply to the particles.</span>
+<span class="sd">        The load vector to apply to the particles; for "pressure", the pressure, which pushes on the face (against its</span>
+<span class="sd">        outward normal) when positive, as for the finite elements.</span>
 <span class="sd">    **kwargs</span>
 <span class="sd">        Additional keyword arguments. The following are supported:</span>
 <span class="sd">        - f_t : Callable[[float], float]</span>
@@ -177,7 +178,8 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">particles</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParticleSet</span><span class="p">:</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_particles</span>
+<span class="w">        </span><span class="sd">"""The particles the load acts on, over all faces of its surface."""</span>
+        <span class="k">return</span> <span class="n">ParticleSet</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">pSet</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_particleSurface</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pSet</span><span class="p">])</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">loadType</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>

@@ -110,11 +110,23 @@
 <span class="sd">      (empty if it carries none), so that a restart can restore it.</span>
 
 <span class="sd">    The nodal values of the particles and of the cells are increments on the current configuration, so the</span>
-<span class="sd">    constraints here read ``dU``, the increment since the last converged state, and leave ``U_np`` unused.</span>
+<span class="sd">    constraints here read them from ``dU``, the increment since the last converged state. A Lagrange multiplier, in</span>
+<span class="sd">    contrast, is a force or a traction, which balances the total stresses of the particles or elements: it is a</span>
+<span class="sd">    total value, read from ``U_np``, where the solver continues it from the last converged increment. The model holds</span>
+<span class="sd">    the multipliers as its scalar variables, and its checkpoint holds them with it.</span>
 
 <span class="sd">    A constraint that acts only in an explicit analysis, with forces and without a tangent, derives from</span>
-<span class="sd">    :class:`~edelweissmeshfree.constraints.base.mpmexplicitconstraintbase.MPMExplicitConstraintBase` instead.</span>
+<span class="sd">    :class:`~edelweissmeshfree.constraints.base.mpmexplicitconstraintbase.MPMExplicitConstraintBase` instead. Whether a</span>
+<span class="sd">    constraint acts in an explicit analysis at all, it declares in :attr:`actsInExplicitAnalysis`.</span>
 <span class="sd">    """</span>
+
+    <span class="c1">#: Whether this constraint acts in an explicit analysis</span>
+    <span class="c1">#: (:class:`~edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic`), which evaluates the</span>
+    <span class="c1">#: constraints at the configuration it has just accepted: the particles have moved, and the nodes of the kernel</span>
+    <span class="c1">#: functions carry neither a solution nor an increment. A constraint that measures its condition at the particles'</span>
+    <span class="c1">#: current positions acts there, e.g. a contact with a boundary; a constraint on the increment, e.g. a weak</span>
+    <span class="c1">#: Dirichlet condition or an equal value, would act as if nothing had moved, and the solver refuses it.</span>
+    <span class="n">actsInExplicitAnalysis</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 
     <span class="nd">@property</span>
     <span class="nd">@abstractmethod</span>

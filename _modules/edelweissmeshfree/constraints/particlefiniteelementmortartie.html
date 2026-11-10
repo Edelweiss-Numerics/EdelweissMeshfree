@@ -1,0 +1,575 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>edelweissmeshfree.constraints.particlefiniteelementmortartie &mdash; EdelweissMeshfree v26.11 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css?v=1d735308" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=57c4c7c7"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            EdelweissMeshfree
+              <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gallery.html">Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation/index.html">Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">EdelweissMeshfree</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">edelweissmeshfree.constraints.particlefiniteelementmortartie</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for edelweissmeshfree.constraints.particlefiniteelementmortartie</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1">#  ---------------------------------------------------------------------</span>
+<span class="c1">#</span>
+<span class="c1">#  _____    _      _              _</span>
+<span class="c1"># | ____|__| | ___| |_      _____(_)___ ___</span>
+<span class="c1"># |  _| / _` |/ _ \ \ \ /\ / / _ \ / __/ __|</span>
+<span class="c1"># | |__| (_| |  __/ |\ V  V /  __/ \__ \__ \</span>
+<span class="c1"># |_____\__,_|\___|_| \_/\_/_\___|_|___/___/</span>
+<span class="c1"># |  \/  | ___  ___| |__  / _|_ __ ___  ___</span>
+<span class="c1"># | |\/| |/ _ \/ __| '_ \| |_| '__/ _ \/ _ \</span>
+<span class="c1"># | |  | |  __/\__ \ | | |  _| | |  __/  __/</span>
+<span class="c1"># |_|  |_|\___||___/_| |_|_| |_|  \___|\___|</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1">#  Unit of Strength of Materials and Structural Analysis</span>
+<span class="c1">#  University of Innsbruck,</span>
+<span class="c1">#</span>
+<span class="c1">#  Research Group for Computational Mechanics of Materials</span>
+<span class="c1">#  Institute of Structural Engineering, BOKU University, Vienna</span>
+<span class="c1">#</span>
+<span class="c1">#  2023 - today</span>
+<span class="c1">#</span>
+<span class="c1">#  Matthias Neuner |  matthias.neuner@boku.ac.at</span>
+<span class="c1">#  Thomas Mader    |  thomas.mader@bokut.ac.at</span>
+<span class="c1">#</span>
+<span class="c1">#  This file is part of EdelweissMeshfree.</span>
+<span class="c1">#</span>
+<span class="c1">#  This library is free software; you can redistribute it and/or</span>
+<span class="c1">#  modify it under the terms of the GNU Lesser General Public</span>
+<span class="c1">#  License as published by the Free Software Foundation; either</span>
+<span class="c1">#  version 2.1 of the License, or (at your option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1">#  The full text of the license can be found in the file LICENSE.md at</span>
+<span class="c1">#  the top level directory of EdelweissMeshfree.</span>
+<span class="c1">#  ---------------------------------------------------------------------</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.config.phenomena</span><span class="w"> </span><span class="kn">import</span> <span class="n">getFieldSize</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.points.node</span><span class="w"> </span><span class="kn">import</span> <span class="n">Node</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.timesteppers.timestep</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeStep</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.variables.scalarvariable</span><span class="w"> </span><span class="kn">import</span> <span class="n">ScalarVariable</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.constraints.base.mpmconstraintbase</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPMConstraintBase</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.models.mpmmodel</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPMModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.particles.base.baseparticle</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseParticle</span>
+
+
+<div class="viewcode-block" id="quadraticEdgeShapeFunctions">
+<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlefiniteelementmortartie.quadraticEdgeShapeFunctions">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">quadraticEdgeShapeFunctions</span><span class="p">(</span><span class="n">xi</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The shape functions of a quadratic edge -- corner node, midside node, corner node -- and their derivatives, at</span>
+<span class="sd">    points :math:`\\xi \\in [-1, 1]` of the edge.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    xi</span>
+<span class="sd">        The points on the edge.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple[np.ndarray, np.ndarray]</span>
+<span class="sd">        ``N`` and ``dN_dXi``, each of shape ``(len(xi), 3)``.</span>
+<span class="sd">    """</span>
+
+    <span class="n">N</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">((</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">xi</span> <span class="o">*</span> <span class="p">(</span><span class="n">xi</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">),</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">xi</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">xi</span> <span class="o">*</span> <span class="p">(</span><span class="n">xi</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">)))</span>
+    <span class="n">dN_dXi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">((</span><span class="n">xi</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">xi</span><span class="p">,</span> <span class="n">xi</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">N</span><span class="p">,</span> <span class="n">dN_dXi</span></div>
+
+
+
+<div class="viewcode-block" id="isQuadraticEdge">
+<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlefiniteelementmortartie.isQuadraticEdge">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">isQuadraticEdge</span><span class="p">(</span><span class="n">corner</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">midside</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">otherCorner</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Whether three points, in this order, can be the nodes of a quadratic element edge: the midside node lies within</span>
+<span class="sd">    a quarter of the distance between the corners from their midpoint. A midside node further along the line between</span>
+<span class="sd">    the corners folds the edge onto itself (the edge mapping is no longer monotonic), one further away from that line</span>
+<span class="sd">    bends the edge by more than a right angle between its corners.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    corner</span>
+<span class="sd">        The first corner node.</span>
+<span class="sd">    midside</span>
+<span class="sd">        The midside node.</span>
+<span class="sd">    otherCorner</span>
+<span class="sd">        The other corner node.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    bool</span>
+<span class="sd">        True if the points can be a quadratic edge in this order.</span>
+<span class="sd">    """</span>
+
+    <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">midside</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">corner</span> <span class="o">+</span> <span class="n">otherCorner</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mf">0.25</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">otherCorner</span> <span class="o">-</span> <span class="n">corner</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="turnsBack">
+<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlefiniteelementmortartie.turnsBack">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">turnsBack</span><span class="p">(</span><span class="n">edge</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">nextEdge</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Whether a quadratic edge turns back at its end, where the next edge starts: whether the two directions there</span>
+<span class="sd">    enclose more than a right angle. An interface may have corners, but it does not go back on itself.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    edge</span>
+<span class="sd">        The corner, midside and corner node of the edge.</span>
+<span class="sd">    nextEdge</span>
+<span class="sd">        The corner, midside and corner node of the next edge, which starts at the last node of ``edge``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    bool</span>
+<span class="sd">        True if the interface turns back.</span>
+<span class="sd">    """</span>
+
+    <span class="n">_</span><span class="p">,</span> <span class="n">dN_dXi</span> <span class="o">=</span> <span class="n">quadraticEdgeShapeFunctions</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">]))</span>
+    <span class="n">dx_dXi_atTheEnd</span> <span class="o">=</span> <span class="n">dN_dXi</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">@</span> <span class="n">edge</span>
+    <span class="n">dx_dXi_atTheStartOfTheNext</span> <span class="o">=</span> <span class="n">dN_dXi</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">@</span> <span class="n">nextEdge</span>
+
+    <span class="c1"># a corner of exactly a right angle is no turn back, whatever the round-off of the coordinates</span>
+    <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span>
+        <span class="n">dx_dXi_atTheEnd</span> <span class="o">@</span> <span class="n">dx_dXi_atTheStartOfTheNext</span>
+        <span class="o">&lt;</span> <span class="o">-</span><span class="mf">1e-12</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">dx_dXi_atTheEnd</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">dx_dXi_atTheStartOfTheNext</span><span class="p">)</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="distanceToPolygon">
+<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlefiniteelementmortartie.distanceToPolygon">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">distanceToPolygon</span><span class="p">(</span><span class="n">point</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">vertices</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The distance of a point to a convex polygon: zero inside, else the distance to the nearest edge.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    point</span>
+<span class="sd">        The point.</span>
+<span class="sd">    vertices</span>
+<span class="sd">        The vertices of the polygon, in order around it.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        The distance.</span>
+<span class="sd">    """</span>
+
+    <span class="n">edgeVectors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="n">vertices</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">-</span> <span class="n">vertices</span>
+    <span class="n">toPoint</span> <span class="o">=</span> <span class="n">point</span> <span class="o">-</span> <span class="n">vertices</span>
+    <span class="n">crossProducts</span> <span class="o">=</span> <span class="n">edgeVectors</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">toPoint</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">edgeVectors</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">toPoint</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">crossProducts</span> <span class="o">&gt;=</span> <span class="mf">0.0</span><span class="p">)</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">crossProducts</span> <span class="o">&lt;=</span> <span class="mf">0.0</span><span class="p">):</span>
+        <span class="k">return</span> <span class="mf">0.0</span>
+
+    <span class="n">positionOnEdge</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">toPoint</span> <span class="o">*</span> <span class="n">edgeVectors</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">edgeVectors</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+    <span class="n">closestPoints</span> <span class="o">=</span> <span class="n">vertices</span> <span class="o">+</span> <span class="n">positionOnEdge</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">edgeVectors</span>
+
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">point</span> <span class="o">-</span> <span class="n">closestPoints</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)))</span></div>
+
+
+
+<div class="viewcode-block" id="ParticleFiniteElementMortarTie">
+<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlefiniteelementmortartie.ParticleFiniteElementMortarTie">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ParticleFiniteElementMortarTie</span><span class="p">(</span><span class="n">MPMConstraintBase</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Ties an RKPM domain to a finite element domain along a common interface, in two dimensions: the displacement of</span>
+<span class="sd">    the particles and the displacement of the finite elements agree on the interface in the weak (mortar) sense.</span>
+
+<span class="sd">    **What is tied.** On the interface :math:`\Gamma`, the finite element side interpolates the displacement with the</span>
+<span class="sd">    shape functions :math:`N_a` of its quadratic element edges, the RKPM side with the reproducing kernel shape</span>
+<span class="sd">    functions :math:`\Psi_K` of the particles there. The two do not match pointwise: the reproducing kernel shape</span>
+<span class="sd">    functions are smooth and not interpolating, the element edges are piecewise polynomials. The tie therefore asks</span>
+<span class="sd">    that their difference be orthogonal to the multiplier space -- the shape functions of the element edges, one</span>
+<span class="sd">    multiplier per interface node and displacement component:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        g_{ai} = \int_\Gamma N_a \left( \sum_b N_b\, \Delta U_{bi} - \sum_K \Psi_K\, \Delta U_{Ki} \right) d\Gamma = 0.</span>
+
+<span class="sd">    **Incremental, on the current configuration.** RKPM is updated-Lagrangian: its nodal values are the coefficients</span>
+<span class="sd">    of one increment, on the configuration at the start of the increment, where the kernel functions sit with their</span>
+<span class="sd">    particles. The tie therefore couples increments :math:`\Delta U`, and integrates on that configuration: the element</span>
+<span class="sd">    edges are placed at their nodes' converged positions, :math:`\boldsymbol{x} = \boldsymbol{X} + \boldsymbol{U}`.</span>
+<span class="sd">    Both sides start stress-free and tied, so the increments add up to a tied total displacement. During an increment</span>
+<span class="sd">    the configuration is fixed, so :math:`g` is linear in :math:`\Delta U`, and its derivatives</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \frac{\partial g_{ai}}{\partial \Delta U_{bi}} = \int_\Gamma N_a N_b \, d\Gamma, \qquad</span>
+<span class="sd">        \frac{\partial g_{ai}}{\partial \Delta U_{Ki}} = -\int_\Gamma N_a \Psi_K \, d\Gamma</span>
+
+<span class="sd">    are computed once per increment, in :meth:`updateConnectivity`.</span>
+
+<span class="sd">    **Forces.** The multiplier :math:`\lambda_{ai}` is the interface traction, interpolated like the displacement of</span>
+<span class="sd">    the element edges. Unlike the increments it couples, it is a total quantity: the stresses on both sides are total,</span>
+<span class="sd">    so is the force that the interface transmits between them. Following the rule of every constraint (see</span>
+<span class="sd">    :class:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase`), the tie adds</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        P_{bi} \mathrel{+}= \sum_a \lambda_{ai} \frac{\partial g_{ai}}{\partial \Delta U_{bi}}, \qquad</span>
+<span class="sd">        P_{Ki} \mathrel{+}= \sum_a \lambda_{ai} \frac{\partial g_{ai}}{\partial \Delta U_{Ki}}, \qquad</span>
+<span class="sd">        P_{\lambda_{ai}} \mathrel{+}= g_{ai},</span>
+
+<span class="sd">    and the tangent, symmetric as the tie stems from the potential :math:`\sum_{ai} \lambda_{ai} g_{ai}`. The finite</span>
+<span class="sd">    element side receives the force :math:`-\int_\Gamma N_b \lambda_i \, d\Gamma`, the RKPM side the opposite one.</span>
+
+<span class="sd">    **The integral.** Gauss quadrature on every element edge, in the configuration at the start of the increment. The</span>
+<span class="sd">    reproducing kernel shape functions at a quadrature point are those of the interface particle the point lies on.</span>
+<span class="sd">    A field that is linear in space is represented exactly on both sides, so it is tied exactly, whatever the</span>
+<span class="sd">    quadrature (the patch test).</span>
+
+<span class="sd">    **Rules for the interface.**</span>
+
+<span class="sd">    - The finite element side carries the multipliers. Its nodes must not be prescribed by a Dirichlet boundary</span>
+<span class="sd">      condition as well, which would constrain them twice.</span>
+<span class="sd">    - The finite element side is given by its interface nodes, in order along the interface: corner node, midside</span>
+<span class="sd">      node, corner node, midside node, ..., corner node -- the edges of quadratic elements. The tie checks that the</span>
+<span class="sd">      order is one along the interface: every midside node lies near the middle of its corners</span>
+<span class="sd">      (:func:`isQuadraticEdge`), and the interface does not turn back at a corner node (:func:`turnsBack`). A node set</span>
+<span class="sd">      in the order of its labels, for instance, is refused.</span>
+<span class="sd">    - The RKPM side is given by its particles along the interface.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    name</span>
+<span class="sd">        The name of this constraint.</span>
+<span class="sd">    model</span>
+<span class="sd">        The model.</span>
+<span class="sd">    interfaceParticles</span>
+<span class="sd">        The particles of the RKPM domain along the interface.</span>
+<span class="sd">    finiteElementInterfaceNodes</span>
+<span class="sd">        The nodes of the finite element domain on the interface, in order along it: corner, midside, corner, ...</span>
+<span class="sd">    quadraturePointsPerEdge</span>
+<span class="sd">        The number of Gauss points on every element edge.</span>
+<span class="sd">    """</span>
+
+    <span class="c1">#: The traction is a scalar variable of the model, which the model's checkpoint holds; the integrals are recomputed</span>
+    <span class="c1">#: at the start of every increment.</span>
+    <span class="n">checkpointedState</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="n">MPMModel</span><span class="p">,</span>
+        <span class="n">interfaceParticles</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">BaseParticle</span><span class="p">],</span>
+        <span class="n">finiteElementInterfaceNodes</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Node</span><span class="p">],</span>
+        <span class="n">quadraturePointsPerEdge</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_interfaceParticles</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">interfaceParticles</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_finiteElementNodes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">finiteElementInterfaceNodes</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">model</span><span class="o">.</span><span class="n">domainSize</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Constraint '</span><span class="si">{:}</span><span class="s2">': the tie is implemented for two dimensions."</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_finiteElementNodes</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">3</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_finiteElementNodes</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">"Constraint '</span><span class="si">{:}</span><span class="s2">': the finite element interface nodes must form quadratic edges: "</span>
+                <span class="s2">"corner, midside, corner, ..., corner."</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interfaceParticles</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Constraint '</span><span class="si">{:}</span><span class="s2">': there are no interface particles."</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span> <span class="o">=</span> <span class="n">getFieldSize</span><span class="p">(</span><span class="s2">"displacement"</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">domainSize</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_checkThatTheNodesAreInOrderAlongTheInterface</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_finiteElementNodes</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_xi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gaussWeights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">polynomial</span><span class="o">.</span><span class="n">legendre</span><span class="o">.</span><span class="n">leggauss</span><span class="p">(</span><span class="n">quadraturePointsPerEdge</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_N_edge</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dN_dXi_edge</span> <span class="o">=</span> <span class="n">quadraticEdgeShapeFunctions</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_xi</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_kernelNodes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1">#: The derivative of the gap with respect to the increments at the finite element nodes, per component.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dGap_dFiniteElementIncrement</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_finiteElementNodes</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_finiteElementNodes</span><span class="p">)))</span>
+        <span class="c1">#: The derivative of the gap with respect to the increments at the kernel nodes, per component.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dGap_dKernelIncrement</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_finiteElementNodes</span><span class="p">),</span> <span class="mi">0</span><span class="p">))</span>
+
+<div class="viewcode-block" id="ParticleFiniteElementMortarTie._checkThatTheNodesAreInOrderAlongTheInterface">
+<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlefiniteelementmortartie.ParticleFiniteElementMortarTie._checkThatTheNodesAreInOrderAlongTheInterface">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_checkThatTheNodesAreInOrderAlongTheInterface</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Refuse finite element interface nodes that are not in order along the interface: corner, midside, corner,</span>
+<span class="sd">        ... The tie integrates every triple of them as an element edge, so nodes in another order would tie the wrong</span>
+<span class="sd">        edges without any other sign of it.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If a triple is no quadratic edge, or if the interface turns back at a corner node.</span>
+<span class="sd">        """</span>
+
+        <span class="n">coordinates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">node</span><span class="o">.</span><span class="n">coordinates</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_finiteElementNodes</span><span class="p">])</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">label</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_finiteElementNodes</span><span class="p">]</span>
+
+        <span class="n">edges</span> <span class="o">=</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="n">first</span><span class="p">,</span> <span class="n">first</span> <span class="o">+</span> <span class="mi">3</span><span class="p">)</span> <span class="k">for</span> <span class="n">first</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">coordinates</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)]</span>
+        <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">isQuadraticEdge</span><span class="p">(</span><span class="o">*</span><span class="n">coordinates</span><span class="p">[</span><span class="n">edge</span><span class="p">]):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">"Constraint '</span><span class="si">{:}</span><span class="s2">': the finite element interface nodes </span><span class="si">{:}</span><span class="s2"> are no quadratic element edge: the "</span>
+                    <span class="s2">"midside node must lie near the middle of the corners. The interface nodes must be given in order "</span>
+                    <span class="s2">"along the interface: corner, midside, corner, ..., corner; a node set in the order of its "</span>
+                    <span class="s2">"labels is not in that order in general."</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">,</span> <span class="n">labels</span><span class="p">[</span><span class="n">edge</span><span class="p">])</span>
+                <span class="p">)</span>
+        <span class="k">for</span> <span class="n">edge</span><span class="p">,</span> <span class="n">nextEdge</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">edges</span><span class="p">,</span> <span class="n">edges</span><span class="p">[</span><span class="mi">1</span><span class="p">:]):</span>
+            <span class="k">if</span> <span class="n">turnsBack</span><span class="p">(</span><span class="n">coordinates</span><span class="p">[</span><span class="n">edge</span><span class="p">],</span> <span class="n">coordinates</span><span class="p">[</span><span class="n">nextEdge</span><span class="p">]):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">"Constraint '</span><span class="si">{:}</span><span class="s2">': the finite element interface turns back at node </span><span class="si">{:}</span><span class="s2">, from the edge </span><span class="si">{:}</span><span class="s2"> to the "</span>
+                    <span class="s2">"edge </span><span class="si">{:}</span><span class="s2">. The interface nodes must be given in order along the interface: corner, midside, "</span>
+                    <span class="s2">"corner, ..., corner."</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">,</span> <span class="n">labels</span><span class="p">[</span><span class="n">nextEdge</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">labels</span><span class="p">[</span><span class="n">edge</span><span class="p">],</span> <span class="n">labels</span><span class="p">[</span><span class="n">nextEdge</span><span class="p">])</span>
+                <span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The finite element interface nodes, in their order along the interface, then the nodes of the kernel</span>
+<span class="sd">        functions the interface particles interpolate from, by label."""</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_finiteElementNodes</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kernelNodes</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fieldsOnNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[[</span><span class="s2">"displacement"</span><span class="p">]]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">nDof</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">scalarVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lagrangianMultipliers</span>
+
+<div class="viewcode-block" id="ParticleFiniteElementMortarTie.getNumberOfAdditionalNeededScalarVariables">
+<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlefiniteelementmortartie.ParticleFiniteElementMortarTie.getNumberOfAdditionalNeededScalarVariables">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getNumberOfAdditionalNeededScalarVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span></div>
+
+
+<div class="viewcode-block" id="ParticleFiniteElementMortarTie.assignAdditionalScalarVariables">
+<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlefiniteelementmortartie.ParticleFiniteElementMortarTie.assignAdditionalScalarVariables">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">assignAdditionalScalarVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scalarVariables</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ScalarVariable</span><span class="p">]):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lagrangianMultipliers</span> <span class="o">=</span> <span class="n">scalarVariables</span></div>
+
+
+<div class="viewcode-block" id="ParticleFiniteElementMortarTie._particleAt">
+<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlefiniteelementmortartie.ParticleFiniteElementMortarTie._particleAt">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_particleAt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">particleVertices</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The index of the interface particle a point lies on, or is closest to.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point</span>
+<span class="sd">            The point.</span>
+<span class="sd">        particleVertices</span>
+<span class="sd">            The vertices of every interface particle.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        int</span>
+<span class="sd">            The index of the particle.</span>
+<span class="sd">        """</span>
+
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">([</span><span class="n">distanceToPolygon</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">vertices</span><span class="p">)</span> <span class="k">for</span> <span class="n">vertices</span> <span class="ow">in</span> <span class="n">particleVertices</span><span class="p">]))</span></div>
+
+
+<div class="viewcode-block" id="ParticleFiniteElementMortarTie.updateConnectivity">
+<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlefiniteelementmortartie.ParticleFiniteElementMortarTie.updateConnectivity">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">updateConnectivity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">MPMModel</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Integrate the gap's derivatives on the configuration at the start of the increment, after the particle</span>
+<span class="sd">        managers have assigned the kernel functions to the particles. The kernel nodes are those the interface</span>
+<span class="sd">        particles at the quadrature points interpolate from.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        model</span>
+<span class="sd">            The model, whose displacement field holds the converged total displacement of the finite element nodes.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">            True if the kernel nodes of the tie changed.</span>
+<span class="sd">        """</span>
+
+        <span class="n">displacementField</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">nodeFields</span><span class="p">[</span><span class="s2">"displacement"</span><span class="p">]</span>
+        <span class="n">convergedPositions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="n">node</span><span class="o">.</span><span class="n">coordinates</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span> <span class="o">+</span> <span class="n">displacementField</span><span class="p">[</span><span class="s2">"U"</span><span class="p">][</span><span class="n">displacementField</span><span class="o">.</span><span class="n">indexOfNode</span><span class="p">(</span><span class="n">node</span><span class="p">)]</span>
+                <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_finiteElementNodes</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">particleVertices</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">getVertexCoordinates</span><span class="p">())</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interfaceParticles</span><span class="p">]</span>
+
+        <span class="n">quadraturePoints</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">firstNodeOfEdge</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_finiteElementNodes</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+            <span class="n">edgeNodes</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">firstNodeOfEdge</span><span class="p">,</span> <span class="n">firstNodeOfEdge</span> <span class="o">+</span> <span class="mi">3</span><span class="p">)</span>
+            <span class="n">x_q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_N_edge</span> <span class="o">@</span> <span class="n">convergedPositions</span><span class="p">[</span><span class="n">edgeNodes</span><span class="p">]</span>
+            <span class="n">dx_dXi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dN_dXi_edge</span> <span class="o">@</span> <span class="n">convergedPositions</span><span class="p">[</span><span class="n">edgeNodes</span><span class="p">]</span>
+            <span class="n">lengthMeasure</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gaussWeights</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">dx_dXi</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_xi</span><span class="p">)):</span>
+                <span class="n">particle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interfaceParticles</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_particleAt</span><span class="p">(</span><span class="n">x_q</span><span class="p">[</span><span class="n">q</span><span class="p">],</span> <span class="n">particleVertices</span><span class="p">)]</span>
+                <span class="n">quadraturePoints</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="p">(</span><span class="n">edgeNodes</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_N_edge</span><span class="p">[</span><span class="n">q</span><span class="p">],</span> <span class="n">lengthMeasure</span><span class="p">[</span><span class="n">q</span><span class="p">],</span> <span class="n">particle</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ascontiguousarray</span><span class="p">(</span><span class="n">x_q</span><span class="p">[</span><span class="n">q</span><span class="p">]))</span>
+                <span class="p">)</span>
+
+        <span class="n">kernelNodes</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+            <span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">kf</span><span class="o">.</span><span class="n">node</span> <span class="k">for</span> <span class="o">*</span><span class="n">_</span><span class="p">,</span> <span class="n">particle</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">quadraturePoints</span> <span class="k">for</span> <span class="n">kf</span> <span class="ow">in</span> <span class="n">particle</span><span class="o">.</span><span class="n">kernelFunctions</span><span class="p">),</span>
+            <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">node</span><span class="p">:</span> <span class="n">node</span><span class="o">.</span><span class="n">label</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">indexOfKernelNode</span> <span class="o">=</span> <span class="p">{</span><span class="n">node</span><span class="p">:</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">node</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">kernelNodes</span><span class="p">)}</span>
+
+        <span class="n">nFiniteElementNodes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_finiteElementNodes</span><span class="p">)</span>
+        <span class="n">dGap_dFiniteElementIncrement</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nFiniteElementNodes</span><span class="p">,</span> <span class="n">nFiniteElementNodes</span><span class="p">))</span>
+        <span class="n">dGap_dKernelIncrement</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nFiniteElementNodes</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">kernelNodes</span><span class="p">)))</span>
+
+        <span class="k">for</span> <span class="n">edgeNodes</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">lengthMeasure</span><span class="p">,</span> <span class="n">particle</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">quadraturePoints</span><span class="p">:</span>
+            <span class="n">Psi</span> <span class="o">=</span> <span class="n">particle</span><span class="o">.</span><span class="n">getInterpolationVector</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">kernelIndices</span> <span class="o">=</span> <span class="p">[</span><span class="n">indexOfKernelNode</span><span class="p">[</span><span class="n">kf</span><span class="o">.</span><span class="n">node</span><span class="p">]</span> <span class="k">for</span> <span class="n">kf</span> <span class="ow">in</span> <span class="n">particle</span><span class="o">.</span><span class="n">kernelFunctions</span><span class="p">]</span>
+            <span class="n">dGap_dFiniteElementIncrement</span><span class="p">[</span><span class="n">edgeNodes</span><span class="p">,</span> <span class="n">edgeNodes</span><span class="p">]</span> <span class="o">+=</span> <span class="n">lengthMeasure</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
+            <span class="n">dGap_dKernelIncrement</span><span class="p">[</span><span class="n">edgeNodes</span><span class="p">,</span> <span class="n">kernelIndices</span><span class="p">]</span> <span class="o">-=</span> <span class="n">lengthMeasure</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">Psi</span><span class="p">)</span>
+
+        <span class="n">hasChanged</span> <span class="o">=</span> <span class="n">kernelNodes</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kernelNodes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_kernelNodes</span> <span class="o">=</span> <span class="n">kernelNodes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dGap_dFiniteElementIncrement</span> <span class="o">=</span> <span class="n">dGap_dFiniteElementIncrement</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dGap_dKernelIncrement</span> <span class="o">=</span> <span class="n">dGap_dKernelIncrement</span>
+
+        <span class="k">return</span> <span class="n">hasChanged</span></div>
+
+
+<div class="viewcode-block" id="ParticleFiniteElementMortarTie.computeKernels">
+<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlefiniteelementmortartie.ParticleFiniteElementMortarTie.computeKernels">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">computeKernels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">U_np</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">dU</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">P</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">K</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Add the tie's residual contribution and its tangent; see :class:`ParticleFiniteElementMortarTie`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        U_np</span>
+<span class="sd">            The current solution; its last entries are the multipliers, the interface tractions.</span>
+<span class="sd">        dU</span>
+<span class="sd">            The increment since the last converged state; the tie couples the increments at the nodes.</span>
+<span class="sd">        P</span>
+<span class="sd">            The residual contribution to augment.</span>
+<span class="sd">        K</span>
+<span class="sd">            The tangent to augment.</span>
+<span class="sd">        timeStep</span>
+<span class="sd">            The time step; unused.</span>
+<span class="sd">        """</span>
+
+        <span class="n">nL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span>
+        <span class="n">fieldSize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span>
+
+        <span class="n">dGap_dIncrement</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">dGap_dFiniteElementIncrement</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dGap_dKernelIncrement</span><span class="p">))</span>
+
+        <span class="n">dU_nodes</span> <span class="o">=</span> <span class="n">dU</span><span class="p">[:</span><span class="o">-</span><span class="n">nL</span><span class="p">]</span>
+        <span class="n">P_nodes</span> <span class="o">=</span> <span class="n">P</span><span class="p">[:</span><span class="o">-</span><span class="n">nL</span><span class="p">]</span>
+        <span class="n">P_multipliers</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="o">-</span><span class="n">nL</span><span class="p">:]</span>
+        <span class="n">tractions</span> <span class="o">=</span> <span class="n">U_np</span><span class="p">[</span><span class="o">-</span><span class="n">nL</span><span class="p">:]</span>
+
+        <span class="n">K</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">nDof</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nDof</span><span class="p">))</span>
+        <span class="n">K_nodesMultipliers</span> <span class="o">=</span> <span class="n">K</span><span class="p">[:</span><span class="o">-</span><span class="n">nL</span><span class="p">,</span> <span class="o">-</span><span class="n">nL</span><span class="p">:]</span>
+        <span class="n">K_multipliersNodes</span> <span class="o">=</span> <span class="n">K</span><span class="p">[</span><span class="o">-</span><span class="n">nL</span><span class="p">:,</span> <span class="p">:</span><span class="o">-</span><span class="n">nL</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">fieldSize</span><span class="p">):</span>
+            <span class="n">traction_i</span> <span class="o">=</span> <span class="n">tractions</span><span class="p">[</span><span class="n">i</span><span class="p">::</span><span class="n">fieldSize</span><span class="p">]</span>
+
+            <span class="n">P_multipliers</span><span class="p">[</span><span class="n">i</span><span class="p">::</span><span class="n">fieldSize</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dGap_dIncrement</span> <span class="o">@</span> <span class="n">dU_nodes</span><span class="p">[</span><span class="n">i</span><span class="p">::</span><span class="n">fieldSize</span><span class="p">]</span>
+            <span class="n">P_nodes</span><span class="p">[</span><span class="n">i</span><span class="p">::</span><span class="n">fieldSize</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dGap_dIncrement</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">traction_i</span>
+
+            <span class="n">K_nodesMultipliers</span><span class="p">[</span><span class="n">i</span><span class="p">::</span><span class="n">fieldSize</span><span class="p">,</span> <span class="n">i</span><span class="p">::</span><span class="n">fieldSize</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dGap_dIncrement</span><span class="o">.</span><span class="n">T</span>
+            <span class="n">K_multipliersNodes</span><span class="p">[</span><span class="n">i</span><span class="p">::</span><span class="n">fieldSize</span><span class="p">,</span> <span class="n">i</span><span class="p">::</span><span class="n">fieldSize</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dGap_dIncrement</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Matthias Neuner.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

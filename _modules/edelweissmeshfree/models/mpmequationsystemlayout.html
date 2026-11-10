@@ -110,7 +110,8 @@
 <span class="c1">#  ---------------------------------------------------------------------</span>
 
 <span class="sd">"""What the equation system of a material point or RKPM model is made of: the answer an</span>
-<span class="sd">:class:`~edelweissmeshfree.models.mpmmodel.MPMModel` gives EdelweissFE's implicit solvers whenever they (re)build</span>
+<span class="sd">:class:`~edelweissmeshfree.models.mpmmodel.MPMModel` gives EdelweissFE's implicit solvers and</span>
+<span class="sd">:class:`~edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic` whenever they (re)build</span>
 <span class="sd">their equation system, see :meth:`~edelweissmeshfree.models.mpmmodel.MPMModel.buildEquationSystem`."""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
@@ -177,6 +178,48 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">materialPoints</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">materialPoints</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
         <span class="c1">#: The active cells and the cell elements, which interpolate the solution to the material points they hold.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cellsInterpolatingToMaterialPoints</span> <span class="o">=</span> <span class="n">activeCells</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">cellElements</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+
+<div class="viewcode-block" id="MPMEquationSystemLayout.numbersTheSameNodesAs">
+<a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.numbersTheSameNodesAs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">numbersTheSameNodesAs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="s2">"MPMEquationSystemLayout"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Whether this layout numbers the same nodes, with the same fields, in the same order as another one, so that</span>
+<span class="sd">        a vector of the other layout means the same here, entry by entry.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other</span>
+<span class="sd">            The other layout.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">            True if the numbering of the nodes is the same.</span>
+<span class="sd">        """</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">numbering</span><span class="p">(</span><span class="n">layout</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">[(</span><span class="n">name</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">nodeField</span><span class="o">.</span><span class="n">nodes</span><span class="p">))</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">nodeField</span> <span class="ow">in</span> <span class="n">layout</span><span class="o">.</span><span class="n">activeNodeFields</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">nDof</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">nDof</span> <span class="ow">and</span> <span class="n">numbering</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">==</span> <span class="n">numbering</span><span class="p">(</span><span class="n">other</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MPMEquationSystemLayout.relocateParticlesAndConstraints">
+<a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.relocateParticlesAndConstraints">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">relocateParticlesAndConstraints</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Follow a change of the connectivity that leaves the active nodes as they are (see</span>
+<span class="sd">        :attr:`~edelweissmeshfree.models.mpmmodel.MPMModel.activeNodesAreFixed`): the numbering of the nodes stands, so</span>
+<span class="sd">        only the particles whose kernel functions changed, and the active constraints, are located anew in the DOF</span>
+<span class="sd">        vector. That is what rebuilding would give, at a fraction of its cost.</span>
+<span class="sd">        """</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">updateParticles</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="n">particle</span>
+                <span class="k">for</span> <span class="n">particleManager</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">particleManagers</span>
+                <span class="k">for</span> <span class="n">particle</span> <span class="ow">in</span> <span class="n">particleManager</span><span class="o">.</span><span class="n">particlesWithChangedKernelFunctions</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">updateConstraints</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">activeConstraints</span><span class="p">())</span></div>
+
 
 <div class="viewcode-block" id="MPMEquationSystemLayout.writeSolutionToDofVector">
 <a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.writeSolutionToDofVector">[docs]</a>

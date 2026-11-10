@@ -452,87 +452,45 @@
 <span class="sd">        """</span></div>
 
 
+<div class="viewcode-block" id="BaseParticle.updatePhysicsExplicit">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.updatePhysicsExplicit">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">updatePhysicsExplicit</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">dU</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">timeTotal</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">dTime</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Explicit dynamics: take the solution increment on the kernel functions currently assigned, i.e. update the</span>
+<span class="sd">        state and the position of the particle, and its velocity and acceleration; see</span>
+<span class="sd">        :class:`~edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic`. A particle that cannot</span>
+<span class="sd">        take the increment requests a cutback (:class:`~edelweissfe.utils.exceptions.CutbackRequest`).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dU</span>
+<span class="sd">            The solution increment.</span>
+<span class="sd">        timeTotal</span>
+<span class="sd">            The current total time.</span>
+<span class="sd">        dTime</span>
+<span class="sd">            The time increment.</span>
+<span class="sd">        """</span></div>
+
+
 <div class="viewcode-block" id="BaseParticle.computePhysicsKernelsExplicit">
 <a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computePhysicsKernelsExplicit">[docs]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">computePhysicsKernelsExplicit</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">dU</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
         <span class="n">P</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-        <span class="n">timeTotal</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-        <span class="n">dTime</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Evaluate the kernel residual and stiffness for given time based for all assigned MaterialPoints.</span>
+<span class="w">        </span><span class="sd">"""Explicit dynamics: add the internal force of the current state, on the kernel functions currently</span>
+<span class="sd">        assigned, to the residual contribution; no tangent.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        dU</span>
-<span class="sd">            The current solution increment.</span>
 <span class="sd">        P</span>
-<span class="sd">            The external load vector to be defined.</span>
-<span class="sd">        timeTotal</span>
-<span class="sd">            The current total time.</span>
-<span class="sd">        dTime</span>
-<span class="sd">            The time increment.</span>
-<span class="sd">        """</span></div>
-
-
-<div class="viewcode-block" id="BaseParticle.computeBodyLoadExplicit">
-<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeBodyLoadExplicit">[docs]</a>
-    <span class="nd">@abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">computeBodyLoadExplicit</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">loadType</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">load</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-        <span class="n">P</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-        <span class="n">timeTotal</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-        <span class="n">dTime</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-    <span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Compute bulk loads (body loads) for given time based for all assigned MaterialPoints.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        loadType</span>
-<span class="sd">            The type of load to be computed (e.g., 'bodyforce')</span>
-<span class="sd">        load</span>
-<span class="sd">            The float (vector) describing the load.</span>
-<span class="sd">        P</span>
-<span class="sd">            The external load vector to be defined.</span>
-<span class="sd">        timeTotal</span>
-<span class="sd">            The current total time.</span>
-<span class="sd">        dTime</span>
-<span class="sd">            The time increment.</span>
-<span class="sd">        """</span></div>
-
-
-<div class="viewcode-block" id="BaseParticle.computeDistributedLoadExplicit">
-<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeDistributedLoadExplicit">[docs]</a>
-    <span class="nd">@abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">computeDistributedLoadExplicit</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">loadType</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">surfaceID</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">load</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-        <span class="n">P</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-        <span class="n">timeTotal</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-        <span class="n">dTime</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-    <span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Compute distributed (surface) a for given time based for a specific assigned material point.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        loadType</span>
-<span class="sd">            The type of load to be computed (e.g., 'pressure')</span>
-<span class="sd">        surfaceID</span>
-<span class="sd">            The ID describing the surface of the material point.</span>
-<span class="sd">        load</span>
-<span class="sd">            The float (vector) describing the load.</span>
-<span class="sd">        P</span>
-<span class="sd">            The external load vector to be defined.</span>
-<span class="sd">        timeTotal</span>
-<span class="sd">            The current total time.</span>
-<span class="sd">        dTime</span>
-<span class="sd">            The time increment.</span>
+<span class="sd">            The residual contribution to augment.</span>
 <span class="sd">        """</span></div>
 
 
@@ -543,12 +501,29 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">M</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Compute the lumped mass matrix for explicit time integration.</span>
+<span class="w">        </span><span class="sd">"""Explicit dynamics: add the lumped mass of the particle, on the kernel functions currently assigned.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        M</span>
-<span class="sd">            The mass matrix to be defined.</span>
+<span class="sd">            The lumped mass to augment, one entry per degree of freedom.</span>
+<span class="sd">        """</span></div>
+
+
+<div class="viewcode-block" id="BaseParticle.computeLumpedMomentum">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedMomentum">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">computeLumpedMomentum</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">momentum</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Explicit dynamics: add the lumped momentum of the particle, on the kernel functions currently assigned,</span>
+<span class="sd">        from which a solver projects the velocity of the nodes.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        momentum</span>
+<span class="sd">            The lumped momentum to augment, one entry per degree of freedom.</span>
 <span class="sd">        """</span></div>
 
 

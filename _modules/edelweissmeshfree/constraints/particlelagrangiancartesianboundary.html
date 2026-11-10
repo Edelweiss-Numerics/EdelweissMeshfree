@@ -106,6 +106,26 @@
 
 <span class="sd">    The orientation is determined based on the initial position of the particle relative to the boundary.</span>
 
+<span class="sd">    The particle interpolates its displacement from the nodes of its kernel functions, as an increment on the current</span>
+<span class="sd">    configuration, so the gap is measured with the increment :math:`\boldsymbol{N} \cdot \Delta\mathbf{U}_j` of the</span>
+<span class="sd">    constrained component :math:`j` from the position at the start of the increment. While the particle is in contact,</span>
+<span class="sd">    a multiplier :math:`\lambda` enforces :math:`g = 0`, and the constraint adds</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \mathbf{P}_{U_j} \mathrel{+}= \lambda\, \frac{\partial g}{\partial \Delta\mathbf{U}_j}, \qquad</span>
+<span class="sd">        P_{\lambda} \mathrel{+}= g, \qquad</span>
+<span class="sd">        \mathbf{K}_{U_j \lambda} \mathrel{+}= \frac{\partial g}{\partial \Delta\mathbf{U}_j}, \qquad</span>
+<span class="sd">        \mathbf{K}_{\lambda U_j} \mathrel{+}= \frac{\partial g}{\partial \Delta\mathbf{U}_j}^T,</span>
+
+<span class="sd">    with :math:`\partial g / \partial \Delta\mathbf{U}_j = \boldsymbol{n}_j \boldsymbol{N}`. The multiplier is the</span>
+<span class="sd">    contact force, positive in compression. A particle that does not penetrate the boundary, or whose multiplier would</span>
+<span class="sd">    pull it towards the boundary, is out of contact: the constraint then adds :math:`P_{\lambda} \mathrel{+}= \lambda`</span>
+<span class="sd">    and :math:`K_{\lambda\lambda} \mathrel{+}= 1`, which holds the multiplier at zero.</span>
+
+<span class="sd">    The gap is one on increments, the multiplier is a total: the contact force that balances the total stress of the</span>
+<span class="sd">    particle, read from ``U_np``, where it continues from the last converged increment. ``reactionForce`` holds it.</span>
+
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    name : str</span>
@@ -130,7 +150,7 @@
 <span class="sd">        The velocity of the boundary along the constrained component.</span>
 <span class="sd">    """</span>
 
-    <span class="c1">#: Carries nothing from one increment to the next.</span>
+    <span class="c1">#: The multiplier is a scalar variable of the model, which the model's checkpoint holds.</span>
     <span class="n">checkpointedState</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
@@ -247,31 +267,29 @@
 <div class="viewcode-block" id="ParticleLagrangianContactCartesianBoundaryConstraint.computeKernels">
 <a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlelagrangiancartesianboundary.ParticleLagrangianContactCartesianBoundaryConstraint.computeKernels">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">computeKernels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">U_np</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">dU</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">P</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">K</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">):</span>
-
-        <span class="n">dU_U</span> <span class="o">=</span> <span class="n">dU</span><span class="p">[:</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span><span class="p">]</span>
-        <span class="n">dU_L</span> <span class="o">=</span> <span class="n">dU</span><span class="p">[</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span> <span class="p">:]</span>
-        <span class="n">P_U</span> <span class="o">=</span> <span class="n">P</span><span class="p">[:</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span><span class="p">]</span>
-        <span class="n">P_L</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span> <span class="p">:]</span>
+        <span class="c1"># the nodal field values come first, the multiplier last; the nodal values are increments, the multiplier a</span>
+        <span class="c1"># total</span>
+        <span class="n">nU</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span>
+        <span class="n">dU_U</span> <span class="o">=</span> <span class="n">dU</span><span class="p">[:</span><span class="n">nU</span><span class="p">]</span>
+        <span class="n">multiplier</span> <span class="o">=</span> <span class="n">U_np</span><span class="p">[</span><span class="n">nU</span><span class="p">]</span>
+        <span class="n">P_U</span> <span class="o">=</span> <span class="n">P</span><span class="p">[:</span><span class="n">nU</span><span class="p">]</span>
+        <span class="n">P_L</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="n">nU</span><span class="p">:]</span>
 
         <span class="n">K</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">nDof</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nDof</span><span class="p">))</span>
+        <span class="n">K_UL</span> <span class="o">=</span> <span class="n">K</span><span class="p">[:</span><span class="n">nU</span><span class="p">,</span> <span class="n">nU</span><span class="p">:]</span>
+        <span class="n">K_LU</span> <span class="o">=</span> <span class="n">K</span><span class="p">[</span><span class="n">nU</span><span class="p">:,</span> <span class="p">:</span><span class="n">nU</span><span class="p">]</span>
+        <span class="n">K_LL</span> <span class="o">=</span> <span class="n">K</span><span class="p">[</span><span class="n">nU</span><span class="p">:,</span> <span class="n">nU</span><span class="p">:]</span>
 
-        <span class="n">K_UL</span> <span class="o">=</span> <span class="n">K</span><span class="p">[:</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span><span class="p">,</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span> <span class="p">:]</span>
-        <span class="n">K_LU</span> <span class="o">=</span> <span class="n">K</span><span class="p">[</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span> <span class="p">:,</span> <span class="p">:</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span><span class="p">]</span>
-        <span class="n">K_LL</span> <span class="o">=</span> <span class="n">K</span><span class="p">[</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span> <span class="p">:,</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_nLagrangianMultipliers</span> <span class="p">:]</span>
-
-        <span class="c1"># lag is the index of the lagrangian multiplier</span>
-        <span class="c1"># i is the component of the field being constrained</span>
-        <span class="n">i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_component</span>
+        <span class="c1"># j is the constrained component of the field, lag the index of the multiplier</span>
+        <span class="n">j</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_component</span>
         <span class="n">lag</span> <span class="o">=</span> <span class="mi">0</span>
 
-        <span class="n">P_U_i</span> <span class="o">=</span> <span class="n">P_U</span><span class="p">[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span>
-        <span class="n">dU_U_j</span> <span class="o">=</span> <span class="n">dU_U</span><span class="p">[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span>
+        <span class="n">P_U_j</span> <span class="o">=</span> <span class="n">P_U</span><span class="p">[</span><span class="n">j</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span>
+        <span class="n">dU_U_j</span> <span class="o">=</span> <span class="n">dU_U</span><span class="p">[</span><span class="n">j</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span>
+        <span class="n">K_UL_j</span> <span class="o">=</span> <span class="n">K_UL</span><span class="p">[</span><span class="n">j</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">K_LU_j</span> <span class="o">=</span> <span class="n">K_LU</span><span class="p">[:,</span> <span class="n">j</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span>
 
-        <span class="n">K_UL_j</span> <span class="o">=</span> <span class="n">K_UL</span><span class="p">[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">,</span> <span class="p">:]</span>
-        <span class="n">K_LU_j</span> <span class="o">=</span> <span class="n">K_LU</span><span class="p">[:,</span> <span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span>
-
-        <span class="n">dL_l</span> <span class="o">=</span> <span class="n">dU_L</span><span class="p">[</span><span class="n">lag</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">reactionForce</span> <span class="o">=</span> <span class="n">dL_l</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reactionForce</span> <span class="o">=</span> <span class="n">multiplier</span>
 
         <span class="n">N</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_particle</span><span class="o">.</span><span class="n">getInterpolationVector</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_getConstraintLocation</span><span class="p">())</span>
 
@@ -279,36 +297,31 @@
 
         <span class="n">deltaU_j</span> <span class="o">=</span> <span class="n">N</span> <span class="o">@</span> <span class="n">dU_U_j</span><span class="p">[</span><span class="n">nodeIdcs</span><span class="p">]</span>
 
-        <span class="n">g_l</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_orientation</span> <span class="o">*</span> <span class="p">(</span>
+        <span class="n">g</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_orientation</span> <span class="o">*</span> <span class="p">(</span>
             <span class="n">deltaU_j</span> <span class="o">-</span> <span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_particle_coordinate_j</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_boundaryPosition</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_velocity</span> <span class="o">*</span> <span class="n">timeStep</span><span class="o">.</span><span class="n">stepProgress</span><span class="p">)</span>
         <span class="p">)</span>
 
         <span class="n">gap_tol</span> <span class="o">=</span> <span class="mf">1e-13</span>
         <span class="n">tensile_threshhold</span> <span class="o">=</span> <span class="mf">1e-13</span>
 
-        <span class="n">is_penetrating</span> <span class="o">=</span> <span class="n">g_l</span> <span class="o">&gt;=</span> <span class="o">-</span><span class="n">gap_tol</span>
+        <span class="n">is_penetrating</span> <span class="o">=</span> <span class="n">g</span> <span class="o">&gt;=</span> <span class="o">-</span><span class="n">gap_tol</span>
 
-        <span class="n">is_in_tension</span> <span class="o">=</span> <span class="p">(</span><span class="n">dL_l</span><span class="p">)</span> <span class="o">&lt;</span> <span class="o">-</span><span class="n">tensile_threshhold</span>
-
-        <span class="n">should_be_active</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">is_in_tension</span> <span class="o">=</span> <span class="n">multiplier</span> <span class="o">&lt;</span> <span class="o">-</span><span class="n">tensile_threshhold</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">is_penetrating</span> <span class="ow">or</span> <span class="n">is_in_tension</span><span class="p">:</span>
-            <span class="n">should_be_active</span> <span class="o">=</span> <span class="kc">False</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">should_be_active</span><span class="p">:</span>
-            <span class="c1"># contact not active, but we need to ensure that no force is transferred</span>
-            <span class="n">P_L</span><span class="p">[</span><span class="n">lag</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dL_l</span>
+            <span class="c1"># out of contact: hold the multiplier at zero, so that no force is transferred</span>
+            <span class="n">P_L</span><span class="p">[</span><span class="n">lag</span><span class="p">]</span> <span class="o">+=</span> <span class="n">multiplier</span>
             <span class="n">K_LL</span><span class="p">[</span><span class="n">lag</span><span class="p">,</span> <span class="n">lag</span><span class="p">]</span> <span class="o">+=</span> <span class="mf">1.0</span>
 
             <span class="k">return</span>
 
-        <span class="n">dg_l_dU_j</span> <span class="o">=</span> <span class="n">N</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_orientation</span>
+        <span class="n">dg_dU_j</span> <span class="o">=</span> <span class="n">N</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_orientation</span>
 
-        <span class="n">P_U_i</span><span class="p">[</span><span class="n">nodeIdcs</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dL_l</span> <span class="o">*</span> <span class="n">dg_l_dU_j</span>
-        <span class="n">P_L</span><span class="p">[</span><span class="n">lag</span><span class="p">]</span> <span class="o">+=</span> <span class="n">g_l</span>
+        <span class="n">P_U_j</span><span class="p">[</span><span class="n">nodeIdcs</span><span class="p">]</span> <span class="o">+=</span> <span class="n">multiplier</span> <span class="o">*</span> <span class="n">dg_dU_j</span>
+        <span class="n">P_L</span><span class="p">[</span><span class="n">lag</span><span class="p">]</span> <span class="o">+=</span> <span class="n">g</span>
 
-        <span class="n">K_UL_j</span><span class="p">[</span><span class="n">nodeIdcs</span><span class="p">,</span> <span class="n">lag</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dg_l_dU_j</span>
-        <span class="n">K_LU_j</span><span class="p">[</span><span class="n">lag</span><span class="p">,</span> <span class="n">nodeIdcs</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dg_l_dU_j</span>
+        <span class="n">K_UL_j</span><span class="p">[</span><span class="n">nodeIdcs</span><span class="p">,</span> <span class="n">lag</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dg_dU_j</span>
+        <span class="n">K_LU_j</span><span class="p">[</span><span class="n">lag</span><span class="p">,</span> <span class="n">nodeIdcs</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dg_dU_j</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_contactCurrentlyActive</span> <span class="o">=</span> <span class="kc">True</span></div>
 </div>

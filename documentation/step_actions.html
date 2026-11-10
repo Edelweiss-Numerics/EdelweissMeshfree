@@ -56,6 +56,7 @@
 <li class="toctree-l2"><a class="reference internal" href="mpm/material_points.html">Material Points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="solvers.html">Solvers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="choosing_a_solver.html">Choosing a solver</a></li>
+<li class="toctree-l2"><a class="reference internal" href="coupled_rkpm_fe.html">Coupled RKPM + FE</a></li>
 <li class="toctree-l2"><a class="reference internal" href="assembly.html">System matrix assembly</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mpm/material_point_managers.html">Material Point Managers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="model_generators.html">Model generators</a></li>
@@ -849,7 +850,8 @@ explicit solver, which needs no tangent.</p></li>
 <li><p><strong>journal</strong> (<em>Journal</em>) – The journal to write messages to.</p></li>
 <li><p><strong>particleSurface</strong> (<em>EntityBasedSurface</em>) – The surface defining the particles to which the load is applied.</p></li>
 <li><p><strong>distributedLoadType</strong> (<em>str</em>) – The type of the distributed load, e.g., “pressure”.</p></li>
-<li><p><strong>loadVector</strong> (<em>np.ndarray</em>) – The load vector to apply to the particles.</p></li>
+<li><p><strong>loadVector</strong> (<em>np.ndarray</em>) – The load vector to apply to the particles; for “pressure”, the pressure, which pushes on the face (against its
+outward normal) when positive, as for the finite elements.</p></li>
 <li><p><strong>**kwargs</strong> – <p>Additional keyword arguments. The following are supported:
 - f_t : Callable[[float], float]</p>
 <blockquote>
@@ -862,7 +864,8 @@ explicit solver, which needs no tangent.</p></li>
 <dd class="field-even"><dl class="simple">
 <dt><a class="reference internal" href="#edelweissmeshfree.stepactions.particledistributedload.ParticleDistributedLoad.loadType" title="edelweissmeshfree.stepactions.particledistributedload.ParticleDistributedLoad.loadType"><code class="xref py py-obj docutils literal notranslate"><span class="pre">loadType</span></code></a></dt><dd><p>The type of the load, one the particles support (e.g., pressure).</p>
 </dd>
-<dt><strong>particles</strong></dt><dd></dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.stepactions.particledistributedload.ParticleDistributedLoad.particles" title="edelweissmeshfree.stepactions.particledistributedload.ParticleDistributedLoad.particles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">particles</span></code></a></dt><dd><p>The particles the load acts on, over all faces of its surface.</p>
+</dd>
 <dt><strong>schema</strong></dt><dd></dd>
 </dl>
 </dd>
@@ -955,6 +958,12 @@ explicit solver, which needs no tangent.</p></li>
 <dd class="field-even"><p>str</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.stepactions.particledistributedload.ParticleDistributedLoad.particles">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">particles</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="sets.html#edelweissmeshfree.sets.particleset.ParticleSet" title="edelweissmeshfree.sets.particleset.ParticleSet"><span class="pre">ParticleSet</span></a></span><a class="headerlink" href="#edelweissmeshfree.stepactions.particledistributedload.ParticleDistributedLoad.particles" title="Link to this definition"></a></dt>
+<dd><p>The particles the load acts on, over all faces of its surface.</p>
 </dd></dl>
 
 </dd></dl>

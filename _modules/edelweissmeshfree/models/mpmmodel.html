@@ -246,18 +246,14 @@
 <div class="viewcode-block" id="MPMModel._prepareMaterialPoints">
 <a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel._prepareMaterialPoints">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_prepareMaterialPoints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">journal</span><span class="p">:</span> <span class="n">Journal</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Prepare elements for a simulation.</span>
-<span class="sd">        In detail, sections are assigned.</span>
-
+<span class="w">        </span><span class="sd">"""Initialize the material points for a simulation. They carry their material from their creation; the</span>
+<span class="sd">        sections are assigned to the finite elements by :meth:`~edelweissfe.models.femodel.FEModel.prepareYourself`.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        journal</span>
 <span class="sd">            The journal instance.</span>
 <span class="sd">        """</span>
-        <span class="k">for</span> <span class="n">section</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sections</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-            <span class="n">section</span><span class="o">.</span><span class="n">assignSectionPropertiesToModel</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-
         <span class="k">for</span> <span class="n">mp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">materialPoints</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
             <span class="n">mp</span><span class="o">.</span><span class="n">initializeYourself</span><span class="p">()</span></div>
 
@@ -305,11 +301,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_prepareMaterialPoints</span><span class="p">(</span><span class="n">journal</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_prepareParticles</span><span class="p">(</span><span class="n">journal</span><span class="p">)</span>
 
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">prepareYourself</span><span class="p">(</span><span class="n">journal</span><span class="p">)</span>
-
-        <span class="c1"># TODO move this to EdelweissFE</span>
-        <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodeFields</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-            <span class="n">field</span><span class="o">.</span><span class="n">createFieldValueEntry</span><span class="p">(</span><span class="s2">"U"</span><span class="p">)</span></div>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">prepareYourself</span><span class="p">(</span><span class="n">journal</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="MPMModel.advanceToTime">
@@ -415,6 +407,25 @@
 
         <span class="k">return</span> <span class="n">connectivityChanged</span></div>
 
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">activeNodesAreFixed</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Whether a change of the connectivity leaves the nodes of the active domain as they are, so that an equation</span>
+<span class="sd">        system can follow it by locating the changed particles and the constraints anew</span>
+<span class="sd">        (:meth:`~edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.relocateParticlesAndConstraints`)</span>
+<span class="sd">        instead of being rebuilt: without MPM managers, whose cells become active and inactive, and with every particle</span>
+<span class="sd">        manager bonding its kernel functions to the particles, so that a kernel function always covers its own</span>
+<span class="sd">        particle.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">            True if the active nodes cannot change.</span>
+<span class="sd">        """</span>
+
+        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpmManagers</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span>
+            <span class="n">particleManager</span><span class="o">.</span><span class="n">kernelFunctionsAreBondedToParticles</span> <span class="k">for</span> <span class="n">particleManager</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">particleManagers</span>
+        <span class="p">)</span>
 
 <div class="viewcode-block" id="MPMModel.buildEquationSystem">
 <a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.buildEquationSystem">[docs]</a>

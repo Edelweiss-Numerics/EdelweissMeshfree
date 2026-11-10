@@ -56,6 +56,7 @@
 <li class="toctree-l2"><a class="reference internal" href="mpm/material_points.html">Material Points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="solvers.html">Solvers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="choosing_a_solver.html">Choosing a solver</a></li>
+<li class="toctree-l2"><a class="reference internal" href="coupled_rkpm_fe.html">Coupled RKPM + FE</a></li>
 <li class="toctree-l2"><a class="reference internal" href="assembly.html">System matrix assembly</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mpm/material_point_managers.html">Material Point Managers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="model_generators.html">Model generators</a></li>
@@ -64,6 +65,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager"><code class="docutils literal notranslate"><span class="pre">BaseParticleManager</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager.signalizeKernelFunctionUpdate"><code class="docutils literal notranslate"><span class="pre">BaseParticleManager.signalizeKernelFunctionUpdate()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager.updateConnectivity"><code class="docutils literal notranslate"><span class="pre">BaseParticleManager.updateConnectivity()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager.kernelFunctionsAreBondedToParticles"><code class="docutils literal notranslate"><span class="pre">BaseParticleManager.kernelFunctionsAreBondedToParticles</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager.particlesWithChangedKernelFunctions"><code class="docutils literal notranslate"><span class="pre">BaseParticleManager.particlesWithChangedKernelFunctions</span></code></a></li>
 </ul>
 </li>
@@ -174,6 +176,15 @@ Returns the truth value of a change during the last connectivity update.</p>
 <dd class="field-even"><p>bool</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager.kernelFunctionsAreBondedToParticles">
+<span class="sig-name descname"><span class="pre">kernelFunctionsAreBondedToParticles</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></span><a class="headerlink" href="#edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager.kernelFunctionsAreBondedToParticles" title="Link to this definition"></a></dt>
+<dd><p>Whether every kernel function is bonded to a particle and moves with it. A bonded kernel function always covers
+its own particle, so the set of nodes the particles reach cannot change, only which particle reaches which node.
+A manager that bonds them sets it in its constructor; False otherwise, which is always safe: a solver then
+assumes the nodes may change.</p>
 </dd></dl>
 
 <dl class="py property">
