@@ -87,13 +87,14 @@ critical time step. The first increment of a step must be the zero increment, wh
 configuration the step starts from. Where the step takes the motion from, the model says
 (:meth:`~edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.carriersOfTheMotion`):
 
-- If the model holds the motion at its nodes -- after a step of this solver -- the step continues it as NED does. It
-  starts from the velocity of the nodes, carried by node as in every rebuild, and from the net force of their
-  acceleration, :math:`\\boldsymbol{f} = \\boldsymbol{M} \\boldsymbol{a}`. The force evaluated at the zero increment
-  would not do: the particles have taken a zero-length increment, and the stabilization of their integration refers
-  to the increment taken last.
-- Otherwise -- at the start of an analysis, with the initial velocity given to the particles, or after a quasi-static
-  step -- it evaluates the forces of the configuration and projects the velocity from the particles' momentum.
+- If the model holds the motion at its nodes -- after a step of this solver, or of NID integrating the inertia at the
+  nodes -- the step continues it as NED does. It starts from the velocity of the nodes, carried by node as in every
+  rebuild, and from the net force of their acceleration, :math:`\\boldsymbol{f} = \\boldsymbol{M} \\boldsymbol{a}`.
+  The force evaluated at the zero increment would not do: the particles have taken a zero-length increment, and the
+  stabilization of their integration refers to the increment taken last.
+- Otherwise -- at the start of an analysis, with the initial velocity given to the particles, after a quasi-static step,
+  or after NID integrating the inertia in the particles -- it evaluates the forces of the configuration and projects the
+  velocity from the particles' momentum.
 
 The first increment of motion is then the leapfrog's half step from that velocity. After a step of this solver, the
 leapfrog continues as though the two steps were one. A resumed step continues from the velocity of the model and the
@@ -408,6 +409,10 @@ class MeshfreeExplicitDynamic(NonlinearSolverBase):
         elif firstEvaluationOfStep or self.options["projectVelocityEveryIncrement"]:
             self._V = momentum * self._Minv
 
+        # A node without inertia has no equation of motion, so it has no velocity: not even the one it carried while it
+        # still had a mass, which the update would otherwise keep, as it adds nothing there.
+        self._V[self._Minv == 0.0] = 0.0
+
         with performancetiming.timeit("write results to nodes"):
             self._layout.writeResultsToModel(self._noSolution(), None, internalAndInertialForce)
             self._layout.writeVelocityAndAccelerationToModel(self._V, acceleration)
@@ -529,8 +534,10 @@ class MeshfreeExplicitDynamic(NonlinearSolverBase):
     def _evaluate(
         self, model: MPMModel, step, timeStep: TimeStep
     ) -> tuple[DofVector, DofVector, DofVector, DofVector, DofVector, DofVector]:
-        """Evaluate at the configuration just accepted: the particles' internal forces, lumped masses and lumped
-        momenta, on all threads, then the loads and constraints. All of them add residual contributions (an internal
+        """Evaluate at the configuration just accepted: the particles' internal forces and lumped momenta, on all
+        threads, their lumped mass (see
+        :meth:`~edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.assembleLumpedMassOfEntitiesWithOwnInertia`),
+        then the loads and constraints. All of them add residual contributions (an internal
         force, the negative of an external one), and the net force is their negative.
 
         Parameters
@@ -553,25 +560,24 @@ class MeshfreeExplicitDynamic(NonlinearSolverBase):
 
         dofManager = self._layout.dofManager
         R = dofManager.constructDofVector()
-        M = dofManager.constructDofVector()
         momentum = dofManager.constructDofVector()
-        R[:] = M[:] = momentum[:] = 0.0
+        R[:] = momentum[:] = 0.0
 
         scatterR = R.createScatterVector()
-        scatterM = M.createScatterVector()
         scatterMomentum = momentum.createScatterVector()
 
         def evaluate(particles):
             for particle in particles:
                 particle.computePhysicsKernelsExplicit(scatterR[particle])
-                particle.computeLumpedInertia(scatterM[particle])
                 particle.computeLumpedMomentum(scatterMomentum[particle])
 
         mapChunksInParallel(self._particles, evaluate)
 
         scatterR.assembleInto(R)
-        scatterM.assembleInto(M)
         scatterMomentum.assembleInto(momentum)
+
+        # the one assembly of the particles' lumped mass, which the implicit dynamic solver uses as well
+        M = self._layout.assembleLumpedMassOfEntitiesWithOwnInertia(mapChunksInParallel)
 
         internalForce = dofManager.constructDofVector()
         internalForce[:] = R
@@ -586,7 +592,8 @@ class MeshfreeExplicitDynamic(NonlinearSolverBase):
         np.negative(R, out=P)
 
         # A node whose kernel function the particles reach only where it vanishes has no positive mass (exactly zero,
-        # or zero up to round-off): it carries no inertia, hence no equation of motion, and keeps a zero velocity.
+        # or zero up to round-off): it carries no inertia, hence no equation of motion, and gets no velocity (see
+        # acceptIncrement).
         Minv = dofManager.constructDofVector()
         Minv[:] = 0.0
         hasInertia = M > 0.0

@@ -159,9 +159,9 @@ cdef class MarmotParticleWrapper:
 
     @property
     def propertyNames(self) -> list[str]:
-        """Get the list of valid properties for this particle."""
+        """Get the list of valid properties for this particle, as strings (the names :meth:`setProperty` takes)."""
 
-        return self._marmotParticle.getPropertyNames()
+        return [name.decode("utf-8") for name in self._marmotParticle.getPropertyNames()]
 
     def setProperty(self, str propertyName, value):
         """Set a property of the particle."""

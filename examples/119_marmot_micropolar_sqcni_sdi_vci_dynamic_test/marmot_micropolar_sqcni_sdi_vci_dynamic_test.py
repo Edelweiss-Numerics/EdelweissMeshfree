@@ -39,9 +39,10 @@ import argparse
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 import pytest
-from edelweissfe.config.linsolve import getLinSolverByName
 from edelweissfe.journal.journal import Journal
-from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
+from edelweissfe.solvers.nonlinearimplicitdynamic import NonlinearImplicitDynamic
+from edelweissfe.steps.adaptivestep import AdaptiveStep
+from edelweissfe.steps.stepmanager import StepActionCollection
 from edelweissfe.utils.exceptions import StepFailed
 
 from edelweissmeshfree.constraints.particlepenaltyweakdirichtlet import (
@@ -71,7 +72,10 @@ from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
 from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
     MarmotParticleWrapper,
 )
-from edelweissmeshfree.solvers.deprecated.nqs import NonlinearQuasistaticSolver
+from edelweissmeshfree.solvers.meshfreeconvergencecriterion import (
+    jobInfoWithMeshfreeTolerances,
+    meshfreeCriterionOptions,
+)
 
 # from edelweissmeshfree.generators.rectangularparticlegridgenerator import (
 #     generateRectangularParticleGrid,
@@ -132,10 +136,6 @@ def run_sim():
         theModel, theJournal, TheParticleFactory, x0=x0, y0=y0, h=height, l=length, nX=nX, nY=nY
     )
 
-    for particle in theModel.particles.values():
-        particle.setProperty("newmark-beta beta", 0.25)
-        particle.setProperty("newmark-beta gamma", 0.5)
-
     # let's create the particle kernel domain
     theParticleKernelDomain = ParticleKernelDomain(
         list(theModel.particles.values()), list(theModel.meshfreeKernelFunctions.values())
@@ -192,17 +192,6 @@ def run_sim():
     ]
 
     incSize = 1e-1
-    adaptiveTimeStepper = AdaptiveTimeStepper(0.0, 1.0, incSize, incSize, incSize / 1, 500, theJournal)
-
-    nonlinearSolver = NonlinearQuasistaticSolver(theJournal)
-
-    iterationOptions = dict()
-
-    iterationOptions["max. iterations"] = 15
-    iterationOptions["critical iterations"] = 3
-    iterationOptions["allowed residual growths"] = 10
-
-    linearSolver = getLinSolverByName("pardiso", {})
 
     from edelweissmeshfree.meshfree.vci import (
         BoundaryParticleDefinition,
@@ -234,19 +223,40 @@ def run_sim():
         f_t=lambda t: 1.0,
     )
 
+    # The model holds its managers and constraints, the load is a step action of the step.
+    theModel.particleManagers.append(theParticleManager)
+    theModel.vciManagers.append(vciManager)
+    for constraint in dirichlets:
+        theModel.constraints[constraint.name] = constraint
+    stepActions = StepActionCollection()
+    stepActions["distributedload"][pressureTop.name] = pressureTop
+
+    # The average acceleration rule; the particles integrate their inertia themselves (inertia=entities,
+    # the default), starting from rest with the acceleration zero, under a load that is applied suddenly.
+    jobInfo = jobInfoWithMeshfreeTolerances()
+    solver = NonlinearImplicitDynamic(
+        jobInfo, theJournal, linsolver="pardiso", newmarkBeta=0.25, newmarkGamma=0.5, **meshfreeCriterionOptions
+    )
+    step = AdaptiveStep(
+        0,
+        theModel,
+        fieldOutputController,
+        theJournal,
+        jobInfo,
+        solver,
+        [ensightOutput],
+        stepActions,
+        startInc=incSize,
+        maxInc=incSize,
+        minInc=incSize,
+        maxNumInc=500,
+        maxIter=15,
+        criticalIter=3,
+        maxGrowIter=10,
+    )
+
     try:
-        nonlinearSolver.solveStep(
-            adaptiveTimeStepper,
-            linearSolver,
-            theModel,
-            fieldOutputController,
-            outputManagers=[ensightOutput],
-            particleManagers=[theParticleManager],
-            constraints=dirichlets,
-            userIterationOptions=iterationOptions,
-            particleDistributedLoads=[pressureTop],
-            vciManagers=[vciManager],
-        )
+        step.solve()
 
     except StepFailed as e:
         theJournal.message(f"Step failed: {str(e)}", "error")
