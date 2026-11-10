@@ -116,6 +116,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.models.equationsystemlayout</span><span class="w"> </span><span class="kn">import</span> <span class="n">EquationSystemLayout</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.numerics.dofmanager</span><span class="w"> </span><span class="kn">import</span> <span class="n">DofManager</span><span class="p">,</span> <span class="n">DofVector</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.sets.nodeset</span><span class="w"> </span><span class="kn">import</span> <span class="n">NodeSet</span>
@@ -133,8 +134,12 @@
 <span class="sd">    increment to increment, as in a finite element model. The nodes of the grid and of the kernel functions do not: the</span>
 <span class="sd">    material point method and RKPM are incremental on the current configuration -- the cells are reset after every</span>
 <span class="sd">    increment, and the kernel functions move with their particles, while the state lives in the material points and</span>
-<span class="sd">    particles. Their nodal values are the coefficients of one increment, and start every rebuilt equation system at</span>
-<span class="sd">    zero.</span>
+<span class="sd">    particles. Their nodal values are the coefficients of one increment: every increment starts them at zero, so that</span>
+<span class="sd">    their solution ``U`` is zero, and their increment ``dU`` is their meaningful nodal value.</span>
+
+<span class="sd">    The model's node fields are read and written straight, by node: read on the nodes that carry an entry (see</span>
+<span class="sd">    :meth:`readEntryOfNodeField`), written on the nodes of the active domain from the vectors of the equation system,</span>
+<span class="sd">    zero on all other nodes (see :meth:`writeEntryOfNodeField`).</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -150,8 +155,8 @@
 <span class="sd">    nodesWithPersistentFieldValues</span>
 <span class="sd">        The nodes that carry their total solution from increment to increment: those of the finite elements and of</span>
 <span class="sd">        the cell elements.</span>
-<span class="sd">    activeNodeFields</span>
-<span class="sd">        The node fields on the nodes of the active domain, which the DOF manager numbers.</span>
+<span class="sd">    nodesWithVolatileFieldValues</span>
+<span class="sd">        The nodes of the active cells and of the particles' kernel functions.</span>
 <span class="sd">    modelForLinearSolver</span>
 <span class="sd">        The model reduced to its active domain, for the linear solver.</span>
 <span class="sd">    """</span>
@@ -163,7 +168,7 @@
         <span class="n">elements</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
         <span class="n">activeCells</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
         <span class="n">nodesWithPersistentFieldValues</span><span class="p">:</span> <span class="n">NodeSet</span><span class="p">,</span>
-        <span class="n">activeNodeFields</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+        <span class="n">nodesWithVolatileFieldValues</span><span class="p">:</span> <span class="n">NodeSet</span><span class="p">,</span>
         <span class="n">modelForLinearSolver</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">dofManager</span><span class="p">,</span> <span class="n">elements</span><span class="p">)</span>
@@ -171,36 +176,22 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">activeCells</span> <span class="o">=</span> <span class="n">activeCells</span>
         <span class="c1">#: The nodes that carry their total solution from increment to increment.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nodesWithPersistentFieldValues</span> <span class="o">=</span> <span class="n">nodesWithPersistentFieldValues</span>
-        <span class="c1">#: The node fields on the nodes of the active domain.</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">activeNodeFields</span> <span class="o">=</span> <span class="n">activeNodeFields</span>
+        <span class="c1">#: The nodes of the active domain whose degrees of freedom are the coefficients of one increment: those of</span>
+        <span class="c1">#: the grid and of the kernel functions that no finite element or cell element shares.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">incrementalNodes</span> <span class="o">=</span> <span class="n">NodeSet</span><span class="p">(</span>
+            <span class="s2">"incremental nodes of the active domain"</span><span class="p">,</span>
+            <span class="p">[</span><span class="n">node</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">nodesWithVolatileFieldValues</span> <span class="k">if</span> <span class="n">node</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">nodesWithPersistentFieldValues</span><span class="p">],</span>
+        <span class="p">)</span>
+        <span class="c1">#: The nodes of the active domain, on which the equation system writes the model's node fields.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">activeNodes</span> <span class="o">=</span> <span class="n">NodeSet</span><span class="p">(</span>
+            <span class="s2">"nodes of the active domain"</span><span class="p">,</span>
+            <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">nodesWithPersistentFieldValues</span><span class="p">)</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">nodesWithVolatileFieldValues</span><span class="p">),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="n">n</span><span class="o">.</span><span class="n">label</span><span class="p">),</span>
+        <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">modelForLinearSolver</span> <span class="o">=</span> <span class="n">modelForLinearSolver</span>
         <span class="c1">#: The material points of the model, a list the solver hands out in chunks.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">materialPoints</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">materialPoints</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
         <span class="c1">#: The active cells and the cell elements, which interpolate the solution to the material points they hold.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cellsInterpolatingToMaterialPoints</span> <span class="o">=</span> <span class="n">activeCells</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">cellElements</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
-
-<div class="viewcode-block" id="MPMEquationSystemLayout.numbersTheSameNodesAs">
-<a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.numbersTheSameNodesAs">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">numbersTheSameNodesAs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="s2">"MPMEquationSystemLayout"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""Whether this layout numbers the same nodes, with the same fields, in the same order as another one, so that</span>
-<span class="sd">        a vector of the other layout means the same here, entry by entry.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        other</span>
-<span class="sd">            The other layout.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        bool</span>
-<span class="sd">            True if the numbering of the nodes is the same.</span>
-<span class="sd">        """</span>
-
-        <span class="k">def</span><span class="w"> </span><span class="nf">numbering</span><span class="p">(</span><span class="n">layout</span><span class="p">):</span>
-            <span class="k">return</span> <span class="p">[(</span><span class="n">name</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">nodeField</span><span class="o">.</span><span class="n">nodes</span><span class="p">))</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">nodeField</span> <span class="ow">in</span> <span class="n">layout</span><span class="o">.</span><span class="n">activeNodeFields</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span>
-
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">nDof</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">nDof</span> <span class="ow">and</span> <span class="n">numbering</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">==</span> <span class="n">numbering</span><span class="p">(</span><span class="n">other</span><span class="p">)</span></div>
-
 
 <div class="viewcode-block" id="MPMEquationSystemLayout.relocateParticlesAndConstraints">
 <a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.relocateParticlesAndConstraints">[docs]</a>
@@ -221,133 +212,103 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">updateConstraints</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">activeConstraints</span><span class="p">())</span></div>
 
 
-<div class="viewcode-block" id="MPMEquationSystemLayout.readStateFromModel">
-<a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.readStateFromModel">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">readStateFromModel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">U</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span> <span class="n">V</span><span class="p">:</span> <span class="n">DofVector</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">A</span><span class="p">:</span> <span class="n">DofVector</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">dynamicFields</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Read the state the model carries from increment to increment into the vectors of a (re)built equation</span>
-<span class="sd">        system: the entry ``U`` of the node fields at the nodes of finite elements and cell elements, and the values of</span>
-<span class="sd">        the scalar variables. The nodes of the grid and of the kernel functions start at zero; see</span>
-<span class="sd">        :class:`MPMEquationSystemLayout`.</span>
+<div class="viewcode-block" id="MPMEquationSystemLayout.readEntryOfNodeField">
+<a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.readEntryOfNodeField">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">readEntryOfNodeField</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dofVector</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span> <span class="n">nodeField</span><span class="p">,</span> <span class="n">entry</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Read one entry of one node field of the model into a vector of the equation system, by node; every read of</span>
+<span class="sd">        :meth:`~edelweissfe.models.equationsystemlayout.EquationSystemLayout.readStateFromModel` goes through here.</span>
+<span class="sd">        The solution ``U`` is read at the nodes that carry their total solution (those of finite elements and cell</span>
+<span class="sd">        elements): the incremental nodes start every increment at zero. The velocity ``V`` and the acceleration ``A``</span>
+<span class="sd">        are read at every node of the active domain: they are carried by node from one equation system to the next, so</span>
+<span class="sd">        that a node keeps them when the active domain changes around it, and a node that has just become active is at</span>
+<span class="sd">        rest.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dofVector</span>
+<span class="sd">            The vector of the equation system, zero, overwritten on the degrees of freedom of the field.</span>
+<span class="sd">        nodeField</span>
+<span class="sd">            The node field of the model.</span>
+<span class="sd">        entry</span>
+<span class="sd">            The entry.</span>
+<span class="sd">        """</span>
+
+        <span class="n">nodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodesWithPersistentFieldValues</span> <span class="k">if</span> <span class="n">entry</span> <span class="o">==</span> <span class="s2">"U"</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">activeNodes</span>
+        <span class="k">if</span> <span class="n">nodes</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">writeNodeFieldToDofVector</span><span class="p">(</span><span class="n">dofVector</span><span class="p">,</span> <span class="n">nodeField</span><span class="p">,</span> <span class="n">entry</span><span class="p">,</span> <span class="n">nodes</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MPMEquationSystemLayout.zeroIncrementalCoefficients">
+<a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.zeroIncrementalCoefficients">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">zeroIncrementalCoefficients</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">U</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Set the degrees of freedom of the incremental nodes (:attr:`incrementalNodes`) to zero in the solution</span>
+<span class="sd">        vector of a converged increment: their solution is the coefficients of one increment, and the next increment</span>
+<span class="sd">        starts them at zero.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        U</span>
-<span class="sd">            The solution vector of the equation system, zero, overwritten.</span>
-<span class="sd">        V</span>
-<span class="sd">            The velocity vector of a solver that integrates in time; not supported, must be None.</span>
-<span class="sd">        A</span>
-<span class="sd">            The acceleration vector of a solver that integrates in time; not supported, must be None.</span>
-<span class="sd">        dynamicFields</span>
-<span class="sd">            The names of the fields whose velocity and acceleration are read; unused.</span>
-
-<span class="sd">        Raises</span>
-<span class="sd">        ------</span>
-<span class="sd">        NotImplementedError</span>
-<span class="sd">            If a velocity or an acceleration is to be read.</span>
+<span class="sd">            The solution vector of the converged increment, modified in place.</span>
 <span class="sd">        """</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_refuseVelocityAndAcceleration</span><span class="p">(</span><span class="n">V</span><span class="p">,</span> <span class="n">A</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodesWithPersistentFieldValues</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">nodeField</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">nodeFields</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">writeNodeFieldToDofVector</span><span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">nodeField</span><span class="p">,</span> <span class="s2">"U"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodesWithPersistentFieldValues</span><span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">writeScalarVariablesToDofVector</span><span class="p">(</span><span class="n">U</span><span class="p">)</span></div>
+        <span class="k">for</span> <span class="n">fieldName</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">fields</span><span class="p">:</span>
+            <span class="n">indices</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">locateFieldOnNodeSet</span><span class="p">(</span><span class="n">fieldName</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">incrementalNodes</span><span class="p">)</span>
+            <span class="n">U</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span></div>
 
 
-<div class="viewcode-block" id="MPMEquationSystemLayout.writeResultsToModel">
-<a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.writeResultsToModel">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">writeResultsToModel</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">U</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span>
-        <span class="n">dU</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span>
-        <span class="n">P</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span>
-        <span class="n">V</span><span class="p">:</span> <span class="n">DofVector</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">A</span><span class="p">:</span> <span class="n">DofVector</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">dynamicFields</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Write the results of an accepted increment to the model: the solution ``U``, its increment ``dU`` and the</span>
-<span class="sd">        internal force ``P`` to the node fields of the active domain, from there to the node fields of the model, whose</span>
-<span class="sd">        nodes outside the active domain get zero, and the solution to the scalar variables.</span>
+<div class="viewcode-block" id="MPMEquationSystemLayout.writeEntryOfNodeField">
+<a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.writeEntryOfNodeField">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">writeEntryOfNodeField</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dofVector</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span> <span class="n">nodeField</span><span class="p">,</span> <span class="n">entry</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Write a vector of the equation system to one entry of one node field of the model, by node: on the nodes of</span>
+<span class="sd">        the active domain, and zero on all other nodes of the model.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        U</span>
-<span class="sd">            The solution.</span>
-<span class="sd">        dU</span>
-<span class="sd">            The increment of the solution.</span>
-<span class="sd">        P</span>
-<span class="sd">            The internal force, the sum of the elements', cells' and particles' residual contributions.</span>
-<span class="sd">        V</span>
-<span class="sd">            The velocity of a solver that integrates in time; not supported, must be None.</span>
-<span class="sd">        A</span>
-<span class="sd">            The acceleration of a solver that integrates in time; not supported, must be None.</span>
-<span class="sd">        dynamicFields</span>
-<span class="sd">            The names of the fields whose velocity and acceleration are written; unused.</span>
-
-<span class="sd">        Raises</span>
-<span class="sd">        ------</span>
-<span class="sd">        NotImplementedError</span>
-<span class="sd">            If a velocity or an acceleration is to be written.</span>
+<span class="sd">        dofVector</span>
+<span class="sd">            The vector of the equation system.</span>
+<span class="sd">        nodeField</span>
+<span class="sd">            The node field of the model.</span>
+<span class="sd">        entry</span>
+<span class="sd">            The entry.</span>
 <span class="sd">        """</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_refuseVelocityAndAcceleration</span><span class="p">(</span><span class="n">V</span><span class="p">,</span> <span class="n">A</span><span class="p">)</span>
-
-        <span class="k">for</span> <span class="n">activeNodeField</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">activeNodeFields</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">writeDofVectorToNodeField</span><span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">activeNodeField</span><span class="p">,</span> <span class="s2">"U"</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">writeDofVectorToNodeField</span><span class="p">(</span><span class="n">P</span><span class="p">,</span> <span class="n">activeNodeField</span><span class="p">,</span> <span class="s2">"P"</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">writeDofVectorToNodeField</span><span class="p">(</span><span class="n">dU</span><span class="p">,</span> <span class="n">activeNodeField</span><span class="p">,</span> <span class="s2">"dU"</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">nodeFields</span><span class="p">[</span><span class="n">activeNodeField</span><span class="o">.</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">copyEntriesFromOther</span><span class="p">(</span><span class="n">activeNodeField</span><span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">writeDofVectorToScalarVariables</span><span class="p">(</span><span class="n">U</span><span class="p">)</span></div>
+        <span class="n">nodeField</span><span class="p">[</span><span class="n">entry</span><span class="p">][:]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">writeDofVectorToNodeField</span><span class="p">(</span><span class="n">dofVector</span><span class="p">,</span> <span class="n">nodeField</span><span class="p">,</span> <span class="n">entry</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">activeNodes</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="MPMEquationSystemLayout.writeVelocityAndAccelerationToModel">
-<a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.writeVelocityAndAccelerationToModel">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">writeVelocityAndAccelerationToModel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">V</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span> <span class="n">A</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span> <span class="n">dynamicFields</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Not supported: EdelweissFE's solvers do not integrate a meshfree model in time.</span>
+<div class="viewcode-block" id="MPMEquationSystemLayout.carriersOfTheMotion">
+<a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.carriersOfTheMotion">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">carriersOfTheMotion</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""Where the model holds the motion of its particles; see</span>
+<span class="sd">        :meth:`~edelweissfe.models.equationsystemlayout.EquationSystemLayout.carriersOfTheMotion`.</span>
+<span class="sd">        ``"nodes"`` if an incremental node of the active domain carries a velocity or an acceleration in the entries</span>
+<span class="sd">        ``V`` and ``A`` of the model's node fields.</span>
 
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        V</span>
-<span class="sd">            The velocity; must be None.</span>
-<span class="sd">        A</span>
-<span class="sd">            The acceleration; must be None.</span>
-<span class="sd">        dynamicFields</span>
-<span class="sd">            The names of the fields whose velocity and acceleration are written; unused.</span>
+<span class="sd">        The explicit solver keeps the motion there: the velocity of the nodes is its state, and every particle takes its</span>
+<span class="sd">        own from them as it advances.</span>
 
-<span class="sd">        Raises</span>
-<span class="sd">        ------</span>
-<span class="sd">        NotImplementedError</span>
-<span class="sd">            If a velocity or an acceleration is to be written.</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        set[str]</span>
+<span class="sd">            ``"nodes"``, or none.</span>
 <span class="sd">        """</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_refuseVelocityAndAcceleration</span><span class="p">(</span><span class="n">V</span><span class="p">,</span> <span class="n">A</span><span class="p">)</span></div>
+        <span class="n">carriers</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">incrementalNodes</span><span class="p">:</span>
+            <span class="n">rate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">fieldName</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">fields</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"V"</span><span class="p">,</span> <span class="s2">"A"</span><span class="p">):</span>
+                    <span class="n">rate</span><span class="p">[:]</span> <span class="o">=</span> <span class="mf">0.0</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">writeNodeFieldToDofVector</span><span class="p">(</span>
+                        <span class="n">rate</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">nodeFields</span><span class="p">[</span><span class="n">fieldName</span><span class="p">],</span> <span class="n">entry</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">incrementalNodes</span>
+                    <span class="p">)</span>
+                    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">rate</span><span class="p">):</span>
+                        <span class="n">carriers</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">"nodes"</span><span class="p">)</span>
+                        <span class="k">return</span> <span class="n">carriers</span>
 
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_refuseVelocityAndAcceleration</span><span class="p">(</span><span class="n">V</span><span class="p">:</span> <span class="n">DofVector</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">A</span><span class="p">:</span> <span class="n">DofVector</span> <span class="o">|</span> <span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Refuse a velocity or an acceleration: the velocity and the acceleration of a meshfree model do not pass</span>
-<span class="sd">        through this layout.</span>
+        <span class="k">return</span> <span class="n">carriers</span></div>
 
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        V</span>
-<span class="sd">            The velocity, or None.</span>
-<span class="sd">        A</span>
-<span class="sd">            The acceleration, or None.</span>
-
-<span class="sd">        Raises</span>
-<span class="sd">        ------</span>
-<span class="sd">        NotImplementedError</span>
-<span class="sd">            If either is given.</span>
-<span class="sd">        """</span>
-
-        <span class="k">if</span> <span class="n">V</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">A</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-                <span class="s2">"the velocity and the acceleration of a meshfree model do not pass through its equation system "</span>
-                <span class="s2">"layout: EdelweissFE's dynamic solvers do not integrate a meshfree model in time"</span>
-            <span class="p">)</span>
 
 <div class="viewcode-block" id="MPMEquationSystemLayout.updateMaterialPoints">
 <a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.updateMaterialPoints">[docs]</a>

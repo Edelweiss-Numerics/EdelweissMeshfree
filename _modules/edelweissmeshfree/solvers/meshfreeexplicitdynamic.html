@@ -113,16 +113,18 @@
 
 <span class="sd">The scheme is the leapfrog of EdelweissFE's</span>
 <span class="sd">:class:`~edelweissfe.solvers.nonlinearexplicitdynamic.NED`: the velocity is staggered half an increment behind the</span>
-<span class="sd">displacement, and the acceleration is the net force divided by a lumped mass,</span>
+<span class="sd">displacement, and the acceleration is the net force :math:`\\boldsymbol{f}` (external minus internal, with the loads and</span>
+<span class="sd">constraints) divided by a lumped mass,</span>
 
 <span class="sd">.. math::</span>
 
 <span class="sd">    \\boldsymbol{v}_{n+1/2} = \\boldsymbol{v}_{n-1/2}</span>
-<span class="sd">        + \\tfrac{1}{2} \\left( \\Delta t_{n+1} + \\Delta t_n \\right) \\boldsymbol{M}^{-1} \\boldsymbol{P}_n, \\qquad</span>
+<span class="sd">        + \\tfrac{1}{2} \\left( \\Delta t_{n+1} + \\Delta t_n \\right) \\boldsymbol{M}^{-1} \\boldsymbol{f}_n, \\qquad</span>
 <span class="sd">    \\Delta \\boldsymbol{u}_{n+1} = \\Delta t_{n+1}\\, \\boldsymbol{v}_{n+1/2},</span>
 
-<span class="sd">with :math:`\\Delta t_0 = 0`: the first increment of motion starts from the velocity at rest,</span>
-<span class="sd">:math:`\\boldsymbol{v}_{1/2} = \\boldsymbol{v}_0 + \\tfrac{1}{2} \\Delta t_1 \\boldsymbol{M}^{-1} \\boldsymbol{P}_0`.</span>
+<span class="sd">with :math:`\\Delta t_0 = 0` at the start of a step: the first increment of motion of a step is the leapfrog's half</span>
+<span class="sd">step from the velocity at its start, :math:`\\boldsymbol{v}_{1/2} = \\boldsymbol{v}_0 + \\tfrac{1}{2} \\Delta t_1</span>
+<span class="sd">\\boldsymbol{M}^{-1} \\boldsymbol{f}_0`.</span>
 
 <span class="sd">What differs is the discretization it is applied to. NED integrates nodes that carry their total solution on a fixed</span>
 <span class="sd">mesh, and an element advances its state and returns its force in one call. The kernel functions of an RKPM model move</span>
@@ -136,15 +138,41 @@
 <span class="sd">   lumped momentum, and the loads and constraints their forces, at the configuration just accepted.</span>
 
 <span class="sd">The lumped mass is therefore assembled anew in every increment, and the nodal values are coefficients of the current</span>
-<span class="sd">kernel functions. The velocity coefficients are carried from one increment to the next while the equation system</span>
-<span class="sd">numbers the same nodes, which holds whenever the kernel functions are bonded to the particles; otherwise, and in every</span>
-<span class="sd">increment if the option ``projectVelocityEveryIncrement`` says so, they are projected from the particles' momentum,</span>
+<span class="sd">kernel functions. The velocity is the state the next increment starts from, so the model owns it, as it owns the</span>
+<span class="sd">velocity of a finite element model (see EdelweissFE's documentation page *Node field results*): the velocity of every</span>
+<span class="sd">node of the kernel functions is written to the entry ``V`` of the node fields at acceptance, and read back by node</span>
+<span class="sd">whenever the equation system is rebuilt. A node keeps its velocity while the active nodes change around it, and a node</span>
+<span class="sd">whose kernel function has just become active starts at rest. If the option ``projectVelocityEveryIncrement`` says so,</span>
+<span class="sd">the velocity is instead projected from the particles' momentum in every increment,</span>
 <span class="sd">:math:`\\boldsymbol{v} = \\boldsymbol{M}^{-1} \\boldsymbol{p}`.</span>
 
-<span class="sd">The time increment is the step's: particles report no critical time step. The first increment of a step must be the</span>
-<span class="sd">zero increment, which evaluates the forces at rest and projects the initial velocity from the particles' momentum, so</span>
-<span class="sd">that the first increment of motion starts from both. A resumed step continues from the velocity, force and mass of</span>
-<span class="sd">its checkpoint instead.</span>
+<span class="sd">At acceptance, the results reach the model in two parts, each through the layout of the equation system that holds</span>
+<span class="sd">them: the increment ``dU`` (and the velocity it was taken with) on the kernel functions of its start, before</span>
+<span class="sd">reconnecting; the force ``P``, the velocity the next increment starts from and the acceleration on the kernel functions</span>
+<span class="sd">of its end. ``V`` is the staggered velocity :math:`\\boldsymbol{v}_{n+1/2}`, as in NED. ``A`` is the acceleration of</span>
+<span class="sd">the scheme, :math:`\\boldsymbol{a}_n = \\boldsymbol{M}^{-1} \\boldsymbol{f}_n` (zero at a node without mass), and</span>
+<span class="sd">``P`` the internal force with the inertial force, :math:`\\boldsymbol{f}_\\mathrm{int} + \\boldsymbol{M}</span>
+<span class="sd">\\boldsymbol{a}_n`: at a node with mass, this is the force of the loads and constraints. The solution ``U`` of the</span>
+<span class="sd">kernel functions' nodes is zero: they carry no total solution.</span>
+
+<span class="sd">A step hands the next one the velocity and the acceleration at its end time, as in NED: at the end of the step, the</span>
+<span class="sd">velocity is advanced by the half increment it lags behind</span>
+<span class="sd">(:meth:`~edelweissfe.models.femodel.FEModel.advanceVelocity`). The time increment is the step's: particles report no</span>
+<span class="sd">critical time step. The first increment of a step must be the zero increment, which assembles the lumped mass of the</span>
+<span class="sd">configuration the step starts from. Where the step takes the motion from, the model says</span>
+<span class="sd">(:meth:`~edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.carriersOfTheMotion`):</span>
+
+<span class="sd">- If the model holds the motion at its nodes -- after a step of this solver -- the step continues it as NED does. It</span>
+<span class="sd">  starts from the velocity of the nodes, carried by node as in every rebuild, and from the net force of their</span>
+<span class="sd">  acceleration, :math:`\\boldsymbol{f} = \\boldsymbol{M} \\boldsymbol{a}`. The force evaluated at the zero increment</span>
+<span class="sd">  would not do: the particles have taken a zero-length increment, and the stabilization of their integration refers</span>
+<span class="sd">  to the increment taken last.</span>
+<span class="sd">- Otherwise -- at the start of an analysis, with the initial velocity given to the particles, or after a quasi-static</span>
+<span class="sd">  step -- it evaluates the forces of the configuration and projects the velocity from the particles' momentum.</span>
+
+<span class="sd">The first increment of motion is then the leapfrog's half step from that velocity. After a step of this solver, the</span>
+<span class="sd">leapfrog continues as though the two steps were one. A resumed step continues from the velocity of the model and the</span>
+<span class="sd">net force and inverse mass of its checkpoint instead.</span>
 <span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
@@ -211,13 +239,13 @@
         <span class="s2">"projectVelocityEveryIncrement"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">}</span>
 
-    <span class="c1">#: The state an increment starts from, which cannot be recomputed from the model: the last increment of motion</span>
-    <span class="c1">#: (its size enters the velocity update), and the velocity, the net force and the inverse lumped mass of the</span>
-    <span class="c1">#: configuration last accepted.</span>
+    <span class="c1">#: The state an increment starts from that lives within one equation system, and so is not the model's: the last</span>
+    <span class="c1">#: increment of motion (its size enters the velocity update), and the net force and the inverse lumped mass of the</span>
+    <span class="c1">#: configuration last accepted. The velocity and the acceleration are the model's (entries ``V`` and ``A`` of its</span>
+    <span class="c1">#: node fields).</span>
     <span class="n">checkpointedState</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">"prevTimeStep"</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">,</span>
-        <span class="s2">"_V"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-        <span class="s2">"_P"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="s2">"_netForce"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
         <span class="s2">"_Minv"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="p">}</span>
 
@@ -232,8 +260,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_layout</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="c1">#: The velocity, staggered half an increment behind the displacement.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_V</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="c1">#: The net force, external minus internal, at the configuration last accepted.</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_P</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1">#: The net force, external minus internal, at the configuration last accepted; None before the first</span>
+        <span class="c1">#: evaluation of a step.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_netForce</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="c1">#: The inverse of the lumped mass at the configuration last accepted; zero where the mass is not positive.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_Minv</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="c1">#: The increment of the solution.</span>
@@ -321,15 +350,16 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">prevTimeStep</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_layout</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_V</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_P</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_Minv</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_V</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_netForce</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_Minv</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_particles</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">particles</span><span class="o">.</span><span class="n">values</span><span class="p">())</span></div>
 
 
 <div class="viewcode-block" id="MeshfreeExplicitDynamic.prepareIncrement">
 <a class="viewcode-back" href="../../../documentation/solvers.html#edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.prepareIncrement">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">prepareIncrement</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">MPMModel</span><span class="p">,</span> <span class="n">isRetry</span><span class="p">:</span> <span class="nb">bool</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Build the equation system at the start of the step; afterwards it follows the particles in</span>
-<span class="sd">        :meth:`acceptIncrement`. A resumed step takes over the velocity, force and inverse mass of its checkpoint.</span>
+<span class="w">        </span><span class="sd">"""Build the equation system at the start of the step, with the velocity of the model; afterwards it follows</span>
+<span class="sd">        the particles in :meth:`acceptIncrement`. A resumed step takes over the net force and inverse mass of its</span>
+<span class="sd">        checkpoint.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -347,16 +377,15 @@
         <span class="n">model</span><span class="o">.</span><span class="n">updateConnectivity</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_adoptLayout</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">buildEquationSystem</span><span class="p">(</span><span class="n">withSystemMatrix</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_V</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_netForce</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># resumed: the checkpoint holds the vectors of the equation system just rebuilt from the same state</span>
             <span class="n">dofManager</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_layout</span><span class="o">.</span><span class="n">dofManager</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_V</span><span class="p">)</span> <span class="o">!=</span> <span class="n">dofManager</span><span class="o">.</span><span class="n">nDof</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_netForce</span><span class="p">)</span> <span class="o">!=</span> <span class="n">dofManager</span><span class="o">.</span><span class="n">nDof</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">"The checkpoint holds a velocity of </span><span class="si">{:}</span><span class="s2"> entries, but the equation system rebuilt from the "</span>
-                    <span class="s2">"resumed model has </span><span class="si">{:}</span><span class="s2">."</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_V</span><span class="p">),</span> <span class="n">dofManager</span><span class="o">.</span><span class="n">nDof</span><span class="p">)</span>
+                    <span class="s2">"The checkpoint holds a net force of </span><span class="si">{:}</span><span class="s2"> entries, but the equation system rebuilt from the "</span>
+                    <span class="s2">"resumed model has </span><span class="si">{:}</span><span class="s2">."</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_netForce</span><span class="p">),</span> <span class="n">dofManager</span><span class="o">.</span><span class="n">nDof</span><span class="p">)</span>
                 <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_V</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_asDofVector</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_V</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_P</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_asDofVector</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_P</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_netForce</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_asDofVector</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_netForce</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_Minv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_asDofVector</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_Minv</span><span class="p">)</span></div>
 
 
@@ -384,10 +413,12 @@
 
         <span class="n">dT</span> <span class="o">=</span> <span class="n">timeStep</span><span class="o">.</span><span class="n">timeIncrement</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_P</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">dT</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_netForce</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">dT</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">"The first increment of a step must be the zero increment for </span><span class="si">{:}</span><span class="s2">, which evaluates the forces at rest "</span>
-                <span class="s2">"and projects the initial velocity, before anything moves."</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">)</span>
+                <span class="s2">"The first increment of a step must be the zero increment for </span><span class="si">{:}</span><span class="s2">, which evaluates the forces of the "</span>
+                <span class="s2">"configuration the step starts from, and takes its velocity, before anything moves."</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">identification</span>
+                <span class="p">)</span>
             <span class="p">)</span>
 
         <span class="n">dU</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dU</span>
@@ -398,7 +429,7 @@
                 <span class="c1"># the time between two half increments. The first increment of motion starts from the velocity at</span>
                 <span class="c1"># rest, a full increment earlier: it advances by half an increment (the previous one counts zero).</span>
                 <span class="n">previousTimeIncrement</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prevTimeStep</span><span class="o">.</span><span class="n">timeIncrement</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">prevTimeStep</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mf">0.0</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_V</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_Minv</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_P</span> <span class="o">*</span> <span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">dT</span> <span class="o">+</span> <span class="n">previousTimeIncrement</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_V</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_Minv</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_netForce</span> <span class="o">*</span> <span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">dT</span> <span class="o">+</span> <span class="n">previousTimeIncrement</span><span class="p">))</span>
                 <span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_V</span><span class="p">,</span> <span class="n">dT</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">dU</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">applyStepActionsAtIncrementStart</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">step</span><span class="o">.</span><span class="n">actions</span><span class="p">)</span>
@@ -423,7 +454,13 @@
 <a class="viewcode-back" href="../../../documentation/solvers.html#edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.acceptIncrement">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">acceptIncrement</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">MPMModel</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""Accept the advanced particles, reconnect, and evaluate on the new kernel functions what the next increment</span>
-<span class="sd">        starts from: the net force, the inverse lumped mass and, when due, the velocity projected from the momentum.</span>
+<span class="sd">        starts from: the net force, the inverse lumped mass and, when due, the velocity projected from the momentum:</span>
+<span class="sd">        in every increment if ``projectVelocityEveryIncrement`` says so, and at the start of a step whose model holds</span>
+<span class="sd">        no motion at its nodes. At the start of a step whose model holds the motion at its nodes, the net force is that</span>
+<span class="sd">        of the model's acceleration instead (see the module documentation). The results reach the model in two parts:</span>
+<span class="sd">        the increment and its velocity before reconnecting, through the layout they were computed on; the force, the</span>
+<span class="sd">        velocity the next increment starts from and the acceleration after evaluating, through the layout of the new</span>
+<span class="sd">        kernel functions.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -443,19 +480,42 @@
         <span class="k">with</span> <span class="n">performancetiming</span><span class="o">.</span><span class="n">timeit</span><span class="p">(</span><span class="s2">"accept state"</span><span class="p">):</span>
             <span class="n">model</span><span class="o">.</span><span class="n">advanceToTime</span><span class="p">(</span><span class="n">timeStep</span><span class="o">.</span><span class="n">totalTime</span><span class="p">)</span>
 
-        <span class="n">nodesRenumbered</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reconnect</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">performancetiming</span><span class="o">.</span><span class="n">timeit</span><span class="p">(</span><span class="s2">"write results to nodes"</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_layout</span><span class="o">.</span><span class="n">writeResultsToModel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_noSolution</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dU</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_layout</span><span class="o">.</span><span class="n">writeVelocityAndAccelerationToModel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_V</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
-        <span class="n">P</span><span class="p">,</span> <span class="n">Minv</span><span class="p">,</span> <span class="n">momentum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evaluate</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_P</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_Minv</span> <span class="o">=</span> <span class="n">P</span><span class="p">,</span> <span class="n">Minv</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_reconnect</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_V</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">nodesRenumbered</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="s2">"projectVelocityEveryIncrement"</span><span class="p">]:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_V</span> <span class="o">=</span> <span class="n">momentum</span> <span class="o">*</span> <span class="n">Minv</span></div>
+        <span class="n">firstEvaluationOfStep</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_netForce</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_netForce</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_Minv</span><span class="p">,</span> <span class="n">acceleration</span><span class="p">,</span> <span class="n">momentum</span><span class="p">,</span> <span class="n">internalAndInertialForce</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evaluate</span><span class="p">(</span>
+            <span class="n">model</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">timeStep</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">firstEvaluationOfStep</span> <span class="ow">and</span> <span class="s2">"nodes"</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_layout</span><span class="o">.</span><span class="n">carriersOfTheMotion</span><span class="p">():</span>
+            <span class="c1"># The model holds the motion at its nodes: the step continues it, as NED does, from the velocity of the</span>
+            <span class="c1"># nodes and from the net force of their acceleration, which the step before ended with. The force just</span>
+            <span class="c1"># evaluated is not that force: the particles have taken a zero-length increment, and the stabilization of</span>
+            <span class="c1"># their integration refers to the increment taken last. This zero increment publishes no force.</span>
+            <span class="n">acceleration</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_accelerationOfTheModel</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_netForce</span> <span class="o">=</span> <span class="n">M</span> <span class="o">*</span> <span class="n">acceleration</span>
+            <span class="n">internalAndInertialForce</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">elif</span> <span class="n">firstEvaluationOfStep</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="s2">"projectVelocityEveryIncrement"</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_V</span> <span class="o">=</span> <span class="n">momentum</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_Minv</span>
+
+        <span class="k">with</span> <span class="n">performancetiming</span><span class="o">.</span><span class="n">timeit</span><span class="p">(</span><span class="s2">"write results to nodes"</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_layout</span><span class="o">.</span><span class="n">writeResultsToModel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_noSolution</span><span class="p">(),</span> <span class="kc">None</span><span class="p">,</span> <span class="n">internalAndInertialForce</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_layout</span><span class="o">.</span><span class="n">writeVelocityAndAccelerationToModel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_V</span><span class="p">,</span> <span class="n">acceleration</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="MeshfreeExplicitDynamic.endStep">
 <a class="viewcode-back" href="../../../documentation/solvers.html#edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.endStep">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">endStep</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">MPMModel</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Nothing to finish.</span>
+<span class="w">        </span><span class="sd">"""Leave the model's velocity at the end time of the step: it lags half of the last increment behind, and is</span>
+<span class="sd">        advanced by that half increment with the acceleration</span>
+<span class="sd">        (:meth:`~edelweissfe.models.femodel.FEModel.advanceVelocity`), so that the next step starts from the velocity at</span>
+<span class="sd">        its start time (see the module documentation). A step resumed at its very end does so as well: its checkpoint</span>
+<span class="sd">        holds the staggered velocity and the last increment. This solver retries no increment, so its step never falls</span>
+<span class="sd">        back to a checkpoint, which ends the abandoned attempt here too.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -463,7 +523,10 @@
 <span class="sd">            The step.</span>
 <span class="sd">        model</span>
 <span class="sd">            The model.</span>
-<span class="sd">        """</span></div>
+<span class="sd">        """</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">prevTimeStep</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">advanceVelocity</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">prevTimeStep</span><span class="o">.</span><span class="n">timeIncrement</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="MeshfreeExplicitDynamic.solveIncrement">
@@ -475,41 +538,32 @@
 
 
     <span class="nd">@performancetiming</span><span class="o">.</span><span class="n">timeit</span><span class="p">(</span><span class="s2">"reconnect"</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_reconnect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">MPMModel</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_reconnect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">MPMModel</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""Assign the particles to the kernel functions they reach now, and let the equation system follow: if the</span>
 <span class="sd">        model's active nodes cannot change (:attr:`~edelweissmeshfree.models.mpmmodel.MPMModel.activeNodesAreFixed`),</span>
-<span class="sd">        only the particles that changed and the constraints are located anew; otherwise the equation system is</span>
-<span class="sd">        rebuilt. The velocity is carried over if the nodes are numbered as before.</span>
+<span class="sd">        only the particles that changed and the constraints are located anew, and the velocity stays as it is;</span>
+<span class="sd">        otherwise the equation system is rebuilt, and reads the velocity of its nodes from the model.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        model</span>
 <span class="sd">            The model.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        bool</span>
-<span class="sd">            True if the equation system numbers other nodes than before, so that the velocity has to be projected.</span>
 <span class="sd">        """</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">model</span><span class="o">.</span><span class="n">updateConnectivity</span><span class="p">():</span>
-            <span class="k">return</span> <span class="kc">False</span>
-
-        <span class="n">layout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_layout</span>
+            <span class="k">return</span>
 
         <span class="k">if</span> <span class="n">model</span><span class="o">.</span><span class="n">activeNodesAreFixed</span><span class="p">:</span>
-            <span class="n">layout</span><span class="o">.</span><span class="n">relocateParticlesAndConstraints</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_adoptLayout</span><span class="p">(</span><span class="n">layout</span><span class="p">)</span>
-            <span class="k">return</span> <span class="kc">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_layout</span><span class="o">.</span><span class="n">relocateParticlesAndConstraints</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_dU</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_layout</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_V</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_asDofVector</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_V</span><span class="p">)</span>
+            <span class="k">return</span>
 
-        <span class="n">rebuilt</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">buildEquationSystem</span><span class="p">(</span><span class="n">withSystemMatrix</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-        <span class="n">nodesRenumbered</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">rebuilt</span><span class="o">.</span><span class="n">numbersTheSameNodesAs</span><span class="p">(</span><span class="n">layout</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_adoptLayout</span><span class="p">(</span><span class="n">rebuilt</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">nodesRenumbered</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_adoptLayout</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">buildEquationSystem</span><span class="p">(</span><span class="n">withSystemMatrix</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_adoptLayout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layout</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Work on the given layout: vectors sized and located by its DOF manager, the velocity carried over by index</span>
-<span class="sd">        while the size stands.</span>
+<span class="w">        </span><span class="sd">"""Work on a (re)built layout: vectors sized and located by its DOF manager, and the velocity of its nodes read</span>
+<span class="sd">        from the model, by node.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -520,8 +574,39 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_layout</span> <span class="o">=</span> <span class="n">layout</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">theDofManager</span> <span class="o">=</span> <span class="n">layout</span><span class="o">.</span><span class="n">dofManager</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_dU</span> <span class="o">=</span> <span class="n">layout</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_V</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_V</span><span class="p">)</span> <span class="o">==</span> <span class="n">layout</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">nDof</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_V</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_asDofVector</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_V</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_V</span> <span class="o">=</span> <span class="n">layout</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_V</span><span class="p">[:]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">layout</span><span class="o">.</span><span class="n">readStateFromModel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_noSolution</span><span class="p">(),</span> <span class="n">V</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_V</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_accelerationOfTheModel</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DofVector</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The acceleration the model holds at the nodes of the current equation system, read by node, zero at a node</span>
+<span class="sd">        without inertia.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        DofVector</span>
+<span class="sd">            The acceleration.</span>
+<span class="sd">        """</span>
+
+        <span class="n">acceleration</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_layout</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+        <span class="n">acceleration</span><span class="p">[:]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_layout</span><span class="o">.</span><span class="n">readStateFromModel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_noSolution</span><span class="p">(),</span> <span class="n">A</span><span class="o">=</span><span class="n">acceleration</span><span class="p">)</span>
+        <span class="n">acceleration</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_Minv</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">return</span> <span class="n">acceleration</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_noSolution</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DofVector</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The solution of the current equation system: zero, since the nodes of the kernel functions carry no total</span>
+<span class="sd">        solution (they move with the particles), and this solver integrates nothing else.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        DofVector</span>
+<span class="sd">            The zero vector.</span>
+<span class="sd">        """</span>
+
+        <span class="n">noSolution</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_layout</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+        <span class="n">noSolution</span><span class="p">[:]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">return</span> <span class="n">noSolution</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_asDofVector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">values</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DofVector</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""A vector of the current equation system holding the given values.</span>
@@ -542,7 +627,9 @@
         <span class="k">return</span> <span class="n">vector</span>
 
     <span class="nd">@performancetiming</span><span class="o">.</span><span class="n">timeit</span><span class="p">(</span><span class="s2">"evaluate"</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">MPMModel</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">DofVector</span><span class="p">,</span> <span class="n">DofVector</span><span class="p">,</span> <span class="n">DofVector</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_evaluate</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">MPMModel</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">DofVector</span><span class="p">,</span> <span class="n">DofVector</span><span class="p">,</span> <span class="n">DofVector</span><span class="p">,</span> <span class="n">DofVector</span><span class="p">,</span> <span class="n">DofVector</span><span class="p">,</span> <span class="n">DofVector</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""Evaluate at the configuration just accepted: the particles' internal forces, lumped masses and lumped</span>
 <span class="sd">        momenta, on all threads, then the loads and constraints. All of them add residual contributions (an internal</span>
 <span class="sd">        force, the negative of an external one), and the net force is their negative.</span>
@@ -558,8 +645,11 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        tuple[DofVector, DofVector, DofVector]</span>
-<span class="sd">            The net force, the inverse lumped mass (zero where the mass is not positive) and the lumped momentum.</span>
+<span class="sd">        tuple[DofVector, DofVector, DofVector, DofVector, DofVector, DofVector]</span>
+<span class="sd">            The net force, the lumped mass, its inverse (zero where the mass is not positive), the acceleration</span>
+<span class="sd">            :math:`\\boldsymbol{a} = \\boldsymbol{M}^{-1} \\boldsymbol{f}`, the lumped momentum, and the internal force</span>
+<span class="sd">            with the inertial force, :math:`\\boldsymbol{f}_\\mathrm{int} + \\boldsymbol{M} \\boldsymbol{a}`, the result</span>
+<span class="sd">            ``P`` the model receives.</span>
 <span class="sd">        """</span>
 
         <span class="n">dofManager</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_layout</span><span class="o">.</span><span class="n">dofManager</span>
@@ -584,10 +674,12 @@
         <span class="n">scatterM</span><span class="o">.</span><span class="n">assembleInto</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
         <span class="n">scatterMomentum</span><span class="o">.</span><span class="n">assembleInto</span><span class="p">(</span><span class="n">momentum</span><span class="p">)</span>
 
+        <span class="n">internalForce</span> <span class="o">=</span> <span class="n">dofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+        <span class="n">internalForce</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">R</span>
+
         <span class="c1"># The configuration is accepted: no increment is left, and the nodes of the kernel functions carry no total</span>
-        <span class="c1"># solution (they move with the particles). Loads and constraints evaluate at the particles' positions.</span>
-        <span class="n">noSolution</span> <span class="o">=</span> <span class="n">dofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
-        <span class="n">noSolution</span><span class="p">[:]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="c1"># solution. Loads and constraints evaluate at the particles' positions.</span>
+        <span class="n">noSolution</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_noSolution</span><span class="p">()</span>
         <span class="n">R</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembleLoads</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">collectLoads</span><span class="p">(</span><span class="n">step</span><span class="o">.</span><span class="n">actions</span><span class="p">),</span> <span class="n">noSolution</span><span class="p">,</span> <span class="n">noSolution</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">)</span>
         <span class="n">R</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembleConstraintForces</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">constraints</span><span class="p">,</span> <span class="n">noSolution</span><span class="p">,</span> <span class="n">noSolution</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">)</span>
 
@@ -601,7 +693,11 @@
         <span class="n">hasInertia</span> <span class="o">=</span> <span class="n">M</span> <span class="o">&gt;</span> <span class="mf">0.0</span>
         <span class="n">Minv</span><span class="p">[</span><span class="n">hasInertia</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">M</span><span class="p">[</span><span class="n">hasInertia</span><span class="p">]</span>
 
-        <span class="k">return</span> <span class="n">P</span><span class="p">,</span> <span class="n">Minv</span><span class="p">,</span> <span class="n">momentum</span></div>
+        <span class="n">acceleration</span> <span class="o">=</span> <span class="n">Minv</span> <span class="o">*</span> <span class="n">P</span>
+        <span class="n">internalAndInertialForce</span> <span class="o">=</span> <span class="n">dofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+        <span class="n">internalAndInertialForce</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">internalForce</span> <span class="o">+</span> <span class="n">M</span> <span class="o">*</span> <span class="n">acceleration</span>
+
+        <span class="k">return</span> <span class="n">P</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">Minv</span><span class="p">,</span> <span class="n">acceleration</span><span class="p">,</span> <span class="n">momentum</span><span class="p">,</span> <span class="n">internalAndInertialForce</span></div>
 
 </pre></div>
 

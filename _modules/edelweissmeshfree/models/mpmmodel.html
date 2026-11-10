@@ -450,7 +450,9 @@
 <span class="sd">        """</span>
 
         <span class="n">activeCells</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">activeCellsOf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mpmManagers</span><span class="p">)</span>
-        <span class="n">nodesWithPersistentFieldValues</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">activeNodeFields</span><span class="p">,</span> <span class="n">activeNodeSets</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembleActiveDomain</span><span class="p">(</span><span class="n">activeCells</span><span class="p">)</span>
+        <span class="n">nodesWithPersistentFieldValues</span><span class="p">,</span> <span class="n">nodesWithVolatileFieldValues</span><span class="p">,</span> <span class="n">activeNodeFields</span><span class="p">,</span> <span class="n">activeNodeSets</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assembleActiveDomain</span><span class="p">(</span><span class="n">activeCells</span><span class="p">)</span>
+        <span class="p">)</span>
         <span class="n">constraints</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">activeConstraints</span><span class="p">()</span>
 
         <span class="n">dofManager</span> <span class="o">=</span> <span class="n">MPMDofManager</span><span class="p">(</span>
@@ -472,7 +474,7 @@
             <span class="p">[</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="o">*</span><span class="n">activeCells</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">cellElements</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="o">.</span><span class="n">values</span><span class="p">()],</span>
             <span class="n">activeCells</span><span class="p">,</span>
             <span class="n">nodesWithPersistentFieldValues</span><span class="p">,</span>
-            <span class="n">activeNodeFields</span><span class="p">,</span>
+            <span class="n">nodesWithVolatileFieldValues</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_reducedToActiveDomain</span><span class="p">(</span><span class="n">activeCells</span><span class="p">,</span> <span class="n">activeNodeFields</span><span class="p">,</span> <span class="n">activeNodeSets</span><span class="p">),</span>
         <span class="p">)</span></div>
 

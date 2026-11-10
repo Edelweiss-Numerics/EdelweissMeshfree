@@ -121,12 +121,14 @@ two kinds of nodes hold different things:</p>
 <li><p>the nodes of the finite elements carry their <strong>total</strong> displacement from increment to increment, as in any finite
 element model;</p></li>
 <li><p>the nodes of the kernel functions carry the <strong>coefficients of one increment</strong>: RKPM is updated-Lagrangian, the
-kernel functions move with their particles, and the state lives in the particles. A rebuilt equation system starts
-them at zero.</p></li>
+kernel functions move with their particles, and the state lives in the particles. Every increment starts them at
+zero.</p></li>
 </ul>
 <p><a class="reference internal" href="models.html#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout" title="edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout"><code class="xref py py-class docutils literal notranslate"><span class="pre">MPMEquationSystemLayout</span></code></a> passes the solution between the
-model and the solver’s vectors accordingly. The model writes back the solution <code class="docutils literal notranslate"><span class="pre">U</span></code>, the increment <code class="docutils literal notranslate"><span class="pre">dU</span></code> and the
-reaction <code class="docutils literal notranslate"><span class="pre">P</span></code> of every node (see EdelweissFE’s “Node field results” for the meaning of these entries).</p>
+model and the solver’s vectors accordingly. At acceptance, it writes the solution <code class="docutils literal notranslate"><span class="pre">U</span></code>, the increment <code class="docutils literal notranslate"><span class="pre">dU</span></code> and the
+reaction <code class="docutils literal notranslate"><span class="pre">P</span></code> straight to the model’s node fields, by node: <code class="docutils literal notranslate"><span class="pre">U</span></code> is the total displacement at the nodes of the finite
+elements and zero at the nodes of the kernel functions, whose meaningful value is <code class="docutils literal notranslate"><span class="pre">dU</span></code>; every node outside the active
+domain holds zero (see EdelweissFE’s “Node field results” for the meaning of these entries).</p>
 </section>
 <section id="the-tie-between-the-two-domains">
 <h2>The tie between the two domains<a class="headerlink" href="#the-tie-between-the-two-domains" title="Link to this heading"></a></h2>
