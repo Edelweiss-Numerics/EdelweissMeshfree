@@ -3,8 +3,7 @@ from typing import Iterable
 
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
-from edelweissfe.numerics.csrgeneratorv2 import CSRGenerator
-from edelweissfe.numerics.dofmanager import DofManager, DofVector, VIJSystemMatrix
+from edelweissfe.numerics.dofmanager import DofManager, DofVector
 from edelweissfe.numerics.parallelizationutilities import (
     getNumberOfThreads,
     getThreadPool,
@@ -14,6 +13,7 @@ from edelweissfe.numerics.systemmatrixassembly import (
     SystemMatrixAssembly,
     VIJSystemMatrixAssembly,
 )
+from edelweissfe.numerics.vijsystemmatrix import VIJSystemMatrix
 from edelweissfe.solvers.base.parallelelementcomputation import chunked_iterable
 from edelweissfe.stepactions.base.dirichletbase import DirichletBase
 from edelweissfe.stepactions.base.loadbase import LoadBase
@@ -654,8 +654,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             The collection of expensive objects.
         """
 
-        csrGenerator = CSRGenerator(theDofManager)
-        K = VIJSystemMatrixAssembly(csrGenerator, theDofManager, 1)
+        K = VIJSystemMatrixAssembly(theDofManager, 1)
+        csrGenerator = K.csrGenerator
 
         dU = theDofManager.constructDofVector()
         Rhs = theDofManager.constructDofVector()

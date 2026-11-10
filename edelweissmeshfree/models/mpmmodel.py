@@ -351,7 +351,7 @@ class MPMModel(FEModel):
             particleManager.kernelFunctionsAreBondedToParticles for particleManager in self.particleManagers
         )
 
-    def buildEquationSystem(self, withSystemMatrix: bool = True) -> MPMEquationSystemLayout:
+    def buildEquationSystem(self) -> MPMEquationSystemLayout:
         """Lay out the equation system of the model on its active domain; see
         :meth:`~edelweissfe.models.femodel.FEModel.buildEquationSystem` and :class:`MPMEquationSystemLayout`.
 
@@ -359,11 +359,6 @@ class MPMModel(FEModel):
         kernel functions reach, and the finite elements and cell elements with their nodes. Its degrees of freedom are
         numbered on the active nodes; the model's node sets are located on their nodes in the active domain. The
         elements the solver computes are the finite elements, the active cells, the cell elements and the particles.
-
-        Parameters
-        ----------
-        withSystemMatrix
-            False for an explicit solver, which assembles no system matrix.
 
         Returns
         -------
@@ -386,8 +381,6 @@ class MPMModel(FEModel):
             cells=activeCells,
             cellElements=self.cellElements.values(),
             particles=self.particles.values(),
-            initializeVIJPattern=withSystemMatrix,
-            determiningIndexToHostObjectMappping=withSystemMatrix,
         )
 
         return MPMEquationSystemLayout(

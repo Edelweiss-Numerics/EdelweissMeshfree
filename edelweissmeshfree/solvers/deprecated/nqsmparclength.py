@@ -38,7 +38,6 @@
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 from edelweissfe.constraints.base.constraintbase import ConstraintBase
-from edelweissfe.numerics.csrgeneratorv2 import CSRGenerator
 from edelweissfe.numerics.dofmanager import DofManager, DofVector
 from edelweissfe.numerics.systemmatrixassembly import VIJSystemMatrixAssembly
 from edelweissfe.outputmanagers.base.outputmanagerbase import OutputManagerBase
@@ -276,15 +275,13 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NonlinearQuasistaticSolver):
 
         # if not newtonCache:
         #     newtonCache = self._createArcLengthNewtonCache(theDofManager)
-        K, csrGenerator, dU, Rhs_, F, PInt, PExt, PExt_0, PExt_f, K_0, K_f = newtonCache
+        K, csrGenerator, dU, Rhs_, F, PInt, PExt, PExt_0, PExt_f, K_VIJ_0, K_VIJ_f = newtonCache
 
         # The contributors write through the contribution objects; the arc-length combination of the
         # dead and reference load stiffnesses is array arithmetic and needs the arrays underneath. This
         # solver is therefore VIJ-only, which is why _createNewtonCache below builds three staging
         # arrays and no direct-to-CSR assembler.
         K_VIJ = K.vijArray
-        K_VIJ_0 = K_0.vijArray
-        K_VIJ_f = K_f.vijArray
 
         if isinstance(dUGuess, tuple):
             dU_temp, dLambda_temp = dUGuess
@@ -330,8 +327,8 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NonlinearQuasistaticSolver):
 
             # the loads twice: at the start of the step (the dead load) and at its end (the reference load)
             loads = [*bodyLoads, *distributedLoads, *particleDistributedLoads]
-            self._assembleLoads(loads, U_np, dU, PExt_0, K_0, zeroTimeStep, theDofManager)
-            self._assembleLoads(loads, U_np, dU, PExt_f, K_f, referenceTimeStep, theDofManager)
+            self._assembleLoads(loads, U_np, dU, PExt_0, K_VIJ_0, zeroTimeStep, theDofManager)
+            self._assembleLoads(loads, U_np, dU, PExt_f, K_VIJ_f, referenceTimeStep, theDofManager)
 
             PExt_f -= PExt_0  # and subtract the dead part, since we are only interested in the homogeneous linear part
             K_VIJ_f -= K_VIJ_0
@@ -470,7 +467,7 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NonlinearQuasistaticSolver):
         if arcLengthController is None:
             return super()._createNewtonCache(theDofManager)
 
-        csrGenerator = CSRGenerator(theDofManager)
+        K = VIJSystemMatrixAssembly(theDofManager, 1)
         dU = theDofManager.constructDofVector()
         Rhs_ = np.tile(theDofManager.constructDofVector(), (2, 1)).T  # 2 RHSs
         F = theDofManager.constructDofVector()
@@ -478,9 +475,11 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NonlinearQuasistaticSolver):
         PExt = theDofManager.constructDofVector()
         PExt_0 = theDofManager.constructDofVector()
         PExt_f = theDofManager.constructDofVector()
+        # the stiffnesses of the dead and of the reference load: value arrays in K's VIJ layout, which K's generator
+        # gathers
         newtonCache = (
-            VIJSystemMatrixAssembly(csrGenerator, theDofManager, 1),
-            csrGenerator,
+            K,
+            K.csrGenerator,
             dU,
             Rhs_,
             F,
@@ -488,8 +487,8 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NonlinearQuasistaticSolver):
             PExt,
             PExt_0,
             PExt_f,
-            VIJSystemMatrixAssembly(csrGenerator, theDofManager, 1),
-            VIJSystemMatrixAssembly(csrGenerator, theDofManager, 1),
+            K.constructVIJSystemMatrix(),
+            K.constructVIJSystemMatrix(),
         )
 
         return newtonCache
