@@ -155,18 +155,14 @@ class MPMModel(FEModel):
         return super()._prepareVariablesAndFields(journal)
 
     def _prepareMaterialPoints(self, journal: Journal):
-        """Prepare elements for a simulation.
-        In detail, sections are assigned.
-
+        """Initialize the material points for a simulation. They carry their material from their creation; the
+        sections are assigned to the finite elements by :meth:`~edelweissfe.models.femodel.FEModel.prepareYourself`.
 
         Parameters
         ----------
         journal
             The journal instance.
         """
-        for section in self.sections.values():
-            section.assignSectionPropertiesToModel(self)
-
         for mp in self.materialPoints.values():
             mp.initializeYourself()
 

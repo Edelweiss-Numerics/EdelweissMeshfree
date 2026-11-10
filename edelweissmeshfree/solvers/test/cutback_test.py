@@ -254,8 +254,7 @@ FAILING_J2_PLASTICITY = {
 
 def _particleWhoseMaterialFails():
     """An RKPM particle on the unit square, with the nine kernel functions that cover it, of a material that fails at
-    every stress update; and its approximation, which the particle refers to without keeping it alive, so that the
-    caller holds it as long as the particle."""
+    every stress update."""
 
     from edelweissfe.points.node import Node
 
@@ -269,13 +268,12 @@ def _particleWhoseMaterialFails():
         MarmotParticleWrapper,
     )
 
-    approximation = MarmotMeshfreeApproximationWrapper("ReproducingKernel", 2, completenessOrder=1)
     particle = MarmotParticleWrapper(
         "Displacement/SQCNIxNSNI/PlaneStrain/Quad",
         1,
         np.array([[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]]),
         0.0,
-        approximation,
+        MarmotMeshfreeApproximationWrapper("ReproducingKernel", 2, completenessOrder=1),
         FAILING_J2_PLASTICITY,
     )
     kernelCenters = itertools.product((-0.5, 0.5, 1.5), repeat=2)
@@ -288,7 +286,7 @@ def _particleWhoseMaterialFails():
         ]
     )
     particle.initializeYourself()
-    return particle, approximation
+    return particle
 
 
 def _evaluateImplicitly(particle):
@@ -297,7 +295,7 @@ def _evaluateImplicitly(particle):
 
 
 def test_a_particle_whose_material_fails_requests_a_cutback():
-    particle, approximation = _particleWhoseMaterialFails()
+    particle = _particleWhoseMaterialFails()
 
     with pytest.raises(CutbackRequest, match=WHAT_THE_MATERIAL_SAYS) as request:
         _evaluateImplicitly(particle)
@@ -311,8 +309,7 @@ def test_the_cutback_request_of_a_particle_reaches_the_solver_from_any_thread_of
 
     monkeypatch.setenv("OMP_NUM_THREADS", "4")
     monkeypatch.setattr(parallelizationutilities, "getNumberOfWorkerThreads", lambda: 4)
-    particlesAndApproximations = [_particleWhoseMaterialFails() for _ in range(16)]
-    particles = [particle for particle, _ in particlesAndApproximations]
+    particles = [_particleWhoseMaterialFails() for _ in range(16)]
 
     def evaluate(chunk):
         for particle in chunk:
