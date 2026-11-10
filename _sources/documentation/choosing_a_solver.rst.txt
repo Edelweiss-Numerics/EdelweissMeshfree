@@ -24,6 +24,9 @@ the solver asks the model*), and the model answers with its active domain.
       - a quasi-static step under arc length control, e.g. past a limit point; the controller is a step action, named by
         the solver option ``arcLengthController``
 
+The state a quasi-static step accepts is at rest: the velocity ``V`` and the acceleration ``A`` of every node are zero
+(see EdelweissFE's "Node field results").
+
 A simulation is set up from Python as any EdelweissFE step. The model holds what defines its connectivity -- the
 managers that assign material points to cells (``mpmManagers``) and particles to kernel functions
 (``particleManagers``), the managers of the variationally consistent integration (``vciManagers``), and the

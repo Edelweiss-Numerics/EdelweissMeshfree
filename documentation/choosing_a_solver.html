@@ -153,6 +153,8 @@ the solver option <code class="docutils literal notranslate"><span class="pre">a
 </tr>
 </tbody>
 </table>
+<p>The state a quasi-static step accepts is at rest: the velocity <code class="docutils literal notranslate"><span class="pre">V</span></code> and the acceleration <code class="docutils literal notranslate"><span class="pre">A</span></code> of every node are zero
+(see EdelweissFE’s “Node field results”).</p>
 <p>A simulation is set up from Python as any EdelweissFE step. The model holds what defines its connectivity – the
 managers that assign material points to cells (<code class="docutils literal notranslate"><span class="pre">mpmManagers</span></code>) and particles to kernel functions
 (<code class="docutils literal notranslate"><span class="pre">particleManagers</span></code>), the managers of the variationally consistent integration (<code class="docutils literal notranslate"><span class="pre">vciManagers</span></code>), and the
