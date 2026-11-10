@@ -38,10 +38,10 @@ points (:meth:`~edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSyst
 material point asks for half the increment, as an EdelweissFE element does, and the step cuts back by the larger of
 this and its ``cutbackFactor``.
 
-A particle translates a failure of Marmot into a cutback request in its wrapper as well, in the implicit kernel, and
-the request reaches the solver from whichever thread of the pool evaluated the particle. The cells and cell elements
-translate it too, but cannot be made to fail: their kernels integrate the stresses their material points have
-computed before.
+A particle translates a failure of Marmot into a cutback request in its wrapper as well, in the implicit kernel and in
+the explicit update, and the request reaches the solver from whichever thread of the pool evaluated the particle. The
+cells and cell elements translate it too, but cannot be made to fail: their kernels integrate the stresses their
+material points have computed before.
 """
 
 import itertools
@@ -300,6 +300,9 @@ def test_a_particle_whose_material_fails_requests_a_cutback():
     with pytest.raises(CutbackRequest, match=WHAT_THE_MATERIAL_SAYS) as request:
         _evaluateImplicitly(particle)
     assert request.value.cutbackSize == 0.5
+
+    with pytest.raises(CutbackRequest, match=WHAT_THE_MATERIAL_SAYS):
+        particle.updatePhysicsExplicit(np.zeros(particle.nDof), 1.0, 1.0)
 
 
 def test_the_cutback_request_of_a_particle_reaches_the_solver_from_any_thread_of_the_pool(monkeypatch):

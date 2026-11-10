@@ -111,7 +111,9 @@ def test_solver_active_domain_assembly_does_not_diverge_from_the_model():
     so a fix applied to the model's copy silently did nothing. Keep them from drifting apart again.
     """
 
-    from edelweissmeshfree.solvers.base.nonlinearsolverbase import BaseNonlinearSolver
+    from edelweissmeshfree.solvers.deprecated.nonlinearsolverbase import (
+        BaseNonlinearSolver,
+    )
 
     model, _ = _buildModelWithShuffledNodes()
 
@@ -177,7 +179,9 @@ class _MPMManagerStub:
 def test_active_cells_are_ordered_by_number():
     """The active cells must come out each once, in an order that depends on their numbers, not on memory."""
 
-    from edelweissmeshfree.solvers.base.nonlinearsolverbase import BaseNonlinearSolver
+    from edelweissmeshfree.solvers.deprecated.nonlinearsolverbase import (
+        BaseNonlinearSolver,
+    )
 
     cells = [_NumberedCellStub(number) for number in range(1, 33)]
     shuffled = list(cells)

@@ -12,6 +12,12 @@ set of EdelweissFE's legacy criterion:
 .. automodule:: edelweissmeshfree.solvers.meshfreeconvergencecriterion
    :members:
 
+The explicit solver
+-------------------
+
+.. automodule:: edelweissmeshfree.solvers.meshfreeexplicitdynamic
+   :members:
+
 Deprecated implicit solvers
 ---------------------------
 

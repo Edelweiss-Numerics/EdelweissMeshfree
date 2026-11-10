@@ -13,7 +13,8 @@ This package keeps the old solvers, so that the examples which still use them ke
   ``NISTParallel``),
 - :class:`~edelweissmeshfree.solvers.deprecated.nqsmparclength.NonlinearQuasistaticMarmotArcLengthSolver` (replaced
   by ``NISTPArcLength``),
-- their common base :mod:`~edelweissmeshfree.solvers.deprecated.implicitbase`, and the predictors they take
+- their common bases :mod:`~edelweissmeshfree.solvers.deprecated.implicitbase` and
+  :mod:`~edelweissmeshfree.solvers.deprecated.nonlinearsolverbase`, and the predictors they take
   (:mod:`~edelweissmeshfree.solvers.deprecated.predictors`; EdelweissFE's solvers have the option ``extrapolation``).
 
 They are frozen: they get no new features, only the adaptations that later changes of the interfaces they call force.

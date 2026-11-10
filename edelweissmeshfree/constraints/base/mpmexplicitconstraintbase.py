@@ -56,6 +56,10 @@ class MPMExplicitConstraintBase(MPMConstraintBase):
     nodes to ``P``.
     """
 
+    #: Written for an explicit analysis, it acts there; see
+    #: :attr:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.actsInExplicitAnalysis`.
+    actsInExplicitAnalysis = True
+
     def computeKernels(
         self,
         U_np: np.ndarray,
