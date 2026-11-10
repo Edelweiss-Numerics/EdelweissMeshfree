@@ -341,7 +341,9 @@ class MPMModel(FEModel):
         """
 
         activeCells = self.activeCellsOf(self.mpmManagers)
-        nodesWithPersistentFieldValues, _, activeNodeFields, activeNodeSets = self.assembleActiveDomain(activeCells)
+        nodesWithPersistentFieldValues, nodesWithVolatileFieldValues, activeNodeFields, activeNodeSets = (
+            self.assembleActiveDomain(activeCells)
+        )
         constraints = self.activeConstraints()
 
         dofManager = MPMDofManager(
@@ -363,7 +365,7 @@ class MPMModel(FEModel):
             [*self.elements.values(), *activeCells, *self.cellElements.values(), *self.particles.values()],
             activeCells,
             nodesWithPersistentFieldValues,
-            activeNodeFields,
+            nodesWithVolatileFieldValues,
             self._reducedToActiveDomain(activeCells, activeNodeFields, activeNodeSets),
         )
 

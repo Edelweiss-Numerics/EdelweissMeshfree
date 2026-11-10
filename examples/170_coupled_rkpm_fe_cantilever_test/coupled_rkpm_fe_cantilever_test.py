@@ -59,6 +59,7 @@ reproduce its tip reaction and its deflection line, up to the discretization err
 import argparse
 
 import edelweissfe.utils.performancetiming as performancetiming
+import h5py
 import numpy as np
 import pytest
 from edelweissfe.config.configurator import loadConfiguration
@@ -461,11 +462,13 @@ def change_test_dir(request, monkeypatch):
     monkeypatch.chdir(request.fspath.dirname)
 
 
-def test_finite_element_and_kernel_nodes_share_one_equation_system():
+def test_finite_element_and_kernel_nodes_share_one_equation_system(tmp_path):
     """The equation system of the coupled model numbers the nodes of the finite elements, the nodes of the kernel
     functions and the tractions of the ties once each. The solution passes between the model and the solver's
     vectors as the two methods require: the finite element nodes carry their total displacement into a rebuilt
-    equation system, the kernel nodes start every rebuilt equation system at zero, and all results are written back."""
+    equation system, the kernel nodes start every increment at zero, so that the model holds zero as their solution,
+    and all results are written to the model. What the model holds does not depend on when the equation system is
+    rebuilt, nor on a restart."""
 
     model = buildCoupledModel(Journal(), defaultElementSize, defaultParticleSize)
     model.updateConnectivity()
@@ -512,16 +515,53 @@ def test_finite_element_and_kernel_nodes_share_one_equation_system():
             1.0 + np.arange(len(constraint.scalarVariables)),
         )
 
-    # the results of an increment, written back to every node
+    # the solution of a converged increment: the coefficients of the kernel nodes are reset for the next increment
     U[:] = np.arange(dofManager.nDof)
-    layout.writeResultsToModel(U, 2 * U, 3 * U)
+    layout.zeroIncrementalCoefficients(U)
+    for node in elementNodes:
+        np.testing.assert_array_equal(U[dofsOf(node)], dofsOf(node))
+    for node in kernelNodes:
+        np.testing.assert_array_equal(U[dofsOf(node)], 0.0)
+    np.testing.assert_array_equal(U[tractionDofs], tractionDofs)
+
+    # the results of the increment, written to every node; a static solver leaves the velocity as it is
+    displacement["V"][:] = -1.0
+    increment = dofManager.constructDofVector()
+    increment[:] = np.arange(dofManager.nDof)
+    layout.writeResultsToModel(U, 2 * increment, 3 * increment)
     for node in elementNodes + kernelNodes:
         row = displacement.indexOfNode(node)
-        for entry, factor in (("U", 1), ("dU", 2), ("P", 3)):
-            np.testing.assert_array_equal(displacement[entry][row], factor * dofsOf(node))
+        np.testing.assert_array_equal(displacement["U"][row], dofsOf(node) if node in elementNodes else 0.0)
+        np.testing.assert_array_equal(displacement["dU"][row], 2 * dofsOf(node))
+        np.testing.assert_array_equal(displacement["P"][row], 3 * dofsOf(node))
+    np.testing.assert_array_equal(displacement["V"], -1.0)
     for constraint in model.constraints.values():
         for traction in constraint.scalarVariables:
             assert traction.value == dofManager.idcsOfScalarVariablesInDofVector[traction]
+
+    held = {entry: np.array(displacement[entry]) for entry in displacement.ENTRIES}
+
+    def assertTheModelHoldsTheSame():
+        for entry, values in held.items():
+            np.testing.assert_array_equal(displacement[entry], values, err_msg=entry)
+
+    # a rebuilt equation system starts from the same state, and writes it back unchanged
+    rebuilt = model.buildEquationSystem()
+    U = rebuilt.dofManager.constructDofVector()
+    rebuilt.readStateFromModel(U)
+    rebuilt.zeroIncrementalCoefficients(U)
+    rebuilt.writeResultsToModel(U, None, None)
+    assertTheModelHoldsTheSame()
+
+    # a restart restores every entry
+    checkpoint = tmp_path / "checkpoint.h5"
+    with h5py.File(checkpoint, "w") as restartFile:
+        model.writeRestart(restartFile)
+    for entry in displacement.ENTRIES:
+        displacement[entry][:] = 7.0
+    with h5py.File(checkpoint, "r") as restartFile:
+        model.readRestart(restartFile)
+    assertTheModelHoldsTheSame()
 
 
 def test_sim(assert_gold):

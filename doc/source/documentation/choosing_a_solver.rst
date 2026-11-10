@@ -98,7 +98,8 @@ onto EdelweissFE's as follows:
     * - ``skipZeroIncrements`` (it kept the zero increment and skipped only its solve)
       - EdelweissFE's implicit dynamic solver skips the solve of a zero-length increment by itself; for a quasi-static
         solver, a time stepper without the zero increment (``makeZeroIncrementFirst=False``). Neither applies to
-        ``MeshfreeExplicitDynamic``: its step starts with the zero increment, which evaluates the forces at rest
+        ``MeshfreeExplicitDynamic``: its step starts with the zero increment, which evaluates the forces of the
+        configuration the step starts from, and takes its velocity (see `Explicit dynamics`_)
 
 **Restart.** EdelweissFE's restart output manager writes a checkpoint of the converged state; an ``MPMModel`` adds the
 state of its material points and particles, from which their positions follow (see
@@ -190,10 +191,24 @@ What to know
 ************
 
 - **The zero increment.** The first increment of a step must be the zero increment (the default of a step): it
-  evaluates the forces at rest and projects the initial velocity from the particles' momentum.
-- **The velocity.** It is carried from increment to increment while the equation system numbers the same nodes, which
-  holds when the particle managers bond the kernel functions to the particles. Otherwise, and in every increment with
-  the option ``projectVelocityEveryIncrement=True``, it is projected from the particles' momentum, which dissipates more.
+  assembles the lumped mass of the configuration the step starts from. If the model holds the motion at its nodes
+  (after a step of this solver), the step continues it as ``NED`` does: from the velocity of the nodes and the net
+  force of their acceleration. Otherwise it evaluates the forces of the configuration and projects the velocity from
+  the particles' momentum, e.g. the initial velocity given to the particles.
+- **The velocity** of the kernel functions' nodes is the model's: it is written to the entry ``V`` of the node fields
+  at acceptance, and read back by node whenever the equation system is rebuilt, also at the start of a step. A node
+  keeps its velocity while the active nodes change around it, and a node that has just become active starts at rest.
+  With the option ``projectVelocityEveryIncrement=True``, it is projected from the particles' momentum in every
+  increment instead, which dissipates more.
+- **Consecutive steps.** As in ``NED``, a step leaves the velocity and the acceleration at its end time: within the
+  step, the velocity lags half an increment behind, and the end of the step advances it by that half increment. A
+  step after a step of this solver therefore continues the leapfrog as though the two steps were one.
+- **The node field results** (see EdelweissFE's "Node field results"): ``dU`` is the increment on the kernel functions
+  it was taken on, ``P`` the internal force with the inertial force, :math:`\boldsymbol{f}_\mathrm{int} +
+  \boldsymbol{M} \boldsymbol{a}`, ``A`` the acceleration :math:`\boldsymbol{a} = \boldsymbol{M}^{-1}
+  \boldsymbol{f}`, and ``V`` the half-step velocity, as in ``NED``; ``U`` is zero, since the nodes of the kernel
+  functions carry no total solution. ``P``, ``V`` and ``A`` are written on the kernel functions the increment ends on,
+  ``dU`` on those it started on: a node that left the active domain in that increment keeps its ``dU``.
 - **The equation system.** When the active nodes cannot change (bonded kernel functions, no material point managers),
   a change of the connectivity only locates the changed particles and the constraints anew; otherwise the equation
   system is rebuilt.
@@ -203,8 +218,8 @@ What to know
   not by convergence, so it is not cut back.
 - **Pressure.** A particle pressure is assembled as in implicit runs: as for the finite elements, a positive pressure
   pushes on the face, against its outward normal.
-- **Restart** works as for the implicit solvers (see above); the checkpoint carries the half-step velocity, the net
-  force and the lumped mass.
+- **Restart** works as for the implicit solvers (see above): the model's checkpoint carries the half-step velocity,
+  the solver's the net force and the lumped mass.
 
 Choosing a linear solver
 ------------------------
