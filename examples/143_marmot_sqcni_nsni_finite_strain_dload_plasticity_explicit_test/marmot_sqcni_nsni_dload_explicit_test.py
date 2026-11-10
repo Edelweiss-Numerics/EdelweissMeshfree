@@ -214,7 +214,7 @@ def run_sim():
         theJournal,
         theModel.surfaces["projectile_top"],
         "pressure",
-        np.array([-1000.00]),
+        np.array([1000.00]),
         f_t=lambda t: 1.0,
     )
 

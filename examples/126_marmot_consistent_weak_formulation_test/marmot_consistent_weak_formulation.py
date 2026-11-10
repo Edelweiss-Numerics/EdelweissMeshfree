@@ -239,7 +239,7 @@ def run_sim():
         journal=theJournal,
         particleSurface=surfacePressure,
         distributedLoadType="pressure",
-        loadVector=np.array([-100]),
+        loadVector=np.array([100]),
         f_t=lambda t: 1.0,
     )
     # pressure_right = ParticleDistributedLoad(
@@ -248,7 +248,7 @@ def run_sim():
     #    journal=theJournal,
     #    particles=theModel.particleSets["rectangular_grid_right"],
     #    distributedLoadType="pressure",
-    #    loadVector=np.array([-100]),
+    #    loadVector=np.array([100]),
     #    surfaceID=2,
     #    f_t=lambda t: 1.0,
     # )

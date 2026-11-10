@@ -201,8 +201,8 @@ What to know
   mass; its node has no equation of motion and keeps a zero velocity.
 - **A particle that cannot take an increment** ends the step with ``StepFailed``: the increment is set by stability,
   not by convergence, so it is not cut back.
-- **Pressure.** A particle pressure is assembled as in implicit runs: a positive pressure pulls along the outward
-  normal of the face.
+- **Pressure.** A particle pressure is assembled as in implicit runs: as for the finite elements, a positive pressure
+  pushes on the face, against its outward normal.
 - **Restart** works as for the implicit solvers (see above); the checkpoint carries the half-step velocity, the net
   force and the lumped mass.
 

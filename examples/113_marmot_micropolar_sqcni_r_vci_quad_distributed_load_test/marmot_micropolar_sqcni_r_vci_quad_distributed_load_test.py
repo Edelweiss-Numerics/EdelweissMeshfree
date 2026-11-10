@@ -219,7 +219,7 @@ def run_sim():
     )
 
     pressureTop = ParticleDistributedLoad(
-        "pressureTop", theModel, theJournal, theModel.surfaces["rectangular_grid_top"], "pressure", np.array([-1])
+        "pressureTop", theModel, theJournal, theModel.surfaces["rectangular_grid_top"], "pressure", np.array([1])
     )
 
     try:

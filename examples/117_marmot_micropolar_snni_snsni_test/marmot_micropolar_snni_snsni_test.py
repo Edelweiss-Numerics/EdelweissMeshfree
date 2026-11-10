@@ -216,7 +216,7 @@ def run_sim():
     )
 
     pressureTop = ParticleDistributedLoad(
-        "pressureTop", theModel, theJournal, theModel.surfaces["rectangular_grid_top"], "pressure", np.array([-5.0])
+        "pressureTop", theModel, theJournal, theModel.surfaces["rectangular_grid_top"], "pressure", np.array([5.0])
     )
 
     # The model holds its managers and constraints, the load is a step action of the step.
