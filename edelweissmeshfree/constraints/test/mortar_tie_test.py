@@ -91,7 +91,6 @@ def _model():
     model.nodeFields = {
         "displacement": MPMNodeField("displacement", 2, NodeSet("all", finiteElementNodes + kernelNodes))
     }
-    model.nodeFields["displacement"].createFieldValueEntry("U")
 
     return model, finiteElementNodes, particles
 

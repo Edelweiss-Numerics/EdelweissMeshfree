@@ -20,8 +20,8 @@ two kinds of nodes hold different things:
   them at zero.
 
 :class:`~edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout` passes the solution between the
-model and the solver's vectors accordingly. The model writes back the solution ``U`` of every node, and the increment
-``dU`` and the reaction ``P`` if its node fields hold these entries (``createFieldValueEntry("P")``).
+model and the solver's vectors accordingly. The model writes back the solution ``U``, the increment ``dU`` and the
+reaction ``P`` of every node (see EdelweissFE's "Node field results" for the meaning of these entries).
 
 The tie between the two domains
 -------------------------------

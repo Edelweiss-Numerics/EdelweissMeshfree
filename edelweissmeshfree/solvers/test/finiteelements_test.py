@@ -77,8 +77,6 @@ def test_the_nodes_of_the_finite_elements_carry_their_total_solution_into_the_ne
     model = MPMModel(2)
     addFiniteElementStrip(model, NUMBER_OF_ELEMENTS)
     model.prepareYourself(journal)
-    # the solver copies back only the entries the model's node fields hold, which is U alone by default
-    model.nodeFields["displacement"].createFieldValueEntry("P")
 
     fieldOutputController = MPMFieldOutputController(model, journal)
     fieldOutputController.initializeJob()

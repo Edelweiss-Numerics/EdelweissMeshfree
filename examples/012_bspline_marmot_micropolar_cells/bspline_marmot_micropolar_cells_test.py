@@ -90,7 +90,6 @@ def run_sim(bspline_order):
     )
 
     mpmModel.prepareYourself(journal)
-    mpmModel.nodeFields["displacement"].createFieldValueEntry("dU")
 
     allCells = mpmModel.cellSets["all"]
     allMPs = mpmModel.materialPointSets["all"]

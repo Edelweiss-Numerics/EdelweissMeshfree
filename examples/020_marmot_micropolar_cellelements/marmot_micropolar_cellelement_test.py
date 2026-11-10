@@ -84,9 +84,6 @@ def run_sim():
 
     mpmModel.prepareYourself(journal)
     journal.printPrettyTable(mpmModel.makePrettyTableSummary(), "Model Summary")
-    mpmModel.nodeFields["displacement"].createFieldValueEntry("dU")
-    mpmModel.nodeFields["displacement"].createFieldValueEntry("U")
-    mpmModel.nodeFields["displacement"].createFieldValueEntry("P")
 
     allCellElements = mpmModel.cellElementSets["all"]
     allMPs = mpmModel.materialPointSets["all"]
