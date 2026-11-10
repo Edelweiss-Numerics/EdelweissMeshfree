@@ -162,6 +162,9 @@
 <span class="sd">        Amplitude function of the prescribed value over step progress (default linear).</span>
 <span class="sd">    """</span>
 
+    <span class="c1">#: The prescribed value reached by the steps before, this step's increment, and whether it is idle.</span>
+    <span class="n">checkpointedState</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"_gAtStepStart"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="s2">"_delta"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="s2">"_idle"</span><span class="p">:</span> <span class="nb">bool</span><span class="p">}</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>

@@ -1,24 +1,24 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" data-content_root="../../../../">
+<html class="writer-html5" lang="en" data-content_root="../../../../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>edelweissmeshfree.numerics.predictors.linearpredictor &mdash; EdelweissMeshfree v26.11 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
-      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
-      <link rel="stylesheet" type="text/css" href="../../../../_static/css/custom.css?v=1d735308" />
+  <title>edelweissmeshfree.solvers.deprecated.predictors.linearpredictor &mdash; EdelweissMeshfree v26.11 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../../_static/css/custom.css?v=1d735308" />
 
   
-      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
-      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../../_static/documentation_options.js?v=57c4c7c7"></script>
-      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
-    <script src="../../../../_static/js/theme.js"></script>
-    <link rel="index" title="Index" href="../../../../genindex.html" />
-    <link rel="search" title="Search" href="../../../../search.html" /> 
+      <script src="../../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../../_static/documentation_options.js?v=57c4c7c7"></script>
+      <script src="../../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -29,12 +29,12 @@
 
           
           
-          <a href="../../../../index.html" class="icon icon-home">
+          <a href="../../../../../index.html" class="icon icon-home">
             EdelweissMeshfree
-              <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+              <img src="../../../../../_static/logo.png" class="logo" alt="Logo"/>
           </a>
 <div role="search">
-  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
@@ -42,10 +42,10 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../../introduction.html">Introduction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../gallery.html">Gallery</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../publications.html">Publications</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../documentation/index.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../gallery.html">Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../documentation/index.html">Documentation</a></li>
 </ul>
 
         </div>
@@ -54,16 +54,16 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../../../index.html">EdelweissMeshfree</a>
+          <a href="../../../../../index.html">EdelweissMeshfree</a>
       </nav>
 
       <div class="wy-nav-content">
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
-          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
-      <li class="breadcrumb-item active">edelweissmeshfree.numerics.predictors.linearpredictor</li>
+      <li><a href="../../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">edelweissmeshfree.solvers.deprecated.predictors.linearpredictor</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -72,7 +72,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <h1>Source code for edelweissmeshfree.numerics.predictors.linearpredictor</h1><div class="highlight"><pre>
+  <h1>Source code for edelweissmeshfree.solvers.deprecated.predictors.linearpredictor</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
 <span class="c1">#  ---------------------------------------------------------------------</span>
 <span class="c1">#</span>
@@ -113,11 +113,11 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.numerics.dofmanager</span><span class="w"> </span><span class="kn">import</span> <span class="n">DofVector</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.timesteppers.timestep</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeStep</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.numerics.predictors.basepredictor</span><span class="w"> </span><span class="kn">import</span> <span class="n">BasePredictor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.solvers.deprecated.predictors.basepredictor</span><span class="w"> </span><span class="kn">import</span> <span class="n">BasePredictor</span>
 
 
 <div class="viewcode-block" id="LinearPredictor">
-<a class="viewcode-back" href="../../../../documentation/numeric_tools.html#edelweissmeshfree.numerics.predictors.linearpredictor.LinearPredictor">[docs]</a>
+<a class="viewcode-back" href="../../../../../documentation/solvers.html#edelweissmeshfree.solvers.deprecated.predictors.linearpredictor.LinearPredictor">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">LinearPredictor</span><span class="p">(</span><span class="n">BasePredictor</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""A linear extrapolator which uses the last solution increment to predict the next solution."""</span>
 
@@ -130,7 +130,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_dLambda_n</span> <span class="o">=</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="LinearPredictor.resetHistory">
-<a class="viewcode-back" href="../../../../documentation/numeric_tools.html#edelweissmeshfree.numerics.predictors.linearpredictor.LinearPredictor.resetHistory">[docs]</a>
+<a class="viewcode-back" href="../../../../../documentation/solvers.html#edelweissmeshfree.solvers.deprecated.predictors.linearpredictor.LinearPredictor.resetHistory">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">resetHistory</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
     <span class="p">):</span>
@@ -141,7 +141,7 @@
 
 
 <div class="viewcode-block" id="LinearPredictor.getPrediction">
-<a class="viewcode-back" href="../../../../documentation/numeric_tools.html#edelweissmeshfree.numerics.predictors.linearpredictor.LinearPredictor.getPrediction">[docs]</a>
+<a class="viewcode-back" href="../../../../../documentation/solvers.html#edelweissmeshfree.solvers.deprecated.predictors.linearpredictor.LinearPredictor.getPrediction">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">getPrediction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dU_n</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_arcLength</span><span class="p">:</span>
@@ -163,7 +163,7 @@
 
 
 <div class="viewcode-block" id="LinearPredictor.updateHistory">
-<a class="viewcode-back" href="../../../../documentation/numeric_tools.html#edelweissmeshfree.numerics.predictors.linearpredictor.LinearPredictor.updateHistory">[docs]</a>
+<a class="viewcode-back" href="../../../../../documentation/solvers.html#edelweissmeshfree.solvers.deprecated.predictors.linearpredictor.LinearPredictor.updateHistory">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">updateHistory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dU</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">,</span> <span class="n">dLambda</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_dU_n</span> <span class="o">=</span> <span class="n">dU</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_deltaT_n</span> <span class="o">=</span> <span class="n">timeStep</span><span class="o">.</span><span class="n">timeIncrement</span>

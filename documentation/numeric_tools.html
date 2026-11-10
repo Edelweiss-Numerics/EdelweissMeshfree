@@ -55,7 +55,7 @@
 <li class="toctree-l2"><a class="reference internal" href="cellelements.html">Cellelements</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mpm/material_points.html">Material Points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="solvers.html">Solvers</a></li>
-<li class="toctree-l2"><a class="reference internal" href="choosing_a_solver.html">Choosing a linear solver</a></li>
+<li class="toctree-l2"><a class="reference internal" href="choosing_a_solver.html">Choosing a solver</a></li>
 <li class="toctree-l2"><a class="reference internal" href="assembly.html">System matrix assembly</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mpm/material_point_managers.html">Material Point Managers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="model_generators.html">Model generators</a></li>
@@ -70,12 +70,6 @@
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Numerical tools</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#module-edelweissmeshfree.numerics.dofmanager"><code class="docutils literal notranslate"><span class="pre">DofManager</span></code> class</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager"><code class="docutils literal notranslate"><span class="pre">MPMDofManager</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="#predictors">Predictors</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#module-edelweissmeshfree.numerics.predictors.basepredictor"><code class="docutils literal notranslate"><span class="pre">BasePredictor</span></code> class</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#module-edelweissmeshfree.numerics.predictors.linearpredictor"><code class="docutils literal notranslate"><span class="pre">LinearPredictor</span></code> class</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#module-edelweissmeshfree.numerics.predictors.quadraticpredictor"><code class="docutils literal notranslate"><span class="pre">QuadraticPredictor</span></code> class</a></li>
 </ul>
 </li>
 </ul>
@@ -123,7 +117,7 @@ problems.</p>
 <dd><p>A DofManager class for the Material Point Method.
 Derived from DofManager, it is used to manage the degrees of freedom of the model
 and to provide the necessary information for the assembly of the global system matrix.</p>
-<dl class="field-list simple">
+<dl class="field-list">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>nodeFields</strong> (<em>list</em>) – A list of node fields.</p></li>
@@ -139,6 +133,22 @@ and to provide the necessary information for the assembly of the global system m
 <li><p><strong>determiningIndexToHostObjectMappping</strong> (<em>bool</em>)</p></li>
 </ul>
 </dd>
+<dt class="field-even">Attributes<span class="colon">:</span></dt>
+<dd class="field-even"><dl>
+<dt><strong>dofNumberingDigest</strong></dt><dd><p>A digest, a hexadecimal string, of what decides the index of every degree of freedom: for every field, its
+name, its dimension, its slice in the DofVector and the labels of its nodes in the order they are numbered; and
+the names of the scalar variables, which follow, in the order they are numbered. Two equation systems with the
+same digest give every degree of freedom the same index, so a DofVector of one is a DofVector of the other –
+e.g., before and after a rebuild caused by a contact search, which changes the coupling of the degrees of
+freedom but not their numbering. The scalar variables are named, not counted: they are those of the
+constraints switched on, which a constraint may change within a step (switched from outside, or by itself), so
+that two systems with as many scalar variables may number different ones.</p>
+<p>The digest names the nodes by their labels, so it is the same in every run of a model: a restart checkpoint
+holds it together with the vectors it numbers. Computed at the first request; the numbering of a DofManager
+does not change.</p>
+</dd>
+</dl>
+</dd>
 </dl>
 <p class="rubric">Methods</p>
 <table class="autosummary longtable docutils align-default">
@@ -149,34 +159,31 @@ and to provide the necessary information for the assembly of the global system m
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.constructVIJSystemMatrix" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.constructVIJSystemMatrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">constructVIJSystemMatrix</span></code></a>()</p></td>
 <td><p>Construct a VIJ (COO) Sparse System matrix object, which also has knowledge about the location of each entity.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.dofNumbering" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.dofNumbering"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dofNumbering</span></code></a>()</p></td>
-<td><p>What decides the index of every degree of freedom: the fields with their slices in the DofVector, the field variables (the nodes' entries of each field) in the order they are numbered, and the scalar variables in the order they are numbered.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.getNodeForIndexInDofVector" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.getNodeForIndexInDofVector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getNodeForIndexInDofVector</span></code></a>(index)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.getNodeForIndexInDofVector" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.getNodeForIndexInDofVector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getNodeForIndexInDofVector</span></code></a>(index)</p></td>
 <td><p>Find the node for a given index in the equuation system.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.locateFieldOnNodeSet" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.locateFieldOnNodeSet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">locateFieldOnNodeSet</span></code></a>(field, nodeSet)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.locateFieldOnNodeSet" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.locateFieldOnNodeSet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">locateFieldOnNodeSet</span></code></a>(field, nodeSet)</p></td>
 <td><p>Where the degrees of freedom of a field on the nodes of a node set lie in the DofVector, e.g. those a Dirichlet boundary condition prescribes, or those a node force acts on.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.refreshConstraintIndices" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.refreshConstraintIndices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">refreshConstraintIndices</span></code></a>(constraints)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.refreshConstraintIndices" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.refreshConstraintIndices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">refreshConstraintIndices</span></code></a>(constraints)</p></td>
 <td><p>Re-locate the constraints' degrees of freedom after their connectivity changed.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.updateConstraints" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.updateConstraints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConstraints</span></code></a>(constraints)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.updateConstraints" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.updateConstraints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConstraints</span></code></a>(constraints)</p></td>
 <td><p>Updates the connectivity mapping for constraints in a serial loop.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.updateParticles" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.updateParticles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateParticles</span></code></a>(particles)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.updateParticles" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.updateParticles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateParticles</span></code></a>(particles)</p></td>
 <td><p>Updates the connectivity mapping for the given particles without rebuilding the entire DofManager structure.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeDofVectorToNodeField" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeDofVectorToNodeField"><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeDofVectorToNodeField</span></code></a>(dofVector, ...)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeDofVectorToNodeField" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeDofVectorToNodeField"><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeDofVectorToNodeField</span></code></a>(dofVector, ...)</p></td>
 <td><p>Write the current values of an entire NodeField from the respective locations in a given DofVector.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeDofVectorToScalarVariables" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeDofVectorToScalarVariables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeDofVectorToScalarVariables</span></code></a>(dofVector)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeDofVectorToScalarVariables" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeDofVectorToScalarVariables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeDofVectorToScalarVariables</span></code></a>(dofVector)</p></td>
 <td><p>Set the values of the scalar variables of this equation system from their locations in a given DofVector; the counterpart of <a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeScalarVariablesToDofVector" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeScalarVariablesToDofVector"><code class="xref py py-meth docutils literal notranslate"><span class="pre">writeScalarVariablesToDofVector()</span></code></a>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeNodeFieldToDofVector" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeNodeFieldToDofVector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeNodeFieldToDofVector</span></code></a>(dofVector, ...[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeNodeFieldToDofVector" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeNodeFieldToDofVector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeNodeFieldToDofVector</span></code></a>(dofVector, ...[, ...])</p></td>
 <td><p>Write the current values of an entire NodeField to the respective locations in a given DofVector.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeScalarVariablesToDofVector" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeScalarVariablesToDofVector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeScalarVariablesToDofVector</span></code></a>(dofVector)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeScalarVariablesToDofVector" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeScalarVariablesToDofVector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeScalarVariablesToDofVector</span></code></a>(dofVector)</p></td>
 <td><p>Write the values of the scalar variables of this equation system to their locations in a given DofVector.</p></td>
 </tr>
 </tbody>
@@ -545,24 +552,6 @@ the location of each entity.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager.dofNumbering">
-<span class="sig-name descname"><span class="pre">dofNumbering</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.dofNumbering" title="Link to this definition"></a></dt>
-<dd><p>What decides the index of every degree of freedom: the fields with their slices in the DofVector, the field
-variables (the nodes’ entries of each field) in the order they are numbered, and the scalar variables in the
-order they are numbered. Two managers whose numberings compare equal give every degree of freedom the same
-index, so a DofVector of one is a DofVector of the other – e.g., before and after a rebuild caused by a
-contact search, which changes the coupling of the degrees of freedom but not their numbering.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The numbering, to be compared with <code class="docutils literal notranslate"><span class="pre">==</span></code>; field and scalar variables compare by identity.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>tuple</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager.getNodeForIndexInDofVector">
 <span class="sig-name descname"><span class="pre">getNodeForIndexInDofVector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.getNodeForIndexInDofVector" title="Link to this definition"></a></dt>
 <dd><p>Find the node for a given index in the equuation system.</p>
@@ -771,6 +760,27 @@ nodes and the positions of these nodes in the set; see <a class="reference inter
 <dd><p>Accumulated number of element DOFs (= sum of element vector sizes)</p>
 </dd></dl>
 
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager.dofNumberingDigest">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">dofNumberingDigest</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.dofNumberingDigest" title="Link to this definition"></a></dt>
+<dd><p>for every field, its
+name, its dimension, its slice in the DofVector and the labels of its nodes in the order they are numbered; and
+the names of the scalar variables, which follow, in the order they are numbered. Two equation systems with the
+same digest give every degree of freedom the same index, so a DofVector of one is a DofVector of the other –
+e.g., before and after a rebuild caused by a contact search, which changes the coupling of the degrees of
+freedom but not their numbering. The scalar variables are named, not counted: they are those of the
+constraints switched on, which a constraint may change within a step (switched from outside, or by itself), so
+that two systems with as many scalar variables may number different ones.</p>
+<p>The digest names the nodes by their labels, so it is the same in every run of a model: a restart checkpoint
+holds it together with the vectors it numbers. Computed at the first request; the numbering of a DofManager
+does not change.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A digest, a hexadecimal string, of what decides the index of every degree of freedom</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager.fields">
 <span class="sig-name descname"><span class="pre">fields</span></span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.fields" title="Link to this definition"></a></dt>
@@ -844,213 +854,6 @@ every degree of freedom.</p>
 
 </dd></dl>
 
-</section>
-<section id="predictors">
-<h2>Predictors<a class="headerlink" href="#predictors" title="Link to this heading"></a></h2>
-<p>Predictors are used to make initial guesses in the Newton-Raphson solver.</p>
-<section id="module-edelweissmeshfree.numerics.predictors.basepredictor">
-<span id="basepredictor-class"></span><h3><code class="docutils literal notranslate"><span class="pre">BasePredictor</span></code> class<a class="headerlink" href="#module-edelweissmeshfree.numerics.predictors.basepredictor" title="Link to this heading"></a></h3>
-<p>Extrapolators (Predictors) are used for making initia guesses in the Newton scheme.</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.predictors.basepredictor.BasePredictor">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.numerics.predictors.basepredictor.</span></span><span class="sig-name descname"><span class="pre">BasePredictor</span></span><a class="reference internal" href="../_modules/edelweissmeshfree/numerics/predictors/basepredictor.html#BasePredictor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.numerics.predictors.basepredictor.BasePredictor" title="Link to this definition"></a></dt>
-<dd><p>The BaseExtrapolator class is an abstract base class for all extrapoltors.
-If you want to implement a new extrapolator, you have to inherit from this class.</p>
-<p class="rubric">Methods</p>
-<table class="autosummary longtable docutils align-default">
-<tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.predictors.basepredictor.BasePredictor.getPrediction" title="edelweissmeshfree.numerics.predictors.basepredictor.BasePredictor.getPrediction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getPrediction</span></code></a>(timeStep)</p></td>
-<td><p>Get the prediction for the next time step.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.predictors.basepredictor.BasePredictor.resetHistory" title="edelweissmeshfree.numerics.predictors.basepredictor.BasePredictor.resetHistory"><code class="xref py py-obj docutils literal notranslate"><span class="pre">resetHistory</span></code></a>()</p></td>
-<td><p>Reset the history of the extrapolator.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.predictors.basepredictor.BasePredictor.updateHistory" title="edelweissmeshfree.numerics.predictors.basepredictor.BasePredictor.updateHistory"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateHistory</span></code></a>(dU, timeStep)</p></td>
-<td><p>Update the history of the extrapolator.</p></td>
-</tr>
-</tbody>
-</table>
-<dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.predictors.basepredictor.BasePredictor.getPrediction">
-<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">getPrediction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/numerics/predictors/basepredictor.html#BasePredictor.getPrediction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.numerics.predictors.basepredictor.BasePredictor.getPrediction" title="Link to this definition"></a></dt>
-<dd><p>Get the prediction for the next time step.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The predicted solution for the next time step.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>DofVector</p>
-</dd>
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>timeStep</strong> (<em>TimeStep</em>)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.predictors.basepredictor.BasePredictor.resetHistory">
-<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">resetHistory</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/numerics/predictors/basepredictor.html#BasePredictor.resetHistory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.numerics.predictors.basepredictor.BasePredictor.resetHistory" title="Link to this definition"></a></dt>
-<dd><p>Reset the history of the extrapolator. Usually when a solve fails.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.predictors.basepredictor.BasePredictor.updateHistory">
-<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">updateHistory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/numerics/predictors/basepredictor.html#BasePredictor.updateHistory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.numerics.predictors.basepredictor.BasePredictor.updateHistory" title="Link to this definition"></a></dt>
-<dd><p>Update the history of the extrapolator.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>dU</strong> (<em>DofVector</em>) – The increment of the solution.</p></li>
-<li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The current time step.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-</section>
-<section id="module-edelweissmeshfree.numerics.predictors.linearpredictor">
-<span id="linearpredictor-class"></span><h3><code class="docutils literal notranslate"><span class="pre">LinearPredictor</span></code> class<a class="headerlink" href="#module-edelweissmeshfree.numerics.predictors.linearpredictor" title="Link to this heading"></a></h3>
-<dl class="py class">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.predictors.linearpredictor.LinearPredictor">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.numerics.predictors.linearpredictor.</span></span><span class="sig-name descname"><span class="pre">LinearPredictor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">journal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arcLength</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/numerics/predictors/linearpredictor.html#LinearPredictor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.numerics.predictors.linearpredictor.LinearPredictor" title="Link to this definition"></a></dt>
-<dd><p>A linear extrapolator which uses the last solution increment to predict the next solution.</p>
-<p class="rubric">Methods</p>
-<table class="autosummary longtable docutils align-default">
-<tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.predictors.linearpredictor.LinearPredictor.getPrediction" title="edelweissmeshfree.numerics.predictors.linearpredictor.LinearPredictor.getPrediction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getPrediction</span></code></a>(timeStep)</p></td>
-<td><p>Get the prediction for the next time step.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.predictors.linearpredictor.LinearPredictor.resetHistory" title="edelweissmeshfree.numerics.predictors.linearpredictor.LinearPredictor.resetHistory"><code class="xref py py-obj docutils literal notranslate"><span class="pre">resetHistory</span></code></a>()</p></td>
-<td><p>Reset the history of the extrapolator.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.predictors.linearpredictor.LinearPredictor.updateHistory" title="edelweissmeshfree.numerics.predictors.linearpredictor.LinearPredictor.updateHistory"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateHistory</span></code></a>(dU, timeStep[, dLambda])</p></td>
-<td><p>Update the history of the extrapolator.</p></td>
-</tr>
-</tbody>
-</table>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>journal</strong> (<em>Journal</em>)</p></li>
-<li><p><strong>arcLength</strong> (<em>bool</em>)</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.predictors.linearpredictor.LinearPredictor.getPrediction">
-<span class="sig-name descname"><span class="pre">getPrediction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/numerics/predictors/linearpredictor.html#LinearPredictor.getPrediction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.numerics.predictors.linearpredictor.LinearPredictor.getPrediction" title="Link to this definition"></a></dt>
-<dd><p>Get the prediction for the next time step.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The predicted solution for the next time step.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>DofVector</p>
-</dd>
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>timeStep</strong> (<em>TimeStep</em>)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.predictors.linearpredictor.LinearPredictor.resetHistory">
-<span class="sig-name descname"><span class="pre">resetHistory</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/numerics/predictors/linearpredictor.html#LinearPredictor.resetHistory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.numerics.predictors.linearpredictor.LinearPredictor.resetHistory" title="Link to this definition"></a></dt>
-<dd><p>Reset the history of the extrapolator. Usually when a solve fails.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.predictors.linearpredictor.LinearPredictor.updateHistory">
-<span class="sig-name descname"><span class="pre">updateHistory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dLambda</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/numerics/predictors/linearpredictor.html#LinearPredictor.updateHistory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.numerics.predictors.linearpredictor.LinearPredictor.updateHistory" title="Link to this definition"></a></dt>
-<dd><p>Update the history of the extrapolator.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>dU</strong> (<em>DofVector</em>) – The increment of the solution.</p></li>
-<li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The current time step.</p></li>
-<li><p><strong>dLambda</strong> (<em>float</em>)</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-</section>
-<section id="module-edelweissmeshfree.numerics.predictors.quadraticpredictor">
-<span id="quadraticpredictor-class"></span><h3><code class="docutils literal notranslate"><span class="pre">QuadraticPredictor</span></code> class<a class="headerlink" href="#module-edelweissmeshfree.numerics.predictors.quadraticpredictor" title="Link to this heading"></a></h3>
-<dl class="py class">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.predictors.quadraticpredictor.QuadraticPredictor">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.numerics.predictors.quadraticpredictor.</span></span><span class="sig-name descname"><span class="pre">QuadraticPredictor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">journal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arcLength</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/numerics/predictors/quadraticpredictor.html#QuadraticPredictor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.numerics.predictors.quadraticpredictor.QuadraticPredictor" title="Link to this definition"></a></dt>
-<dd><p>A quadratic extrapolator which uses the last two solution increments to predict the next solution.</p>
-<p class="rubric">Methods</p>
-<table class="autosummary longtable docutils align-default">
-<tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.predictors.quadraticpredictor.QuadraticPredictor.getPrediction" title="edelweissmeshfree.numerics.predictors.quadraticpredictor.QuadraticPredictor.getPrediction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getPrediction</span></code></a>(timeStep)</p></td>
-<td><p>Get the prediction for the next time step.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.predictors.quadraticpredictor.QuadraticPredictor.resetHistory" title="edelweissmeshfree.numerics.predictors.quadraticpredictor.QuadraticPredictor.resetHistory"><code class="xref py py-obj docutils literal notranslate"><span class="pre">resetHistory</span></code></a>()</p></td>
-<td><p>Reset the history of the extrapolator.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.predictors.quadraticpredictor.QuadraticPredictor.updateHistory" title="edelweissmeshfree.numerics.predictors.quadraticpredictor.QuadraticPredictor.updateHistory"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateHistory</span></code></a>(dU, timeStep[, dLambda])</p></td>
-<td><p>Update the history of the extrapolator.</p></td>
-</tr>
-</tbody>
-</table>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>journal</strong> (<em>Journal</em>)</p></li>
-<li><p><strong>arcLength</strong> (<em>bool</em>)</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.predictors.quadraticpredictor.QuadraticPredictor.getPrediction">
-<span class="sig-name descname"><span class="pre">getPrediction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/numerics/predictors/quadraticpredictor.html#QuadraticPredictor.getPrediction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.numerics.predictors.quadraticpredictor.QuadraticPredictor.getPrediction" title="Link to this definition"></a></dt>
-<dd><p>Get the prediction for the next time step.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The predicted solution for the next time step.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>DofVector</p>
-</dd>
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>timeStep</strong> (<em>TimeStep</em>)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.predictors.quadraticpredictor.QuadraticPredictor.resetHistory">
-<span class="sig-name descname"><span class="pre">resetHistory</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/numerics/predictors/quadraticpredictor.html#QuadraticPredictor.resetHistory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.numerics.predictors.quadraticpredictor.QuadraticPredictor.resetHistory" title="Link to this definition"></a></dt>
-<dd><p>Reset the history of the extrapolator. Usually when a solve fails.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.predictors.quadraticpredictor.QuadraticPredictor.updateHistory">
-<span class="sig-name descname"><span class="pre">updateHistory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dLambda</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/numerics/predictors/quadraticpredictor.html#QuadraticPredictor.updateHistory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.numerics.predictors.quadraticpredictor.QuadraticPredictor.updateHistory" title="Link to this definition"></a></dt>
-<dd><p>Update the history of the extrapolator.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>dU</strong> (<em>DofVector</em>) – The increment of the solution.</p></li>
-<li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The current time step.</p></li>
-<li><p><strong>dLambda</strong> (<em>float</em>)</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-</section>
 </section>
 </section>
 

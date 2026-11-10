@@ -273,6 +273,21 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_stress</span><span class="p">[:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stress_temp</span></div>
 
 
+<div class="viewcode-block" id="PythonMaterialPoint.getRestartData">
+<a class="viewcode-back" href="../../../../documentation/mpm/material_points.html#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.getRestartData">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getRestartData</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The displacement, strain and stress of the last accepted increment."""</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">_displacement</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_strain</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stress</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="PythonMaterialPoint.readRestartData">
+<a class="viewcode-back" href="../../../../documentation/mpm/material_points.html#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.readRestartData">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">readRestartData</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">restartData</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Restore the displacement, strain and stress :meth:`getRestartData` returned."""</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_displacement</span><span class="p">[:],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_strain</span><span class="p">[:],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stress</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">restartData</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resetToLastValidStateAndPosition</span><span class="p">()</span></div>
+
+
 <div class="viewcode-block" id="PythonMaterialPoint.resetToLastValidStateAndPosition">
 <a class="viewcode-back" href="../../../../documentation/mpm/material_points.html#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.resetToLastValidStateAndPosition">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">resetToLastValidStateAndPosition</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>

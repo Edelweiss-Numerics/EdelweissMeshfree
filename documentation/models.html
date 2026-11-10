@@ -65,7 +65,7 @@
 <li class="toctree-l2"><a class="reference internal" href="cellelements.html">Cellelements</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mpm/material_points.html">Material Points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="solvers.html">Solvers</a></li>
-<li class="toctree-l2"><a class="reference internal" href="choosing_a_solver.html">Choosing a linear solver</a></li>
+<li class="toctree-l2"><a class="reference internal" href="choosing_a_solver.html">Choosing a solver</a></li>
 <li class="toctree-l2"><a class="reference internal" href="assembly.html">System matrix assembly</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mpm/material_point_managers.html">Material Point Managers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="model_generators.html">Model generators</a></li>
@@ -159,8 +159,8 @@ for nodes and scalar degrees of freedom, and it manages the fields.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.prepareYourself" title="edelweissmeshfree.models.mpmmodel.MPMModel.prepareYourself"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prepareYourself</span></code></a>(journal)</p></td>
 <td><p>Prepare the model for a simulation.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.readRestart" title="edelweissmeshfree.models.mpmmodel.MPMModel.readRestart"><code class="xref py py-obj docutils literal notranslate"><span class="pre">readRestart</span></code></a>(restartFile)</p></td>
-<td><p>Read the state of the model from a restart file.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.readRestart" title="edelweissmeshfree.models.mpmmodel.MPMModel.readRestart"><code class="xref py py-obj docutils literal notranslate"><span class="pre">readRestart</span></code></a>(restartFile[, journal])</p></td>
+<td><p>Read the state of the model from a restart checkpoint written by <a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.writeRestart" title="edelweissmeshfree.models.mpmmodel.MPMModel.writeRestart"><code class="xref py py-meth docutils literal notranslate"><span class="pre">writeRestart()</span></code></a>.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.removeElement" title="edelweissmeshfree.models.mpmmodel.MPMModel.removeElement"><code class="xref py py-obj docutils literal notranslate"><span class="pre">removeElement</span></code></a>(elNumber)</p></td>
 <td><p>Remove an element from the model.</p></td>
@@ -169,7 +169,7 @@ for nodes and scalar degrees of freedom, and it manages the fields.</p>
 <td><p>Bring the coupling of the degrees of freedom up to date with the converged state, before an increment; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code>.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.writeRestart" title="edelweissmeshfree.models.mpmmodel.MPMModel.writeRestart"><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeRestart</span></code></a>(restartFile)</p></td>
-<td><p>Write the current state of the model to a restart file.</p></td>
+<td><p>Write the converged state of the model to a restart checkpoint: EdelweissFE's model state (see <code class="xref py py-meth docutils literal notranslate"><span class="pre">writeRestart()</span></code>), and the state of every material point and particle.</p></td>
 </tr>
 </tbody>
 </table>
@@ -545,13 +545,14 @@ and initializes elements.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.readRestart">
-<span class="sig-name descname"><span class="pre">readRestart</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">restartFile</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmmodel.html#MPMModel.readRestart"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.readRestart" title="Link to this definition"></a></dt>
-<dd><p>Read the state of the model from a restart file.</p>
+<span class="sig-name descname"><span class="pre">readRestart</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">restartFile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">journal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmmodel.html#MPMModel.readRestart"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.readRestart" title="Link to this definition"></a></dt>
+<dd><p>Read the state of the model from a restart checkpoint written by <a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.writeRestart" title="edelweissmeshfree.models.mpmmodel.MPMModel.writeRestart"><code class="xref py py-meth docutils literal notranslate"><span class="pre">writeRestart()</span></code></a>.</p>
+<p>The model must have been built as for the checkpointed run, and <a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.prepareYourself" title="edelweissmeshfree.models.mpmmodel.MPMModel.prepareYourself"><code class="xref py py-meth docutils literal notranslate"><span class="pre">prepareYourself()</span></code></a> called.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>fileName</strong> – The name of the restart file.</p></li>
-<li><p><strong>restartFile</strong> (<em>File</em>)</p></li>
+<li><p><strong>restartFile</strong> (<em>File</em>) – An open, readable <code class="xref py py-class docutils literal notranslate"><span class="pre">h5py.File</span></code> (or group) to read the checkpoint from.</p></li>
+<li><p><strong>journal</strong> (<em>Journal</em>) – The journal, for the progress messages of the topology replay.</p></li>
 </ul>
 </dd>
 </dl>
@@ -594,13 +595,16 @@ solver rebuilds its equation system, but does not re-equilibrate.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.writeRestart">
 <span class="sig-name descname"><span class="pre">writeRestart</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">restartFile</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmmodel.html#MPMModel.writeRestart"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.writeRestart" title="Link to this definition"></a></dt>
-<dd><p>Write the current state of the model to a restart file.</p>
+<dd><p>Write the converged state of the model to a restart checkpoint: EdelweissFE’s model state (see
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">writeRestart()</span></code>), and the state of every material point and particle.</p>
+<p>The material point method and RKPM are updated-Lagrangian: the material points and particles carry the state,
+and their positions follow from it. The connectivity – which cells hold which material points, which kernel
+functions reach which particles, where bonded kernel functions sit – follows from the positions, and is
+rebuilt by the first connectivity update of the resumed run (<a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity" title="edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity"><code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code></a>), as before every
+increment.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>fileName</strong> – The name of the restart file.</p></li>
-<li><p><strong>restartFile</strong> (<em>File</em>)</p></li>
-</ul>
+<dd class="field-odd"><p><strong>restartFile</strong> (<em>File</em>) – An open, writable <code class="xref py py-class docutils literal notranslate"><span class="pre">h5py.File</span></code> (or group) to write the checkpoint into.</p>
 </dd>
 </dl>
 </dd></dl>

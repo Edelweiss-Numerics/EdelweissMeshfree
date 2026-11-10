@@ -60,11 +60,13 @@
 <li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.assignCells"><code class="docutils literal notranslate"><span class="pre">MaterialPointBase.assignCells()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.computeYourself"><code class="docutils literal notranslate"><span class="pre">MaterialPointBase.computeYourself()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getCenterCoordinates"><code class="docutils literal notranslate"><span class="pre">MaterialPointBase.getCenterCoordinates()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getRestartData"><code class="docutils literal notranslate"><span class="pre">MaterialPointBase.getRestartData()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getResultArray"><code class="docutils literal notranslate"><span class="pre">MaterialPointBase.getResultArray()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getVertexCoordinates"><code class="docutils literal notranslate"><span class="pre">MaterialPointBase.getVertexCoordinates()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getVolume"><code class="docutils literal notranslate"><span class="pre">MaterialPointBase.getVolume()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.initializeYourself"><code class="docutils literal notranslate"><span class="pre">MaterialPointBase.initializeYourself()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.prepareTimestep"><code class="docutils literal notranslate"><span class="pre">MaterialPointBase.prepareTimestep()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.readRestartData"><code class="docutils literal notranslate"><span class="pre">MaterialPointBase.readRestartData()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.setInitialCondition"><code class="docutils literal notranslate"><span class="pre">MaterialPointBase.setInitialCondition()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.setMaterial"><code class="docutils literal notranslate"><span class="pre">MaterialPointBase.setMaterial()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.setProperties"><code class="docutils literal notranslate"><span class="pre">MaterialPointBase.setProperties()</span></code></a></li>
@@ -83,7 +85,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../solvers.html">Solvers</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../choosing_a_solver.html">Choosing a linear solver</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../choosing_a_solver.html">Choosing a solver</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../assembly.html">System matrix assembly</a></li>
 <li class="toctree-l2"><a class="reference internal" href="material_point_managers.html">Material Point Managers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../model_generators.html">Model generators</a></li>
@@ -175,20 +177,26 @@ and to transfer the material properties to the grid.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getCenterCoordinates" title="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getCenterCoordinates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getCenterCoordinates</span></code></a>()</p></td>
 <td><p>The location of the material point is defined by the coordinates of it's center.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getResultArray" title="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getResultArray"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getResultArray</span></code></a>(result[, getPersistentView])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getRestartData" title="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getRestartData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getRestartData</span></code></a>()</p></td>
+<td><p>The state of the last accepted increment, for a restart checkpoint.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getResultArray" title="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getResultArray"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getResultArray</span></code></a>(result[, getPersistentView])</p></td>
 <td><p>Get the array of a result, possibly as a persistent view which is continiously updated by a MaterialPoint.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getVertexCoordinates" title="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getVertexCoordinates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVertexCoordinates</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getVertexCoordinates" title="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getVertexCoordinates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVertexCoordinates</span></code></a>()</p></td>
 <td><p>A material point's shape is defined by an arbitrary number of vertices.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getVolume" title="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getVolume"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVolume</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getVolume" title="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getVolume"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVolume</span></code></a>()</p></td>
 <td><p>A material point has distinct volume, which may change during a simulation.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.initializeYourself" title="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.initializeYourself"><code class="xref py py-obj docutils literal notranslate"><span class="pre">initializeYourself</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.initializeYourself" title="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.initializeYourself"><code class="xref py py-obj docutils literal notranslate"><span class="pre">initializeYourself</span></code></a>()</p></td>
 <td><p>Initalize the mateiral point to be ready for computing.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.prepareTimestep" title="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.prepareTimestep"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prepareTimestep</span></code></a>(timeTotal, dT)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.prepareTimestep" title="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.prepareTimestep"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prepareTimestep</span></code></a>(timeTotal, dT)</p></td>
 <td><p>Prepare a new time step, i.e., before interpolation from the grid takes place.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.readRestartData" title="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.readRestartData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">readRestartData</span></code></a>(restartData)</p></td>
+<td><p>Restore the state <a class="reference internal" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getRestartData" title="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getRestartData"><code class="xref py py-meth docutils literal notranslate"><span class="pre">getRestartData()</span></code></a> returned, and with it the position.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.setInitialCondition" title="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.setInitialCondition"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setInitialCondition</span></code></a>(stateType, values)</p></td>
 <td><p>Assign initial conditions.</p></td>
@@ -239,6 +247,21 @@ and to transfer the material properties to the grid.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>The coordinates of the material point’s center of mass.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getRestartData">
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">getRestartData</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/materialpoints/base/mp.html#MaterialPointBase.getRestartData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getRestartData" title="Link to this definition"></a></dt>
+<dd><p>The state of the last accepted increment, for a restart checkpoint. A material point is updated-Lagrangian:
+its position follows from this state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The state.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>np.ndarray</p>
@@ -311,6 +334,17 @@ updated by a MaterialPoint.</p>
 <li><p><strong>timeTotal</strong> (<em>float</em>)</p></li>
 <li><p><strong>dT</strong> (<em>float</em>)</p></li>
 </ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.readRestartData">
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">readRestartData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">restartData</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/materialpoints/base/mp.html#MaterialPointBase.readRestartData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.readRestartData" title="Link to this definition"></a></dt>
+<dd><p>Restore the state <a class="reference internal" href="#edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getRestartData" title="edelweissmeshfree.materialpoints.base.mp.MaterialPointBase.getRestartData"><code class="xref py py-meth docutils literal notranslate"><span class="pre">getRestartData()</span></code></a> returned, and with it the position.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>restartData</strong> (<em>ndarray</em>) – The state.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -432,26 +466,32 @@ Young’s modulus and Poisson’s ratio.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.getCenterCoordinates" title="edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.getCenterCoordinates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getCenterCoordinates</span></code></a>()</p></td>
 <td><p>The location of the material point is defined by the coordinates of it's center.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.getResultArray" title="edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.getResultArray"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getResultArray</span></code></a>(result[, getPersistentView])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.getRestartData" title="edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.getRestartData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getRestartData</span></code></a>()</p></td>
+<td><p>The displacement, strain and stress of the last accepted increment.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.getResultArray" title="edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.getResultArray"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getResultArray</span></code></a>(result[, getPersistentView])</p></td>
 <td><p>Get a result array by name.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.getVertexCoordinates" title="edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.getVertexCoordinates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVertexCoordinates</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.getVertexCoordinates" title="edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.getVertexCoordinates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVertexCoordinates</span></code></a>()</p></td>
 <td><p>A material point's shape is defined by an arbitrary number of vertices.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.getVolume" title="edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.getVolume"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVolume</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.getVolume" title="edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.getVolume"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVolume</span></code></a>()</p></td>
 <td><p>A material point has distinct volume, which may change during a simulation.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.initializeYourself" title="edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.initializeYourself"><code class="xref py py-obj docutils literal notranslate"><span class="pre">initializeYourself</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.initializeYourself" title="edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.initializeYourself"><code class="xref py py-obj docutils literal notranslate"><span class="pre">initializeYourself</span></code></a>()</p></td>
 <td><p>Initialize the material point.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.interpolateFieldsFromCell" title="edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.interpolateFieldsFromCell"><code class="xref py py-obj docutils literal notranslate"><span class="pre">interpolateFieldsFromCell</span></code></a>(dU, dStrain)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.interpolateFieldsFromCell" title="edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.interpolateFieldsFromCell"><code class="xref py py-obj docutils literal notranslate"><span class="pre">interpolateFieldsFromCell</span></code></a>(dU, dStrain)</p></td>
 <td><p>Receive interpolated displacement increment and strain increment from the cell.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.prepareTimestep" title="edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.prepareTimestep"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prepareTimestep</span></code></a>(timeTotal, dT)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.prepareTimestep" title="edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.prepareTimestep"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prepareTimestep</span></code></a>(timeTotal, dT)</p></td>
 <td><p>Prepare for a new timestep.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.prepareYourself" title="edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.prepareYourself"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prepareYourself</span></code></a>(timeTotal, dT)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.prepareYourself" title="edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.prepareYourself"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prepareYourself</span></code></a>(timeTotal, dT)</p></td>
 <td><p>Prepare for a new timestep (alias used by solvers).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.readRestartData" title="edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.readRestartData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">readRestartData</span></code></a>(restartData)</p></td>
+<td><p>Restore the displacement, strain and stress <a class="reference internal" href="#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.getRestartData" title="edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.getRestartData"><code class="xref py py-meth docutils literal notranslate"><span class="pre">getRestartData()</span></code></a> returned.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.resetToLastValidStateAndPosition" title="edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.resetToLastValidStateAndPosition"><code class="xref py py-obj docutils literal notranslate"><span class="pre">resetToLastValidStateAndPosition</span></code></a>()</p></td>
 <td><p>Reset to the last converged state.</p></td>
@@ -517,6 +557,17 @@ Young’s modulus and Poisson’s ratio.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.getRestartData">
+<span class="sig-name descname"><span class="pre">getRestartData</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/materialpoints/pythonmaterialpoint/mp.html#PythonMaterialPoint.getRestartData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.getRestartData" title="Link to this definition"></a></dt>
+<dd><p>The displacement, strain and stress of the last accepted increment.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>ndarray</em></p>
 </dd>
 </dl>
 </dd></dl>
@@ -613,6 +664,17 @@ Young’s modulus and Poisson’s ratio.</p>
 <li><p><strong>timeTotal</strong> (<em>float</em>)</p></li>
 <li><p><strong>dT</strong> (<em>float</em>)</p></li>
 </ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.readRestartData">
+<span class="sig-name descname"><span class="pre">readRestartData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">restartData</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/edelweissmeshfree/materialpoints/pythonmaterialpoint/mp.html#PythonMaterialPoint.readRestartData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.readRestartData" title="Link to this definition"></a></dt>
+<dd><p>Restore the displacement, strain and stress <a class="reference internal" href="#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.getRestartData" title="edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.getRestartData"><code class="xref py py-meth docutils literal notranslate"><span class="pre">getRestartData()</span></code></a> returned.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>restartData</strong> (<em>ndarray</em>)</p>
 </dd>
 </dl>
 </dd></dl>

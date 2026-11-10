@@ -112,12 +112,12 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">h5py</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.config.phenomena</span><span class="w"> </span><span class="kn">import</span> <span class="n">getFieldSize</span><span class="p">,</span> <span class="n">phenomena</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.journal.journal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Journal</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.models.femodel</span><span class="w"> </span><span class="kn">import</span> <span class="n">FEModel</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.sets.elementset</span><span class="w"> </span><span class="kn">import</span> <span class="n">ElementSet</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.sets.nodeset</span><span class="w"> </span><span class="kn">import</span> <span class="n">NodeSet</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.utils.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">RestartError</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.variables.fieldvariable</span><span class="w"> </span><span class="kn">import</span> <span class="n">FieldVariable</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">prettytable</span><span class="w"> </span><span class="kn">import</span> <span class="n">PrettyTable</span>
 
@@ -658,44 +658,58 @@
 <div class="viewcode-block" id="MPMModel.writeRestart">
 <a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.writeRestart">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">writeRestart</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">restartFile</span><span class="p">:</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Write the current state of the model to a restart file.</span>
+<span class="w">        </span><span class="sd">"""Write the converged state of the model to a restart checkpoint: EdelweissFE's model state (see</span>
+<span class="sd">        :meth:`~edelweissfe.models.femodel.FEModel.writeRestart`), and the state of every material point and particle.</span>
+
+<span class="sd">        The material point method and RKPM are updated-Lagrangian: the material points and particles carry the state,</span>
+<span class="sd">        and their positions follow from it. The connectivity -- which cells hold which material points, which kernel</span>
+<span class="sd">        functions reach which particles, where bonded kernel functions sit -- follows from the positions, and is</span>
+<span class="sd">        rebuilt by the first connectivity update of the resumed run (:meth:`updateConnectivity`), as before every</span>
+<span class="sd">        increment.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        fileName</span>
-<span class="sd">            The name of the restart file.</span>
+<span class="sd">        restartFile</span>
+<span class="sd">            An open, writable :class:`h5py.File` (or group) to write the checkpoint into.</span>
 <span class="sd">        """</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">writeRestart</span><span class="p">(</span><span class="n">restartFile</span><span class="p">)</span>
 
-        <span class="n">f</span> <span class="o">=</span> <span class="n">restartFile</span>
+        <span class="n">materialPointsGroup</span> <span class="o">=</span> <span class="n">restartFile</span><span class="o">.</span><span class="n">create_group</span><span class="p">(</span><span class="s2">"materialPoints"</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">materialPoint</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">materialPoints</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">materialPointsGroup</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">materialPoint</span><span class="o">.</span><span class="n">number</span><span class="p">),</span> <span class="n">data</span><span class="o">=</span><span class="n">materialPoint</span><span class="o">.</span><span class="n">getRestartData</span><span class="p">())</span>
 
-        <span class="c1"># particles</span>
-        <span class="n">f</span><span class="o">.</span><span class="n">create_group</span><span class="p">(</span><span class="s2">"particles"</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-            <span class="n">theData</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">getRestartData</span><span class="p">()</span>
-            <span class="n">f</span><span class="p">[</span><span class="s2">"particles"</span><span class="p">]</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">number</span><span class="p">),</span> <span class="n">data</span><span class="o">=</span><span class="n">theData</span><span class="p">)</span></div>
+        <span class="n">particlesGroup</span> <span class="o">=</span> <span class="n">restartFile</span><span class="o">.</span><span class="n">create_group</span><span class="p">(</span><span class="s2">"particles"</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">particle</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">particlesGroup</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">particle</span><span class="o">.</span><span class="n">number</span><span class="p">),</span> <span class="n">data</span><span class="o">=</span><span class="n">particle</span><span class="o">.</span><span class="n">getRestartData</span><span class="p">())</span></div>
 
 
 <div class="viewcode-block" id="MPMModel.readRestart">
 <a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.readRestart">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">readRestart</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">restartFile</span><span class="p">:</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Read the state of the model from a restart file.</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">readRestart</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">restartFile</span><span class="p">:</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">,</span> <span class="n">journal</span><span class="p">:</span> <span class="n">Journal</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Read the state of the model from a restart checkpoint written by :meth:`writeRestart`.</span>
+
+<span class="sd">        The model must have been built as for the checkpointed run, and :meth:`prepareYourself` called.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        fileName</span>
-<span class="sd">            The name of the restart file.</span>
+<span class="sd">        restartFile</span>
+<span class="sd">            An open, readable :class:`h5py.File` (or group) to read the checkpoint from.</span>
+<span class="sd">        journal</span>
+<span class="sd">            The journal, for the progress messages of the topology replay.</span>
 <span class="sd">        """</span>
 
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">readRestart</span><span class="p">(</span><span class="n">restartFile</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">readRestart</span><span class="p">(</span><span class="n">restartFile</span><span class="p">,</span> <span class="n">journal</span><span class="p">)</span>
 
-        <span class="n">f</span> <span class="o">=</span> <span class="n">restartFile</span>
-
-        <span class="c1"># particles</span>
-        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-            <span class="n">theData</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="s2">"particles"</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">number</span><span class="p">)]</span>
-            <span class="n">p</span><span class="o">.</span><span class="n">readRestartData</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">theData</span><span class="p">))</span></div>
+        <span class="k">for</span> <span class="n">entities</span><span class="p">,</span> <span class="n">groupName</span> <span class="ow">in</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">materialPoints</span><span class="p">,</span> <span class="s2">"materialPoints"</span><span class="p">),</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="p">,</span> <span class="s2">"particles"</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">groupName</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">restartFile</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">RestartError</span><span class="p">(</span><span class="s2">"the checkpoint holds no state of the </span><span class="si">{:}</span><span class="s2"> of an MPMModel"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">groupName</span><span class="p">))</span>
+            <span class="n">group</span> <span class="o">=</span> <span class="n">restartFile</span><span class="p">[</span><span class="n">groupName</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">number</span><span class="p">,</span> <span class="n">entity</span> <span class="ow">in</span> <span class="n">entities</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">entity</span><span class="o">.</span><span class="n">number</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">group</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">RestartError</span><span class="p">(</span><span class="s2">"the checkpoint holds no state for </span><span class="si">{:}</span><span class="s2"> </span><span class="si">{:}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">groupName</span><span class="p">,</span> <span class="n">number</span><span class="p">))</span>
+                <span class="n">entity</span><span class="o">.</span><span class="n">readRestartData</span><span class="p">(</span><span class="n">group</span><span class="p">[</span><span class="n">key</span><span class="p">][()])</span></div>
 </div>
 
 </pre></div>

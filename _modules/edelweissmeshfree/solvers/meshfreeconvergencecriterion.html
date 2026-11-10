@@ -151,9 +151,15 @@
 
 <div class="viewcode-block" id="jobInfoWithMeshfreeTolerances">
 <a class="viewcode-back" href="../../../documentation/solvers.html#edelweissmeshfree.solvers.meshfreeconvergencecriterion.jobInfoWithMeshfreeTolerances">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">jobInfoWithMeshfreeTolerances</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">jobInfoWithMeshfreeTolerances</span><span class="p">(</span><span class="o">**</span><span class="n">tolerances</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""The ``jobInfo`` of an EdelweissFE solver with EdelweissMeshfree's tolerances for every field. The scalar</span>
 <span class="sd">    variables, which EdelweissMeshfree's solvers did not check, keep EdelweissFE's tolerances.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    **tolerances</span>
+<span class="sd">        Tolerances that replace those of :data:`meshfreeFieldTolerances` for every field, by their names in the</span>
+<span class="sd">        ``jobInfo``, e.g. ``fluxResidualTolerance=5e-3``.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -161,10 +167,18 @@
 <span class="sd">        The job information.</span>
 <span class="sd">    """</span>
 
+    <span class="n">unknown</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">tolerances</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">meshfreeFieldTolerances</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">unknown</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">"no such tolerance: </span><span class="si">{:}</span><span class="s2">; the tolerances are </span><span class="si">{:}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">unknown</span><span class="p">)),</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">meshfreeFieldTolerances</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
     <span class="n">jobInfo</span> <span class="o">=</span> <span class="n">loadConfiguration</span><span class="p">({})</span>
 
     <span class="c1"># new dictionaries: the defaults that loadConfiguration hands out are EdelweissFE's own</span>
-    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">tolerance</span> <span class="ow">in</span> <span class="n">meshfreeFieldTolerances</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">tolerance</span> <span class="ow">in</span> <span class="p">(</span><span class="n">meshfreeFieldTolerances</span> <span class="o">|</span> <span class="n">tolerances</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="n">jobInfo</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
             <span class="n">field</span><span class="p">:</span> <span class="p">(</span><span class="n">default</span> <span class="k">if</span> <span class="n">field</span> <span class="o">==</span> <span class="s2">"scalar variables"</span> <span class="k">else</span> <span class="n">tolerance</span><span class="p">)</span> <span class="k">for</span> <span class="n">field</span><span class="p">,</span> <span class="n">default</span> <span class="ow">in</span> <span class="n">jobInfo</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
         <span class="p">}</span>

@@ -96,7 +96,7 @@
 <li class="toctree-l2"><a class="reference internal" href="cellelements.html">Cellelements</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mpm/material_points.html">Material Points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="solvers.html">Solvers</a></li>
-<li class="toctree-l2"><a class="reference internal" href="choosing_a_solver.html">Choosing a linear solver</a></li>
+<li class="toctree-l2"><a class="reference internal" href="choosing_a_solver.html">Choosing a solver</a></li>
 <li class="toctree-l2"><a class="reference internal" href="assembly.html">System matrix assembly</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mpm/material_point_managers.html">Material Point Managers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="model_generators.html">Model generators</a></li>
@@ -149,8 +149,7 @@ solver evaluates cells, cell elements, particles and elements alike. A cell is i
 configuration: its nodal values are increments, so it may read <code class="docutils literal notranslate"><span class="pre">dU</span></code> but never <code class="docutils literal notranslate"><span class="pre">U</span></code>. A cell element deforms like an
 element, and reads <code class="docutils literal notranslate"><span class="pre">U</span></code>.</p>
 <p>A Marmot cell that fails – Marmot throws – requests a cutback (EdelweissFE’s <code class="docutils literal notranslate"><span class="pre">CutbackRequest</span></code>), as an EdelweissFE
-element does, and the solver retries the increment smaller. So do the Marmot material points and particles, and the
-threaded Marmot kernels of <code class="docutils literal notranslate"><span class="pre">NQSParallelForMarmot</span></code>.</p>
+element does, and the solver retries the increment smaller. So do the Marmot material points and particles.</p>
 <p id="module-edelweissmeshfree.cells.base.cell">Cells represent the basic building blocks of the MPM grid. They are used to
 compute the material point kernels and to interpolate the field solutions back
 to the material points. Cells are used to compute the residual and stiffness

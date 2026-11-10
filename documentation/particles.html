@@ -56,7 +56,7 @@
 <li class="toctree-l2"><a class="reference internal" href="cellelements.html">Cellelements</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mpm/material_points.html">Material Points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="solvers.html">Solvers</a></li>
-<li class="toctree-l2"><a class="reference internal" href="choosing_a_solver.html">Choosing a linear solver</a></li>
+<li class="toctree-l2"><a class="reference internal" href="choosing_a_solver.html">Choosing a solver</a></li>
 <li class="toctree-l2"><a class="reference internal" href="assembly.html">System matrix assembly</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mpm/material_point_managers.html">Material Point Managers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="model_generators.html">Model generators</a></li>
@@ -211,7 +211,7 @@ For particles generally a node-wise layout is assumed.</p>
 <td><p>Get the interpolation vector for a given global coordinate.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getRestartData" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.getRestartData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getRestartData</span></code></a>()</p></td>
-<td><p>Get the restart data in  form of a numpy array.</p></td>
+<td><p>The state of the last accepted increment, for a restart checkpoint.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getResultArray" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.getResultArray"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getResultArray</span></code></a>(result[, getPersistentView, qp])</p></td>
 <td><p>Get the array of a result, possibly as a persistent view which is continiously updated by a MaterialPoint.</p></td>
@@ -229,7 +229,7 @@ For particles generally a node-wise layout is assumed.</p>
 <td><p>Prepare the particle to be ready for computing.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.readRestartData" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.readRestartData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">readRestartData</span></code></a>(restartData)</p></td>
-<td><p>Set the restart data.</p></td>
+<td><p>Restore the state <a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getRestartData" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.getRestartData"><code class="xref py py-meth docutils literal notranslate"><span class="pre">getRestartData()</span></code></a> returned, and with it the position and the shape.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.setInitialCondition" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.setInitialCondition"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setInitialCondition</span></code></a>(stateType, values)</p></td>
 <td><p>Assign initial conditions.</p></td>
@@ -484,10 +484,11 @@ nodal values are increments, so a particle reads <code class="docutils literal n
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.getRestartData">
 <span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">getRestartData</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particles/base/baseparticle.html#BaseParticle.getRestartData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getRestartData" title="Link to this definition"></a></dt>
-<dd><p>Get the restart data in  form of a numpy array.</p>
+<dd><p>The state of the last accepted increment, for a restart checkpoint. A particle is updated-Lagrangian: its
+position and shape follow from this state.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The restart data.</p>
+<dd class="field-odd"><p>The state.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>np.ndarray</p>
@@ -568,10 +569,10 @@ updated by a MaterialPoint.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.readRestartData">
 <span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">readRestartData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">restartData</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particles/base/baseparticle.html#BaseParticle.readRestartData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.readRestartData" title="Link to this definition"></a></dt>
-<dd><p>Set the restart data.</p>
+<dd><p>Restore the state <a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getRestartData" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.getRestartData"><code class="xref py py-meth docutils literal notranslate"><span class="pre">getRestartData()</span></code></a> returned, and with it the position and the shape.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>restartData</strong> (<em>ndarray</em>) – The restart data.</p>
+<dd class="field-odd"><p><strong>restartData</strong> (<em>ndarray</em>) – The state.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -786,19 +787,22 @@ For higher order (non point) particles, the surface vector might be omitted and 
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.initializeVIJContribution" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.initializeVIJContribution"><code class="xref py py-obj docutils literal notranslate"><span class="pre">initializeVIJContribution</span></code></a>(idcs, I_, J_, offset)</p></td>
 <td><p>Initialize the I and J arrays for the VIJ (COO) system matrix assembly.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setInitialCondition" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setInitialCondition"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setInitialCondition</span></code></a>(stateType, value)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.readRestartData" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.readRestartData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">readRestartData</span></code></a>(data)</p></td>
+<td><p>Restore the state <code class="xref py py-meth docutils literal notranslate"><span class="pre">getRestartData()</span></code> returned.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setInitialCondition" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setInitialCondition"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setInitialCondition</span></code></a>(stateType, value)</p></td>
 <td><p>Set initial condition of the particle.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setProperties" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setProperties"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setProperties</span></code></a>(properties)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setProperties" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setProperties"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setProperties</span></code></a>(properties)</p></td>
 <td><p>Set a list of properties of the particle.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setProperty" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setProperty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setProperty</span></code></a>(propertyName, value)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setProperty" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setProperty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setProperty</span></code></a>(propertyName, value)</p></td>
 <td><p>Set a property of the particle.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.shapeVIJContribution" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.shapeVIJContribution"><code class="xref py py-obj docutils literal notranslate"><span class="pre">shapeVIJContribution</span></code></a>(flat_view)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.shapeVIJContribution" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.shapeVIJContribution"><code class="xref py py-obj docutils literal notranslate"><span class="pre">shapeVIJContribution</span></code></a>(flat_view)</p></td>
 <td><p>Keep the view flat for Cython 1-D memoryview compatibility.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.updatePhysicsExplicit" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.updatePhysicsExplicit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updatePhysicsExplicit</span></code></a>(dUc, timeNew, dTime)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.updatePhysicsExplicit" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.updatePhysicsExplicit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updatePhysicsExplicit</span></code></a>(dUc, timeNew, dTime)</p></td>
 <td><p>Evaluate residual for given time, field, and field increment.</p></td>
 </tr>
 </tbody>
@@ -835,25 +839,22 @@ For higher order (non point) particles, the surface vector might be omitted and 
 <tr class="row-even"><td><p><strong>prepareYourself</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p><strong>readRestartData</strong></p></td>
+<tr class="row-odd"><td><p><strong>vci_assignTestFunctionCorrectionTerms</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p><strong>vci_assignTestFunctionCorrectionTerms</strong></p></td>
+<tr class="row-even"><td><p><strong>vci_compute_MMatrix</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p><strong>vci_compute_MMatrix</strong></p></td>
+<tr class="row-odd"><td><p><strong>vci_compute_TestGradient_P_Integral</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p><strong>vci_compute_TestGradient_P_Integral</strong></p></td>
+<tr class="row-even"><td><p><strong>vci_compute_Test_PGradient_Integral</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p><strong>vci_compute_Test_PGradient_Integral</strong></p></td>
+<tr class="row-odd"><td><p><strong>vci_compute_Test_P_BoundaryIntegral</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p><strong>vci_compute_Test_P_BoundaryIntegral</strong></p></td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><p><strong>vci_getNumberOfConstraints</strong></p></td>
+<tr class="row-even"><td><p><strong>vci_getNumberOfConstraints</strong></p></td>
 <td></td>
 </tr>
 </tbody>
@@ -953,6 +954,13 @@ updated by the underlying MarmotParticle.</p>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.readRestartData">
+<span class="sig-name descname"><span class="pre">readRestartData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.readRestartData" title="Link to this definition"></a></dt>
+<dd><p>Restore the state <code class="xref py py-meth docutils literal notranslate"><span class="pre">getRestartData()</span></code> returned. The geometry of the underlying MarmotParticle follows
+from its state, and is brought to it as at the start of an increment (see <code class="xref py py-meth docutils literal notranslate"><span class="pre">prepareYourself()</span></code>).</p>
 </dd></dl>
 
 <dl class="py method">

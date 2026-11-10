@@ -55,7 +55,7 @@
 <li class="toctree-l2"><a class="reference internal" href="cellelements.html">Cellelements</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mpm/material_points.html">Material Points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="solvers.html">Solvers</a></li>
-<li class="toctree-l2"><a class="reference internal" href="choosing_a_solver.html">Choosing a linear solver</a></li>
+<li class="toctree-l2"><a class="reference internal" href="choosing_a_solver.html">Choosing a solver</a></li>
 <li class="toctree-l2"><a class="reference internal" href="assembly.html">System matrix assembly</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mpm/material_point_managers.html">Material Point Managers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="model_generators.html">Model generators</a></li>
@@ -143,26 +143,32 @@
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">createPerNodeOutput</span></code>(fieldOutput[, part, ...])</p></td>
 <td><p>Create a per node output job.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">finalizeFailedIncrement</span></code>(**kwargs)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">dropLatestCheckpoint</span></code>()</p></td>
+<td><p>Offer the latest checkpoint (see <code class="xref py py-meth docutils literal notranslate"><span class="pre">latestCheckpoint()</span></code>) no more: a step has fallen back to it, or found that it holds the state its failed increment started from.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">finalizeFailedIncrement</span></code>(**kwargs)</p></td>
 <td><p>Finalize the output at the end of a time increment.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">finalizeIncrement</span></code>(**kwargs)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">finalizeIncrement</span></code>(**kwargs)</p></td>
 <td><p>Finalize the output at the end of a time increment.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">finalizeJob</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">finalizeJob</span></code>()</p></td>
 <td><p>Finalize the output at the end of a job.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">finalizeStep</span></code>()</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">finalizeStep</span></code>()</p></td>
 <td><p>Finalize the output the end of a step.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getRestartData</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getRestartData</span></code>()</p></td>
 <td><p>This export's transient-sequence bookkeeping: each Ensight time/file set's history of already-written time values (flattened CSR-style, since sets can have different lengths), which geometry trends have ever been written (name -&gt; time/file set number -- unlike variable trends, which get (re-)registered on every write regardless of mesh change and so self-heal on resume, a geometry trend is only (re-)registered when the mesh actually changes; a resumed run whose mesh happens to be already stable would otherwise never re-register it, leaving the <code class="docutils literal notranslate"><span class="pre">.case</span></code> file's <code class="docutils literal notranslate"><span class="pre">GEOMETRY</span></code> section without its <code class="docutils literal notranslate"><span class="pre">model:</span></code> line even though the geometry file itself exists on disk from before the resume), plus the mesh signature and <code class="docutils literal notranslate"><span class="pre">timeAtLastOutput</span></code> used to decide whether to write a fresh geometry chunk / throttle output.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">initializeJob</span></code>()</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">initializeJob</span></code>()</p></td>
 <td><p>Initalize the output manager at the beginning of a step.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">initializeStep</span></code>(step)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">initializeStep</span></code>(step)</p></td>
 <td><p>Initalize the output manager at the beginning of a step.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">latestCheckpoint</span></code>()</p></td>
+<td><p>The latest restart checkpoint this output manager wrote that is still on disk and that no fallback has used yet, for a step to fall back to (see <code class="xref py py-meth docutils literal notranslate"><span class="pre">fallBackToCheckpoint()</span></code>).</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">schema</span></code></p></td>
 <td><p></p></td>

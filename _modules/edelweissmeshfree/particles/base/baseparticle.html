@@ -670,12 +670,13 @@
 <a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getRestartData">[docs]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">getRestartData</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""Get the restart data in  form of a numpy array.</span>
+<span class="w">        </span><span class="sd">"""The state of the last accepted increment, for a restart checkpoint. A particle is updated-Lagrangian: its</span>
+<span class="sd">        position and shape follow from this state.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        np.ndarray</span>
-<span class="sd">            The restart data.</span>
+<span class="sd">            The state.</span>
 <span class="sd">        """</span></div>
 
 
@@ -683,12 +684,12 @@
 <a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.readRestartData">[docs]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">readRestartData</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">restartData</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Set the restart data.</span>
+<span class="w">        </span><span class="sd">"""Restore the state :meth:`getRestartData` returned, and with it the position and the shape.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        restartData</span>
-<span class="sd">            The restart data.</span>
+<span class="sd">            The state.</span>
 <span class="sd">        """</span></div>
 </div>
 

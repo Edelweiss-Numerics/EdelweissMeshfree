@@ -150,6 +150,9 @@
 <span class="sd">        A function for the time dependent scaling of the arc length parameter.</span>
 <span class="sd">        """</span>
 
+    <span class="c1">#: The arc length reached by the steps before.</span>
+    <span class="n">checkpointedState</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"_currentL0"</span><span class="p">:</span> <span class="nb">float</span><span class="p">}</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
