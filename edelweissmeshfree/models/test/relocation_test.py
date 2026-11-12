@@ -89,3 +89,38 @@ def test_the_system_locates_particles_and_constraints_anew_as_a_fresh_one_has_th
     )
     # the discrete system it follows from is not changed
     assert system.constraints == constraintsBefore
+    # the derived attributes are read from the locations: the same particles and cells in both systems
+    assert relocated.particles == system.particles == particles
+    assert relocated.activeCells == system.activeCells == cells
+
+
+def test_a_vector_wrapped_on_the_new_locations_keeps_its_values_and_finds_the_moved_particle():
+    nodes = makeNodes(6)
+    nodeField = makeNodeField(nodes)
+    particles = [Entity(nodes[1:3]), Entity(nodes[3:6])]
+
+    model = SimpleNamespace(
+        materialPoints={},
+        particles=dict(enumerate(particles)),
+        cellElements={},
+        particleManagers=[SimpleNamespace(particlesWithChangedKernelFunctions=[])],
+        activeConstraints=lambda: [],
+    )
+    system = MPMDiscreteSystem(
+        model,
+        makeDofLocations(nodeField, [], [], [], particles),
+        NodeSet("persistent", []),
+        NodeSet("volatile", []),
+        None,
+    )
+    vector = system.locations.constructDofVector()
+    vector[:] = range(vector.size)
+
+    particles[0].couple(nodes[0:2])
+    model.particleManagers[0].particlesWithChangedKernelFunctions = [particles[0]]
+    relocated = system.withNewLocations()
+    rewrapped = vector.onLocations(relocated.locations)
+
+    assert rewrapped.tolist() == vector.tolist()
+    assert rewrapped[particles[0]].tolist() == [0.0, 1.0, 2.0, 3.0]
+    assert vector[particles[0]].tolist() == [2.0, 3.0, 4.0, 5.0]

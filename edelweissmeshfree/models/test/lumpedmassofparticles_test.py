@@ -60,7 +60,7 @@ class _LocationsOfOneDofPerParticle:
         self.ofEntity = {particle: np.array([index]) for index, particle in enumerate(particles)}
 
     def constructDofVector(self) -> DofVector:
-        return DofVector(len(self.ofEntity), self.ofEntity)
+        return DofVector(len(self.ofEntity), self)
 
 
 def test_a_node_without_inertia_gets_no_mass():

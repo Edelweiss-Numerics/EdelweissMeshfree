@@ -464,7 +464,7 @@ class MeshfreeExplicitDynamic(NonlinearSolverBase):
         if change == Change.LOCATIONS:
             self.system = self.system.withNewLocations()
             self._dU = self.system.locations.constructDofVector()
-            self._V = self._asDofVector(self._V)
+            self._V = self._V.onLocations(self.system.locations)
             return
 
         self._adoptSystem(model.buildDiscreteSystem())

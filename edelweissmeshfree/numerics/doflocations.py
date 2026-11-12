@@ -47,7 +47,8 @@ class MPMDofLocations(DofLocations):
 
     The locations of the particles are the locations of the nodes their kernel functions reach, node after node, on
     each node the same fields. Moving particles reach other nodes of the same numbering: new locations of the
-    particles on the same numbering, see :meth:`withNewLocationsOf`.
+    particles on the same numbering, see
+    :meth:`~edelweissfe.numerics.doflocations.DofLocations.withNewLocationsOf`.
 
     Parameters
     ----------
