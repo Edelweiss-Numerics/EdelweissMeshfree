@@ -200,17 +200,12 @@ class ParticlePenaltyContactCartesianBoundaryConstraint(MPMConstraintBase):
         # get the current constrained points, as the particle may have moved
         self._constrained_points = self._getConstraintLocations()
 
-        wasActive = self.active
-
         # within reach if one of the constrained points is close enough to the boundary
         self.withinReach = not self._doProximityCheck or any(
             abs(constrained_point[self._component] - self._boundaryPosition)
             <= self._particleCharacteristicLength_x_proximityFactor
             for constrained_point in self._constrained_points
         )
-
-        if self.active != wasActive:
-            hasChanged = True
 
         if not self.active:
             self.reactionForce = 0.0

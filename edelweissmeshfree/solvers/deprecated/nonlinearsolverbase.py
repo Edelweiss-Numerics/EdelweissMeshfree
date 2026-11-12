@@ -510,7 +510,8 @@ class BaseNonlinearSolver:
         Returns
         -------
         bool
-            True if the connectivity of at least one constraint has changed.
+            True if the connectivity of at least one constraint has changed, or a constraint took part or does not any
+            more (:attr:`~edelweissfe.constraints.base.constraintbase.ConstraintBase.active`).
         """
 
         # Callers legitimately hand over a dict view rather than a list, which the serial loop this
@@ -560,12 +561,15 @@ class BaseNonlinearSolver:
         Returns
         -------
         bool
-            True if the connectivity of at least one constraint in this chunk has changed.
+            True if the connectivity of at least one constraint in this chunk has changed, or a constraint took part
+            or does not any more (:attr:`~edelweissfe.constraints.base.constraintbase.ConstraintBase.active`).
         """
 
         connectivityHasChanged = False
         for constraint in constraints:
+            wasActive = constraint.active
             connectivityHasChanged |= constraint.updateConnectivity(model)
+            connectivityHasChanged |= constraint.active != wasActive
 
         return connectivityHasChanged
 

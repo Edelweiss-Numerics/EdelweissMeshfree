@@ -35,6 +35,7 @@ of its contact, twice its characteristic length, 0.2; moved down to y = 0.3, it 
 
 import numpy as np
 import pytest
+from edelweissfe.models.change import Change
 from edelweissfe.points.node import Node
 
 from edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit import (
@@ -110,11 +111,11 @@ def test_a_contact_switches_itself_off_and_on_by_the_reach_of_its_particle(name)
     assert constraint.active and model.activeConstraints() == [constraint]
 
     _moveTo(particle, OUT_OF_REACH)
-    assert constraint.updateConnectivity(model), "switching itself off is a change of the connectivity"
+    assert model.updateConnectivity() == Change.LOCATIONS, "the model sees the contact leave reach"
     assert not constraint.withinReach and not constraint.active and model.activeConstraints() == []
 
     _moveTo(particle, IN_REACH)
-    assert constraint.updateConnectivity(model), "switching itself on is a change of the connectivity"
+    assert model.updateConnectivity() == Change.LOCATIONS, "the model sees the contact come within reach"
     assert constraint.active
 
 
@@ -142,9 +143,11 @@ def test_the_model_does_not_locate_a_contact_switched_off_from_outside(name):
 
     constraint.active = False
     _moveTo(particle, OUT_OF_REACH)
-    assert not model.updateConnectivity()
+    assert model.updateConnectivity() == Change.NONE
     assert constraint.withinReach, "switched off from outside, the contact rests: the model does not locate it"
 
     constraint.active = True
-    assert model.updateConnectivity(), "switched on again, it is located, and finds itself out of reach"
+    assert (
+        model.updateConnectivity() == Change.LOCATIONS
+    ), "switched on again, it is located, and finds itself out of reach"
     assert not constraint.withinReach and not constraint.active

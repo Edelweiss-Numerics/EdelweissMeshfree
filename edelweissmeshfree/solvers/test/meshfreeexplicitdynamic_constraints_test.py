@@ -45,6 +45,7 @@ from edelweissfe.constraints.directionalspringpenalty import (
 from edelweissfe.journal.journal import Journal
 from edelweissfe.points.node import Node
 from edelweissfe.sets.nodeset import NodeSet
+from edelweissfe.solvers.nonlinearexplicitstatic import NEST
 
 from edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit import (
     ParticlePenaltyCartesianBoundaryConstraintExplicit,
@@ -169,3 +170,14 @@ def test_a_constraint_that_is_switched_on_is_refused_even_out_of_reach(name):
 
     with pytest.raises(NotImplementedError, match="does not act in an explicit analysis"):
         MeshfreeExplicitDynamic({}, Journal(verbose=False)).validateModelCapabilities(model)
+
+
+@pytest.mark.parametrize("name", [*ACTING, *[name for name in NOT_ACTING if name != "an EdelweissFE constraint"]])
+def test_the_explicit_static_solver_refuses_a_meshfree_constraint(name):
+    """The nodes of a meshfree constraint follow its particles, so that it has to be updated while they move, which
+    ``NEST`` never does."""
+
+    model = _modelWith({**ACTING, **NOT_ACTING}[name])
+
+    with pytest.raises(Exception, match="changes with the motion"):
+        NEST({}, Journal(verbose=False)).validateModelCapabilities(model)

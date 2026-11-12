@@ -106,6 +106,7 @@ from dataclasses import dataclass
 
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
+from edelweissfe.models.change import Change
 from edelweissfe.numerics.dofmanager import DofVector
 from edelweissfe.numerics.parallelizationutilities import (
     getNumberOfWorkerThreads,
@@ -443,10 +444,11 @@ class MeshfreeExplicitDynamic(NonlinearSolverBase):
 
     @performancetiming.timeit("reconnect")
     def _reconnect(self, model: MPMModel):
-        """Assign the particles to the kernel functions they reach now, and let the discrete system follow: if the
-        model's active nodes cannot change (:attr:`~edelweissmeshfree.models.mpmmodel.MPMModel.activeNodesAreFixed`),
-        only the particles that changed and the constraints are located anew, and the velocity stays as it is;
-        otherwise the discrete system is rebuilt, and reads the velocity of its nodes from the model.
+        """Assign the particles to the kernel functions they reach now, and let the discrete system follow what the
+        model says changed (:meth:`~edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity`): if only the
+        locations changed (the active nodes cannot), the particles that changed and the constraints are located anew,
+        and the velocity stays as it is; if the numbering changed, the discrete system is rebuilt, and reads the
+        velocity of its nodes from the model.
 
         Parameters
         ----------
@@ -454,10 +456,12 @@ class MeshfreeExplicitDynamic(NonlinearSolverBase):
             The model.
         """
 
-        if not model.updateConnectivity():
+        change = model.updateConnectivity()
+
+        if change == Change.NONE:
             return
 
-        if model.activeNodesAreFixed:
+        if change == Change.LOCATIONS:
             self._system.relocateParticlesAndConstraints()
             self._dU = self._system.dofManager.constructDofVector()
             self._V = self._asDofVector(self._V)
