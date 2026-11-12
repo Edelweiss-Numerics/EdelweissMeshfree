@@ -235,7 +235,7 @@ def run_sim():
         linsolver="pardiso",
         **meshfreeCriterionOptions
         | {
-            # a quadratic prediction, retried without if it fails, and kept while the rebuilt equation systems number
+            # a quadratic prediction, retried without if it fails, and kept while the rebuilt discrete systems number
             # the degrees of freedom as before
             "extrapolation": "quadratic",
             "retryWithoutExtrapolation": True,

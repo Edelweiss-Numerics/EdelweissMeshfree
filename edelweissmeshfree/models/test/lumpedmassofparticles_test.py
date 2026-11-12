@@ -34,9 +34,9 @@ import numpy as np
 from edelweissfe.numerics.dofvector import DofVector
 from edelweissfe.sets.nodeset import NodeSet
 
-from edelweissmeshfree.models.mpmequationsystemlayout import (
+from edelweissmeshfree.models.mpmdiscretesystem import (
     MASS_AT_ROUND_OFF,
-    MPMEquationSystemLayout,
+    MPMDiscreteSystem,
 )
 
 
@@ -64,7 +64,7 @@ def test_a_node_without_inertia_gets_no_mass():
     masses = [1.0, 0.1 * MASS_AT_ROUND_OFF, -0.1, 0.25, 10.0 * MASS_AT_ROUND_OFF]
     particles = {number: _ParticleOfMass(mass) for number, mass in enumerate(masses)}
     model = SimpleNamespace(materialPoints={}, particles=particles, cellElements={})
-    layout = MPMEquationSystemLayout(
+    system = MPMDiscreteSystem(
         model,
         _NumberingOfOneDofPerParticle(list(particles.values())),
         [],
@@ -74,6 +74,6 @@ def test_a_node_without_inertia_gets_no_mass():
         None,
     )
 
-    M = layout.assembleLumpedMassOfEntitiesWithOwnInertia(lambda entities, work: work(entities))
+    M = system.assembleLumpedMassOfEntitiesWithOwnInertia(lambda entities, work: work(entities))
 
     np.testing.assert_array_equal(M, [1.0, 0.0, 0.0, 0.25, 10.0 * MASS_AT_ROUND_OFF])

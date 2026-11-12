@@ -261,7 +261,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                     activeCells = self._getActiveCellsFromManagers(mpmManagers)
 
                     self.journal.message(
-                        "active domain has changed, (re)initializing equation system & clearing cache",
+                        "active domain has changed, (re)initializing discrete system & clearing cache",
                         self.identification,
                         level=1,
                     )
@@ -293,7 +293,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                             theDofManager.writeNodeFieldToDofVector(U, field, "U", activeNodesWithPersistentFieldValues)
 
                     self.journal.message(
-                        "resulting equation system has a size of {:}".format(theDofManager.nDof),
+                        "resulting discrete system has a size of {:}".format(theDofManager.nDof),
                         self.identification,
                         level=1,
                     )

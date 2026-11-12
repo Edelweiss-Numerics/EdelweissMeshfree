@@ -110,8 +110,15 @@ class MPMDofManager(DofManager):
         self.idcsOfCellElementsInDofVector = self._locateCellsInDofVector(cellElements)
         self.idcsOfParticlesInDofVector = self._locateParticlesInDofVector(particles)
 
-        if initializeAccumulatedNodalFluxesFieldwise:
+        self._addTheMeshfreeEntities()
 
+    def _addTheMeshfreeEntities(self):
+        """Add the cells, the cell elements and the particles to what the base class gathers of the elements and the
+        constraints: their nodal fluxes to the accumulated nodal fluxes, and their DOF indices to the merged entity
+        mapping, which is made a new dict (see
+        :meth:`~edelweissfe.numerics.dofmanager.DofManager.refreshConstraintIndices`)."""
+
+        if self._hasAccumulatedNodalFluxes:
             for field in self.nAccumulatedNodalFluxesFieldwise.keys():
                 self.nAccumulatedNodalFluxesFieldwise[field] += self._nAccumulatedNodalFluxesFieldwiseFromCells[field]
                 self.nAccumulatedNodalFluxesFieldwise[field] += self._nAccumulatedNodalFluxesFieldwiseFromCellElements[
@@ -121,9 +128,12 @@ class MPMDofManager(DofManager):
                     field
                 ]
 
-        self.idcsOfHigherOrderEntitiesInDofVector |= self.idcsOfCellsInDofVector
-        self.idcsOfHigherOrderEntitiesInDofVector |= self.idcsOfCellElementsInDofVector
-        self.idcsOfHigherOrderEntitiesInDofVector |= self.idcsOfParticlesInDofVector
+        self.idcsOfHigherOrderEntitiesInDofVector = (
+            self.idcsOfHigherOrderEntitiesInDofVector
+            | self.idcsOfCellsInDofVector
+            | self.idcsOfCellElementsInDofVector
+            | self.idcsOfParticlesInDofVector
+        )
 
     def _gatherCellsInformation(self, entities: list) -> tuple[int, dict, int]:
         """Generates some auxiliary information,
@@ -222,20 +232,16 @@ class MPMDofManager(DofManager):
         self.idcsOfParticlesInDofVector.update(relocatedParticles)
         self.idcsOfHigherOrderEntitiesInDofVector.update(relocatedParticles)
 
-    def updateConstraints(self, constraints: list):
-        """
-        Updates the connectivity mapping for constraints in a serial loop.
-        Reuses global index maps to avoid re-instancing the manager.
+    def refreshConstraintIndices(self, constraints: list):
+        """Re-locate the constraints' degrees of freedom after their connectivity changed; see
+        :meth:`~edelweissfe.numerics.dofmanager.DofManager.refreshConstraintIndices`. The cells, the cell elements and
+        the particles keep their indices, and are added again to what the base class gathers anew.
 
         Parameters
         ----------
-        constraints : list
-            The list of constraints to be considered.
+        constraints
+            The constraints, with their current connectivity.
         """
-        if not constraints:
-            return
 
-        constraints = list(constraints)  # Ensure we have a list for iteration
-
-        self.idcsOfConstraintsInDofVector = self._locateConstraintsInDofVector(constraints)
-        self.idcsOfHigherOrderEntitiesInDofVector.update(self.idcsOfConstraintsInDofVector)
+        super().refreshConstraintIndices(constraints)
+        self._addTheMeshfreeEntities()

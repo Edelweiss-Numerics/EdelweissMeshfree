@@ -56,7 +56,7 @@ from edelweissmeshfree.solvers.meshfreeconvergencecriterion import (
 @performancetiming.timeit("simulation")
 def run_sim():
     """Solve the example with EdelweissFE's NISTParallel: the material points move through a fixed background grid,
-    so the cells they occupy, and with them the equation system, change from increment to increment."""
+    so the cells they occupy, and with them the discrete system, change from increment to increment."""
     dimension = 2
 
     journal = Journal()

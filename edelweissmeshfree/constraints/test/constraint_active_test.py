@@ -24,7 +24,7 @@
 #  The full text of the license can be found in the file LICENSE.md at
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
-"""A constraint takes part in the equation system while it is ``active`` (EdelweissFE's
+"""A constraint takes part in the discrete system while it is ``active`` (EdelweissFE's
 ``ConstraintBase.active``). The contact constraints of EdelweissMeshfree switch themselves on and off by the reach of
 their particle (``ConstraintBase.withinReach``), and they can be switched off from outside like any constraint: then
 they stay off, whatever they find in reach, until they are switched on again.

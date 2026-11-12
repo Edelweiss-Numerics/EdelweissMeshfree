@@ -6,7 +6,7 @@ Constraints
 The residual and the tangent
 ----------------------------
 
-A constraint of EdelweissMeshfree is an EdelweissFE constraint, and enters the equation system by EdelweissFE's rule
+A constraint of EdelweissMeshfree is an EdelweissFE constraint, and enters the discrete system by EdelweissFE's rule
 (see the EdelweissFE solver documentation, *The residual and the tangent*): its ``computeKernels(U_np, dU, P, K,
 timeStep)`` adds the residual contribution :math:`\mathbf{P}` -- the *negative* of the force the constraint exerts on
 its nodes, what an element of the same mechanics would add as its internal force -- and its tangent
@@ -22,7 +22,7 @@ The nodal values of the particles and of the cells are increments on the current
 read the increment ``dU``. Their nodes are those the particles or material points currently interpolate from: a
 constraint finds them anew at the start of every increment, in ``updateConnectivity``, which may also find the
 constraint out of reach (``withinReach``), e.g. a contact constraint whose particle is far from the boundary. A
-constraint takes part in the equation system (``active``) while it is within reach, unless it is switched off from
+constraint takes part in the discrete system (``active``) while it is within reach, unless it is switched off from
 outside: setting ``active`` to False, e.g. by a ``modelupdate`` step action, switches a constraint off whatever it
 finds in reach, until it is switched on again. Switched off from outside, it rests: the model does not locate it anew,
 and it keeps what it found and computed last, its reaction force included. These are the rules of EdelweissFE's
@@ -41,10 +41,10 @@ total stresses of the particles or elements, so it is a **total**. A multiplier 
     \mathbf{K}_{\lambda U} \mathrel{+}= \mathbf{N}^T,
 
 with :math:`\lambda` read from ``U_np``: the solver continues it from the last converged increment, also across a
-rebuilt equation system, as the model keeps the converged multipliers in its scalar variables, and its checkpoint keeps
+rebuilt discrete system, as the model keeps the converged multipliers in its scalar variables, and its checkpoint keeps
 them for a restart. The residual is linear in :math:`\lambda`, so where Newton's method starts :math:`\lambda` changes
 only its first residual, not the iterates after the first correction. The deprecated solvers
-(:mod:`edelweissmeshfree.solvers.deprecated`) continue the multipliers only while the equation system is kept, restart
+(:mod:`edelweissmeshfree.solvers.deprecated`) continue the multipliers only while the discrete system is kept, restart
 them at zero after a rebuild, and do not check the residual of the multipliers for convergence.
 
 Because :math:`\mathbf{K}` is the derivative of exactly what is added to :math:`\mathbf{P}`, each constraint is

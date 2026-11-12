@@ -161,7 +161,7 @@ def run_sim():
             for acl in activeCells:
                 dofVector[acl] += 10.0 * acl.cellNumber
 
-            print("equation system would have a size of {:}".format(dofManager.nDof))
+            print("discrete system would have a size of {:}".format(dofManager.nDof))
 
             shift = np.asarray([2.0, 3.0 * np.cos(4 * np.pi * i / 100.0)])
             mpmModel.advanceToTime(10.0 * (i))

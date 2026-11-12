@@ -34,15 +34,15 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 
-"""What the equation system of a material point or RKPM model is made of: the answer an
+"""What the discrete system of a material point or RKPM model is made of: the answer an
 :class:`~edelweissmeshfree.models.mpmmodel.MPMModel` gives EdelweissFE's implicit solvers and
 :class:`~edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic` whenever they (re)build
-their equation system, see :meth:`~edelweissmeshfree.models.mpmmodel.MPMModel.buildEquationSystem`."""
+their discrete system, see :meth:`~edelweissmeshfree.models.mpmmodel.MPMModel.buildDiscreteSystem`."""
 
 from collections.abc import Callable
 
 import numpy as np
-from edelweissfe.models.equationsystemlayout import EquationSystemLayout
+from edelweissfe.models.discretesystem import DiscreteSystem
 from edelweissfe.numerics.dofmanager import DofManager, DofVector
 from edelweissfe.sets.nodeset import NodeSet
 from edelweissfe.timesteppers.timestep import TimeStep
@@ -53,8 +53,8 @@ from edelweissfe.timesteppers.timestep import TimeStep
 MASS_AT_ROUND_OFF = 1e-12
 
 
-class MPMEquationSystemLayout(EquationSystemLayout):
-    """The layout of the equation system of a meshfree model, on its active domain: the background cells that hold
+class MPMDiscreteSystem(DiscreteSystem):
+    """The discrete system of a meshfree model, on its active domain: the background cells that hold
     material points, the nodes these cells and the particles' kernel functions reach, and the finite elements with
     their nodes.
 
@@ -66,7 +66,7 @@ class MPMEquationSystemLayout(EquationSystemLayout):
     their solution ``U`` is zero, and their increment ``dU`` is their meaningful nodal value.
 
     The model's node fields are read and written straight, by node: read on the nodes that carry an entry (see
-    :meth:`readEntryOfNodeField`), written on the nodes of the active domain from the vectors of the equation system,
+    :meth:`readEntryOfNodeField`), written on the nodes of the active domain from the vectors of the discrete system,
     zero on all other nodes (see :meth:`writeEntryOfNodeField`).
 
     Parameters
@@ -110,7 +110,7 @@ class MPMEquationSystemLayout(EquationSystemLayout):
             "incremental nodes of the active domain",
             [node for node in nodesWithVolatileFieldValues if node not in nodesWithPersistentFieldValues],
         )
-        #: The nodes of the active domain, on which the equation system writes the model's node fields.
+        #: The nodes of the active domain, on which the discrete system writes the model's node fields.
         self.activeNodes = NodeSet(
             "nodes of the active domain",
             sorted(set(nodesWithPersistentFieldValues) | set(nodesWithVolatileFieldValues), key=lambda n: n.label),
@@ -137,21 +137,21 @@ class MPMEquationSystemLayout(EquationSystemLayout):
                 for particle in particleManager.particlesWithChangedKernelFunctions
             ]
         )
-        self.dofManager.updateConstraints(self.model.activeConstraints())
+        self.dofManager.refreshConstraintIndices(self.model.activeConstraints())
 
     def readEntryOfNodeField(self, dofVector: DofVector, nodeField, entry: str):
-        """Read one entry of one node field of the model into a vector of the equation system, by node; every read of
-        :meth:`~edelweissfe.models.equationsystemlayout.EquationSystemLayout.readStateFromModel` goes through here.
+        """Read one entry of one node field of the model into a vector of the discrete system, by node; every read of
+        :meth:`~edelweissfe.models.discretesystem.DiscreteSystem.readStateFromModel` goes through here.
         The solution ``U`` is read at the nodes that carry their total solution (those of finite elements and cell
         elements): the incremental nodes start every increment at zero. The velocity ``V`` and the acceleration ``A``
-        are read at every node of the active domain: they are carried by node from one equation system to the next, so
+        are read at every node of the active domain: they are carried by node from one discrete system to the next, so
         that a node keeps them when the active domain changes around it, and a node that has just become active is at
         rest.
 
         Parameters
         ----------
         dofVector
-            The vector of the equation system, zero, overwritten on the degrees of freedom of the field.
+            The vector of the discrete system, zero, overwritten on the degrees of freedom of the field.
         nodeField
             The node field of the model.
         entry
@@ -178,13 +178,13 @@ class MPMEquationSystemLayout(EquationSystemLayout):
             U[indices] = 0.0
 
     def writeEntryOfNodeField(self, dofVector: DofVector, nodeField, entry: str):
-        """Write a vector of the equation system to one entry of one node field of the model, by node: on the nodes of
+        """Write a vector of the discrete system to one entry of one node field of the model, by node: on the nodes of
         the active domain, and zero on all other nodes of the model.
 
         Parameters
         ----------
         dofVector
-            The vector of the equation system.
+            The vector of the discrete system.
         nodeField
             The node field of the model.
         entry
@@ -208,7 +208,7 @@ class MPMEquationSystemLayout(EquationSystemLayout):
         Returns
         -------
         np.ndarray
-            The indices of the degrees of freedom in the vectors of the equation system, sorted.
+            The indices of the degrees of freedom in the vectors of the discrete system, sorted.
         """
 
         isWithNodalInertia = np.zeros(self.dofManager.nDof, dtype=bool)
@@ -225,12 +225,12 @@ class MPMEquationSystemLayout(EquationSystemLayout):
         """The lumped mass of the particles at the nodes of their current kernel functions,
         :math:`m_A = \\sum_p \\rho_0\\, V_{0,p}\\, T_A(\\boldsymbol{x}_p)`, as each particle reports it
         (``computeLumpedInertia``), summed over the particles; see
-        :meth:`~edelweissfe.models.equationsystemlayout.EquationSystemLayout.assembleLumpedMassOfEntitiesWithOwnInertia`. The one
+        :meth:`~edelweissfe.models.discretesystem.DiscreteSystem.assembleLumpedMassOfEntitiesWithOwnInertia`. The one
         assembly of this mass: the explicit solver divides by it, the implicit dynamic solver adds it to the mass of
         the nodes when it integrates the particles' inertia there.
 
         A node carries inertia if its mass is positive beyond round-off, more than
-        :data:`~edelweissmeshfree.models.mpmequationsystemlayout.MASS_AT_ROUND_OFF` of the largest one; every other node
+        :data:`~edelweissmeshfree.models.mpmdiscretesystem.MASS_AT_ROUND_OFF` of the largest one; every other node
         gets zero, the mass of a node without inertia, which both solvers take as such.
 
         Parameters
@@ -266,7 +266,7 @@ class MPMEquationSystemLayout(EquationSystemLayout):
 
     def carriersOfTheMotion(self) -> set[str]:
         """Where the model holds the motion of its particles; see
-        :meth:`~edelweissfe.models.equationsystemlayout.EquationSystemLayout.carriersOfTheMotion`.
+        :meth:`~edelweissfe.models.discretesystem.DiscreteSystem.carriersOfTheMotion`.
         ``"entities"`` if a particle that integrates its inertia (one with Newmark parameters) carries a velocity or an
         acceleration in its state, ``"nodes"`` if an incremental node of the active domain carries one in the entries
         ``V`` and ``A`` of the model's node fields.

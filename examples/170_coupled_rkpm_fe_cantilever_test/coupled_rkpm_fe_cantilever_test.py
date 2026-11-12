@@ -557,22 +557,22 @@ def change_test_dir(request, monkeypatch):
     monkeypatch.chdir(request.fspath.dirname)
 
 
-def test_finite_element_and_kernel_nodes_share_one_equation_system(tmp_path):
-    """The equation system of the coupled model numbers the nodes of the finite elements, the nodes of the kernel
+def test_finite_element_and_kernel_nodes_share_one_discrete_system(tmp_path):
+    """The discrete system of the coupled model numbers the nodes of the finite elements, the nodes of the kernel
     functions and the tractions of the ties once each. The solution passes between the model and the solver's
     vectors as the two methods require: the finite element nodes carry their total displacement into a rebuilt
-    equation system, the kernel nodes start every increment at zero, so that the model holds zero as their solution,
-    and all results are written to the model. What the model holds does not depend on when the equation system is
+    discrete system, the kernel nodes start every increment at zero, so that the model holds zero as their solution,
+    and all results are written to the model. What the model holds does not depend on when the discrete system is
     rebuilt, nor on a restart."""
 
     model = buildCoupledModel(Journal(), defaultElementSize, defaultParticleSize)
     model.updateConnectivity()
-    layout = model.buildEquationSystem()
-    dofManager = layout.dofManager
+    system = model.buildDiscreteSystem()
+    dofManager = system.dofManager
 
     nElements = len(model.elements)
-    assert layout.elements[:nElements] == list(model.elements.values())
-    assert layout.elements[nElements:] == list(model.particles.values())
+    assert system.elements[:nElements] == list(model.elements.values())
+    assert system.elements[nElements:] == list(model.particles.values())
 
     elementNodes = finiteElementNodes(model)
     kernelNodes = [kernelFunction.node for kernelFunction in model.meshfreeKernelFunctions.values()]
@@ -599,7 +599,7 @@ def test_finite_element_and_kernel_nodes_share_one_equation_system(tmp_path):
             traction.value = 1.0 + i
 
     U = dofManager.constructDofVector()
-    layout.readStateFromModel(U)
+    system.readStateFromModel(U)
     for node in elementNodes:
         np.testing.assert_array_equal(U[dofsOf(node)], [node.label, -node.label])
     for node in kernelNodes:
@@ -612,18 +612,18 @@ def test_finite_element_and_kernel_nodes_share_one_equation_system(tmp_path):
 
     # the solution of a converged increment: the coefficients of the kernel nodes are reset for the next increment
     U[:] = np.arange(dofManager.nDof)
-    layout.zeroIncrementalCoefficients(U)
+    system.zeroIncrementalCoefficients(U)
     for node in elementNodes:
         np.testing.assert_array_equal(U[dofsOf(node)], dofsOf(node))
     for node in kernelNodes:
         np.testing.assert_array_equal(U[dofsOf(node)], 0.0)
     np.testing.assert_array_equal(U[tractionDofs], tractionDofs)
 
-    # the results of the increment, written to every node; passed no velocity, the layout leaves it as it is
+    # the results of the increment, written to every node; passed no velocity, the system leaves it as it is
     displacement["V"][:] = -1.0
     increment = dofManager.constructDofVector()
     increment[:] = np.arange(dofManager.nDof)
-    layout.writeResultsToModel(U, 2 * increment, 3 * increment)
+    system.writeResultsToModel(U, 2 * increment, 3 * increment)
     for node in elementNodes + kernelNodes:
         row = displacement.indexOfNode(node)
         np.testing.assert_array_equal(displacement["U"][row], dofsOf(node) if node in elementNodes else 0.0)
@@ -636,7 +636,7 @@ def test_finite_element_and_kernel_nodes_share_one_equation_system(tmp_path):
 
     # the state a quasi-static solver accepts is at rest, on every node
     displacement["A"][:] = -1.0
-    layout.writeZeroVelocityAndAccelerationToModel()
+    system.writeZeroVelocityAndAccelerationToModel()
     np.testing.assert_array_equal(displacement["V"], 0.0)
     np.testing.assert_array_equal(displacement["A"], 0.0)
 
@@ -646,8 +646,8 @@ def test_finite_element_and_kernel_nodes_share_one_equation_system(tmp_path):
         for entry, values in held.items():
             np.testing.assert_array_equal(displacement[entry], values, err_msg=entry)
 
-    # a rebuilt equation system starts from the same state, and writes it back unchanged
-    rebuilt = model.buildEquationSystem()
+    # a rebuilt discrete system starts from the same state, and writes it back unchanged
+    rebuilt = model.buildDiscreteSystem()
     U = rebuilt.dofManager.constructDofVector()
     rebuilt.readStateFromModel(U)
     rebuilt.zeroIncrementalCoefficients(U)

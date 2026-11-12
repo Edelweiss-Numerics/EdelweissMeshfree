@@ -34,7 +34,7 @@ the width of the cell, so the first full increment would turn the material point
 converges.
 
 The deprecated solver cuts back by its own factor. EdelweissFE's solver meets the failure where it updates the material
-points (:meth:`~edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.updateMaterialPoints`); the
+points (:meth:`~edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.updateMaterialPoints`); the
 material point asks for half the increment, as an EdelweissFE element does, and the step cuts back by the larger of
 this and its ``cutbackFactor``.
 
@@ -196,7 +196,7 @@ def test_a_failing_material_point_is_a_cutback():
 def test_a_failing_material_point_cuts_the_increment_back_to_the_larger_of_half_and_the_cutback_factor(
     cutbackFactor: float, cutbackSize: float
 ):
-    """EdelweissFE's NIST updates the material points through the equation system layout of the model."""
+    """EdelweissFE's NIST updates the material points through the discrete system of the model."""
 
     from edelweissfe.solvers.nonlinearimplicitstatic import NIST
     from edelweissfe.steps.adaptivestep import AdaptiveStep
