@@ -27,7 +27,7 @@
 """Guards the reproducibility of the global DOF ordering.
 
 ``Node`` defines no ``__hash__``, so it hashes by identity and iterating a plain ``set`` of Node
-objects yields an order that tracks memory addresses -- different on every run. ``DofManager``
+objects yields an order that tracks memory addresses -- different on every run. ``DofNumbering``
 assigns DOF indices strictly in ``nodeField.nodes`` order, so if the active-node collection is not
 ordered deterministically, the global sparsity pattern changes from run to run. That is not merely
 cosmetic: a permuted ordering changes direct-solver fill-in and AMG aggregation, so it injects

@@ -38,7 +38,8 @@
 from abc import abstractmethod
 
 import numpy as np
-from edelweissfe.numerics.dofmanager import DofManager, DofVector
+from edelweissfe.numerics.doflocations import DofLocations
+from edelweissfe.numerics.dofvector import DofVector
 from edelweissfe.stepactions.base.loadbase import LoadBase
 from edelweissfe.timesteppers.timestep import TimeStep
 
@@ -87,7 +88,7 @@ class ParticleDistributedLoadBase(LoadBase):
         U_np: DofVector,
         dU: DofVector,
         timeStep: TimeStep,
-        dofManager: DofManager,
+        locations: DofLocations,
     ):
         """Let every loaded particle add the residual contribution of the load on its face, the negative of the
         external load, and its tangent; see :meth:`~edelweissfe.stepactions.base.loadbase.LoadBase.assembleLoad`.
@@ -105,8 +106,8 @@ class ParticleDistributedLoadBase(LoadBase):
             The global solution increment.
         timeStep
             The current time step.
-        dofManager
-            The DOF manager of the discrete system.
+        locations
+            The locations of the entities in the discrete system, from which the load finds where it acts.
         """
 
         for p, surfaceID, loadVector in self.getCurrentParticleLoads(timeStep):

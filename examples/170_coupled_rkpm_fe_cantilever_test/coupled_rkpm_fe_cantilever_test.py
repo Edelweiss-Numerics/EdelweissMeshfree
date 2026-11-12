@@ -568,7 +568,7 @@ def test_finite_element_and_kernel_nodes_share_one_discrete_system(tmp_path):
     model = buildCoupledModel(Journal(), defaultElementSize, defaultParticleSize)
     model.updateConnectivity()
     system = model.buildDiscreteSystem()
-    dofManager = system.dofManager
+    numbering, locations = system.numbering, system.locations
 
     nElements = len(model.elements)
     assert system.elements[:nElements] == list(model.elements.values())
@@ -579,16 +579,16 @@ def test_finite_element_and_kernel_nodes_share_one_discrete_system(tmp_path):
     assert not set(elementNodes) & set(kernelNodes)
 
     def dofsOf(node):
-        return dofManager.idcsOfFieldVariablesInDofVector[node.fields["displacement"]]
+        return numbering.idcsOfFieldVariablesInDofVector[node.fields["displacement"]]
 
     tractionDofs = [
-        dofManager.idcsOfScalarVariablesInDofVector[traction]
+        numbering.idcsOfScalarVariablesInDofVector[traction]
         for constraint in model.constraints.values()
         for traction in constraint.scalarVariables
     ]
     assert len(tractionDofs) == 2 * 2 * len(model.nodeSets["feLeft_right"])
     allDofs = np.concatenate([dofsOf(node) for node in elementNodes + kernelNodes] + [tractionDofs])
-    assert sorted(allDofs) == list(range(dofManager.nDof))
+    assert sorted(allDofs) == list(range(numbering.nDof))
 
     # the converged state of the last increment, as the model holds it
     displacement = model.nodeFields["displacement"]
@@ -598,7 +598,7 @@ def test_finite_element_and_kernel_nodes_share_one_discrete_system(tmp_path):
         for i, traction in enumerate(constraint.scalarVariables):
             traction.value = 1.0 + i
 
-    U = dofManager.constructDofVector()
+    U = locations.constructDofVector()
     system.readStateFromModel(U)
     for node in elementNodes:
         np.testing.assert_array_equal(U[dofsOf(node)], [node.label, -node.label])
@@ -606,12 +606,12 @@ def test_finite_element_and_kernel_nodes_share_one_discrete_system(tmp_path):
         np.testing.assert_array_equal(U[dofsOf(node)], 0.0)
     for constraint in model.constraints.values():
         np.testing.assert_array_equal(
-            U[[dofManager.idcsOfScalarVariablesInDofVector[t] for t in constraint.scalarVariables]],
+            U[[numbering.idcsOfScalarVariablesInDofVector[t] for t in constraint.scalarVariables]],
             1.0 + np.arange(len(constraint.scalarVariables)),
         )
 
     # the solution of a converged increment: the coefficients of the kernel nodes are reset for the next increment
-    U[:] = np.arange(dofManager.nDof)
+    U[:] = np.arange(numbering.nDof)
     system.zeroIncrementalCoefficients(U)
     for node in elementNodes:
         np.testing.assert_array_equal(U[dofsOf(node)], dofsOf(node))
@@ -621,8 +621,8 @@ def test_finite_element_and_kernel_nodes_share_one_discrete_system(tmp_path):
 
     # the results of the increment, written to every node; passed no velocity, the system leaves it as it is
     displacement["V"][:] = -1.0
-    increment = dofManager.constructDofVector()
-    increment[:] = np.arange(dofManager.nDof)
+    increment = locations.constructDofVector()
+    increment[:] = np.arange(numbering.nDof)
     system.writeResultsToModel(U, 2 * increment, 3 * increment)
     for node in elementNodes + kernelNodes:
         row = displacement.indexOfNode(node)
@@ -632,7 +632,7 @@ def test_finite_element_and_kernel_nodes_share_one_discrete_system(tmp_path):
     np.testing.assert_array_equal(displacement["V"], -1.0)
     for constraint in model.constraints.values():
         for traction in constraint.scalarVariables:
-            assert traction.value == dofManager.idcsOfScalarVariablesInDofVector[traction]
+            assert traction.value == numbering.idcsOfScalarVariablesInDofVector[traction]
 
     # the state a quasi-static solver accepts is at rest, on every node
     displacement["A"][:] = -1.0
@@ -648,7 +648,7 @@ def test_finite_element_and_kernel_nodes_share_one_discrete_system(tmp_path):
 
     # a rebuilt discrete system starts from the same state, and writes it back unchanged
     rebuilt = model.buildDiscreteSystem()
-    U = rebuilt.dofManager.constructDofVector()
+    U = rebuilt.locations.constructDofVector()
     rebuilt.readStateFromModel(U)
     rebuilt.zeroIncrementalCoefficients(U)
     rebuilt.writeResultsToModel(U, None, None)

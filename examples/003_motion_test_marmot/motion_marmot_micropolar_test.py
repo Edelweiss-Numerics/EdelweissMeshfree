@@ -39,6 +39,7 @@ import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 import pytest
 from edelweissfe.journal.journal import Journal
+from edelweissfe.numerics.dofnumbering import DofNumbering
 
 from edelweissmeshfree.fieldoutput.fieldoutput import MPMFieldOutputController
 from edelweissmeshfree.fields.nodefield import MPMNodeField
@@ -48,7 +49,7 @@ from edelweissmeshfree.generators import (
 )
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.mpmmanagers.simplempmmanager import SimpleMaterialPointManager
-from edelweissmeshfree.numerics.dofmanager import MPMDofManager
+from edelweissmeshfree.numerics.doflocations import MPMDofLocations
 from edelweissmeshfree.outputmanagers.ensight import (
     OutputManager as EnsightOutputManager,
 )
@@ -168,17 +169,17 @@ def run_sim():
             constraints = []
             nodeSets = []
 
-            dofManager = MPMDofManager(
-                activeNodeFields.values(), scalarVariables, elements, constraints, nodeSets, activeCells, cellElements
-            )
+            numbering = DofNumbering(activeNodeFields.values(), scalarVariables, nodeSets)
 
-            dofVector = dofManager.constructDofVector()
+            locations = MPMDofLocations(numbering, elements, constraints, activeCells, cellElements)
+
+            dofVector = locations.constructDofVector()
 
             time = 10 * i
             shift = np.asarray([2.0, 2.0 * np.cos(4 * np.pi * i / 100.0)])
 
             activeNodeFields["displacement"]["dU"][:] = shift
-            dofManager.writeNodeFieldToDofVector(dofVector, activeNodeFields["displacement"], "dU")
+            numbering.writeNodeFieldToDofVector(dofVector, activeNodeFields["displacement"], "dU")
 
             # a new increment begins: the material points reset their displacement increment, which the cells
             # then accumulate (the order of the solvers: prepare, interpolate, compute)

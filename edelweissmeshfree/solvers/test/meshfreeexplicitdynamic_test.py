@@ -98,10 +98,10 @@ class _SolverRecordingTheVelocityAtReconnection(MeshfreeExplicitDynamic):
             self.activeNodeChanges.append((before, after))
 
     def velocityOfTheActiveNodes(self) -> dict:
-        dofManager = self._system.dofManager
+        numbering = self.system.numbering
         return {
-            node: np.array(self._V[dofManager.idcsOfFieldVariablesInDofVector[node.fields["displacement"]]])
-            for node in self._system.activeNodes
+            node: np.array(self._V[numbering.idcsOfFieldVariablesInDofVector[node.fields["displacement"]]])
+            for node in self.system.activeNodes
         }
 
 
@@ -117,9 +117,9 @@ class _SolverRecordingTheNodesWithoutInertia(_SolverRecordingTheVelocityAtReconn
     def acceptIncrement(self, step, model, timeStep):
         velocityBefore = self.velocityOfTheActiveNodes()
         super().acceptIncrement(step, model, timeStep)
-        dofManager = self._system.dofManager
+        numbering = self.system.numbering
         for node, velocity in self.velocityOfTheActiveNodes().items():
-            indices = dofManager.idcsOfFieldVariablesInDofVector[node.fields["displacement"]]
+            indices = numbering.idcsOfFieldVariablesInDofVector[node.fields["displacement"]]
             if np.all(np.asarray(self._Minv)[indices] == 0.0):
                 self.velocityOfNodesWithoutInertia.append(velocity)
                 if np.any(velocityBefore.get(node, 0.0)):
@@ -267,7 +267,7 @@ def test_a_node_without_inertia_has_no_velocity(monkeypatch):
         M = assembleLumpedMassOfEntitiesWithOwnInertia(system, forEachChunk)
         evaluations.append(len(evaluations))
         if len(evaluations) >= 10:
-            dofs = system.dofManager.idcsOfFieldVariablesInDofVector
+            dofs = system.numbering.idcsOfFieldVariablesInDofVector
             if not nodeLosingItsMass:
                 nodeLosingItsMass.append(
                     max(system.activeNodes, key=lambda node: float(np.sum(M[dofs[node.fields["displacement"]]])))

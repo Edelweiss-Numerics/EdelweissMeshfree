@@ -37,7 +37,8 @@
 import numpy as np
 from edelweissfe.config.phenomena import getFieldSize
 from edelweissfe.journal.journal import Journal
-from edelweissfe.numerics.dofmanager import DofManager, DofVector
+from edelweissfe.numerics.dofnumbering import DofNumbering
+from edelweissfe.numerics.dofvector import DofVector
 from edelweissfe.stepactions.base.arclengthcontrollerbase import ArcLengthControllerBase
 from edelweissfe.timesteppers.timestep import TimeStep
 
@@ -94,7 +95,7 @@ class IndirectControl(ArcLengthControllerBase):
         self._c = cMatrix.flatten()
 
     def computeDDLambda(
-        self, dU: DofVector, ddU_0: DofVector, ddU_f: DofVector, timeStep: TimeStep, dofManager: DofManager
+        self, dU: DofVector, ddU_0: DofVector, ddU_f: DofVector, timeStep: TimeStep, numbering: DofNumbering
     ) -> float:
         """
         This method is called by an arc length solver for computing the
@@ -110,8 +111,8 @@ class IndirectControl(ArcLengthControllerBase):
             The controllable correction to the solution resulting from the reference load.
         timeStep
             The current time increment.
-        dofManager
-            The DofManager instance.
+        numbering
+            The numbering of the degrees of freedom of the current discrete system.
 
         Returns
         -------
@@ -122,7 +123,7 @@ class IndirectControl(ArcLengthControllerBase):
         mpIndices = [
             np.asarray(
                 [
-                    dofManager.idcsOfFieldVariablesInDofVector[n.fields[self._field]]
+                    numbering.idcsOfFieldVariablesInDofVector[n.fields[self._field]]
                     for cell in mp.assignedCells
                     for n in cell.nodes
                 ]
@@ -147,7 +148,7 @@ class IndirectControl(ArcLengthControllerBase):
 
         return ddLambda
 
-    def finishIncrement(self, U: DofVector, dU: DofVector, dLambda: float, timeStep: TimeStep, dofManager: DofManager):
+    def finishIncrement(self, U: DofVector, dU: DofVector, dLambda: float, timeStep: TimeStep, numbering: DofNumbering):
         """Called by the arc length solver once an increment has converged; see
         :meth:`~edelweissfe.stepactions.base.arclengthcontrollerbase.ArcLengthControllerBase.finishIncrement`. This
         controller keeps nothing from one increment to the next: its target is the arc length of the whole step.
@@ -162,8 +163,8 @@ class IndirectControl(ArcLengthControllerBase):
             The converged increment of the load parameter.
         timeStep
             The converged time step.
-        dofManager
-            The dof manager of the current discrete system.
+        numbering
+            The numbering of the degrees of freedom of the current discrete system.
         """
 
     def applyAtStepEnd(self, model):

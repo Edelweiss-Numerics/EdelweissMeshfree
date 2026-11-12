@@ -122,15 +122,17 @@ def run_sim():
     print(theParticleManager)
 
     # We now create a bundled model.
-    # We need this model to create the dof manager
+    # We need this model to build the discrete system
 
     theModel.particleKernelDomains["my_all_with_all"] = theParticleKernelDomain
 
     theModel.prepareYourself(theJournal)
     theJournal.printPrettyTable(theModel.makePrettyTableSummary(), "summary")
 
+    from edelweissfe.numerics.dofnumbering import DofNumbering
+
     from edelweissmeshfree.fieldoutput.fieldoutput import MPMFieldOutputController
-    from edelweissmeshfree.numerics.dofmanager import MPMDofManager
+    from edelweissmeshfree.numerics.doflocations import MPMDofLocations
 
     fieldOutputController = MPMFieldOutputController(theModel, theJournal)
 
@@ -160,25 +162,24 @@ def run_sim():
 
         theActiveSubModel = theModel.getActiveSubModel()
 
-        theDofManager = MPMDofManager(
-            theActiveSubModel.nodeFields.values(), particles=theActiveSubModel.particles.values()
-        )
+        numbering = DofNumbering(theActiveSubModel.nodeFields.values())
+        locations = MPMDofLocations(numbering, particles=theActiveSubModel.particles.values())
 
         theJournal.message(f"step: {i}", "info", 0)
         theJournal.message(f"number of active nodes: {len(theActiveSubModel.nodes)}", "info")
 
-        U = theDofManager.constructDofVector()
-        U[theDofManager.idcsOfNodeFieldsInDofVector["displacement"]][::dimension] = disp_x
-        U[theDofManager.idcsOfNodeFieldsInDofVector["displacement"]][1::dimension] = disp_y
+        U = locations.constructDofVector()
+        U[numbering.idcsOfFieldsInDofVector["displacement"]][::dimension] = disp_x
+        U[numbering.idcsOfFieldsInDofVector["displacement"]][1::dimension] = disp_y
 
         for theParticle in theModel.particles.values():
             theParticleDisplacement = theParticle.getResultArray("displacement")[0:dimension]
 
             particleNodes = theParticle.nodes
 
-            dUc = U[theDofManager.idcsOfParticlesInDofVector[theParticle]]
+            dUc = U[locations[theParticle]]
 
-            sizeVec = theDofManager.nDof
+            sizeVec = numbering.nDof
             Pc = np.zeros(sizeVec)
             Kc = np.zeros((sizeVec * sizeVec))
             timeNew = 0.0
@@ -189,9 +190,7 @@ def run_sim():
 
             theJournal.message(f"particle: {theParticle.number}", "info")
             theJournal.message(f"particle assigned nodes: {[n.label for n in particleNodes]}", "info")
-            theJournal.message(
-                f"particle indices in dof vector: {theDofManager.idcsOfParticlesInDofVector[theParticle]}", "info"
-            )
+            theJournal.message(f"particle indices in dof vector: {locations[theParticle]}", "info")
             theJournal.message(f"applied incremental displacement: {disp_x}, {disp_y}", "info")
             theJournal.message(f"resulting total displacement: {theParticleDisplacement}", "info")
 

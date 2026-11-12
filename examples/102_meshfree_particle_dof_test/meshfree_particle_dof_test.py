@@ -138,7 +138,7 @@ def run_sim():
     from edelweissmeshfree.models.mpmmodel import MPMModel
 
     # We now create a bundled model.
-    # We need this model to create the dof manager
+    # We need this model to build the discrete system
 
     theModel = MPMModel(2)
 
@@ -150,7 +150,9 @@ def run_sim():
     theModel.prepareYourself(theJournal)
     theJournal.printPrettyTable(theModel.makePrettyTableSummary(), "summary")
 
-    from edelweissmeshfree.numerics.dofmanager import MPMDofManager
+    from edelweissfe.numerics.dofnumbering import DofNumbering
+
+    from edelweissmeshfree.numerics.doflocations import MPMDofLocations
 
     nSteps = 12
     for i in range(nSteps):
@@ -159,20 +161,21 @@ def run_sim():
         disp_y = 0.1 * np.sin(angle)
 
         theParticleManager.updateConnectivity()
-        theDofManager = MPMDofManager(theModel.nodeFields.values(), particles=theModel.particles.values())
+        numbering = DofNumbering(theModel.nodeFields.values())
+        locations = MPMDofLocations(numbering, particles=theModel.particles.values())
 
-        U = theDofManager.constructDofVector()
+        U = locations.constructDofVector()
 
-        U[theDofManager.idcsOfNodeFieldsInDofVector["displacement"]][::2] = disp_x
-        U[theDofManager.idcsOfNodeFieldsInDofVector["displacement"]][1::2] = disp_y
+        U[numbering.idcsOfFieldsInDofVector["displacement"]][::2] = disp_x
+        U[numbering.idcsOfFieldsInDofVector["displacement"]][1::2] = disp_y
 
         print("step: ", i)
         for theParticle in marmotParticles:
             theParticleDisplacement = theParticle.getResultArray("displacement")[0:dimension]
 
-            dUc = U[theDofManager.idcsOfParticlesInDofVector[theParticle]]
+            dUc = U[locations[theParticle]]
 
-            sizeVec = theDofManager.nDof
+            sizeVec = numbering.nDof
             Pc = np.zeros(sizeVec)
             Kc = np.zeros((sizeVec * sizeVec))
             timeNew = 0.0

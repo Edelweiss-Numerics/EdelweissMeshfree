@@ -38,7 +38,8 @@
 from abc import abstractmethod
 
 import numpy as np
-from edelweissfe.numerics.dofmanager import DofManager, DofVector
+from edelweissfe.numerics.doflocations import DofLocations
+from edelweissfe.numerics.dofvector import DofVector
 from edelweissfe.stepactions.base.loadbase import LoadBase
 from edelweissfe.timesteppers.timestep import TimeStep
 
@@ -97,12 +98,12 @@ class MPMBodyLoadBase(LoadBase):
         U_np: DofVector,
         dU: DofVector,
         timeStep: TimeStep,
-        dofManager: DofManager,
+        locations: DofLocations,
     ):
         """Let every active cell of the cell set add the residual contribution of the body load, the negative of the
         external load, and its tangent; see :meth:`~edelweissfe.stepactions.base.loadbase.LoadBase.assembleLoad`.
 
-        The active cells are those of the discrete system, i.e. those the DOF manager numbers; a body load acts only
+        The active cells are those of the discrete system, i.e. those the locations hold; a body load acts only
         on them.
 
         Parameters
@@ -118,16 +119,15 @@ class MPMBodyLoadBase(LoadBase):
             The global solution increment.
         timeStep
             The current time step.
-        dofManager
-            The DOF manager of the discrete system.
+        locations
+            The locations of the entities in the discrete system, from which the load finds where it acts.
         """
 
         loadVector = self.getCurrentLoad(timeStep)
-        activeCells = dofManager.idcsOfCellsInDofVector
 
         # summed in the order of the cell set
         for cl in self.cellSet:
-            if cl in activeCells:
+            if cl in locations:
                 Pc = np.zeros(cl.nDof)
                 Kc = K[cl] if K is not None else np.zeros(cl.nDof * cl.nDof)
 

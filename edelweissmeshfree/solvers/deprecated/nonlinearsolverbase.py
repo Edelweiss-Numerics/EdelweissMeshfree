@@ -42,7 +42,9 @@ import h5py
 import numpy as np
 from edelweissfe.constraints.base.constraintbase import ConstraintBase
 from edelweissfe.journal.journal import Journal
-from edelweissfe.numerics.dofmanager import DofManager, DofVector
+from edelweissfe.numerics.doflocations import DofLocations
+from edelweissfe.numerics.dofnumbering import DofNumbering
+from edelweissfe.numerics.dofvector import DofVector
 from edelweissfe.numerics.parallelizationutilities import (
     getNumberOfThreads,
     getThreadPool,
@@ -58,7 +60,7 @@ from edelweissfe.utils.fieldoutput import FieldOutputController
 
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.mpmmanagers.base.mpmmanagerbase import MPMManagerBase
-from edelweissmeshfree.numerics.dofmanager import MPMDofManager
+from edelweissmeshfree.numerics.doflocations import MPMDofLocations
 from edelweissmeshfree.particlemanagers.base.baseparticlemanager import (
     BaseParticleManager,
 )
@@ -137,7 +139,7 @@ class BaseNonlinearSolver:
         timeStep: TimeStep,
         R: DofVector,
         dirichlets: list[DirichletBase],
-        theDofManager: DofManager,
+        locations: DofLocations,
     ):
         """Apply the dirichlet bcs on the residual vector
         Is called by solveStep() before solving the global equatuon system.
@@ -150,8 +152,8 @@ class BaseNonlinearSolver:
             The residual vector of the global discrete system to be modified.
         dirichlets
             The list of dirichlet boundary conditions.
-        theDofManager
-            The DofManager instance.
+        locations
+            The locations of the entities in the discrete system.
 
         Returns
         -------
@@ -160,7 +162,7 @@ class BaseNonlinearSolver:
         """
 
         for dirichlet in dirichlets:
-            dofIndices, nodePositions = self._locateDirichlet(theDofManager, dirichlet)
+            dofIndices, nodePositions = self._locateDirichlet(locations, dirichlet)
             R[dofIndices] = dirichlet.getPrescribedIncrement(timeStep)[nodePositions].flatten()
 
         return R
@@ -212,13 +214,13 @@ class BaseNonlinearSolver:
         for action in actions:
             action.applyAtIncrementStart(model, timeStep)
 
-    def _findDirichletIndices(self, theDofManager: DofManager, dirichlet: DirichletBase) -> np.ndarray:
+    def _findDirichletIndices(self, locations: DofLocations, dirichlet: DirichletBase) -> np.ndarray:
         """The DOF indices a Dirichlet boundary condition prescribes, node after node, see :meth:`_locateDirichlet`.
 
         Parameters
         ----------
-        theDofManager
-            The DofManager instance.
+        locations
+            The locations of the entities in the discrete system.
         dirichlet
             The boundary condition.
 
@@ -228,9 +230,9 @@ class BaseNonlinearSolver:
             The prescribed DOF indices.
         """
 
-        return self._locateDirichlet(theDofManager, dirichlet)[0]
+        return self._locateDirichlet(locations, dirichlet)[0]
 
-    def _locateDirichlet(self, theDofManager: DofManager, dirichlet: DirichletBase) -> tuple[np.ndarray, np.ndarray]:
+    def _locateDirichlet(self, locations: DofLocations, dirichlet: DirichletBase) -> tuple[np.ndarray, np.ndarray]:
         """Where a Dirichlet boundary condition acts in the discrete system: the DOF indices of its prescribed
         components on the nodes of its node set that lie in the active domain, and the positions of these nodes in
         the set, which select the rows of
@@ -241,8 +243,8 @@ class BaseNonlinearSolver:
 
         Parameters
         ----------
-        theDofManager
-            The DofManager instance.
+        locations
+            The locations of the entities in the discrete system.
         dirichlet
             The boundary condition.
 
@@ -256,10 +258,10 @@ class BaseNonlinearSolver:
         if cache is None:
             cache = self._dirichletIndicesCache = {}
 
-        key = (dirichlet, theDofManager, tuple(dirichlet.components))
+        key = (dirichlet, locations, tuple(dirichlet.components))
         located = cache.get(key)
         if located is None:
-            fieldIndices, nodePositions = theDofManager.locateFieldOnNodeSet(dirichlet.field, dirichlet.nSet)
+            fieldIndices, nodePositions = locations.numbering.locateFieldOnNodeSet(dirichlet.field, dirichlet.nSet)
             dofIndices = fieldIndices.reshape((-1, dirichlet.fieldSize))[:, dirichlet.components].flatten()
             located = cache[key] = (dofIndices, nodePositions)
 
@@ -350,9 +352,45 @@ class BaseNonlinearSolver:
         for mp in materialPoints:
             mp.computeYourself(time, dT)
 
-    @performancetiming.timeit("instancing dof manager")
-    def _createDofManager(self, *args, **kwargs):
-        return MPMDofManager(*args, **kwargs)
+    @performancetiming.timeit("instancing dof locations")
+    def _createLocations(
+        self, nodeFields, scalarVariables, nodeSets, elements, constraints, cells, cellElements, particles
+    ) -> MPMDofLocations:
+        """The numbering of the degrees of freedom of the active domain, and the locations of its entities in it.
+
+        Parameters
+        ----------
+        nodeFields
+            The node fields of the active domain.
+        scalarVariables
+            The scalar variables of the active constraints.
+        nodeSets
+            The node sets, reduced to the active domain.
+        elements
+            The finite elements.
+        constraints
+            The active constraints.
+        cells
+            The active cells.
+        cellElements
+            The cell elements.
+        particles
+            The particles.
+
+        Returns
+        -------
+        MPMDofLocations
+            The locations, whose numbering is :attr:`~edelweissfe.numerics.doflocations.DofLocations.numbering`.
+        """
+
+        return MPMDofLocations(
+            DofNumbering(nodeFields, scalarVariables, nodeSets),
+            elements=elements,
+            constraints=constraints,
+            cells=cells,
+            cellElements=cellElements,
+            particles=particles,
+        )
 
     @performancetiming.timeit("update connectivity")
     def _updateManagedConnectivity(self, managers: list[MPMManagerBase] | list[BaseParticleManager]) -> bool:
@@ -496,7 +534,7 @@ class BaseNonlinearSolver:
 
         Point 2 is about the value only, and it is not on its own enough: ``any`` short-circuits, so
         reducing a lazy ``Executor.map`` would also make this function *return early*, while the
-        chunks after the first changed one are still writing. The caller rebuilds the dof manager
+        chunks after the first changed one are still writing. The caller builds the numbering and the locations
         immediately afterwards, from the very node lists those threads are still rewriting. Hence
         the results are materialised before being reduced -- see the comment at the call below.
 

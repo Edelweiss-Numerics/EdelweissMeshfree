@@ -167,7 +167,7 @@ def run_sim(no_limit=False):
     print(theParticleManager)
 
     # We now create a bundled model.
-    # We need this model to create the dof manager
+    # We need this model to build the discrete system
     theModel.particleKernelDomains["my_all_with_all"] = theParticleKernelDomain
 
     dirichletLeft = ParticleLagrangianWeakDirichletOnParticleSetFactory(

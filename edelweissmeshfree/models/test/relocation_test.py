@@ -25,8 +25,9 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 """A meshfree discrete system follows a change of the connectivity that leaves the active nodes as they are by locating
-the particles whose kernel functions changed, and the constraints, anew: its DOF manager equals one built for the
-changed entities, and its constraints are those of the model that are active, none if all have left."""
+the particles whose kernel functions changed, and the constraints, anew, in a new discrete system on the same
+numbering: its locations equal those built for the changed entities, and its constraints are those of the model that
+are active, none if all have left."""
 
 from types import SimpleNamespace
 
@@ -36,8 +37,8 @@ from edelweissfe.sets.nodeset import NodeSet
 from edelweissmeshfree.models.mpmdiscretesystem import MPMDiscreteSystem
 from edelweissmeshfree.numerics.test._entities import (
     Entity,
-    assertEqualDofManagers,
-    makeDofManager,
+    assertEqualDofLocations,
+    makeDofLocations,
     makeNodeField,
     makeNodes,
 )
@@ -64,21 +65,27 @@ def test_the_system_locates_particles_and_constraints_anew_as_a_fresh_one_has_th
     )
     system = MPMDiscreteSystem(
         model,
-        makeDofManager(nodeField, constraints, cells, [], particles),
-        [],
-        cells,
+        makeDofLocations(nodeField, constraints, cells, [], particles),
         NodeSet("persistent", []),
         NodeSet("volatile", []),
         None,
     )
     assert system.constraints == constraints
+    constraintsBefore = list(constraints)
 
     # the kernel functions of one particle now reach other nodes, and the constraints change
     particles[0].couple(nodes[0:3])
     model.particleManagers[0].particlesWithChangedKernelFunctions = [particles[0]]
     constraints[:] = [Entity([nodes[i] for i in indices]) for indices in nodesOfTheConstraintsAfterwards]
 
-    system.relocateParticlesAndConstraints()
+    relocated = system.withNewLocations()
 
-    assert system.constraints == constraints
-    assertEqualDofManagers(system.dofManager, makeDofManager(nodeField, constraints, cells, [], particles))
+    assert relocated.constraints == constraints
+    assert relocated.elements == [*cells, *particles]
+    assert relocated.numbering is system.numbering
+    assertEqualDofLocations(
+        relocated.locations,
+        makeDofLocations(nodeField, constraints, cells, [], particles, numbering=system.numbering),
+    )
+    # the discrete system it follows from is not changed
+    assert system.constraints == constraintsBefore

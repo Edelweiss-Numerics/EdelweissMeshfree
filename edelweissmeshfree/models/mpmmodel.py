@@ -41,6 +41,7 @@ from edelweissfe.config.phenomena import getFieldSize, phenomena
 from edelweissfe.journal.journal import Journal
 from edelweissfe.models.change import Change
 from edelweissfe.models.femodel import FEModel
+from edelweissfe.numerics.dofnumbering import DofNumbering
 from edelweissfe.sets.elementset import ElementSet
 from edelweissfe.sets.nodeset import NodeSet
 from edelweissfe.utils.exceptions import RestartError
@@ -49,7 +50,7 @@ from prettytable import PrettyTable
 
 from edelweissmeshfree.fields.nodefield import MPMNodeField
 from edelweissmeshfree.models.mpmdiscretesystem import MPMDiscreteSystem
-from edelweissmeshfree.numerics.dofmanager import MPMDofManager
+from edelweissmeshfree.numerics.doflocations import MPMDofLocations
 from edelweissmeshfree.sets.cellelementset import CellElementSet
 from edelweissmeshfree.sets.cellset import CellSet
 from edelweissmeshfree.sets.materialpointset import MaterialPointSet
@@ -346,7 +347,7 @@ class MPMModel(FEModel):
     def _activeNodesAreFixed(self) -> bool:
         """Whether a change of the connectivity leaves the nodes of the active domain as they are, so that a discrete
         system can follow it by locating the changed particles and the constraints anew
-        (:meth:`~edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.relocateParticlesAndConstraints`)
+        (:meth:`~edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.withNewLocations`)
         instead of being rebuilt: without MPM managers, whose cells become active and inactive, and with every particle
         manager bonding its kernel functions to the particles, so that a kernel function always covers its own
         particle.
@@ -382,12 +383,11 @@ class MPMModel(FEModel):
         )
         constraints = self.activeConstraints()
 
-        dofManager = MPMDofManager(
-            activeNodeFields.values(),
-            self.activeScalarVariables(),
+        numbering = DofNumbering(activeNodeFields.values(), self.activeScalarVariables(), self.nodeSets.values())
+        locations = MPMDofLocations(
+            numbering,
             elements=self.elements.values(),
             constraints=constraints,
-            nodeSets=self.nodeSets.values(),
             cells=activeCells,
             cellElements=self.cellElements.values(),
             particles=self.particles.values(),
@@ -395,9 +395,7 @@ class MPMModel(FEModel):
 
         return MPMDiscreteSystem(
             self,
-            dofManager,
-            [*self.elements.values(), *activeCells, *self.cellElements.values(), *self.particles.values()],
-            activeCells,
+            locations,
             nodesWithPersistentFieldValues,
             nodesWithVolatileFieldValues,
             self._reducedToActiveDomain(activeCells, activeNodeFields, activeNodeSets),
@@ -511,7 +509,7 @@ class MPMModel(FEModel):
         activeNodes = activeNodesWithVolatileFieldValues | activeNodesWithPersistentFieldValues
 
         # Node defines no __hash__, so a plain set of Node objects iterates in an address-dependent
-        # order that differs between runs. DofManager assigns DOF indices strictly in
+        # order that differs between runs. DofNumbering assigns DOF indices strictly in
         # nodeField.nodes order, so leaving this unsorted made the global sparsity pattern
         # irreproducible -- and with it direct-solver fill-in and AMG aggregation, i.e. solve times
         # and iteration counts. Labels are unique, so sorting on them pins the numbering down
