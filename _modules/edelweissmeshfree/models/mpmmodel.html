@@ -114,6 +114,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">h5py</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.config.phenomena</span><span class="w"> </span><span class="kn">import</span> <span class="n">getFieldSize</span><span class="p">,</span> <span class="n">phenomena</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.journal.journal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Journal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.models.change</span><span class="w"> </span><span class="kn">import</span> <span class="n">Change</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.models.femodel</span><span class="w"> </span><span class="kn">import</span> <span class="n">FEModel</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.sets.elementset</span><span class="w"> </span><span class="kn">import</span> <span class="n">ElementSet</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.sets.nodeset</span><span class="w"> </span><span class="kn">import</span> <span class="n">NodeSet</span>
@@ -399,9 +400,9 @@
 
 <div class="viewcode-block" id="MPMModel.updateConnectivity">
 <a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">updateConnectivity</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""Bring the coupling of the degrees of freedom up to date with the converged state, before an increment; see</span>
-<span class="sd">        :meth:`~edelweissfe.models.femodel.FEModel.updateConnectivity`. Called by EdelweissFE's solvers at the start</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">updateConnectivity</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Change</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Bring the connectivity up to date with the converged state, before an increment, and say what that changed;</span>
+<span class="sd">        see :meth:`~edelweissfe.models.femodel.FEModel.updateConnectivity`. Called by EdelweissFE's solvers at the start</span>
 <span class="sd">        of every increment and of every retry after a cutback.</span>
 
 <span class="sd">        First the managers assign the material points to the cells they lie in (:attr:`mpmManagers`) and the particles</span>
@@ -410,40 +411,51 @@
 <span class="sd">        assigned. Finally, the test functions of the particles are corrected for the new connectivity</span>
 <span class="sd">        (:attr:`vciManagers`).</span>
 
-<span class="sd">        A change of the active domain is a change of the coupling, not of the mesh: no node is created or moved, so the</span>
-<span class="sd">        solver rebuilds its discrete system, but does not re-equilibrate.</span>
+<span class="sd">        A change of the active domain is a change of the connectivity, not of the mesh: no node is created or moved. If the</span>
+<span class="sd">        nodes of the active domain are fixed (``_activeNodesAreFixed``), the numbering of the nodes stands, and the</span>
+<span class="sd">        change is one of the locations: only the particles that changed and the constraints are located anew, which</span>
+<span class="sd">        is what rebuilding would give, at a fraction of its cost. Otherwise the active domain may change, and with it</span>
+<span class="sd">        the numbering.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        bool</span>
-<span class="sd">            True if a coupling changed, so that the discrete system has to be rebuilt.</span>
+<span class="sd">        Change</span>
+<span class="sd">            What changed: :attr:`~edelweissfe.models.change.Change.NONE` if nothing did,</span>
+<span class="sd">            :attr:`~edelweissfe.models.change.Change.LOCATIONS` if the active nodes are fixed, else</span>
+<span class="sd">            :attr:`~edelweissfe.models.change.Change.NUMBERING`, or what the constraints changed, if that is more.</span>
 <span class="sd">        """</span>
 
-        <span class="n">connectivityChanged</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">managersChanged</span> <span class="o">=</span> <span class="kc">False</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpmManagers</span><span class="p">:</span>
             <span class="c1"># The arguments are those of the converged state; no material point reads them here.</span>
             <span class="k">for</span> <span class="n">materialPoint</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">materialPoints</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
                 <span class="n">materialPoint</span><span class="o">.</span><span class="n">prepareYourself</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">time</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">mpmManager</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpmManagers</span><span class="p">:</span>
-                <span class="n">connectivityChanged</span> <span class="o">|=</span> <span class="n">mpmManager</span><span class="o">.</span><span class="n">updateConnectivity</span><span class="p">()</span>
+                <span class="n">managersChanged</span> <span class="o">|=</span> <span class="n">mpmManager</span><span class="o">.</span><span class="n">updateConnectivity</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">particleManagers</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">particle</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
                 <span class="n">particle</span><span class="o">.</span><span class="n">prepareYourself</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">time</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">particleManager</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">particleManagers</span><span class="p">:</span>
-                <span class="n">connectivityChanged</span> <span class="o">|=</span> <span class="n">particleManager</span><span class="o">.</span><span class="n">updateConnectivity</span><span class="p">()</span>
+                <span class="n">managersChanged</span> <span class="o">|=</span> <span class="n">particleManager</span><span class="o">.</span><span class="n">updateConnectivity</span><span class="p">()</span>
 
-        <span class="n">connectivityChanged</span> <span class="o">|=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">updateConnectivity</span><span class="p">()</span>
+        <span class="n">change</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">updateConnectivity</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">managersChanged</span><span class="p">:</span>
+            <span class="n">change</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">change</span><span class="p">,</span> <span class="n">Change</span><span class="o">.</span><span class="n">LOCATIONS</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">vciManager</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">vciManagers</span><span class="p">:</span>
             <span class="n">vciManager</span><span class="o">.</span><span class="n">computeVCICorrections</span><span class="p">()</span>
 
-        <span class="k">return</span> <span class="n">connectivityChanged</span></div>
+        <span class="k">if</span> <span class="n">change</span> <span class="o">&gt;</span> <span class="n">Change</span><span class="o">.</span><span class="n">NONE</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_activeNodesAreFixed</span><span class="p">():</span>
+            <span class="n">change</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">change</span><span class="p">,</span> <span class="n">Change</span><span class="o">.</span><span class="n">NUMBERING</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">change</span></div>
 
 
-    <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">activeNodesAreFixed</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<div class="viewcode-block" id="MPMModel._activeNodesAreFixed">
+<a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel._activeNodesAreFixed">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_activeNodesAreFixed</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Whether a change of the connectivity leaves the nodes of the active domain as they are, so that a discrete</span>
 <span class="sd">        system can follow it by locating the changed particles and the constraints anew</span>
 <span class="sd">        (:meth:`~edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.relocateParticlesAndConstraints`)</span>
@@ -459,7 +471,8 @@
 
         <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpmManagers</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span>
             <span class="n">particleManager</span><span class="o">.</span><span class="n">kernelFunctionsAreBondedToParticles</span> <span class="k">for</span> <span class="n">particleManager</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">particleManagers</span>
-        <span class="p">)</span>
+        <span class="p">)</span></div>
+
 
 <div class="viewcode-block" id="MPMModel.buildDiscreteSystem">
 <a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.buildDiscreteSystem">[docs]</a>
@@ -486,7 +499,7 @@
 
         <span class="n">dofManager</span> <span class="o">=</span> <span class="n">MPMDofManager</span><span class="p">(</span>
             <span class="n">activeNodeFields</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span>
-            <span class="p">[</span><span class="n">scalarVariable</span> <span class="k">for</span> <span class="n">constraint</span> <span class="ow">in</span> <span class="n">constraints</span> <span class="k">for</span> <span class="n">scalarVariable</span> <span class="ow">in</span> <span class="n">constraint</span><span class="o">.</span><span class="n">scalarVariables</span><span class="p">],</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">activeScalarVariables</span><span class="p">(),</span>
             <span class="n">elements</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span>
             <span class="n">constraints</span><span class="o">=</span><span class="n">constraints</span><span class="p">,</span>
             <span class="n">nodeSets</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nodeSets</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span>

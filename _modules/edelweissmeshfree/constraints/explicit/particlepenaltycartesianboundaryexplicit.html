@@ -254,15 +254,10 @@
         <span class="n">hasChanged</span> <span class="o">=</span> <span class="n">nodes</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span> <span class="o">=</span> <span class="n">nodes</span>
 
-        <span class="n">wasActive</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">active</span>
-
         <span class="c1"># within reach if one of the constrained points is close enough to the boundary</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">withinReach</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_doProximityCheck</span> <span class="ow">or</span> <span class="nb">any</span><span class="p">(</span>
             <span class="nb">abs</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_component</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_boundaryPosition</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_proximityDist</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constrained_points</span>
         <span class="p">)</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="o">!=</span> <span class="n">wasActive</span><span class="p">:</span>
-            <span class="n">hasChanged</span> <span class="o">=</span> <span class="kc">True</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">active</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">reactionForce</span> <span class="o">=</span> <span class="mf">0.0</span>

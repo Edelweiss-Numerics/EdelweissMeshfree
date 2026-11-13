@@ -431,9 +431,11 @@ it was taken on, <code class="docutils literal notranslate"><span class="pre">P<
 \boldsymbol{f}\)</span>, and <code class="docutils literal notranslate"><span class="pre">V</span></code> the half-step velocity, as in <code class="docutils literal notranslate"><span class="pre">NED</span></code>; <code class="docutils literal notranslate"><span class="pre">U</span></code> is zero, since the nodes of the kernel
 functions carry no total solution. <code class="docutils literal notranslate"><span class="pre">P</span></code>, <code class="docutils literal notranslate"><span class="pre">V</span></code> and <code class="docutils literal notranslate"><span class="pre">A</span></code> are written on the kernel functions the increment ends on,
 <code class="docutils literal notranslate"><span class="pre">dU</span></code> on those it started on: a node that left the active domain in that increment keeps its <code class="docutils literal notranslate"><span class="pre">dU</span></code>.</p></li>
-<li><p><strong>The discrete system.</strong> When the active nodes cannot change (bonded kernel functions, no material point managers),
-a change of the connectivity only locates the changed particles and the constraints anew; otherwise the discrete
-system is rebuilt.</p></li>
+<li><p><strong>The discrete system.</strong> The model classifies a change of the connectivity
+(<code class="xref py py-class docutils literal notranslate"><span class="pre">Change</span></code>, see EdelweissFE’s <em>What the solver asks the model</em>). When the active
+nodes cannot change (bonded kernel functions, no material point managers), it is a change of the locations, and the
+solver only locates the changed particles and the constraints anew; otherwise it is a change of the numbering, and
+the discrete system is rebuilt. Nothing changed: nothing to do.</p></li>
 <li><p><strong>Nodes without mass.</strong> A kernel function that the particles reach only where it vanishes has no positive lumped
 mass; its node has no equation of motion and has no velocity, also after it lost its mass while it moved.</p></li>
 <li><p><strong>A particle that cannot take an increment</strong> ends the step with <code class="docutils literal notranslate"><span class="pre">StepFailed</span></code>: the increment is set by stability,

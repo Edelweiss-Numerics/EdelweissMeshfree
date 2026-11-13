@@ -238,11 +238,11 @@ what an element of the same mechanics would add as its internal force – and it
 See the EdelweissFE solver documentation, <em>The residual and the tangent</em>.</p></li>
 <li><p>The nodes of a meshfree constraint are those its particles or material points currently interpolate from, so
 they change as the kernel functions and cells move: <code class="docutils literal notranslate"><span class="pre">updateConnectivity</span></code> finds them anew at the start of
-every increment, and reports a change.</p></li>
+every increment, and reports whether they changed.</p></li>
 <li><p>A constraint may switch itself off in <code class="docutils literal notranslate"><span class="pre">updateConnectivity</span></code>, e.g. a contact constraint whose particle is far
 from the boundary: it sets
-<code class="xref py py-attr docutils literal notranslate"><span class="pre">withinReach</span></code>, and reports a change of
-<code class="xref py py-attr docutils literal notranslate"><span class="pre">active</span></code>. A constraint switched off from
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">withinReach</span></code>; the model sees the change of
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">active</span></code> itself. A constraint switched off from
 outside, through <code class="docutils literal notranslate"><span class="pre">active</span></code>, stays off whatever it finds, and rests: the model does not locate it anew.</p></li>
 <li><p>Every constraint declares the state it carries from one increment to the next, in <code class="docutils literal notranslate"><span class="pre">checkpointedState</span></code>
 (empty if it carries none), so that a restart can restore it.</p></li>
@@ -322,7 +322,7 @@ constraint acts in an explicit analysis at all, it declares in <a class="referen
 <td><p>The entity's view of the flat array of the values of its block, which it writes its tangent into.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code>(model)</p></td>
-<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether its <code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code> footprint has changed since the last call.</p></td>
+<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have changed since the last call.</p></td>
 </tr>
 </tbody>
 </table>
@@ -335,6 +335,15 @@ constraints at the configuration it has just accepted: the particles have moved,
 functions carry neither a solution nor an increment. A constraint that measures its condition at the particles’
 current positions acts there, e.g. a contact with a boundary; a constraint on the increment, e.g. a weak
 Dirichlet condition or an equal value, would act as if nothing had moved, and the solver refuses it.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.connectivityChangesWithMotion">
+<span class="sig-name descname"><span class="pre">connectivityChangesWithMotion</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.connectivityChangesWithMotion" title="Link to this definition"></a></dt>
+<dd><p>The nodes of a meshfree constraint are those its particles or material points currently interpolate from, so they
+change as the particles move (see
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">connectivityChangesWithMotion</span></code>): a solver that
+never updates the connectivity, e.g. <code class="docutils literal notranslate"><span class="pre">NEST</span></code>, refuses it.</p>
 </dd></dl>
 
 <dl class="py property">
@@ -446,7 +455,7 @@ nodes to <code class="docutils literal notranslate"><span class="pre">P</span></
 <td><p>The entity's view of the flat array of the values of its block, which it writes its tangent into.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code>(model)</p></td>
-<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether its <code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code> footprint has changed since the last call.</p></td>
+<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have changed since the last call.</p></td>
 </tr>
 </tbody>
 </table>
@@ -572,7 +581,7 @@ nodes to <code class="docutils literal notranslate"><span class="pre">P</span></
 <td><p>The entity's view of the flat array of the values of its block, which it writes its tangent into.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.updateConnectivity" title="edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.updateConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code></a>(model)</p></td>
-<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether its <code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code> footprint has changed since the last call.</p></td>
+<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have changed since the last call.</p></td>
 </tr>
 </tbody>
 </table>
@@ -646,18 +655,19 @@ this Constraint needs.</p>
 <span class="sig-name descname"><span class="pre">updateConnectivity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/penaltyequalvalue.html#PenaltyEqualValue.updateConnectivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.updateConnectivity" title="Link to this definition"></a></dt>
 <dd><p>Called once at the start of every increment, before the global discrete system is
 (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based
-contact pairs) and declare whether its <code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code> footprint has
-changed since the last call.</p>
+contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have
+changed since the last call. A constraint that is not always within reach also sets
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">withinReach</span></code> here; it does not report the change of <code class="xref py py-attr docutils literal notranslate"><span class="pre">active</span></code> itself, the model compares it (see
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code>).</p>
 <p>The default implementation does nothing and reports no change, which is correct for every
-constraint whose DOF footprint is fixed at construction (i.e. every constraint that does
+constraint whose nodes are fixed at construction (i.e. every constraint that does
 not override this method).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>model</strong> – The current model.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>True if this constraint’s contribution to the global system has changed and the
-discrete system must be rebuilt before the next Newton solve.</p>
+<dd class="field-even"><p>True if the nodes this constraint couples have changed.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>bool</p>
@@ -996,7 +1006,7 @@ It constrains a material point field increment.</p>
 <td><p>The entity's view of the flat array of the values of its block, which it writes its tangent into.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.updateConnectivity" title="edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.updateConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code></a>(model)</p></td>
-<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether its <code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code> footprint has changed since the last call.</p></td>
+<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have changed since the last call.</p></td>
 </tr>
 </tbody>
 </table>
@@ -1070,18 +1080,19 @@ this Constraint needs.</p>
 <span class="sig-name descname"><span class="pre">updateConnectivity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/penaltyweakdirichlet.html#PenaltyWeakDirichlet.updateConnectivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.updateConnectivity" title="Link to this definition"></a></dt>
 <dd><p>Called once at the start of every increment, before the global discrete system is
 (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based
-contact pairs) and declare whether its <code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code> footprint has
-changed since the last call.</p>
+contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have
+changed since the last call. A constraint that is not always within reach also sets
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">withinReach</span></code> here; it does not report the change of <code class="xref py py-attr docutils literal notranslate"><span class="pre">active</span></code> itself, the model compares it (see
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code>).</p>
 <p>The default implementation does nothing and reports no change, which is correct for every
-constraint whose DOF footprint is fixed at construction (i.e. every constraint that does
+constraint whose nodes are fixed at construction (i.e. every constraint that does
 not override this method).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>model</strong> – The current model.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>True if this constraint’s contribution to the global system has changed and the
-discrete system must be rebuilt before the next Newton solve.</p>
+<dd class="field-even"><p>True if the nodes this constraint couples have changed.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>bool</p>
@@ -1223,7 +1234,7 @@ If “center”, the center of the particle is constrained. If a list, the verti
 <td><p>The entity's view of the flat array of the values of its block, which it writes its tangent into.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.updateConnectivity" title="edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.updateConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code></a>(model)</p></td>
-<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether its <code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code> footprint has changed since the last call.</p></td>
+<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have changed since the last call.</p></td>
 </tr>
 </tbody>
 </table>
@@ -1297,18 +1308,19 @@ this Constraint needs.</p>
 <span class="sig-name descname"><span class="pre">updateConnectivity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/particlepenaltyweakdirichtlet.html#ParticlePenaltyWeakDirichlet.updateConnectivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.updateConnectivity" title="Link to this definition"></a></dt>
 <dd><p>Called once at the start of every increment, before the global discrete system is
 (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based
-contact pairs) and declare whether its <code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code> footprint has
-changed since the last call.</p>
+contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have
+changed since the last call. A constraint that is not always within reach also sets
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">withinReach</span></code> here; it does not report the change of <code class="xref py py-attr docutils literal notranslate"><span class="pre">active</span></code> itself, the model compares it (see
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code>).</p>
 <p>The default implementation does nothing and reports no change, which is correct for every
-constraint whose DOF footprint is fixed at construction (i.e. every constraint that does
+constraint whose nodes are fixed at construction (i.e. every constraint that does
 not override this method).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>model</strong> – The current model.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>True if this constraint’s contribution to the global system has changed and the
-discrete system must be rebuilt before the next Newton solve.</p>
+<dd class="field-even"><p>True if the nodes this constraint couples have changed.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>bool</p>
@@ -1449,7 +1461,7 @@ discrete system must be rebuilt before the next Newton solve.</p>
 <td><p>The entity's view of the flat array of the values of its block, which it writes its tangent into.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.particlepenaltyequalvalue.ParticlePenaltyEqualValue.updateConnectivity" title="edelweissmeshfree.constraints.particlepenaltyequalvalue.ParticlePenaltyEqualValue.updateConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code></a>(model)</p></td>
-<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether its <code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code> footprint has changed since the last call.</p></td>
+<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have changed since the last call.</p></td>
 </tr>
 </tbody>
 </table>
@@ -1523,18 +1535,19 @@ this Constraint needs.</p>
 <span class="sig-name descname"><span class="pre">updateConnectivity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/particlepenaltyequalvalue.html#ParticlePenaltyEqualValue.updateConnectivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.particlepenaltyequalvalue.ParticlePenaltyEqualValue.updateConnectivity" title="Link to this definition"></a></dt>
 <dd><p>Called once at the start of every increment, before the global discrete system is
 (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based
-contact pairs) and declare whether its <code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code> footprint has
-changed since the last call.</p>
+contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have
+changed since the last call. A constraint that is not always within reach also sets
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">withinReach</span></code> here; it does not report the change of <code class="xref py py-attr docutils literal notranslate"><span class="pre">active</span></code> itself, the model compares it (see
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code>).</p>
 <p>The default implementation does nothing and reports no change, which is correct for every
-constraint whose DOF footprint is fixed at construction (i.e. every constraint that does
+constraint whose nodes are fixed at construction (i.e. every constraint that does
 not override this method).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>model</strong> – The current model.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>True if this constraint’s contribution to the global system has changed and the
-discrete system must be rebuilt before the next Newton solve.</p>
+<dd class="field-even"><p>True if the nodes this constraint couples have changed.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>bool</p>
@@ -1691,7 +1704,7 @@ the displacement field that is constrained.</p></li>
 <td><p>The entity's view of the flat array of the values of its block, which it writes its tangent into.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.particlepenaltycartesianboundary.ParticlePenaltyContactCartesianBoundaryConstraint.updateConnectivity" title="edelweissmeshfree.constraints.particlepenaltycartesianboundary.ParticlePenaltyContactCartesianBoundaryConstraint.updateConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code></a>(model)</p></td>
-<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether its <code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code> footprint has changed since the last call.</p></td>
+<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have changed since the last call.</p></td>
 </tr>
 </tbody>
 </table>
@@ -1765,18 +1778,19 @@ this Constraint needs.</p>
 <span class="sig-name descname"><span class="pre">updateConnectivity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/particlepenaltycartesianboundary.html#ParticlePenaltyContactCartesianBoundaryConstraint.updateConnectivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.particlepenaltycartesianboundary.ParticlePenaltyContactCartesianBoundaryConstraint.updateConnectivity" title="Link to this definition"></a></dt>
 <dd><p>Called once at the start of every increment, before the global discrete system is
 (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based
-contact pairs) and declare whether its <code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code> footprint has
-changed since the last call.</p>
+contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have
+changed since the last call. A constraint that is not always within reach also sets
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">withinReach</span></code> here; it does not report the change of <code class="xref py py-attr docutils literal notranslate"><span class="pre">active</span></code> itself, the model compares it (see
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code>).</p>
 <p>The default implementation does nothing and reports no change, which is correct for every
-constraint whose DOF footprint is fixed at construction (i.e. every constraint that does
+constraint whose nodes are fixed at construction (i.e. every constraint that does
 not override this method).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>model</strong> – The current model.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>True if this constraint’s contribution to the global system has changed and the
-discrete system must be rebuilt before the next Newton solve.</p>
+<dd class="field-even"><p>True if the nodes this constraint couples have changed.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>bool</p>
@@ -1959,7 +1973,7 @@ vertices given by vertexIDs (“vertex”).</p></li>
 <td><p>The entity's view of the flat array of the values of its block, which it writes its tangent into.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.particlepenaltyrigidbodycontact.ParticlePenaltyContactImplicitSurfaceConstraint.updateConnectivity" title="edelweissmeshfree.constraints.particlepenaltyrigidbodycontact.ParticlePenaltyContactImplicitSurfaceConstraint.updateConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code></a>(model)</p></td>
-<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether its <code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code> footprint has changed since the last call.</p></td>
+<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have changed since the last call.</p></td>
 </tr>
 </tbody>
 </table>
@@ -2033,18 +2047,19 @@ this Constraint needs.</p>
 <span class="sig-name descname"><span class="pre">updateConnectivity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/particlepenaltyrigidbodycontact.html#ParticlePenaltyContactImplicitSurfaceConstraint.updateConnectivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.particlepenaltyrigidbodycontact.ParticlePenaltyContactImplicitSurfaceConstraint.updateConnectivity" title="Link to this definition"></a></dt>
 <dd><p>Called once at the start of every increment, before the global discrete system is
 (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based
-contact pairs) and declare whether its <code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code> footprint has
-changed since the last call.</p>
+contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have
+changed since the last call. A constraint that is not always within reach also sets
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">withinReach</span></code> here; it does not report the change of <code class="xref py py-attr docutils literal notranslate"><span class="pre">active</span></code> itself, the model compares it (see
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code>).</p>
 <p>The default implementation does nothing and reports no change, which is correct for every
-constraint whose DOF footprint is fixed at construction (i.e. every constraint that does
+constraint whose nodes are fixed at construction (i.e. every constraint that does
 not override this method).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>model</strong> – The current model.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>True if this constraint’s contribution to the global system has changed and the
-discrete system must be rebuilt before the next Newton solve.</p>
+<dd class="field-even"><p>True if the nodes this constraint couples have changed.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>bool</p>
@@ -2209,7 +2224,7 @@ continues from the last converged increment. <code class="docutils literal notra
 <td><p>The entity's view of the flat array of the values of its block, which it writes its tangent into.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.particlelagrangianequalvalue.ParticleLagrangianEqualValueConstraint.updateConnectivity" title="edelweissmeshfree.constraints.particlelagrangianequalvalue.ParticleLagrangianEqualValueConstraint.updateConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code></a>(model)</p></td>
-<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether its <code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code> footprint has changed since the last call.</p></td>
+<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have changed since the last call.</p></td>
 </tr>
 </tbody>
 </table>
@@ -2283,18 +2298,19 @@ this Constraint needs.</p>
 <span class="sig-name descname"><span class="pre">updateConnectivity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/particlelagrangianequalvalue.html#ParticleLagrangianEqualValueConstraint.updateConnectivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.particlelagrangianequalvalue.ParticleLagrangianEqualValueConstraint.updateConnectivity" title="Link to this definition"></a></dt>
 <dd><p>Called once at the start of every increment, before the global discrete system is
 (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based
-contact pairs) and declare whether its <code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code> footprint has
-changed since the last call.</p>
+contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have
+changed since the last call. A constraint that is not always within reach also sets
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">withinReach</span></code> here; it does not report the change of <code class="xref py py-attr docutils literal notranslate"><span class="pre">active</span></code> itself, the model compares it (see
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code>).</p>
 <p>The default implementation does nothing and reports no change, which is correct for every
-constraint whose DOF footprint is fixed at construction (i.e. every constraint that does
+constraint whose nodes are fixed at construction (i.e. every constraint that does
 not override this method).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>model</strong> – The current model.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>True if this constraint’s contribution to the global system has changed and the
-discrete system must be rebuilt before the next Newton solve.</p>
+<dd class="field-even"><p>True if the nodes this constraint couples have changed.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>bool</p>
@@ -2490,7 +2506,7 @@ acts on the constraint.</p>
 <td><p>The entity's view of the flat array of the values of its block, which it writes its tangent into.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.particlelagrangianweakdirichlet.ParticleLagrangianWeakDirichlet.updateConnectivity" title="edelweissmeshfree.constraints.particlelagrangianweakdirichlet.ParticleLagrangianWeakDirichlet.updateConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code></a>(model)</p></td>
-<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether its <code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code> footprint has changed since the last call.</p></td>
+<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have changed since the last call.</p></td>
 </tr>
 </tbody>
 </table>
@@ -2578,18 +2594,19 @@ this Constraint needs.</p>
 <span class="sig-name descname"><span class="pre">updateConnectivity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/particlelagrangianweakdirichlet.html#ParticleLagrangianWeakDirichlet.updateConnectivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.particlelagrangianweakdirichlet.ParticleLagrangianWeakDirichlet.updateConnectivity" title="Link to this definition"></a></dt>
 <dd><p>Called once at the start of every increment, before the global discrete system is
 (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based
-contact pairs) and declare whether its <code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code> footprint has
-changed since the last call.</p>
+contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have
+changed since the last call. A constraint that is not always within reach also sets
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">withinReach</span></code> here; it does not report the change of <code class="xref py py-attr docutils literal notranslate"><span class="pre">active</span></code> itself, the model compares it (see
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code>).</p>
 <p>The default implementation does nothing and reports no change, which is correct for every
-constraint whose DOF footprint is fixed at construction (i.e. every constraint that does
+constraint whose nodes are fixed at construction (i.e. every constraint that does
 not override this method).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>model</strong> – The current model.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>True if this constraint’s contribution to the global system has changed and the
-discrete system must be rebuilt before the next Newton solve.</p>
+<dd class="field-even"><p>True if the nodes this constraint couples have changed.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>bool</p>
@@ -2786,7 +2803,7 @@ vertex given by vertexID (“vertex”).</p></li>
 <td><p>The entity's view of the flat array of the values of its block, which it writes its tangent into.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.particlelagrangiancartesianboundary.ParticleLagrangianContactCartesianBoundaryConstraint.updateConnectivity" title="edelweissmeshfree.constraints.particlelagrangiancartesianboundary.ParticleLagrangianContactCartesianBoundaryConstraint.updateConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code></a>(model)</p></td>
-<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether its <code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code> footprint has changed since the last call.</p></td>
+<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have changed since the last call.</p></td>
 </tr>
 </tbody>
 </table>
@@ -2860,18 +2877,19 @@ this Constraint needs.</p>
 <span class="sig-name descname"><span class="pre">updateConnectivity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/particlelagrangiancartesianboundary.html#ParticleLagrangianContactCartesianBoundaryConstraint.updateConnectivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.particlelagrangiancartesianboundary.ParticleLagrangianContactCartesianBoundaryConstraint.updateConnectivity" title="Link to this definition"></a></dt>
 <dd><p>Called once at the start of every increment, before the global discrete system is
 (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based
-contact pairs) and declare whether its <code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code> footprint has
-changed since the last call.</p>
+contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have
+changed since the last call. A constraint that is not always within reach also sets
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">withinReach</span></code> here; it does not report the change of <code class="xref py py-attr docutils literal notranslate"><span class="pre">active</span></code> itself, the model compares it (see
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code>).</p>
 <p>The default implementation does nothing and reports no change, which is correct for every
-constraint whose DOF footprint is fixed at construction (i.e. every constraint that does
+constraint whose nodes are fixed at construction (i.e. every constraint that does
 not override this method).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>model</strong> – The current model.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>True if this constraint’s contribution to the global system has changed and the
-discrete system must be rebuilt before the next Newton solve.</p>
+<dd class="field-even"><p>True if the nodes this constraint couples have changed.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>bool</p>
@@ -3055,7 +3073,7 @@ continues from the last converged increment.</p>
 <td><p>The entity's view of the flat array of the values of its block, which it writes its tangent into.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.particlemortarweakdirichlet.ParticleMortarWeakDirichlet.updateConnectivity" title="edelweissmeshfree.constraints.particlemortarweakdirichlet.ParticleMortarWeakDirichlet.updateConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code></a>(model)</p></td>
-<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether its <code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code> footprint has changed since the last call.</p></td>
+<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have changed since the last call.</p></td>
 </tr>
 </tbody>
 </table>
@@ -3136,18 +3154,19 @@ this Constraint needs.</p>
 <span class="sig-name descname"><span class="pre">updateConnectivity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/particlemortarweakdirichlet.html#ParticleMortarWeakDirichlet.updateConnectivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.particlemortarweakdirichlet.ParticleMortarWeakDirichlet.updateConnectivity" title="Link to this definition"></a></dt>
 <dd><p>Called once at the start of every increment, before the global discrete system is
 (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based
-contact pairs) and declare whether its <code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code> footprint has
-changed since the last call.</p>
+contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have
+changed since the last call. A constraint that is not always within reach also sets
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">withinReach</span></code> here; it does not report the change of <code class="xref py py-attr docutils literal notranslate"><span class="pre">active</span></code> itself, the model compares it (see
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code>).</p>
 <p>The default implementation does nothing and reports no change, which is correct for every
-constraint whose DOF footprint is fixed at construction (i.e. every constraint that does
+constraint whose nodes are fixed at construction (i.e. every constraint that does
 not override this method).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>model</strong> – The current model.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>True if this constraint’s contribution to the global system has changed and the
-discrete system must be rebuilt before the next Newton solve.</p>
+<dd class="field-even"><p>True if the nodes this constraint couples have changed.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>bool</p>

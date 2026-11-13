@@ -181,6 +181,7 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">edelweissfe.utils.performancetiming</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">performancetiming</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.models.change</span><span class="w"> </span><span class="kn">import</span> <span class="n">Change</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.numerics.dofmanager</span><span class="w"> </span><span class="kn">import</span> <span class="n">DofVector</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.numerics.parallelizationutilities</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">getNumberOfWorkerThreads</span><span class="p">,</span>
@@ -544,10 +545,11 @@
 
     <span class="nd">@performancetiming</span><span class="o">.</span><span class="n">timeit</span><span class="p">(</span><span class="s2">"reconnect"</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_reconnect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">MPMModel</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Assign the particles to the kernel functions they reach now, and let the discrete system follow: if the</span>
-<span class="sd">        model's active nodes cannot change (:attr:`~edelweissmeshfree.models.mpmmodel.MPMModel.activeNodesAreFixed`),</span>
-<span class="sd">        only the particles that changed and the constraints are located anew, and the velocity stays as it is;</span>
-<span class="sd">        otherwise the discrete system is rebuilt, and reads the velocity of its nodes from the model.</span>
+<span class="w">        </span><span class="sd">"""Assign the particles to the kernel functions they reach now, and let the discrete system follow what the</span>
+<span class="sd">        model says changed (:meth:`~edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity`): if only the</span>
+<span class="sd">        locations changed (the active nodes cannot), the particles that changed and the constraints are located anew,</span>
+<span class="sd">        and the velocity stays as it is; if the numbering changed, the discrete system is rebuilt, and reads the</span>
+<span class="sd">        velocity of its nodes from the model.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -555,10 +557,12 @@
 <span class="sd">            The model.</span>
 <span class="sd">        """</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">model</span><span class="o">.</span><span class="n">updateConnectivity</span><span class="p">():</span>
+        <span class="n">change</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">updateConnectivity</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">change</span> <span class="o">==</span> <span class="n">Change</span><span class="o">.</span><span class="n">NONE</span><span class="p">:</span>
             <span class="k">return</span>
 
-        <span class="k">if</span> <span class="n">model</span><span class="o">.</span><span class="n">activeNodesAreFixed</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">change</span> <span class="o">==</span> <span class="n">Change</span><span class="o">.</span><span class="n">LOCATIONS</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_system</span><span class="o">.</span><span class="n">relocateParticlesAndConstraints</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_dU</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_system</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_V</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_asDofVector</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_V</span><span class="p">)</span>

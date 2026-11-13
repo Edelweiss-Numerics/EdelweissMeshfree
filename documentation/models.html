@@ -128,12 +128,6 @@ for nodes and scalar degrees of freedom, and it manages the fields.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>dimension</strong> (<em>int</em>) – The dimension of the model.</p>
 </dd>
-<dt class="field-even">Attributes<span class="colon">:</span></dt>
-<dd class="field-even"><dl class="simple">
-<dt><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.activeNodesAreFixed" title="edelweissmeshfree.models.mpmmodel.MPMModel.activeNodesAreFixed"><code class="xref py py-obj docutils literal notranslate"><span class="pre">activeNodesAreFixed</span></code></a></dt><dd><p>Whether a change of the connectivity leaves the nodes of the active domain as they are, so that a discrete system can follow it by locating the changed particles and the constraints anew (<a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.relocateParticlesAndConstraints" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.relocateParticlesAndConstraints"><code class="xref py py-meth docutils literal notranslate"><span class="pre">relocateParticlesAndConstraints()</span></code></a>) instead of being rebuilt: without MPM managers, whose cells become active and inactive, and with every particle manager bonding its kernel functions to the particles, so that a kernel function always covers its own particle.</p>
-</dd>
-</dl>
-</dd>
 </dl>
 <p class="rubric">Methods</p>
 <table class="autosummary longtable docutils align-default">
@@ -144,46 +138,49 @@ for nodes and scalar degrees of freedom, and it manages the fields.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.activeConstraints" title="edelweissmeshfree.models.mpmmodel.MPMModel.activeConstraints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">activeConstraints</span></code></a>()</p></td>
 <td><p>The constraints that take part in the discrete system: all constraints, in their order, that are active, i.e. switched on and within reach (see <code class="xref py py-attr docutils literal notranslate"><span class="pre">active</span></code>).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.advanceToTime" title="edelweissmeshfree.models.mpmmodel.MPMModel.advanceToTime"><code class="xref py py-obj docutils literal notranslate"><span class="pre">advanceToTime</span></code></a>(time)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.activeScalarVariables" title="edelweissmeshfree.models.mpmmodel.MPMModel.activeScalarVariables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">activeScalarVariables</span></code></a>()</p></td>
+<td><p>The scalar variables (e.g. Lagrange multipliers) of the active constraints, constraint by constraint: the scalar variables that are numbered in the discrete system (see <a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.activeConstraints" title="edelweissmeshfree.models.mpmmodel.MPMModel.activeConstraints"><code class="xref py py-meth docutils literal notranslate"><span class="pre">activeConstraints()</span></code></a>).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.advanceToTime" title="edelweissmeshfree.models.mpmmodel.MPMModel.advanceToTime"><code class="xref py py-obj docutils literal notranslate"><span class="pre">advanceToTime</span></code></a>(time)</p></td>
 <td><p>Accept the current state of the model and sub instances, and set the new time.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.advanceVelocity" title="edelweissmeshfree.models.mpmmodel.MPMModel.advanceVelocity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">advanceVelocity</span></code></a>(timeIncrement)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.advanceVelocity" title="edelweissmeshfree.models.mpmmodel.MPMModel.advanceVelocity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">advanceVelocity</span></code></a>(timeIncrement)</p></td>
 <td><p>Advance the velocity of the model by its acceleration over a time increment, <span class="math notranslate nohighlight">\(\boldsymbol{V} \leftarrow \boldsymbol{V} + \Delta t \, \boldsymbol{A}\)</span>, in every node field, on every node.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.assembleActiveDomain" title="edelweissmeshfree.models.mpmmodel.MPMModel.assembleActiveDomain"><code class="xref py py-obj docutils literal notranslate"><span class="pre">assembleActiveDomain</span></code></a>(activeCells)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.assembleActiveDomain" title="edelweissmeshfree.models.mpmmodel.MPMModel.assembleActiveDomain"><code class="xref py py-obj docutils literal notranslate"><span class="pre">assembleActiveDomain</span></code></a>(activeCells)</p></td>
 <td><p>Gather the active Nodes, and the NodeFields and NodeSets reduced onto them.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.buildDiscreteSystem" title="edelweissmeshfree.models.mpmmodel.MPMModel.buildDiscreteSystem"><code class="xref py py-obj docutils literal notranslate"><span class="pre">buildDiscreteSystem</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.buildDiscreteSystem" title="edelweissmeshfree.models.mpmmodel.MPMModel.buildDiscreteSystem"><code class="xref py py-obj docutils literal notranslate"><span class="pre">buildDiscreteSystem</span></code></a>()</p></td>
 <td><p>Build the discrete system of the model on its active domain; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">buildDiscreteSystem()</span></code> and <code class="xref py py-class docutils literal notranslate"><span class="pre">MPMDiscreteSystem</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.createElement" title="edelweissmeshfree.models.mpmmodel.MPMModel.createElement"><code class="xref py py-obj docutils literal notranslate"><span class="pre">createElement</span></code></a>(element)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.createElement" title="edelweissmeshfree.models.mpmmodel.MPMModel.createElement"><code class="xref py py-obj docutils literal notranslate"><span class="pre">createElement</span></code></a>(element)</p></td>
 <td><p>Add a freshly created element to the model.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.createNode" title="edelweissmeshfree.models.mpmmodel.MPMModel.createNode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">createNode</span></code></a>(node)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.createNode" title="edelweissmeshfree.models.mpmmodel.MPMModel.createNode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">createNode</span></code></a>(node)</p></td>
 <td><p>Add a freshly created node to the model.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.getActiveSubModel" title="edelweissmeshfree.models.mpmmodel.MPMModel.getActiveSubModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getActiveSubModel</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.getActiveSubModel" title="edelweissmeshfree.models.mpmmodel.MPMModel.getActiveSubModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getActiveSubModel</span></code></a>()</p></td>
 <td><p>For many applications only a part of the model is active.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.makePrettyTableSummary" title="edelweissmeshfree.models.mpmmodel.MPMModel.makePrettyTableSummary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">makePrettyTableSummary</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.makePrettyTableSummary" title="edelweissmeshfree.models.mpmmodel.MPMModel.makePrettyTableSummary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">makePrettyTableSummary</span></code></a>()</p></td>
 <td><p>Create a pretty table with a summary of the model properties.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.prepareYourself" title="edelweissmeshfree.models.mpmmodel.MPMModel.prepareYourself"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prepareYourself</span></code></a>(journal)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.prepareYourself" title="edelweissmeshfree.models.mpmmodel.MPMModel.prepareYourself"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prepareYourself</span></code></a>(journal)</p></td>
 <td><p>Prepare the model for a simulation.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.readRestart" title="edelweissmeshfree.models.mpmmodel.MPMModel.readRestart"><code class="xref py py-obj docutils literal notranslate"><span class="pre">readRestart</span></code></a>(restartFile[, journal])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.readRestart" title="edelweissmeshfree.models.mpmmodel.MPMModel.readRestart"><code class="xref py py-obj docutils literal notranslate"><span class="pre">readRestart</span></code></a>(restartFile[, journal])</p></td>
 <td><p>Read the state of the model from a restart checkpoint written by <a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.writeRestart" title="edelweissmeshfree.models.mpmmodel.MPMModel.writeRestart"><code class="xref py py-meth docutils literal notranslate"><span class="pre">writeRestart()</span></code></a>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.removeElement" title="edelweissmeshfree.models.mpmmodel.MPMModel.removeElement"><code class="xref py py-obj docutils literal notranslate"><span class="pre">removeElement</span></code></a>(elNumber)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.removeElement" title="edelweissmeshfree.models.mpmmodel.MPMModel.removeElement"><code class="xref py py-obj docutils literal notranslate"><span class="pre">removeElement</span></code></a>(elNumber)</p></td>
 <td><p>Remove an element from the model.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.setNewmarkParametersOfEntities" title="edelweissmeshfree.models.mpmmodel.MPMModel.setNewmarkParametersOfEntities"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setNewmarkParametersOfEntities</span></code></a>(beta, gamma)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.setNewmarkParametersOfEntities" title="edelweissmeshfree.models.mpmmodel.MPMModel.setNewmarkParametersOfEntities"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setNewmarkParametersOfEntities</span></code></a>(beta, gamma)</p></td>
 <td><p>Give the particles the Newmark parameters of the solver, at the start of every step of an implicit solver; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">setNewmarkParametersOfEntities()</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity" title="edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code></a>()</p></td>
-<td><p>Bring the coupling of the degrees of freedom up to date with the converged state, before an increment; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code>.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity" title="edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code></a>()</p></td>
+<td><p>Bring the connectivity up to date with the converged state, before an increment, and say what that changed; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.writeRestart" title="edelweissmeshfree.models.mpmmodel.MPMModel.writeRestart"><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeRestart</span></code></a>(restartFile)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.writeRestart" title="edelweissmeshfree.models.mpmmodel.MPMModel.writeRestart"><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeRestart</span></code></a>(restartFile)</p></td>
 <td><p>Write the converged state of the model to a restart checkpoint: EdelweissFE's model state (see <code class="xref py py-meth docutils literal notranslate"><span class="pre">writeRestart()</span></code>), and the state of every material point and particle.</p></td>
 </tr>
 </tbody>
@@ -228,6 +225,25 @@ over a Newton loop and a linear solve, where 19 ms disappears into the noise. Ex
 dynamics calls it on every one of millions of increments: on the anchor pry-out model it was
 15.6 % of the whole step, the single largest cost outside the element kernels themselves, and
 every millisecond of it was serial Python holding 31 of 32 threads idle.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel._activeNodesAreFixed">
+<span class="sig-name descname"><span class="pre">_activeNodesAreFixed</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmmodel.html#MPMModel._activeNodesAreFixed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel._activeNodesAreFixed" title="Link to this definition"></a></dt>
+<dd><p>Whether a change of the connectivity leaves the nodes of the active domain as they are, so that a discrete
+system can follow it by locating the changed particles and the constraints anew
+(<a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.relocateParticlesAndConstraints" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.relocateParticlesAndConstraints"><code class="xref py py-meth docutils literal notranslate"><span class="pre">relocateParticlesAndConstraints()</span></code></a>)
+instead of being rebuilt: without MPM managers, whose cells become active and inactive, and with every particle
+manager bonding its kernel functions to the particles, so that a kernel function always covers its own
+particle.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if the active nodes cannot change.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -438,6 +454,21 @@ i.e. switched on and within reach (see
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.activeScalarVariables">
+<span class="sig-name descname"><span class="pre">activeScalarVariables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.activeScalarVariables" title="Link to this definition"></a></dt>
+<dd><p>The scalar variables (e.g. Lagrange multipliers) of the active constraints, constraint by constraint: the
+scalar variables that are numbered in the discrete system (see <a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.activeConstraints" title="edelweissmeshfree.models.mpmmodel.MPMModel.activeConstraints"><code class="xref py py-meth docutils literal notranslate"><span class="pre">activeConstraints()</span></code></a>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The scalar variables.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list[ScalarVariable]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.advanceToTime">
 <span class="sig-name descname"><span class="pre">advanceToTime</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmmodel.html#MPMModel.advanceToTime"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.advanceToTime" title="Link to this definition"></a></dt>
 <dd><p>Accept the current state of the model and sub instances, and
@@ -623,22 +654,27 @@ quasi-static solver, and refused by a dynamic one.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity">
 <span class="sig-name descname"><span class="pre">updateConnectivity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmmodel.html#MPMModel.updateConnectivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity" title="Link to this definition"></a></dt>
-<dd><p>Bring the coupling of the degrees of freedom up to date with the converged state, before an increment; see
-<code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code>. Called by EdelweissFE’s solvers at the start
+<dd><p>Bring the connectivity up to date with the converged state, before an increment, and say what that changed;
+see <code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code>. Called by EdelweissFE’s solvers at the start
 of every increment and of every retry after a cutback.</p>
 <p>First the managers assign the material points to the cells they lie in (<a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.mpmManagers" title="edelweissmeshfree.models.mpmmodel.MPMModel.mpmManagers"><code class="xref py py-attr docutils literal notranslate"><span class="pre">mpmManagers</span></code></a>) and the particles
 to the kernel functions they reach (<a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.particleManagers" title="edelweissmeshfree.models.mpmmodel.MPMModel.particleManagers"><code class="xref py py-attr docutils literal notranslate"><span class="pre">particleManagers</span></code></a>), each from its converged state: a failed attempt
 may have left a trial state behind. Then the constraints follow, which couple the nodes the managers have just
 assigned. Finally, the test functions of the particles are corrected for the new connectivity
 (<a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.vciManagers" title="edelweissmeshfree.models.mpmmodel.MPMModel.vciManagers"><code class="xref py py-attr docutils literal notranslate"><span class="pre">vciManagers</span></code></a>).</p>
-<p>A change of the active domain is a change of the coupling, not of the mesh: no node is created or moved, so the
-solver rebuilds its discrete system, but does not re-equilibrate.</p>
+<p>A change of the active domain is a change of the connectivity, not of the mesh: no node is created or moved. If the
+nodes of the active domain are fixed (<code class="docutils literal notranslate"><span class="pre">_activeNodesAreFixed</span></code>), the numbering of the nodes stands, and the
+change is one of the locations: only the particles that changed and the constraints are located anew, which
+is what rebuilding would give, at a fraction of its cost. Otherwise the active domain may change, and with it
+the numbering.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>True if a coupling changed, so that the discrete system has to be rebuilt.</p>
+<dd class="field-odd"><p>What changed: <code class="xref py py-attr docutils literal notranslate"><span class="pre">NONE</span></code> if nothing did,
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">LOCATIONS</span></code> if the active nodes are fixed, else
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">NUMBERING</span></code>, or what the constraints changed, if that is more.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>bool</p>
+<dd class="field-even"><p>Change</p>
 </dd>
 </dl>
 </dd></dl>
@@ -656,25 +692,6 @@ increment.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>restartFile</strong> (<em>File</em>) – An open, writable <code class="xref py py-class docutils literal notranslate"><span class="pre">h5py.File</span></code> (or group) to write the checkpoint into.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.activeNodesAreFixed">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">activeNodesAreFixed</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.activeNodesAreFixed" title="Link to this definition"></a></dt>
-<dd><p>Whether a change of the connectivity leaves the nodes of the active domain as they are, so that a discrete
-system can follow it by locating the changed particles and the constraints anew
-(<a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.relocateParticlesAndConstraints" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.relocateParticlesAndConstraints"><code class="xref py py-meth docutils literal notranslate"><span class="pre">relocateParticlesAndConstraints()</span></code></a>)
-instead of being rebuilt: without MPM managers, whose cells become active and inactive, and with every particle
-manager bonding its kernel functions to the particles, so that a kernel function always covers its own
-particle.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>True if the active nodes cannot change.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>bool</p>
 </dd>
 </dl>
 </dd></dl>
@@ -964,7 +981,7 @@ the cell elements.</p></li>
 <td><p>Read the state the model carries from increment to increment into the vectors of a (re)built discrete system, from which the next increment starts (see the documentation page <em>Node field results</em>): the solution <code class="docutils literal notranslate"><span class="pre">U</span></code>, and, for a solver that integrates in time, the velocity <code class="docutils literal notranslate"><span class="pre">V</span></code> and the acceleration <code class="docutils literal notranslate"><span class="pre">A</span></code>.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.relocateParticlesAndConstraints" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.relocateParticlesAndConstraints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">relocateParticlesAndConstraints</span></code></a>()</p></td>
-<td><p>Follow a change of the connectivity that leaves the active nodes as they are (see <a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.activeNodesAreFixed" title="edelweissmeshfree.models.mpmmodel.MPMModel.activeNodesAreFixed"><code class="xref py py-attr docutils literal notranslate"><span class="pre">activeNodesAreFixed</span></code></a>): the numbering of the nodes stands, so only the particles whose kernel functions changed, and the active constraints, are located anew in the DOF vector.</p></td>
+<td><p>Follow a change of the connectivity that leaves the active nodes as they are (the model reports <code class="xref py py-attr docutils literal notranslate"><span class="pre">LOCATIONS</span></code>, see <a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity" title="edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity"><code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code></a>): the numbering of the nodes stands, so only the particles whose kernel functions changed, and the active constraints, are located anew in the DOF vector.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.updateMaterialPoints" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.updateMaterialPoints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateMaterialPoints</span></code></a>(dU, timeStep, forEachChunk)</p></td>
 <td><p>Update the material points with the trial solution increment, before the solver computes the cells, which integrate them: the material points return to their converged state, every active cell (and cell element) interpolates the solution increment to the material points it holds, and the material points evaluate their material.</p></td>
@@ -1077,8 +1094,9 @@ rest.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.relocateParticlesAndConstraints">
 <span class="sig-name descname"><span class="pre">relocateParticlesAndConstraints</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmdiscretesystem.html#MPMDiscreteSystem.relocateParticlesAndConstraints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.relocateParticlesAndConstraints" title="Link to this definition"></a></dt>
-<dd><p>Follow a change of the connectivity that leaves the active nodes as they are (see
-<a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.activeNodesAreFixed" title="edelweissmeshfree.models.mpmmodel.MPMModel.activeNodesAreFixed"><code class="xref py py-attr docutils literal notranslate"><span class="pre">activeNodesAreFixed</span></code></a>): the numbering of the nodes stands, so
+<dd><p>Follow a change of the connectivity that leaves the active nodes as they are (the model reports
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">LOCATIONS</span></code>, see
+<a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity" title="edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity"><code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code></a>): the numbering of the nodes stands, so
 only the particles whose kernel functions changed, and the active constraints, are located anew in the DOF
 vector. That is what rebuilding would give, at a fraction of its cost.</p>
 </dd></dl>

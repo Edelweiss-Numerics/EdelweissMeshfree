@@ -288,9 +288,11 @@ What to know
   \boldsymbol{f}`, and ``V`` the half-step velocity, as in ``NED``; ``U`` is zero, since the nodes of the kernel
   functions carry no total solution. ``P``, ``V`` and ``A`` are written on the kernel functions the increment ends on,
   ``dU`` on those it started on: a node that left the active domain in that increment keeps its ``dU``.
-- **The discrete system.** When the active nodes cannot change (bonded kernel functions, no material point managers),
-  a change of the connectivity only locates the changed particles and the constraints anew; otherwise the discrete
-  system is rebuilt.
+- **The discrete system.** The model classifies a change of the connectivity
+  (:class:`~edelweissfe.models.change.Change`, see EdelweissFE's *What the solver asks the model*). When the active
+  nodes cannot change (bonded kernel functions, no material point managers), it is a change of the locations, and the
+  solver only locates the changed particles and the constraints anew; otherwise it is a change of the numbering, and
+  the discrete system is rebuilt. Nothing changed: nothing to do.
 - **Nodes without mass.** A kernel function that the particles reach only where it vanishes has no positive lumped
   mass; its node has no equation of motion and has no velocity, also after it lost its mass while it moved.
 - **A particle that cannot take an increment** ends the step with ``StepFailed``: the increment is set by stability,

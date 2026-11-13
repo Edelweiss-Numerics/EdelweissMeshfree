@@ -100,11 +100,11 @@
 <span class="sd">      See the EdelweissFE solver documentation, *The residual and the tangent*.</span>
 <span class="sd">    - The nodes of a meshfree constraint are those its particles or material points currently interpolate from, so</span>
 <span class="sd">      they change as the kernel functions and cells move: ``updateConnectivity`` finds them anew at the start of</span>
-<span class="sd">      every increment, and reports a change.</span>
+<span class="sd">      every increment, and reports whether they changed.</span>
 <span class="sd">    - A constraint may switch itself off in ``updateConnectivity``, e.g. a contact constraint whose particle is far</span>
 <span class="sd">      from the boundary: it sets</span>
-<span class="sd">      :attr:`~edelweissfe.constraints.base.constraintbase.ConstraintBase.withinReach`, and reports a change of</span>
-<span class="sd">      :attr:`~edelweissfe.constraints.base.constraintbase.ConstraintBase.active`. A constraint switched off from</span>
+<span class="sd">      :attr:`~edelweissfe.constraints.base.constraintbase.ConstraintBase.withinReach`; the model sees the change of</span>
+<span class="sd">      :attr:`~edelweissfe.constraints.base.constraintbase.ConstraintBase.active` itself. A constraint switched off from</span>
 <span class="sd">      outside, through ``active``, stays off whatever it finds, and rests: the model does not locate it anew.</span>
 <span class="sd">    - Every constraint declares the state it carries from one increment to the next, in ``checkpointedState``</span>
 <span class="sd">      (empty if it carries none), so that a restart can restore it.</span>
@@ -127,6 +127,12 @@
     <span class="c1">#: current positions acts there, e.g. a contact with a boundary; a constraint on the increment, e.g. a weak</span>
     <span class="c1">#: Dirichlet condition or an equal value, would act as if nothing had moved, and the solver refuses it.</span>
     <span class="n">actsInExplicitAnalysis</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="c1">#: The nodes of a meshfree constraint are those its particles or material points currently interpolate from, so they</span>
+    <span class="c1">#: change as the particles move (see</span>
+    <span class="c1">#: :attr:`~edelweissfe.constraints.base.constraintbase.ConstraintBase.connectivityChangesWithMotion`): a solver that</span>
+    <span class="c1">#: never updates the connectivity, e.g. ``NEST``, refuses it.</span>
+    <span class="n">connectivityChangesWithMotion</span> <span class="o">=</span> <span class="kc">True</span>
 
     <span class="nd">@property</span>
     <span class="nd">@abstractmethod</span>
