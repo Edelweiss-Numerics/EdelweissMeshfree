@@ -128,7 +128,7 @@
 <section id="the-nonlinear-solver">
 <h2>The nonlinear solver<a class="headerlink" href="#the-nonlinear-solver" title="Link to this heading"></a></h2>
 <p>An <a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">MPMModel</span></code></a> is solved by EdelweissFE’s implicit static solvers, as a finite
-element model is: the solver asks the model what its equation system is made of (see EdelweissFE’s documentation, <em>What
+element model is: the solver asks the model what its discrete system is made of (see EdelweissFE’s documentation, <em>What
 the solver asks the model</em>), and the model answers with its active domain.</p>
 <table class="docutils align-default" style="width: 100%">
 <colgroup>
@@ -418,7 +418,7 @@ does: from the velocity of the nodes and the net force of their acceleration. Ot
 the configuration and projects the velocity from the particles’ momentum: the initial velocity given to the
 particles, or the velocity of a step of <code class="docutils literal notranslate"><span class="pre">NID</span></code> that integrated the inertia in the particles.</p></li>
 <li><p><strong>The velocity</strong> of the kernel functions’ nodes is the model’s: it is written to the entry <code class="docutils literal notranslate"><span class="pre">V</span></code> of the node fields
-at acceptance, and read back by node whenever the equation system is rebuilt, also at the start of a step. A node
+at acceptance, and read back by node whenever the discrete system is rebuilt, also at the start of a step. A node
 keeps its velocity while the active nodes change around it, and a node that has just become active starts at rest.
 With the option <code class="docutils literal notranslate"><span class="pre">projectVelocityEveryIncrement=True</span></code>, it is projected from the particles’ momentum in every
 increment instead, which dissipates more.</p></li>
@@ -431,8 +431,8 @@ it was taken on, <code class="docutils literal notranslate"><span class="pre">P<
 \boldsymbol{f}\)</span>, and <code class="docutils literal notranslate"><span class="pre">V</span></code> the half-step velocity, as in <code class="docutils literal notranslate"><span class="pre">NED</span></code>; <code class="docutils literal notranslate"><span class="pre">U</span></code> is zero, since the nodes of the kernel
 functions carry no total solution. <code class="docutils literal notranslate"><span class="pre">P</span></code>, <code class="docutils literal notranslate"><span class="pre">V</span></code> and <code class="docutils literal notranslate"><span class="pre">A</span></code> are written on the kernel functions the increment ends on,
 <code class="docutils literal notranslate"><span class="pre">dU</span></code> on those it started on: a node that left the active domain in that increment keeps its <code class="docutils literal notranslate"><span class="pre">dU</span></code>.</p></li>
-<li><p><strong>The equation system.</strong> When the active nodes cannot change (bonded kernel functions, no material point managers),
-a change of the connectivity only locates the changed particles and the constraints anew; otherwise the equation
+<li><p><strong>The discrete system.</strong> When the active nodes cannot change (bonded kernel functions, no material point managers),
+a change of the connectivity only locates the changed particles and the constraints anew; otherwise the discrete
 system is rebuilt.</p></li>
 <li><p><strong>Nodes without mass.</strong> A kernel function that the particles reach only where it vanishes has no positive lumped
 mass; its node has no equation of motion and has no velocity, also after it lost its mass while it moved.</p></li>

@@ -5,7 +5,7 @@ The nonlinear solver
 --------------------
 
 An :class:`~edelweissmeshfree.models.mpmmodel.MPMModel` is solved by EdelweissFE's implicit static solvers, as a finite
-element model is: the solver asks the model what its equation system is made of (see EdelweissFE's documentation, *What
+element model is: the solver asks the model what its discrete system is made of (see EdelweissFE's documentation, *What
 the solver asks the model*), and the model answers with its active domain.
 
 .. list-table::
@@ -275,7 +275,7 @@ What to know
   the configuration and projects the velocity from the particles' momentum: the initial velocity given to the
   particles, or the velocity of a step of ``NID`` that integrated the inertia in the particles.
 - **The velocity** of the kernel functions' nodes is the model's: it is written to the entry ``V`` of the node fields
-  at acceptance, and read back by node whenever the equation system is rebuilt, also at the start of a step. A node
+  at acceptance, and read back by node whenever the discrete system is rebuilt, also at the start of a step. A node
   keeps its velocity while the active nodes change around it, and a node that has just become active starts at rest.
   With the option ``projectVelocityEveryIncrement=True``, it is projected from the particles' momentum in every
   increment instead, which dissipates more.
@@ -288,8 +288,8 @@ What to know
   \boldsymbol{f}`, and ``V`` the half-step velocity, as in ``NED``; ``U`` is zero, since the nodes of the kernel
   functions carry no total solution. ``P``, ``V`` and ``A`` are written on the kernel functions the increment ends on,
   ``dU`` on those it started on: a node that left the active domain in that increment keeps its ``dU``.
-- **The equation system.** When the active nodes cannot change (bonded kernel functions, no material point managers),
-  a change of the connectivity only locates the changed particles and the constraints anew; otherwise the equation
+- **The discrete system.** When the active nodes cannot change (bonded kernel functions, no material point managers),
+  a change of the connectivity only locates the changed particles and the constraints anew; otherwise the discrete
   system is rebuilt.
 - **Nodes without mass.** A kernel function that the particles reach only where it vanishes has no positive lumped
   mass; its node has no equation of motion and has no velocity, also after it lost its mass while it moved.

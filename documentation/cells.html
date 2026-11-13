@@ -143,7 +143,7 @@
              
   <section id="cells">
 <h1>Cells<a class="headerlink" href="#cells" title="Link to this heading"></a></h1>
-<p>A cell enters the equation system like an EdelweissFE element: its <code class="docutils literal notranslate"><span class="pre">computeKernels(K,</span> <span class="pre">P,</span> <span class="pre">U,</span> <span class="pre">dU,</span> <span class="pre">time,</span> <span class="pre">dT)</span></code>, with the
+<p>A cell enters the discrete system like an EdelweissFE element: its <code class="docutils literal notranslate"><span class="pre">computeKernels(K,</span> <span class="pre">P,</span> <span class="pre">U,</span> <span class="pre">dU,</span> <span class="pre">time,</span> <span class="pre">dT)</span></code>, with the
 argument order of <code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissfe.elements.base.baseelement.BaseElement.computeKernels()</span></code>, adds the internal forces
 of the material points it holds to the residual <span class="math notranslate nohighlight">\(\mathbf{P}\)</span>, and their tangent to <span class="math notranslate nohighlight">\(\mathbf{K}\)</span>. So a
 solver evaluates cells, cell elements, particles and elements alike. A cell is incremental on the current

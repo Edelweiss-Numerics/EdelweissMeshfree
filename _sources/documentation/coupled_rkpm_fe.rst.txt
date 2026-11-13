@@ -3,14 +3,14 @@ Coupled RKPM + FE
 
 An :class:`~edelweissmeshfree.models.mpmmodel.MPMModel` may hold finite elements next to its particles: e.g. a
 structure of finite elements with an RKPM domain where the material is expected to deform strongly. Both are solved
-together, as one equation system, by EdelweissFE's implicit static solvers (see :doc:`choosing_a_solver`). The time
+together, as one discrete system, by EdelweissFE's implicit static solvers (see :doc:`choosing_a_solver`). The time
 integration is quasi-static.
 
-Two kinds of nodes in one equation system
+Two kinds of nodes in one discrete system
 -----------------------------------------
 
-The model numbers the nodes of the finite elements and the nodes of the kernel functions in one equation system,
-the elements first, then the particles (:meth:`~edelweissmeshfree.models.mpmmodel.MPMModel.buildEquationSystem`). The
+The model numbers the nodes of the finite elements and the nodes of the kernel functions in one discrete system,
+the elements first, then the particles (:meth:`~edelweissmeshfree.models.mpmmodel.MPMModel.buildDiscreteSystem`). The
 two kinds of nodes hold different things:
 
 - the nodes of the finite elements carry their **total** displacement from increment to increment, as in any finite
@@ -19,7 +19,7 @@ two kinds of nodes hold different things:
   kernel functions move with their particles, and the state lives in the particles. Every increment starts them at
   zero.
 
-:class:`~edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout` passes the solution between the
+:class:`~edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem` passes the solution between the
 model and the solver's vectors accordingly. At acceptance, it writes the solution ``U``, the increment ``dU`` and the
 reaction ``P`` straight to the model's node fields, by node: ``U`` is the total displacement at the nodes of the finite
 elements and zero at the nodes of the kernel functions, whose meaningful value is ``dU``; every node outside the active

@@ -155,7 +155,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">particlesWithChangedKernelFunctions</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""The particles whose set of kernel functions changed during the last connectivity update.</span>
 
-<span class="sd">        A particle contributes to the global equation system through the nodes of its kernel</span>
+<span class="sd">        A particle contributes to the global discrete system through the nodes of its kernel</span>
 <span class="sd">        functions, so its mapping into the degree-of-freedom vector only has to be rebuilt when that</span>
 <span class="sd">        set changes. Reporting *which* particles changed, rather than only *whether* any did, is what</span>
 <span class="sd">        lets a solver rebuild a handful of mappings instead of all of them.</span>

@@ -212,7 +212,7 @@ body load, you should derive from this class.</p>
 <span class="sig-name descname"><span class="pre">assembleLoad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">P</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">K</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">U_np</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dofManager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/base/mpmbodyloadbase.html#MPMBodyLoadBase.assembleLoad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.base.mpmbodyloadbase.MPMBodyLoadBase.assembleLoad" title="Link to this definition"></a></dt>
 <dd><p>Let every active cell of the cell set add the residual contribution of the body load, the negative of the
 external load, and its tangent; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleLoad()</span></code>.</p>
-<p>The active cells are those of the equation system, i.e. those the DOF manager numbers; a body load acts only
+<p>The active cells are those of the discrete system, i.e. those the DOF manager numbers; a body load acts only
 on them.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -223,7 +223,7 @@ solver, which needs no tangent.</p></li>
 <li><p><strong>U_np</strong> (<em>DofVector</em>) – The current global solution.</p></li>
 <li><p><strong>dU</strong> (<em>DofVector</em>) – The global solution increment.</p></li>
 <li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The current time step.</p></li>
-<li><p><strong>dofManager</strong> (<em>DofManager</em>) – The DOF manager of the equation system.</p></li>
+<li><p><strong>dofManager</strong> (<em>DofManager</em>) – The DOF manager of the discrete system.</p></li>
 </ul>
 </dd>
 </dl>
@@ -503,7 +503,7 @@ solver, which needs no tangent.</p></li>
 <li><p><strong>U_np</strong> (<em>DofVector</em>) – The current global solution.</p></li>
 <li><p><strong>dU</strong> (<em>DofVector</em>) – The global solution increment.</p></li>
 <li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The current time step.</p></li>
-<li><p><strong>dofManager</strong> (<em>DofManager</em>) – The DOF manager of the equation system.</p></li>
+<li><p><strong>dofManager</strong> (<em>DofManager</em>) – The DOF manager of the discrete system.</p></li>
 </ul>
 </dd>
 </dl>
@@ -796,7 +796,7 @@ explicit solver, which needs no tangent.</p></li>
 <li><p><strong>U_np</strong> (<em>DofVector</em>) – The current global solution.</p></li>
 <li><p><strong>dU</strong> (<em>DofVector</em>) – The global solution increment.</p></li>
 <li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The current time step.</p></li>
-<li><p><strong>dofManager</strong> (<em>DofManager</em>) – The DOF manager of the equation system.</p></li>
+<li><p><strong>dofManager</strong> (<em>DofManager</em>) – The DOF manager of the discrete system.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1239,7 +1239,7 @@ controller keeps nothing from one increment to the next: its target is the arc l
 <li><p><strong>dU</strong> (<em>DofVector</em>) – The converged increment of the solution.</p></li>
 <li><p><strong>dLambda</strong> (<em>float</em>) – The converged increment of the load parameter.</p></li>
 <li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The converged time step.</p></li>
-<li><p><strong>dofManager</strong> (<em>DofManager</em>) – The dof manager of the current equation system.</p></li>
+<li><p><strong>dofManager</strong> (<em>DofManager</em>) – The dof manager of the current discrete system.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1381,7 +1381,7 @@ controller keeps nothing from one increment to the next: its target is the arc l
 <li><p><strong>dU</strong> (<em>DofVector</em>) – The converged increment of the solution.</p></li>
 <li><p><strong>dLambda</strong> (<em>float</em>) – The converged increment of the load parameter.</p></li>
 <li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The converged time step.</p></li>
-<li><p><strong>dofManager</strong> (<em>DofManager</em>) – The dof manager of the current equation system.</p></li>
+<li><p><strong>dofManager</strong> (<em>DofManager</em>) – The dof manager of the current discrete system.</p></li>
 </ul>
 </dd>
 </dl>

@@ -113,7 +113,7 @@
              
   <section id="particles">
 <h1>Particles<a class="headerlink" href="#particles" title="Link to this heading"></a></h1>
-<p>A particle enters the equation system like an EdelweissFE element: its <code class="docutils literal notranslate"><span class="pre">computeKernels(K,</span> <span class="pre">P,</span> <span class="pre">U,</span> <span class="pre">dU,</span> <span class="pre">time,</span> <span class="pre">dT)</span></code>, with
+<p>A particle enters the discrete system like an EdelweissFE element: its <code class="docutils literal notranslate"><span class="pre">computeKernels(K,</span> <span class="pre">P,</span> <span class="pre">U,</span> <span class="pre">dU,</span> <span class="pre">time,</span> <span class="pre">dT)</span></code>, with
 the argument order of <code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissfe.elements.base.baseelement.BaseElement.computeKernels()</span></code>, adds its internal
 forces to the residual <span class="math notranslate nohighlight">\(\mathbf{P}\)</span> and their tangent to <span class="math notranslate nohighlight">\(\mathbf{K}\)</span>. A particle is incremental on the
 current configuration: its kernel functions move with it, and their nodal values are increments, so it reads <code class="docutils literal notranslate"><span class="pre">dU</span></code>,

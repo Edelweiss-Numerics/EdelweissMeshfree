@@ -57,7 +57,7 @@
 <li class="toctree-l2"><a class="reference internal" href="solvers.html">Solvers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="choosing_a_solver.html">Choosing a solver</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Coupled RKPM + FE</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#two-kinds-of-nodes-in-one-equation-system">Two kinds of nodes in one equation system</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#two-kinds-of-nodes-in-one-discrete-system">Two kinds of nodes in one discrete system</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#the-tie-between-the-two-domains">The tie between the two domains</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#building-a-coupled-model">Building a coupled model</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#the-example">The example</a></li>
@@ -110,12 +110,12 @@
 <h1>Coupled RKPM + FE<a class="headerlink" href="#coupled-rkpm-fe" title="Link to this heading"></a></h1>
 <p>An <a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">MPMModel</span></code></a> may hold finite elements next to its particles: e.g. a
 structure of finite elements with an RKPM domain where the material is expected to deform strongly. Both are solved
-together, as one equation system, by EdelweissFE’s implicit static solvers (see <a class="reference internal" href="choosing_a_solver.html"><span class="doc">Choosing a solver</span></a>). The time
+together, as one discrete system, by EdelweissFE’s implicit static solvers (see <a class="reference internal" href="choosing_a_solver.html"><span class="doc">Choosing a solver</span></a>). The time
 integration is quasi-static.</p>
-<section id="two-kinds-of-nodes-in-one-equation-system">
-<h2>Two kinds of nodes in one equation system<a class="headerlink" href="#two-kinds-of-nodes-in-one-equation-system" title="Link to this heading"></a></h2>
-<p>The model numbers the nodes of the finite elements and the nodes of the kernel functions in one equation system,
-the elements first, then the particles (<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel.buildEquationSystem" title="edelweissmeshfree.models.mpmmodel.MPMModel.buildEquationSystem"><code class="xref py py-meth docutils literal notranslate"><span class="pre">buildEquationSystem()</span></code></a>). The
+<section id="two-kinds-of-nodes-in-one-discrete-system">
+<h2>Two kinds of nodes in one discrete system<a class="headerlink" href="#two-kinds-of-nodes-in-one-discrete-system" title="Link to this heading"></a></h2>
+<p>The model numbers the nodes of the finite elements and the nodes of the kernel functions in one discrete system,
+the elements first, then the particles (<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel.buildDiscreteSystem" title="edelweissmeshfree.models.mpmmodel.MPMModel.buildDiscreteSystem"><code class="xref py py-meth docutils literal notranslate"><span class="pre">buildDiscreteSystem()</span></code></a>). The
 two kinds of nodes hold different things:</p>
 <ul class="simple">
 <li><p>the nodes of the finite elements carry their <strong>total</strong> displacement from increment to increment, as in any finite
@@ -124,7 +124,7 @@ element model;</p></li>
 kernel functions move with their particles, and the state lives in the particles. Every increment starts them at
 zero.</p></li>
 </ul>
-<p><a class="reference internal" href="models.html#edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout" title="edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout"><code class="xref py py-class docutils literal notranslate"><span class="pre">MPMEquationSystemLayout</span></code></a> passes the solution between the
+<p><a class="reference internal" href="models.html#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem"><code class="xref py py-class docutils literal notranslate"><span class="pre">MPMDiscreteSystem</span></code></a> passes the solution between the
 model and the solver’s vectors accordingly. At acceptance, it writes the solution <code class="docutils literal notranslate"><span class="pre">U</span></code>, the increment <code class="docutils literal notranslate"><span class="pre">dU</span></code> and the
 reaction <code class="docutils literal notranslate"><span class="pre">P</span></code> straight to the model’s node fields, by node: <code class="docutils literal notranslate"><span class="pre">U</span></code> is the total displacement at the nodes of the finite
 elements and zero at the nodes of the kernel functions, whose meaningful value is <code class="docutils literal notranslate"><span class="pre">dU</span></code>; every node outside the active

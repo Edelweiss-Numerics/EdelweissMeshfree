@@ -187,8 +187,17 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfCellElementsInDofVector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locateCellsInDofVector</span><span class="p">(</span><span class="n">cellElements</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfParticlesInDofVector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locateParticlesInDofVector</span><span class="p">(</span><span class="n">particles</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">initializeAccumulatedNodalFluxesFieldwise</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_addTheMeshfreeEntities</span><span class="p">()</span>
 
+<div class="viewcode-block" id="MPMDofManager._addTheMeshfreeEntities">
+<a class="viewcode-back" href="../../../documentation/numeric_tools.html#edelweissmeshfree.numerics.dofmanager.MPMDofManager._addTheMeshfreeEntities">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_addTheMeshfreeEntities</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Add the cells, the cell elements and the particles to what the base class gathers of the elements and the</span>
+<span class="sd">        constraints: their nodal fluxes to the accumulated nodal fluxes, and their DOF indices to the merged entity</span>
+<span class="sd">        mapping, which is made a new dict (see</span>
+<span class="sd">        :meth:`~edelweissfe.numerics.dofmanager.DofManager.refreshConstraintIndices`)."""</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hasAccumulatedNodalFluxes</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nAccumulatedNodalFluxesFieldwise</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">nAccumulatedNodalFluxesFieldwise</span><span class="p">[</span><span class="n">field</span><span class="p">]</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nAccumulatedNodalFluxesFieldwiseFromCells</span><span class="p">[</span><span class="n">field</span><span class="p">]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">nAccumulatedNodalFluxesFieldwise</span><span class="p">[</span><span class="n">field</span><span class="p">]</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nAccumulatedNodalFluxesFieldwiseFromCellElements</span><span class="p">[</span>
@@ -198,9 +207,13 @@
                     <span class="n">field</span>
                 <span class="p">]</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfHigherOrderEntitiesInDofVector</span> <span class="o">|=</span> <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfCellsInDofVector</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfHigherOrderEntitiesInDofVector</span> <span class="o">|=</span> <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfCellElementsInDofVector</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfHigherOrderEntitiesInDofVector</span> <span class="o">|=</span> <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfParticlesInDofVector</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfHigherOrderEntitiesInDofVector</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfHigherOrderEntitiesInDofVector</span>
+            <span class="o">|</span> <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfCellsInDofVector</span>
+            <span class="o">|</span> <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfCellElementsInDofVector</span>
+            <span class="o">|</span> <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfParticlesInDofVector</span>
+        <span class="p">)</span></div>
+
 
 <div class="viewcode-block" id="MPMDofManager._gatherCellsInformation">
 <a class="viewcode-back" href="../../../documentation/numeric_tools.html#edelweissmeshfree.numerics.dofmanager.MPMDofManager._gatherCellsInformation">[docs]</a>
@@ -311,25 +324,21 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfHigherOrderEntitiesInDofVector</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">relocatedParticles</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="MPMDofManager.updateConstraints">
-<a class="viewcode-back" href="../../../documentation/numeric_tools.html#edelweissmeshfree.numerics.dofmanager.MPMDofManager.updateConstraints">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">updateConstraints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">constraints</span><span class="p">:</span> <span class="nb">list</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Updates the connectivity mapping for constraints in a serial loop.</span>
-<span class="sd">        Reuses global index maps to avoid re-instancing the manager.</span>
+<div class="viewcode-block" id="MPMDofManager.refreshConstraintIndices">
+<a class="viewcode-back" href="../../../documentation/numeric_tools.html#edelweissmeshfree.numerics.dofmanager.MPMDofManager.refreshConstraintIndices">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">refreshConstraintIndices</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">constraints</span><span class="p">:</span> <span class="nb">list</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Re-locate the constraints' degrees of freedom after their connectivity changed; see</span>
+<span class="sd">        :meth:`~edelweissfe.numerics.dofmanager.DofManager.refreshConstraintIndices`. The cells, the cell elements and</span>
+<span class="sd">        the particles keep their indices, and are added again to what the base class gathers anew.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        constraints : list</span>
-<span class="sd">            The list of constraints to be considered.</span>
+<span class="sd">        constraints</span>
+<span class="sd">            The constraints, with their current connectivity.</span>
 <span class="sd">        """</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">constraints</span><span class="p">:</span>
-            <span class="k">return</span>
 
-        <span class="n">constraints</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">constraints</span><span class="p">)</span>  <span class="c1"># Ensure we have a list for iteration</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfConstraintsInDofVector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locateConstraintsInDofVector</span><span class="p">(</span><span class="n">constraints</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">idcsOfHigherOrderEntitiesInDofVector</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">idcsOfConstraintsInDofVector</span><span class="p">)</span></div>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">refreshConstraintIndices</span><span class="p">(</span><span class="n">constraints</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_addTheMeshfreeEntities</span><span class="p">()</span></div>
 </div>
 
 </pre></div>

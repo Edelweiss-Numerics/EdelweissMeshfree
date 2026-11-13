@@ -191,7 +191,7 @@ assumes the nodes may change.</p>
 <dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager.particlesWithChangedKernelFunctions">
 <span class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">particlesWithChangedKernelFunctions</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager.particlesWithChangedKernelFunctions" title="Link to this definition"></a></dt>
 <dd><p>The particles whose set of kernel functions changed during the last connectivity update.</p>
-<p>A particle contributes to the global equation system through the nodes of its kernel
+<p>A particle contributes to the global discrete system through the nodes of its kernel
 functions, so its mapping into the degree-of-freedom vector only has to be rebuilt when that
 set changes. Reporting <em>which</em> particles changed, rather than only <em>whether</em> any did, is what
 lets a solver rebuild a handful of mappings instead of all of them.</p>
@@ -485,7 +485,7 @@ functions are the same ones a full search would have produced.</p>
 <dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager.particlesWithChangedKernelFunctions">
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">particlesWithChangedKernelFunctions</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager.particlesWithChangedKernelFunctions" title="Link to this definition"></a></dt>
 <dd><p>The particles whose set of kernel functions changed during the last connectivity update.</p>
-<p>A particle contributes to the global equation system through the nodes of its kernel
+<p>A particle contributes to the global discrete system through the nodes of its kernel
 functions, so its mapping into the degree-of-freedom vector only has to be rebuilt when that
 set changes. Reporting <em>which</em> particles changed, rather than only <em>whether</em> any did, is what
 lets a solver rebuild a handful of mappings instead of all of them.</p>

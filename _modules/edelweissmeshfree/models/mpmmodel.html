@@ -122,7 +122,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">prettytable</span><span class="w"> </span><span class="kn">import</span> <span class="n">PrettyTable</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.fields.nodefield</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPMNodeField</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.models.mpmequationsystemlayout</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPMEquationSystemLayout</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.models.mpmdiscretesystem</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPMDiscreteSystem</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.numerics.dofmanager</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPMDofManager</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.sets.cellelementset</span><span class="w"> </span><span class="kn">import</span> <span class="n">CellElementSet</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.sets.cellset</span><span class="w"> </span><span class="kn">import</span> <span class="n">CellSet</span>
@@ -411,12 +411,12 @@
 <span class="sd">        (:attr:`vciManagers`).</span>
 
 <span class="sd">        A change of the active domain is a change of the coupling, not of the mesh: no node is created or moved, so the</span>
-<span class="sd">        solver rebuilds its equation system, but does not re-equilibrate.</span>
+<span class="sd">        solver rebuilds its discrete system, but does not re-equilibrate.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        bool</span>
-<span class="sd">            True if a coupling changed, so that the equation system has to be rebuilt.</span>
+<span class="sd">            True if a coupling changed, so that the discrete system has to be rebuilt.</span>
 <span class="sd">        """</span>
 
         <span class="n">connectivityChanged</span> <span class="o">=</span> <span class="kc">False</span>
@@ -444,9 +444,9 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">activeNodesAreFixed</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""Whether a change of the connectivity leaves the nodes of the active domain as they are, so that an equation</span>
+<span class="w">        </span><span class="sd">"""Whether a change of the connectivity leaves the nodes of the active domain as they are, so that a discrete</span>
 <span class="sd">        system can follow it by locating the changed particles and the constraints anew</span>
-<span class="sd">        (:meth:`~edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.relocateParticlesAndConstraints`)</span>
+<span class="sd">        (:meth:`~edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.relocateParticlesAndConstraints`)</span>
 <span class="sd">        instead of being rebuilt: without MPM managers, whose cells become active and inactive, and with every particle</span>
 <span class="sd">        manager bonding its kernel functions to the particles, so that a kernel function always covers its own</span>
 <span class="sd">        particle.</span>
@@ -461,11 +461,11 @@
             <span class="n">particleManager</span><span class="o">.</span><span class="n">kernelFunctionsAreBondedToParticles</span> <span class="k">for</span> <span class="n">particleManager</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">particleManagers</span>
         <span class="p">)</span>
 
-<div class="viewcode-block" id="MPMModel.buildEquationSystem">
-<a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.buildEquationSystem">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">buildEquationSystem</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MPMEquationSystemLayout</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""Lay out the equation system of the model on its active domain; see</span>
-<span class="sd">        :meth:`~edelweissfe.models.femodel.FEModel.buildEquationSystem` and :class:`MPMEquationSystemLayout`.</span>
+<div class="viewcode-block" id="MPMModel.buildDiscreteSystem">
+<a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.buildDiscreteSystem">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">buildDiscreteSystem</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MPMDiscreteSystem</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Build the discrete system of the model on its active domain; see</span>
+<span class="sd">        :meth:`~edelweissfe.models.femodel.FEModel.buildDiscreteSystem` and :class:`MPMDiscreteSystem`.</span>
 
 <span class="sd">        The active domain consists of the cells that hold material points, the nodes these cells and the particles'</span>
 <span class="sd">        kernel functions reach, and the finite elements and cell elements with their nodes. Its degrees of freedom are</span>
@@ -474,8 +474,8 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        MPMEquationSystemLayout</span>
-<span class="sd">            The layout of the equation system.</span>
+<span class="sd">        MPMDiscreteSystem</span>
+<span class="sd">            The discrete system.</span>
 <span class="sd">        """</span>
 
         <span class="n">activeCells</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">activeCellsOf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mpmManagers</span><span class="p">)</span>
@@ -495,7 +495,7 @@
             <span class="n">particles</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span>
         <span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">MPMEquationSystemLayout</span><span class="p">(</span>
+        <span class="k">return</span> <span class="n">MPMDiscreteSystem</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">dofManager</span><span class="p">,</span>
             <span class="p">[</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="o">*</span><span class="n">activeCells</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">cellElements</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="o">.</span><span class="n">values</span><span class="p">()],</span>

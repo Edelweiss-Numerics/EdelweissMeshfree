@@ -184,7 +184,7 @@
 <span class="w">        </span><span class="sd">"""Let every active cell of the cell set add the residual contribution of the body load, the negative of the</span>
 <span class="sd">        external load, and its tangent; see :meth:`~edelweissfe.stepactions.base.loadbase.LoadBase.assembleLoad`.</span>
 
-<span class="sd">        The active cells are those of the equation system, i.e. those the DOF manager numbers; a body load acts only</span>
+<span class="sd">        The active cells are those of the discrete system, i.e. those the DOF manager numbers; a body load acts only</span>
 <span class="sd">        on them.</span>
 
 <span class="sd">        Parameters</span>
@@ -201,7 +201,7 @@
 <span class="sd">        timeStep</span>
 <span class="sd">            The current time step.</span>
 <span class="sd">        dofManager</span>
-<span class="sd">            The DOF manager of the equation system.</span>
+<span class="sd">            The DOF manager of the discrete system.</span>
 <span class="sd">        """</span>
 
         <span class="n">loadVector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getCurrentLoad</span><span class="p">(</span><span class="n">timeStep</span><span class="p">)</span>
