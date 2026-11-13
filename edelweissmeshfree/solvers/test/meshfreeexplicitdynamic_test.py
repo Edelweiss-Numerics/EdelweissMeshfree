@@ -49,7 +49,7 @@ from edelweissmeshfree.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunct
     MarmotMeshfreeKernelFunctionWrapper,
 )
 from edelweissmeshfree.meshfree.particlekerneldomain import ParticleKernelDomain
-from edelweissmeshfree.models.mpmequationsystemlayout import MPMEquationSystemLayout
+from edelweissmeshfree.models.mpmdiscretesystem import MPMDiscreteSystem
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
     KDBinOrganizedParticleManager,
@@ -98,10 +98,10 @@ class _SolverRecordingTheVelocityAtReconnection(MeshfreeExplicitDynamic):
             self.activeNodeChanges.append((before, after))
 
     def velocityOfTheActiveNodes(self) -> dict:
-        dofManager = self._layout.dofManager
+        dofManager = self._system.dofManager
         return {
             node: np.array(self._V[dofManager.idcsOfFieldVariablesInDofVector[node.fields["displacement"]]])
-            for node in self._layout.activeNodes
+            for node in self._system.activeNodes
         }
 
 
@@ -117,7 +117,7 @@ class _SolverRecordingTheNodesWithoutInertia(_SolverRecordingTheVelocityAtReconn
     def acceptIncrement(self, step, model, timeStep):
         velocityBefore = self.velocityOfTheActiveNodes()
         super().acceptIncrement(step, model, timeStep)
-        dofManager = self._layout.dofManager
+        dofManager = self._system.dofManager
         for node, velocity in self.velocityOfTheActiveNodes().items():
             indices = dofManager.idcsOfFieldVariablesInDofVector[node.fields["displacement"]]
             if np.all(np.asarray(self._Minv)[indices] == 0.0):
@@ -259,25 +259,25 @@ def test_a_node_without_inertia_has_no_velocity(monkeypatch):
     it had a mass, and lost it as the body moved on, keeps none. The test takes away the mass of the node with the
     largest one, from the tenth evaluation on, as a body leaving the node would."""
 
-    assembleLumpedMassOfEntitiesWithOwnInertia = MPMEquationSystemLayout.assembleLumpedMassOfEntitiesWithOwnInertia
+    assembleLumpedMassOfEntitiesWithOwnInertia = MPMDiscreteSystem.assembleLumpedMassOfEntitiesWithOwnInertia
     evaluations = []
     nodeLosingItsMass = []
 
-    def assembleWithoutTheMassOfOneNode(layout, forEachChunk):
-        M = assembleLumpedMassOfEntitiesWithOwnInertia(layout, forEachChunk)
+    def assembleWithoutTheMassOfOneNode(system, forEachChunk):
+        M = assembleLumpedMassOfEntitiesWithOwnInertia(system, forEachChunk)
         evaluations.append(len(evaluations))
         if len(evaluations) >= 10:
-            dofs = layout.dofManager.idcsOfFieldVariablesInDofVector
+            dofs = system.dofManager.idcsOfFieldVariablesInDofVector
             if not nodeLosingItsMass:
                 nodeLosingItsMass.append(
-                    max(layout.activeNodes, key=lambda node: float(np.sum(M[dofs[node.fields["displacement"]]])))
+                    max(system.activeNodes, key=lambda node: float(np.sum(M[dofs[node.fields["displacement"]]])))
                 )
-            if nodeLosingItsMass[0] in layout.activeNodes:
+            if nodeLosingItsMass[0] in system.activeNodes:
                 M[dofs[nodeLosingItsMass[0].fields["displacement"]]] = 0.0
         return M
 
     monkeypatch.setattr(
-        MPMEquationSystemLayout, "assembleLumpedMassOfEntitiesWithOwnInertia", assembleWithoutTheMassOfOneNode
+        MPMDiscreteSystem, "assembleLumpedMassOfEntitiesWithOwnInertia", assembleWithoutTheMassOfOneNode
     )
 
     journal = Journal()

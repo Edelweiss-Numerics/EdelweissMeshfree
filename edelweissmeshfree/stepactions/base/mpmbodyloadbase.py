@@ -102,7 +102,7 @@ class MPMBodyLoadBase(LoadBase):
         """Let every active cell of the cell set add the residual contribution of the body load, the negative of the
         external load, and its tangent; see :meth:`~edelweissfe.stepactions.base.loadbase.LoadBase.assembleLoad`.
 
-        The active cells are those of the equation system, i.e. those the DOF manager numbers; a body load acts only
+        The active cells are those of the discrete system, i.e. those the DOF manager numbers; a body load acts only
         on them.
 
         Parameters
@@ -119,7 +119,7 @@ class MPMBodyLoadBase(LoadBase):
         timeStep
             The current time step.
         dofManager
-            The DOF manager of the equation system.
+            The DOF manager of the discrete system.
         """
 
         loadVector = self.getCurrentLoad(timeStep)

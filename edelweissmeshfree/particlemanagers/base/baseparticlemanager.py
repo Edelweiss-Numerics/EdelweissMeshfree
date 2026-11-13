@@ -75,7 +75,7 @@ class BaseParticleManager(ABC):
     def particlesWithChangedKernelFunctions(self) -> list:
         """The particles whose set of kernel functions changed during the last connectivity update.
 
-        A particle contributes to the global equation system through the nodes of its kernel
+        A particle contributes to the global discrete system through the nodes of its kernel
         functions, so its mapping into the degree-of-freedom vector only has to be rebuilt when that
         set changes. Reporting *which* particles changed, rather than only *whether* any did, is what
         lets a solver rebuild a handful of mappings instead of all of them.

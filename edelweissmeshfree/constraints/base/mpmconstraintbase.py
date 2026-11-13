@@ -1,6 +1,6 @@
 """
 Constraints are used to enforce certain conditions on the system. They are used to enforce boundary conditions, contact conditions, etc.
-Technically, a constraint is an entity of the equation system like an element: it adds a residual contribution and its
+Technically, a constraint is an entity of the discrete system like an element: it adds a residual contribution and its
 tangent, and it may introduce additional scalar variables (e.g., Lagrange multipliers) to enforce its condition.
 Unlike elements, constraints are not subject to external loads.
 """

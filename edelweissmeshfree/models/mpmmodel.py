@@ -47,7 +47,7 @@ from edelweissfe.variables.fieldvariable import FieldVariable
 from prettytable import PrettyTable
 
 from edelweissmeshfree.fields.nodefield import MPMNodeField
-from edelweissmeshfree.models.mpmequationsystemlayout import MPMEquationSystemLayout
+from edelweissmeshfree.models.mpmdiscretesystem import MPMDiscreteSystem
 from edelweissmeshfree.numerics.dofmanager import MPMDofManager
 from edelweissmeshfree.sets.cellelementset import CellElementSet
 from edelweissmeshfree.sets.cellset import CellSet
@@ -302,12 +302,12 @@ class MPMModel(FEModel):
         (:attr:`vciManagers`).
 
         A change of the active domain is a change of the coupling, not of the mesh: no node is created or moved, so the
-        solver rebuilds its equation system, but does not re-equilibrate.
+        solver rebuilds its discrete system, but does not re-equilibrate.
 
         Returns
         -------
         bool
-            True if a coupling changed, so that the equation system has to be rebuilt.
+            True if a coupling changed, so that the discrete system has to be rebuilt.
         """
 
         connectivityChanged = False
@@ -334,9 +334,9 @@ class MPMModel(FEModel):
 
     @property
     def activeNodesAreFixed(self) -> bool:
-        """Whether a change of the connectivity leaves the nodes of the active domain as they are, so that an equation
+        """Whether a change of the connectivity leaves the nodes of the active domain as they are, so that a discrete
         system can follow it by locating the changed particles and the constraints anew
-        (:meth:`~edelweissmeshfree.models.mpmequationsystemlayout.MPMEquationSystemLayout.relocateParticlesAndConstraints`)
+        (:meth:`~edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.relocateParticlesAndConstraints`)
         instead of being rebuilt: without MPM managers, whose cells become active and inactive, and with every particle
         manager bonding its kernel functions to the particles, so that a kernel function always covers its own
         particle.
@@ -351,9 +351,9 @@ class MPMModel(FEModel):
             particleManager.kernelFunctionsAreBondedToParticles for particleManager in self.particleManagers
         )
 
-    def buildEquationSystem(self) -> MPMEquationSystemLayout:
-        """Lay out the equation system of the model on its active domain; see
-        :meth:`~edelweissfe.models.femodel.FEModel.buildEquationSystem` and :class:`MPMEquationSystemLayout`.
+    def buildDiscreteSystem(self) -> MPMDiscreteSystem:
+        """Build the discrete system of the model on its active domain; see
+        :meth:`~edelweissfe.models.femodel.FEModel.buildDiscreteSystem` and :class:`MPMDiscreteSystem`.
 
         The active domain consists of the cells that hold material points, the nodes these cells and the particles'
         kernel functions reach, and the finite elements and cell elements with their nodes. Its degrees of freedom are
@@ -362,8 +362,8 @@ class MPMModel(FEModel):
 
         Returns
         -------
-        MPMEquationSystemLayout
-            The layout of the equation system.
+        MPMDiscreteSystem
+            The discrete system.
         """
 
         activeCells = self.activeCellsOf(self.mpmManagers)
@@ -383,7 +383,7 @@ class MPMModel(FEModel):
             particles=self.particles.values(),
         )
 
-        return MPMEquationSystemLayout(
+        return MPMDiscreteSystem(
             self,
             dofManager,
             [*self.elements.values(), *activeCells, *self.cellElements.values(), *self.particles.values()],

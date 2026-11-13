@@ -65,7 +65,7 @@ Where the memory ceiling is
 Once the staging array is gone, the peak memory of a large model is dominated by transients outside the solve: the
 construction of the CSR pattern, and its reconstruction whenever the connectivity changes -- which, as particles move,
 happens on many increments. Size a machine for this peak, not for what the solve occupies, and if a run dies of
-memory, look at the rebuild of the equation system before suspecting the solve.
+memory, look at the rebuild of the discrete system before suspecting the solve.
 
 Reference
 ---------

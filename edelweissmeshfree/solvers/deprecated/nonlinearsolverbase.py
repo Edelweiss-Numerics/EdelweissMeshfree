@@ -147,7 +147,7 @@ class BaseNonlinearSolver:
         timeStep
             The time increment.
         R
-            The residual vector of the global equation system to be modified.
+            The residual vector of the global discrete system to be modified.
         dirichlets
             The list of dirichlet boundary conditions.
         theDofManager
@@ -231,13 +231,13 @@ class BaseNonlinearSolver:
         return self._locateDirichlet(theDofManager, dirichlet)[0]
 
     def _locateDirichlet(self, theDofManager: DofManager, dirichlet: DirichletBase) -> tuple[np.ndarray, np.ndarray]:
-        """Where a Dirichlet boundary condition acts in the equation system: the DOF indices of its prescribed
+        """Where a Dirichlet boundary condition acts in the discrete system: the DOF indices of its prescribed
         components on the nodes of its node set that lie in the active domain, and the positions of these nodes in
         the set, which select the rows of
         :meth:`~edelweissfe.stepactions.base.dirichletbase.DirichletBase.getPrescribedIncrement`.
 
         Memoized: the result is requested several times per Newton iteration (residual and system matrix), but
-        changes only when the equation system is rebuilt or the boundary condition is updated between steps.
+        changes only when the discrete system is rebuilt or the boundary condition is updated between steps.
 
         Parameters
         ----------

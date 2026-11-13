@@ -279,7 +279,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
 
     @performancetiming.timeit("linear solve")
     def _linearSolve(self, A: csr_matrix, b: DofVector, linearSolver) -> ndarray:
-        """Solve the linear equation system.
+        """Solve the linear system of equations.
 
         Parameters
         ----------

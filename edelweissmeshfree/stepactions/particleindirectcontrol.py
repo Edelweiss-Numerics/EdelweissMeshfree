@@ -165,7 +165,7 @@ class IndirectControl(ArcLengthControllerBase):
         timeStep
             The converged time step.
         dofManager
-            The dof manager of the current equation system.
+            The dof manager of the current discrete system.
         """
 
     def applyAtStepEnd(self, model):
