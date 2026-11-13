@@ -39,6 +39,7 @@ import copy
 import h5py
 from edelweissfe.config.phenomena import getFieldSize, phenomena
 from edelweissfe.journal.journal import Journal
+from edelweissfe.models.change import Change
 from edelweissfe.models.femodel import FEModel
 from edelweissfe.sets.elementset import ElementSet
 from edelweissfe.sets.nodeset import NodeSet
@@ -290,9 +291,9 @@ class MPMModel(FEModel):
 
         return theNodeFields
 
-    def updateConnectivity(self) -> bool:
-        """Bring the coupling of the degrees of freedom up to date with the converged state, before an increment; see
-        :meth:`~edelweissfe.models.femodel.FEModel.updateConnectivity`. Called by EdelweissFE's solvers at the start
+    def updateConnectivity(self) -> Change:
+        """Bring the connectivity up to date with the converged state, before an increment, and say what that changed;
+        see :meth:`~edelweissfe.models.femodel.FEModel.updateConnectivity`. Called by EdelweissFE's solvers at the start
         of every increment and of every retry after a cutback.
 
         First the managers assign the material points to the cells they lie in (:attr:`mpmManagers`) and the particles
@@ -301,39 +302,48 @@ class MPMModel(FEModel):
         assigned. Finally, the test functions of the particles are corrected for the new connectivity
         (:attr:`vciManagers`).
 
-        A change of the active domain is a change of the coupling, not of the mesh: no node is created or moved, so the
-        solver rebuilds its discrete system, but does not re-equilibrate.
+        A change of the active domain is a change of the connectivity, not of the mesh: no node is created or moved. If the
+        nodes of the active domain are fixed (``_activeNodesAreFixed``), the numbering of the nodes stands, and the
+        change is one of the locations: only the particles that changed and the constraints are located anew, which
+        is what rebuilding would give, at a fraction of its cost. Otherwise the active domain may change, and with it
+        the numbering.
 
         Returns
         -------
-        bool
-            True if a coupling changed, so that the discrete system has to be rebuilt.
+        Change
+            What changed: :attr:`~edelweissfe.models.change.Change.NONE` if nothing did,
+            :attr:`~edelweissfe.models.change.Change.LOCATIONS` if the active nodes are fixed, else
+            :attr:`~edelweissfe.models.change.Change.NUMBERING`, or what the constraints changed, if that is more.
         """
 
-        connectivityChanged = False
+        managersChanged = False
 
         if self.mpmManagers:
             # The arguments are those of the converged state; no material point reads them here.
             for materialPoint in self.materialPoints.values():
                 materialPoint.prepareYourself(self.time, 0.0)
             for mpmManager in self.mpmManagers:
-                connectivityChanged |= mpmManager.updateConnectivity()
+                managersChanged |= mpmManager.updateConnectivity()
 
         if self.particleManagers:
             for particle in self.particles.values():
                 particle.prepareYourself(self.time, 0.0)
             for particleManager in self.particleManagers:
-                connectivityChanged |= particleManager.updateConnectivity()
+                managersChanged |= particleManager.updateConnectivity()
 
-        connectivityChanged |= super().updateConnectivity()
+        change = super().updateConnectivity()
+        if managersChanged:
+            change = max(change, Change.LOCATIONS)
 
         for vciManager in self.vciManagers:
             vciManager.computeVCICorrections()
 
-        return connectivityChanged
+        if change > Change.NONE and not self._activeNodesAreFixed():
+            change = max(change, Change.NUMBERING)
 
-    @property
-    def activeNodesAreFixed(self) -> bool:
+        return change
+
+    def _activeNodesAreFixed(self) -> bool:
         """Whether a change of the connectivity leaves the nodes of the active domain as they are, so that a discrete
         system can follow it by locating the changed particles and the constraints anew
         (:meth:`~edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.relocateParticlesAndConstraints`)
@@ -374,7 +384,7 @@ class MPMModel(FEModel):
 
         dofManager = MPMDofManager(
             activeNodeFields.values(),
-            [scalarVariable for constraint in constraints for scalarVariable in constraint.scalarVariables],
+            self.activeScalarVariables(),
             elements=self.elements.values(),
             constraints=constraints,
             nodeSets=self.nodeSets.values(),

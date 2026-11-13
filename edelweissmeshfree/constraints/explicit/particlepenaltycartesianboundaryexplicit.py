@@ -169,15 +169,10 @@ class ParticlePenaltyCartesianBoundaryConstraintExplicit(MPMExplicitConstraintBa
         hasChanged = nodes != self._nodes
         self._nodes = nodes
 
-        wasActive = self.active
-
         # within reach if one of the constrained points is close enough to the boundary
         self.withinReach = not self._doProximityCheck or any(
             abs(p[self._component] - self._boundaryPosition) <= self._proximityDist for p in self._constrained_points
         )
-
-        if self.active != wasActive:
-            hasChanged = True
 
         if not self.active:
             self.reactionForce = 0.0

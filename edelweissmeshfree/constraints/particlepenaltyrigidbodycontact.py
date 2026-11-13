@@ -135,16 +135,11 @@ class ParticlePenaltyContactImplicitSurfaceConstraint(MPMConstraintBase):
         self._nodes = nodes
         self._constrained_points = self._getConstraintLocations()
 
-        wasActive = self.active
-
         # within reach if one of the constrained points is close enough to the surface
         self.withinReach = not self._doProximityCheck or any(
             self._implicit_function(p_coord) < self._particleCharacteristicLength_x_proximityFactor
             for p_coord in self._constrained_points
         )
-
-        if self.active != wasActive:
-            hasChanged = True
 
         if not self.active:
             self.reactionForce = 0.0

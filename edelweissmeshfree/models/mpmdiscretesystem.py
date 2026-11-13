@@ -124,8 +124,9 @@ class MPMDiscreteSystem(DiscreteSystem):
         self.cellsInterpolatingToMaterialPoints = activeCells + list(model.cellElements.values())
 
     def relocateParticlesAndConstraints(self):
-        """Follow a change of the connectivity that leaves the active nodes as they are (see
-        :attr:`~edelweissmeshfree.models.mpmmodel.MPMModel.activeNodesAreFixed`): the numbering of the nodes stands, so
+        """Follow a change of the connectivity that leaves the active nodes as they are (the model reports
+        :attr:`~edelweissfe.models.change.Change.LOCATIONS`, see
+        :meth:`~edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity`): the numbering of the nodes stands, so
         only the particles whose kernel functions changed, and the active constraints, are located anew in the DOF
         vector. That is what rebuilding would give, at a fraction of its cost.
         """

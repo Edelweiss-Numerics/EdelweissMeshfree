@@ -23,11 +23,11 @@ class MPMConstraintBase(ConstraintBase):
       See the EdelweissFE solver documentation, *The residual and the tangent*.
     - The nodes of a meshfree constraint are those its particles or material points currently interpolate from, so
       they change as the kernel functions and cells move: ``updateConnectivity`` finds them anew at the start of
-      every increment, and reports a change.
+      every increment, and reports whether they changed.
     - A constraint may switch itself off in ``updateConnectivity``, e.g. a contact constraint whose particle is far
       from the boundary: it sets
-      :attr:`~edelweissfe.constraints.base.constraintbase.ConstraintBase.withinReach`, and reports a change of
-      :attr:`~edelweissfe.constraints.base.constraintbase.ConstraintBase.active`. A constraint switched off from
+      :attr:`~edelweissfe.constraints.base.constraintbase.ConstraintBase.withinReach`; the model sees the change of
+      :attr:`~edelweissfe.constraints.base.constraintbase.ConstraintBase.active` itself. A constraint switched off from
       outside, through ``active``, stays off whatever it finds, and rests: the model does not locate it anew.
     - Every constraint declares the state it carries from one increment to the next, in ``checkpointedState``
       (empty if it carries none), so that a restart can restore it.
@@ -50,6 +50,12 @@ class MPMConstraintBase(ConstraintBase):
     #: current positions acts there, e.g. a contact with a boundary; a constraint on the increment, e.g. a weak
     #: Dirichlet condition or an equal value, would act as if nothing had moved, and the solver refuses it.
     actsInExplicitAnalysis: bool = False
+
+    #: The nodes of a meshfree constraint are those its particles or material points currently interpolate from, so they
+    #: change as the particles move (see
+    #: :attr:`~edelweissfe.constraints.base.constraintbase.ConstraintBase.connectivityChangesWithMotion`): a solver that
+    #: never updates the connectivity, e.g. ``NEST``, refuses it.
+    connectivityChangesWithMotion = True
 
     @property
     @abstractmethod

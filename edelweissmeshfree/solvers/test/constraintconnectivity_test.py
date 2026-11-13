@@ -45,12 +45,13 @@ NUMBER_OF_CONSTRAINTS = 1000
 
 
 class _ConstraintStandIn:
-    """What the connectivity update asks of a constraint: to bring its connectivity up to date, and whether it
-    changed."""
+    """What the connectivity update asks of a constraint: to bring its connectivity up to date, whether it changed, and
+    whether it takes part."""
 
     def __init__(self, changes: bool):
         self.changes = changes
         self.isUpToDate = False
+        self.active = True
 
     def updateConnectivity(self, model) -> bool:
         self.isUpToDate = True
