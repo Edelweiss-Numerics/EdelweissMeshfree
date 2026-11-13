@@ -210,11 +210,27 @@ class MPMDiscreteSystem(DiscreteSystem):
         nodeField[entry][:] = 0.0
         self.numbering.writeDofVectorToNodeField(dofVector, nodeField, entry, self.activeNodes)
 
+    @property
+    def elementsWithNodalInertia(self) -> list:
+        """The finite elements, whose inertia, damping and stable time increment a solver assembles element by
+        element, at the nodes. The cells, the cell elements and the particles contribute nothing there: the particles
+        carry the state, and with it the inertia, which they integrate themselves, or which a solver lumps to the nodes
+        of their kernel functions (see :meth:`assembleLumpedMassOfEntitiesWithOwnInertia`).
+
+        Returns
+        -------
+        list
+            The finite elements, in the order in which the solver computes them.
+        """
+
+        return self.locations.finiteElements
+
     def dofsWithNodalInertia(self, fieldNames: list) -> np.ndarray:
         """The degrees of freedom of the given fields whose inertia is that of the nodes: those of the nodes that carry
-        their total solution, i.e. of the finite elements (and cell elements), whose mass the elements assemble. The
-        nodes of the kernel functions are left out: the particles carry the state, and with it the inertia, which they
-        integrate themselves, or which a solver lumps to these nodes (see :meth:`assembleLumpedMassOfEntitiesWithOwnInertia`).
+        their total solution, i.e. of the finite elements and of the cell elements. Only the finite elements assemble
+        a mass there (:attr:`elementsWithNodalInertia`). The nodes of the kernel functions are left out: the particles
+        carry the state, and with it the inertia, which they integrate themselves, or which a solver lumps to these
+        nodes (see :meth:`assembleLumpedMassOfEntitiesWithOwnInertia`).
 
         Parameters
         ----------

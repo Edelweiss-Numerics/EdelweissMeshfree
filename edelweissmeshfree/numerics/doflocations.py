@@ -79,8 +79,13 @@ class MPMDofLocations(DofLocations):
         cellElements = [] if cellElements is None else list(cellElements)
         particles = [] if particles is None else list(particles)
 
-        super().__init__(numbering, elements, constraints, [*cells, *cellElements, *particles])
+        finiteElements = [] if elements is None else list(elements)
 
+        super().__init__(numbering, finiteElements, constraints, [*cells, *cellElements, *particles])
+
+        #: The finite elements among :attr:`elements`: the ones whose inertia, damping and stable time increment a solver
+        #: assembles element by element. The cells and the particles come on top of them in :attr:`elements`.
+        self.finiteElements = finiteElements
         #: The cells that have a location, the active cells.
         self.cells = cells
         #: The cell elements that have a location.
