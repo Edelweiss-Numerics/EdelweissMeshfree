@@ -147,6 +147,10 @@ cdef class MarmotParticleWrapper:
         return self._nodes
 
     @property
+    def nNodes(self):
+        return len(self._nodes)
+
+    @property
     def dimension(self):
         return self._nDim
 
@@ -242,6 +246,17 @@ cdef class MarmotParticleWrapper:
         :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedInertia`."""
 
         self._marmotParticle.computeLumpedInertia(&mLumped[0])
+
+    @property
+    def connectivityChangesWithMotion(self):
+        """True: the kernel functions of a particle reach other nodes as it moves."""
+        return True
+
+    @property
+    def scalarVariables(self):
+        """No scalar variables, as for every particle; see
+        :attr:`edelweissfe.nodecouplingentity.base.nodecouplingentity.BaseNodeCouplingEntity.scalarVariables`."""
+        return ()
 
     def computeLumpedMomentum(self, double[::1] mLumped ):
         """Add the lumped momentum; see

@@ -43,7 +43,9 @@ class MPMDofLocations(DofLocations):
     """The locations of the entities of a material point or RKPM model in the numbering of the degrees of freedom of
     its active domain: those of
     :class:`~edelweissfe.numerics.doflocations.DofLocations` -- the finite elements and the constraints -- and those of
-    the background cells, the cell elements and the particles, which are computed like elements.
+    the background cells, the cell elements and the particles, which are computed like elements: they follow the finite
+    elements in :attr:`~edelweissfe.numerics.doflocations.DofLocations.elements`, and they are located by the same
+    protocol of an entity as the elements are.
 
     The locations of the particles are the locations of the nodes their kernel functions reach, node after node, on
     each node the same fields. Moving particles reach other nodes of the same numbering: new locations of the
@@ -54,8 +56,8 @@ class MPMDofLocations(DofLocations):
     ----------
     numbering : DofNumbering
         The numbering of the degrees of freedom of the active domain.
-    elements : list
-        A list of elements.
+    finiteElements : list
+        The finite elements that take part in the discrete system.
     constraints : list
         A list of constraints.
     cells : list
@@ -69,22 +71,21 @@ class MPMDofLocations(DofLocations):
     def __init__(
         self,
         numbering: DofNumbering,
-        elements: list = None,
+        finiteElements: list = None,
         constraints: list = None,
         cells: list = None,
         cellElements: list = None,
         particles: list = None,
     ):
+        finiteElements = [] if finiteElements is None else list(finiteElements)
         cells = [] if cells is None else list(cells)
         cellElements = [] if cellElements is None else list(cellElements)
         particles = [] if particles is None else list(particles)
 
-        finiteElements = [] if elements is None else list(elements)
+        super().__init__(numbering, [*finiteElements, *cells, *cellElements, *particles], constraints)
 
-        super().__init__(numbering, finiteElements, constraints, [*cells, *cellElements, *particles])
-
-        #: The finite elements among :attr:`elements`: the ones whose inertia, damping and stable time increment a solver
-        #: assembles element by element. The cells and the particles come on top of them in :attr:`elements`.
+        #: The finite elements among :attr:`elements`, which also holds the cells, the cell elements and the particles,
+        #: in this order, after them.
         self.finiteElements = finiteElements
         #: The cells that have a location, the active cells.
         self.cells = cells

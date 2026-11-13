@@ -63,7 +63,7 @@ class PenaltyConstrainMP2Node(MPMConstraintBase):
         return list(self._slaveNodes.keys()) + [self._masterNode]
 
     @property
-    def fieldsOnNodes(self) -> list:
+    def fields(self) -> list:
         return [
             [
                 self._field,

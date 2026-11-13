@@ -34,6 +34,7 @@ import pytest
 
 from edelweissmeshfree.numerics.test._entities import (
     Entity,
+    Particle,
     assertEqualDofLocations,
     makeDofLocations,
     makeNodeField,
@@ -51,7 +52,7 @@ def test_relocated_locations_equal_fresh_ones(nodesOfTheConstraintsAfterwards):
     nodeField = makeNodeField(nodes)
     cells = [Entity(nodes[0:3]), Entity(nodes[2:5])]
     cellElements = [Entity(nodes[0:2]), Entity(nodes[4:6])]
-    particles = [Entity(nodes[1:4]), Entity(nodes[3:6])]
+    particles = [Particle(nodes[1:4]), Particle(nodes[3:6])]
     constraintsBefore = [Entity([nodes[0], nodes[1]])]
     constraintsAfterwards = [Entity([nodes[i] for i in indices]) for indices in nodesOfTheConstraintsAfterwards]
 
@@ -72,7 +73,7 @@ def test_relocated_locations_equal_fresh_ones(nodesOfTheConstraintsAfterwards):
 def test_moved_particles_are_located_anew_on_the_same_numbering_and_the_others_keep_their_locations():
     nodes = makeNodes(6)
     nodeField = makeNodeField(nodes)
-    particles = [Entity(nodes[1:4]), Entity(nodes[3:6]), Entity(nodes[0:2])]
+    particles = [Particle(nodes[1:4]), Particle(nodes[3:6]), Particle(nodes[0:2])]
     before = makeDofLocations(nodeField, [], [], [], particles)
     locationsOfUnmoved = {p: before[p] for p in particles[1:]}
 
@@ -97,7 +98,7 @@ def test_the_locations_of_cells_cell_elements_and_particles_are_those_of_their_n
     nodeField = makeNodeField(nodes)
     cells = [Entity(nodes[0:3]), Entity(nodes[2:5])]
     cellElements = [Entity(nodes[4:6])]
-    particles = [Entity(nodes[1:3])]
+    particles = [Particle(nodes[1:3])]
     constraints = [Entity([nodes[0], nodes[5]])]
 
     locations = makeDofLocations(nodeField, constraints, cells, cellElements, particles)
@@ -110,7 +111,7 @@ def test_the_locations_of_cells_cell_elements_and_particles_are_those_of_their_n
     assert locations.elements == [*cells, *cellElements, *particles]
     assert locations.constraints == constraints
     assert locations.cells == cells and locations.cellElements == cellElements and locations.particles == particles
-    assert list(locations.ofEntity) == [*constraints, *cells, *cellElements, *particles]
+    assert list(locations.ofEntity) == [*cells, *cellElements, *particles, *constraints]
     # Σ_entities Σ_nodes nDof(field): 3 + 3 nodes of the cells, 2 of the cell element, 2 of the particle, 2 of the
     # constraint, each with two components
     assert locations.nAccumulatedNodalFluxesFieldwise == {"displacement": 2 * (3 + 3 + 2 + 2 + 2)}

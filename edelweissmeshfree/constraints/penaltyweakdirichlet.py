@@ -65,7 +65,7 @@ class PenaltyWeakDirichlet(MPMConstraintBase):
         return self._nodes.keys()
 
     @property
-    def fieldsOnNodes(self) -> list:
+    def fields(self) -> list:
         return [
             [
                 self._field,

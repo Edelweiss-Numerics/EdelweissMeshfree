@@ -43,6 +43,8 @@ DIMENSION = 2
 class Entity:
     """A cell, a cell element, a particle or a constraint: it couples the given nodes, with the field on each."""
 
+    connectivityChangesWithMotion = False
+
     def __init__(self, nodes: list):
         self.dofIndicesPermutation = None
         self.scalarVariables = []
@@ -53,8 +55,14 @@ class Entity:
         constraint that is re-assigned."""
 
         self.nodes = nodes
-        self.fields = self.fieldsOnNodes = [[FIELD] for _ in nodes]
+        self.fields = [[FIELD] for _ in nodes]
         self.nDof = DIMENSION * len(nodes)
+
+
+class Particle(Entity):
+    """A particle: the nodes it couples change with the motion."""
+
+    connectivityChangesWithMotion = True
 
 
 def makeNodes(number: int) -> list[Node]:
