@@ -50,14 +50,17 @@ class _ParticleOfMass:
         M += self.mass
 
 
-class _NumberingOfOneDofPerParticle:
-    """A stand-in for the numbering of the degrees of freedom: one per particle, in their order."""
+class _LocationsOfOneDofPerParticle:
+    """A stand-in for the locations of the particles: one degree of freedom per particle, in their order."""
 
     def __init__(self, particles: list):
-        self.entitiesInDofVector = {particle: np.array([index]) for index, particle in enumerate(particles)}
+        self.particles = particles
+        self.cells = []
+        self.cellElements = []
+        self.ofEntity = {particle: np.array([index]) for index, particle in enumerate(particles)}
 
     def constructDofVector(self) -> DofVector:
-        return DofVector(len(self.entitiesInDofVector), self.entitiesInDofVector)
+        return DofVector(len(self.ofEntity), self)
 
 
 def test_a_node_without_inertia_gets_no_mass():
@@ -66,9 +69,7 @@ def test_a_node_without_inertia_gets_no_mass():
     model = SimpleNamespace(materialPoints={}, particles=particles, cellElements={})
     system = MPMDiscreteSystem(
         model,
-        _NumberingOfOneDofPerParticle(list(particles.values())),
-        [],
-        [],
+        _LocationsOfOneDofPerParticle(list(particles.values())),
         NodeSet("nodes with persistent field values", []),
         NodeSet("nodes with volatile field values", []),
         None,

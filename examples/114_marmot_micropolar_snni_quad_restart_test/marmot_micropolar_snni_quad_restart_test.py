@@ -162,7 +162,7 @@ def run_sim(restartBaseName: str = "restart", resumeFrom: str = None, maxNumInc:
     print(theParticleManager)
 
     # We now create a bundled model.
-    # We need this model to create the dof manager
+    # We need this model to build the discrete system
     theModel.particleKernelDomains["my_all_with_all"] = theParticleKernelDomain
 
     theModel.prepareYourself(theJournal)

@@ -30,8 +30,9 @@ date.
 In a particle simulation there is one constraint per particle, and the update spreads the constraints in chunks over
 the threads. ``Executor.map`` hands out the answers of the chunks lazily, so reducing them directly with ``any`` would
 stop at the first chunk whose constraints changed, and return while the later chunks are still rewriting the node lists
-that the solver builds its DOF manager from next. Here a stand-in of the thread pool runs a chunk only when its answer
-is asked for: a chunk that the update does not wait for is never run, so the test does not depend on thread timing.
+that the solver builds its numbering and locations from next. Here a stand-in of the thread pool runs a chunk only when
+its answer is asked for: a chunk that the update does not wait for is never run, so the test does not depend on
+thread timing.
 """
 
 from edelweissfe.journal.journal import Journal

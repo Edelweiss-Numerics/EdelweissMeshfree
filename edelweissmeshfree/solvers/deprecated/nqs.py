@@ -41,7 +41,8 @@ import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 from edelweissfe.constraints.base.constraintbase import ConstraintBase
 from edelweissfe.journal.journal import Journal
-from edelweissfe.numerics.dofmanager import DofManager, DofVector
+from edelweissfe.numerics.doflocations import DofLocations
+from edelweissfe.numerics.dofvector import DofVector
 from edelweissfe.outputmanagers.base.outputmanagerbase import OutputManagerBase
 from edelweissfe.stepactions.base.dirichletbase import DirichletBase
 from edelweissfe.timesteppers.timestep import TimeStep
@@ -229,7 +230,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
         particles = model.particles.values()
 
         newtonCache = None
-        theDofManager = None
+        locations = None
 
         if predictor:
             predictor.resetHistory()
@@ -256,7 +257,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                     materialPoints, particles, constraints, model, timeStep, mpmManagers, particleManagers
                 )
 
-                if connectivityHasChanged or not theDofManager:
+                if connectivityHasChanged or locations is None:
 
                     activeCells = self._getActiveCellsFromManagers(mpmManagers)
 
@@ -273,7 +274,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                     activeConstraints = [c for c in constraints if c.active]
                     activeConstraintsScalarVariables = [v for c in activeConstraints for v in c.scalarVariables]
 
-                    theDofManager = self._createDofManager(
+                    locations = self._createLocations(
                         reducedNodeFields.values(),
                         activeConstraintsScalarVariables,
                         elements=elements,
@@ -284,23 +285,25 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                         particles=particles,
                     )
 
-                    U = theDofManager.constructDofVector()
+                    U = locations.constructDofVector()
 
                     # Finite element nodes carry their total solution across increments; the nodes of
                     # cells and particles are volatile and start every rebuild at zero.
                     if activeNodesWithPersistentFieldValues:
                         for field in model.nodeFields.values():
-                            theDofManager.writeNodeFieldToDofVector(U, field, "U", activeNodesWithPersistentFieldValues)
+                            locations.numbering.writeNodeFieldToDofVector(
+                                U, field, "U", activeNodesWithPersistentFieldValues
+                            )
 
                     self.journal.message(
-                        "resulting discrete system has a size of {:}".format(theDofManager.nDof),
+                        "resulting discrete system has a size of {:}".format(locations.numbering.nDof),
                         self.identification,
                         level=1,
                     )
 
                     newtonCache = None
 
-                presentVariableNames = list(theDofManager.idcsOfFieldsInDofVector.keys())
+                presentVariableNames = list(locations.numbering.idcsOfFieldsInDofVector.keys())
 
                 # TODO: We are handling this currently as a dedicated special case,
                 # but we should consider to make this part of a more general
@@ -320,17 +323,17 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                 self.journal.message(iterationHeader2, self.identification, level=2)
 
                 if not newtonCache:
-                    newtonCache = self._createNewtonCache(theDofManager)
+                    newtonCache = self._createNewtonCache(locations)
                     linearSolver.setJournal(self.journal)
-                    linearSolver.setModel(model, theDofManager)
+                    linearSolver.setModel(model, locations.numbering)
 
                 try:
                     for initialGuess in (dUPrediction, None):
                         try:
                             if timeStep.timeIncrement == 0.0 and skipZeroIncrements:
                                 self.journal.message("Skipping zero time increment solve", self.identification, level=1)
-                                dU = theDofManager.constructDofVector()
-                                P = theDofManager.constructDofVector()
+                                dU = locations.constructDofVector()
+                                P = locations.constructDofVector()
                                 iterationHistory = None
                                 break
 
@@ -346,7 +349,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                                 materialPoints,
                                 particles,
                                 constraints,
-                                theDofManager,
+                                locations,
                                 linearSolver,
                                 iterationOptions,
                                 timeStep,
@@ -401,9 +404,9 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                         self._updatePredictorHistory(predictor, dU, timeStep, iterationHistory)
 
                     for field in reducedNodeFields.values():
-                        theDofManager.writeDofVectorToNodeField(dU, field, "dU")
-                        theDofManager.writeDofVectorToNodeField(U, field, "U")
-                        theDofManager.writeDofVectorToNodeField(P, field, "P")
+                        locations.numbering.writeDofVectorToNodeField(dU, field, "dU")
+                        locations.numbering.writeDofVectorToNodeField(U, field, "U")
+                        locations.numbering.writeDofVectorToNodeField(P, field, "P")
                         model.nodeFields[field.name].copyEntriesFromOther(field)
 
                     model.advanceToTime(timeStep.totalTime)
@@ -453,7 +456,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
         materialPoints: list,
         particles: list,
         constraints: list,
-        theDofManager: DofManager,
+        locations: DofLocations,
         linearSolver,
         iterationOptions: dict,
         timeStep: TimeStep,
@@ -485,8 +488,8 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
             The list of particles.
         constraints
             The list of constraints.
-        theDofManager
-            The DofManager instance for the current active model.
+        locations
+            The locations of the entities in the discrete system of the current active model.
         linearSolver
             The instance of the linear solver to be used.
         iterationOptions
@@ -512,7 +515,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
         """
 
         iterationCounter = 0
-        incrementResidualHistory = {field: list() for field in theDofManager.idcsOfFieldsInDofVector}
+        incrementResidualHistory = {field: list() for field in locations.numbering.idcsOfFieldsInDofVector}
 
         nAllowedResidualGrowths = iterationOptions["allowed residual growths"]
 
@@ -540,7 +543,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                 particles,
                 constraints,
                 timeStep,
-                theDofManager,
+                locations,
                 dU,
                 Rhs,
                 K,
@@ -550,14 +553,12 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
             )
 
             if iterationCounter == 0 and dirichlets:
-                Rhs = self._applyDirichlet(timeStep, Rhs, dirichlets, theDofManager)
+                Rhs = self._applyDirichlet(timeStep, Rhs, dirichlets, locations)
             else:
                 for dirichlet in dirichlets:
-                    Rhs[self._findDirichletIndices(theDofManager, dirichlet)] = 0.0
+                    Rhs[self._findDirichletIndices(locations, dirichlet)] = 0.0
 
-                incrementResidualHistory = self._computeResiduals(
-                    Rhs, ddU, dU, F, incrementResidualHistory, theDofManager
-                )
+                incrementResidualHistory = self._computeResiduals(Rhs, ddU, dU, F, incrementResidualHistory, locations)
 
                 incrementResidualHistory = self._checkConvergence(
                     iterationCounter, incrementResidualHistory, iterationOptions
@@ -608,7 +609,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
             else:
                 K_CSR = K_CSR_elastic.copy()
 
-            K_CSR = self._applyDirichletKCsr(K_CSR, dirichlets, theDofManager)
+            K_CSR = self._applyDirichletKCsr(K_CSR, dirichlets, locations)
 
             ddU = self._linearSolve(K_CSR, Rhs, linearSolver)
 
@@ -638,7 +639,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                         particles,
                         constraints,
                         timeStep,
-                        theDofManager,
+                        locations,
                         dU_linesearch,
                         Rhs,
                         K,
@@ -647,7 +648,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
                         F,
                     )
                     for dirichlet in dirichlets:
-                        Rhs_[self._findDirichletIndices(theDofManager, dirichlet)] = 0.0
+                        Rhs_[self._findDirichletIndices(locations, dirichlet)] = 0.0
 
                     return Rhs_
 
@@ -680,7 +681,7 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
         particles: list,
         constraints: list,
         timeStep: TimeStep,
-        theDofManager: DofManager,
+        locations: DofLocations,
         dU,
         Rhs,
         K,
@@ -702,18 +703,18 @@ class NonlinearQuasistaticSolver(BaseNonlinearImplicitSolver):
         time = timeStep.totalTime
         dT = timeStep.timeIncrement
 
-        self._computeCells(activeCells, U_np, dU, PInt, F, K, time, dT, theDofManager)
+        self._computeCells(activeCells, U_np, dU, PInt, F, K, time, dT, locations)
 
-        self._computeElements(elements, U_np, dU, PInt, F, K, time, dT, theDofManager)
+        self._computeElements(elements, U_np, dU, PInt, F, K, time, dT, locations)
 
-        self._computeCellElements(cellElements, U_np, dU, PInt, F, K, time, dT, theDofManager)
+        self._computeCellElements(cellElements, U_np, dU, PInt, F, K, time, dT, locations)
 
-        self._computeParticles(particles, U_np, dU, PInt, F, K, time, dT, theDofManager)
+        self._computeParticles(particles, U_np, dU, PInt, F, K, time, dT, locations)
 
         self._computeConstraints(constraints, U_np, dU, PInt, K, timeStep)
 
         self._assembleLoads(
-            [*bodyLoads, *distributedLoads, *particleDistributedLoads], U_np, dU, PExt, K, timeStep, theDofManager
+            [*bodyLoads, *distributedLoads, *particleDistributedLoads], U_np, dU, PExt, K, timeStep, locations
         )
 
         # every contributor has had its say; commit whatever is still held so the matrix is complete

@@ -38,7 +38,8 @@
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 from edelweissfe.constraints.base.constraintbase import ConstraintBase
-from edelweissfe.numerics.dofmanager import DofManager, DofVector
+from edelweissfe.numerics.doflocations import DofLocations
+from edelweissfe.numerics.dofvector import DofVector
 from edelweissfe.numerics.systemmatrixassembly import VIJSystemMatrixAssembly
 from edelweissfe.outputmanagers.base.outputmanagerbase import OutputManagerBase
 from edelweissfe.stepactions.base.arclengthcontrollerbase import ArcLengthControllerBase
@@ -194,7 +195,7 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NonlinearQuasistaticSolver):
         materialPoints: list,
         particles: list,
         constraints: list,
-        theDofManager: DofManager,
+        locations: DofLocations,
         linearSolver,
         iterationOptions: dict,
         timeStep: TimeStep,
@@ -220,8 +221,8 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NonlinearQuasistaticSolver):
             The list of material points.
         constraints
             The list of constraints.
-        theDofManager
-            The DofManager instance for the current active model.
+        locations
+            The locations of the entities in the discrete system of the current active model.
         linearSolver
             The instance of the linear solver to be used.
         iterationOptions
@@ -259,7 +260,7 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NonlinearQuasistaticSolver):
                 materialPoints,
                 particles,
                 constraints,
-                theDofManager,
+                locations,
                 linearSolver,
                 iterationOptions,
                 timeStep,
@@ -269,12 +270,12 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NonlinearQuasistaticSolver):
             )
 
         iterationCounter = 0
-        incrementResidualHistory = {field: list() for field in theDofManager.idcsOfFieldsInDofVector}
+        incrementResidualHistory = {field: list() for field in locations.numbering.idcsOfFieldsInDofVector}
 
         nAllowedResidualGrowths = iterationOptions["allowed residual growths"]
 
         # if not newtonCache:
-        #     newtonCache = self._createArcLengthNewtonCache(theDofManager)
+        #     newtonCache = self._createArcLengthNewtonCache(locations)
         K, csrGenerator, dU, Rhs_, F, PInt, PExt, PExt_0, PExt_f, K_VIJ_0, K_VIJ_f = newtonCache
 
         # The contributors write through the contribution objects; the arc-length combination of the
@@ -320,15 +321,15 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NonlinearQuasistaticSolver):
             U_np = Un + dU
             time = timeStep.totalTime
             dT = timeStep.timeIncrement
-            self._computeCells(activeCells, U_np, dU, PInt, F, K, time, dT, theDofManager)
-            self._computeElements(elements, U_np, dU, PInt, F, K, time, dT, theDofManager)
-            self._computeParticles(particles, U_np, dU, PInt, F, K, time, dT, theDofManager)
+            self._computeCells(activeCells, U_np, dU, PInt, F, K, time, dT, locations)
+            self._computeElements(elements, U_np, dU, PInt, F, K, time, dT, locations)
+            self._computeParticles(particles, U_np, dU, PInt, F, K, time, dT, locations)
             self._computeConstraints(constraints, U_np, dU, PInt, K, timeStep)
 
             # the loads twice: at the start of the step (the dead load) and at its end (the reference load)
             loads = [*bodyLoads, *distributedLoads, *particleDistributedLoads]
-            self._assembleLoads(loads, U_np, dU, PExt_0, K_VIJ_0, zeroTimeStep, theDofManager)
-            self._assembleLoads(loads, U_np, dU, PExt_f, K_VIJ_f, referenceTimeStep, theDofManager)
+            self._assembleLoads(loads, U_np, dU, PExt_0, K_VIJ_0, zeroTimeStep, locations)
+            self._assembleLoads(loads, U_np, dU, PExt_f, K_VIJ_f, referenceTimeStep, locations)
 
             PExt_f -= PExt_0  # and subtract the dead part, since we are only interested in the homogeneous linear part
             K_VIJ_f -= K_VIJ_0
@@ -344,15 +345,15 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NonlinearQuasistaticSolver):
             K_VIJ[:] += K_VIJ_0
             K_VIJ[:] += (Lambda + dLambda) * K_VIJ_f
 
-            Rhs_f = self._applyDirichlet(referenceTimeStep, Rhs_f, dirichlets, theDofManager)
+            Rhs_f = self._applyDirichlet(referenceTimeStep, Rhs_f, dirichlets, locations)
             if iterationCounter == 0 and dirichlets:
-                Rhs_0 = self._applyDirichlet(timeStep, Rhs_0, dirichlets, theDofManager)
+                Rhs_0 = self._applyDirichlet(timeStep, Rhs_0, dirichlets, locations)
             else:
                 for dirichlet in dirichlets:
-                    Rhs_0[self._findDirichletIndices(theDofManager, dirichlet)] = 0.0
+                    Rhs_0[self._findDirichletIndices(locations, dirichlet)] = 0.0
 
                 incrementResidualHistory = self._computeResiduals(
-                    Rhs_0, ddU, dU, F, incrementResidualHistory, theDofManager
+                    Rhs_0, ddU, dU, F, incrementResidualHistory, locations
                 )
 
                 incrementResidualHistory = self._checkConvergence(
@@ -390,7 +391,7 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NonlinearQuasistaticSolver):
                     raise ReachedMaxIterations("Reached max. iterations in current increment, cutting back")
 
             K_CSR = self._VIJtoCSR(K_VIJ, csrGenerator, useInPlace=True)
-            K_CSR = self._applyDirichletKCsr(K_CSR, dirichlets, theDofManager)
+            K_CSR = self._applyDirichletKCsr(K_CSR, dirichlets, locations)
 
             # solve 2 eq. systems at once:
             ddU_ = self._linearSolve(K_CSR, Rhs_, linearSolver)
@@ -399,7 +400,7 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NonlinearQuasistaticSolver):
             ddU_0, ddU_f = ddU_[:, 0], ddU_[:, 1]
 
             # compute the increment of the load parameter. Method depends on the employed arc length controller
-            ddLambda = arcLengthController.computeDDLambda(dU, ddU_0, ddU_f, timeStep, theDofManager)
+            ddLambda = arcLengthController.computeDDLambda(dU, ddU_0, ddU_f, timeStep, locations.numbering)
 
             # assemble total solution
             ddU = ddU_0 + ddLambda * ddU_f
@@ -423,7 +424,7 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NonlinearQuasistaticSolver):
                     _assembleArcLengthSystem(dU + ddU_linesearch, dLambda + alpha * ddLambda)
                     Rhs_trial = Rhs_0.copy()
                     for dirichlet in dirichlets:
-                        Rhs_trial[self._findDirichletIndices(theDofManager, dirichlet)] = 0.0
+                        Rhs_trial[self._findDirichletIndices(locations, dirichlet)] = 0.0
                     return Rhs_trial
 
                 ddU_new = self._quadraticLineSearch(_arcResidualCallback, ddU, alphas)
@@ -449,13 +450,13 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NonlinearQuasistaticSolver):
             return dU, PInt, iterationHistory, newtonCache
 
     @performancetiming.timeit("creation newton cache")
-    def _createNewtonCache(self, theDofManager: DofManager) -> tuple:
+    def _createNewtonCache(self, locations: DofLocations) -> tuple:
         """Create expensive objects, which may be reused if the global system does not change.
 
         Parameters
         ----------
-        theDofManager
-            The DofManager instance.
+        locations
+            The locations of the entities in the discrete system.
 
         Returns
         -------
@@ -465,16 +466,16 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NonlinearQuasistaticSolver):
         arcLengthController = self._arcLengthController
 
         if arcLengthController is None:
-            return super()._createNewtonCache(theDofManager)
+            return super()._createNewtonCache(locations)
 
-        K = VIJSystemMatrixAssembly(theDofManager, 1)
-        dU = theDofManager.constructDofVector()
-        Rhs_ = np.tile(theDofManager.constructDofVector(), (2, 1)).T  # 2 RHSs
-        F = theDofManager.constructDofVector()
-        PInt = theDofManager.constructDofVector()
-        PExt = theDofManager.constructDofVector()
-        PExt_0 = theDofManager.constructDofVector()
-        PExt_f = theDofManager.constructDofVector()
+        K = VIJSystemMatrixAssembly(locations, 1)
+        dU = locations.constructDofVector()
+        Rhs_ = np.tile(locations.constructDofVector(), (2, 1)).T  # 2 RHSs
+        F = locations.constructDofVector()
+        PInt = locations.constructDofVector()
+        PExt = locations.constructDofVector()
+        PExt_0 = locations.constructDofVector()
+        PExt_f = locations.constructDofVector()
         # the stiffnesses of the dead and of the reference load: value arrays in K's VIJ layout, which K's generator
         # gathers
         newtonCache = (

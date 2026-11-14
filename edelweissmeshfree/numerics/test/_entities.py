@@ -25,15 +25,16 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 """Stand-ins for the entities of a meshfree discrete system -- cells, cell elements, particles and constraints -- and
-what compares the DOF managers that locate them."""
+what compares the locations of them."""
 
 import numpy as np
 from edelweissfe.fields.nodefield import NodeField
+from edelweissfe.numerics.dofnumbering import DofNumbering
 from edelweissfe.points.node import Node
 from edelweissfe.sets.nodeset import NodeSet
 from edelweissfe.variables.fieldvariable import FieldVariable
 
-from edelweissmeshfree.numerics.dofmanager import MPMDofManager
+from edelweissmeshfree.numerics.doflocations import MPMDofLocations
 
 FIELD = "displacement"
 DIMENSION = 2
@@ -72,23 +73,22 @@ def makeNodeField(nodes: list[Node]) -> NodeField:
     return NodeField(FIELD, DIMENSION, NodeSet("all", nodes))
 
 
-def makeDofManager(
+def makeDofLocations(
     nodeField: NodeField,
     constraints: list,
     cells: list,
     cellElements: list,
     particles: list,
-    initializeAccumulatedNodalFluxesFieldwise: bool = True,
-) -> MPMDofManager:
-    """The DOF manager of the entities."""
+    numbering: DofNumbering = None,
+) -> MPMDofLocations:
+    """The locations of the entities, in the given numbering of the node field, or in a new one."""
 
-    return MPMDofManager(
-        [nodeField],
+    return MPMDofLocations(
+        DofNumbering([nodeField]) if numbering is None else numbering,
         constraints=constraints,
         cells=cells,
         cellElements=cellElements,
         particles=particles,
-        initializeAccumulatedNodalFluxesFieldwise=initializeAccumulatedNodalFluxesFieldwise,
     )
 
 
@@ -100,16 +100,14 @@ def assertEqualMappings(mapping: dict, expected: dict):
         np.testing.assert_array_equal(mapping[entity], expected[entity])
 
 
-def assertEqualDofManagers(refreshed: MPMDofManager, fresh: MPMDofManager):
-    """What a refreshed DOF manager shares with one built for the same entities."""
+def assertEqualDofLocations(relocated: MPMDofLocations, fresh: MPMDofLocations):
+    """What relocated locations share with locations built for the same entities."""
 
-    for mapping, expected in (
-        (refreshed.idcsOfConstraintsInDofVector, fresh.idcsOfConstraintsInDofVector),
-        (refreshed.idcsOfCellsInDofVector, fresh.idcsOfCellsInDofVector),
-        (refreshed.idcsOfCellElementsInDofVector, fresh.idcsOfCellElementsInDofVector),
-        (refreshed.idcsOfParticlesInDofVector, fresh.idcsOfParticlesInDofVector),
-        (refreshed.idcsOfHigherOrderEntitiesInDofVector, fresh.idcsOfHigherOrderEntitiesInDofVector),
-    ):
-        assertEqualMappings(mapping, expected)
-    assert refreshed.accumulatedConstraintNDof == fresh.accumulatedConstraintNDof
-    assert refreshed.largestNumberOfConstraintNDof == fresh.largestNumberOfConstraintNDof
+    assertEqualMappings(relocated.ofEntity, fresh.ofEntity)
+    assert relocated.numbering.nDof == fresh.numbering.nDof
+    assert relocated.elements == fresh.elements
+    assert relocated.constraints == fresh.constraints
+    assert relocated.cells == fresh.cells
+    assert relocated.cellElements == fresh.cellElements
+    assert relocated.particles == fresh.particles
+    assert relocated.nAccumulatedNodalFluxesFieldwise == fresh.nAccumulatedNodalFluxesFieldwise

@@ -3,7 +3,8 @@ from typing import Iterable
 
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
-from edelweissfe.numerics.dofmanager import DofManager, DofVector
+from edelweissfe.numerics.doflocations import DofLocations
+from edelweissfe.numerics.dofvector import DofVector
 from edelweissfe.numerics.parallelizationutilities import (
     getNumberOfThreads,
     getThreadPool,
@@ -43,7 +44,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         materialPoints: list,
         particles: list,
         constraints: list,
-        theDofManager: DofManager,
+        locations: DofLocations,
         linearSolver,
         iterationOptions: dict,
         timeStep: TimeStep,
@@ -61,7 +62,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         P: DofVector,
         K: SystemMatrixAssembly,
         timeStep: TimeStep,
-        theDofManager: DofManager,
+        locations: DofLocations,
     ):
         """Assemble the residual contributions of all loads, the negative of the external loads, and their tangents:
         every load knows where it acts -- on cells, on material points, on particle faces -- and assembles itself, see
@@ -81,19 +82,19 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             Where each entity writes its stiffness contribution.
         timeStep
             The current time increment.
-        theDofManager
-            The DofManager instance.
+        locations
+            The locations of the entities in the discrete system.
         """
 
         for load in loads:
-            load.assembleLoad(P, K, U_np, dU, timeStep, theDofManager)
+            load.assembleLoad(P, K, U_np, dU, timeStep, locations)
 
     @performancetiming.timeit("dirichlet on CSR")
     def _applyDirichletKCsr(
         self,
         K: VIJSystemMatrix,
         dirichlets: list[DirichletBase],
-        theDofManager: DofManager,
+        locations: DofLocations,
     ) -> VIJSystemMatrix:
         """Apply the dirichlet bcs on the global stiffness matrix
         Is called by solveStep() before solving the global system.
@@ -114,12 +115,12 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
 
         if dirichlets:
             for dirichlet in dirichlets:
-                for row in self._findDirichletIndices(theDofManager, dirichlet):
+                for row in self._findDirichletIndices(locations, dirichlet):
                     K.data[K.indptr[row] : K.indptr[row + 1]] = 0.0
 
             # K[row, row] = 1.0 @ once, faster than within the loop above:
             diag = K.diagonal()
-            diag[np.concatenate([self._findDirichletIndices(theDofManager, d) for d in dirichlets])] = 1.0
+            diag[np.concatenate([self._findDirichletIndices(locations, d) for d in dirichlets])] = 1.0
             K.setdiag(diag)
 
             # NOTE: the zeroed off-diagonals are deliberately kept as explicitly stored zeros.
@@ -137,7 +138,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         dU: DofVector,
         F: DofVector,
         residualHistory: dict,
-        theDofManager: DofManager,
+        locations: DofLocations,
     ) -> tuple[bool, dict]:
         """Compute the current residuals and relative flux residuals flux (R) and effort correction (ddU).
 
@@ -153,8 +154,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             The accumulated fluxes.
         residualHistory
             The previous residuals.
-        theDofManager
-            The DofManager instance.
+        locations
+            The locations of the entities in the discrete system.
 
         Returns
         -------
@@ -167,16 +168,16 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         if np.isnan(R).any():
             raise DivergingSolution("NaN obtained in residual.")
 
-        spatialAveragedFluxes = self._computeSpatialAveragedFluxes(F, theDofManager)
+        spatialAveragedFluxes = self._computeSpatialAveragedFluxes(F, locations)
 
-        for field, fieldIndices in theDofManager.idcsOfFieldsInDofVector.items():
+        for field, fieldIndices in locations.numbering.idcsOfFieldsInDofVector.items():
             fieldResidualAbs = np.abs(R[fieldIndices])
 
             indexOfMax = np.argmax(fieldResidualAbs)
             fluxResidualAbsolute = fieldResidualAbs[indexOfMax]
 
             fluxResidualRelative = fluxResidualAbsolute / max(spatialAveragedFluxes[field], 1e-16)
-            nodeWithLargestResidual = theDofManager.getNodeForIndexInDofVector(indexOfMax)
+            nodeWithLargestResidual = locations.numbering.getNodeForIndexInDofVector(indexOfMax)
 
             maxIncrement = np.linalg.norm(dU[fieldIndices], np.inf)
             correctionAbsolute = np.linalg.norm(ddU[fieldIndices], np.inf) if ddU is not None else 0.0
@@ -335,7 +336,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         return KCsr
 
     @performancetiming.timeit("computation spatial fluxes")
-    def _computeSpatialAveragedFluxes(self, F: DofVector, theDofManager) -> float:
+    def _computeSpatialAveragedFluxes(self, F: DofVector, locations) -> float:
         """Compute the spatial averaged flux for every field
         Is usually called by checkConvergence().
 
@@ -349,9 +350,11 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         dict[str,float]
             A dictioary containg the spatial average fluxes for every field.
         """
-        spatialAveragedFluxes = dict.fromkeys(theDofManager.idcsOfFieldsInDofVector, 0.0)
-        for field, nDof in theDofManager.nAccumulatedNodalFluxesFieldwise.items():
-            spatialAveragedFluxes[field] = np.linalg.norm(F[theDofManager.idcsOfFieldsInDofVector[field]], 1) / nDof
+        spatialAveragedFluxes = dict.fromkeys(locations.numbering.idcsOfFieldsInDofVector, 0.0)
+        for field, nDof in locations.nAccumulatedNodalFluxesFieldwise.items():
+            spatialAveragedFluxes[field] = (
+                np.linalg.norm(F[locations.numbering.idcsOfFieldsInDofVector[field]], 1) / nDof
+            )
 
         return spatialAveragedFluxes
 
@@ -417,7 +420,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         K: SystemMatrixAssembly,
         time: float,
         dT: float,
-        theDofManager: DofManager,
+        locations: DofLocations,
     ):
         """Evaluate all cells.
 
@@ -439,8 +442,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             The current time.
         dT
             The increment of time.
-        theDofManager
-            The DofManager instance.
+        locations
+            The locations of the entities in the discrete system.
         """
         for c in activeCells:
             Pc = np.zeros(c.nDof)
@@ -460,7 +463,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         K: SystemMatrixAssembly,
         time: float,
         dT: float,
-        theDofManager: DofManager,
+        locations: DofLocations,
     ):
         """Evaluate all finite elements.
 
@@ -485,8 +488,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             The current time.
         dT
             The increment of time.
-        theDofManager
-            The DofManager instance.
+        locations
+            The locations of the entities in the discrete system.
         """
 
         for el in elements:
@@ -506,7 +509,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         K: SystemMatrixAssembly,
         time: float,
         dT: float,
-        theDofManager: DofManager,
+        locations: DofLocations,
     ):
         """Evaluate all cell elements.
 
@@ -528,8 +531,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             The current time.
         dT
             The increment of time.
-        theDofManager
-            The DofManager instance.
+        locations
+            The locations of the entities in the discrete system.
         """
 
         for el in elements:
@@ -550,7 +553,7 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
         K: SystemMatrixAssembly,
         time: float,
         dT: float,
-        theDofManager: DofManager,
+        locations: DofLocations,
     ):
         """Evaluate all particles.
 
@@ -572,8 +575,8 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             The current time.
         dT
             The increment of time.
-        theDofManager
-            The DofManager instance.
+        locations
+            The locations of the entities in the discrete system.
         """
 
         if not particles:
@@ -640,13 +643,13 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
                 P[c] += Pc
 
     @performancetiming.timeit("creation newton cache")
-    def _createNewtonCache(self, theDofManager):
+    def _createNewtonCache(self, locations):
         """Create expensive objects, which may be reused if the global system does not change.
 
         Parameters
         ----------
-        theDofManager
-            The DofManager instance.
+        locations
+            The locations of the entities in the discrete system.
 
         Returns
         -------
@@ -654,14 +657,14 @@ class BaseNonlinearImplicitSolver(BaseNonlinearSolver):
             The collection of expensive objects.
         """
 
-        K = VIJSystemMatrixAssembly(theDofManager, 1)
+        K = VIJSystemMatrixAssembly(locations, 1)
         csrGenerator = K.csrGenerator
 
-        dU = theDofManager.constructDofVector()
-        Rhs = theDofManager.constructDofVector()
-        F = theDofManager.constructDofVector()
-        PInt = theDofManager.constructDofVector()
-        PExt = theDofManager.constructDofVector()
+        dU = locations.constructDofVector()
+        Rhs = locations.constructDofVector()
+        F = locations.constructDofVector()
+        PInt = locations.constructDofVector()
+        PExt = locations.constructDofVector()
 
         newtonCache = (K, csrGenerator, dU, Rhs, F, PInt, PExt)
 

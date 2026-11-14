@@ -39,7 +39,7 @@ Extrapolators (Predictors) are used for making initia guesses in the Newton sche
 
 from abc import ABC, abstractmethod
 
-from edelweissfe.numerics.dofmanager import DofVector
+from edelweissfe.numerics.dofvector import DofVector
 from edelweissfe.timesteppers.timestep import TimeStep
 
 

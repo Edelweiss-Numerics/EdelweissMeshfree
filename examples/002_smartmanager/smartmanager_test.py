@@ -39,6 +39,7 @@ import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 import pytest
 from edelweissfe.journal.journal import Journal
+from edelweissfe.numerics.dofnumbering import DofNumbering
 
 from edelweissmeshfree.fieldoutput.fieldoutput import MPMFieldOutputController
 from edelweissmeshfree.fields.nodefield import MPMNodeField
@@ -48,7 +49,7 @@ from edelweissmeshfree.generators import (
 )
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.mpmmanagers.smartmpmmanager import SmartMaterialPointManager
-from edelweissmeshfree.numerics.dofmanager import MPMDofManager
+from edelweissmeshfree.numerics.doflocations import MPMDofLocations
 from edelweissmeshfree.outputmanagers.ensight import (
     OutputManager as EnsightOutputManager,
 )
@@ -157,22 +158,16 @@ def run_sim():
                 constraints = []
                 nodeSets = []
 
-                dofManager = MPMDofManager(
-                    activeNodeFields.values(),
-                    scalarVariables,
-                    elements,
-                    constraints,
-                    nodeSets,
-                    activeCells,
-                    cellElements,
-                )
+                numbering = DofNumbering(activeNodeFields.values(), scalarVariables, nodeSets)
 
-                dofVector = dofManager.constructDofVector()
+                locations = MPMDofLocations(numbering, elements, constraints, activeCells, cellElements)
+
+                dofVector = locations.constructDofVector()
 
             for acl in activeCells:
                 dofVector[acl] += 10.0 * acl.cellNumber
 
-            print("discrete system would have a size of {:}".format(dofManager.nDof))
+            print("discrete system would have a size of {:}".format(numbering.nDof))
 
             shift = np.asarray([2.0, 3.0 * np.cos(4 * np.pi * i / 100.0)])
             mpmModel.advanceToTime(10.0 * (i))

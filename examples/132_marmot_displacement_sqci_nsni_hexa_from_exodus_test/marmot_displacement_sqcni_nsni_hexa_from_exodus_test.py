@@ -136,7 +136,7 @@ def run_sim():
     print(theParticleManager)
 
     # We now create a bundled model.
-    # We need this model to create the dof manager
+    # We need this model to build the discrete system
     theModel.particleKernelDomains["my_all_with_all"] = theParticleKernelDomain
 
     from edelweissmeshfree.constraints.particlelagrangianweakdirichlet import (

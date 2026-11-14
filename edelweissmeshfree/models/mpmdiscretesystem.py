@@ -43,9 +43,11 @@ from collections.abc import Callable
 
 import numpy as np
 from edelweissfe.models.discretesystem import DiscreteSystem
-from edelweissfe.numerics.dofmanager import DofManager, DofVector
+from edelweissfe.numerics.dofvector import DofVector
 from edelweissfe.sets.nodeset import NodeSet
 from edelweissfe.timesteppers.timestep import TimeStep
+
+from edelweissmeshfree.numerics.doflocations import MPMDofLocations
 
 #: The lumped mass of a node below this fraction of the largest one is zero up to round-off: the particles reach its
 #: kernel function only where it vanishes. A solver that divides by it would give the node an acceleration of round-off
@@ -73,13 +75,10 @@ class MPMDiscreteSystem(DiscreteSystem):
     ----------
     model
         The model.
-    dofManager
-        The numbering of the degrees of freedom of the active domain.
-    elements
-        The finite elements, the active cells, the cell elements and the particles, in the order in which the solver
-        computes them.
-    activeCells
-        The cells that hold material points, sorted by their number.
+    locations
+        The locations of the entities in the numbering of the degrees of freedom of the active domain; the finite
+        elements, the active cells (those that hold material points, sorted by their number), the cell elements and the
+        particles, in the order in which the solver computes them, are the elements of the discrete system.
     nodesWithPersistentFieldValues
         The nodes that carry their total solution from increment to increment: those of the finite elements and of
         the cell elements.
@@ -92,16 +91,12 @@ class MPMDiscreteSystem(DiscreteSystem):
     def __init__(
         self,
         model,
-        dofManager: DofManager,
-        elements: list,
-        activeCells: list,
+        locations: MPMDofLocations,
         nodesWithPersistentFieldValues: NodeSet,
         nodesWithVolatileFieldValues: NodeSet,
         modelForLinearSolver,
     ):
-        super().__init__(model, dofManager, elements)
-        #: The cells that hold material points, sorted by their number.
-        self.activeCells = activeCells
+        super().__init__(model, locations)
         #: The nodes that carry their total solution from increment to increment.
         self.nodesWithPersistentFieldValues = nodesWithPersistentFieldValues
         #: The nodes of the active domain whose degrees of freedom are the coefficients of one increment: those of
@@ -118,27 +113,47 @@ class MPMDiscreteSystem(DiscreteSystem):
         self.modelForLinearSolver = modelForLinearSolver
         #: The material points of the model, a list the solver hands out in chunks.
         self.materialPoints = list(model.materialPoints.values())
-        #: The particles of the model, a list the solver hands out in chunks.
-        self.particles = list(model.particles.values())
-        #: The active cells and the cell elements, which interpolate the solution to the material points they hold.
-        self.cellsInterpolatingToMaterialPoints = activeCells + list(model.cellElements.values())
 
-    def relocateParticlesAndConstraints(self):
-        """Follow a change of the connectivity that leaves the active nodes as they are (the model reports
+    @property
+    def activeCells(self) -> list:
+        """The cells that hold material points, sorted by their number, i.e. the cells of the locations."""
+
+        return self.locations.cells
+
+    @property
+    def particles(self) -> list:
+        """The particles of the model, a list the solver hands out in chunks, i.e. the particles of the locations."""
+
+        return self.locations.particles
+
+    @property
+    def cellsInterpolatingToMaterialPoints(self) -> list:
+        """The active cells and the cell elements, which interpolate the solution to the material points they hold."""
+
+        return [*self.locations.cells, *self.locations.cellElements]
+
+    def _newLocations(self) -> MPMDofLocations:
+        """The new locations of :meth:`~edelweissfe.models.discretesystem.DiscreteSystem.withNewLocations` after a
+        change of the connectivity that leaves the active nodes as they are (the model reports
         :attr:`~edelweissfe.models.change.Change.LOCATIONS`, see
-        :meth:`~edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity`): the numbering of the nodes stands, so
-        only the particles whose kernel functions changed, and the active constraints, are located anew in the DOF
-        vector. That is what rebuilding would give, at a fraction of its cost.
+        :meth:`~edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity`): the particles whose kernel functions
+        changed, and the active constraints, are located anew. The numbering of the nodes stands, so that is what
+        rebuilding would give, at a fraction of its cost.
+
+        Returns
+        -------
+        MPMDofLocations
+            The new locations.
         """
 
-        self.dofManager.updateParticles(
+        return self.locations.withNewLocationsOf(
+            self.model.activeConstraints(),
             [
                 particle
                 for particleManager in self.model.particleManagers
                 for particle in particleManager.particlesWithChangedKernelFunctions
-            ]
+            ],
         )
-        self.dofManager.refreshConstraintIndices(self.model.activeConstraints())
 
     def readEntryOfNodeField(self, dofVector: DofVector, nodeField, entry: str):
         """Read one entry of one node field of the model into a vector of the discrete system, by node; every read of
@@ -161,7 +176,7 @@ class MPMDiscreteSystem(DiscreteSystem):
 
         nodes = self.nodesWithPersistentFieldValues if entry == "U" else self.activeNodes
         if nodes:
-            self.dofManager.writeNodeFieldToDofVector(dofVector, nodeField, entry, nodes)
+            self.numbering.writeNodeFieldToDofVector(dofVector, nodeField, entry, nodes)
 
     def zeroIncrementalCoefficients(self, U: DofVector):
         """Set the degrees of freedom of the incremental nodes (:attr:`incrementalNodes`) to zero in the solution
@@ -174,8 +189,8 @@ class MPMDiscreteSystem(DiscreteSystem):
             The solution vector of the converged increment, modified in place.
         """
 
-        for fieldName in self.dofManager.fields:
-            indices, _ = self.dofManager.locateFieldOnNodeSet(fieldName, self.incrementalNodes)
+        for fieldName in self.numbering.fields:
+            indices, _ = self.numbering.locateFieldOnNodeSet(fieldName, self.incrementalNodes)
             U[indices] = 0.0
 
     def writeEntryOfNodeField(self, dofVector: DofVector, nodeField, entry: str):
@@ -193,7 +208,7 @@ class MPMDiscreteSystem(DiscreteSystem):
         """
 
         nodeField[entry][:] = 0.0
-        self.dofManager.writeDofVectorToNodeField(dofVector, nodeField, entry, self.activeNodes)
+        self.numbering.writeDofVectorToNodeField(dofVector, nodeField, entry, self.activeNodes)
 
     def dofsWithNodalInertia(self, fieldNames: list) -> np.ndarray:
         """The degrees of freedom of the given fields whose inertia is that of the nodes: those of the nodes that carry
@@ -212,10 +227,10 @@ class MPMDiscreteSystem(DiscreteSystem):
             The indices of the degrees of freedom in the vectors of the discrete system, sorted.
         """
 
-        isWithNodalInertia = np.zeros(self.dofManager.nDof, dtype=bool)
+        isWithNodalInertia = np.zeros(self.numbering.nDof, dtype=bool)
         if self.nodesWithPersistentFieldValues:
             for fieldName in fieldNames:
-                indices, _ = self.dofManager.locateFieldOnNodeSet(fieldName, self.nodesWithPersistentFieldValues)
+                indices, _ = self.numbering.locateFieldOnNodeSet(fieldName, self.nodesWithPersistentFieldValues)
                 isWithNodalInertia[indices] = True
 
         return np.flatnonzero(isWithNodalInertia)
@@ -249,7 +264,7 @@ class MPMDiscreteSystem(DiscreteSystem):
         if not self.particles:
             return None
 
-        M = self.dofManager.constructDofVector()
+        M = self.locations.constructDofVector()
         M[:] = 0.0
         scatterM = M.createScatterVector()
 
@@ -292,11 +307,11 @@ class MPMDiscreteSystem(DiscreteSystem):
             carriers.add("entities")
 
         if self.incrementalNodes:
-            rate = self.dofManager.constructDofVector()
-            for fieldName in self.dofManager.fields:
+            rate = self.locations.constructDofVector()
+            for fieldName in self.numbering.fields:
                 for entry in ("V", "A"):
                     rate[:] = 0.0
-                    self.dofManager.writeNodeFieldToDofVector(
+                    self.numbering.writeNodeFieldToDofVector(
                         rate, self.model.nodeFields[fieldName], entry, self.incrementalNodes
                     )
                     if np.any(rate):

@@ -37,7 +37,8 @@
 from abc import abstractmethod
 
 import numpy as np
-from edelweissfe.numerics.dofmanager import DofManager, DofVector
+from edelweissfe.numerics.doflocations import DofLocations
+from edelweissfe.numerics.dofvector import DofVector
 from edelweissfe.stepactions.base.loadbase import LoadBase
 from edelweissfe.timesteppers.timestep import TimeStep
 
@@ -98,7 +99,7 @@ class MPMDistributedLoadBase(LoadBase):
         U_np: DofVector,
         dU: DofVector,
         timeStep: TimeStep,
-        dofManager: DofManager,
+        locations: DofLocations,
     ):
         """Let the cells of every loaded material point add the residual contribution of the load the material point
         carries, the negative of the external load, and its tangent; see
@@ -117,8 +118,8 @@ class MPMDistributedLoadBase(LoadBase):
             The global solution increment.
         timeStep
             The current time step.
-        dofManager
-            The DOF manager of the discrete system.
+        locations
+            The locations of the entities in the discrete system, from which the load finds where it acts.
         """
 
         for mp in self.mpSet:

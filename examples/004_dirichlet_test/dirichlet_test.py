@@ -39,6 +39,7 @@ import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 import pytest
 from edelweissfe.journal.journal import Journal
+from edelweissfe.numerics.dofnumbering import DofNumbering
 from edelweissfe.sets.nodeset import NodeSet
 
 from edelweissmeshfree.fieldoutput.fieldoutput import MPMFieldOutputController
@@ -49,7 +50,7 @@ from edelweissmeshfree.generators import (
 )
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.mpmmanagers.simplempmmanager import SimpleMaterialPointManager
-from edelweissmeshfree.numerics.dofmanager import MPMDofManager
+from edelweissmeshfree.numerics.doflocations import MPMDofLocations
 from edelweissmeshfree.outputmanagers.ensight import (
     OutputManager as EnsightOutputManager,
 )
@@ -178,39 +179,33 @@ def run_sim():
                     for nodeSet in mpmModel.nodeSets.values()
                 }
 
-                dofManager = MPMDofManager(
-                    activeNodeFields.values(),
-                    scalarVariables,
-                    elements,
-                    constraints,
-                    reducedNodeSets.values(),
-                    activeCells,
-                    cellElements,
-                )
+                numbering = DofNumbering(activeNodeFields.values(), scalarVariables, reducedNodeSets.values())
 
-                dUActiveCells = dofManager.constructDofVector()
+                locations = MPMDofLocations(numbering, elements, constraints, activeCells, cellElements)
+
+                dUActiveCells = locations.constructDofVector()
 
             time = 10 * i
             shift = np.asarray([2.0, 6.0 * np.cos(4 * np.pi * i / 100.0)])
             activeNodeFields["displacement"]["dU"][:] = shift
-            dofManager.writeNodeFieldToDofVector(dUActiveCells, activeNodeFields["displacement"], "dU")
+            numbering.writeNodeFieldToDofVector(dUActiveCells, activeNodeFields["displacement"], "dU")
 
-            idcsTop, _ = dofManager.locateFieldOnNodeSet(
+            idcsTop, _ = numbering.locateFieldOnNodeSet(
                 "displacement", reducedNodeSets[mpmModel.nodeSets["rectangular_grid_top"]]
             )
             dUActiveCells[idcsTop[1::2]] = 0.0
 
-            idcsBottom, _ = dofManager.locateFieldOnNodeSet(
+            idcsBottom, _ = numbering.locateFieldOnNodeSet(
                 "displacement", reducedNodeSets[mpmModel.nodeSets["rectangular_grid_bottom"]]
             )
             dUActiveCells[idcsBottom[1::2]] = 0.0
 
-            idcsRight, _ = dofManager.locateFieldOnNodeSet(
+            idcsRight, _ = numbering.locateFieldOnNodeSet(
                 "displacement", reducedNodeSets[mpmModel.nodeSets["rectangular_grid_right"]]
             )
             dUActiveCells[idcsRight] = 0.0
 
-            dofManager.writeDofVectorToNodeField(dUActiveCells, activeNodeFields["displacement"], "dU")
+            numbering.writeDofVectorToNodeField(dUActiveCells, activeNodeFields["displacement"], "dU")
 
             # a new increment begins: the material points reset their displacement increment, which the cells
             # then accumulate (the order of the solvers: prepare, interpolate, compute)

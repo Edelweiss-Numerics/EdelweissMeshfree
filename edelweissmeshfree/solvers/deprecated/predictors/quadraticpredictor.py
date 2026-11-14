@@ -35,7 +35,7 @@
 #  ---------------------------------------------------------------------
 
 from edelweissfe.journal.journal import Journal
-from edelweissfe.numerics.dofmanager import DofVector
+from edelweissfe.numerics.dofvector import DofVector
 from edelweissfe.timesteppers.timestep import TimeStep
 
 from edelweissmeshfree.solvers.deprecated.predictors.basepredictor import BasePredictor
