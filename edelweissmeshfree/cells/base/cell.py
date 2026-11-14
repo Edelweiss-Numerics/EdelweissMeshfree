@@ -43,16 +43,19 @@ Implementing your own cells can be done easily by subclassing from
 the abstract base class :class:`~CellBase`.
 """
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 
 import numpy as np
+from edelweissfe.nodecouplingentity.base.nodecouplingentity import (
+    BaseNodeCouplingEntity,
+)
 from edelweissfe.numerics.systemmatrixcontributor import SystemMatrixContributorBase
 from edelweissfe.points.node import Node
 
 from edelweissmeshfree.materialpoints.base.mp import MaterialPointBase
 
 
-class CellBase(ABC, SystemMatrixContributorBase):
+class CellBase(BaseNodeCouplingEntity, SystemMatrixContributorBase):
     """MPM cells in EdelweissMPM should be derived from this
     base class in order to follow the general interface.
 
@@ -89,29 +92,8 @@ class CellBase(ABC, SystemMatrixContributorBase):
 
     @property
     @abstractmethod
-    def nNodes(self) -> int:
-        """The list of nodes this cell holds"""
-
-    @property
-    @abstractmethod
-    def nDof(self) -> int:
-        """The total number of degrees of freedom this cell has"""
-
-    @property
-    @abstractmethod
-    def fields(self) -> list[list[str]]:
-        """The list of fields per grid nodes."""
-
-    @property
-    @abstractmethod
-    def dofIndicesPermutation(self) -> np.ndarray:
-        """The permutation pattern for the residual vector and the stiffness matrix to
-        aggregate all entries in order to resemble the defined fields nodewise."""
-
-    @property
-    @abstractmethod
     def ensightType(self) -> str:
-        """The shape of the element in Ensight Gold notation."""
+        """The shape of the cell in Ensight Gold notation."""
 
     @property
     @abstractmethod

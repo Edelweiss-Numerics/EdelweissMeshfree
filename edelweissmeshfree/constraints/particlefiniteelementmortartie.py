@@ -301,7 +301,7 @@ class ParticleFiniteElementMortarTie(MPMConstraintBase):
         return self._finiteElementNodes + self._kernelNodes
 
     @property
-    def fieldsOnNodes(self) -> list:
+    def fields(self) -> list:
         return [["displacement"]] * len(self.nodes)
 
     @property

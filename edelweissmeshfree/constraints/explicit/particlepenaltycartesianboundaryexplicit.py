@@ -139,7 +139,7 @@ class ParticlePenaltyCartesianBoundaryConstraintExplicit(MPMExplicitConstraintBa
         return self._nodes
 
     @property
-    def fieldsOnNodes(self) -> list:
+    def fields(self) -> list:
         return [[self._field]] * len(self._nodes)
 
     @property

@@ -70,10 +70,19 @@ class BaseParticle(BaseNodeCouplingEntity):
     For instance: [node_1_displacement, node_1_temperature, node_2_displacement, node_2_temperature, ...]
     """
 
+    #: The kernel functions of a particle reach other nodes as it moves, so its connectivity changes with the motion;
+    #: see :attr:`~edelweissfe.nodecouplingentity.base.nodecouplingentity.BaseNodeCouplingEntity.connectivityChangesWithMotion`.
+    connectivityChangesWithMotion = True
+
     @property
     @abstractmethod
     def dimension(self) -> int:
         """Defines the dimension of the particle, e.g., 1, 2 or 3."""
+
+    @property
+    @abstractmethod
+    def ensightType(self) -> str:
+        """The shape of the particle in Ensight Gold notation."""
 
     @property
     @abstractmethod
@@ -368,7 +377,9 @@ class BaseParticle(BaseNodeCouplingEntity):
         self,
         M: np.ndarray,
     ):
-        """Explicit dynamics: add the lumped mass of the particle, on the kernel functions currently assigned.
+        """Explicit dynamics: add the lumped mass of the particle, on the kernel functions currently assigned: the mass
+        the particle integrates itself, which a solver reads through
+        :meth:`~edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.assembleLumpedMassOfEntitiesWithOwnInertia`.
 
         Parameters
         ----------

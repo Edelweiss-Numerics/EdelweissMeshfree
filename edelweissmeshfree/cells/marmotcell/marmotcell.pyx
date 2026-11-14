@@ -158,6 +158,17 @@ cdef class MarmotCellWrapper:
     cpdef void computeConsistentInertia( self, double[::1] M ) nogil:
         self._marmotCell.computeConsistentInertia(&M[0])
 
+    @property
+    def connectivityChangesWithMotion(self):
+        """False: the nodes of a cell stay."""
+        return False
+
+    @property
+    def scalarVariables(self):
+        """No scalar variables, as for every cell; see
+        :attr:`edelweissfe.nodecouplingentity.base.nodecouplingentity.BaseNodeCouplingEntity.scalarVariables`."""
+        return ()
+
     def computeBodyLoad(self,
                          str loadType,
                          double[::1] load,

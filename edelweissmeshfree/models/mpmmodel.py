@@ -390,7 +390,7 @@ class MPMModel(FEModel):
         numbering = DofNumbering(activeNodeFields.values(), self.activeScalarVariables(), self.nodeSets.values())
         locations = MPMDofLocations(
             numbering,
-            elements=self.elementsWithKernels(),
+            finiteElements=self.elementsWithKernels(),
             constraints=constraints,
             cells=activeCells,
             cellElements=self.cellElements.values(),

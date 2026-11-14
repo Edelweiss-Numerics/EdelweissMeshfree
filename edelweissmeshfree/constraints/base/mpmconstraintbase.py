@@ -53,7 +53,7 @@ class MPMConstraintBase(ConstraintBase):
 
     #: The nodes of a meshfree constraint are those its particles or material points currently interpolate from, so they
     #: change as the particles move (see
-    #: :attr:`~edelweissfe.constraints.base.constraintbase.ConstraintBase.connectivityChangesWithMotion`): a solver that
+    #: :attr:`~edelweissfe.nodecouplingentity.base.nodecouplingentity.BaseNodeCouplingEntity.connectivityChangesWithMotion`): a solver that
     #: never updates the connectivity, e.g. ``NEST``, refuses it.
     connectivityChangesWithMotion = True
 

@@ -385,7 +385,7 @@ class BaseNonlinearSolver:
 
         return MPMDofLocations(
             DofNumbering(nodeFields, scalarVariables, nodeSets),
-            elements=elements,
+            finiteElements=elements,
             constraints=constraints,
             cells=cells,
             cellElements=cellElements,

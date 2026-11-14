@@ -55,7 +55,7 @@ class _Constraint(ConstraintBase):
     name = "constraint"
     scalarVariables = []
     nodes = []
-    fieldsOnNodes = []
+    fields = []
     nDof = 0
 
     def __init__(self):

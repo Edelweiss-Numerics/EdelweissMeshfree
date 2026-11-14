@@ -37,6 +37,7 @@ from edelweissfe.sets.nodeset import NodeSet
 from edelweissmeshfree.models.mpmdiscretesystem import MPMDiscreteSystem
 from edelweissmeshfree.numerics.test._entities import (
     Entity,
+    Particle,
     assertEqualDofLocations,
     makeDofLocations,
     makeNodeField,
@@ -53,7 +54,7 @@ def test_the_system_locates_particles_and_constraints_anew_as_a_fresh_one_has_th
     nodes = makeNodes(6)
     nodeField = makeNodeField(nodes)
     cells = [Entity(nodes[0:3]), Entity(nodes[2:5])]
-    particles = [Entity(nodes[1:4]), Entity(nodes[3:6])]
+    particles = [Particle(nodes[1:4]), Particle(nodes[3:6])]
     constraints = [Entity([nodes[0], nodes[1]])]
 
     model = SimpleNamespace(
@@ -97,7 +98,7 @@ def test_the_system_locates_particles_and_constraints_anew_as_a_fresh_one_has_th
 def test_a_vector_wrapped_on_the_new_locations_keeps_its_values_and_finds_the_moved_particle():
     nodes = makeNodes(6)
     nodeField = makeNodeField(nodes)
-    particles = [Entity(nodes[1:3]), Entity(nodes[3:6])]
+    particles = [Particle(nodes[1:3]), Particle(nodes[3:6])]
 
     model = SimpleNamespace(
         materialPoints={},

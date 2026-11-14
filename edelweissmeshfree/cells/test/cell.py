@@ -51,7 +51,7 @@ class Cell(CellBase):
         self._cellNumber = cellNumber
         self._assignedMaterialPoints = list()
 
-        self.nodes = nodes
+        self._nodes = nodes
         self.coordinates = np.array([n.coordinates for n in nodes])
 
         self.x_min = np.min(self.coordinates[:, 0])
@@ -62,6 +62,10 @@ class Cell(CellBase):
     @property
     def cellNumber(self) -> int:
         return self._cellNumber
+
+    @property
+    def nodes(self) -> list[Node]:
+        return self._nodes
 
     @property
     def nNodes(self) -> int:
