@@ -369,7 +369,9 @@ class MPMModel(FEModel):
         The active domain consists of the cells that hold material points, the nodes these cells and the particles'
         kernel functions reach, and the finite elements and cell elements with their nodes. Its degrees of freedom are
         numbered on the active nodes; the model's node sets are located on their nodes in the active domain. The
-        elements the solver computes are the finite elements, the active cells, the cell elements and the particles.
+        elements the solver computes are the finite elements that carry kernels
+        (:meth:`~edelweissfe.models.femodel.FEModel.elementsWithKernels`), the active cells, the cell elements and the
+        particles.
 
         Returns
         -------
@@ -386,7 +388,7 @@ class MPMModel(FEModel):
         numbering = DofNumbering(activeNodeFields.values(), self.activeScalarVariables(), self.nodeSets.values())
         locations = MPMDofLocations(
             numbering,
-            elements=self.elements.values(),
+            elements=self.elementsWithKernels(),
             constraints=constraints,
             cells=activeCells,
             cellElements=self.cellElements.values(),
