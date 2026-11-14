@@ -112,7 +112,8 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.config.phenomena</span><span class="w"> </span><span class="kn">import</span> <span class="n">getFieldSize</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.journal.journal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Journal</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.numerics.dofmanager</span><span class="w"> </span><span class="kn">import</span> <span class="n">DofManager</span><span class="p">,</span> <span class="n">DofVector</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.numerics.dofnumbering</span><span class="w"> </span><span class="kn">import</span> <span class="n">DofNumbering</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.numerics.dofvector</span><span class="w"> </span><span class="kn">import</span> <span class="n">DofVector</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.stepactions.base.arclengthcontrollerbase</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArcLengthControllerBase</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.timesteppers.timestep</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeStep</span>
 
@@ -173,7 +174,7 @@
 <div class="viewcode-block" id="IndirectControl.computeDDLambda">
 <a class="viewcode-back" href="../../../documentation/step_actions.html#edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.computeDDLambda">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">computeDDLambda</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">dU</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span> <span class="n">ddU_0</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span> <span class="n">ddU_f</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">,</span> <span class="n">dofManager</span><span class="p">:</span> <span class="n">DofManager</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">dU</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span> <span class="n">ddU_0</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span> <span class="n">ddU_f</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">,</span> <span class="n">numbering</span><span class="p">:</span> <span class="n">DofNumbering</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        This method is called by an arc length solver for computing the</span>
@@ -189,8 +190,8 @@
 <span class="sd">            The controllable correction to the solution resulting from the reference load.</span>
 <span class="sd">        timeStep</span>
 <span class="sd">            The current time increment.</span>
-<span class="sd">        dofManager</span>
-<span class="sd">            The DofManager instance.</span>
+<span class="sd">        numbering</span>
+<span class="sd">            The numbering of the degrees of freedom of the current discrete system.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -201,7 +202,7 @@
         <span class="n">mpIndices</span> <span class="o">=</span> <span class="p">[</span>
             <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
                 <span class="p">[</span>
-                    <span class="n">dofManager</span><span class="o">.</span><span class="n">idcsOfFieldVariablesInDofVector</span><span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_field</span><span class="p">]]</span>
+                    <span class="n">numbering</span><span class="o">.</span><span class="n">idcsOfFieldVariablesInDofVector</span><span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_field</span><span class="p">]]</span>
                     <span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="n">mp</span><span class="o">.</span><span class="n">assignedCells</span>
                     <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">cell</span><span class="o">.</span><span class="n">nodes</span>
                 <span class="p">]</span>
@@ -229,7 +230,7 @@
 
 <div class="viewcode-block" id="IndirectControl.finishIncrement">
 <a class="viewcode-back" href="../../../documentation/step_actions.html#edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.finishIncrement">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">finishIncrement</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">U</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span> <span class="n">dU</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span> <span class="n">dLambda</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">,</span> <span class="n">dofManager</span><span class="p">:</span> <span class="n">DofManager</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">finishIncrement</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">U</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span> <span class="n">dU</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span> <span class="n">dLambda</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">,</span> <span class="n">numbering</span><span class="p">:</span> <span class="n">DofNumbering</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""Called by the arc length solver once an increment has converged; see</span>
 <span class="sd">        :meth:`~edelweissfe.stepactions.base.arclengthcontrollerbase.ArcLengthControllerBase.finishIncrement`. This</span>
 <span class="sd">        controller keeps nothing from one increment to the next: its target is the arc length of the whole step.</span>
@@ -244,8 +245,8 @@
 <span class="sd">            The converged increment of the load parameter.</span>
 <span class="sd">        timeStep</span>
 <span class="sd">            The converged time step.</span>
-<span class="sd">        dofManager</span>
-<span class="sd">            The dof manager of the current discrete system.</span>
+<span class="sd">        numbering</span>
+<span class="sd">            The numbering of the degrees of freedom of the current discrete system.</span>
 <span class="sd">        """</span></div>
 
 

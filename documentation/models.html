@@ -159,8 +159,14 @@ for nodes and scalar degrees of freedom, and it manages the fields.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.createNode" title="edelweissmeshfree.models.mpmmodel.MPMModel.createNode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">createNode</span></code></a>(node)</p></td>
 <td><p>Add a freshly created node to the model.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.getActiveSubModel" title="edelweissmeshfree.models.mpmmodel.MPMModel.getActiveSubModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getActiveSubModel</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.elementsWithKernels" title="edelweissmeshfree.models.mpmmodel.MPMModel.elementsWithKernels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">elementsWithKernels</span></code></a>()</p></td>
+<td><p>The elements of the model that take part in a discrete system: those that carry kernels (see <code class="xref py py-attr docutils literal notranslate"><span class="pre">hasKernels</span></code>).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.getActiveSubModel" title="edelweissmeshfree.models.mpmmodel.MPMModel.getActiveSubModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getActiveSubModel</span></code></a>()</p></td>
 <td><p>For many applications only a part of the model is active.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.indicesRelatedByMultiPointConstraints" title="edelweissmeshfree.models.mpmmodel.MPMModel.indicesRelatedByMultiPointConstraints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">indicesRelatedByMultiPointConstraints</span></code></a>(numbering)</p></td>
+<td><p>The indices of the degrees of freedom that the multi-point constraints of the model relate, as slaves and as masters, in the given numbering.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.makePrettyTableSummary" title="edelweissmeshfree.models.mpmmodel.MPMModel.makePrettyTableSummary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">makePrettyTableSummary</span></code></a>()</p></td>
 <td><p>Create a pretty table with a summary of the model properties.</p></td>
@@ -232,7 +238,7 @@ every millisecond of it was serial Python holding 31 of 32 threads idle.</p>
 <span class="sig-name descname"><span class="pre">_activeNodesAreFixed</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmmodel.html#MPMModel._activeNodesAreFixed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel._activeNodesAreFixed" title="Link to this definition"></a></dt>
 <dd><p>Whether a change of the connectivity leaves the nodes of the active domain as they are, so that a discrete
 system can follow it by locating the changed particles and the constraints anew
-(<a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.relocateParticlesAndConstraints" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.relocateParticlesAndConstraints"><code class="xref py py-meth docutils literal notranslate"><span class="pre">relocateParticlesAndConstraints()</span></code></a>)
+(<code class="xref py py-meth docutils literal notranslate"><span class="pre">withNewLocations()</span></code>)
 instead of being rebuilt: without MPM managers, whose cells become active and inactive, and with every particle
 manager bonding its kernel functions to the particles, so that a kernel function always covers its own
 particle.</p>
@@ -568,6 +574,23 @@ elements the solver computes are the finite elements, the active cells, the cell
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.elementsWithKernels">
+<span class="sig-name descname"><span class="pre">elementsWithKernels</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.elementsWithKernels" title="Link to this definition"></a></dt>
+<dd><p>The elements of the model that take part in a discrete system: those that carry kernels (see
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">hasKernels</span></code>). An entity of the element container that
+carries geometry only, e.g. a contact facet, has no block in the system matrix and takes no part; its nodes
+have rows only if an element that carries kernels couples them, see <a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.buildDiscreteSystem" title="edelweissmeshfree.models.mpmmodel.MPMModel.buildDiscreteSystem"><code class="xref py py-meth docutils literal notranslate"><span class="pre">buildDiscreteSystem()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The elements, in the order of the element container.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.getActiveSubModel">
 <span class="sig-name descname"><span class="pre">getActiveSubModel</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmmodel.html#MPMModel.getActiveSubModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.getActiveSubModel" title="Link to this definition"></a></dt>
 <dd><p>For many applications only a part of the model is active.
@@ -580,6 +603,24 @@ This function returns the active sub model, based on the current state of the mo
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel">MPMModel</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.indicesRelatedByMultiPointConstraints">
+<span class="sig-name descname"><span class="pre">indicesRelatedByMultiPointConstraints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">numbering</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.indicesRelatedByMultiPointConstraints" title="Link to this definition"></a></dt>
+<dd><p>The indices of the degrees of freedom that the multi-point constraints of the model relate, as slaves and as
+masters, in the given numbering.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>numbering</strong> (<em>DofNumbering</em>) – The numbering of the degrees of freedom.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The indices, in no particular order, with repetitions.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
 </dd>
 </dl>
 </dd></dl>
@@ -928,7 +969,7 @@ cells are computed. See EdelweissFE’s documentation, “What the solver asks t
 their discrete system, see <a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.buildDiscreteSystem" title="edelweissmeshfree.models.mpmmodel.MPMModel.buildDiscreteSystem"><code class="xref py py-meth docutils literal notranslate"><span class="pre">buildDiscreteSystem()</span></code></a>.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.models.mpmdiscretesystem.</span></span><span class="sig-name descname"><span class="pre">MPMDiscreteSystem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dofManager</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elements</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activeCells</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodesWithPersistentFieldValues</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodesWithVolatileFieldValues</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">modelForLinearSolver</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmdiscretesystem.html#MPMDiscreteSystem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.models.mpmdiscretesystem.</span></span><span class="sig-name descname"><span class="pre">MPMDiscreteSystem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">locations</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodesWithPersistentFieldValues</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodesWithVolatileFieldValues</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">modelForLinearSolver</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmdiscretesystem.html#MPMDiscreteSystem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem" title="Link to this definition"></a></dt>
 <dd><p>The discrete system of a meshfree model, on its active domain: the background cells that hold
 material points, the nodes these cells and the particles’ kernel functions reach, and the finite elements with
 their nodes.</p>
@@ -945,10 +986,9 @@ zero on all other nodes (see <a class="reference internal" href="#edelweissmeshf
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>model</strong> – The model.</p></li>
-<li><p><strong>dofManager</strong> (<em>DofManager</em>) – The numbering of the degrees of freedom of the active domain.</p></li>
-<li><p><strong>elements</strong> (<em>list</em>) – The finite elements, the active cells, the cell elements and the particles, in the order in which the solver
-computes them.</p></li>
-<li><p><strong>activeCells</strong> (<em>list</em>) – The cells that hold material points, sorted by their number.</p></li>
+<li><p><strong>locations</strong> (<a class="reference internal" href="numeric_tools.html#edelweissmeshfree.numerics.doflocations.MPMDofLocations" title="edelweissmeshfree.numerics.doflocations.MPMDofLocations"><em>MPMDofLocations</em></a>) – The locations of the entities in the numbering of the degrees of freedom of the active domain; the finite
+elements, the active cells (those that hold material points, sorted by their number), the cell elements and the
+particles, in the order in which the solver computes them, are the elements of the discrete system.</p></li>
 <li><p><strong>nodesWithPersistentFieldValues</strong> (<em>NodeSet</em>) – The nodes that carry their total solution from increment to increment: those of the finite elements and of
 the cell elements.</p></li>
 <li><p><strong>nodesWithVolatileFieldValues</strong> (<em>NodeSet</em>) – The nodes of the active cells and of the particles’ kernel functions.</p></li>
@@ -957,7 +997,19 @@ the cell elements.</p></li>
 </dd>
 <dt class="field-even">Attributes<span class="colon">:</span></dt>
 <dd class="field-even"><dl class="simple">
-<dt><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.constraints" title="edelweissmeshfree.models.mpmmodel.MPMModel.constraints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">constraints</span></code></a></dt><dd><p>The constraints that take part in the discrete system: the ones the DOF manager located, with their scalar variables, when the discrete system was built or last located its constraints anew (see <code class="xref py py-meth docutils literal notranslate"><span class="pre">refreshConstraintIndices()</span></code>).</p>
+<dt><a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.activeCells" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.activeCells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">activeCells</span></code></a></dt><dd><p>The cells that hold material points, sorted by their number, i.e.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.cellsInterpolatingToMaterialPoints" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.cellsInterpolatingToMaterialPoints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cellsInterpolatingToMaterialPoints</span></code></a></dt><dd><p>The active cells and the cell elements, which interpolate the solution to the material points they hold.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.constraints" title="edelweissmeshfree.models.mpmmodel.MPMModel.constraints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">constraints</span></code></a></dt><dd><p>The constraints that take part in the discrete system, i.e.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.elements" title="edelweissmeshfree.models.mpmmodel.MPMModel.elements"><code class="xref py py-obj docutils literal notranslate"><span class="pre">elements</span></code></a></dt><dd><p>Everything the solver computes like an element in every evaluation of the model, see <code class="xref py py-meth docutils literal notranslate"><span class="pre">computeElements()</span></code>: the finite elements of the model that carry kernels (<code class="xref py py-attr docutils literal notranslate"><span class="pre">hasKernels</span></code>), and in a meshfree model its cells and particles as well.</p>
+</dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">elementsWithNodalInertia</span></code></dt><dd><p>The entities whose inertia, damping and stable time increment a solver assembles element by element, at the nodes (<code class="docutils literal notranslate"><span class="pre">NID</span></code>, <code class="docutils literal notranslate"><span class="pre">NED</span></code>).</p>
+</dd>
+<dt><a class="reference internal" href="numeric_tools.html#edelweissmeshfree.numerics.doflocations.MPMDofLocations.numbering" title="edelweissmeshfree.numerics.doflocations.MPMDofLocations.numbering"><code class="xref py py-obj docutils literal notranslate"><span class="pre">numbering</span></code></a></dt><dd><p>The numbering of the degrees of freedom of the discrete system, which says which node fields and scalar variables have degrees of freedom, and the global index of each; see <code class="xref py py-class docutils literal notranslate"><span class="pre">DofNumbering</span></code>.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.particles" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.particles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">particles</span></code></a></dt><dd><p>The particles of the model, a list the solver hands out in chunks, i.e.</p>
 </dd>
 </dl>
 </dd>
@@ -980,11 +1032,11 @@ the cell elements.</p></li>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">readStateFromModel</span></code>(U[, V, A, dynamicFields])</p></td>
 <td><p>Read the state the model carries from increment to increment into the vectors of a (re)built discrete system, from which the next increment starts (see the documentation page <em>Node field results</em>): the solution <code class="docutils literal notranslate"><span class="pre">U</span></code>, and, for a solver that integrates in time, the velocity <code class="docutils literal notranslate"><span class="pre">V</span></code> and the acceleration <code class="docutils literal notranslate"><span class="pre">A</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.relocateParticlesAndConstraints" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.relocateParticlesAndConstraints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">relocateParticlesAndConstraints</span></code></a>()</p></td>
-<td><p>Follow a change of the connectivity that leaves the active nodes as they are (the model reports <code class="xref py py-attr docutils literal notranslate"><span class="pre">LOCATIONS</span></code>, see <a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity" title="edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity"><code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code></a>): the numbering of the nodes stands, so only the particles whose kernel functions changed, and the active constraints, are located anew in the DOF vector.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.updateMaterialPoints" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.updateMaterialPoints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateMaterialPoints</span></code></a>(dU, timeStep, forEachChunk)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.updateMaterialPoints" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.updateMaterialPoints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateMaterialPoints</span></code></a>(dU, timeStep, forEachChunk)</p></td>
 <td><p>Update the material points with the trial solution increment, before the solver computes the cells, which integrate them: the material points return to their converged state, every active cell (and cell element) interpolates the solution increment to the material points it holds, and the material points evaluate their material.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">withNewLocations</span></code>()</p></td>
+<td><p>The discrete system after a change of the connectivity that leaves the numbering as it is, e.g. the contact search of a constraint: the same numbering, and the locations of the constraints that are active now (see <code class="xref py py-meth docutils literal notranslate"><span class="pre">activeConstraints()</span></code>).</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.writeEntryOfNodeField" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.writeEntryOfNodeField"><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeEntryOfNodeField</span></code></a>(dofVector, nodeField, ...)</p></td>
 <td><p>Write a vector of the discrete system to one entry of one node field of the model, by node: on the nodes of the active domain, and zero on all other nodes of the model.</p></td>
@@ -1092,16 +1144,6 @@ rest.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.relocateParticlesAndConstraints">
-<span class="sig-name descname"><span class="pre">relocateParticlesAndConstraints</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmdiscretesystem.html#MPMDiscreteSystem.relocateParticlesAndConstraints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.relocateParticlesAndConstraints" title="Link to this definition"></a></dt>
-<dd><p>Follow a change of the connectivity that leaves the active nodes as they are (the model reports
-<code class="xref py py-attr docutils literal notranslate"><span class="pre">LOCATIONS</span></code>, see
-<a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity" title="edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity"><code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code></a>): the numbering of the nodes stands, so
-only the particles whose kernel functions changed, and the active constraints, are located anew in the DOF
-vector. That is what rebuilding would give, at a fraction of its cost.</p>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.updateMaterialPoints">
 <span class="sig-name descname"><span class="pre">updateMaterialPoints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forEachChunk</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmdiscretesystem.html#MPMDiscreteSystem.updateMaterialPoints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.updateMaterialPoints" title="Link to this definition"></a></dt>
 <dd><p>Update the material points with the trial solution increment, before the solver computes the cells, which
@@ -1150,10 +1192,10 @@ starts them at zero.</p>
 </dl>
 </dd></dl>
 
-<dl class="py attribute">
+<dl class="py property">
 <dt class="sig sig-object py" id="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.activeCells">
-<span class="sig-name descname"><span class="pre">activeCells</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.activeCells" title="Link to this definition"></a></dt>
-<dd><p>The cells that hold material points, sorted by their number.</p>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">activeCells</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.activeCells" title="Link to this definition"></a></dt>
+<dd><p>The cells that hold material points, sorted by their number, i.e. the cells of the locations.</p>
 </dd></dl>
 
 <dl class="py attribute">
@@ -1162,9 +1204,9 @@ starts them at zero.</p>
 <dd><p>The nodes of the active domain, on which the discrete system writes the model’s node fields.</p>
 </dd></dl>
 
-<dl class="py attribute">
+<dl class="py property">
 <dt class="sig sig-object py" id="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.cellsInterpolatingToMaterialPoints">
-<span class="sig-name descname"><span class="pre">cellsInterpolatingToMaterialPoints</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.cellsInterpolatingToMaterialPoints" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">cellsInterpolatingToMaterialPoints</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.cellsInterpolatingToMaterialPoints" title="Link to this definition"></a></dt>
 <dd><p>The active cells and the cell elements, which interpolate the solution to the material points they hold.</p>
 </dd></dl>
 
@@ -1192,10 +1234,10 @@ the grid and of the kernel functions that no finite element or cell element shar
 <dd><p>The nodes that carry their total solution from increment to increment.</p>
 </dd></dl>
 
-<dl class="py attribute">
+<dl class="py property">
 <dt class="sig sig-object py" id="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.particles">
-<span class="sig-name descname"><span class="pre">particles</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.particles" title="Link to this definition"></a></dt>
-<dd><p>The particles of the model, a list the solver hands out in chunks.</p>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">particles</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.particles" title="Link to this definition"></a></dt>
+<dd><p>The particles of the model, a list the solver hands out in chunks, i.e. the particles of the locations.</p>
 </dd></dl>
 
 </dd></dl>

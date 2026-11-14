@@ -182,7 +182,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">edelweissfe.utils.performancetiming</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">performancetiming</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.models.change</span><span class="w"> </span><span class="kn">import</span> <span class="n">Change</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.numerics.dofmanager</span><span class="w"> </span><span class="kn">import</span> <span class="n">DofVector</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.numerics.dofvector</span><span class="w"> </span><span class="kn">import</span> <span class="n">DofVector</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.numerics.parallelizationutilities</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">getNumberOfWorkerThreads</span><span class="p">,</span>
     <span class="n">mapChunksInParallel</span><span class="p">,</span>
@@ -259,7 +259,7 @@
         <span class="c1">#: The last increment of motion; None before the first one of a step.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">prevTimeStep</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="c1">#: The discrete system on the current kernel functions; None until the first increment.</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_system</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">system</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="c1">#: The velocity, staggered half an increment behind the displacement.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_V</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="c1">#: The net force, external minus internal, at the configuration last accepted; None before the first</span>
@@ -351,7 +351,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">applyStepActionsAtStepStart</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">prevTimeStep</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_system</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">system</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_V</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_netForce</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_Minv</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_particles</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">particles</span><span class="o">.</span><span class="n">values</span><span class="p">())</span></div>
 
@@ -373,7 +373,7 @@
 <span class="sd">            Never True: an explicit increment is not retried.</span>
 <span class="sd">        """</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_system</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">system</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span>
 
         <span class="n">model</span><span class="o">.</span><span class="n">updateConnectivity</span><span class="p">()</span>
@@ -381,11 +381,11 @@
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_netForce</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># resumed: the checkpoint holds the vectors of the discrete system just rebuilt from the same state</span>
-            <span class="n">dofManager</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_system</span><span class="o">.</span><span class="n">dofManager</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_netForce</span><span class="p">)</span> <span class="o">!=</span> <span class="n">dofManager</span><span class="o">.</span><span class="n">nDof</span><span class="p">:</span>
+            <span class="n">numbering</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">numbering</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_netForce</span><span class="p">)</span> <span class="o">!=</span> <span class="n">numbering</span><span class="o">.</span><span class="n">nDof</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                     <span class="s2">"The checkpoint holds a net force of </span><span class="si">{:}</span><span class="s2"> entries, but the discrete system rebuilt from the "</span>
-                    <span class="s2">"resumed model has </span><span class="si">{:}</span><span class="s2">."</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_netForce</span><span class="p">),</span> <span class="n">dofManager</span><span class="o">.</span><span class="n">nDof</span><span class="p">)</span>
+                    <span class="s2">"resumed model has </span><span class="si">{:}</span><span class="s2">."</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_netForce</span><span class="p">),</span> <span class="n">numbering</span><span class="o">.</span><span class="n">nDof</span><span class="p">)</span>
                 <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_netForce</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_asDofVector</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_netForce</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_Minv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_asDofVector</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_Minv</span><span class="p">)</span></div>
@@ -483,8 +483,8 @@
             <span class="n">model</span><span class="o">.</span><span class="n">advanceToTime</span><span class="p">(</span><span class="n">timeStep</span><span class="o">.</span><span class="n">totalTime</span><span class="p">)</span>
 
         <span class="k">with</span> <span class="n">performancetiming</span><span class="o">.</span><span class="n">timeit</span><span class="p">(</span><span class="s2">"write results to nodes"</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_system</span><span class="o">.</span><span class="n">writeResultsToModel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_noSolution</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dU</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_system</span><span class="o">.</span><span class="n">writeVelocityAndAccelerationToModel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_V</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">writeResultsToModel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_noSolution</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dU</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">writeVelocityAndAccelerationToModel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_V</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_reconnect</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
 
@@ -493,7 +493,7 @@
             <span class="n">model</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">timeStep</span>
         <span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">firstEvaluationOfStep</span> <span class="ow">and</span> <span class="s2">"nodes"</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_system</span><span class="o">.</span><span class="n">carriersOfTheMotion</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">firstEvaluationOfStep</span> <span class="ow">and</span> <span class="s2">"nodes"</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">carriersOfTheMotion</span><span class="p">():</span>
             <span class="c1"># The model holds the motion at its nodes: the step continues it, as NED does, from the velocity of the</span>
             <span class="c1"># nodes and from the net force of their acceleration, which the step before ended with. The force just</span>
             <span class="c1"># evaluated is not that force: the particles have taken a zero-length increment, and the stabilization of</span>
@@ -509,8 +509,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_V</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_Minv</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
 
         <span class="k">with</span> <span class="n">performancetiming</span><span class="o">.</span><span class="n">timeit</span><span class="p">(</span><span class="s2">"write results to nodes"</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_system</span><span class="o">.</span><span class="n">writeResultsToModel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_noSolution</span><span class="p">(),</span> <span class="kc">None</span><span class="p">,</span> <span class="n">internalAndInertialForce</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_system</span><span class="o">.</span><span class="n">writeVelocityAndAccelerationToModel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_V</span><span class="p">,</span> <span class="n">acceleration</span><span class="p">)</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">writeResultsToModel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_noSolution</span><span class="p">(),</span> <span class="kc">None</span><span class="p">,</span> <span class="n">internalAndInertialForce</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">writeVelocityAndAccelerationToModel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_V</span><span class="p">,</span> <span class="n">acceleration</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="MeshfreeExplicitDynamic.endStep">
@@ -563,15 +563,15 @@
             <span class="k">return</span>
 
         <span class="k">if</span> <span class="n">change</span> <span class="o">==</span> <span class="n">Change</span><span class="o">.</span><span class="n">LOCATIONS</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_system</span><span class="o">.</span><span class="n">relocateParticlesAndConstraints</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_dU</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_system</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_V</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_asDofVector</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_V</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">system</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">withNewLocations</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_dU</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">locations</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_V</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_V</span><span class="o">.</span><span class="n">onLocations</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">locations</span><span class="p">)</span>
             <span class="k">return</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_adoptSystem</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">buildDiscreteSystem</span><span class="p">())</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_adoptSystem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">system</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Work on a (re)built discrete system: vectors sized and located by its DOF manager, and the velocity of its</span>
+<span class="w">        </span><span class="sd">"""Work on a (re)built discrete system: vectors sized and located by its locations, and the velocity of its</span>
 <span class="sd">        nodes read from the model, by node.</span>
 
 <span class="sd">        Parameters</span>
@@ -580,10 +580,9 @@
 <span class="sd">            The discrete system.</span>
 <span class="sd">        """</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_system</span> <span class="o">=</span> <span class="n">system</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">theDofManager</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">dofManager</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_dU</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_V</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">system</span> <span class="o">=</span> <span class="n">system</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dU</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">locations</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_V</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">locations</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_V</span><span class="p">[:]</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="n">system</span><span class="o">.</span><span class="n">readStateFromModel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_noSolution</span><span class="p">(),</span> <span class="n">V</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_V</span><span class="p">)</span>
 
@@ -597,9 +596,9 @@
 <span class="sd">            The acceleration.</span>
 <span class="sd">        """</span>
 
-        <span class="n">acceleration</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_system</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+        <span class="n">acceleration</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">locations</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
         <span class="n">acceleration</span><span class="p">[:]</span> <span class="o">=</span> <span class="mf">0.0</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_system</span><span class="o">.</span><span class="n">readStateFromModel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_noSolution</span><span class="p">(),</span> <span class="n">A</span><span class="o">=</span><span class="n">acceleration</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">readStateFromModel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_noSolution</span><span class="p">(),</span> <span class="n">A</span><span class="o">=</span><span class="n">acceleration</span><span class="p">)</span>
         <span class="n">acceleration</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_Minv</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="k">return</span> <span class="n">acceleration</span>
 
@@ -613,7 +612,7 @@
 <span class="sd">            The zero vector.</span>
 <span class="sd">        """</span>
 
-        <span class="n">noSolution</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_system</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+        <span class="n">noSolution</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">locations</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
         <span class="n">noSolution</span><span class="p">[:]</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="k">return</span> <span class="n">noSolution</span>
 
@@ -631,7 +630,7 @@
 <span class="sd">            The vector.</span>
 <span class="sd">        """</span>
 
-        <span class="n">vector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_system</span><span class="o">.</span><span class="n">dofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+        <span class="n">vector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">locations</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
         <span class="n">vector</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">values</span>
         <span class="k">return</span> <span class="n">vector</span>
 
@@ -663,9 +662,9 @@
 <span class="sd">            ``P`` the model receives.</span>
 <span class="sd">        """</span>
 
-        <span class="n">dofManager</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_system</span><span class="o">.</span><span class="n">dofManager</span>
-        <span class="n">R</span> <span class="o">=</span> <span class="n">dofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
-        <span class="n">momentum</span> <span class="o">=</span> <span class="n">dofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+        <span class="n">locations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">locations</span>
+        <span class="n">R</span> <span class="o">=</span> <span class="n">locations</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+        <span class="n">momentum</span> <span class="o">=</span> <span class="n">locations</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
         <span class="n">R</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">momentum</span><span class="p">[:]</span> <span class="o">=</span> <span class="mf">0.0</span>
 
         <span class="n">scatterR</span> <span class="o">=</span> <span class="n">R</span><span class="o">.</span><span class="n">createScatterVector</span><span class="p">()</span>
@@ -682,30 +681,30 @@
         <span class="n">scatterMomentum</span><span class="o">.</span><span class="n">assembleInto</span><span class="p">(</span><span class="n">momentum</span><span class="p">)</span>
 
         <span class="c1"># the one assembly of the particles' lumped mass, which the implicit dynamic solver uses as well</span>
-        <span class="n">M</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_system</span><span class="o">.</span><span class="n">assembleLumpedMassOfEntitiesWithOwnInertia</span><span class="p">(</span><span class="n">mapChunksInParallel</span><span class="p">)</span>
+        <span class="n">M</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">assembleLumpedMassOfEntitiesWithOwnInertia</span><span class="p">(</span><span class="n">mapChunksInParallel</span><span class="p">)</span>
 
-        <span class="n">internalForce</span> <span class="o">=</span> <span class="n">dofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+        <span class="n">internalForce</span> <span class="o">=</span> <span class="n">locations</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
         <span class="n">internalForce</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">R</span>
 
         <span class="c1"># The configuration is accepted: no increment is left, and the nodes of the kernel functions carry no total</span>
         <span class="c1"># solution. Loads and constraints evaluate at the particles' positions.</span>
         <span class="n">noSolution</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_noSolution</span><span class="p">()</span>
         <span class="n">R</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembleLoads</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">collectLoads</span><span class="p">(</span><span class="n">step</span><span class="o">.</span><span class="n">actions</span><span class="p">),</span> <span class="n">noSolution</span><span class="p">,</span> <span class="n">noSolution</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">)</span>
-        <span class="n">R</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembleConstraintForces</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_system</span><span class="o">.</span><span class="n">constraints</span><span class="p">,</span> <span class="n">noSolution</span><span class="p">,</span> <span class="n">noSolution</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">)</span>
+        <span class="n">R</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembleConstraintForces</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">constraints</span><span class="p">,</span> <span class="n">noSolution</span><span class="p">,</span> <span class="n">noSolution</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">)</span>
 
-        <span class="n">P</span> <span class="o">=</span> <span class="n">dofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+        <span class="n">P</span> <span class="o">=</span> <span class="n">locations</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
         <span class="n">np</span><span class="o">.</span><span class="n">negative</span><span class="p">(</span><span class="n">R</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">P</span><span class="p">)</span>
 
         <span class="c1"># A node whose kernel function the particles reach only where it vanishes has no positive mass (exactly zero,</span>
         <span class="c1"># or zero up to round-off): it carries no inertia, hence no equation of motion, and gets no velocity (see</span>
         <span class="c1"># acceptIncrement).</span>
-        <span class="n">Minv</span> <span class="o">=</span> <span class="n">dofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+        <span class="n">Minv</span> <span class="o">=</span> <span class="n">locations</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
         <span class="n">Minv</span><span class="p">[:]</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="n">hasInertia</span> <span class="o">=</span> <span class="n">M</span> <span class="o">&gt;</span> <span class="mf">0.0</span>
         <span class="n">Minv</span><span class="p">[</span><span class="n">hasInertia</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">M</span><span class="p">[</span><span class="n">hasInertia</span><span class="p">]</span>
 
         <span class="n">acceleration</span> <span class="o">=</span> <span class="n">Minv</span> <span class="o">*</span> <span class="n">P</span>
-        <span class="n">internalAndInertialForce</span> <span class="o">=</span> <span class="n">dofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+        <span class="n">internalAndInertialForce</span> <span class="o">=</span> <span class="n">locations</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
         <span class="n">internalAndInertialForce</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">internalForce</span> <span class="o">+</span> <span class="n">M</span> <span class="o">*</span> <span class="n">acceleration</span>
 
         <span class="k">return</span> <span class="n">P</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">Minv</span><span class="p">,</span> <span class="n">acceleration</span><span class="p">,</span> <span class="n">momentum</span><span class="p">,</span> <span class="n">internalAndInertialForce</span></div>

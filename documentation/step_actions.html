@@ -129,7 +129,7 @@
 such as the enforcement of boundary conditions, the application of external forces.</p>
 <p>A load is an EdelweissFE load (<code class="xref py py-class docutils literal notranslate"><span class="pre">LoadBase</span></code>): it assembles its own
 residual contribution, the <em>negative</em> of the external load it applies, and the tangent of that contribution in
-<code class="docutils literal notranslate"><span class="pre">assembleLoad(P,</span> <span class="pre">K,</span> <span class="pre">U_np,</span> <span class="pre">dU,</span> <span class="pre">timeStep,</span> <span class="pre">dofManager)</span></code>, wherever it acts – on the cells of the background grid, on
+<code class="docutils literal notranslate"><span class="pre">assembleLoad(P,</span> <span class="pre">K,</span> <span class="pre">U_np,</span> <span class="pre">dU,</span> <span class="pre">timeStep,</span> <span class="pre">locations)</span></code>, wherever it acts – on the cells of the background grid, on
 the cells of the material points that carry it, or on the faces of particles. A solver therefore only loops over the
 loads. The loads here derive from one of three bases, which implement <code class="docutils literal notranslate"><span class="pre">assembleLoad</span></code> once for all loads of their
 kind: <a class="reference internal" href="#edelweissmeshfree.stepactions.base.mpmbodyloadbase.MPMBodyLoadBase" title="edelweissmeshfree.stepactions.base.mpmbodyloadbase.MPMBodyLoadBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">MPMBodyLoadBase</span></code></a>,
@@ -184,7 +184,7 @@ body load, you should derive from this class.</p>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtStepStart</span></code>(model)</p></td>
 <td><p>Is called when a step starts.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.stepactions.base.mpmbodyloadbase.MPMBodyLoadBase.assembleLoad" title="edelweissmeshfree.stepactions.base.mpmbodyloadbase.MPMBodyLoadBase.assembleLoad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">assembleLoad</span></code></a>(P, K, U_np, dU, timeStep, ...)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.stepactions.base.mpmbodyloadbase.MPMBodyLoadBase.assembleLoad" title="edelweissmeshfree.stepactions.base.mpmbodyloadbase.MPMBodyLoadBase.assembleLoad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">assembleLoad</span></code></a>(P, K, U_np, dU, timeStep, locations)</p></td>
 <td><p>Let every active cell of the cell set add the residual contribution of the body load, the negative of the external load, and its tangent; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleLoad()</span></code>.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fromStepActionDefinition</span></code>(name, definition, ...)</p></td>
@@ -209,10 +209,10 @@ body load, you should derive from this class.</p>
 </table>
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.stepactions.base.mpmbodyloadbase.MPMBodyLoadBase.assembleLoad">
-<span class="sig-name descname"><span class="pre">assembleLoad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">P</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">K</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">U_np</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dofManager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/base/mpmbodyloadbase.html#MPMBodyLoadBase.assembleLoad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.base.mpmbodyloadbase.MPMBodyLoadBase.assembleLoad" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">assembleLoad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">P</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">K</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">U_np</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">locations</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/base/mpmbodyloadbase.html#MPMBodyLoadBase.assembleLoad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.base.mpmbodyloadbase.MPMBodyLoadBase.assembleLoad" title="Link to this definition"></a></dt>
 <dd><p>Let every active cell of the cell set add the residual contribution of the body load, the negative of the
 external load, and its tangent; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleLoad()</span></code>.</p>
-<p>The active cells are those of the discrete system, i.e. those the DOF manager numbers; a body load acts only
+<p>The active cells are those of the discrete system, i.e. those the locations hold; a body load acts only
 on them.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -223,7 +223,7 @@ solver, which needs no tangent.</p></li>
 <li><p><strong>U_np</strong> (<em>DofVector</em>) – The current global solution.</p></li>
 <li><p><strong>dU</strong> (<em>DofVector</em>) – The global solution increment.</p></li>
 <li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The current time step.</p></li>
-<li><p><strong>dofManager</strong> (<em>DofManager</em>) – The DOF manager of the discrete system.</p></li>
+<li><p><strong>locations</strong> (<em>DofLocations</em>) – The locations of the entities in the discrete system, from which the load finds where it acts.</p></li>
 </ul>
 </dd>
 </dl>
@@ -325,7 +325,7 @@ solver, which needs no tangent.</p></li>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtStepStart</span></code>(model)</p></td>
 <td><p>Is called when a step starts.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">assembleLoad</span></code>(P, K, U_np, dU, timeStep, ...)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">assembleLoad</span></code>(P, K, U_np, dU, timeStep, locations)</p></td>
 <td><p>Let every active cell of the cell set add the residual contribution of the body load, the negative of the external load, and its tangent; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleLoad()</span></code>.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fromStepActionDefinition</span></code>(name, definition, ...)</p></td>
@@ -465,7 +465,7 @@ assembles its own residual contribution, the negative of the external load, in <
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtStepStart</span></code>(model)</p></td>
 <td><p>Is called when a step starts.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.stepactions.base.mpmdistributedloadbase.MPMDistributedLoadBase.assembleLoad" title="edelweissmeshfree.stepactions.base.mpmdistributedloadbase.MPMDistributedLoadBase.assembleLoad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">assembleLoad</span></code></a>(P, K, U_np, dU, timeStep, ...)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.stepactions.base.mpmdistributedloadbase.MPMDistributedLoadBase.assembleLoad" title="edelweissmeshfree.stepactions.base.mpmdistributedloadbase.MPMDistributedLoadBase.assembleLoad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">assembleLoad</span></code></a>(P, K, U_np, dU, timeStep, locations)</p></td>
 <td><p>Let the cells of every loaded material point add the residual contribution of the load the material point carries, the negative of the external load, and its tangent; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleLoad()</span></code>.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fromStepActionDefinition</span></code>(name, definition, ...)</p></td>
@@ -490,7 +490,7 @@ assembles its own residual contribution, the negative of the external load, in <
 </table>
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.stepactions.base.mpmdistributedloadbase.MPMDistributedLoadBase.assembleLoad">
-<span class="sig-name descname"><span class="pre">assembleLoad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">P</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">K</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">U_np</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dofManager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/base/mpmdistributedloadbase.html#MPMDistributedLoadBase.assembleLoad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.base.mpmdistributedloadbase.MPMDistributedLoadBase.assembleLoad" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">assembleLoad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">P</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">K</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">U_np</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">locations</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/base/mpmdistributedloadbase.html#MPMDistributedLoadBase.assembleLoad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.base.mpmdistributedloadbase.MPMDistributedLoadBase.assembleLoad" title="Link to this definition"></a></dt>
 <dd><p>Let the cells of every loaded material point add the residual contribution of the load the material point
 carries, the negative of the external load, and its tangent; see
 <code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleLoad()</span></code>.</p>
@@ -503,7 +503,7 @@ solver, which needs no tangent.</p></li>
 <li><p><strong>U_np</strong> (<em>DofVector</em>) – The current global solution.</p></li>
 <li><p><strong>dU</strong> (<em>DofVector</em>) – The global solution increment.</p></li>
 <li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The current time step.</p></li>
-<li><p><strong>dofManager</strong> (<em>DofManager</em>) – The DOF manager of the discrete system.</p></li>
+<li><p><strong>locations</strong> (<em>DofLocations</em>) – The locations of the entities in the discrete system, from which the load finds where it acts.</p></li>
 </ul>
 </dd>
 </dl>
@@ -611,7 +611,7 @@ Accordingly, the load vector already includes the surface vector defintion.</p>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtStepStart</span></code>(model)</p></td>
 <td><p>Is called when a step starts.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">assembleLoad</span></code>(P, K, U_np, dU, timeStep, ...)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">assembleLoad</span></code>(P, K, U_np, dU, timeStep, locations)</p></td>
 <td><p>Let the cells of every loaded material point add the residual contribution of the load the material point carries, the negative of the external load, and its tangent; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleLoad()</span></code>.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fromStepActionDefinition</span></code>(name, definition, ...)</p></td>
@@ -759,7 +759,7 @@ of load it is (<a class="reference internal" href="#edelweissmeshfree.stepaction
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtStepStart</span></code>(model)</p></td>
 <td><p>Is called when a step starts.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.stepactions.base.particledistributedloadbase.ParticleDistributedLoadBase.assembleLoad" title="edelweissmeshfree.stepactions.base.particledistributedloadbase.ParticleDistributedLoadBase.assembleLoad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">assembleLoad</span></code></a>(P, K, U_np, dU, timeStep, ...)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.stepactions.base.particledistributedloadbase.ParticleDistributedLoadBase.assembleLoad" title="edelweissmeshfree.stepactions.base.particledistributedloadbase.ParticleDistributedLoadBase.assembleLoad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">assembleLoad</span></code></a>(P, K, U_np, dU, timeStep, locations)</p></td>
 <td><p>Let every loaded particle add the residual contribution of the load on its face, the negative of the external load, and its tangent; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleLoad()</span></code>.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fromStepActionDefinition</span></code>(name, definition, ...)</p></td>
@@ -784,7 +784,7 @@ of load it is (<a class="reference internal" href="#edelweissmeshfree.stepaction
 </table>
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.stepactions.base.particledistributedloadbase.ParticleDistributedLoadBase.assembleLoad">
-<span class="sig-name descname"><span class="pre">assembleLoad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">P</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">K</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">U_np</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dofManager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/base/particledistributedloadbase.html#ParticleDistributedLoadBase.assembleLoad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.base.particledistributedloadbase.ParticleDistributedLoadBase.assembleLoad" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">assembleLoad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">P</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">K</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">U_np</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">locations</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/base/particledistributedloadbase.html#ParticleDistributedLoadBase.assembleLoad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.base.particledistributedloadbase.ParticleDistributedLoadBase.assembleLoad" title="Link to this definition"></a></dt>
 <dd><p>Let every loaded particle add the residual contribution of the load on its face, the negative of the
 external load, and its tangent; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleLoad()</span></code>.</p>
 <dl class="field-list simple">
@@ -796,7 +796,7 @@ explicit solver, which needs no tangent.</p></li>
 <li><p><strong>U_np</strong> (<em>DofVector</em>) – The current global solution.</p></li>
 <li><p><strong>dU</strong> (<em>DofVector</em>) – The global solution increment.</p></li>
 <li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The current time step.</p></li>
-<li><p><strong>dofManager</strong> (<em>DofManager</em>) – The DOF manager of the discrete system.</p></li>
+<li><p><strong>locations</strong> (<em>DofLocations</em>) – The locations of the entities in the discrete system, from which the load finds where it acts.</p></li>
 </ul>
 </dd>
 </dl>
@@ -885,7 +885,7 @@ outward normal) when positive, as for the finite elements.</p></li>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtStepStart</span></code>(model)</p></td>
 <td><p>Is called when a step starts.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">assembleLoad</span></code>(P, K, U_np, dU, timeStep, ...)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">assembleLoad</span></code>(P, K, U_np, dU, timeStep, locations)</p></td>
 <td><p>Let every loaded particle add the residual contribution of the load on its face, the negative of the external load, and its tangent; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleLoad()</span></code>.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fromStepActionDefinition</span></code>(name, definition, ...)</p></td>
@@ -1039,7 +1039,7 @@ nearly incompressible regime is O(10) * K / h.</p></li>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtStepStart</span></code>(model)</p></td>
 <td><p>Is called when a step starts.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">assembleLoad</span></code>(P, K, U_np, dU, timeStep, ...)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">assembleLoad</span></code>(P, K, U_np, dU, timeStep, locations)</p></td>
 <td><p>Let every loaded particle add the residual contribution of the load on its face, the negative of the external load, and its tangent; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleLoad()</span></code>.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fromStepActionDefinition</span></code>(name, definition, ...)</p></td>
@@ -1204,7 +1204,7 @@ length solver <code class="docutils literal notranslate"><span class="pre">NISTP
 
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.computeDDLambda">
-<span class="sig-name descname"><span class="pre">computeDDLambda</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ddU_0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ddU_f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dofManager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/indirectcontrol.html#IndirectControl.computeDDLambda"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.computeDDLambda" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">computeDDLambda</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ddU_0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ddU_f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numbering</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/indirectcontrol.html#IndirectControl.computeDDLambda"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.computeDDLambda" title="Link to this definition"></a></dt>
 <dd><p>This method is called by an arc length solver for computing the
 correction to the arc length parameter.</p>
 <dl class="field-list simple">
@@ -1214,7 +1214,7 @@ correction to the arc length parameter.</p>
 <li><p><strong>ddU_0</strong> (<em>DofVector</em>) – The dead (unconditional) correction to the solution.</p></li>
 <li><p><strong>ddU_f</strong> (<em>DofVector</em>) – The controllable correction to the solution resulting from the reference load.</p></li>
 <li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The current time increment.</p></li>
-<li><p><strong>dofManager</strong> (<em>DofManager</em>) – The DofManager instance.</p></li>
+<li><p><strong>numbering</strong> (<em>DofNumbering</em>) – The numbering of the degrees of freedom of the current discrete system.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1228,7 +1228,7 @@ correction to the arc length parameter.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.finishIncrement">
-<span class="sig-name descname"><span class="pre">finishIncrement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">U</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dLambda</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dofManager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/indirectcontrol.html#IndirectControl.finishIncrement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.finishIncrement" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">finishIncrement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">U</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dLambda</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numbering</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/indirectcontrol.html#IndirectControl.finishIncrement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.finishIncrement" title="Link to this definition"></a></dt>
 <dd><p>Called by the arc length solver once an increment has converged; see
 <code class="xref py py-meth docutils literal notranslate"><span class="pre">finishIncrement()</span></code>. This
 controller keeps nothing from one increment to the next: its target is the arc length of the whole step.</p>
@@ -1239,7 +1239,7 @@ controller keeps nothing from one increment to the next: its target is the arc l
 <li><p><strong>dU</strong> (<em>DofVector</em>) – The converged increment of the solution.</p></li>
 <li><p><strong>dLambda</strong> (<em>float</em>) – The converged increment of the load parameter.</p></li>
 <li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The converged time step.</p></li>
-<li><p><strong>dofManager</strong> (<em>DofManager</em>) – The dof manager of the current discrete system.</p></li>
+<li><p><strong>numbering</strong> (<em>DofNumbering</em>) – The numbering of the degrees of freedom of the current discrete system.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1346,7 +1346,7 @@ module for indirect (displacement) controlled simulations.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.stepactions.particleindirectcontrol.IndirectControl.computeDDLambda">
-<span class="sig-name descname"><span class="pre">computeDDLambda</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ddU_0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ddU_f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dofManager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/particleindirectcontrol.html#IndirectControl.computeDDLambda"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.particleindirectcontrol.IndirectControl.computeDDLambda" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">computeDDLambda</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ddU_0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ddU_f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numbering</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/particleindirectcontrol.html#IndirectControl.computeDDLambda"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.particleindirectcontrol.IndirectControl.computeDDLambda" title="Link to this definition"></a></dt>
 <dd><p>This method is called by an arc length solver for computing the
 correction to the arc length parameter.</p>
 <dl class="field-list simple">
@@ -1356,7 +1356,7 @@ correction to the arc length parameter.</p>
 <li><p><strong>ddU_0</strong> (<em>DofVector</em>) – The dead (unconditional) correction to the solution.</p></li>
 <li><p><strong>ddU_f</strong> (<em>DofVector</em>) – The controllable correction to the solution resulting from the reference load.</p></li>
 <li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The current time increment.</p></li>
-<li><p><strong>dofManager</strong> (<em>DofManager</em>) – The DofManager instance.</p></li>
+<li><p><strong>numbering</strong> (<em>DofNumbering</em>) – The numbering of the degrees of freedom of the current discrete system.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1370,7 +1370,7 @@ correction to the arc length parameter.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.stepactions.particleindirectcontrol.IndirectControl.finishIncrement">
-<span class="sig-name descname"><span class="pre">finishIncrement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">U</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dLambda</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dofManager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/particleindirectcontrol.html#IndirectControl.finishIncrement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.particleindirectcontrol.IndirectControl.finishIncrement" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">finishIncrement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">U</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dLambda</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numbering</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/particleindirectcontrol.html#IndirectControl.finishIncrement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.particleindirectcontrol.IndirectControl.finishIncrement" title="Link to this definition"></a></dt>
 <dd><p>Called by the arc length solver once an increment has converged; see
 <code class="xref py py-meth docutils literal notranslate"><span class="pre">finishIncrement()</span></code>. This
 controller keeps nothing from one increment to the next: its target is the arc length of the whole step.</p>
@@ -1381,7 +1381,7 @@ controller keeps nothing from one increment to the next: its target is the arc l
 <li><p><strong>dU</strong> (<em>DofVector</em>) – The converged increment of the solution.</p></li>
 <li><p><strong>dLambda</strong> (<em>float</em>) – The converged increment of the load parameter.</p></li>
 <li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The converged time step.</p></li>
-<li><p><strong>dofManager</strong> (<em>DofManager</em>) – The dof manager of the current discrete system.</p></li>
+<li><p><strong>numbering</strong> (<em>DofNumbering</em>) – The numbering of the degrees of freedom of the current discrete system.</p></li>
 </ul>
 </dd>
 </dl>

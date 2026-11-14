@@ -69,8 +69,8 @@
 <li class="toctree-l2"><a class="reference internal" href="step_actions.html">Step actions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="constraints.html">Constraints</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Numerical tools</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#module-edelweissmeshfree.numerics.dofmanager"><code class="docutils literal notranslate"><span class="pre">DofManager</span></code> class</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager"><code class="docutils literal notranslate"><span class="pre">MPMDofManager</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mpmdoflocations-class"><code class="docutils literal notranslate"><span class="pre">MPMDofLocations</span></code> class</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations"><code class="docutils literal notranslate"><span class="pre">MPMDofLocations</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -110,46 +110,39 @@
 <h1>Numerical tools<a class="headerlink" href="#numerical-tools" title="Link to this heading"></a></h1>
 <p>The numerical tools are a set of tools that can be used to solve a variety of
 problems.</p>
-<section id="module-edelweissmeshfree.numerics.dofmanager">
-<span id="dofmanager-class"></span><h2><code class="docutils literal notranslate"><span class="pre">DofManager</span></code> class<a class="headerlink" href="#module-edelweissmeshfree.numerics.dofmanager" title="Link to this heading"></a></h2>
-<dl class="py class">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.numerics.dofmanager.</span></span><span class="sig-name descname"><span class="pre">MPMDofManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodeFields</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scalarVariables</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elements</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constraints</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeSets</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cells</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cellElements</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">particles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initializeAccumulatedNodalFluxesFieldwise</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/numerics/dofmanager.html#MPMDofManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager" title="Link to this definition"></a></dt>
-<dd><p>A DofManager class for the Material Point Method.
-Derived from DofManager, it is used to manage the degrees of freedom of the model
-and to provide the necessary information for the assembly of the global system matrix.</p>
-<dl class="field-list">
+<section id="mpmdoflocations-class">
+<h2><code class="docutils literal notranslate"><span class="pre">MPMDofLocations</span></code> class<a class="headerlink" href="#mpmdoflocations-class" title="Link to this heading"></a></h2>
+<p>The locations of the entities of a material point or RKPM model: the global indices of the local degrees of freedom of
+its finite elements and constraints (<code class="xref py py-class docutils literal notranslate"><span class="pre">DofLocations</span></code>, the <em>LM</em> array), and of
+its background cells, cell elements and particles. They are built on the numbering of the degrees of freedom of the
+active domain (<code class="xref py py-class docutils literal notranslate"><span class="pre">DofNumbering</span></code>, the <em>ID</em> array). Neither is ever changed: moved
+particles, or changed constraints, make new locations on the same numbering
+(<code class="xref py py-meth docutils literal notranslate"><span class="pre">withNewLocationsOf()</span></code>).</p>
+<span class="target" id="module-edelweissmeshfree.numerics.doflocations"></span><dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.doflocations.MPMDofLocations">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.numerics.doflocations.</span></span><span class="sig-name descname"><span class="pre">MPMDofLocations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">numbering</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elements</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constraints</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cells</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cellElements</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">particles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/numerics/doflocations.html#MPMDofLocations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations" title="Link to this definition"></a></dt>
+<dd><p>The locations of the entities of a material point or RKPM model in the numbering of the degrees of freedom of
+its active domain: those of
+<code class="xref py py-class docutils literal notranslate"><span class="pre">DofLocations</span></code> – the finite elements and the constraints – and those of
+the background cells, the cell elements and the particles, which are computed like elements.</p>
+<p>The locations of the particles are the locations of the nodes their kernel functions reach, node after node, on
+each node the same fields. Moving particles reach other nodes of the same numbering: new locations of the
+particles on the same numbering, see
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">withNewLocationsOf()</span></code>.</p>
+<dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>nodeFields</strong> (<em>list</em>) – A list of node fields.</p></li>
-<li><p><strong>scalarVariables</strong> (<em>list</em>) – A list of scalar variables.</p></li>
+<li><p><strong>numbering</strong> (<em>DofNumbering</em>) – The numbering of the degrees of freedom of the active domain.</p></li>
 <li><p><strong>elements</strong> (<em>list</em>) – A list of elements.</p></li>
 <li><p><strong>constraints</strong> (<em>list</em>) – A list of constraints.</p></li>
-<li><p><strong>nodeSets</strong> (<em>list</em>) – A list of node sets.</p></li>
 <li><p><strong>cells</strong> (<em>list</em>) – A list of cells.</p></li>
 <li><p><strong>cellElements</strong> (<em>list</em>) – A list of cell elements.</p></li>
 <li><p><strong>particles</strong> (<em>list</em>) – The list of particles (RKPM).</p></li>
-<li><p><strong>initializeAccumulatedNodalFluxesFieldwise</strong> (<em>bool</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Attributes<span class="colon">:</span></dt>
-<dd class="field-even"><dl>
-<dt><strong>dofNumberingDigest</strong></dt><dd><p>A digest, a hexadecimal string, of what decides the index of every degree of freedom: for every field, its
-name, its dimension, its slice in the DofVector and the labels of its nodes in the order they are numbered; and
-the names of the scalar variables, which follow, in the order they are numbered. Two discrete systems with the
-same digest give every degree of freedom the same index, so a DofVector of one is a DofVector of the other –
-e.g., before and after a rebuild caused by a contact search, which changes the coupling of the degrees of
-freedom but not their numbering. The scalar variables are named, not counted: they are those of the
-constraints switched on, which a constraint may change within a step (switched from outside, or by itself), so
-that two systems with as many scalar variables may number different ones.</p>
-<p>The digest names the nodes by their labels, so it is the same in every run of a model: a restart checkpoint
-holds it together with the vectors it numbers. Computed at the first request; the numbering of a DofManager
-does not change.</p>
-</dd>
-<dt><strong>indexToHostObjectMapping</strong></dt><dd><p>The node of every index of a field variable in the DofVector, built on first use: only the report of the
-largest residual of an implicit solver reads it (through <a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.getNodeForIndexInDofVector" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.getNodeForIndexInDofVector"><code class="xref py py-meth docutils literal notranslate"><span class="pre">getNodeForIndexInDofVector()</span></code></a>), while building it
-costs a pass over every degree of freedom, which a DOF manager that is never asked – one of the many an explicit
-solver builds over a run, say – does not pay.</p>
+<dd class="field-even"><dl class="simple">
+<dt><a class="reference internal" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations.nAccumulatedNodalFluxesFieldwise" title="edelweissmeshfree.numerics.doflocations.MPMDofLocations.nAccumulatedNodalFluxesFieldwise"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nAccumulatedNodalFluxesFieldwise</span></code></a></dt><dd><p>For the Abaqus like convergence test, the number of degrees of freedom ‘entity-wise’ per field, that is Σ_(elements+constraints) Σ_nodes ( nDof (field) ).</p>
 </dd>
 </dl>
 </dd>
@@ -157,38 +150,20 @@ solver builds over a run, say – does not pay.</p>
 <p class="rubric">Methods</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.constructDofVector" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.constructDofVector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">constructDofVector</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations.checkEveryDofIsLocated" title="edelweissmeshfree.numerics.doflocations.MPMDofLocations.checkEveryDofIsLocated"><code class="xref py py-obj docutils literal notranslate"><span class="pre">checkEveryDofIsLocated</span></code></a>([...])</p></td>
+<td><p>Refuse a degree of freedom that no located entity touches.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations.constructDofVector" title="edelweissmeshfree.numerics.doflocations.MPMDofLocations.constructDofVector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">constructDofVector</span></code></a>()</p></td>
 <td><p>Construct a vector with size=nDof and which has knowledge about the location of each entity.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.getNodeForIndexInDofVector" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.getNodeForIndexInDofVector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getNodeForIndexInDofVector</span></code></a>(index)</p></td>
-<td><p>Find the node for a given index in the discrete system.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.locateFieldOnNodeSet" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.locateFieldOnNodeSet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">locateFieldOnNodeSet</span></code></a>(field, nodeSet)</p></td>
-<td><p>Where the degrees of freedom of a field on the nodes of a node set lie in the DofVector, e.g. those a Dirichlet boundary condition prescribes, or those a node force acts on.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.refreshConstraintIndices" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.refreshConstraintIndices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">refreshConstraintIndices</span></code></a>(constraints)</p></td>
-<td><p>Re-locate the constraints' degrees of freedom after their connectivity changed; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">refreshConstraintIndices()</span></code>.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.updateParticles" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.updateParticles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateParticles</span></code></a>(particles)</p></td>
-<td><p>Updates the connectivity mapping for the given particles without rebuilding the entire DofManager structure.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeDofVectorToNodeField" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeDofVectorToNodeField"><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeDofVectorToNodeField</span></code></a>(dofVector, ...[, ...])</p></td>
-<td><p>Write the values of a NodeField from the respective locations in a given DofVector; the counterpart of <a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeNodeFieldToDofVector" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeNodeFieldToDofVector"><code class="xref py py-meth docutils literal notranslate"><span class="pre">writeNodeFieldToDofVector()</span></code></a>.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeDofVectorToScalarVariables" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeDofVectorToScalarVariables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeDofVectorToScalarVariables</span></code></a>(dofVector)</p></td>
-<td><p>Set the values of the scalar variables of this discrete system from their locations in a given DofVector; the counterpart of <a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeScalarVariablesToDofVector" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeScalarVariablesToDofVector"><code class="xref py py-meth docutils literal notranslate"><span class="pre">writeScalarVariablesToDofVector()</span></code></a>.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeNodeFieldToDofVector" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeNodeFieldToDofVector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeNodeFieldToDofVector</span></code></a>(dofVector, ...[, ...])</p></td>
-<td><p>Write the current values of an entire NodeField to the respective locations in a given DofVector.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeScalarVariablesToDofVector" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeScalarVariablesToDofVector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeScalarVariablesToDofVector</span></code></a>(dofVector)</p></td>
-<td><p>Write the values of the scalar variables of this discrete system to their locations in a given DofVector.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations.withNewLocationsOf" title="edelweissmeshfree.numerics.doflocations.MPMDofLocations.withNewLocationsOf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">withNewLocationsOf</span></code></a>(constraints[, movedEntities])</p></td>
+<td><p>The locations of the same entities in the same numbering, with the constraints, and the further entities that moved, located anew after their connectivity changed.</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager._accumulateNodalFluxesFieldwise">
-<span class="sig-name descname"><span class="pre">_accumulateNodalFluxesFieldwise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entities</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager._accumulateNodalFluxesFieldwise" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.doflocations.MPMDofLocations._accumulateNodalFluxesFieldwise">
+<span class="sig-name descname"><span class="pre">_accumulateNodalFluxesFieldwise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entities</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations._accumulateNodalFluxesFieldwise" title="Link to this definition"></a></dt>
 <dd><p>Count the nodal fluxes Σ_entities Σ_nodes ( nDof (field) ) for each field.</p>
 <p>A node shared by many entities contributes the same count to each of them, so the nodes are
 first counted, and each distinct node’s fields are then looked up only once, weighted by
@@ -209,226 +184,38 @@ entity.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager._addTheMeshfreeEntities">
-<span class="sig-name descname"><span class="pre">_addTheMeshfreeEntities</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/numerics/dofmanager.html#MPMDofManager._addTheMeshfreeEntities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager._addTheMeshfreeEntities" title="Link to this definition"></a></dt>
-<dd><p>Add the cells, the cell elements and the particles to what the base class gathers of the elements and the
-constraints: their nodal fluxes to the accumulated nodal fluxes, and their DOF indices to the merged entity
-mapping, which is made a new dict (see
-<code class="xref py py-meth docutils literal notranslate"><span class="pre">refreshConstraintIndices()</span></code>).</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager._checkNodeFieldAccess">
-<span class="sig-name descname"><span class="pre">_checkNodeFieldAccess</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodeField</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resultName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wholeField</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager._checkNodeFieldAccess" title="Link to this definition"></a></dt>
-<dd><p>Refuse an access to a node field entry this DofManager cannot serve: an entry no node field holds, a field
-it does not number, or – for an access to the field as a whole, which addresses its rows by position – a
-node field other than the one it numbers, even of the same name (e.g. the node field of the model, while
-this DofManager numbers that of an active domain).</p>
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.doflocations.MPMDofLocations._locateConstraints">
+<span class="sig-name descname"><span class="pre">_locateConstraints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">constraints</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations._locateConstraints" title="Link to this definition"></a></dt>
+<dd><p>Creates a dictionary containing the location (indices) of each constraint within the DofVector structure:
+the indices of the field variables of its nodes, node after node, followed by those of its scalar variables.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>nodeField</strong> (<em>NodeField</em>) – The NodeField accessed.</p></li>
-<li><p><strong>resultName</strong> (<em>str</em>) – The entry accessed.</p></li>
-<li><p><strong>wholeField</strong> (<em>bool</em>) – Whether the field is accessed as a whole, rather than on the nodes of a node set.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
-<li><p><strong>KeyError</strong> – If the entry is not one of <code class="xref py py-attr docutils literal notranslate"><span class="pre">NodeField.ENTRIES</span></code>.</p></li>
-<li><p><strong>ValueError</strong> – If this DofManager does not number the field, or, for an access as a whole, numbers another node field
-of that name.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager._computeAccumulatedNodalFluxesFieldWise">
-<span class="sig-name descname"><span class="pre">_computeAccumulatedNodalFluxesFieldWise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fields</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager._computeAccumulatedNodalFluxesFieldWise" title="Link to this definition"></a></dt>
-<dd><p>For the Abaqus like convergence test,
-the number of dofs ‘entity-wise’ is needed:
-= Σ_(elements+constraints) Σ_nodes ( nDof (field) ).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>fields</strong> (<em>list</em>) – The list of fields for which the accumulated nodal fluxes should be computed.</p>
+<dd class="field-odd"><p><strong>constraints</strong> (<em>list</em>) – The list of constraints to locate.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><dl class="simple">
-<dt>Number of accumulated fluxes per field:</dt><dd><ul class="simple">
-<li><p>Field</p></li>
-<li><p>Number of accumulated fluxes</p></li>
-</ul>
-</dd>
-</dl>
-</p>
+<dd class="field-even"><p>A dictionary containing the location mapping.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>dict</p>
 </dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager._determineIndexToNodeMap">
-<span class="sig-name descname"><span class="pre">_determineIndexToNodeMap</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager._determineIndexToNodeMap" title="Link to this definition"></a></dt>
-<dd><p>Determine the map from each index (associated with a FieldVariable)
-in the DofVector to the corresponding attached Node oject.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The dictionary containing the map from index of a FieldVariable (component) in the DofVector to the respective Node instance.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>dict[int, Node]</p>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If a constraint cannot be located: see <a class="reference internal" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations._noLocationError" title="edelweissmeshfree.numerics.doflocations.MPMDofLocations._noLocationError"><code class="xref py py-meth docutils literal notranslate"><span class="pre">_noLocationError()</span></code></a>.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager._gatherCellsInformation">
-<span class="sig-name descname"><span class="pre">_gatherCellsInformation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entities</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/numerics/dofmanager.html#MPMDofManager._gatherCellsInformation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager._gatherCellsInformation" title="Link to this definition"></a></dt>
-<dd><p>Generates some auxiliary information,
-which may be required by some modules of EdelweissFE.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>entities</strong> (<em>list</em>) – The list of entities, for which the information is gathered.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><dl class="simple">
-<dt>The tuple of</dt><dd><ul class="simple">
-<li><p>number of accumulated elemental degrees of freedom.</p></li>
-<li><p>the number of  acummulated fluxes Σ_entities Σ_nodes ( nDof (field) ) for Abaqus-like convergence tests.</p></li>
-<li><p>largest occuring number of dofs on any element.</p></li>
-</ul>
-</dd>
-</dl>
-</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple[int, dict, int]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager._gatherConstraintsInformation">
-<span class="sig-name descname"><span class="pre">_gatherConstraintsInformation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entities</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager._gatherConstraintsInformation" title="Link to this definition"></a></dt>
-<dd><p>Generates some auxiliary information,
-which may be required by some modules of EdelweissFE.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>entities</strong> (<em>list</em>) – The list of entities, for which the information is gathered.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><dl class="simple">
-<dt>The tuple of</dt><dd><ul class="simple">
-<li><p>number of accumulated elemental degrees of freedom.</p></li>
-<li><p>the number of  acummulated fluxes Σ_entities Σ_nodes ( nDof (field) ) for Abaqus-like convergence tests.</p></li>
-<li><p>largest occuring number of dofs on any element.</p></li>
-</ul>
-</dd>
-</dl>
-</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple[int, dict, int]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager._gatherElementsInformation">
-<span class="sig-name descname"><span class="pre">_gatherElementsInformation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entities</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager._gatherElementsInformation" title="Link to this definition"></a></dt>
-<dd><p>Generates some auxiliary information,
-which may be required by some modules of EdelweissFE.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>entities</strong> (<em>list</em>) – The list of entities, for which the information is gathered.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><dl class="simple">
-<dt>The tuple of</dt><dd><ul class="simple">
-<li><p>number of accumulated elemental degrees of freedom.</p></li>
-<li><p>the number of  acummulated fluxes Σ_entities Σ_nodes ( nDof (field) ) for Abaqus-like convergence tests.</p></li>
-<li><p>largest occuring number of dofs on any element.</p></li>
-</ul>
-</dd>
-</dl>
-</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple[int, dict, int]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager._locateCellsInDofVector">
-<span class="sig-name descname"><span class="pre">_locateCellsInDofVector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cells</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/numerics/dofmanager.html#MPMDofManager._locateCellsInDofVector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager._locateCellsInDofVector" title="Link to this definition"></a></dt>
-<dd><p>Creates a dictionary containing the location (indices) of each cell
-within the DofVector structure.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>A dictionary containing the location mapping.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>dict</p>
-</dd>
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>cells</strong> (<em>list</em>)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager._locateConstraintsInDofVector">
-<span class="sig-name descname"><span class="pre">_locateConstraintsInDofVector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">constraints</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager._locateConstraintsInDofVector" title="Link to this definition"></a></dt>
-<dd><p>Creates a dictionary containing the location (indices) of each entity (elements, constraints)
-within the DofVector structure.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>A dictionary containing the location mapping.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>dict</p>
-</dd>
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>constraints</strong> (<em>list</em>)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager._locateFieldOnNodeSet">
-<span class="sig-name descname"><span class="pre">_locateFieldOnNodeSet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">field</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeSet</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager._locateFieldOnNodeSet" title="Link to this definition"></a></dt>
-<dd><p>Locate the degrees of freedom of a field on the nodes of a node set; see <a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.locateFieldOnNodeSet" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.locateFieldOnNodeSet"><code class="xref py py-meth docutils literal notranslate"><span class="pre">locateFieldOnNodeSet()</span></code></a>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>field</strong> (<em>str</em>) – The name of the field.</p></li>
-<li><p><strong>nodeSet</strong> (<em>NodeSet</em>) – The node set.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The indices of the degrees of freedom, and the positions of their nodes in the set.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple[np.ndarray, np.ndarray]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager._locateNodeCouplingEntitiesInDofVector">
-<span class="sig-name descname"><span class="pre">_locateNodeCouplingEntitiesInDofVector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entities</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager._locateNodeCouplingEntitiesInDofVector" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.doflocations.MPMDofLocations._locateNodeCouplingEntities">
+<span class="sig-name descname"><span class="pre">_locateNodeCouplingEntities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entities</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations._locateNodeCouplingEntities" title="Link to this definition"></a></dt>
 <dd><p>Creates a dictionary containing the location (indices) of each entity (elements, …)
 within the DofVector structure.</p>
 <p>The location of an entity is the indices of the field variables of its nodes, node after node and, on each
 node, field after field as the entity lists them (<code class="docutils literal notranslate"><span class="pre">fields</span></code>), reordered by its <code class="docutils literal notranslate"><span class="pre">dofIndicesPermutation</span></code>
 unless that is None.</p>
-<p>An entity without a location is left out of the dictionary: one of its nodes does not have a field the entity
-couples there, or the field variable is not part of the DofVector. Any other fault of an entity raises – it
-lacks <code class="docutils literal notranslate"><span class="pre">nodes</span></code>, <code class="docutils literal notranslate"><span class="pre">fields</span></code> or <code class="docutils literal notranslate"><span class="pre">dofIndicesPermutation</span></code>, or lists fewer fields than it has nodes – whether
-there are few entities or many.</p>
+<p>An entity that cannot be located raises: one of its nodes does not have a field the entity couples there, or the
+field variable is not part of the numbering (see <a class="reference internal" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations._noLocationError" title="edelweissmeshfree.numerics.doflocations.MPMDofLocations._noLocationError"><code class="xref py py-meth docutils literal notranslate"><span class="pre">_noLocationError()</span></code></a>); so does an entity that lacks
+<code class="docutils literal notranslate"><span class="pre">nodes</span></code>, <code class="docutils literal notranslate"><span class="pre">fields</span></code> or <code class="docutils literal notranslate"><span class="pre">dofIndicesPermutation</span></code>, or lists fewer fields than it has nodes – whether there are
+few entities or many.</p>
 <p>The entities are independent of each other, so they are located in chunks on the thread pool
 (<code class="xref py py-func docutils literal notranslate"><span class="pre">mapChunksInParallel()</span></code>), unless there are so few of them
 that handing them to the pool would cost more than it saves: then the calling thread locates them. The
@@ -443,122 +230,67 @@ dictionary holds the entities in the order they were given.</p>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>dict</p>
 </dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If an entity cannot be located.</p>
+</dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager._locateNodeFieldOnNodeSet">
-<span class="sig-name descname"><span class="pre">_locateNodeFieldOnNodeSet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodeField</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeSet</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager._locateNodeFieldOnNodeSet" title="Link to this definition"></a></dt>
-<dd><p>Where the values of a NodeField on the nodes of a node set lie, in the DofVector and in the NodeField: the
-nodes of the set whose field is part of this discrete system (see <a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.locateFieldOnNodeSet" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.locateFieldOnNodeSet"><code class="xref py py-meth docutils literal notranslate"><span class="pre">locateFieldOnNodeSet()</span></code></a>).</p>
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.doflocations.MPMDofLocations._mergeEntities">
+<span class="sig-name descname"><span class="pre">_mergeEntities</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations._mergeEntities" title="Link to this definition"></a></dt>
+<dd><p>Merge what is known per kind of entity: the lists of the elements and of the constraints the locations hold,
+the merged mapping of every entity to its indices, and the accumulated nodal fluxes. The locations are
+immutable: the merged mapping is made anew for every locations, never changed in place, so that whoever still
+holds the old locations holds a mapping that stays valid.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.doflocations.MPMDofLocations._noLocationError">
+<span class="sig-name descname"><span class="pre">_noLocationError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fieldsOnNodes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scalarVariables</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations._noLocationError" title="Link to this definition"></a></dt>
+<dd><p>The error for an entity that cannot be located: what is missing in the numbering, and which entity it is.
+The entity is named by its class (its module too, as many modules name their class alike), by its own name if it
+has one, and by the labels of its first nodes.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>nodeField</strong> (<em>NodeField</em>) – The NodeField.</p></li>
-<li><p><strong>nodeSet</strong> (<em>NodeSet</em>) – The NodeSet.</p></li>
+<li><p><strong>entity</strong> – The entity that cannot be located.</p></li>
+<li><p><strong>fieldsOnNodes</strong> (<em>list</em>) – The fields the entity couples on each of its nodes.</p></li>
+<li><p><strong>scalarVariables</strong> (<em>list</em>) – The scalar variables of the entity.</p></li>
+<li><p><strong>name</strong> (<em>str</em><em> | </em><em>None</em>) – The name of the entity, if it has one (a constraint has); None otherwise.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p>The indices of the degrees of freedom in the DofVector, node after node.</p></li>
-<li><p>The rows of these nodes in the NodeField, in the same order.</p></li>
-</ul>
-</p>
+<dd class="field-even"><p>The error, to raise.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple[np.ndarray, list]</p>
+<dd class="field-odd"><p>ValueError</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager._locateParticlesInDofVector">
-<span class="sig-name descname"><span class="pre">_locateParticlesInDofVector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">particles</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/numerics/dofmanager.html#MPMDofManager._locateParticlesInDofVector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager._locateParticlesInDofVector" title="Link to this definition"></a></dt>
-<dd><p>Creates a dictionary containing the location (indices) of each particle
-within the DofVector structure.</p>
-<p>In contrast to elements, cells and cell elements, particles have an identical set of fields
-on each attached node.
-Furthermore, due to the varying number attached nodes, no permutation is allowed.
-For particles generally a node-wise layout is assumed.</p>
-<p>For instance: [node_1_displacement, node_1_temperature, node_2_displacement, node_2_temperature, …]</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>A dictionary containing the location mapping.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>dict</p>
-</dd>
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>particles</strong> (<em>list</em>)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager._reserveSpaceForNodeFields">
-<span class="sig-name descname"><span class="pre">_reserveSpaceForNodeFields</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idxStart</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeFields</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager._reserveSpaceForNodeFields" title="Link to this definition"></a></dt>
-<dd><p>Loop over all nodes to generate the global field-dof indices.</p>
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.doflocations.MPMDofLocations.checkEveryDofIsLocated">
+<span class="sig-name descname"><span class="pre">checkEveryDofIsLocated</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indicesRelatedByMultiPointConstraints</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations.checkEveryDofIsLocated" title="Link to this definition"></a></dt>
+<dd><p>Refuse a degree of freedom that no located entity touches. Such a degree of freedom has a number, but no row
+in the system matrix: a node that only an entity without kernels touches (e.g. a contact facet) is such a node.
+A solver cannot pin it with a Dirichlet boundary condition, nor integrate it, so the discrete system is not
+built.</p>
+<p>A multi-point constraint is no entity and owns no degrees of freedom, but a degree of freedom it relates, as
+slave or as master (e.g. of the reference point of a rigid body), has its row through the condensation.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>idxStart</strong> (<em>int</em>) – The starting index for the DOF numbering.</p></li>
-<li><p><strong>nodeFields</strong> (<em>list</em><em>[</em><em>NodeField</em><em>]</em>) – The list of NodeFields to process.</p></li>
-</ul>
+<dd class="field-odd"><p><strong>indicesRelatedByMultiPointConstraints</strong> (<em>ndarray</em><em> | </em><em>None</em>) – The indices of the degrees of freedom that multi-point constraints relate; None for none.</p>
 </dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><dl class="simple">
-<dt>output is a tuple of:</dt><dd><ul class="simple">
-<li><p>number of total DOFS</p></li>
-<li><p>dictionary of field variables and indices</p></li>
-<li><p>dictionary of fields and indices</p></li>
-</ul>
-</dd>
-</dl>
-</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple</p>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If a degree of freedom of the numbering is in no location; the error names the node and the field.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager._reserveSpaceForScalarVariables">
-<span class="sig-name descname"><span class="pre">_reserveSpaceForScalarVariables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idxStart</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scalarVariables</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager._reserveSpaceForScalarVariables" title="Link to this definition"></a></dt>
-<dd><p>Loop over all ScalarVariables to generate their global indices.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><dl class="simple">
-<dt>output is a tuple of:</dt><dd><ul class="simple">
-<li><p>number of total DOFS</p></li>
-<li><dl class="simple">
-<dt>dictionary of fields and indices:</dt><dd><ul>
-<li><p>field</p></li>
-<li><p>indices</p></li>
-</ul>
-</dd>
-</dl>
-</li>
-</ul>
-</dd>
-</dl>
-</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>tuple</p>
-</dd>
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>idxStart</strong> (<em>int</em>)</p></li>
-<li><p><strong>scalarVariables</strong> (<em>list</em>)</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager.constructDofVector">
-<span class="sig-name descname"><span class="pre">constructDofVector</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.constructDofVector" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.doflocations.MPMDofLocations.constructDofVector">
+<span class="sig-name descname"><span class="pre">constructDofVector</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations.constructDofVector" title="Link to this definition"></a></dt>
 <dd><p>Construct a vector with size=nDof and which has knowledge about
 the location of each entity.</p>
 <dl class="field-list simple">
@@ -572,305 +304,88 @@ the location of each entity.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager.getNodeForIndexInDofVector">
-<span class="sig-name descname"><span class="pre">getNodeForIndexInDofVector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.getNodeForIndexInDofVector" title="Link to this definition"></a></dt>
-<dd><p>Find the node for a given index in the discrete system.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>index</strong> (<em>int</em>) – The index in the DofVector.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The attached Node.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Node</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager.locateFieldOnNodeSet">
-<span class="sig-name descname"><span class="pre">locateFieldOnNodeSet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">field</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeSet</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.locateFieldOnNodeSet" title="Link to this definition"></a></dt>
-<dd><p>Where the degrees of freedom of a field on the nodes of a node set lie in the DofVector, e.g. those a
-Dirichlet boundary condition prescribes, or those a node force acts on.</p>
-<p>Only the nodes whose field is part of this discrete system count. In a finite element model, these are all
-nodes of the set that carry the field. A model whose discrete system covers a part of its nodes only – the
-active domain of a material point method model, the nodes in the support of an RKPM model’s particles –
-leaves the other nodes of a set out. Values given per node of the set (the prescribed values of a boundary
-condition, the forces of a node force) are then selected by the positions of the remaining nodes in the set,
-which this method returns along with the indices.</p>
-<p>The node sets given at construction are located up front, any other one at its first request.</p>
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.doflocations.MPMDofLocations.withNewLocationsOf">
+<span class="sig-name descname"><span class="pre">withNewLocationsOf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">constraints</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">movedEntities</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations.withNewLocationsOf" title="Link to this definition"></a></dt>
+<dd><p>The locations of the same entities in the same numbering, with the constraints, and the further entities
+that moved, located anew after their connectivity changed.</p>
+<p>A contact search re-assigns which nodes a constraint couples. That changes the constraints’ locations and
+nothing else: no node, field, scalar variable or element is touched, so the numbering and the locations of
+every element stay valid, and only what is derived from the constraints is computed again – by the same
+methods, in the same order, as the constructor computed it. That is a small fraction of what making
+locations for the same model costs.</p>
+<p>A change that moves the numbering – a mesh refinement, a constraint gaining a scalar variable of its own – is
+not a change of the connectivity, and needs a new <code class="xref py py-class docutils literal notranslate"><span class="pre">DofNumbering</span></code>:
+this method refuses it.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>field</strong> (<em>str</em>) – The name of the field, one of this discrete system.</p></li>
-<li><p><strong>nodeSet</strong> (<em>NodeSet</em>) – The node set.</p></li>
+<li><p><strong>constraints</strong> (<em>list</em>) – The constraints, with their current connectivity.</p></li>
+<li><p><strong>movedEntities</strong> (<em>list</em>) – The further entities whose connectivity changed (see the constructor); the others keep the locations they
+were given. Only meaningful where the numbering stands, as for the constraints.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p>The indices of the degrees of freedom in the DofVector, node after node in the order of the set, on each
-node the components of the field.</p></li>
-<li><p>The positions of these nodes in the set: the rows of an array that holds one row per node of the set.</p></li>
-</ul>
-</p>
+<dd class="field-even"><p>The new locations; these locations are not changed.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple[np.ndarray, np.ndarray]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager.refreshConstraintIndices">
-<span class="sig-name descname"><span class="pre">refreshConstraintIndices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">constraints</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/numerics/dofmanager.html#MPMDofManager.refreshConstraintIndices"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.refreshConstraintIndices" title="Link to this definition"></a></dt>
-<dd><p>Re-locate the constraints’ degrees of freedom after their connectivity changed; see
-<code class="xref py py-meth docutils literal notranslate"><span class="pre">refreshConstraintIndices()</span></code>. The cells, the cell elements and
-the particles keep their indices, and are added again to what the base class gathers anew.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>constraints</strong> (<em>list</em>) – The constraints, with their current connectivity.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager.updateParticles">
-<span class="sig-name descname"><span class="pre">updateParticles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">particles</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/numerics/dofmanager.html#MPMDofManager.updateParticles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.updateParticles" title="Link to this definition"></a></dt>
-<dd><p>Updates the connectivity mapping for the given particles without rebuilding
-the entire DofManager structure.</p>
-<p>Only the mappings of the particles passed in are recomputed; the mappings of all other
-particles are left as they are. That is what makes it worth passing just the particles whose
-kernel functions actually changed, which is usually a small fraction of the model.</p>
-<p>It is also why this method may only be used while the global degree-of-freedom numbering
-stays put: an untouched particle keeps the indices it was given earlier, so those indices
-have to still mean the same thing. Whenever the numbering itself changes, the DofManager has
-to be rebuilt from scratch instead.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>particles</strong> (<em>list</em>) – The particles whose mapping is to be recomputed.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeDofVectorToNodeField">
-<span class="sig-name descname"><span class="pre">writeDofVectorToNodeField</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dofVector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeField</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resultName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeSet</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeDofVectorToNodeField" title="Link to this definition"></a></dt>
-<dd><p>Write the values of a NodeField from the respective locations in a given DofVector; the counterpart of
-<a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeNodeFieldToDofVector" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeNodeFieldToDofVector"><code class="xref py py-meth docutils literal notranslate"><span class="pre">writeNodeFieldToDofVector()</span></code></a>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>dofVector</strong> (<em>DofVector</em>) – The source DofVector.</p></li>
-<li><p><strong>nodeField</strong> (<em>NodeField</em>) – The NodeField to get the updated values. Written as a whole, it must be the one this DofManager numbers
-(see <code class="xref py py-attr docutils literal notranslate"><span class="pre">numberedNodeFields</span></code>); written on a node set, any node field of a field this DofManager numbers,
-since its rows are then found by node.</p></li>
-<li><p><strong>resultName</strong> (<em>str</em>) – The entry of the NodeField to write, one of
-<code class="xref py py-attr docutils literal notranslate"><span class="pre">NodeField.ENTRIES</span></code>.</p></li>
-<li><p><strong>nodeSet</strong> (<em>NodeSet</em>) – The NodeSet to write: its nodes whose field is part of this discrete system (see
-<a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.locateFieldOnNodeSet" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.locateFieldOnNodeSet"><code class="xref py py-meth docutils literal notranslate"><span class="pre">locateFieldOnNodeSet()</span></code></a>); the other rows of the NodeField keep their values. If None, all nodes of the
-NodeField are written.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The updated NodeField.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>NodeField</p>
+<dd class="field-odd"><p>DofLocations</p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
-<li><p><strong>KeyError</strong> – If the entry is not one a node field holds.</p></li>
-<li><p><strong>ValueError</strong> – If this DofManager does not number the field, or, written as a whole, numbers another NodeField of that
-name.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeDofVectorToScalarVariables">
-<span class="sig-name descname"><span class="pre">writeDofVectorToScalarVariables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dofVector</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeDofVectorToScalarVariables" title="Link to this definition"></a></dt>
-<dd><p>Set the values of the scalar variables of this discrete system from their locations in a given
-DofVector; the counterpart of <a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeScalarVariablesToDofVector" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeScalarVariablesToDofVector"><code class="xref py py-meth docutils literal notranslate"><span class="pre">writeScalarVariablesToDofVector()</span></code></a>. A scalar variable this DofManager
-does not number keeps its value.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>dofVector</strong> (<em>DofVector</em>) – The source DofVector.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeNodeFieldToDofVector">
-<span class="sig-name descname"><span class="pre">writeNodeFieldToDofVector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dofVector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeField</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resultName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeSet</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeNodeFieldToDofVector" title="Link to this definition"></a></dt>
-<dd><p>Write the current values of an entire NodeField to the respective locations in a given DofVector.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>dofVector</strong> (<em>DofVector</em>) – The result DofVector.</p></li>
-<li><p><strong>nodeField</strong> (<em>NodeField</em>) – The NodeField holding the values. Read as a whole, it must be the one this DofManager numbers (see
-<code class="xref py py-attr docutils literal notranslate"><span class="pre">numberedNodeFields</span></code>); read on a node set, any node field of a field this DofManager numbers, since
-its rows are then found by node.</p></li>
-<li><p><strong>resultName</strong> (<em>str</em>) – The entry of the NodeField to read, one of
-<code class="xref py py-attr docutils literal notranslate"><span class="pre">NodeField.ENTRIES</span></code>.</p></li>
-<li><p><strong>NodeSet</strong> – The NodeSet to consider: its nodes whose field is part of this discrete system (see
-<a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.locateFieldOnNodeSet" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.locateFieldOnNodeSet"><code class="xref py py-meth docutils literal notranslate"><span class="pre">locateFieldOnNodeSet()</span></code></a>). If None, all nodes of the NodeField are considered.</p></li>
-<li><p><strong>nodeSet</strong> (<em>NodeSet</em>)</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The DofVector.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>DofVector</p>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
-<li><p><strong>KeyError</strong> – If the entry is not one a node field holds.</p></li>
-<li><p><strong>ValueError</strong> – If this DofManager does not number the field, or, read as a whole, numbers another NodeField of that name.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeScalarVariablesToDofVector">
-<span class="sig-name descname"><span class="pre">writeScalarVariablesToDofVector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dofVector</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.writeScalarVariablesToDofVector" title="Link to this definition"></a></dt>
-<dd><p>Write the values of the scalar variables of this discrete system to their locations in a given
-DofVector. Only the scalar variables this DofManager numbers are written: those of a constraint that is
-switched off are not part of the discrete system.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>dofVector</strong> (<em>DofVector</em>) – The result DofVector.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The DofVector.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>DofVector</p>
+<dd class="field-even"><p><strong>ValueError</strong> – If the scalar variables of the constraints are not exactly those the numbering numbers, in this order, or
+a moved entity is not located in these locations.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager._fieldsOnNodeSets">
-<span class="sig-name descname"><span class="pre">_fieldsOnNodeSets</span></span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager._fieldsOnNodeSets" title="Link to this definition"></a></dt>
-<dd><p>For each field, the node sets located so far, each with the indices of the field’s degrees of freedom on its
-nodes and the positions of these nodes in the set; see <a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.locateFieldOnNodeSet" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.locateFieldOnNodeSet"><code class="xref py py-meth docutils literal notranslate"><span class="pre">locateFieldOnNodeSet()</span></code></a>.</p>
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.doflocations.MPMDofLocations._fluxesOfElements">
+<span class="sig-name descname"><span class="pre">_fluxesOfElements</span></span><a class="headerlink" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations._fluxesOfElements" title="Link to this definition"></a></dt>
+<dd><p>The accumulated nodal fluxes of the elements and of the further entities, counted when first asked for
+(see <a class="reference internal" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations.nAccumulatedNodalFluxesFieldwise" title="edelweissmeshfree.numerics.doflocations.MPMDofLocations.nAccumulatedNodalFluxesFieldwise"><code class="xref py py-attr docutils literal notranslate"><span class="pre">nAccumulatedNodalFluxesFieldwise</span></code></a>) and shared by the locations made from these, see
+<a class="reference internal" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations.withNewLocationsOf" title="edelweissmeshfree.numerics.doflocations.MPMDofLocations.withNewLocationsOf"><code class="xref py py-meth docutils literal notranslate"><span class="pre">withNewLocationsOf()</span></code></a>.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager._hasAccumulatedNodalFluxes">
-<span class="sig-name descname"><span class="pre">_hasAccumulatedNodalFluxes</span></span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager._hasAccumulatedNodalFluxes" title="Link to this definition"></a></dt>
-<dd><p>Which of the optional structures this manager carries, for <a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.refreshConstraintIndices" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.refreshConstraintIndices"><code class="xref py py-meth docutils literal notranslate"><span class="pre">refreshConstraintIndices()</span></code></a>.</p>
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.doflocations.MPMDofLocations.cellElements">
+<span class="sig-name descname"><span class="pre">cellElements</span></span><a class="headerlink" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations.cellElements" title="Link to this definition"></a></dt>
+<dd><p>The cell elements that have a location.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager.accumulatedConstraintNDof">
-<span class="sig-name descname"><span class="pre">accumulatedConstraintNDof</span></span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.accumulatedConstraintNDof" title="Link to this definition"></a></dt>
-<dd><p>Accumulated number of constraint DOFs (= sum of constraint vector sizes)</p>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager.accumulatedElementNDof">
-<span class="sig-name descname"><span class="pre">accumulatedElementNDof</span></span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.accumulatedElementNDof" title="Link to this definition"></a></dt>
-<dd><p>Accumulated number of element DOFs (= sum of element vector sizes)</p>
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.doflocations.MPMDofLocations.cells">
+<span class="sig-name descname"><span class="pre">cells</span></span><a class="headerlink" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations.cells" title="Link to this definition"></a></dt>
+<dd><p>The cells that have a location, the active cells.</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager.dofNumberingDigest">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">dofNumberingDigest</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.dofNumberingDigest" title="Link to this definition"></a></dt>
-<dd><p>for every field, its
-name, its dimension, its slice in the DofVector and the labels of its nodes in the order they are numbered; and
-the names of the scalar variables, which follow, in the order they are numbered. Two discrete systems with the
-same digest give every degree of freedom the same index, so a DofVector of one is a DofVector of the other –
-e.g., before and after a rebuild caused by a contact search, which changes the coupling of the degrees of
-freedom but not their numbering. The scalar variables are named, not counted: they are those of the
-constraints switched on, which a constraint may change within a step (switched from outside, or by itself), so
-that two systems with as many scalar variables may number different ones.</p>
-<p>The digest names the nodes by their labels, so it is the same in every run of a model: a restart checkpoint
-holds it together with the vectors it numbers. Computed at the first request; the numbering of a DofManager
-does not change.</p>
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.doflocations.MPMDofLocations.nAccumulatedNodalFluxesFieldwise">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">nAccumulatedNodalFluxesFieldwise</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span></span><a class="headerlink" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations.nAccumulatedNodalFluxesFieldwise" title="Link to this definition"></a></dt>
+<dd><p>For the Abaqus like convergence test, the number of degrees of freedom ‘entity-wise’ per field, that is
+Σ_(elements+constraints) Σ_nodes ( nDof (field) ).
+Computed from the entities of these locations at the first request, and kept: only the convergence criteria
+ask, so a solver without them does not pay. The count of the elements, and of the further entities that did
+not move, is shared with the locations these were made from: only the constraints, and the entities that
+moved, are counted again.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>A digest, a hexadecimal string, of what decides the index of every degree of freedom</p>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The number of accumulated fluxes, for every field of the numbering.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager.fields">
-<span class="sig-name descname"><span class="pre">fields</span></span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.fields" title="Link to this definition"></a></dt>
-<dd><p>The list of field names in the DofVector</p>
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.doflocations.MPMDofLocations.numbering">
+<span class="sig-name descname"><span class="pre">numbering</span></span><a class="headerlink" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations.numbering" title="Link to this definition"></a></dt>
+<dd><p>The numbering of the degrees of freedom the entities are located in.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager.idcsOfConstraintsInDofVector">
-<span class="sig-name descname"><span class="pre">idcsOfConstraintsInDofVector</span></span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.idcsOfConstraintsInDofVector" title="Link to this definition"></a></dt>
-<dd><p>Dictionary mapping a constraint to its indices in the DofVector</p>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager.idcsOfElementsInDofVector">
-<span class="sig-name descname"><span class="pre">idcsOfElementsInDofVector</span></span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.idcsOfElementsInDofVector" title="Link to this definition"></a></dt>
-<dd><p>Dictionary mapping an element to its indices in the DofVector</p>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager.idcsOfFieldVariablesInDofVector">
-<span class="sig-name descname"><span class="pre">idcsOfFieldVariablesInDofVector</span></span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.idcsOfFieldVariablesInDofVector" title="Link to this definition"></a></dt>
-<dd><p>Dictionary mapping nodal field variables to their indices in the DofVector</p>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager.idcsOfFieldsInDofVector">
-<span class="sig-name descname"><span class="pre">idcsOfFieldsInDofVector</span></span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.idcsOfFieldsInDofVector" title="Link to this definition"></a></dt>
-<dd><p>Dictionary mapping field names to all indices in the DofVector</p>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager.idcsOfNodeFieldsInDofVector">
-<span class="sig-name descname"><span class="pre">idcsOfNodeFieldsInDofVector</span></span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.idcsOfNodeFieldsInDofVector" title="Link to this definition"></a></dt>
-<dd><p>Dictionary mapping a complete NodeField to all its indices in the DofVector</p>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager.idcsOfScalarVariablesInDofVector">
-<span class="sig-name descname"><span class="pre">idcsOfScalarVariablesInDofVector</span></span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.idcsOfScalarVariablesInDofVector" title="Link to this definition"></a></dt>
-<dd><p>Dictionary mapping scalar variables to all indices in the DofVector</p>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager.indexToHostObjectMapping">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">indexToHostObjectMapping</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Node</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.indexToHostObjectMapping" title="Link to this definition"></a></dt>
-<dd><p>only the report of the
-largest residual of an implicit solver reads it (through <a class="reference internal" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.getNodeForIndexInDofVector" title="edelweissmeshfree.numerics.dofmanager.MPMDofManager.getNodeForIndexInDofVector"><code class="xref py py-meth docutils literal notranslate"><span class="pre">getNodeForIndexInDofVector()</span></code></a>), while building it
-costs a pass over every degree of freedom, which a DOF manager that is never asked – one of the many an explicit
-solver builds over a run, say – does not pay.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The node of every index of a field variable in the DofVector, built on first use</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager.largestNumberOfConstraintNDof">
-<span class="sig-name descname"><span class="pre">largestNumberOfConstraintNDof</span></span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.largestNumberOfConstraintNDof" title="Link to this definition"></a></dt>
-<dd><p>Size of the largest constraint DOF vector</p>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager.largestNumberOfElNDof">
-<span class="sig-name descname"><span class="pre">largestNumberOfElNDof</span></span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.largestNumberOfElNDof" title="Link to this definition"></a></dt>
-<dd><p>Size of the largest element DOF vector</p>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.dofmanager.MPMDofManager.nDof">
-<span class="sig-name descname"><span class="pre">nDof</span></span><a class="headerlink" href="#edelweissmeshfree.numerics.dofmanager.MPMDofManager.nDof" title="Link to this definition"></a></dt>
-<dd><p>The total number of degrees of freedom (and size of the DofVector)</p>
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.doflocations.MPMDofLocations.particles">
+<span class="sig-name descname"><span class="pre">particles</span></span><a class="headerlink" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations.particles" title="Link to this definition"></a></dt>
+<dd><p>The particles that have a location.</p>
 </dd></dl>
 
 </dd></dl>

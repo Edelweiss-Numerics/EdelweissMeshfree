@@ -116,6 +116,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.journal.journal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Journal</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.models.change</span><span class="w"> </span><span class="kn">import</span> <span class="n">Change</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.models.femodel</span><span class="w"> </span><span class="kn">import</span> <span class="n">FEModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.numerics.dofnumbering</span><span class="w"> </span><span class="kn">import</span> <span class="n">DofNumbering</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.sets.elementset</span><span class="w"> </span><span class="kn">import</span> <span class="n">ElementSet</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.sets.nodeset</span><span class="w"> </span><span class="kn">import</span> <span class="n">NodeSet</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.utils.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">RestartError</span>
@@ -124,7 +125,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.fields.nodefield</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPMNodeField</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.models.mpmdiscretesystem</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPMDiscreteSystem</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.numerics.dofmanager</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPMDofManager</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.numerics.doflocations</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPMDofLocations</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.sets.cellelementset</span><span class="w"> </span><span class="kn">import</span> <span class="n">CellElementSet</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.sets.cellset</span><span class="w"> </span><span class="kn">import</span> <span class="n">CellSet</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.sets.materialpointset</span><span class="w"> </span><span class="kn">import</span> <span class="n">MaterialPointSet</span>
@@ -458,7 +459,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_activeNodesAreFixed</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Whether a change of the connectivity leaves the nodes of the active domain as they are, so that a discrete</span>
 <span class="sd">        system can follow it by locating the changed particles and the constraints anew</span>
-<span class="sd">        (:meth:`~edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.relocateParticlesAndConstraints`)</span>
+<span class="sd">        (:meth:`~edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.withNewLocations`)</span>
 <span class="sd">        instead of being rebuilt: without MPM managers, whose cells become active and inactive, and with every particle</span>
 <span class="sd">        manager bonding its kernel functions to the particles, so that a kernel function always covers its own</span>
 <span class="sd">        particle.</span>
@@ -497,12 +498,11 @@
         <span class="p">)</span>
         <span class="n">constraints</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">activeConstraints</span><span class="p">()</span>
 
-        <span class="n">dofManager</span> <span class="o">=</span> <span class="n">MPMDofManager</span><span class="p">(</span>
-            <span class="n">activeNodeFields</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">activeScalarVariables</span><span class="p">(),</span>
+        <span class="n">numbering</span> <span class="o">=</span> <span class="n">DofNumbering</span><span class="p">(</span><span class="n">activeNodeFields</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">activeScalarVariables</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodeSets</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="n">locations</span> <span class="o">=</span> <span class="n">MPMDofLocations</span><span class="p">(</span>
+            <span class="n">numbering</span><span class="p">,</span>
             <span class="n">elements</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span>
             <span class="n">constraints</span><span class="o">=</span><span class="n">constraints</span><span class="p">,</span>
-            <span class="n">nodeSets</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nodeSets</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span>
             <span class="n">cells</span><span class="o">=</span><span class="n">activeCells</span><span class="p">,</span>
             <span class="n">cellElements</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cellElements</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span>
             <span class="n">particles</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span>
@@ -510,9 +510,7 @@
 
         <span class="k">return</span> <span class="n">MPMDiscreteSystem</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
-            <span class="n">dofManager</span><span class="p">,</span>
-            <span class="p">[</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="o">*</span><span class="n">activeCells</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">cellElements</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="o">.</span><span class="n">values</span><span class="p">()],</span>
-            <span class="n">activeCells</span><span class="p">,</span>
+            <span class="n">locations</span><span class="p">,</span>
             <span class="n">nodesWithPersistentFieldValues</span><span class="p">,</span>
             <span class="n">nodesWithVolatileFieldValues</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_reducedToActiveDomain</span><span class="p">(</span><span class="n">activeCells</span><span class="p">,</span> <span class="n">activeNodeFields</span><span class="p">,</span> <span class="n">activeNodeSets</span><span class="p">),</span>
@@ -638,7 +636,7 @@
         <span class="n">activeNodes</span> <span class="o">=</span> <span class="n">activeNodesWithVolatileFieldValues</span> <span class="o">|</span> <span class="n">activeNodesWithPersistentFieldValues</span>
 
         <span class="c1"># Node defines no __hash__, so a plain set of Node objects iterates in an address-dependent</span>
-        <span class="c1"># order that differs between runs. DofManager assigns DOF indices strictly in</span>
+        <span class="c1"># order that differs between runs. DofNumbering assigns DOF indices strictly in</span>
         <span class="c1"># nodeField.nodes order, so leaving this unsorted made the global sparsity pattern</span>
         <span class="c1"># irreproducible -- and with it direct-solver fill-in and AMG aggregation, i.e. solve times</span>
         <span class="c1"># and iteration counts. Labels are unique, so sorting on them pins the numbering down</span>

@@ -116,7 +116,8 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.constraints.base.constraintbase</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConstraintBase</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.journal.journal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Journal</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.numerics.dofmanager</span><span class="w"> </span><span class="kn">import</span> <span class="n">DofManager</span><span class="p">,</span> <span class="n">DofVector</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.numerics.doflocations</span><span class="w"> </span><span class="kn">import</span> <span class="n">DofLocations</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.numerics.dofvector</span><span class="w"> </span><span class="kn">import</span> <span class="n">DofVector</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.outputmanagers.base.outputmanagerbase</span><span class="w"> </span><span class="kn">import</span> <span class="n">OutputManagerBase</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.stepactions.base.dirichletbase</span><span class="w"> </span><span class="kn">import</span> <span class="n">DirichletBase</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.timesteppers.timestep</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeStep</span>
@@ -308,7 +309,7 @@
         <span class="n">particles</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">particles</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
 
         <span class="n">newtonCache</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="n">theDofManager</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">locations</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="k">if</span> <span class="n">predictor</span><span class="p">:</span>
             <span class="n">predictor</span><span class="o">.</span><span class="n">resetHistory</span><span class="p">()</span>
@@ -335,7 +336,7 @@
                     <span class="n">materialPoints</span><span class="p">,</span> <span class="n">particles</span><span class="p">,</span> <span class="n">constraints</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">mpmManagers</span><span class="p">,</span> <span class="n">particleManagers</span>
                 <span class="p">)</span>
 
-                <span class="k">if</span> <span class="n">connectivityHasChanged</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">theDofManager</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">connectivityHasChanged</span> <span class="ow">or</span> <span class="n">locations</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
 
                     <span class="n">activeCells</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getActiveCellsFromManagers</span><span class="p">(</span><span class="n">mpmManagers</span><span class="p">)</span>
 
@@ -352,7 +353,7 @@
                     <span class="n">activeConstraints</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">constraints</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">active</span><span class="p">]</span>
                     <span class="n">activeConstraintsScalarVariables</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">activeConstraints</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">c</span><span class="o">.</span><span class="n">scalarVariables</span><span class="p">]</span>
 
-                    <span class="n">theDofManager</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_createDofManager</span><span class="p">(</span>
+                    <span class="n">locations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_createLocations</span><span class="p">(</span>
                         <span class="n">reducedNodeFields</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span>
                         <span class="n">activeConstraintsScalarVariables</span><span class="p">,</span>
                         <span class="n">elements</span><span class="o">=</span><span class="n">elements</span><span class="p">,</span>
@@ -363,23 +364,25 @@
                         <span class="n">particles</span><span class="o">=</span><span class="n">particles</span><span class="p">,</span>
                     <span class="p">)</span>
 
-                    <span class="n">U</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+                    <span class="n">U</span> <span class="o">=</span> <span class="n">locations</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
 
                     <span class="c1"># Finite element nodes carry their total solution across increments; the nodes of</span>
                     <span class="c1"># cells and particles are volatile and start every rebuild at zero.</span>
                     <span class="k">if</span> <span class="n">activeNodesWithPersistentFieldValues</span><span class="p">:</span>
                         <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">nodeFields</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-                            <span class="n">theDofManager</span><span class="o">.</span><span class="n">writeNodeFieldToDofVector</span><span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="s2">"U"</span><span class="p">,</span> <span class="n">activeNodesWithPersistentFieldValues</span><span class="p">)</span>
+                            <span class="n">locations</span><span class="o">.</span><span class="n">numbering</span><span class="o">.</span><span class="n">writeNodeFieldToDofVector</span><span class="p">(</span>
+                                <span class="n">U</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="s2">"U"</span><span class="p">,</span> <span class="n">activeNodesWithPersistentFieldValues</span>
+                            <span class="p">)</span>
 
                     <span class="bp">self</span><span class="o">.</span><span class="n">journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span>
-                        <span class="s2">"resulting discrete system has a size of </span><span class="si">{:}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">theDofManager</span><span class="o">.</span><span class="n">nDof</span><span class="p">),</span>
+                        <span class="s2">"resulting discrete system has a size of </span><span class="si">{:}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">locations</span><span class="o">.</span><span class="n">numbering</span><span class="o">.</span><span class="n">nDof</span><span class="p">),</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">,</span>
                         <span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
                     <span class="p">)</span>
 
                     <span class="n">newtonCache</span> <span class="o">=</span> <span class="kc">None</span>
 
-                <span class="n">presentVariableNames</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">theDofManager</span><span class="o">.</span><span class="n">idcsOfFieldsInDofVector</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+                <span class="n">presentVariableNames</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">locations</span><span class="o">.</span><span class="n">numbering</span><span class="o">.</span><span class="n">idcsOfFieldsInDofVector</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
 
                 <span class="c1"># TODO: We are handling this currently as a dedicated special case,</span>
                 <span class="c1"># but we should consider to make this part of a more general</span>
@@ -399,17 +402,17 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span><span class="n">iterationHeader2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">newtonCache</span><span class="p">:</span>
-                    <span class="n">newtonCache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_createNewtonCache</span><span class="p">(</span><span class="n">theDofManager</span><span class="p">)</span>
+                    <span class="n">newtonCache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_createNewtonCache</span><span class="p">(</span><span class="n">locations</span><span class="p">)</span>
                     <span class="n">linearSolver</span><span class="o">.</span><span class="n">setJournal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">journal</span><span class="p">)</span>
-                    <span class="n">linearSolver</span><span class="o">.</span><span class="n">setModel</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">)</span>
+                    <span class="n">linearSolver</span><span class="o">.</span><span class="n">setModel</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">locations</span><span class="o">.</span><span class="n">numbering</span><span class="p">)</span>
 
                 <span class="k">try</span><span class="p">:</span>
                     <span class="k">for</span> <span class="n">initialGuess</span> <span class="ow">in</span> <span class="p">(</span><span class="n">dUPrediction</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
                         <span class="k">try</span><span class="p">:</span>
                             <span class="k">if</span> <span class="n">timeStep</span><span class="o">.</span><span class="n">timeIncrement</span> <span class="o">==</span> <span class="mf">0.0</span> <span class="ow">and</span> <span class="n">skipZeroIncrements</span><span class="p">:</span>
                                 <span class="bp">self</span><span class="o">.</span><span class="n">journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span><span class="s2">"Skipping zero time increment solve"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">identification</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-                                <span class="n">dU</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
-                                <span class="n">P</span> <span class="o">=</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+                                <span class="n">dU</span> <span class="o">=</span> <span class="n">locations</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+                                <span class="n">P</span> <span class="o">=</span> <span class="n">locations</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
                                 <span class="n">iterationHistory</span> <span class="o">=</span> <span class="kc">None</span>
                                 <span class="k">break</span>
 
@@ -425,7 +428,7 @@
                                 <span class="n">materialPoints</span><span class="p">,</span>
                                 <span class="n">particles</span><span class="p">,</span>
                                 <span class="n">constraints</span><span class="p">,</span>
-                                <span class="n">theDofManager</span><span class="p">,</span>
+                                <span class="n">locations</span><span class="p">,</span>
                                 <span class="n">linearSolver</span><span class="p">,</span>
                                 <span class="n">iterationOptions</span><span class="p">,</span>
                                 <span class="n">timeStep</span><span class="p">,</span>
@@ -480,9 +483,9 @@
                         <span class="bp">self</span><span class="o">.</span><span class="n">_updatePredictorHistory</span><span class="p">(</span><span class="n">predictor</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">iterationHistory</span><span class="p">)</span>
 
                     <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">reducedNodeFields</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-                        <span class="n">theDofManager</span><span class="o">.</span><span class="n">writeDofVectorToNodeField</span><span class="p">(</span><span class="n">dU</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="s2">"dU"</span><span class="p">)</span>
-                        <span class="n">theDofManager</span><span class="o">.</span><span class="n">writeDofVectorToNodeField</span><span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="s2">"U"</span><span class="p">)</span>
-                        <span class="n">theDofManager</span><span class="o">.</span><span class="n">writeDofVectorToNodeField</span><span class="p">(</span><span class="n">P</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="s2">"P"</span><span class="p">)</span>
+                        <span class="n">locations</span><span class="o">.</span><span class="n">numbering</span><span class="o">.</span><span class="n">writeDofVectorToNodeField</span><span class="p">(</span><span class="n">dU</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="s2">"dU"</span><span class="p">)</span>
+                        <span class="n">locations</span><span class="o">.</span><span class="n">numbering</span><span class="o">.</span><span class="n">writeDofVectorToNodeField</span><span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="s2">"U"</span><span class="p">)</span>
+                        <span class="n">locations</span><span class="o">.</span><span class="n">numbering</span><span class="o">.</span><span class="n">writeDofVectorToNodeField</span><span class="p">(</span><span class="n">P</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="s2">"P"</span><span class="p">)</span>
                         <span class="n">model</span><span class="o">.</span><span class="n">nodeFields</span><span class="p">[</span><span class="n">field</span><span class="o">.</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">copyEntriesFromOther</span><span class="p">(</span><span class="n">field</span><span class="p">)</span>
 
                     <span class="n">model</span><span class="o">.</span><span class="n">advanceToTime</span><span class="p">(</span><span class="n">timeStep</span><span class="o">.</span><span class="n">totalTime</span><span class="p">)</span>
@@ -535,7 +538,7 @@
         <span class="n">materialPoints</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
         <span class="n">particles</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
         <span class="n">constraints</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
-        <span class="n">theDofManager</span><span class="p">:</span> <span class="n">DofManager</span><span class="p">,</span>
+        <span class="n">locations</span><span class="p">:</span> <span class="n">DofLocations</span><span class="p">,</span>
         <span class="n">linearSolver</span><span class="p">,</span>
         <span class="n">iterationOptions</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
         <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">,</span>
@@ -567,8 +570,8 @@
 <span class="sd">            The list of particles.</span>
 <span class="sd">        constraints</span>
 <span class="sd">            The list of constraints.</span>
-<span class="sd">        theDofManager</span>
-<span class="sd">            The DofManager instance for the current active model.</span>
+<span class="sd">        locations</span>
+<span class="sd">            The locations of the entities in the discrete system of the current active model.</span>
 <span class="sd">        linearSolver</span>
 <span class="sd">            The instance of the linear solver to be used.</span>
 <span class="sd">        iterationOptions</span>
@@ -594,7 +597,7 @@
 <span class="sd">        """</span>
 
         <span class="n">iterationCounter</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">incrementResidualHistory</span> <span class="o">=</span> <span class="p">{</span><span class="n">field</span><span class="p">:</span> <span class="nb">list</span><span class="p">()</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">theDofManager</span><span class="o">.</span><span class="n">idcsOfFieldsInDofVector</span><span class="p">}</span>
+        <span class="n">incrementResidualHistory</span> <span class="o">=</span> <span class="p">{</span><span class="n">field</span><span class="p">:</span> <span class="nb">list</span><span class="p">()</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">locations</span><span class="o">.</span><span class="n">numbering</span><span class="o">.</span><span class="n">idcsOfFieldsInDofVector</span><span class="p">}</span>
 
         <span class="n">nAllowedResidualGrowths</span> <span class="o">=</span> <span class="n">iterationOptions</span><span class="p">[</span><span class="s2">"allowed residual growths"</span><span class="p">]</span>
 
@@ -622,7 +625,7 @@
                 <span class="n">particles</span><span class="p">,</span>
                 <span class="n">constraints</span><span class="p">,</span>
                 <span class="n">timeStep</span><span class="p">,</span>
-                <span class="n">theDofManager</span><span class="p">,</span>
+                <span class="n">locations</span><span class="p">,</span>
                 <span class="n">dU</span><span class="p">,</span>
                 <span class="n">Rhs</span><span class="p">,</span>
                 <span class="n">K</span><span class="p">,</span>
@@ -632,14 +635,12 @@
             <span class="p">)</span>
 
             <span class="k">if</span> <span class="n">iterationCounter</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">dirichlets</span><span class="p">:</span>
-                <span class="n">Rhs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_applyDirichlet</span><span class="p">(</span><span class="n">timeStep</span><span class="p">,</span> <span class="n">Rhs</span><span class="p">,</span> <span class="n">dirichlets</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">)</span>
+                <span class="n">Rhs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_applyDirichlet</span><span class="p">(</span><span class="n">timeStep</span><span class="p">,</span> <span class="n">Rhs</span><span class="p">,</span> <span class="n">dirichlets</span><span class="p">,</span> <span class="n">locations</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">dirichlet</span> <span class="ow">in</span> <span class="n">dirichlets</span><span class="p">:</span>
-                    <span class="n">Rhs</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_findDirichletIndices</span><span class="p">(</span><span class="n">theDofManager</span><span class="p">,</span> <span class="n">dirichlet</span><span class="p">)]</span> <span class="o">=</span> <span class="mf">0.0</span>
+                    <span class="n">Rhs</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_findDirichletIndices</span><span class="p">(</span><span class="n">locations</span><span class="p">,</span> <span class="n">dirichlet</span><span class="p">)]</span> <span class="o">=</span> <span class="mf">0.0</span>
 
-                <span class="n">incrementResidualHistory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_computeResiduals</span><span class="p">(</span>
-                    <span class="n">Rhs</span><span class="p">,</span> <span class="n">ddU</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">incrementResidualHistory</span><span class="p">,</span> <span class="n">theDofManager</span>
-                <span class="p">)</span>
+                <span class="n">incrementResidualHistory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_computeResiduals</span><span class="p">(</span><span class="n">Rhs</span><span class="p">,</span> <span class="n">ddU</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">incrementResidualHistory</span><span class="p">,</span> <span class="n">locations</span><span class="p">)</span>
 
                 <span class="n">incrementResidualHistory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_checkConvergence</span><span class="p">(</span>
                     <span class="n">iterationCounter</span><span class="p">,</span> <span class="n">incrementResidualHistory</span><span class="p">,</span> <span class="n">iterationOptions</span>
@@ -690,7 +691,7 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">K_CSR</span> <span class="o">=</span> <span class="n">K_CSR_elastic</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
-            <span class="n">K_CSR</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_applyDirichletKCsr</span><span class="p">(</span><span class="n">K_CSR</span><span class="p">,</span> <span class="n">dirichlets</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">)</span>
+            <span class="n">K_CSR</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_applyDirichletKCsr</span><span class="p">(</span><span class="n">K_CSR</span><span class="p">,</span> <span class="n">dirichlets</span><span class="p">,</span> <span class="n">locations</span><span class="p">)</span>
 
             <span class="n">ddU</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_linearSolve</span><span class="p">(</span><span class="n">K_CSR</span><span class="p">,</span> <span class="n">Rhs</span><span class="p">,</span> <span class="n">linearSolver</span><span class="p">)</span>
 
@@ -720,7 +721,7 @@
                         <span class="n">particles</span><span class="p">,</span>
                         <span class="n">constraints</span><span class="p">,</span>
                         <span class="n">timeStep</span><span class="p">,</span>
-                        <span class="n">theDofManager</span><span class="p">,</span>
+                        <span class="n">locations</span><span class="p">,</span>
                         <span class="n">dU_linesearch</span><span class="p">,</span>
                         <span class="n">Rhs</span><span class="p">,</span>
                         <span class="n">K</span><span class="p">,</span>
@@ -729,7 +730,7 @@
                         <span class="n">F</span><span class="p">,</span>
                     <span class="p">)</span>
                     <span class="k">for</span> <span class="n">dirichlet</span> <span class="ow">in</span> <span class="n">dirichlets</span><span class="p">:</span>
-                        <span class="n">Rhs_</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_findDirichletIndices</span><span class="p">(</span><span class="n">theDofManager</span><span class="p">,</span> <span class="n">dirichlet</span><span class="p">)]</span> <span class="o">=</span> <span class="mf">0.0</span>
+                        <span class="n">Rhs_</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_findDirichletIndices</span><span class="p">(</span><span class="n">locations</span><span class="p">,</span> <span class="n">dirichlet</span><span class="p">)]</span> <span class="o">=</span> <span class="mf">0.0</span>
 
                     <span class="k">return</span> <span class="n">Rhs_</span>
 
@@ -765,7 +766,7 @@
         <span class="n">particles</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
         <span class="n">constraints</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
         <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">,</span>
-        <span class="n">theDofManager</span><span class="p">:</span> <span class="n">DofManager</span><span class="p">,</span>
+        <span class="n">locations</span><span class="p">:</span> <span class="n">DofLocations</span><span class="p">,</span>
         <span class="n">dU</span><span class="p">,</span>
         <span class="n">Rhs</span><span class="p">,</span>
         <span class="n">K</span><span class="p">,</span>
@@ -787,18 +788,18 @@
         <span class="n">time</span> <span class="o">=</span> <span class="n">timeStep</span><span class="o">.</span><span class="n">totalTime</span>
         <span class="n">dT</span> <span class="o">=</span> <span class="n">timeStep</span><span class="o">.</span><span class="n">timeIncrement</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_computeCells</span><span class="p">(</span><span class="n">activeCells</span><span class="p">,</span> <span class="n">U_np</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">PInt</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">dT</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_computeCells</span><span class="p">(</span><span class="n">activeCells</span><span class="p">,</span> <span class="n">U_np</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">PInt</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">dT</span><span class="p">,</span> <span class="n">locations</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_computeElements</span><span class="p">(</span><span class="n">elements</span><span class="p">,</span> <span class="n">U_np</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">PInt</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">dT</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_computeElements</span><span class="p">(</span><span class="n">elements</span><span class="p">,</span> <span class="n">U_np</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">PInt</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">dT</span><span class="p">,</span> <span class="n">locations</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_computeCellElements</span><span class="p">(</span><span class="n">cellElements</span><span class="p">,</span> <span class="n">U_np</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">PInt</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">dT</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_computeCellElements</span><span class="p">(</span><span class="n">cellElements</span><span class="p">,</span> <span class="n">U_np</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">PInt</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">dT</span><span class="p">,</span> <span class="n">locations</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_computeParticles</span><span class="p">(</span><span class="n">particles</span><span class="p">,</span> <span class="n">U_np</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">PInt</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">dT</span><span class="p">,</span> <span class="n">theDofManager</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_computeParticles</span><span class="p">(</span><span class="n">particles</span><span class="p">,</span> <span class="n">U_np</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">PInt</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">dT</span><span class="p">,</span> <span class="n">locations</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_computeConstraints</span><span class="p">(</span><span class="n">constraints</span><span class="p">,</span> <span class="n">U_np</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">PInt</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_assembleLoads</span><span class="p">(</span>
-            <span class="p">[</span><span class="o">*</span><span class="n">bodyLoads</span><span class="p">,</span> <span class="o">*</span><span class="n">distributedLoads</span><span class="p">,</span> <span class="o">*</span><span class="n">particleDistributedLoads</span><span class="p">],</span> <span class="n">U_np</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">PExt</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">theDofManager</span>
+            <span class="p">[</span><span class="o">*</span><span class="n">bodyLoads</span><span class="p">,</span> <span class="o">*</span><span class="n">distributedLoads</span><span class="p">,</span> <span class="o">*</span><span class="n">particleDistributedLoads</span><span class="p">],</span> <span class="n">U_np</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">PExt</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">locations</span>
         <span class="p">)</span>
 
         <span class="c1"># every contributor has had its say; commit whatever is still held so the matrix is complete</span>
