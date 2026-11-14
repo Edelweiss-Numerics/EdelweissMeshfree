@@ -540,7 +540,9 @@ not agree with the cells reachable from <code class="docutils literal notranslat
 <p>The active domain consists of the cells that hold material points, the nodes these cells and the particles’
 kernel functions reach, and the finite elements and cell elements with their nodes. Its degrees of freedom are
 numbered on the active nodes; the model’s node sets are located on their nodes in the active domain. The
-elements the solver computes are the finite elements, the active cells, the cell elements and the particles.</p>
+elements the solver computes are the finite elements that carry kernels
+(<code class="xref py py-meth docutils literal notranslate"><span class="pre">elementsWithKernels()</span></code>), the active cells, the cell elements and the
+particles.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>The discrete system.</p>
@@ -1005,7 +1007,7 @@ the cell elements.</p></li>
 </dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.elements" title="edelweissmeshfree.models.mpmmodel.MPMModel.elements"><code class="xref py py-obj docutils literal notranslate"><span class="pre">elements</span></code></a></dt><dd><p>Everything the solver computes like an element in every evaluation of the model, see <code class="xref py py-meth docutils literal notranslate"><span class="pre">computeElements()</span></code>: the finite elements of the model that carry kernels (<code class="xref py py-attr docutils literal notranslate"><span class="pre">hasKernels</span></code>), and in a meshfree model its cells and particles as well.</p>
 </dd>
-<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">elementsWithNodalInertia</span></code></dt><dd><p>The entities whose inertia, damping and stable time increment a solver assembles element by element, at the nodes (<code class="docutils literal notranslate"><span class="pre">NID</span></code>, <code class="docutils literal notranslate"><span class="pre">NED</span></code>).</p>
+<dt><a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.elementsWithNodalInertia" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.elementsWithNodalInertia"><code class="xref py py-obj docutils literal notranslate"><span class="pre">elementsWithNodalInertia</span></code></a></dt><dd><p>The finite elements, whose inertia, damping and stable time increment a solver assembles element by element, at the nodes.</p>
 </dd>
 <dt><a class="reference internal" href="numeric_tools.html#edelweissmeshfree.numerics.doflocations.MPMDofLocations.numbering" title="edelweissmeshfree.numerics.doflocations.MPMDofLocations.numbering"><code class="xref py py-obj docutils literal notranslate"><span class="pre">numbering</span></code></a></dt><dd><p>The numbering of the degrees of freedom of the discrete system, which says which node fields and scalar variables have degrees of freedom, and the global index of each; see <code class="xref py py-class docutils literal notranslate"><span class="pre">DofNumbering</span></code>.</p>
 </dd>
@@ -1024,7 +1026,7 @@ the cell elements.</p></li>
 <td><p>Where the model holds the motion of its particles; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">carriersOfTheMotion()</span></code>.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.dofsWithNodalInertia" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.dofsWithNodalInertia"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dofsWithNodalInertia</span></code></a>(fieldNames)</p></td>
-<td><p>The degrees of freedom of the given fields whose inertia is that of the nodes: those of the nodes that carry their total solution, i.e. of the finite elements (and cell elements), whose mass the elements assemble.</p></td>
+<td><p>The degrees of freedom of the given fields whose inertia is that of the nodes: those of the nodes that carry their total solution, i.e. of the finite elements and of the cell elements.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.readEntryOfNodeField" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.readEntryOfNodeField"><code class="xref py py-obj docutils literal notranslate"><span class="pre">readEntryOfNodeField</span></code></a>(dofVector, nodeField, entry)</p></td>
 <td><p>Read one entry of one node field of the model into a vector of the discrete system, by node; every read of <code class="xref py py-meth docutils literal notranslate"><span class="pre">readStateFromModel()</span></code> goes through here.</p></td>
@@ -1106,9 +1108,10 @@ and every particle takes its own from them as it advances.</p>
 <dt class="sig sig-object py" id="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.dofsWithNodalInertia">
 <span class="sig-name descname"><span class="pre">dofsWithNodalInertia</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fieldNames</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmdiscretesystem.html#MPMDiscreteSystem.dofsWithNodalInertia"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.dofsWithNodalInertia" title="Link to this definition"></a></dt>
 <dd><p>The degrees of freedom of the given fields whose inertia is that of the nodes: those of the nodes that carry
-their total solution, i.e. of the finite elements (and cell elements), whose mass the elements assemble. The
-nodes of the kernel functions are left out: the particles carry the state, and with it the inertia, which they
-integrate themselves, or which a solver lumps to these nodes (see <a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.assembleLumpedMassOfEntitiesWithOwnInertia" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.assembleLumpedMassOfEntitiesWithOwnInertia"><code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleLumpedMassOfEntitiesWithOwnInertia()</span></code></a>).</p>
+their total solution, i.e. of the finite elements and of the cell elements. Only the finite elements assemble
+a mass there (<a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.elementsWithNodalInertia" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.elementsWithNodalInertia"><code class="xref py py-attr docutils literal notranslate"><span class="pre">elementsWithNodalInertia</span></code></a>). The nodes of the kernel functions are left out: the particles
+carry the state, and with it the inertia, which they integrate themselves, or which a solver lumps to these
+nodes (see <a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.assembleLumpedMassOfEntitiesWithOwnInertia" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.assembleLumpedMassOfEntitiesWithOwnInertia"><code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleLumpedMassOfEntitiesWithOwnInertia()</span></code></a>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>fieldNames</strong> (<em>list</em>) – The names of the fields.</p>
@@ -1208,6 +1211,23 @@ starts them at zero.</p>
 <dt class="sig sig-object py" id="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.cellsInterpolatingToMaterialPoints">
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">cellsInterpolatingToMaterialPoints</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.cellsInterpolatingToMaterialPoints" title="Link to this definition"></a></dt>
 <dd><p>The active cells and the cell elements, which interpolate the solution to the material points they hold.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.elementsWithNodalInertia">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">elementsWithNodalInertia</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.elementsWithNodalInertia" title="Link to this definition"></a></dt>
+<dd><p>The finite elements, whose inertia, damping and stable time increment a solver assembles element by
+element, at the nodes. The cells, the cell elements and the particles contribute nothing there: the particles
+carry the state, and with it the inertia, which they integrate themselves, or which a solver lumps to the nodes
+of their kernel functions (see <a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.assembleLumpedMassOfEntitiesWithOwnInertia" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.assembleLumpedMassOfEntitiesWithOwnInertia"><code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleLumpedMassOfEntitiesWithOwnInertia()</span></code></a>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The finite elements, in the order in which the solver computes them.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py attribute">

@@ -296,13 +296,29 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">numbering</span><span class="o">.</span><span class="n">writeDofVectorToNodeField</span><span class="p">(</span><span class="n">dofVector</span><span class="p">,</span> <span class="n">nodeField</span><span class="p">,</span> <span class="n">entry</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">activeNodes</span><span class="p">)</span></div>
 
 
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">elementsWithNodalInertia</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The finite elements, whose inertia, damping and stable time increment a solver assembles element by</span>
+<span class="sd">        element, at the nodes. The cells, the cell elements and the particles contribute nothing there: the particles</span>
+<span class="sd">        carry the state, and with it the inertia, which they integrate themselves, or which a solver lumps to the nodes</span>
+<span class="sd">        of their kernel functions (see :meth:`assembleLumpedMassOfEntitiesWithOwnInertia`).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list</span>
+<span class="sd">            The finite elements, in the order in which the solver computes them.</span>
+<span class="sd">        """</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">locations</span><span class="o">.</span><span class="n">finiteElements</span>
+
 <div class="viewcode-block" id="MPMDiscreteSystem.dofsWithNodalInertia">
 <a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.dofsWithNodalInertia">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">dofsWithNodalInertia</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fieldNames</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""The degrees of freedom of the given fields whose inertia is that of the nodes: those of the nodes that carry</span>
-<span class="sd">        their total solution, i.e. of the finite elements (and cell elements), whose mass the elements assemble. The</span>
-<span class="sd">        nodes of the kernel functions are left out: the particles carry the state, and with it the inertia, which they</span>
-<span class="sd">        integrate themselves, or which a solver lumps to these nodes (see :meth:`assembleLumpedMassOfEntitiesWithOwnInertia`).</span>
+<span class="sd">        their total solution, i.e. of the finite elements and of the cell elements. Only the finite elements assemble</span>
+<span class="sd">        a mass there (:attr:`elementsWithNodalInertia`). The nodes of the kernel functions are left out: the particles</span>
+<span class="sd">        carry the state, and with it the inertia, which they integrate themselves, or which a solver lumps to these</span>
+<span class="sd">        nodes (see :meth:`assembleLumpedMassOfEntitiesWithOwnInertia`).</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>

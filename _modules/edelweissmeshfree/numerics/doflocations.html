@@ -156,8 +156,13 @@
         <span class="n">cellElements</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">cellElements</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="n">cellElements</span><span class="p">)</span>
         <span class="n">particles</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">particles</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="n">particles</span><span class="p">)</span>
 
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">numbering</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span> <span class="n">constraints</span><span class="p">,</span> <span class="p">[</span><span class="o">*</span><span class="n">cells</span><span class="p">,</span> <span class="o">*</span><span class="n">cellElements</span><span class="p">,</span> <span class="o">*</span><span class="n">particles</span><span class="p">])</span>
+        <span class="n">finiteElements</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">elements</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="n">elements</span><span class="p">)</span>
 
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">numbering</span><span class="p">,</span> <span class="n">finiteElements</span><span class="p">,</span> <span class="n">constraints</span><span class="p">,</span> <span class="p">[</span><span class="o">*</span><span class="n">cells</span><span class="p">,</span> <span class="o">*</span><span class="n">cellElements</span><span class="p">,</span> <span class="o">*</span><span class="n">particles</span><span class="p">])</span>
+
+        <span class="c1">#: The finite elements among :attr:`elements`: the ones whose inertia, damping and stable time increment a solver</span>
+        <span class="c1">#: assembles element by element. The cells and the particles come on top of them in :attr:`elements`.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">finiteElements</span> <span class="o">=</span> <span class="n">finiteElements</span>
         <span class="c1">#: The cells that have a location, the active cells.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cells</span> <span class="o">=</span> <span class="n">cells</span>
         <span class="c1">#: The cell elements that have a location.</span>
