@@ -294,8 +294,10 @@ class MPMModel(FEModel):
 
     def updateConnectivity(self) -> Change:
         """Bring the connectivity up to date with the converged state, before an increment, and say what that changed;
-        see :meth:`~edelweissfe.models.femodel.FEModel.updateConnectivity`. Called by EdelweissFE's solvers at the start
-        of every increment and of every retry after a cutback.
+        see :meth:`~edelweissfe.models.femodel.FEModel.updateConnectivity`. Called by EdelweissFE's implicit solvers at
+        the start of every increment and of every retry after a cutback, and by
+        :class:`~edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic` after every increment, on
+        the kernel functions the particles reached.
 
         First the managers assign the material points to the cells they lie in (:attr:`mpmManagers`) and the particles
         to the kernel functions they reach (:attr:`particleManagers`), each from its converged state: a failed attempt

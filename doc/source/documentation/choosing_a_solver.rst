@@ -275,8 +275,9 @@ What to know
   the configuration and projects the velocity from the particles' momentum: the initial velocity given to the
   particles, or the velocity of a step of ``NID`` that integrated the inertia in the particles.
 - **The velocity** of the kernel functions' nodes is the model's: it is written to the entry ``V`` of the node fields
-  at acceptance, and read back by node whenever the discrete system is rebuilt, also at the start of a step. A node
-  keeps its velocity while the active nodes change around it, and a node that has just become active starts at rest.
+  at acceptance, and read back by node whenever the discrete system gets a new numbering, also at the start of a step.
+  A node keeps its velocity while the active nodes change around it, and a node that has just become active starts at
+  rest.
   With the option ``projectVelocityEveryIncrement=True``, it is projected from the particles' momentum in every
   increment instead, which dissipates more.
 - **Consecutive steps.** As in ``NED``, a step leaves the velocity and the acceleration at its end time: within the
@@ -288,11 +289,15 @@ What to know
   \boldsymbol{f}`, and ``V`` the half-step velocity, as in ``NED``; ``U`` is zero, since the nodes of the kernel
   functions carry no total solution. ``P``, ``V`` and ``A`` are written on the kernel functions the increment ends on,
   ``dU`` on those it started on: a node that left the active domain in that increment keeps its ``dU``.
-- **The discrete system.** The model classifies a change of the connectivity
-  (:class:`~edelweissfe.models.change.Change`, see EdelweissFE's *What the solver asks the model*). When the active
-  nodes cannot change (bonded kernel functions, no material point managers), it is a change of the locations, and the
-  solver only locates the changed particles and the constraints anew; otherwise it is a change of the numbering, and
-  the discrete system is rebuilt. Nothing changed: nothing to do.
+- **The discrete system** follows the particles through the one build path of EdelweissFE's solvers (see
+  EdelweissFE's *What the solver asks the model*). The model classifies a change of the connectivity
+  (:class:`~edelweissfe.models.change.Change`). When the active nodes cannot change (bonded kernel functions, no
+  material point managers), it is a change of the locations: the discrete system keeps its numbering and locates the
+  changed particles and the constraints anew, and the solver wraps its increment and its velocity with the new
+  locations, their values kept. Otherwise it is a change of the numbering: the model builds a new discrete system, and
+  the solver builds the increment and the velocity, which it reads by node from the model. Nothing changed: nothing to
+  do. The lumped mass is no part of this: it is a function of the particles' current positions, and is assembled in
+  every increment.
 - **Nodes without mass.** A kernel function that the particles reach only where it vanishes has no positive lumped
   mass; its node has no equation of motion and has no velocity, also after it lost its mass while it moved.
 - **A particle that cannot take an increment** ends the step with ``StepFailed``: the increment is set by stability,
@@ -300,7 +305,10 @@ What to know
 - **Pressure.** A particle pressure is assembled as in implicit runs: as for the finite elements, a positive pressure
   pushes on the face, against its outward normal.
 - **Restart** works as for the implicit solvers (see above): the model's checkpoint carries the half-step velocity,
-  the solver's the net force and the lumped mass.
+  the solver's the net force and the inverse lumped mass, with the digest of the numbering they are vectors of. The
+  resumed step refuses to take them over if its discrete system, built from the resumed model, has another numbering,
+  e.g. because a neighbour list skin makes the first search of the resumed run admit other kernel functions than the
+  checkpointed one had. It also refuses a checkpoint that holds no digest.
 
 Choosing a linear solver
 ------------------------
