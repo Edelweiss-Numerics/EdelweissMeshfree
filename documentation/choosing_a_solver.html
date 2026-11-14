@@ -418,8 +418,9 @@ does: from the velocity of the nodes and the net force of their acceleration. Ot
 the configuration and projects the velocity from the particles’ momentum: the initial velocity given to the
 particles, or the velocity of a step of <code class="docutils literal notranslate"><span class="pre">NID</span></code> that integrated the inertia in the particles.</p></li>
 <li><p><strong>The velocity</strong> of the kernel functions’ nodes is the model’s: it is written to the entry <code class="docutils literal notranslate"><span class="pre">V</span></code> of the node fields
-at acceptance, and read back by node whenever the discrete system is rebuilt, also at the start of a step. A node
-keeps its velocity while the active nodes change around it, and a node that has just become active starts at rest.
+at acceptance, and read back by node whenever the discrete system gets a new numbering, also at the start of a step.
+A node keeps its velocity while the active nodes change around it, and a node that has just become active starts at
+rest.
 With the option <code class="docutils literal notranslate"><span class="pre">projectVelocityEveryIncrement=True</span></code>, it is projected from the particles’ momentum in every
 increment instead, which dissipates more.</p></li>
 <li><p><strong>Consecutive steps.</strong> As in <code class="docutils literal notranslate"><span class="pre">NED</span></code>, a step leaves the velocity and the acceleration at its end time: within the
@@ -431,11 +432,15 @@ it was taken on, <code class="docutils literal notranslate"><span class="pre">P<
 \boldsymbol{f}\)</span>, and <code class="docutils literal notranslate"><span class="pre">V</span></code> the half-step velocity, as in <code class="docutils literal notranslate"><span class="pre">NED</span></code>; <code class="docutils literal notranslate"><span class="pre">U</span></code> is zero, since the nodes of the kernel
 functions carry no total solution. <code class="docutils literal notranslate"><span class="pre">P</span></code>, <code class="docutils literal notranslate"><span class="pre">V</span></code> and <code class="docutils literal notranslate"><span class="pre">A</span></code> are written on the kernel functions the increment ends on,
 <code class="docutils literal notranslate"><span class="pre">dU</span></code> on those it started on: a node that left the active domain in that increment keeps its <code class="docutils literal notranslate"><span class="pre">dU</span></code>.</p></li>
-<li><p><strong>The discrete system.</strong> The model classifies a change of the connectivity
-(<code class="xref py py-class docutils literal notranslate"><span class="pre">Change</span></code>, see EdelweissFE’s <em>What the solver asks the model</em>). When the active
-nodes cannot change (bonded kernel functions, no material point managers), it is a change of the locations, and the
-solver only locates the changed particles and the constraints anew; otherwise it is a change of the numbering, and
-the discrete system is rebuilt. Nothing changed: nothing to do.</p></li>
+<li><p><strong>The discrete system</strong> follows the particles through the one build path of EdelweissFE’s solvers (see
+EdelweissFE’s <em>What the solver asks the model</em>). The model classifies a change of the connectivity
+(<code class="xref py py-class docutils literal notranslate"><span class="pre">Change</span></code>). When the active nodes cannot change (bonded kernel functions, no
+material point managers), it is a change of the locations: the discrete system keeps its numbering and locates the
+changed particles and the constraints anew, and the solver wraps its increment and its velocity with the new
+locations, their values kept. Otherwise it is a change of the numbering: the model builds a new discrete system, and
+the solver builds the increment and the velocity, which it reads by node from the model. Nothing changed: nothing to
+do. The lumped mass is no part of this: it is a function of the particles’ current positions, and is assembled in
+every increment.</p></li>
 <li><p><strong>Nodes without mass.</strong> A kernel function that the particles reach only where it vanishes has no positive lumped
 mass; its node has no equation of motion and has no velocity, also after it lost its mass while it moved.</p></li>
 <li><p><strong>A particle that cannot take an increment</strong> ends the step with <code class="docutils literal notranslate"><span class="pre">StepFailed</span></code>: the increment is set by stability,
@@ -443,7 +448,10 @@ not by convergence, so it is not cut back.</p></li>
 <li><p><strong>Pressure.</strong> A particle pressure is assembled as in implicit runs: as for the finite elements, a positive pressure
 pushes on the face, against its outward normal.</p></li>
 <li><p><strong>Restart</strong> works as for the implicit solvers (see above): the model’s checkpoint carries the half-step velocity,
-the solver’s the net force and the lumped mass.</p></li>
+the solver’s the net force and the inverse lumped mass, with the digest of the numbering they are vectors of. The
+resumed step refuses to take them over if its discrete system, built from the resumed model, has another numbering,
+e.g. because a neighbour list skin makes the first search of the resumed run admit other kernel functions than the
+checkpointed one had. It also refuses a checkpoint that holds no digest.</p></li>
 </ul>
 </section>
 </section>

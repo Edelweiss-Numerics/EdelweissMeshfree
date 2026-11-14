@@ -403,8 +403,10 @@
 <a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">updateConnectivity</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Change</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Bring the connectivity up to date with the converged state, before an increment, and say what that changed;</span>
-<span class="sd">        see :meth:`~edelweissfe.models.femodel.FEModel.updateConnectivity`. Called by EdelweissFE's solvers at the start</span>
-<span class="sd">        of every increment and of every retry after a cutback.</span>
+<span class="sd">        see :meth:`~edelweissfe.models.femodel.FEModel.updateConnectivity`. Called by EdelweissFE's implicit solvers at</span>
+<span class="sd">        the start of every increment and of every retry after a cutback, and by</span>
+<span class="sd">        :class:`~edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic` after every increment, on</span>
+<span class="sd">        the kernel functions the particles reached.</span>
 
 <span class="sd">        First the managers assign the material points to the cells they lie in (:attr:`mpmManagers`) and the particles</span>
 <span class="sd">        to the kernel functions they reach (:attr:`particleManagers`), each from its converged state: a failed attempt</span>

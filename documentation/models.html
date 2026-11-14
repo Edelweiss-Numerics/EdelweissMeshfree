@@ -698,8 +698,10 @@ quasi-static solver, and refused by a dynamic one.</p>
 <dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity">
 <span class="sig-name descname"><span class="pre">updateConnectivity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmmodel.html#MPMModel.updateConnectivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity" title="Link to this definition"></a></dt>
 <dd><p>Bring the connectivity up to date with the converged state, before an increment, and say what that changed;
-see <code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code>. Called by EdelweissFE’s solvers at the start
-of every increment and of every retry after a cutback.</p>
+see <code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code>. Called by EdelweissFE’s implicit solvers at
+the start of every increment and of every retry after a cutback, and by
+<a class="reference internal" href="solvers.html#edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic" title="edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeshfreeExplicitDynamic</span></code></a> after every increment, on
+the kernel functions the particles reached.</p>
 <p>First the managers assign the material points to the cells they lie in (<a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.mpmManagers" title="edelweissmeshfree.models.mpmmodel.MPMModel.mpmManagers"><code class="xref py py-attr docutils literal notranslate"><span class="pre">mpmManagers</span></code></a>) and the particles
 to the kernel functions they reach (<a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.particleManagers" title="edelweissmeshfree.models.mpmmodel.MPMModel.particleManagers"><code class="xref py py-attr docutils literal notranslate"><span class="pre">particleManagers</span></code></a>), each from its converged state: a failed attempt
 may have left a trial state behind. Then the constraints follow, which couple the nodes the managers have just
@@ -961,8 +963,8 @@ update of the connectivity, see <a class="reference internal" href="#edelweissme
 </section>
 <section id="mpmdiscretesystem-class">
 <h2><code class="docutils literal notranslate"><span class="pre">MPMDiscreteSystem</span></code> class<a class="headerlink" href="#mpmdiscretesystem-class" title="Link to this heading"></a></h2>
-<p>What an <code class="docutils literal notranslate"><span class="pre">MPMModel</span></code> answers EdelweissFE’s implicit solvers (<code class="docutils literal notranslate"><span class="pre">NIST</span></code>, <code class="docutils literal notranslate"><span class="pre">NISTParallel</span></code>, <code class="docutils literal notranslate"><span class="pre">NISTPArcLength</span></code>) when they
-(re)build their discrete system: the active domain, its degrees of freedom and the entities computed like elements, how
+<p>What an <code class="docutils literal notranslate"><span class="pre">MPMModel</span></code> answers EdelweissFE’s implicit solvers (<code class="docutils literal notranslate"><span class="pre">NIST</span></code>, <code class="docutils literal notranslate"><span class="pre">NISTParallel</span></code>, <code class="docutils literal notranslate"><span class="pre">NISTPArcLength</span></code>) and the
+explicit solver <code class="docutils literal notranslate"><span class="pre">MeshfreeExplicitDynamic</span></code> when they (re)build their discrete system: the active domain, its degrees of freedom and the entities computed like elements, how
 the solution passes between the model and the solver’s vectors, and the update of the material points before the
 cells are computed. See EdelweissFE’s documentation, “What the solver asks the model”.</p>
 <p id="module-edelweissmeshfree.models.mpmdiscretesystem">What the discrete system of a material point or RKPM model is made of: the answer an

@@ -198,19 +198,25 @@ with its particles, and the state lives in the particles (updated Lagrangian), s
 <ol class="arabic simple">
 <li><p><strong>advance</strong>: every particle takes the increment <span class="math notranslate nohighlight">\(\Delta \boldsymbol{u}_{n+1}\)</span> on the kernel functions it was
 assigned at <span class="math notranslate nohighlight">\(t_n\)</span> (<code class="docutils literal notranslate"><span class="pre">updatePhysicsExplicit</span></code>), and moves;</p></li>
-<li><p><strong>reconnect</strong>: the model assigns the particles to the kernel functions they reach now
-(<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity" title="edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity"><code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code></a>), and the discrete system follows;</p></li>
+<li><p><strong>reconnect</strong>: the model assigns the particles to the kernel functions they reach now and says what that changed
+(<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity" title="edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity"><code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code></a>), and the discrete system follows, through
+the one build path of EdelweissFE’s solvers
+(<code class="xref py py-meth docutils literal notranslate"><span class="pre">updateDiscreteSystem()</span></code>): if nothing
+changed, it stands; if the particles reach other nodes of the same numbering, it has new locations
+(<a class="reference internal" href="#edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.onNewLocations" title="edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.onNewLocations"><code class="xref py py-meth docutils literal notranslate"><span class="pre">MeshfreeExplicitDynamic.onNewLocations()</span></code></a>); if the active nodes changed, it has a new numbering
+(<a class="reference internal" href="#edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.onNewNumbering" title="edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.onNewNumbering"><code class="xref py py-meth docutils literal notranslate"><span class="pre">MeshfreeExplicitDynamic.onNewNumbering()</span></code></a>);</p></li>
 <li><p><strong>evaluate</strong>: on the new kernel functions, the particles return their internal force, their lumped mass and their
 lumped momentum, and the loads and constraints their forces, at the configuration just accepted.</p></li>
 </ol>
-<p>The lumped mass is therefore assembled anew in every increment, and the nodal values are coefficients of the current
-kernel functions. The velocity is the state the next increment starts from, so the model owns it, as it owns the
-velocity of a finite element model (see EdelweissFE’s documentation page <em>Node field results</em>): the velocity of every
-node of the kernel functions is written to the entry <code class="docutils literal notranslate"><span class="pre">V</span></code> of the node fields at acceptance, and read back by node
-whenever the discrete system is rebuilt. A node keeps its velocity while the active nodes change around it, and a node
-whose kernel function has just become active starts at rest. If the option <code class="docutils literal notranslate"><span class="pre">projectVelocityEveryIncrement</span></code> says so,
-the velocity is instead projected from the particles’ momentum in every increment,
-<span class="math notranslate nohighlight">\(\boldsymbol{v} = \boldsymbol{M}^{-1} \boldsymbol{p}\)</span>.</p>
+<p>The lumped mass is therefore assembled anew in every increment – it is the particles’ mass at the kernel functions
+as they are at the particles’ current positions, which change in every increment, whether or not the locations do –
+and the nodal values are coefficients of the current kernel functions. The velocity is the state the next increment
+starts from, so the model owns it, as it owns the velocity of a finite element model (see EdelweissFE’s documentation
+page <em>Node field results</em>): the velocity of every node of the kernel functions is written to the entry <code class="docutils literal notranslate"><span class="pre">V</span></code> of the
+node fields at acceptance, and read back by node whenever the discrete system gets a new numbering. A node keeps its
+velocity while the active nodes change around it, and a node whose kernel function has just become active starts at
+rest. If the option <code class="docutils literal notranslate"><span class="pre">projectVelocityEveryIncrement</span></code> says so, the velocity is instead projected from the particles’
+momentum in every increment, <span class="math notranslate nohighlight">\(\boldsymbol{v} = \boldsymbol{M}^{-1} \boldsymbol{p}\)</span>.</p>
 <p>At acceptance, the results reach the model in two parts, each through the discrete system that holds
 them: the increment <code class="docutils literal notranslate"><span class="pre">dU</span></code> (and the velocity it was taken with) on the kernel functions of its start, before
 reconnecting; the force <code class="docutils literal notranslate"><span class="pre">P</span></code>, the velocity the next increment starts from and the acceleration on the kernel functions
@@ -227,8 +233,8 @@ configuration the step starts from. Where the step takes the motion from, the mo
 (<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.carriersOfTheMotion" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.carriersOfTheMotion"><code class="xref py py-meth docutils literal notranslate"><span class="pre">carriersOfTheMotion()</span></code></a>):</p>
 <ul class="simple">
 <li><p>If the model holds the motion at its nodes – after a step of this solver, or of NID integrating the inertia at the
-nodes – the step continues it as NED does. It starts from the velocity of the nodes, carried by node as in every
-rebuild, and from the net force of their acceleration, <span class="math notranslate nohighlight">\(\boldsymbol{f} = \boldsymbol{M} \boldsymbol{a}\)</span>.
+nodes – the step continues it as NED does. It starts from the velocity of the nodes, carried by node as at every new
+numbering, and from the net force of their acceleration, <span class="math notranslate nohighlight">\(\boldsymbol{f} = \boldsymbol{M} \boldsymbol{a}\)</span>.
 The force evaluated at the zero increment would not do: the particles have taken a zero-length increment, and the
 stabilization of their integration refers to the increment taken last.</p></li>
 <li><p>Otherwise – at the start of an analysis, with the initial velocity given to the particles, after a quasi-static step,
@@ -310,58 +316,61 @@ checkpoints are EdelweissFE’s. The particles are evaluated on all threads (<co
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">checkMPCDirichletConflicts</span></code>(transformation, ...)</p></td>
 <td><p>Raise if any Dirichlet boundary condition of the step prescribes a DOF that is a slave DOF of a multi-point constraint.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">collectLoads</span></code>(stepActions)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">checkNumberingOfRestartedVectors</span></code>(...)</p></td>
+<td><p>Refuse the vectors of a restart checkpoint if they belong to another numbering than the discrete system just built from the resumed model: a vector is only a vector of the degrees of freedom it was written for, and one of equal length numbers other nodes if the active nodes changed (e.g. a meshfree model that searches its particles' kernel functions anew on resuming).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">collectLoads</span></code>(stepActions)</p></td>
 <td><p>The loads among a step's actions: every action that is a <code class="xref py py-class docutils literal notranslate"><span class="pre">LoadBase</span></code>, whatever step action module it is defined in, so that a new kind of load needs no change to any solver.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.endStep" title="edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.endStep"><code class="xref py py-obj docutils literal notranslate"><span class="pre">endStep</span></code></a>(step, model)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.endStep" title="edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.endStep"><code class="xref py py-obj docutils literal notranslate"><span class="pre">endStep</span></code></a>(step, model)</p></td>
 <td><p>Leave the model's velocity at the end time of the step: it lags half of the last increment behind, and is advanced by that half increment with the acceleration (<code class="xref py py-meth docutils literal notranslate"><span class="pre">advanceVelocity()</span></code>), so that the next step starts from the velocity at its start time (see the module documentation).</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">forgetDiscreteSystem</span></code>()</p></td>
-<td><p>Drop the discrete system, and everything that belongs to it, before the next one is built: the multi-point-constraint condensation as well, which is a function of the numbering.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.forgetDiscreteSystem" title="edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.forgetDiscreteSystem"><code class="xref py py-obj docutils literal notranslate"><span class="pre">forgetDiscreteSystem</span></code></a>()</p></td>
+<td><p>Drop the discrete system, and everything that belongs to it, before the next one is built; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">forgetDiscreteSystem()</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getRestartData</span></code>()</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getRestartData</span></code>()</p></td>
 <td><p>The state this solver carries from one increment to the next, as it is; see <a class="reference internal" href="#edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.checkpointedState" title="edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.checkpointedState"><code class="xref py py-attr docutils literal notranslate"><span class="pre">checkpointedState</span></code></a>.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">isOutputIncrement</span></code>(timeStep)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">isOutputIncrement</span></code>(timeStep)</p></td>
 <td><p>Whether field outputs, output managers and restart checkpoints are written after this increment.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">linearSolve</span></code>(A, b)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">linearSolve</span></code>(A, b)</p></td>
 <td><p>Solve the linear system of equations.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">locateConstrainedDofs</span></code>(dirichlets)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">locateConstrainedDofs</span></code>(dirichlets)</p></td>
 <td><p>Determine, up front, which global DOFs each Dirichlet BC constrains.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">onNewLocations</span></code>()</p></td>
-<td><p>Everything that is derived from the locations of the new discrete system, <code class="xref py py-attr docutils literal notranslate"><span class="pre">system</span></code>, is built here: the vectors are wrapped with them (<code class="xref py py-meth docutils literal notranslate"><span class="pre">onLocations()</span></code>, the values are kept), and the system matrix assembly, whose sparsity pattern the locations determine.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.onNewLocations" title="edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.onNewLocations"><code class="xref py py-obj docutils literal notranslate"><span class="pre">onNewLocations</span></code></a>()</p></td>
+<td><p>Wrap the increment and the velocity with the new locations, their values kept: the particles reach other nodes of the same numbering, and the velocity of a node does not change with it.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">onNewNumbering</span></code>()</p></td>
-<td><p>Everything that is sized by the numbering of the new discrete system, <code class="xref py py-attr docutils literal notranslate"><span class="pre">system</span></code>, is built here, e.g. the vectors, which the state is read into from the model, the linear solver's view of the degrees of freedom, the layout of the convergence table.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.onNewNumbering" title="edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.onNewNumbering"><code class="xref py py-obj docutils literal notranslate"><span class="pre">onNewNumbering</span></code></a>()</p></td>
+<td><p>Build what is sized by the numbering of the new discrete system: the increment, and the velocity, which the model holds by node (see the module documentation): a node keeps the velocity it had while the active nodes change around it, and a node that has just become active starts at rest.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.prepareIncrement" title="edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.prepareIncrement"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prepareIncrement</span></code></a>(step, model, isRetry)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.prepareIncrement" title="edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.prepareIncrement"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prepareIncrement</span></code></a>(step, model, isRetry)</p></td>
 <td><p>Build the discrete system at the start of the step, with the velocity of the model; afterwards it follows the particles in <a class="reference internal" href="#edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.acceptIncrement" title="edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.acceptIncrement"><code class="xref py py-meth docutils literal notranslate"><span class="pre">acceptIncrement()</span></code></a>.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">printResidualOutlierNodes</span></code>(residualOutliers)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">printResidualOutlierNodes</span></code>(residualOutliers)</p></td>
 <td><p>Print which nodes have the largest residuals.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.schema" title="edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.schema"><code class="xref py py-obj docutils literal notranslate"><span class="pre">schema</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.schema" title="edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.schema"><code class="xref py py-obj docutils literal notranslate"><span class="pre">schema</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setRestartData</span></code>(data)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setRestartData</span></code>(data)</p></td>
 <td><p>Restore the state <code class="xref py py-meth docutils literal notranslate"><span class="pre">getRestartData()</span></code> returned, so that the resumed step continues exactly where the uninterrupted run would have.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.solveIncrement" title="edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.solveIncrement"><code class="xref py py-obj docutils literal notranslate"><span class="pre">solveIncrement</span></code></a>(*args)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.solveIncrement" title="edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.solveIncrement"><code class="xref py py-obj docutils literal notranslate"><span class="pre">solveIncrement</span></code></a>(*args)</p></td>
 <td><p>Not used: an increment is <a class="reference internal" href="#edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.attemptIncrement" title="edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.attemptIncrement"><code class="xref py py-meth docutils literal notranslate"><span class="pre">attemptIncrement()</span></code></a> and <a class="reference internal" href="#edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.acceptIncrement" title="edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.acceptIncrement"><code class="xref py py-meth docutils literal notranslate"><span class="pre">acceptIncrement()</span></code></a>.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateDiscreteSystem</span></code>(model, change)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateDiscreteSystem</span></code>(model, change)</p></td>
 <td><p>Bring the discrete system up to date with what changed: the one way a solver builds its discrete system, from the first to the last increment.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateRigidBodies</span></code>(model, timeStep)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateRigidBodies</span></code>(model, timeStep)</p></td>
 <td><p>Refresh the kinematics of all rigid bodies in the model after a converged increment.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateTopologyAndConnectivity</span></code>(model, step[, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateTopologyAndConnectivity</span></code>(model, step[, ...])</p></td>
 <td><p>Run the topology update, then let every mesh-dependent consumer catch up on it, and say what changed.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.validateModelCapabilities" title="edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.validateModelCapabilities"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validateModelCapabilities</span></code></a>(model)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.validateModelCapabilities" title="edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.validateModelCapabilities"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validateModelCapabilities</span></code></a>(model)</p></td>
 <td><p>Refuse what this solver does not integrate, on top of the base checks: everything but particles, i.e. finite elements, cells with their material points, and cell elements; constraints with scalar variables of their own (Lagrange multipliers), which carry no inertia and therefore have no equation of motion; and constraints that do not act in an explicit analysis (<a class="reference internal" href="constraints.html#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.actsInExplicitAnalysis" title="edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.actsInExplicitAnalysis"><code class="xref py py-attr docutils literal notranslate"><span class="pre">actsInExplicitAnalysis</span></code></a>): the constraints are evaluated at the configuration just accepted, where the nodes of the kernel functions carry neither a solution nor an increment, so a constraint on the increment would act as if nothing had moved.</p></td>
 </tr>
 </tbody>
@@ -453,11 +462,47 @@ back to a checkpoint, which ends the abandoned attempt here too.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.forgetDiscreteSystem">
+<span class="sig-name descname"><span class="pre">forgetDiscreteSystem</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/solvers/meshfreeexplicitdynamic.html#MeshfreeExplicitDynamic.forgetDiscreteSystem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.forgetDiscreteSystem" title="Link to this definition"></a></dt>
+<dd><p>Drop the discrete system, and everything that belongs to it, before the next one is built; see
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">forgetDiscreteSystem()</span></code>. The net force and
+the inverse lumped mass go with it: they are vectors of its numbering, and the evaluation that follows every
+update of the discrete system makes them anew (see <a class="reference internal" href="#edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.acceptIncrement" title="edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.acceptIncrement"><code class="xref py py-meth docutils literal notranslate"><span class="pre">acceptIncrement()</span></code></a>). A resumed step takes those of its
+checkpoint before its discrete system is built (see <a class="reference internal" href="#edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.prepareIncrement" title="edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.prepareIncrement"><code class="xref py py-meth docutils literal notranslate"><span class="pre">prepareIncrement()</span></code></a>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.onNewLocations">
+<span class="sig-name descname"><span class="pre">onNewLocations</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/solvers/meshfreeexplicitdynamic.html#MeshfreeExplicitDynamic.onNewLocations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.onNewLocations" title="Link to this definition"></a></dt>
+<dd><p>Wrap the increment and the velocity with the new locations, their values kept: the particles reach other
+nodes of the same numbering, and the velocity of a node does not change with it.</p>
+<p>The lumped mass is not derived from the locations here: it is assembled in every increment, from the
+particles at their current positions (see <code class="xref py py-meth docutils literal notranslate"><span class="pre">_evaluate()</span></code>).</p>
+<p>See <code class="xref py py-meth docutils literal notranslate"><span class="pre">onNewLocations()</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.onNewNumbering">
+<span class="sig-name descname"><span class="pre">onNewNumbering</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/solvers/meshfreeexplicitdynamic.html#MeshfreeExplicitDynamic.onNewNumbering"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.onNewNumbering" title="Link to this definition"></a></dt>
+<dd><p>Build what is sized by the numbering of the new discrete system: the increment, and the velocity, which the
+model holds by node (see the module documentation): a node keeps the velocity it had while the active nodes
+change around it, and a node that has just become active starts at rest. The net force and the inverse lumped
+mass the evaluation makes next are vectors of this numbering, which the checkpoint records with them.</p>
+<p>See <code class="xref py py-meth docutils literal notranslate"><span class="pre">onNewNumbering()</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.prepareIncrement">
 <span class="sig-name descname"><span class="pre">prepareIncrement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">step</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">isRetry</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/solvers/meshfreeexplicitdynamic.html#MeshfreeExplicitDynamic.prepareIncrement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.prepareIncrement" title="Link to this definition"></a></dt>
 <dd><p>Build the discrete system at the start of the step, with the velocity of the model; afterwards it follows
 the particles in <a class="reference internal" href="#edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.acceptIncrement" title="edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.acceptIncrement"><code class="xref py py-meth docutils literal notranslate"><span class="pre">acceptIncrement()</span></code></a>. A resumed step takes over the net force and inverse mass of its
-checkpoint.</p>
+checkpoint, if its discrete system has the numbering they were written for (see
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">checkNumberingOfRestartedVectors()</span></code>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -498,11 +543,11 @@ during the step.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.checkpointedState">
-<span class="sig-name descname"><span class="pre">checkpointedState</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'_Minv':</span> <span class="pre">&lt;class</span> <span class="pre">'numpy.ndarray'&gt;,</span> <span class="pre">'_netForce':</span> <span class="pre">&lt;class</span> <span class="pre">'numpy.ndarray'&gt;,</span> <span class="pre">'prevTimeStep':</span> <span class="pre">&lt;class</span> <span class="pre">'edelweissfe.timesteppers.timestep.TimeStep'&gt;}</span></span><a class="headerlink" href="#edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.checkpointedState" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">checkpointedState</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'_Minv':</span> <span class="pre">&lt;class</span> <span class="pre">'numpy.ndarray'&gt;,</span> <span class="pre">'_netForce':</span> <span class="pre">&lt;class</span> <span class="pre">'numpy.ndarray'&gt;,</span> <span class="pre">'_numberingOfNetForce':</span> <span class="pre">&lt;class</span> <span class="pre">'str'&gt;,</span> <span class="pre">'prevTimeStep':</span> <span class="pre">&lt;class</span> <span class="pre">'edelweissfe.timesteppers.timestep.TimeStep'&gt;}</span></span><a class="headerlink" href="#edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.checkpointedState" title="Link to this definition"></a></dt>
 <dd><p>The state an increment starts from that lives within one discrete system, and so is not the model’s. It is the
 last increment of motion (its size enters the velocity update), and the net force and the inverse lumped mass of
-the configuration last accepted. The velocity and the acceleration are the model’s (entries <code class="docutils literal notranslate"><span class="pre">V</span></code> and <code class="docutils literal notranslate"><span class="pre">A</span></code> of
-its node fields).</p>
+the configuration last accepted, with the digest of the numbering they are vectors of. The velocity and the
+acceleration are the model’s (entries <code class="docutils literal notranslate"><span class="pre">V</span></code> and <code class="docutils literal notranslate"><span class="pre">A</span></code> of its node fields).</p>
 </dd></dl>
 
 <dl class="py attribute">
