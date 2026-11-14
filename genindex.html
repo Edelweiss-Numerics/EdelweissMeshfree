@@ -139,9 +139,11 @@
 </li>
       <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.particlemortarweakdirichlet.ParticleMortarWeakDirichlet._edgeParametrizationAndWeights">_edgeParametrizationAndWeights() (edelweissmeshfree.constraints.particlemortarweakdirichlet.ParticleMortarWeakDirichlet method)</a>
 </li>
+      <li><a href="documentation/numeric_tools.html#edelweissmeshfree.numerics.doflocations.MPMDofLocations._elementsWithFixedConnectivity">_elementsWithFixedConnectivity (edelweissmeshfree.numerics.doflocations.MPMDofLocations attribute)</a>
+</li>
       <li><a href="documentation/particle_managers.html#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._FastKDBinOrganizer">_FastKDBinOrganizer (class in edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager)</a>
 </li>
-      <li><a href="documentation/numeric_tools.html#edelweissmeshfree.numerics.doflocations.MPMDofLocations._fluxesOfElements">_fluxesOfElements (edelweissmeshfree.numerics.doflocations.MPMDofLocations attribute)</a>
+      <li><a href="documentation/numeric_tools.html#edelweissmeshfree.numerics.doflocations.MPMDofLocations._fluxesOfFixedElements">_fluxesOfFixedElements (edelweissmeshfree.numerics.doflocations.MPMDofLocations attribute)</a>
 </li>
       <li><a href="documentation/particle_managers.html#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager._gatherEvaluationCoordinates">_gatherEvaluationCoordinates() (edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager method)</a>
 </li>
@@ -153,21 +155,19 @@
 </li>
       <li><a href="documentation/output_managers.html#edelweissmeshfree.outputmanagers.ensight.OutputManager._getTargetPartForFieldOutput">_getTargetPartForFieldOutput() (edelweissmeshfree.outputmanagers.ensight.OutputManager method)</a>
 </li>
-      <li><a href="documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell._global_to_parametric">_global_to_parametric() (in module edelweissmeshfree.cells.pythoncell.cell)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell._global_to_parametric">_global_to_parametric() (in module edelweissmeshfree.cells.pythoncell.cell)</a>
+</li>
       <li><a href="documentation/particle_managers.html#edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager._KDBinOrganizer">_KDBinOrganizer (class in edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager)</a>
 </li>
       <li><a href="documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel._linkFieldVariableObjects">_linkFieldVariableObjects() (edelweissmeshfree.models.mpmmodel.MPMModel method)</a>
 </li>
-      <li><a href="documentation/numeric_tools.html#edelweissmeshfree.numerics.doflocations.MPMDofLocations._locateConstraints">_locateConstraints() (edelweissmeshfree.numerics.doflocations.MPMDofLocations method)</a>
-</li>
-      <li><a href="documentation/numeric_tools.html#edelweissmeshfree.numerics.doflocations.MPMDofLocations._locateNodeCouplingEntities">_locateNodeCouplingEntities() (edelweissmeshfree.numerics.doflocations.MPMDofLocations method)</a>
-</li>
-      <li><a href="documentation/numeric_tools.html#edelweissmeshfree.numerics.doflocations.MPMDofLocations._mergeEntities">_mergeEntities() (edelweissmeshfree.numerics.doflocations.MPMDofLocations method)</a>
+      <li><a href="documentation/numeric_tools.html#edelweissmeshfree.numerics.doflocations.MPMDofLocations._locate">_locate() (edelweissmeshfree.numerics.doflocations.MPMDofLocations method)</a>
 </li>
       <li><a href="documentation/particle_managers.html#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager._moveKernelFunctionsToTheirParticles">_moveKernelFunctionsToTheirParticles() (edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager method)</a>
+</li>
+      <li><a href="documentation/numeric_tools.html#edelweissmeshfree.numerics.doflocations.MPMDofLocations._nAccumulatedNodalFluxesFieldwise">_nAccumulatedNodalFluxesFieldwise (edelweissmeshfree.numerics.doflocations.MPMDofLocations attribute)</a>
 </li>
       <li><a href="documentation/solvers.html#edelweissmeshfree.solvers.deprecated.nqs.NonlinearQuasistaticSolver._newtonSolve">_newtonSolve() (edelweissmeshfree.solvers.deprecated.nqs.NonlinearQuasistaticSolver method)</a>
 
@@ -565,10 +565,22 @@
         <li><a href="documentation/mpm/material_points.html#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.computeYourself">(edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint method)</a>
 </li>
       </ul></li>
-      <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.connectivityChangesWithMotion">connectivityChangesWithMotion (edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase attribute)</a>
+      <li><a href="documentation/cells.html#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.connectivityChangesWithMotion">connectivityChangesWithMotion (edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper attribute)</a>
+
+      <ul>
+        <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.connectivityChangesWithMotion">(edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase attribute)</a>
 </li>
+        <li><a href="documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.connectivityChangesWithMotion">(edelweissmeshfree.particles.base.baseparticle.BaseParticle attribute)</a>
+</li>
+        <li><a href="documentation/particles.html#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.connectivityChangesWithMotion">(edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper attribute)</a>
+</li>
+      </ul></li>
       <li><a href="documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.constraints">constraints (edelweissmeshfree.models.mpmmodel.MPMModel attribute)</a>
+
+      <ul>
+        <li><a href="documentation/numeric_tools.html#edelweissmeshfree.numerics.doflocations.MPMDofLocations.constraints">(edelweissmeshfree.numerics.doflocations.MPMDofLocations attribute)</a>
 </li>
+      </ul></li>
       <li><a href="documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.constraintSets">constraintSets (edelweissmeshfree.models.mpmmodel.MPMModel attribute)</a>
 </li>
       <li><a href="documentation/numeric_tools.html#edelweissmeshfree.numerics.doflocations.MPMDofLocations.constructDofVector">constructDofVector() (edelweissmeshfree.numerics.doflocations.MPMDofLocations method)</a>
@@ -603,16 +615,12 @@
 </li>
       <li><a href="documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.dimension">dimension (edelweissmeshfree.particles.base.baseparticle.BaseParticle property)</a>
 </li>
-      <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.particlefiniteelementmortartie.distanceToPolygon">distanceToPolygon() (in module edelweissmeshfree.constraints.particlefiniteelementmortartie)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="documentation/cells.html#edelweissmeshfree.cells.base.cell.CellBase.dofIndicesPermutation">dofIndicesPermutation (edelweissmeshfree.cells.base.cell.CellBase property)</a>
-
-      <ul>
-        <li><a href="documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation">(edelweissmeshfree.cells.pythoncell.cell.PythonCell property)</a>
+      <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.particlefiniteelementmortartie.distanceToPolygon">distanceToPolygon() (in module edelweissmeshfree.constraints.particlefiniteelementmortartie)</a>
 </li>
-      </ul></li>
+      <li><a href="documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation">dofIndicesPermutation (edelweissmeshfree.cells.pythoncell.cell.PythonCell property)</a>
+</li>
       <li><a href="documentation/models.html#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.dofsWithNodalInertia">dofsWithNodalInertia() (edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem method)</a>
 </li>
       <li><a href="documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.domainSize">domainSize (edelweissmeshfree.models.mpmmodel.MPMModel attribute)</a>
@@ -931,8 +939,6 @@
         <li><a href="documentation/meshfree.html#module-edelweissmeshfree.meshfree.approximations.base.basemeshfreeapproximation">module</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     edelweissmeshfree.meshfree.approximations.marmot.marmotmeshfreeapproximation
 
@@ -940,6 +946,8 @@
         <li><a href="documentation/meshfree.html#module-edelweissmeshfree.meshfree.approximations.marmot.marmotmeshfreeapproximation">module</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction
 
@@ -1209,7 +1217,11 @@
       <li><a href="documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.elementProperties">elementProperties (edelweissmeshfree.models.mpmmodel.MPMModel attribute)</a>
 </li>
       <li><a href="documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.elements">elements (edelweissmeshfree.models.mpmmodel.MPMModel attribute)</a>
+
+      <ul>
+        <li><a href="documentation/numeric_tools.html#edelweissmeshfree.numerics.doflocations.MPMDofLocations.elements">(edelweissmeshfree.numerics.doflocations.MPMDofLocations attribute)</a>
 </li>
+      </ul></li>
       <li><a href="documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.elementSets">elementSets (edelweissmeshfree.models.mpmmodel.MPMModel attribute)</a>
 </li>
       <li><a href="documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.elementsWithKernels">elementsWithKernels() (edelweissmeshfree.models.mpmmodel.MPMModel method)</a>
@@ -1227,6 +1239,8 @@
 </li>
         <li><a href="documentation/mpm/material_points.html#edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint.ensightType">(edelweissmeshfree.materialpoints.pythonmaterialpoint.mp.PythonMaterialPoint property)</a>
 </li>
+        <li><a href="documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.ensightType">(edelweissmeshfree.particles.base.baseparticle.BaseParticle property)</a>
+</li>
       </ul></li>
   </ul></td>
 </tr></table>
@@ -1236,40 +1250,36 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.fieldOutputController">fieldOutputController (edelweissmeshfree.models.mpmmodel.MPMModel attribute)</a>
 </li>
-      <li><a href="documentation/cells.html#edelweissmeshfree.cells.base.cell.CellBase.fields">fields (edelweissmeshfree.cells.base.cell.CellBase property)</a>
+      <li><a href="documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.fields">fields (edelweissmeshfree.cells.pythoncell.cell.PythonCell property)</a>
 
       <ul>
-        <li><a href="documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.fields">(edelweissmeshfree.cells.pythoncell.cell.PythonCell property)</a>
+        <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit.ParticlePenaltyCartesianBoundaryConstraintExplicit.fields">(edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit.ParticlePenaltyCartesianBoundaryConstraintExplicit property)</a>
 </li>
-      </ul></li>
-      <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit.ParticlePenaltyCartesianBoundaryConstraintExplicit.fieldsOnNodes">fieldsOnNodes (edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit.ParticlePenaltyCartesianBoundaryConstraintExplicit property)</a>
-
-      <ul>
-        <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.explicit.particlepenaltyrigidbodycontactexplicit.ParticlePenaltyContactImplicitSurfaceConstraintExplicit.fieldsOnNodes">(edelweissmeshfree.constraints.explicit.particlepenaltyrigidbodycontactexplicit.ParticlePenaltyContactImplicitSurfaceConstraintExplicit property)</a>
+        <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.explicit.particlepenaltyrigidbodycontactexplicit.ParticlePenaltyContactImplicitSurfaceConstraintExplicit.fields">(edelweissmeshfree.constraints.explicit.particlepenaltyrigidbodycontactexplicit.ParticlePenaltyContactImplicitSurfaceConstraintExplicit property)</a>
 </li>
-        <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.particlefiniteelementmortartie.ParticleFiniteElementMortarTie.fieldsOnNodes">(edelweissmeshfree.constraints.particlefiniteelementmortartie.ParticleFiniteElementMortarTie property)</a>
+        <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.particlefiniteelementmortartie.ParticleFiniteElementMortarTie.fields">(edelweissmeshfree.constraints.particlefiniteelementmortartie.ParticleFiniteElementMortarTie property)</a>
 </li>
-        <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.particlelagrangiancartesianboundary.ParticleLagrangianContactCartesianBoundaryConstraint.fieldsOnNodes">(edelweissmeshfree.constraints.particlelagrangiancartesianboundary.ParticleLagrangianContactCartesianBoundaryConstraint property)</a>
+        <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.particlelagrangiancartesianboundary.ParticleLagrangianContactCartesianBoundaryConstraint.fields">(edelweissmeshfree.constraints.particlelagrangiancartesianboundary.ParticleLagrangianContactCartesianBoundaryConstraint property)</a>
 </li>
-        <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.particlelagrangianequalvalue.ParticleLagrangianEqualValueConstraint.fieldsOnNodes">(edelweissmeshfree.constraints.particlelagrangianequalvalue.ParticleLagrangianEqualValueConstraint property)</a>
+        <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.particlelagrangianequalvalue.ParticleLagrangianEqualValueConstraint.fields">(edelweissmeshfree.constraints.particlelagrangianequalvalue.ParticleLagrangianEqualValueConstraint property)</a>
 </li>
-        <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.particlelagrangianweakdirichlet.ParticleLagrangianWeakDirichlet.fieldsOnNodes">(edelweissmeshfree.constraints.particlelagrangianweakdirichlet.ParticleLagrangianWeakDirichlet property)</a>
+        <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.particlelagrangianweakdirichlet.ParticleLagrangianWeakDirichlet.fields">(edelweissmeshfree.constraints.particlelagrangianweakdirichlet.ParticleLagrangianWeakDirichlet property)</a>
 </li>
-        <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.particlemortarweakdirichlet.ParticleMortarWeakDirichlet.fieldsOnNodes">(edelweissmeshfree.constraints.particlemortarweakdirichlet.ParticleMortarWeakDirichlet property)</a>
+        <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.particlemortarweakdirichlet.ParticleMortarWeakDirichlet.fields">(edelweissmeshfree.constraints.particlemortarweakdirichlet.ParticleMortarWeakDirichlet property)</a>
 </li>
-        <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.particlepenaltycartesianboundary.ParticlePenaltyContactCartesianBoundaryConstraint.fieldsOnNodes">(edelweissmeshfree.constraints.particlepenaltycartesianboundary.ParticlePenaltyContactCartesianBoundaryConstraint property)</a>
+        <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.particlepenaltycartesianboundary.ParticlePenaltyContactCartesianBoundaryConstraint.fields">(edelweissmeshfree.constraints.particlepenaltycartesianboundary.ParticlePenaltyContactCartesianBoundaryConstraint property)</a>
 </li>
-        <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.particlepenaltyequalvalue.ParticlePenaltyEqualValue.fieldsOnNodes">(edelweissmeshfree.constraints.particlepenaltyequalvalue.ParticlePenaltyEqualValue property)</a>
+        <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.particlepenaltyequalvalue.ParticlePenaltyEqualValue.fields">(edelweissmeshfree.constraints.particlepenaltyequalvalue.ParticlePenaltyEqualValue property)</a>
 </li>
-        <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.particlepenaltyrigidbodycontact.ParticlePenaltyContactImplicitSurfaceConstraint.fieldsOnNodes">(edelweissmeshfree.constraints.particlepenaltyrigidbodycontact.ParticlePenaltyContactImplicitSurfaceConstraint property)</a>
+        <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.particlepenaltyrigidbodycontact.ParticlePenaltyContactImplicitSurfaceConstraint.fields">(edelweissmeshfree.constraints.particlepenaltyrigidbodycontact.ParticlePenaltyContactImplicitSurfaceConstraint property)</a>
 </li>
-        <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.fieldsOnNodes">(edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet property)</a>
+        <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.fields">(edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet property)</a>
 </li>
-        <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.fieldsOnNodes">(edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node property)</a>
+        <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.fields">(edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node property)</a>
 </li>
-        <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.fieldsOnNodes">(edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue property)</a>
+        <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.fields">(edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue property)</a>
 </li>
-        <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.fieldsOnNodes">(edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet property)</a>
+        <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.fields">(edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet property)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -1909,11 +1919,9 @@
         <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.name">(edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet property)</a>
 </li>
       </ul></li>
-      <li><a href="documentation/cells.html#edelweissmeshfree.cells.base.cell.CellBase.nDof">nDof (edelweissmeshfree.cells.base.cell.CellBase property)</a>
+      <li><a href="documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.nDof">nDof (edelweissmeshfree.cells.pythoncell.cell.PythonCell property)</a>
 
       <ul>
-        <li><a href="documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.nDof">(edelweissmeshfree.cells.pythoncell.cell.PythonCell property)</a>
-</li>
         <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit.ParticlePenaltyCartesianBoundaryConstraintExplicit.nDof">(edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit.ParticlePenaltyCartesianBoundaryConstraintExplicit property)</a>
 </li>
         <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.explicit.particlepenaltyrigidbodycontactexplicit.ParticlePenaltyContactImplicitSurfaceConstraintExplicit.nDof">(edelweissmeshfree.constraints.explicit.particlepenaltyrigidbodycontactexplicit.ParticlePenaltyContactImplicitSurfaceConstraintExplicit property)</a>
@@ -1947,19 +1955,17 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="documentation/cellelements.html#edelweissmeshfree.cellelements.base.cellelement.CellElementBase.nMaterialPoints">nMaterialPoints (edelweissmeshfree.cellelements.base.cellelement.CellElementBase property)</a>
 </li>
-      <li><a href="documentation/cells.html#edelweissmeshfree.cells.base.cell.CellBase.nNodes">nNodes (edelweissmeshfree.cells.base.cell.CellBase property)</a>
-
-      <ul>
-        <li><a href="documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes">(edelweissmeshfree.cells.pythoncell.cell.PythonCell property)</a>
+      <li><a href="documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes">nNodes (edelweissmeshfree.cells.pythoncell.cell.PythonCell property)</a>
 </li>
-      </ul></li>
       <li><a href="documentation/meshfree.html#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction.node">node (edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction property)</a>
 </li>
       <li><a href="documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.nodeFields">nodeFields (edelweissmeshfree.models.mpmmodel.MPMModel attribute)</a>
 </li>
-      <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit.ParticlePenaltyCartesianBoundaryConstraintExplicit.nodes">nodes (edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit.ParticlePenaltyCartesianBoundaryConstraintExplicit property)</a>
+      <li><a href="documentation/cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.nodes">nodes (edelweissmeshfree.cells.pythoncell.cell.PythonCell property)</a>
 
       <ul>
+        <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit.ParticlePenaltyCartesianBoundaryConstraintExplicit.nodes">(edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit.ParticlePenaltyCartesianBoundaryConstraintExplicit property)</a>
+</li>
         <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.explicit.particlepenaltyrigidbodycontactexplicit.ParticlePenaltyContactImplicitSurfaceConstraintExplicit.nodes">(edelweissmeshfree.constraints.explicit.particlepenaltyrigidbodycontactexplicit.ParticlePenaltyContactImplicitSurfaceConstraintExplicit property)</a>
 </li>
         <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.particlefiniteelementmortartie.ParticleFiniteElementMortarTie.nodes">(edelweissmeshfree.constraints.particlefiniteelementmortartie.ParticleFiniteElementMortarTie property)</a>
@@ -2011,6 +2017,8 @@
 <h2 id="O">O</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="documentation/numeric_tools.html#edelweissmeshfree.numerics.doflocations.MPMDofLocations.ofEntity">ofEntity (edelweissmeshfree.numerics.doflocations.MPMDofLocations attribute)</a>
+</li>
       <li><a href="documentation/solvers.html#edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.onNewLocations">onNewLocations() (edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic method)</a>
 </li>
   </ul></td>
@@ -2195,9 +2203,11 @@
 <h2 id="S">S</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.scalarVariables">scalarVariables (edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase property)</a>
+      <li><a href="documentation/cells.html#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.scalarVariables">scalarVariables (edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper attribute)</a>
 
       <ul>
+        <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.scalarVariables">(edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase property)</a>
+</li>
         <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit.ParticlePenaltyCartesianBoundaryConstraintExplicit.scalarVariables">(edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit.ParticlePenaltyCartesianBoundaryConstraintExplicit property)</a>
 </li>
         <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.explicit.particlepenaltyrigidbodycontactexplicit.ParticlePenaltyContactImplicitSurfaceConstraintExplicit.scalarVariables">(edelweissmeshfree.constraints.explicit.particlepenaltyrigidbodycontactexplicit.ParticlePenaltyContactImplicitSurfaceConstraintExplicit property)</a>
@@ -2227,6 +2237,8 @@
         <li><a href="documentation/constraints.html#edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.scalarVariables">(edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet property)</a>
 </li>
         <li><a href="documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.scalarVariables">(edelweissmeshfree.models.mpmmodel.MPMModel attribute)</a>
+</li>
+        <li><a href="documentation/particles.html#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.scalarVariables">(edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper attribute)</a>
 </li>
       </ul></li>
       <li><a href="documentation/solvers.html#edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic.schema">schema (edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic attribute)</a>

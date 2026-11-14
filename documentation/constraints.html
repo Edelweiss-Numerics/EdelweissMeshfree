@@ -263,13 +263,17 @@ constraint acts in an explicit analysis at all, it declares in <a class="referen
 <dt><strong>checkpointedState</strong></dt><dd></dd>
 <dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs" title="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">couplesAllItsDofs</span></code></a></dt><dd><p>Whether the entity’s block couples every one of its degrees of freedom with every other one.</p>
 </dd>
-<dt><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.fieldsOnNodes" title="edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.fieldsOnNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code></a></dt><dd><p>The fields on the nodes this constraint is acting on.</p>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dofIndicesPermutation</span></code></a></dt><dd><p>None: the layout of a constraint is nodewise, followed by its scalar variables.</p>
 </dd>
-<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.base.cell.CellBase.nDof" title="edelweissmeshfree.cells.base.cell.CellBase.nDof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nDof</span></code></a></dt><dd><p>The total number of degrees of freedom this constraint is associated with.</p>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.fields" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.fields"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fields</span></code></a></dt><dd><p>The fields on the nodes this constraint is acting on.</p>
+</dd>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.nDof" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.nDof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nDof</span></code></a></dt><dd><p>The total number of degrees of freedom this constraint is associated with.</p>
+</dd>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nNodes</span></code></a></dt><dd><p>The number of nodes this constraint is acting on.</p>
 </dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.name" title="edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></a></dt><dd><p>The name of this constraint.</p>
 </dd>
-<dt><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.nodes" title="edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.nodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes</span></code></a></dt><dd><p>The nodes this constraint is acting on.</p>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.nodes" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.nodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes</span></code></a></dt><dd><p>The nodes this constraint is acting on.</p>
 </dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.scalarVariables" title="edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.scalarVariables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scalarVariables</span></code></a></dt><dd><p>The scalar variables (e.g., Lagrange multipliers) assigned to this constraint.</p>
 </dd>
@@ -322,7 +326,7 @@ constraint acts in an explicit analysis at all, it declares in <a class="referen
 <td><p>The entity's view of the flat array of the values of its block, which it writes its tangent into.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code>(model)</p></td>
-<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have changed since the last call.</p></td>
+<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fields</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have changed since the last call.</p></td>
 </tr>
 </tbody>
 </table>
@@ -396,15 +400,19 @@ nodes to <code class="docutils literal notranslate"><span class="pre">P</span></
 <dt><strong>checkpointedState</strong></dt><dd></dd>
 <dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs" title="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">couplesAllItsDofs</span></code></a></dt><dd><p>Whether the entity’s block couples every one of its degrees of freedom with every other one.</p>
 </dd>
-<dt><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.fieldsOnNodes" title="edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.fieldsOnNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code></a></dt><dd><p>The fields on the nodes this constraint is acting on.</p>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dofIndicesPermutation</span></code></a></dt><dd><p>None: the layout of a constraint is nodewise, followed by its scalar variables.</p>
 </dd>
-<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.base.cell.CellBase.nDof" title="edelweissmeshfree.cells.base.cell.CellBase.nDof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nDof</span></code></a></dt><dd><p>The total number of degrees of freedom this constraint is associated with.</p>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.fields" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.fields"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fields</span></code></a></dt><dd><p>The fields on the nodes this constraint is acting on.</p>
+</dd>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.nDof" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.nDof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nDof</span></code></a></dt><dd><p>The total number of degrees of freedom this constraint is associated with.</p>
+</dd>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nNodes</span></code></a></dt><dd><p>The number of nodes this constraint is acting on.</p>
 </dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.name" title="edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></a></dt><dd><p>The name of this constraint.</p>
 </dd>
-<dt><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.nodes" title="edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.nodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes</span></code></a></dt><dd><p>The nodes this constraint is acting on.</p>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.nodes" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.nodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes</span></code></a></dt><dd><p>The nodes this constraint is acting on.</p>
 </dd>
-<dt><a class="reference internal" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.scalarVariables" title="edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.scalarVariables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scalarVariables</span></code></a></dt><dd><p>The scalar variables (e.g., Lagrange multipliers) assigned to this constraint.</p>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.scalarVariables" title="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.scalarVariables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scalarVariables</span></code></a></dt><dd><p>The scalar variables (e.g., Lagrange multipliers) assigned to this constraint.</p>
 </dd>
 <dt><strong>schema</strong></dt><dd></dd>
 <dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">switchedOn</span></code></dt><dd><p>Whether this constraint is switched on from outside, e.g.</p>
@@ -455,7 +463,7 @@ nodes to <code class="docutils literal notranslate"><span class="pre">P</span></
 <td><p>The entity's view of the flat array of the values of its block, which it writes its tangent into.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code>(model)</p></td>
-<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have changed since the last call.</p></td>
+<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fields</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have changed since the last call.</p></td>
 </tr>
 </tbody>
 </table>
@@ -528,9 +536,13 @@ nodes to <code class="docutils literal notranslate"><span class="pre">P</span></
 </dd>
 <dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs" title="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">couplesAllItsDofs</span></code></a></dt><dd><p>Whether the entity’s block couples every one of its degrees of freedom with every other one.</p>
 </dd>
-<dt><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.fieldsOnNodes" title="edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.fieldsOnNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code></a></dt><dd><p>The fields on the nodes this constraint is acting on.</p>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dofIndicesPermutation</span></code></a></dt><dd><p>None: the layout of a constraint is nodewise, followed by its scalar variables.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.fields" title="edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.fields"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fields</span></code></a></dt><dd><p>The fields on the nodes this constraint is acting on.</p>
 </dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.nDof" title="edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.nDof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nDof</span></code></a></dt><dd><p>The total number of degrees of freedom this constraint is associated with.</p>
+</dd>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nNodes</span></code></a></dt><dd><p>The number of nodes this constraint is acting on.</p>
 </dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.name" title="edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></a></dt><dd><p>The name of this constraint.</p>
 </dd>
@@ -581,7 +593,7 @@ nodes to <code class="docutils literal notranslate"><span class="pre">P</span></
 <td><p>The entity's view of the flat array of the values of its block, which it writes its tangent into.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.updateConnectivity" title="edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.updateConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code></a>(model)</p></td>
-<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have changed since the last call.</p></td>
+<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fields</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have changed since the last call.</p></td>
 </tr>
 </tbody>
 </table>
@@ -655,7 +667,7 @@ this Constraint needs.</p>
 <span class="sig-name descname"><span class="pre">updateConnectivity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/penaltyequalvalue.html#PenaltyEqualValue.updateConnectivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.updateConnectivity" title="Link to this definition"></a></dt>
 <dd><p>Called once at the start of every increment, before the global discrete system is
 (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based
-contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have
+contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fields</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have
 changed since the last call. A constraint that is not always within reach also sets
 <code class="xref py py-attr docutils literal notranslate"><span class="pre">withinReach</span></code> here; it does not report the change of <code class="xref py py-attr docutils literal notranslate"><span class="pre">active</span></code> itself, the model compares it (see
 <code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code>).</p>
@@ -682,8 +694,8 @@ not override this method).</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.fieldsOnNodes">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">fieldsOnNodes</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.fieldsOnNodes" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.fields">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">fields</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyequalvalue.PenaltyEqualValue.fields" title="Link to this definition"></a></dt>
 <dd><p>The fields on the nodes this constraint is acting on.</p>
 </dd></dl>
 
@@ -754,9 +766,13 @@ not override this method).</p>
 </dd>
 <dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs" title="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">couplesAllItsDofs</span></code></a></dt><dd><p>Whether the entity’s block couples every one of its degrees of freedom with every other one.</p>
 </dd>
-<dt><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.fieldsOnNodes" title="edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.fieldsOnNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code></a></dt><dd><p>The fields on the nodes this constraint is acting on.</p>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dofIndicesPermutation</span></code></a></dt><dd><p>None: the layout of a constraint is nodewise, followed by its scalar variables.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.fields" title="edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.fields"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fields</span></code></a></dt><dd><p>The fields on the nodes this constraint is acting on.</p>
 </dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.nDof" title="edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.nDof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nDof</span></code></a></dt><dd><p>The total number of degrees of freedom this constraint is associated with.</p>
+</dd>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nNodes</span></code></a></dt><dd><p>The number of nodes this constraint is acting on.</p>
 </dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.name" title="edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></a></dt><dd><p>The name of this constraint.</p>
 </dd>
@@ -881,8 +897,8 @@ this Constraint needs.</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.fieldsOnNodes">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">fieldsOnNodes</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.fieldsOnNodes" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.fields">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">fields</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyconstrainmp2node.PenaltyConstrainMP2Node.fields" title="Link to this definition"></a></dt>
 <dd><p>The fields on the nodes this constraint is acting on.</p>
 </dd></dl>
 
@@ -953,9 +969,13 @@ It constrains a material point field increment.</p>
 </dd>
 <dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs" title="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">couplesAllItsDofs</span></code></a></dt><dd><p>Whether the entity’s block couples every one of its degrees of freedom with every other one.</p>
 </dd>
-<dt><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.fieldsOnNodes" title="edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.fieldsOnNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code></a></dt><dd><p>The fields on the nodes this constraint is acting on.</p>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dofIndicesPermutation</span></code></a></dt><dd><p>None: the layout of a constraint is nodewise, followed by its scalar variables.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.fields" title="edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.fields"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fields</span></code></a></dt><dd><p>The fields on the nodes this constraint is acting on.</p>
 </dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.nDof" title="edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.nDof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nDof</span></code></a></dt><dd><p>The total number of degrees of freedom this constraint is associated with.</p>
+</dd>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nNodes</span></code></a></dt><dd><p>The number of nodes this constraint is acting on.</p>
 </dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.name" title="edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></a></dt><dd><p>The name of this constraint.</p>
 </dd>
@@ -1006,7 +1026,7 @@ It constrains a material point field increment.</p>
 <td><p>The entity's view of the flat array of the values of its block, which it writes its tangent into.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.updateConnectivity" title="edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.updateConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code></a>(model)</p></td>
-<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have changed since the last call.</p></td>
+<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fields</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have changed since the last call.</p></td>
 </tr>
 </tbody>
 </table>
@@ -1080,7 +1100,7 @@ this Constraint needs.</p>
 <span class="sig-name descname"><span class="pre">updateConnectivity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/penaltyweakdirichlet.html#PenaltyWeakDirichlet.updateConnectivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.updateConnectivity" title="Link to this definition"></a></dt>
 <dd><p>Called once at the start of every increment, before the global discrete system is
 (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based
-contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have
+contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fields</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have
 changed since the last call. A constraint that is not always within reach also sets
 <code class="xref py py-attr docutils literal notranslate"><span class="pre">withinReach</span></code> here; it does not report the change of <code class="xref py py-attr docutils literal notranslate"><span class="pre">active</span></code> itself, the model compares it (see
 <code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code>).</p>
@@ -1107,8 +1127,8 @@ not override this method).</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.fieldsOnNodes">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">fieldsOnNodes</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.fieldsOnNodes" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.fields">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">fields</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.penaltyweakdirichlet.PenaltyWeakDirichlet.fields" title="Link to this definition"></a></dt>
 <dd><p>The fields on the nodes this constraint is acting on.</p>
 </dd></dl>
 
@@ -1181,9 +1201,13 @@ If “center”, the center of the particle is constrained. If a list, the verti
 </dd>
 <dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs" title="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">couplesAllItsDofs</span></code></a></dt><dd><p>Whether the entity’s block couples every one of its degrees of freedom with every other one.</p>
 </dd>
-<dt><a class="reference internal" href="#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.fieldsOnNodes" title="edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.fieldsOnNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code></a></dt><dd><p>The fields on the nodes this constraint is acting on.</p>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dofIndicesPermutation</span></code></a></dt><dd><p>None: the layout of a constraint is nodewise, followed by its scalar variables.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.fields" title="edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.fields"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fields</span></code></a></dt><dd><p>The fields on the nodes this constraint is acting on.</p>
 </dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.nDof" title="edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.nDof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nDof</span></code></a></dt><dd><p>The total number of degrees of freedom this constraint is associated with.</p>
+</dd>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nNodes</span></code></a></dt><dd><p>The number of nodes this constraint is acting on.</p>
 </dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.name" title="edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></a></dt><dd><p>The name of this constraint.</p>
 </dd>
@@ -1234,7 +1258,7 @@ If “center”, the center of the particle is constrained. If a list, the verti
 <td><p>The entity's view of the flat array of the values of its block, which it writes its tangent into.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.updateConnectivity" title="edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.updateConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code></a>(model)</p></td>
-<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have changed since the last call.</p></td>
+<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fields</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have changed since the last call.</p></td>
 </tr>
 </tbody>
 </table>
@@ -1308,7 +1332,7 @@ this Constraint needs.</p>
 <span class="sig-name descname"><span class="pre">updateConnectivity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/particlepenaltyweakdirichtlet.html#ParticlePenaltyWeakDirichlet.updateConnectivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.updateConnectivity" title="Link to this definition"></a></dt>
 <dd><p>Called once at the start of every increment, before the global discrete system is
 (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based
-contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have
+contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fields</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have
 changed since the last call. A constraint that is not always within reach also sets
 <code class="xref py py-attr docutils literal notranslate"><span class="pre">withinReach</span></code> here; it does not report the change of <code class="xref py py-attr docutils literal notranslate"><span class="pre">active</span></code> itself, the model compares it (see
 <code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code>).</p>
@@ -1335,8 +1359,8 @@ not override this method).</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.fieldsOnNodes">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">fieldsOnNodes</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.fieldsOnNodes" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.fields">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">fields</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.fields" title="Link to this definition"></a></dt>
 <dd><p>The fields on the nodes this constraint is acting on.</p>
 </dd></dl>
 
@@ -1408,9 +1432,13 @@ not override this method).</p>
 </dd>
 <dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs" title="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">couplesAllItsDofs</span></code></a></dt><dd><p>Whether the entity’s block couples every one of its degrees of freedom with every other one.</p>
 </dd>
-<dt><a class="reference internal" href="#edelweissmeshfree.constraints.particlepenaltyequalvalue.ParticlePenaltyEqualValue.fieldsOnNodes" title="edelweissmeshfree.constraints.particlepenaltyequalvalue.ParticlePenaltyEqualValue.fieldsOnNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code></a></dt><dd><p>The fields on the nodes this constraint is acting on.</p>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dofIndicesPermutation</span></code></a></dt><dd><p>None: the layout of a constraint is nodewise, followed by its scalar variables.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.particlepenaltyequalvalue.ParticlePenaltyEqualValue.fields" title="edelweissmeshfree.constraints.particlepenaltyequalvalue.ParticlePenaltyEqualValue.fields"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fields</span></code></a></dt><dd><p>The fields on the nodes this constraint is acting on.</p>
 </dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.constraints.particlepenaltyequalvalue.ParticlePenaltyEqualValue.nDof" title="edelweissmeshfree.constraints.particlepenaltyequalvalue.ParticlePenaltyEqualValue.nDof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nDof</span></code></a></dt><dd><p>The total number of degrees of freedom this constraint is associated with.</p>
+</dd>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nNodes</span></code></a></dt><dd><p>The number of nodes this constraint is acting on.</p>
 </dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.constraints.particlepenaltyequalvalue.ParticlePenaltyEqualValue.name" title="edelweissmeshfree.constraints.particlepenaltyequalvalue.ParticlePenaltyEqualValue.name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></a></dt><dd><p>The name of this constraint.</p>
 </dd>
@@ -1461,7 +1489,7 @@ not override this method).</p>
 <td><p>The entity's view of the flat array of the values of its block, which it writes its tangent into.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.particlepenaltyequalvalue.ParticlePenaltyEqualValue.updateConnectivity" title="edelweissmeshfree.constraints.particlepenaltyequalvalue.ParticlePenaltyEqualValue.updateConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code></a>(model)</p></td>
-<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have changed since the last call.</p></td>
+<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fields</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have changed since the last call.</p></td>
 </tr>
 </tbody>
 </table>
@@ -1535,7 +1563,7 @@ this Constraint needs.</p>
 <span class="sig-name descname"><span class="pre">updateConnectivity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/particlepenaltyequalvalue.html#ParticlePenaltyEqualValue.updateConnectivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.particlepenaltyequalvalue.ParticlePenaltyEqualValue.updateConnectivity" title="Link to this definition"></a></dt>
 <dd><p>Called once at the start of every increment, before the global discrete system is
 (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based
-contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have
+contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fields</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have
 changed since the last call. A constraint that is not always within reach also sets
 <code class="xref py py-attr docutils literal notranslate"><span class="pre">withinReach</span></code> here; it does not report the change of <code class="xref py py-attr docutils literal notranslate"><span class="pre">active</span></code> itself, the model compares it (see
 <code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code>).</p>
@@ -1562,8 +1590,8 @@ not override this method).</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="edelweissmeshfree.constraints.particlepenaltyequalvalue.ParticlePenaltyEqualValue.fieldsOnNodes">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">fieldsOnNodes</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.particlepenaltyequalvalue.ParticlePenaltyEqualValue.fieldsOnNodes" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.particlepenaltyequalvalue.ParticlePenaltyEqualValue.fields">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">fields</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.particlepenaltyequalvalue.ParticlePenaltyEqualValue.fields" title="Link to this definition"></a></dt>
 <dd><p>The fields on the nodes this constraint is acting on.</p>
 </dd></dl>
 
@@ -1651,9 +1679,13 @@ the displacement field that is constrained.</p></li>
 </dd>
 <dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs" title="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">couplesAllItsDofs</span></code></a></dt><dd><p>Whether the entity’s block couples every one of its degrees of freedom with every other one.</p>
 </dd>
-<dt><a class="reference internal" href="#edelweissmeshfree.constraints.particlepenaltycartesianboundary.ParticlePenaltyContactCartesianBoundaryConstraint.fieldsOnNodes" title="edelweissmeshfree.constraints.particlepenaltycartesianboundary.ParticlePenaltyContactCartesianBoundaryConstraint.fieldsOnNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code></a></dt><dd><p>The fields on the nodes this constraint is acting on.</p>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dofIndicesPermutation</span></code></a></dt><dd><p>None: the layout of a constraint is nodewise, followed by its scalar variables.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.particlepenaltycartesianboundary.ParticlePenaltyContactCartesianBoundaryConstraint.fields" title="edelweissmeshfree.constraints.particlepenaltycartesianboundary.ParticlePenaltyContactCartesianBoundaryConstraint.fields"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fields</span></code></a></dt><dd><p>The fields on the nodes this constraint is acting on.</p>
 </dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.constraints.particlepenaltycartesianboundary.ParticlePenaltyContactCartesianBoundaryConstraint.nDof" title="edelweissmeshfree.constraints.particlepenaltycartesianboundary.ParticlePenaltyContactCartesianBoundaryConstraint.nDof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nDof</span></code></a></dt><dd><p>The total number of degrees of freedom this constraint is associated with.</p>
+</dd>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nNodes</span></code></a></dt><dd><p>The number of nodes this constraint is acting on.</p>
 </dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.constraints.particlepenaltycartesianboundary.ParticlePenaltyContactCartesianBoundaryConstraint.name" title="edelweissmeshfree.constraints.particlepenaltycartesianboundary.ParticlePenaltyContactCartesianBoundaryConstraint.name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></a></dt><dd><p>The name of this constraint.</p>
 </dd>
@@ -1704,7 +1736,7 @@ the displacement field that is constrained.</p></li>
 <td><p>The entity's view of the flat array of the values of its block, which it writes its tangent into.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.particlepenaltycartesianboundary.ParticlePenaltyContactCartesianBoundaryConstraint.updateConnectivity" title="edelweissmeshfree.constraints.particlepenaltycartesianboundary.ParticlePenaltyContactCartesianBoundaryConstraint.updateConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code></a>(model)</p></td>
-<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have changed since the last call.</p></td>
+<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fields</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have changed since the last call.</p></td>
 </tr>
 </tbody>
 </table>
@@ -1778,7 +1810,7 @@ this Constraint needs.</p>
 <span class="sig-name descname"><span class="pre">updateConnectivity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/particlepenaltycartesianboundary.html#ParticlePenaltyContactCartesianBoundaryConstraint.updateConnectivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.particlepenaltycartesianboundary.ParticlePenaltyContactCartesianBoundaryConstraint.updateConnectivity" title="Link to this definition"></a></dt>
 <dd><p>Called once at the start of every increment, before the global discrete system is
 (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based
-contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have
+contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fields</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have
 changed since the last call. A constraint that is not always within reach also sets
 <code class="xref py py-attr docutils literal notranslate"><span class="pre">withinReach</span></code> here; it does not report the change of <code class="xref py py-attr docutils literal notranslate"><span class="pre">active</span></code> itself, the model compares it (see
 <code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code>).</p>
@@ -1813,8 +1845,8 @@ in an explicit analysis as well, where the increment is zero; see
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="edelweissmeshfree.constraints.particlepenaltycartesianboundary.ParticlePenaltyContactCartesianBoundaryConstraint.fieldsOnNodes">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">fieldsOnNodes</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.particlepenaltycartesianboundary.ParticlePenaltyContactCartesianBoundaryConstraint.fieldsOnNodes" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.particlepenaltycartesianboundary.ParticlePenaltyContactCartesianBoundaryConstraint.fields">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">fields</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.particlepenaltycartesianboundary.ParticlePenaltyContactCartesianBoundaryConstraint.fields" title="Link to this definition"></a></dt>
 <dd><p>The fields on the nodes this constraint is acting on.</p>
 </dd></dl>
 
@@ -1920,9 +1952,13 @@ vertices given by vertexIDs (“vertex”).</p></li>
 </dd>
 <dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs" title="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">couplesAllItsDofs</span></code></a></dt><dd><p>Whether the entity’s block couples every one of its degrees of freedom with every other one.</p>
 </dd>
-<dt><a class="reference internal" href="#edelweissmeshfree.constraints.particlepenaltyrigidbodycontact.ParticlePenaltyContactImplicitSurfaceConstraint.fieldsOnNodes" title="edelweissmeshfree.constraints.particlepenaltyrigidbodycontact.ParticlePenaltyContactImplicitSurfaceConstraint.fieldsOnNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code></a></dt><dd><p>The fields on the nodes this constraint is acting on.</p>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dofIndicesPermutation</span></code></a></dt><dd><p>None: the layout of a constraint is nodewise, followed by its scalar variables.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.particlepenaltyrigidbodycontact.ParticlePenaltyContactImplicitSurfaceConstraint.fields" title="edelweissmeshfree.constraints.particlepenaltyrigidbodycontact.ParticlePenaltyContactImplicitSurfaceConstraint.fields"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fields</span></code></a></dt><dd><p>The fields on the nodes this constraint is acting on.</p>
 </dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.constraints.particlepenaltyrigidbodycontact.ParticlePenaltyContactImplicitSurfaceConstraint.nDof" title="edelweissmeshfree.constraints.particlepenaltyrigidbodycontact.ParticlePenaltyContactImplicitSurfaceConstraint.nDof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nDof</span></code></a></dt><dd><p>The total number of degrees of freedom this constraint is associated with.</p>
+</dd>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nNodes</span></code></a></dt><dd><p>The number of nodes this constraint is acting on.</p>
 </dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.constraints.particlepenaltyrigidbodycontact.ParticlePenaltyContactImplicitSurfaceConstraint.name" title="edelweissmeshfree.constraints.particlepenaltyrigidbodycontact.ParticlePenaltyContactImplicitSurfaceConstraint.name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></a></dt><dd><p>The name of this constraint.</p>
 </dd>
@@ -1973,7 +2009,7 @@ vertices given by vertexIDs (“vertex”).</p></li>
 <td><p>The entity's view of the flat array of the values of its block, which it writes its tangent into.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.particlepenaltyrigidbodycontact.ParticlePenaltyContactImplicitSurfaceConstraint.updateConnectivity" title="edelweissmeshfree.constraints.particlepenaltyrigidbodycontact.ParticlePenaltyContactImplicitSurfaceConstraint.updateConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code></a>(model)</p></td>
-<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have changed since the last call.</p></td>
+<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fields</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have changed since the last call.</p></td>
 </tr>
 </tbody>
 </table>
@@ -2047,7 +2083,7 @@ this Constraint needs.</p>
 <span class="sig-name descname"><span class="pre">updateConnectivity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/particlepenaltyrigidbodycontact.html#ParticlePenaltyContactImplicitSurfaceConstraint.updateConnectivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.particlepenaltyrigidbodycontact.ParticlePenaltyContactImplicitSurfaceConstraint.updateConnectivity" title="Link to this definition"></a></dt>
 <dd><p>Called once at the start of every increment, before the global discrete system is
 (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based
-contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have
+contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fields</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have
 changed since the last call. A constraint that is not always within reach also sets
 <code class="xref py py-attr docutils literal notranslate"><span class="pre">withinReach</span></code> here; it does not report the change of <code class="xref py py-attr docutils literal notranslate"><span class="pre">active</span></code> itself, the model compares it (see
 <code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code>).</p>
@@ -2082,8 +2118,8 @@ in an explicit analysis as well, where the increment is zero; see
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="edelweissmeshfree.constraints.particlepenaltyrigidbodycontact.ParticlePenaltyContactImplicitSurfaceConstraint.fieldsOnNodes">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">fieldsOnNodes</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.particlepenaltyrigidbodycontact.ParticlePenaltyContactImplicitSurfaceConstraint.fieldsOnNodes" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.particlepenaltyrigidbodycontact.ParticlePenaltyContactImplicitSurfaceConstraint.fields">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">fields</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.particlepenaltyrigidbodycontact.ParticlePenaltyContactImplicitSurfaceConstraint.fields" title="Link to this definition"></a></dt>
 <dd><p>The fields on the nodes this constraint is acting on.</p>
 </dd></dl>
 
@@ -2171,9 +2207,13 @@ continues from the last converged increment. <code class="docutils literal notra
 </dd>
 <dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs" title="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">couplesAllItsDofs</span></code></a></dt><dd><p>Whether the entity’s block couples every one of its degrees of freedom with every other one.</p>
 </dd>
-<dt><a class="reference internal" href="#edelweissmeshfree.constraints.particlelagrangianequalvalue.ParticleLagrangianEqualValueConstraint.fieldsOnNodes" title="edelweissmeshfree.constraints.particlelagrangianequalvalue.ParticleLagrangianEqualValueConstraint.fieldsOnNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code></a></dt><dd><p>The fields on the nodes this constraint is acting on.</p>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dofIndicesPermutation</span></code></a></dt><dd><p>None: the layout of a constraint is nodewise, followed by its scalar variables.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.particlelagrangianequalvalue.ParticleLagrangianEqualValueConstraint.fields" title="edelweissmeshfree.constraints.particlelagrangianequalvalue.ParticleLagrangianEqualValueConstraint.fields"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fields</span></code></a></dt><dd><p>The fields on the nodes this constraint is acting on.</p>
 </dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.constraints.particlelagrangianequalvalue.ParticleLagrangianEqualValueConstraint.nDof" title="edelweissmeshfree.constraints.particlelagrangianequalvalue.ParticleLagrangianEqualValueConstraint.nDof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nDof</span></code></a></dt><dd><p>The total number of degrees of freedom this constraint is associated with.</p>
+</dd>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nNodes</span></code></a></dt><dd><p>The number of nodes this constraint is acting on.</p>
 </dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.constraints.particlelagrangianequalvalue.ParticleLagrangianEqualValueConstraint.name" title="edelweissmeshfree.constraints.particlelagrangianequalvalue.ParticleLagrangianEqualValueConstraint.name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></a></dt><dd><p>The name of this constraint.</p>
 </dd>
@@ -2224,7 +2264,7 @@ continues from the last converged increment. <code class="docutils literal notra
 <td><p>The entity's view of the flat array of the values of its block, which it writes its tangent into.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.particlelagrangianequalvalue.ParticleLagrangianEqualValueConstraint.updateConnectivity" title="edelweissmeshfree.constraints.particlelagrangianequalvalue.ParticleLagrangianEqualValueConstraint.updateConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code></a>(model)</p></td>
-<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have changed since the last call.</p></td>
+<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fields</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have changed since the last call.</p></td>
 </tr>
 </tbody>
 </table>
@@ -2298,7 +2338,7 @@ this Constraint needs.</p>
 <span class="sig-name descname"><span class="pre">updateConnectivity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/particlelagrangianequalvalue.html#ParticleLagrangianEqualValueConstraint.updateConnectivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.particlelagrangianequalvalue.ParticleLagrangianEqualValueConstraint.updateConnectivity" title="Link to this definition"></a></dt>
 <dd><p>Called once at the start of every increment, before the global discrete system is
 (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based
-contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have
+contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fields</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have
 changed since the last call. A constraint that is not always within reach also sets
 <code class="xref py py-attr docutils literal notranslate"><span class="pre">withinReach</span></code> here; it does not report the change of <code class="xref py py-attr docutils literal notranslate"><span class="pre">active</span></code> itself, the model compares it (see
 <code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code>).</p>
@@ -2325,8 +2365,8 @@ not override this method).</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="edelweissmeshfree.constraints.particlelagrangianequalvalue.ParticleLagrangianEqualValueConstraint.fieldsOnNodes">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">fieldsOnNodes</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.particlelagrangianequalvalue.ParticleLagrangianEqualValueConstraint.fieldsOnNodes" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.particlelagrangianequalvalue.ParticleLagrangianEqualValueConstraint.fields">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">fields</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.particlelagrangianequalvalue.ParticleLagrangianEqualValueConstraint.fields" title="Link to this definition"></a></dt>
 <dd><p>The fields on the nodes this constraint is acting on.</p>
 </dd></dl>
 
@@ -2453,9 +2493,13 @@ acts on the constraint.</p>
 </dd>
 <dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs" title="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">couplesAllItsDofs</span></code></a></dt><dd><p>Whether the entity’s block couples every one of its degrees of freedom with every other one.</p>
 </dd>
-<dt><a class="reference internal" href="#edelweissmeshfree.constraints.particlelagrangianweakdirichlet.ParticleLagrangianWeakDirichlet.fieldsOnNodes" title="edelweissmeshfree.constraints.particlelagrangianweakdirichlet.ParticleLagrangianWeakDirichlet.fieldsOnNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code></a></dt><dd><p>The fields on the nodes this constraint is acting on.</p>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dofIndicesPermutation</span></code></a></dt><dd><p>None: the layout of a constraint is nodewise, followed by its scalar variables.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.particlelagrangianweakdirichlet.ParticleLagrangianWeakDirichlet.fields" title="edelweissmeshfree.constraints.particlelagrangianweakdirichlet.ParticleLagrangianWeakDirichlet.fields"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fields</span></code></a></dt><dd><p>The fields on the nodes this constraint is acting on.</p>
 </dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.constraints.particlelagrangianweakdirichlet.ParticleLagrangianWeakDirichlet.nDof" title="edelweissmeshfree.constraints.particlelagrangianweakdirichlet.ParticleLagrangianWeakDirichlet.nDof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nDof</span></code></a></dt><dd><p>The total number of degrees of freedom this constraint is associated with.</p>
+</dd>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nNodes</span></code></a></dt><dd><p>The number of nodes this constraint is acting on.</p>
 </dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.constraints.particlelagrangianweakdirichlet.ParticleLagrangianWeakDirichlet.name" title="edelweissmeshfree.constraints.particlelagrangianweakdirichlet.ParticleLagrangianWeakDirichlet.name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></a></dt><dd><p>The name of this constraint.</p>
 </dd>
@@ -2506,7 +2550,7 @@ acts on the constraint.</p>
 <td><p>The entity's view of the flat array of the values of its block, which it writes its tangent into.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.particlelagrangianweakdirichlet.ParticleLagrangianWeakDirichlet.updateConnectivity" title="edelweissmeshfree.constraints.particlelagrangianweakdirichlet.ParticleLagrangianWeakDirichlet.updateConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code></a>(model)</p></td>
-<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have changed since the last call.</p></td>
+<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fields</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have changed since the last call.</p></td>
 </tr>
 </tbody>
 </table>
@@ -2594,7 +2638,7 @@ this Constraint needs.</p>
 <span class="sig-name descname"><span class="pre">updateConnectivity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/particlelagrangianweakdirichlet.html#ParticleLagrangianWeakDirichlet.updateConnectivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.particlelagrangianweakdirichlet.ParticleLagrangianWeakDirichlet.updateConnectivity" title="Link to this definition"></a></dt>
 <dd><p>Called once at the start of every increment, before the global discrete system is
 (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based
-contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have
+contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fields</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have
 changed since the last call. A constraint that is not always within reach also sets
 <code class="xref py py-attr docutils literal notranslate"><span class="pre">withinReach</span></code> here; it does not report the change of <code class="xref py py-attr docutils literal notranslate"><span class="pre">active</span></code> itself, the model compares it (see
 <code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code>).</p>
@@ -2621,8 +2665,8 @@ not override this method).</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="edelweissmeshfree.constraints.particlelagrangianweakdirichlet.ParticleLagrangianWeakDirichlet.fieldsOnNodes">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">fieldsOnNodes</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.particlelagrangianweakdirichlet.ParticleLagrangianWeakDirichlet.fieldsOnNodes" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.particlelagrangianweakdirichlet.ParticleLagrangianWeakDirichlet.fields">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">fields</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.particlelagrangianweakdirichlet.ParticleLagrangianWeakDirichlet.fields" title="Link to this definition"></a></dt>
 <dd><p>The fields on the nodes this constraint is acting on.</p>
 </dd></dl>
 
@@ -2750,9 +2794,13 @@ vertex given by vertexID (“vertex”).</p></li>
 </dd>
 <dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs" title="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">couplesAllItsDofs</span></code></a></dt><dd><p>Whether the entity’s block couples every one of its degrees of freedom with every other one.</p>
 </dd>
-<dt><a class="reference internal" href="#edelweissmeshfree.constraints.particlelagrangiancartesianboundary.ParticleLagrangianContactCartesianBoundaryConstraint.fieldsOnNodes" title="edelweissmeshfree.constraints.particlelagrangiancartesianboundary.ParticleLagrangianContactCartesianBoundaryConstraint.fieldsOnNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code></a></dt><dd><p>The fields on the nodes this constraint is acting on.</p>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dofIndicesPermutation</span></code></a></dt><dd><p>None: the layout of a constraint is nodewise, followed by its scalar variables.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.particlelagrangiancartesianboundary.ParticleLagrangianContactCartesianBoundaryConstraint.fields" title="edelweissmeshfree.constraints.particlelagrangiancartesianboundary.ParticleLagrangianContactCartesianBoundaryConstraint.fields"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fields</span></code></a></dt><dd><p>The fields on the nodes this constraint is acting on.</p>
 </dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.constraints.particlelagrangiancartesianboundary.ParticleLagrangianContactCartesianBoundaryConstraint.nDof" title="edelweissmeshfree.constraints.particlelagrangiancartesianboundary.ParticleLagrangianContactCartesianBoundaryConstraint.nDof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nDof</span></code></a></dt><dd><p>The total number of degrees of freedom this constraint is associated with.</p>
+</dd>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nNodes</span></code></a></dt><dd><p>The number of nodes this constraint is acting on.</p>
 </dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.constraints.particlelagrangiancartesianboundary.ParticleLagrangianContactCartesianBoundaryConstraint.name" title="edelweissmeshfree.constraints.particlelagrangiancartesianboundary.ParticleLagrangianContactCartesianBoundaryConstraint.name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></a></dt><dd><p>The name of this constraint.</p>
 </dd>
@@ -2803,7 +2851,7 @@ vertex given by vertexID (“vertex”).</p></li>
 <td><p>The entity's view of the flat array of the values of its block, which it writes its tangent into.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.particlelagrangiancartesianboundary.ParticleLagrangianContactCartesianBoundaryConstraint.updateConnectivity" title="edelweissmeshfree.constraints.particlelagrangiancartesianboundary.ParticleLagrangianContactCartesianBoundaryConstraint.updateConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code></a>(model)</p></td>
-<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have changed since the last call.</p></td>
+<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fields</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have changed since the last call.</p></td>
 </tr>
 </tbody>
 </table>
@@ -2877,7 +2925,7 @@ this Constraint needs.</p>
 <span class="sig-name descname"><span class="pre">updateConnectivity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/particlelagrangiancartesianboundary.html#ParticleLagrangianContactCartesianBoundaryConstraint.updateConnectivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.particlelagrangiancartesianboundary.ParticleLagrangianContactCartesianBoundaryConstraint.updateConnectivity" title="Link to this definition"></a></dt>
 <dd><p>Called once at the start of every increment, before the global discrete system is
 (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based
-contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have
+contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fields</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have
 changed since the last call. A constraint that is not always within reach also sets
 <code class="xref py py-attr docutils literal notranslate"><span class="pre">withinReach</span></code> here; it does not report the change of <code class="xref py py-attr docutils literal notranslate"><span class="pre">active</span></code> itself, the model compares it (see
 <code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code>).</p>
@@ -2904,8 +2952,8 @@ not override this method).</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="edelweissmeshfree.constraints.particlelagrangiancartesianboundary.ParticleLagrangianContactCartesianBoundaryConstraint.fieldsOnNodes">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">fieldsOnNodes</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.particlelagrangiancartesianboundary.ParticleLagrangianContactCartesianBoundaryConstraint.fieldsOnNodes" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.particlelagrangiancartesianboundary.ParticleLagrangianContactCartesianBoundaryConstraint.fields">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">fields</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.particlelagrangiancartesianboundary.ParticleLagrangianContactCartesianBoundaryConstraint.fields" title="Link to this definition"></a></dt>
 <dd><p>The fields on the nodes this constraint is acting on.</p>
 </dd></dl>
 
@@ -3020,9 +3068,13 @@ continues from the last converged increment.</p>
 </dd>
 <dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs" title="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">couplesAllItsDofs</span></code></a></dt><dd><p>Whether the entity’s block couples every one of its degrees of freedom with every other one.</p>
 </dd>
-<dt><a class="reference internal" href="#edelweissmeshfree.constraints.particlemortarweakdirichlet.ParticleMortarWeakDirichlet.fieldsOnNodes" title="edelweissmeshfree.constraints.particlemortarweakdirichlet.ParticleMortarWeakDirichlet.fieldsOnNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code></a></dt><dd><p>The fields on the nodes this constraint is acting on.</p>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dofIndicesPermutation</span></code></a></dt><dd><p>None: the layout of a constraint is nodewise, followed by its scalar variables.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.particlemortarweakdirichlet.ParticleMortarWeakDirichlet.fields" title="edelweissmeshfree.constraints.particlemortarweakdirichlet.ParticleMortarWeakDirichlet.fields"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fields</span></code></a></dt><dd><p>The fields on the nodes this constraint is acting on.</p>
 </dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.constraints.particlemortarweakdirichlet.ParticleMortarWeakDirichlet.nDof" title="edelweissmeshfree.constraints.particlemortarweakdirichlet.ParticleMortarWeakDirichlet.nDof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nDof</span></code></a></dt><dd><p>The total number of degrees of freedom this constraint is associated with.</p>
+</dd>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nNodes</span></code></a></dt><dd><p>The number of nodes this constraint is acting on.</p>
 </dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.constraints.particlemortarweakdirichlet.ParticleMortarWeakDirichlet.name" title="edelweissmeshfree.constraints.particlemortarweakdirichlet.ParticleMortarWeakDirichlet.name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></a></dt><dd><p>The name of this constraint.</p>
 </dd>
@@ -3073,7 +3125,7 @@ continues from the last converged increment.</p>
 <td><p>The entity's view of the flat array of the values of its block, which it writes its tangent into.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.particlemortarweakdirichlet.ParticleMortarWeakDirichlet.updateConnectivity" title="edelweissmeshfree.constraints.particlemortarweakdirichlet.ParticleMortarWeakDirichlet.updateConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code></a>(model)</p></td>
-<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have changed since the last call.</p></td>
+<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fields</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have changed since the last call.</p></td>
 </tr>
 </tbody>
 </table>
@@ -3154,7 +3206,7 @@ this Constraint needs.</p>
 <span class="sig-name descname"><span class="pre">updateConnectivity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/particlemortarweakdirichlet.html#ParticleMortarWeakDirichlet.updateConnectivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.particlemortarweakdirichlet.ParticleMortarWeakDirichlet.updateConnectivity" title="Link to this definition"></a></dt>
 <dd><p>Called once at the start of every increment, before the global discrete system is
 (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based
-contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have
+contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fields</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have
 changed since the last call. A constraint that is not always within reach also sets
 <code class="xref py py-attr docutils literal notranslate"><span class="pre">withinReach</span></code> here; it does not report the change of <code class="xref py py-attr docutils literal notranslate"><span class="pre">active</span></code> itself, the model compares it (see
 <code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code>).</p>
@@ -3181,8 +3233,8 @@ not override this method).</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="edelweissmeshfree.constraints.particlemortarweakdirichlet.ParticleMortarWeakDirichlet.fieldsOnNodes">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">fieldsOnNodes</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.particlemortarweakdirichlet.ParticleMortarWeakDirichlet.fieldsOnNodes" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.particlemortarweakdirichlet.ParticleMortarWeakDirichlet.fields">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">fields</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.particlemortarweakdirichlet.ParticleMortarWeakDirichlet.fields" title="Link to this definition"></a></dt>
 <dd><p>The fields on the nodes this constraint is acting on.</p>
 </dd></dl>
 
@@ -3316,9 +3368,13 @@ in the order of its labels, for instance, is refused.</p></li>
 </dd>
 <dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs" title="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">couplesAllItsDofs</span></code></a></dt><dd><p>Whether the entity’s block couples every one of its degrees of freedom with every other one.</p>
 </dd>
-<dt><a class="reference internal" href="#edelweissmeshfree.constraints.particlefiniteelementmortartie.ParticleFiniteElementMortarTie.fieldsOnNodes" title="edelweissmeshfree.constraints.particlefiniteelementmortartie.ParticleFiniteElementMortarTie.fieldsOnNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code></a></dt><dd><p>The fields on the nodes this constraint is acting on.</p>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dofIndicesPermutation</span></code></a></dt><dd><p>None: the layout of a constraint is nodewise, followed by its scalar variables.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.particlefiniteelementmortartie.ParticleFiniteElementMortarTie.fields" title="edelweissmeshfree.constraints.particlefiniteelementmortartie.ParticleFiniteElementMortarTie.fields"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fields</span></code></a></dt><dd><p>The fields on the nodes this constraint is acting on.</p>
 </dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.constraints.particlefiniteelementmortartie.ParticleFiniteElementMortarTie.nDof" title="edelweissmeshfree.constraints.particlefiniteelementmortartie.ParticleFiniteElementMortarTie.nDof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nDof</span></code></a></dt><dd><p>The total number of degrees of freedom this constraint is associated with.</p>
+</dd>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nNodes</span></code></a></dt><dd><p>The number of nodes this constraint is acting on.</p>
 </dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.constraints.particlefiniteelementmortartie.ParticleFiniteElementMortarTie.name" title="edelweissmeshfree.constraints.particlefiniteelementmortartie.ParticleFiniteElementMortarTie.name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></a></dt><dd><p>The name of this constraint.</p>
 </dd>
@@ -3491,8 +3547,8 @@ at the start of every increment.</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="edelweissmeshfree.constraints.particlefiniteelementmortartie.ParticleFiniteElementMortarTie.fieldsOnNodes">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">fieldsOnNodes</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.particlefiniteelementmortartie.ParticleFiniteElementMortarTie.fieldsOnNodes" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.particlefiniteelementmortartie.ParticleFiniteElementMortarTie.fields">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">fields</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.particlefiniteelementmortartie.ParticleFiniteElementMortarTie.fields" title="Link to this definition"></a></dt>
 <dd><p>The fields on the nodes this constraint is acting on.</p>
 </dd></dl>
 
@@ -3661,9 +3717,13 @@ If penetration is detected, the penalty force is</p>
 </dd>
 <dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs" title="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">couplesAllItsDofs</span></code></a></dt><dd><p>Whether the entity’s block couples every one of its degrees of freedom with every other one.</p>
 </dd>
-<dt><a class="reference internal" href="#edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit.ParticlePenaltyCartesianBoundaryConstraintExplicit.fieldsOnNodes" title="edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit.ParticlePenaltyCartesianBoundaryConstraintExplicit.fieldsOnNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code></a></dt><dd><p>The fields on the nodes this constraint is acting on.</p>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dofIndicesPermutation</span></code></a></dt><dd><p>None: the layout of a constraint is nodewise, followed by its scalar variables.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit.ParticlePenaltyCartesianBoundaryConstraintExplicit.fields" title="edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit.ParticlePenaltyCartesianBoundaryConstraintExplicit.fields"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fields</span></code></a></dt><dd><p>The fields on the nodes this constraint is acting on.</p>
 </dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit.ParticlePenaltyCartesianBoundaryConstraintExplicit.nDof" title="edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit.ParticlePenaltyCartesianBoundaryConstraintExplicit.nDof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nDof</span></code></a></dt><dd><p>The total number of degrees of freedom this constraint is associated with.</p>
+</dd>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nNodes</span></code></a></dt><dd><p>The number of nodes this constraint is acting on.</p>
 </dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit.ParticlePenaltyCartesianBoundaryConstraintExplicit.name" title="edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit.ParticlePenaltyCartesianBoundaryConstraintExplicit.name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></a></dt><dd><p>The name of this constraint.</p>
 </dd>
@@ -3778,8 +3838,8 @@ In explicit, this caches the global indices of the nodes for fast access.</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit.ParticlePenaltyCartesianBoundaryConstraintExplicit.fieldsOnNodes">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">fieldsOnNodes</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit.ParticlePenaltyCartesianBoundaryConstraintExplicit.fieldsOnNodes" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit.ParticlePenaltyCartesianBoundaryConstraintExplicit.fields">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">fields</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit.ParticlePenaltyCartesianBoundaryConstraintExplicit.fields" title="Link to this definition"></a></dt>
 <dd><p>The fields on the nodes this constraint is acting on.</p>
 </dd></dl>
 
@@ -3878,9 +3938,13 @@ In explicit, this caches the global indices of the nodes for fast access.</p>
 </dd>
 <dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs" title="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">couplesAllItsDofs</span></code></a></dt><dd><p>Whether the entity’s block couples every one of its degrees of freedom with every other one.</p>
 </dd>
-<dt><a class="reference internal" href="#edelweissmeshfree.constraints.explicit.particlepenaltyrigidbodycontactexplicit.ParticlePenaltyContactImplicitSurfaceConstraintExplicit.fieldsOnNodes" title="edelweissmeshfree.constraints.explicit.particlepenaltyrigidbodycontactexplicit.ParticlePenaltyContactImplicitSurfaceConstraintExplicit.fieldsOnNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fieldsOnNodes</span></code></a></dt><dd><p>The fields on the nodes this constraint is acting on.</p>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dofIndicesPermutation</span></code></a></dt><dd><p>None: the layout of a constraint is nodewise, followed by its scalar variables.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.explicit.particlepenaltyrigidbodycontactexplicit.ParticlePenaltyContactImplicitSurfaceConstraintExplicit.fields" title="edelweissmeshfree.constraints.explicit.particlepenaltyrigidbodycontactexplicit.ParticlePenaltyContactImplicitSurfaceConstraintExplicit.fields"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fields</span></code></a></dt><dd><p>The fields on the nodes this constraint is acting on.</p>
 </dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.constraints.explicit.particlepenaltyrigidbodycontactexplicit.ParticlePenaltyContactImplicitSurfaceConstraintExplicit.nDof" title="edelweissmeshfree.constraints.explicit.particlepenaltyrigidbodycontactexplicit.ParticlePenaltyContactImplicitSurfaceConstraintExplicit.nDof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nDof</span></code></a></dt><dd><p>The total number of degrees of freedom this constraint is associated with.</p>
+</dd>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nNodes</span></code></a></dt><dd><p>The number of nodes this constraint is acting on.</p>
 </dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.constraints.explicit.particlepenaltyrigidbodycontactexplicit.ParticlePenaltyContactImplicitSurfaceConstraintExplicit.name" title="edelweissmeshfree.constraints.explicit.particlepenaltyrigidbodycontactexplicit.ParticlePenaltyContactImplicitSurfaceConstraintExplicit.name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></a></dt><dd><p>The name of this constraint.</p>
 </dd>
@@ -4005,8 +4069,8 @@ this Constraint needs.</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="edelweissmeshfree.constraints.explicit.particlepenaltyrigidbodycontactexplicit.ParticlePenaltyContactImplicitSurfaceConstraintExplicit.fieldsOnNodes">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">fieldsOnNodes</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.explicit.particlepenaltyrigidbodycontactexplicit.ParticlePenaltyContactImplicitSurfaceConstraintExplicit.fieldsOnNodes" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.explicit.particlepenaltyrigidbodycontactexplicit.ParticlePenaltyContactImplicitSurfaceConstraintExplicit.fields">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">fields</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.explicit.particlepenaltyrigidbodycontactexplicit.ParticlePenaltyContactImplicitSurfaceConstraintExplicit.fields" title="Link to this definition"></a></dt>
 <dd><p>The fields on the nodes this constraint is acting on.</p>
 </dd></dl>
 

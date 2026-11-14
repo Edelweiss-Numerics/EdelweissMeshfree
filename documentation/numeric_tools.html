@@ -114,17 +114,25 @@ problems.</p>
 <h2><code class="docutils literal notranslate"><span class="pre">MPMDofLocations</span></code> class<a class="headerlink" href="#mpmdoflocations-class" title="Link to this heading"></a></h2>
 <p>The locations of the entities of a material point or RKPM model: the global indices of the local degrees of freedom of
 its finite elements and constraints (<code class="xref py py-class docutils literal notranslate"><span class="pre">DofLocations</span></code>, the <em>LM</em> array), and of
-its background cells, cell elements and particles. They are built on the numbering of the degrees of freedom of the
+its background cells, cell elements and particles, all located by the one protocol of an entity
+(<code class="xref py py-class docutils literal notranslate"><span class="pre">BaseNodeCouplingEntity</span></code>: nodes, fields per node,
+permutation, scalar variables). The inertia of the finite elements is assembled at the nodes
+(<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.elementsWithNodalInertia" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.elementsWithNodalInertia"><code class="xref py py-attr docutils literal notranslate"><span class="pre">elementsWithNodalInertia</span></code></a>); the particles’ lumped
+mass is assembled by the discrete system
+(<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.assembleLumpedMassOfEntitiesWithOwnInertia" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.assembleLumpedMassOfEntitiesWithOwnInertia"><code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleLumpedMassOfEntitiesWithOwnInertia()</span></code></a>). They
+are built on the numbering of the degrees of freedom of the
 active domain (<code class="xref py py-class docutils literal notranslate"><span class="pre">DofNumbering</span></code>, the <em>ID</em> array). Neither is ever changed: moved
 particles, or changed constraints, make new locations on the same numbering
 (<code class="xref py py-meth docutils literal notranslate"><span class="pre">withNewLocationsOf()</span></code>).</p>
 <span class="target" id="module-edelweissmeshfree.numerics.doflocations"></span><dl class="py class">
 <dt class="sig sig-object py" id="edelweissmeshfree.numerics.doflocations.MPMDofLocations">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.numerics.doflocations.</span></span><span class="sig-name descname"><span class="pre">MPMDofLocations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">numbering</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elements</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constraints</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cells</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cellElements</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">particles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/numerics/doflocations.html#MPMDofLocations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.numerics.doflocations.</span></span><span class="sig-name descname"><span class="pre">MPMDofLocations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">numbering</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">finiteElements</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constraints</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cells</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cellElements</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">particles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/numerics/doflocations.html#MPMDofLocations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations" title="Link to this definition"></a></dt>
 <dd><p>The locations of the entities of a material point or RKPM model in the numbering of the degrees of freedom of
 its active domain: those of
 <code class="xref py py-class docutils literal notranslate"><span class="pre">DofLocations</span></code> – the finite elements and the constraints – and those of
-the background cells, the cell elements and the particles, which are computed like elements.</p>
+the background cells, the cell elements and the particles, which are computed like elements: they follow the finite
+elements in <code class="xref py py-attr docutils literal notranslate"><span class="pre">elements</span></code>, and they are located by the same
+protocol of an entity as the elements are.</p>
 <p>The locations of the particles are the locations of the nodes their kernel functions reach, node after node, on
 each node the same fields. Moving particles reach other nodes of the same numbering: new locations of the
 particles on the same numbering, see
@@ -133,7 +141,7 @@ particles on the same numbering, see
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>numbering</strong> (<em>DofNumbering</em>) – The numbering of the degrees of freedom of the active domain.</p></li>
-<li><p><strong>elements</strong> (<em>list</em>) – A list of elements.</p></li>
+<li><p><strong>finiteElements</strong> (<em>list</em>) – The finite elements that take part in the discrete system.</p></li>
 <li><p><strong>constraints</strong> (<em>list</em>) – A list of constraints.</p></li>
 <li><p><strong>cells</strong> (<em>list</em>) – A list of cells.</p></li>
 <li><p><strong>cellElements</strong> (<em>list</em>) – A list of cell elements.</p></li>
@@ -157,7 +165,7 @@ particles on the same numbering, see
 <td><p>Construct a vector with size=nDof and which has knowledge about the location of each entity.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations.withNewLocationsOf" title="edelweissmeshfree.numerics.doflocations.MPMDofLocations.withNewLocationsOf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">withNewLocationsOf</span></code></a>(constraints[, movedEntities])</p></td>
-<td><p>The locations of the same entities in the same numbering, with the constraints, and the further entities that moved, located anew after their connectivity changed.</p></td>
+<td><p>The locations of the same entities in the same numbering, with the constraints, and the elements that moved, located anew after their connectivity changed.</p></td>
 </tr>
 </tbody>
 </table>
@@ -184,38 +192,17 @@ entity.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.doflocations.MPMDofLocations._locateConstraints">
-<span class="sig-name descname"><span class="pre">_locateConstraints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">constraints</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations._locateConstraints" title="Link to this definition"></a></dt>
-<dd><p>Creates a dictionary containing the location (indices) of each constraint within the DofVector structure:
-the indices of the field variables of its nodes, node after node, followed by those of its scalar variables.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>constraints</strong> (<em>list</em>) – The list of constraints to locate.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A dictionary containing the location mapping.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>dict</p>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ValueError</strong> – If a constraint cannot be located: see <a class="reference internal" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations._noLocationError" title="edelweissmeshfree.numerics.doflocations.MPMDofLocations._noLocationError"><code class="xref py py-meth docutils literal notranslate"><span class="pre">_noLocationError()</span></code></a>.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.doflocations.MPMDofLocations._locateNodeCouplingEntities">
-<span class="sig-name descname"><span class="pre">_locateNodeCouplingEntities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entities</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations._locateNodeCouplingEntities" title="Link to this definition"></a></dt>
-<dd><p>Creates a dictionary containing the location (indices) of each entity (elements, …)
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.doflocations.MPMDofLocations._locate">
+<span class="sig-name descname"><span class="pre">_locate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entities</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations._locate" title="Link to this definition"></a></dt>
+<dd><p>Creates a dictionary containing the location (indices) of each entity (elements, constraints, …)
 within the DofVector structure.</p>
 <p>The location of an entity is the indices of the field variables of its nodes, node after node and, on each
 node, field after field as the entity lists them (<code class="docutils literal notranslate"><span class="pre">fields</span></code>), reordered by its <code class="docutils literal notranslate"><span class="pre">dofIndicesPermutation</span></code>
-unless that is None.</p>
+unless that is None; the indices of its scalar variables (<code class="docutils literal notranslate"><span class="pre">scalarVariables</span></code>) follow, after the permutation.</p>
 <p>An entity that cannot be located raises: one of its nodes does not have a field the entity couples there, or the
-field variable is not part of the numbering (see <a class="reference internal" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations._noLocationError" title="edelweissmeshfree.numerics.doflocations.MPMDofLocations._noLocationError"><code class="xref py py-meth docutils literal notranslate"><span class="pre">_noLocationError()</span></code></a>); so does an entity that lacks
-<code class="docutils literal notranslate"><span class="pre">nodes</span></code>, <code class="docutils literal notranslate"><span class="pre">fields</span></code> or <code class="docutils literal notranslate"><span class="pre">dofIndicesPermutation</span></code>, or lists fewer fields than it has nodes – whether there are
-few entities or many.</p>
+field variable is not part of the numbering, or a scalar variable is not (see <a class="reference internal" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations._noLocationError" title="edelweissmeshfree.numerics.doflocations.MPMDofLocations._noLocationError"><code class="xref py py-meth docutils literal notranslate"><span class="pre">_noLocationError()</span></code></a>); so does
+an entity that lacks <code class="docutils literal notranslate"><span class="pre">nodes</span></code>, <code class="docutils literal notranslate"><span class="pre">fields</span></code>, <code class="docutils literal notranslate"><span class="pre">dofIndicesPermutation</span></code> or <code class="docutils literal notranslate"><span class="pre">scalarVariables</span></code>, or lists fewer
+fields than it has nodes – whether there are few entities or many.</p>
 <p>The entities are independent of each other, so they are located in chunks on the thread pool
 (<code class="xref py py-func docutils literal notranslate"><span class="pre">mapChunksInParallel()</span></code>), unless there are so few of them
 that handing them to the pool would cost more than it saves: then the calling thread locates them. The
@@ -237,28 +224,14 @@ dictionary holds the entities in the order they were given.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.doflocations.MPMDofLocations._mergeEntities">
-<span class="sig-name descname"><span class="pre">_mergeEntities</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations._mergeEntities" title="Link to this definition"></a></dt>
-<dd><p>Merge what is known per kind of entity: the lists of the elements and of the constraints the locations hold,
-the merged mapping of every entity to its indices, and the accumulated nodal fluxes. The locations are
-immutable: the merged mapping is made anew for every locations, never changed in place, so that whoever still
-holds the old locations holds a mapping that stays valid.</p>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.numerics.doflocations.MPMDofLocations._noLocationError">
-<span class="sig-name descname"><span class="pre">_noLocationError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fieldsOnNodes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scalarVariables</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations._noLocationError" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">_noLocationError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entity</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations._noLocationError" title="Link to this definition"></a></dt>
 <dd><p>The error for an entity that cannot be located: what is missing in the numbering, and which entity it is.
-The entity is named by its class (its module too, as many modules name their class alike), by its own name if it
-has one, and by the labels of its first nodes.</p>
+The entity is named by its class, with its module, as many modules name their class alike, and by the labels of
+its first nodes.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>entity</strong> – The entity that cannot be located.</p></li>
-<li><p><strong>fieldsOnNodes</strong> (<em>list</em>) – The fields the entity couples on each of its nodes.</p></li>
-<li><p><strong>scalarVariables</strong> (<em>list</em>) – The scalar variables of the entity.</p></li>
-<li><p><strong>name</strong> (<em>str</em><em> | </em><em>None</em>) – The name of the entity, if it has one (a constraint has); None otherwise.</p></li>
-</ul>
+<dd class="field-odd"><p><strong>entity</strong> – The entity that cannot be located.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The error, to raise.</p>
@@ -306,12 +279,12 @@ the location of each entity.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.numerics.doflocations.MPMDofLocations.withNewLocationsOf">
 <span class="sig-name descname"><span class="pre">withNewLocationsOf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">constraints</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">movedEntities</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations.withNewLocationsOf" title="Link to this definition"></a></dt>
-<dd><p>The locations of the same entities in the same numbering, with the constraints, and the further entities
-that moved, located anew after their connectivity changed.</p>
+<dd><p>The locations of the same entities in the same numbering, with the constraints, and the elements that
+moved, located anew after their connectivity changed.</p>
 <p>A contact search re-assigns which nodes a constraint couples. That changes the constraints’ locations and
 nothing else: no node, field, scalar variable or element is touched, so the numbering and the locations of
 every element stay valid, and only what is derived from the constraints is computed again – by the same
-methods, in the same order, as the constructor computed it. That is a small fraction of what making
+method, in the same order, as the constructor computed it. That is a small fraction of what making
 locations for the same model costs.</p>
 <p>A change that moves the numbering – a mesh refinement, a constraint gaining a scalar variable of its own – is
 not a change of the connectivity, and needs a new <code class="xref py py-class docutils literal notranslate"><span class="pre">DofNumbering</span></code>:
@@ -320,8 +293,10 @@ this method refuses it.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>constraints</strong> (<em>list</em>) – The constraints, with their current connectivity.</p></li>
-<li><p><strong>movedEntities</strong> (<em>list</em>) – The further entities whose connectivity changed (see the constructor); the others keep the locations they
-were given. Only meaningful where the numbering stands, as for the constraints.</p></li>
+<li><p><strong>movedEntities</strong> (<em>list</em>) – The elements whose connectivity changed: those that declare that it changes with the motion
+(<code class="xref py py-attr docutils literal notranslate"><span class="pre">connectivityChangesWithMotion</span></code>,
+e.g. the particles of a meshfree model whose kernel functions reach other nodes). The others keep the
+locations they were given. Only meaningful where the numbering stands, as for the constraints.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -332,17 +307,32 @@ were given. Only meaningful where the numbering stands, as for the constraints.<
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>ValueError</strong> – If the scalar variables of the constraints are not exactly those the numbering numbers, in this order, or
-a moved entity is not located in these locations.</p>
+a moved entity is not an element located in these locations, or does not declare that its connectivity
+changes with the motion.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="edelweissmeshfree.numerics.doflocations.MPMDofLocations._fluxesOfElements">
-<span class="sig-name descname"><span class="pre">_fluxesOfElements</span></span><a class="headerlink" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations._fluxesOfElements" title="Link to this definition"></a></dt>
-<dd><p>The accumulated nodal fluxes of the elements and of the further entities, counted when first asked for
-(see <a class="reference internal" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations.nAccumulatedNodalFluxesFieldwise" title="edelweissmeshfree.numerics.doflocations.MPMDofLocations.nAccumulatedNodalFluxesFieldwise"><code class="xref py py-attr docutils literal notranslate"><span class="pre">nAccumulatedNodalFluxesFieldwise</span></code></a>) and shared by the locations made from these, see
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.doflocations.MPMDofLocations._elementsWithFixedConnectivity">
+<span class="sig-name descname"><span class="pre">_elementsWithFixedConnectivity</span></span><a class="headerlink" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations._elementsWithFixedConnectivity" title="Link to this definition"></a></dt>
+<dd><p>The elements whose nodes stay as they are, and those whose nodes change with the motion
+(<code class="xref py py-attr docutils literal notranslate"><span class="pre">connectivityChangesWithMotion</span></code>),
+which are the only ones that can be moved, see <a class="reference internal" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations.withNewLocationsOf" title="edelweissmeshfree.numerics.doflocations.MPMDofLocations.withNewLocationsOf"><code class="xref py py-meth docutils literal notranslate"><span class="pre">withNewLocationsOf()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.doflocations.MPMDofLocations._fluxesOfFixedElements">
+<span class="sig-name descname"><span class="pre">_fluxesOfFixedElements</span></span><a class="headerlink" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations._fluxesOfFixedElements" title="Link to this definition"></a></dt>
+<dd><p>The accumulated nodal fluxes of the elements with fixed connectivity, counted when first asked for (see
+<a class="reference internal" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations.nAccumulatedNodalFluxesFieldwise" title="edelweissmeshfree.numerics.doflocations.MPMDofLocations.nAccumulatedNodalFluxesFieldwise"><code class="xref py py-attr docutils literal notranslate"><span class="pre">nAccumulatedNodalFluxesFieldwise</span></code></a>) and shared by all locations of the numbering, see
 <a class="reference internal" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations.withNewLocationsOf" title="edelweissmeshfree.numerics.doflocations.MPMDofLocations.withNewLocationsOf"><code class="xref py py-meth docutils literal notranslate"><span class="pre">withNewLocationsOf()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.doflocations.MPMDofLocations._nAccumulatedNodalFluxesFieldwise">
+<span class="sig-name descname"><span class="pre">_nAccumulatedNodalFluxesFieldwise</span></span><a class="headerlink" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations._nAccumulatedNodalFluxesFieldwise" title="Link to this definition"></a></dt>
+<dd><p>The accumulated nodal fluxes of all entities, computed at the first request.</p>
 </dd></dl>
 
 <dl class="py attribute">
@@ -358,15 +348,25 @@ a moved entity is not located in these locations.</p>
 </dd></dl>
 
 <dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.doflocations.MPMDofLocations.constraints">
+<span class="sig-name descname"><span class="pre">constraints</span></span><a class="headerlink" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations.constraints" title="Link to this definition"></a></dt>
+<dd><p>The constraints that take part in the discrete system, with their scalar variables. The solver evaluates
+exactly these, so that every constraint it evaluates has its rows in the system matrix, and every row of a
+constraint is filled.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.doflocations.MPMDofLocations.elements">
+<span class="sig-name descname"><span class="pre">elements</span></span><a class="headerlink" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations.elements" title="Link to this definition"></a></dt>
+<dd><p>Everything the solver computes like an element, in the order in which it computes it. Every one of them has a
+location.</p>
+</dd></dl>
+
+<dl class="py attribute">
 <dt class="sig sig-object py" id="edelweissmeshfree.numerics.doflocations.MPMDofLocations.finiteElements">
 <span class="sig-name descname"><span class="pre">finiteElements</span></span><a class="headerlink" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations.finiteElements" title="Link to this definition"></a></dt>
-<dd><p>the ones whose inertia, damping and stable time increment a solver
-assembles element by element. The cells and the particles come on top of them in <code class="xref py py-attr docutils literal notranslate"><span class="pre">elements</span></code>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The finite elements among <code class="xref py py-attr docutils literal notranslate"><span class="pre">elements</span></code></p>
-</dd>
-</dl>
+<dd><p>The finite elements among <a class="reference internal" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations.elements" title="edelweissmeshfree.numerics.doflocations.MPMDofLocations.elements"><code class="xref py py-attr docutils literal notranslate"><span class="pre">elements</span></code></a>, which also holds the cells, the cell elements and the particles,
+in this order, after them.</p>
 </dd></dl>
 
 <dl class="py property">
@@ -375,9 +375,10 @@ assembles element by element. The cells and the particles come on top of them in
 <dd><p>For the Abaqus like convergence test, the number of degrees of freedom ‘entity-wise’ per field, that is
 Σ_(elements+constraints) Σ_nodes ( nDof (field) ).
 Computed from the entities of these locations at the first request, and kept: only the convergence criteria
-ask, so a solver without them does not pay. The count of the elements, and of the further entities that did
-not move, is shared with the locations these were made from: only the constraints, and the entities that
-moved, are counted again.</p>
+ask, so a solver without them does not pay. The count of the elements whose connectivity is fixed is shared by
+all locations of a numbering, and made once: only the constraints and the elements whose connectivity changes
+with the motion (<code class="xref py py-attr docutils literal notranslate"><span class="pre">connectivityChangesWithMotion</span></code>)
+are counted again for new locations.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>The number of accumulated fluxes, for every field of the numbering.</p>
@@ -392,6 +393,15 @@ moved, are counted again.</p>
 <dt class="sig sig-object py" id="edelweissmeshfree.numerics.doflocations.MPMDofLocations.numbering">
 <span class="sig-name descname"><span class="pre">numbering</span></span><a class="headerlink" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations.numbering" title="Link to this definition"></a></dt>
 <dd><p>The numbering of the degrees of freedom the entities are located in.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.doflocations.MPMDofLocations.ofEntity">
+<span class="sig-name descname"><span class="pre">ofEntity</span></span><a class="headerlink" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations.ofEntity" title="Link to this definition"></a></dt>
+<dd><p>Dictionary mapping every entity (elements, then constraints) to its indices in the DofVector. It is the one
+mapping the consumers that handle all entities at once (the system matrix assembly, the layout of the
+scatter vectors) read; a single location is read by <code class="docutils literal notranslate"><span class="pre">locations[entity]</span></code>. The locations are immutable, so
+whoever still holds the old locations holds a mapping that stays valid.</p>
 </dd></dl>
 
 <dl class="py attribute">

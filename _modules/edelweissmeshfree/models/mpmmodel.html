@@ -505,7 +505,7 @@
         <span class="n">numbering</span> <span class="o">=</span> <span class="n">DofNumbering</span><span class="p">(</span><span class="n">activeNodeFields</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">activeScalarVariables</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodeSets</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
         <span class="n">locations</span> <span class="o">=</span> <span class="n">MPMDofLocations</span><span class="p">(</span>
             <span class="n">numbering</span><span class="p">,</span>
-            <span class="n">elements</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">elementsWithKernels</span><span class="p">(),</span>
+            <span class="n">finiteElements</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">elementsWithKernels</span><span class="p">(),</span>
             <span class="n">constraints</span><span class="o">=</span><span class="n">constraints</span><span class="p">,</span>
             <span class="n">cells</span><span class="o">=</span><span class="n">activeCells</span><span class="p">,</span>
             <span class="n">cellElements</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cellElements</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span>

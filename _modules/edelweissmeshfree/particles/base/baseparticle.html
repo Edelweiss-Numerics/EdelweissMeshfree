@@ -147,10 +147,19 @@
 <span class="sd">    For instance: [node_1_displacement, node_1_temperature, node_2_displacement, node_2_temperature, ...]</span>
 <span class="sd">    """</span>
 
+    <span class="c1">#: The kernel functions of a particle reach other nodes as it moves, so its connectivity changes with the motion;</span>
+    <span class="c1">#: see :attr:`~edelweissfe.nodecouplingentity.base.nodecouplingentity.BaseNodeCouplingEntity.connectivityChangesWithMotion`.</span>
+    <span class="n">connectivityChangesWithMotion</span> <span class="o">=</span> <span class="kc">True</span>
+
     <span class="nd">@property</span>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">dimension</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Defines the dimension of the particle, e.g., 1, 2 or 3."""</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ensightType</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The shape of the particle in Ensight Gold notation."""</span>
 
     <span class="nd">@property</span>
     <span class="nd">@abstractmethod</span>
@@ -501,7 +510,9 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">M</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Explicit dynamics: add the lumped mass of the particle, on the kernel functions currently assigned.</span>
+<span class="w">        </span><span class="sd">"""Explicit dynamics: add the lumped mass of the particle, on the kernel functions currently assigned: the mass</span>
+<span class="sd">        the particle integrates itself, which a solver reads through</span>
+<span class="sd">        :meth:`~edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.assembleLumpedMassOfEntitiesWithOwnInertia`.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
