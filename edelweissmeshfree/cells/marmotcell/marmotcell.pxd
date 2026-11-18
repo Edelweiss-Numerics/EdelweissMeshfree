@@ -112,7 +112,7 @@ cdef extern from "Marmot/MarmotCell.h":
 
         void interpolateFieldsToMaterialPoints( const double* Q)
 
-        void getInterpolationVector( double* N, const double* coordinates)
+        void getInterpolationVector( double* N, const double* coordinates) except +
 
         void getBoundingBox(double* boundingBoxMin, double* boundingBoxMax)
 

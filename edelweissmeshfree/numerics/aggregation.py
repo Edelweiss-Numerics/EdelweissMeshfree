@@ -291,26 +291,45 @@ class CellAggregation:
         """
 
         x = np.ascontiguousarray(node.coordinates, dtype=float)
-        interiorCell = self._closest(x, sorted({self.connectedInteriorCell[c] for c in boundaryCellsOfNode}))
-        cell = self.adjacency.cells[interiorCell]
+        candidates = sorted({self.connectedInteriorCell[c] for c in boundaryCellsOfNode})
+        failures = []
 
-        N = np.asarray(cell.getInterpolationVector(x), dtype=float)
-        nodeCoordinates = np.array([n.coordinates for n in cell.nodes])
+        # the closest candidate first; the next one if the inverse map of a (distorted) cell fails for the node
+        while candidates:
+            interiorCell = self._closest(x, candidates)
+            candidates.remove(interiorCell)
+            cell = self.adjacency.cells[interiorCell]
 
-        scale = np.max(np.abs(N))
-        size = np.linalg.norm(nodeCoordinates.max(axis=0) - nodeCoordinates.min(axis=0))
-        if (
-            abs(N.sum() - 1.0) > _EXTRAPOLATION_TOLERANCE * scale
-            or np.linalg.norm(N @ nodeCoordinates - x) > _EXTRAPOLATION_TOLERANCE * scale * size
-        ):
-            raise RuntimeError(
-                "Aggregation (AgMPM): the interpolation vector of cell {:} at node {:} {:} is not an extrapolation of "
-                "its basis (sum {:}, reproduces {:}); the cell's getInterpolationVector must extrapolate to points "
-                "outside of it.".format(cell.cellNumber, node.label, x, N.sum(), N @ nodeCoordinates)
+            try:
+                N = np.asarray(cell.getInterpolationVector(x), dtype=float)
+            except RuntimeError as error:
+                failures.append("cell {:}: {:}".format(interiorCell, error))
+                continue
+
+            nodeCoordinates = np.array([n.coordinates for n in cell.nodes])
+            scale = np.max(np.abs(N))
+            size = np.linalg.norm(nodeCoordinates.max(axis=0) - nodeCoordinates.min(axis=0))
+            if (
+                not np.all(np.isfinite(N))
+                or abs(N.sum() - 1.0) > _EXTRAPOLATION_TOLERANCE * scale
+                or np.linalg.norm(N @ nodeCoordinates - x) > _EXTRAPOLATION_TOLERANCE * scale * size
+            ):
+                failures.append(
+                    "cell {:}: not an extrapolation of its basis (sum {:}, reproduces {:})".format(
+                        interiorCell, N.sum(), N @ nodeCoordinates
+                    )
+                )
+                continue
+
+            weights = [(n, w) for n, w in zip(cell.nodes, N) if abs(w) > _WEIGHT_AT_ROUND_OFF * scale]
+            return interiorCell, weights
+
+        raise RuntimeError(
+            "Aggregation (AgMPM): no interior cell extends its basis to exterior node {:} at {:}; the cell's "
+            "getInterpolationVector must extrapolate to points outside of it. {:}".format(
+                node.label, x, "; ".join(failures)
             )
-
-        weights = [(n, w) for n, w in zip(cell.nodes, N) if abs(w) > _WEIGHT_AT_ROUND_OFF * scale]
-        return interiorCell, weights
+        )
 
     def recordsIn(self, numbering) -> list:
         """The linear dependencies of the exterior degrees of freedom on the interior ones, in a numbering of the

@@ -286,12 +286,18 @@ def test_bspline_cells_are_not_supported():
 
 
 @pytest.mark.parametrize(
-    "cellType", ["Displacement/Quad4", "GradientEnhancedFiniteStrain/Quad4", "GradientEnhancedMicropolar/Quad4"]
+    "cellType",
+    [
+        "Displacement/Quad4",
+        "DisplacementFBar/Quad4",
+        "GradientEnhancedFiniteStrain/Quad4",
+        "GradientEnhancedMicropolar/Quad4",
+    ],
 )
 def test_every_field_of_every_cell_type_is_aggregated(cellType):
     """The extension is geometric: the same scalar weights act on every field the nodes carry, whatever the physics
-    of the cell (displacement only; displacement and a nonlocal field; displacement, rotation and a nonlocal
-    field)."""
+    of the cell (displacement only, also with F-bar; displacement and a nonlocal field; displacement, rotation and a
+    nonlocal field)."""
 
     model = _grid(cellType=cellType)
     activeCells = [model.cells[_cell(i, j)] for i, j in STAIRCASE]
@@ -353,3 +359,31 @@ def test_constraint_without_interior_cell_warns_and_aggregates_nothing():
     assert len(records) == 12
     assert constraint.getMultiPointConstraints(numbering) is records
     assert constraint.slavesYieldToDirichlet
+
+
+class _FailingInverseMap:
+    """A cell whose inverse map fails, as Marmot's may far outside a strongly distorted cell."""
+
+    def __init__(self, cell):
+        self.cellNumber = cell.cellNumber
+        self.nodes = cell.nodes
+
+    def getInterpolationVector(self, x):
+        raise RuntimeError("inverse map did not converge")
+
+
+def test_a_failing_inverse_map_falls_back_to_the_next_interior_cell(staircase):
+    model, aggregation = staircase
+    node = _node(model, 1, 3)
+    boundaryCells = [_cell(0, 2), _cell(1, 2)]
+    # the node takes the interior cell (0, 1), equally close as (1, 1), by its lower number
+    assert aggregation._extensionTo(node, boundaryCells)[0] == _cell(0, 1)
+
+    aggregation.adjacency.cells[_cell(0, 1)] = _FailingInverseMap(aggregation.adjacency.cells[_cell(0, 1)])
+    interiorCell, weights = aggregation._extensionTo(node, boundaryCells)
+    assert interiorCell == _cell(1, 1)
+    assert {tuple(master.coordinates): w for master, w in weights} == pytest.approx({(1.0, 1.0): -1.0, (1.0, 2.0): 2.0})
+
+    aggregation.adjacency.cells[_cell(1, 1)] = _FailingInverseMap(aggregation.adjacency.cells[_cell(1, 1)])
+    with pytest.raises(RuntimeError, match="no interior cell extends"):
+        aggregation._extensionTo(node, boundaryCells)
