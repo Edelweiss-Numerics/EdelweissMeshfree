@@ -326,6 +326,10 @@ class MPMModel(FEModel):
             mapChunksInParallel(list(self.materialPoints.values()), self._prepareAtTheConvergedState)
             for mpmManager in self.mpmManagers:
                 managersChanged |= mpmManager.updateConnectivity()
+            # multi-point constraints that depend on the assignment (aggregation: projection points of the cells)
+            for mpc in self.multiPointConstraints.values():
+                if hasattr(mpc, "updateConnectivity"):
+                    mpc.updateConnectivity()
 
         if self.particleManagers:
             mapChunksInParallel(list(self.particles.values()), self._prepareAtTheConvergedState)

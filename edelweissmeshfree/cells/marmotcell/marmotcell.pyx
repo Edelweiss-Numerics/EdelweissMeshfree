@@ -241,6 +241,19 @@ cdef class MarmotCellWrapper:
 
         self._assignedMaterialPoints = marmotMaterialPointWrappers
 
+    def setProjectionPoint(self, coordinate: np.ndarray) -> bool:
+        """Set the point (physical coordinates) at which a cell-level projection of the cell (e.g. the volume change
+        of an F-bar cell) is evaluated, until the next :meth:`assignMaterialPoints`; see the Marmot cell. Used by the
+        aggregated material point method to evaluate the projection of all cells of an aggregate at one point.
+
+        Returns
+        -------
+        bool
+            Whether the cell uses the point; ``False`` for cells without such a projection.
+        """
+        cdef double[::1] coords = np.ascontiguousarray(coordinate, dtype=float)
+        return self._marmotCell.setProjectionPoint(&coords[0])
+
     def isCoordinateInCell(self, coordinate: np.ndarray) -> bool:
         """Whether ``coordinate``, with as many entries as the cell has dimensions, lies in the cell."""
 

@@ -387,3 +387,56 @@ def test_a_failing_inverse_map_falls_back_to_the_next_interior_cell(staircase):
     aggregation.adjacency.cells[_cell(1, 1)] = _FailingInverseMap(aggregation.adjacency.cells[_cell(1, 1)])
     with pytest.raises(RuntimeError, match="no interior cell extends"):
         aggregation._extensionTo(node, boundaryCells)
+
+
+class _MP:
+    def __init__(self, x):
+        self.x = np.asarray(x, dtype=float)
+
+    def getCenterCoordinates(self):
+        return self.x
+
+
+class _RecordingCell:
+    """An active cell that records the projection points it is given; its material points sit at given positions."""
+
+    def __init__(self, cell, mpCoordinates):
+        self.cellNumber = cell.cellNumber
+        self.assignedMaterialPoints = [_MP(x) for x in mpCoordinates]
+        self.points = []
+
+    def setProjectionPoint(self, x):
+        self.points.append(np.array(x))
+        return True
+
+
+def test_cells_of_an_aggregate_get_one_common_projection_point(staircase):
+    from edelweissmeshfree.constraints.aggregatedmpm import (
+        AggregatedMaterialPointMethod,
+    )
+
+    model, _ = staircase
+    rng = np.random.default_rng(3)
+    cells = {
+        (i, j): _RecordingCell(model.cells[_cell(i, j)], [(i, j) + rng.random(2) for _ in range(1 + (i + j) % 3)])
+        for i, j in STAIRCASE
+    }
+    manager = _Manager(list(cells.values()))
+    model.mpmManagers.append(manager)
+    constraint = AggregatedMaterialPointMethod("agmpm", model, Journal(), cells=model.cells.values())
+
+    constraint.updateConnectivity()
+
+    # the aggregates of the staircase: interior cell -> its boundary cells (test_classification_of_cells_and_nodes)
+    aggregates = [[(2, 0), (3, 0)], [(1, 1), (2, 1), (1, 2)], [(0, 1), (0, 2)]]
+    for aggregate in aggregates:
+        centroid = np.mean([mp.x for c in aggregate for mp in cells[c].assignedMaterialPoints], axis=0)
+        for c in aggregate:
+            assert len(cells[c].points) == 1 and np.allclose(cells[c].points[0], centroid)
+    # interior cells without boundary cells keep their own choice
+    assert cells[(0, 0)].points == [] and cells[(1, 0)].points == []
+
+    # switched off: nobody is told anything
+    constraint.commonProjectionPoint = False
+    constraint.updateConnectivity()
+    assert all(len(cell.points) == (1 if any(c in a for a in aggregates) else 0) for c, cell in cells.items())

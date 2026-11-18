@@ -43,13 +43,17 @@ Reference: Timoshenko beam theory in plane strain (E' = E / (1 - nu^2), Cowper's
 (h = 0.0625) of DisplacementFBar cells reproduces within 2 %.
 
 Checks: the standard cell locks (deflection < 10 % of the reference); the F-bar cell without aggregation does not
-(within 3 %); the material point displacements match the gold file of each of the four variants.
+(within 3 %); with aggregation, the F-bar cell does not lock either (within 20 %), but only because the cells of an
+aggregate evaluate the F-bar dilatation at one common point (AggregatedMaterialPointMethod.commonProjectionPoint,
+the centroid of the material points of the aggregate); without it, it locks like the standard cell; the material
+point displacements match the gold file of each of the four variants.
 
-Known limitation (expected failure): with aggregation, the F-bar cell locks as well. An aggregated boundary cell takes
-the polynomial extension of its interior cell, but still imposes its own volumetric constraint (at the centre of its
-material points, outside the interior cell), so the aggregate carries two volumetric constraints on one bilinear field
-and loses its bending mode. The same happens with one material point per cell and the standard cell, so it is not an
-F-bar issue; a cure would evaluate the F-bar dilatation of all cells of an aggregate at one point.
+Why the common point: an aggregated boundary cell carries the polynomial extension of its interior cell (its exterior
+nodes are slaved to it), but would still impose its own volumetric constraint at the centre of its own material
+points, so the aggregate carries two volumetric constraints on (essentially) one bilinear field and loses its bending
+mode (tip deflection 0.014 x reference). With the common point: 1.17 x reference at h = 0.25 (here the beam is four
+cells deep, two of which are aggregated, so the volumetric constraint is coarser than the grid) and 0.98 x reference
+at h = 0.125.
 """
 
 import argparse
@@ -116,7 +120,7 @@ class DeadPointLoad(MaterialPointPointWiseDistributedLoad):
                 P[cell] += -np.outer(N, force).ravel()
 
 
-def run_sim(cellType: str, aggregate: bool):
+def run_sim(cellType: str, aggregate: bool, commonProjectionPoint: bool = True):
     dimension = 2
     journal = Journal()
 
@@ -156,7 +160,9 @@ def run_sim(cellType: str, aggregate: bool):
     mpmModel.mpmManagers.append(SmartMaterialPointManager(allCells, allMPs, dimension, options={"KDTreeLevels": 3}))
 
     if aggregate:
-        mpmModel.multiPointConstraints["agmpm"] = AggregatedMaterialPointMethod("agmpm", mpmModel, journal)
+        mpmModel.multiPointConstraints["agmpm"] = AggregatedMaterialPointMethod(
+            "agmpm", mpmModel, journal, commonProjectionPoint=commonProjectionPoint
+        )
 
     fieldOutputController = MPMFieldOutputController(mpmModel, journal)
     fieldOutputController.addPerMaterialPointFieldOutput("displacement", allMPs, "displacement")
@@ -241,10 +247,14 @@ def test_fbar_cell_is_free_of_locking():
     assert tipDeflection(tip) == pytest.approx(timoshenkoTipDeflection(), rel=0.03)
 
 
-@pytest.mark.xfail(strict=True, reason="aggregation adds a volumetric constraint per aggregated cell (see docstring)")
 def test_aggregated_fbar_cell_is_free_of_locking():
     _, tip = run_sim("DisplacementFBar/Quad4", True)
-    assert tipDeflection(tip) == pytest.approx(timoshenkoTipDeflection(), rel=0.03)
+    assert tipDeflection(tip) == pytest.approx(timoshenkoTipDeflection(), rel=0.2)
+
+
+def test_aggregated_fbar_cell_locks_without_common_projection_point():
+    _, tip = run_sim("DisplacementFBar/Quad4", True, commonProjectionPoint=False)
+    assert tipDeflection(tip) < 0.1 * timoshenkoTipDeflection()
 
 
 if __name__ == "__main__":

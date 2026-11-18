@@ -61,6 +61,7 @@ that this is reported quietly). The masters are the nodes of interior cells, nev
 exterior degree of freedom is the master of no other one.
 """
 
+import numpy as np
 from edelweissfe.constraints.base.multipointconstraintbase import (
     MultiPointConstraintBase,
 )
@@ -88,11 +89,14 @@ class AggregatedMaterialPointMethod(MultiPointConstraintBase):
         The journal, for the summary of every new aggregation and the warning if there is no interior cell.
     cells
         The cells of the background grid; default all cells of the model.
+    commonProjectionPoint
+        Whether the cells of an aggregate evaluate their cell-level projection (F-bar) at one common point, see
+        :meth:`updateConnectivity`.
     """
 
     slavesYieldToDirichlet = True
 
-    def __init__(self, name: str, model, journal: Journal = None, cells=None):
+    def __init__(self, name: str, model, journal: Journal = None, cells=None, commonProjectionPoint: bool = True):
         self._name = name
         self._model = model
         self._journal = journal
@@ -101,6 +105,10 @@ class AggregatedMaterialPointMethod(MultiPointConstraintBase):
         self._records = []
         self._numbering = None
         self._activeCellNumbers = None
+        self._aggregationCache = None
+        #: Whether the cells of an aggregate evaluate their cell-level projection at one common point, see
+        #: :meth:`updateConnectivity`.
+        self.commonProjectionPoint = commonProjectionPoint
         #: The aggregation of the last numbering, :class:`~edelweissmeshfree.numerics.aggregation.CellAggregation`.
         self.aggregation = None
 
@@ -169,6 +177,49 @@ class AggregatedMaterialPointMethod(MultiPointConstraintBase):
         self._activeCellNumbers = activeCellNumbers
 
         return records
+
+    def _aggregationOf(self, activeCells: list, activeCellNumbers: tuple) -> CellAggregation:
+        """The aggregation of the active cells, computed once per set of active cells."""
+
+        if self._aggregationCache is None or self._aggregationCache[0] != activeCellNumbers:
+            aggregation = CellAggregation(self.adjacency, activeCells, nodesOfFiniteElements(self._model))
+            self._aggregationCache = (activeCellNumbers, aggregation)
+        return self._aggregationCache[1]
+
+    def updateConnectivity(self):
+        """Follow the material points the managers have just assigned to the cells (called by
+        :meth:`~edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity` at the start of every increment):
+        every aggregate, i.e. an interior cell and the boundary cells connected to it, gets one common projection
+        point, the centroid of the material points of its cells, and every cell of the aggregate evaluates its cell-level
+        projection there (:meth:`setProjectionPoint`, e.g. the volume change of an F-bar cell). The boundary cells
+        carry the extension of the field of their interior cell, so this imposes one projection constraint per
+        aggregate instead of one per cell. Cells without such a projection ignore the point, so this is
+        physics-agnostic; with ``commonProjectionPoint=False``, every cell keeps its own choice."""
+
+        if not self.commonProjectionPoint:
+            return
+        activeCells = self._model.activeCellsOf(self._model.mpmManagers)
+        aggregation = self._aggregationOf(activeCells, tuple(cell.cellNumber for cell in activeCells))
+        if not aggregation.connectedInteriorCell:
+            return
+        cellByNumber = {cell.cellNumber: cell for cell in activeCells}
+        members = {}
+        for boundaryCell, interiorCell in aggregation.connectedInteriorCell.items():
+            members.setdefault(interiorCell, [interiorCell]).append(boundaryCell)
+        for cellNumbers in members.values():
+            cells = [cellByNumber[c] for c in cellNumbers]
+            if not all(hasattr(cell, "setProjectionPoint") for cell in cells):
+                continue
+            x = np.array(
+                [
+                    np.asarray(mp.getCenterCoordinates(), dtype=float).ravel()
+                    for cell in cells
+                    for mp in cell.assignedMaterialPoints
+                ]
+            )
+            point = np.ascontiguousarray(x.mean(axis=0)[: self.adjacency.dimension])
+            for cell in cells:
+                cell.setProjectionPoint(point)
 
     def claimedSlaveNodes(self) -> set:
         """The exterior nodes of the last aggregation."""

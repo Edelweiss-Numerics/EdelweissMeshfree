@@ -80,6 +80,8 @@ cdef extern from "Marmot/MarmotCell.h":
 
         void assignMaterialPoints(const vector[MarmotMaterialPoint*] materialPoints)
 
+        bint setProjectionPoint(const double* coordinates) except +
+
         void computeMaterialPointKernels(   const double* dUc,
                                             double* Pc,
                                             double* Kc,
