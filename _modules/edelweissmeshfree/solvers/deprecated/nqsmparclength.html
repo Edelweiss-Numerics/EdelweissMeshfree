@@ -113,6 +113,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">edelweissfe.utils.performancetiming</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">performancetiming</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.constraints.base.constraintbase</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConstraintBase</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.models.discretesystem</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscreteSystem</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.numerics.doflocations</span><span class="w"> </span><span class="kn">import</span> <span class="n">DofLocations</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.numerics.dofvector</span><span class="w"> </span><span class="kn">import</span> <span class="n">DofVector</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.numerics.systemmatrixassembly</span><span class="w"> </span><span class="kn">import</span> <span class="n">VIJSystemMatrixAssembly</span>
@@ -353,6 +354,8 @@
 
         <span class="n">iterationCounter</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">incrementResidualHistory</span> <span class="o">=</span> <span class="p">{</span><span class="n">field</span><span class="p">:</span> <span class="nb">list</span><span class="p">()</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">locations</span><span class="o">.</span><span class="n">numbering</span><span class="o">.</span><span class="n">idcsOfFieldsInDofVector</span><span class="p">}</span>
+        <span class="c1"># the arc length controller reads the degrees of freedom from a discrete system</span>
+        <span class="n">system</span> <span class="o">=</span> <span class="n">DiscreteSystem</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">locations</span><span class="p">)</span>
 
         <span class="n">nAllowedResidualGrowths</span> <span class="o">=</span> <span class="n">iterationOptions</span><span class="p">[</span><span class="s2">"allowed residual growths"</span><span class="p">]</span>
 
@@ -482,7 +485,7 @@
             <span class="n">ddU_0</span><span class="p">,</span> <span class="n">ddU_f</span> <span class="o">=</span> <span class="n">ddU_</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">ddU_</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
 
             <span class="c1"># compute the increment of the load parameter. Method depends on the employed arc length controller</span>
-            <span class="n">ddLambda</span> <span class="o">=</span> <span class="n">arcLengthController</span><span class="o">.</span><span class="n">computeDDLambda</span><span class="p">(</span><span class="n">dU</span><span class="p">,</span> <span class="n">ddU_0</span><span class="p">,</span> <span class="n">ddU_f</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">locations</span><span class="o">.</span><span class="n">numbering</span><span class="p">)</span>
+            <span class="n">ddLambda</span> <span class="o">=</span> <span class="n">arcLengthController</span><span class="o">.</span><span class="n">computeDDLambda</span><span class="p">(</span><span class="n">dU</span><span class="p">,</span> <span class="n">ddU_0</span><span class="p">,</span> <span class="n">ddU_f</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">system</span><span class="p">)</span>
 
             <span class="c1"># assemble total solution</span>
             <span class="n">ddU</span> <span class="o">=</span> <span class="n">ddU_0</span> <span class="o">+</span> <span class="n">ddLambda</span> <span class="o">*</span> <span class="n">ddU_f</span>

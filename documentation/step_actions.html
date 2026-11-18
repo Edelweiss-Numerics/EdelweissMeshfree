@@ -1168,25 +1168,40 @@ length solver <code class="docutils literal notranslate"><span class="pre">NISTP
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtStepStart</span></code>(model)</p></td>
 <td><p>Is called when a step starts.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.computeDDLambda" title="edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.computeDDLambda"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeDDLambda</span></code></a>(dU, ddU_0, ddU_f, timeStep, ...)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">beginControl</span></code>(model)</p></td>
+<td><p>Called when the solver starts (or resumes) a step this controller controls, before its first increment.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.computeDDLambda" title="edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.computeDDLambda"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeDDLambda</span></code></a>(dU, ddU_0, ddU_f, timeStep, ...)</p></td>
 <td><p>This method is called by an arc length solver for computing the correction to the arc length parameter.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.finishIncrement" title="edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.finishIncrement"><code class="xref py py-obj docutils literal notranslate"><span class="pre">finishIncrement</span></code></a>(U, dU, dLambda, timeStep, ...)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">endControl</span></code>(model)</p></td>
+<td><p>Called when the solver ends a step this controller controls, whether it finished or failed.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.finishIncrement" title="edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.finishIncrement"><code class="xref py py-obj docutils literal notranslate"><span class="pre">finishIncrement</span></code></a>(U, dU, dLambda, timeStep, system)</p></td>
 <td><p>Called by the arc length solver once an increment has converged; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">finishIncrement()</span></code>.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fromStepActionDefinition</span></code>(name, definition, ...)</p></td>
 <td><p>Create this step action from a parsed <code class="docutils literal notranslate"><span class="pre">.inp</span></code> step action definition.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getRestartData</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getExtrapolationFactor</span></code>(timeStep, linearWeight)</p></td>
+<td><p>The factor by which the last accepted increment, of the solution and of the load parameter, is scaled for the linear prediction of a new increment.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getRestartData</span></code>()</p></td>
 <td><p>The state this step action carries; by default the attributes declared in <a class="reference internal" href="#edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.checkpointedState" title="edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.checkpointedState"><code class="xref py py-attr docutils literal notranslate"><span class="pre">checkpointedState</span></code></a>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">isConstraintSatisfied</span></code>(timeStep, dU, system)</p></td>
+<td><p>Whether the iterate satisfies the controller's equation: checked once the residual has converged.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setRestartData</span></code>(data)</p></td>
 <td><p>Restore the state <code class="xref py py-meth docutils literal notranslate"><span class="pre">getRestartData()</span></code> returned.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateStepAction</span></code>(definition, jobInfo, model, ...)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setSystemState</span></code>(reaction, referenceIncrement, ...)</p></td>
+<td><p>Receive the state of the iterate: called in every Newton iteration before <a class="reference internal" href="#edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.computeDDLambda" title="edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.computeDDLambda"><code class="xref py py-meth docutils literal notranslate"><span class="pre">computeDDLambda()</span></code></a>, and once an increment has converged, before <a class="reference internal" href="#edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.finishIncrement" title="edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.finishIncrement"><code class="xref py py-meth docutils literal notranslate"><span class="pre">finishIncrement()</span></code></a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateStepAction</span></code>(definition, jobInfo, model, ...)</p></td>
 <td><p>Is called when an updated definition is present for a new step.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateStepActionFromDefinition</span></code>(definition, ...)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateStepActionFromDefinition</span></code>(definition, ...)</p></td>
 <td><p>Update this step action from a parsed <code class="docutils literal notranslate"><span class="pre">.inp</span></code> step action definition.</p></td>
 </tr>
 </tbody>
@@ -1204,7 +1219,7 @@ length solver <code class="docutils literal notranslate"><span class="pre">NISTP
 
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.computeDDLambda">
-<span class="sig-name descname"><span class="pre">computeDDLambda</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ddU_0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ddU_f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numbering</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/indirectcontrol.html#IndirectControl.computeDDLambda"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.computeDDLambda" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">computeDDLambda</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ddU_0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ddU_f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">system</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/indirectcontrol.html#IndirectControl.computeDDLambda"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.computeDDLambda" title="Link to this definition"></a></dt>
 <dd><p>This method is called by an arc length solver for computing the
 correction to the arc length parameter.</p>
 <dl class="field-list simple">
@@ -1214,7 +1229,7 @@ correction to the arc length parameter.</p>
 <li><p><strong>ddU_0</strong> (<em>DofVector</em>) – The dead (unconditional) correction to the solution.</p></li>
 <li><p><strong>ddU_f</strong> (<em>DofVector</em>) – The controllable correction to the solution resulting from the reference load.</p></li>
 <li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The current time increment.</p></li>
-<li><p><strong>numbering</strong> (<em>DofNumbering</em>) – The numbering of the degrees of freedom of the current discrete system.</p></li>
+<li><p><strong>system</strong> (<em>DiscreteSystem</em>) – The current discrete system.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1228,7 +1243,7 @@ correction to the arc length parameter.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.finishIncrement">
-<span class="sig-name descname"><span class="pre">finishIncrement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">U</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dLambda</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numbering</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/indirectcontrol.html#IndirectControl.finishIncrement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.finishIncrement" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">finishIncrement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">U</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dLambda</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">system</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/indirectcontrol.html#IndirectControl.finishIncrement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.indirectcontrol.IndirectControl.finishIncrement" title="Link to this definition"></a></dt>
 <dd><p>Called by the arc length solver once an increment has converged; see
 <code class="xref py py-meth docutils literal notranslate"><span class="pre">finishIncrement()</span></code>. This
 controller keeps nothing from one increment to the next: its target is the arc length of the whole step.</p>
@@ -1239,7 +1254,7 @@ controller keeps nothing from one increment to the next: its target is the arc l
 <li><p><strong>dU</strong> (<em>DofVector</em>) – The converged increment of the solution.</p></li>
 <li><p><strong>dLambda</strong> (<em>float</em>) – The converged increment of the load parameter.</p></li>
 <li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The converged time step.</p></li>
-<li><p><strong>numbering</strong> (<em>DofNumbering</em>) – The numbering of the degrees of freedom of the current discrete system.</p></li>
+<li><p><strong>system</strong> (<em>DiscreteSystem</em>) – The current discrete system.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1310,25 +1325,40 @@ module for indirect (displacement) controlled simulations.</p>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyAtStepStart</span></code>(model)</p></td>
 <td><p>Is called when a step starts.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.stepactions.particleindirectcontrol.IndirectControl.computeDDLambda" title="edelweissmeshfree.stepactions.particleindirectcontrol.IndirectControl.computeDDLambda"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeDDLambda</span></code></a>(dU, ddU_0, ddU_f, timeStep, ...)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">beginControl</span></code>(model)</p></td>
+<td><p>Called when the solver starts (or resumes) a step this controller controls, before its first increment.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.stepactions.particleindirectcontrol.IndirectControl.computeDDLambda" title="edelweissmeshfree.stepactions.particleindirectcontrol.IndirectControl.computeDDLambda"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeDDLambda</span></code></a>(dU, ddU_0, ddU_f, timeStep, ...)</p></td>
 <td><p>This method is called by an arc length solver for computing the correction to the arc length parameter.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.stepactions.particleindirectcontrol.IndirectControl.finishIncrement" title="edelweissmeshfree.stepactions.particleindirectcontrol.IndirectControl.finishIncrement"><code class="xref py py-obj docutils literal notranslate"><span class="pre">finishIncrement</span></code></a>(U, dU, dLambda, timeStep, ...)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">endControl</span></code>(model)</p></td>
+<td><p>Called when the solver ends a step this controller controls, whether it finished or failed.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.stepactions.particleindirectcontrol.IndirectControl.finishIncrement" title="edelweissmeshfree.stepactions.particleindirectcontrol.IndirectControl.finishIncrement"><code class="xref py py-obj docutils literal notranslate"><span class="pre">finishIncrement</span></code></a>(U, dU, dLambda, timeStep, system)</p></td>
 <td><p>Called by the arc length solver once an increment has converged; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">finishIncrement()</span></code>.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fromStepActionDefinition</span></code>(name, definition, ...)</p></td>
 <td><p>Create this step action from a parsed <code class="docutils literal notranslate"><span class="pre">.inp</span></code> step action definition.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getRestartData</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getExtrapolationFactor</span></code>(timeStep, linearWeight)</p></td>
+<td><p>The factor by which the last accepted increment, of the solution and of the load parameter, is scaled for the linear prediction of a new increment.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getRestartData</span></code>()</p></td>
 <td><p>The state this step action carries; by default the attributes declared in <a class="reference internal" href="#edelweissmeshfree.stepactions.particleindirectcontrol.IndirectControl.checkpointedState" title="edelweissmeshfree.stepactions.particleindirectcontrol.IndirectControl.checkpointedState"><code class="xref py py-attr docutils literal notranslate"><span class="pre">checkpointedState</span></code></a>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">isConstraintSatisfied</span></code>(timeStep, dU, system)</p></td>
+<td><p>Whether the iterate satisfies the controller's equation: checked once the residual has converged.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setRestartData</span></code>(data)</p></td>
 <td><p>Restore the state <code class="xref py py-meth docutils literal notranslate"><span class="pre">getRestartData()</span></code> returned.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateStepAction</span></code>(definition, jobInfo, model, ...)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setSystemState</span></code>(reaction, referenceIncrement, ...)</p></td>
+<td><p>Receive the state of the iterate: called in every Newton iteration before <a class="reference internal" href="#edelweissmeshfree.stepactions.particleindirectcontrol.IndirectControl.computeDDLambda" title="edelweissmeshfree.stepactions.particleindirectcontrol.IndirectControl.computeDDLambda"><code class="xref py py-meth docutils literal notranslate"><span class="pre">computeDDLambda()</span></code></a>, and once an increment has converged, before <a class="reference internal" href="#edelweissmeshfree.stepactions.particleindirectcontrol.IndirectControl.finishIncrement" title="edelweissmeshfree.stepactions.particleindirectcontrol.IndirectControl.finishIncrement"><code class="xref py py-meth docutils literal notranslate"><span class="pre">finishIncrement()</span></code></a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateStepAction</span></code>(definition, jobInfo, model, ...)</p></td>
 <td><p>Is called when an updated definition is present for a new step.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateStepActionFromDefinition</span></code>(definition, ...)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateStepActionFromDefinition</span></code>(definition, ...)</p></td>
 <td><p>Update this step action from a parsed <code class="docutils literal notranslate"><span class="pre">.inp</span></code> step action definition.</p></td>
 </tr>
 </tbody>
@@ -1346,7 +1376,7 @@ module for indirect (displacement) controlled simulations.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.stepactions.particleindirectcontrol.IndirectControl.computeDDLambda">
-<span class="sig-name descname"><span class="pre">computeDDLambda</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ddU_0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ddU_f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numbering</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/particleindirectcontrol.html#IndirectControl.computeDDLambda"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.particleindirectcontrol.IndirectControl.computeDDLambda" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">computeDDLambda</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ddU_0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ddU_f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">system</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/particleindirectcontrol.html#IndirectControl.computeDDLambda"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.particleindirectcontrol.IndirectControl.computeDDLambda" title="Link to this definition"></a></dt>
 <dd><p>This method is called by an arc length solver for computing the
 correction to the arc length parameter.</p>
 <dl class="field-list simple">
@@ -1356,7 +1386,7 @@ correction to the arc length parameter.</p>
 <li><p><strong>ddU_0</strong> (<em>DofVector</em>) – The dead (unconditional) correction to the solution.</p></li>
 <li><p><strong>ddU_f</strong> (<em>DofVector</em>) – The controllable correction to the solution resulting from the reference load.</p></li>
 <li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The current time increment.</p></li>
-<li><p><strong>numbering</strong> (<em>DofNumbering</em>) – The numbering of the degrees of freedom of the current discrete system.</p></li>
+<li><p><strong>system</strong> (<em>DiscreteSystem</em>) – The current discrete system.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1370,7 +1400,7 @@ correction to the arc length parameter.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.stepactions.particleindirectcontrol.IndirectControl.finishIncrement">
-<span class="sig-name descname"><span class="pre">finishIncrement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">U</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dLambda</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numbering</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/particleindirectcontrol.html#IndirectControl.finishIncrement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.particleindirectcontrol.IndirectControl.finishIncrement" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">finishIncrement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">U</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dLambda</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">system</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/stepactions/particleindirectcontrol.html#IndirectControl.finishIncrement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.stepactions.particleindirectcontrol.IndirectControl.finishIncrement" title="Link to this definition"></a></dt>
 <dd><p>Called by the arc length solver once an increment has converged; see
 <code class="xref py py-meth docutils literal notranslate"><span class="pre">finishIncrement()</span></code>. This
 controller keeps nothing from one increment to the next: its target is the arc length of the whole step.</p>
@@ -1381,7 +1411,7 @@ controller keeps nothing from one increment to the next: its target is the arc l
 <li><p><strong>dU</strong> (<em>DofVector</em>) – The converged increment of the solution.</p></li>
 <li><p><strong>dLambda</strong> (<em>float</em>) – The converged increment of the load parameter.</p></li>
 <li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The converged time step.</p></li>
-<li><p><strong>numbering</strong> (<em>DofNumbering</em>) – The numbering of the degrees of freedom of the current discrete system.</p></li>
+<li><p><strong>system</strong> (<em>DiscreteSystem</em>) – The current discrete system.</p></li>
 </ul>
 </dd>
 </dl>
