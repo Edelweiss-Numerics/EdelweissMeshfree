@@ -124,6 +124,8 @@ cdef extern from "Marmot/MarmotCell.h":
 
         void getInterpolationVector( double* N, const double* coordinates) except +
 
+        void getInterpolationGradient( double* dNdX, const double* coordinates) except +
+
         void getBoundingBox(double* boundingBoxMin, double* boundingBoxMax)
 
 cdef class MarmotCellWrapper:

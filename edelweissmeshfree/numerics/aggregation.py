@@ -494,7 +494,14 @@ def _assembleCellStiffness(system, time: float, dT: float) -> csr_matrix:
 
 
 def reducedStiffness(
-    model, dirichlets: list = (), aggregate: bool = False, conditionNumber: bool = True, time=None, dT: float = 1.0
+    model,
+    dirichlets: list = (),
+    aggregate: bool = False,
+    conditionNumber: bool = True,
+    time=None,
+    dT: float = 1.0,
+    ghost: dict = None,
+    ghostFaceScaling: str = "neumann",
 ) -> ReducedStiffness:
     """The tangent stiffness of the active cells of an MPM model, reduced to its free degrees of freedom: without the
     degrees of freedom the Dirichlet boundary conditions prescribe, and with aggregation also without the exterior
@@ -522,6 +529,11 @@ def reducedStiffness(
         The time; default the time of the model.
     dT
         The time increment.
+    ghost
+        If given, the penalty parameters ``{field: gamma}`` of a ghost penalty that is added to the stiffness before
+        the reduction (see :func:`~edelweissmeshfree.numerics.ghostpenalty.ghostPenaltyInNumbering`).
+    ghostFaceScaling
+        The face scaling of the ghost penalty.
 
     Returns
     -------
@@ -538,6 +550,10 @@ def reducedStiffness(
     nDof = numbering.nDof
 
     K = _assembleCellStiffness(system, time, dT)
+    if ghost:
+        from edelweissmeshfree.numerics.ghostpenalty import ghostPenaltyInNumbering
+
+        K = (K + ghostPenaltyInNumbering(model, system.activeCells, numbering, ghost, ghostFaceScaling)).tocsr()
 
     prescribed = set()
     for dirichlet in dirichlets:

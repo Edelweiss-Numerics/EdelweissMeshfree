@@ -310,6 +310,32 @@ cdef class MarmotCellWrapper:
         self._marmotCell.getInterpolationVector(&Nview_[0], &coords[0])
         return N
 
+    def getInterpolationGradient(self, coordinate: np.ndarray) -> np.ndarray:
+        """The gradients of the shape functions w.r.t. the physical coordinates at a point, also outside of the cell
+        (the gradients of the polynomial extension of :meth:`getInterpolationVector`).
+
+        Parameters
+        ----------
+        coordinate
+            The coordinates of the point.
+
+        Returns
+        -------
+        np.ndarray
+            :math:`\\partial N_a / \\partial x_i`, shape ``(nDim, nNodes)``.
+
+        Raises
+        ------
+        RuntimeError
+            If the cell does not provide its interpolation gradients, or the inverse map fails.
+        """
+        cdef double[::1] coords = coordinate
+        cdef int dim = self._nodeCoordinates.shape[1]
+        cdef np.ndarray dNdX = np.zeros(self._nNodes * dim)
+        cdef double[::1] dNdXview_ = dNdX
+        self._marmotCell.getInterpolationGradient(&dNdXview_[0], &coords[0])
+        return dNdX.reshape((self._nNodes, dim)).T.copy()
+
     @property
     def couplesAllItsDofs(self) -> bool:
         """``True``: the block is the dense ``nDof x nDof`` matrix, column-major."""
