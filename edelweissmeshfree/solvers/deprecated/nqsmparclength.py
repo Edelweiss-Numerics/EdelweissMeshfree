@@ -38,6 +38,7 @@
 import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 from edelweissfe.constraints.base.constraintbase import ConstraintBase
+from edelweissfe.models.discretesystem import DiscreteSystem
 from edelweissfe.numerics.doflocations import DofLocations
 from edelweissfe.numerics.dofvector import DofVector
 from edelweissfe.numerics.systemmatrixassembly import VIJSystemMatrixAssembly
@@ -271,6 +272,8 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NonlinearQuasistaticSolver):
 
         iterationCounter = 0
         incrementResidualHistory = {field: list() for field in locations.numbering.idcsOfFieldsInDofVector}
+        # the arc length controller reads the degrees of freedom from a discrete system
+        system = DiscreteSystem(model, locations)
 
         nAllowedResidualGrowths = iterationOptions["allowed residual growths"]
 
@@ -400,7 +403,7 @@ class NonlinearQuasistaticMarmotArcLengthSolver(NonlinearQuasistaticSolver):
             ddU_0, ddU_f = ddU_[:, 0], ddU_[:, 1]
 
             # compute the increment of the load parameter. Method depends on the employed arc length controller
-            ddLambda = arcLengthController.computeDDLambda(dU, ddU_0, ddU_f, timeStep, locations.numbering)
+            ddLambda = arcLengthController.computeDDLambda(dU, ddU_0, ddU_f, timeStep, system)
 
             # assemble total solution
             ddU = ddU_0 + ddLambda * ddU_f
