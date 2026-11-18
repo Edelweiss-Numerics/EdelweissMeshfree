@@ -126,6 +126,14 @@ class MPMDiscreteSystem(DiscreteSystem):
         return self.locations.cells
 
     @property
+    def cellPatchProjections(self) -> list:
+        """The constraints of the discrete system that project over patches of cells
+        (:class:`~edelweissmeshfree.constraints.cellpatchprojection.CellPatchProjection`), evaluated before the cells
+        interpolate, see :meth:`updateMaterialPoints`."""
+
+        return [c for c in self.constraints if getattr(c, "projectsOverCells", False)]
+
+    @property
     def particles(self) -> list:
         """The particles of the model, a list the solver hands out in chunks, i.e. the particles of the locations."""
 
@@ -798,5 +806,8 @@ class MPMDiscreteSystem(DiscreteSystem):
                 materialPoint.computeYourself(time, dT)
 
         forEachChunk(self.materialPoints, prepare)
+        # projections over patches of cells (e.g. F-bar patch): the patch value, before the cells interpolate
+        for patch in self.cellPatchProjections:
+            patch.projectToCells(dU)
         forEachChunk(self.cellsInterpolatingToMaterialPoints, interpolate)
         forEachChunk(self.materialPoints, compute)

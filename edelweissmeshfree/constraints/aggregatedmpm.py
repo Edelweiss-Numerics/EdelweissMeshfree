@@ -67,6 +67,7 @@ from edelweissfe.constraints.base.multipointconstraintbase import (
 )
 from edelweissfe.journal.journal import Journal
 
+from edelweissmeshfree.constraints.cellpatchprojection import patchesOfCells
 from edelweissmeshfree.numerics.aggregation import (
     CellAggregation,
     GridFaceAdjacency,
@@ -91,12 +92,31 @@ class AggregatedMaterialPointMethod(MultiPointConstraintBase):
         The cells of the background grid; default all cells of the model.
     commonProjectionPoint
         Whether the cells of an aggregate evaluate their cell-level projection (F-bar) at one common point, see
-        :meth:`updateConnectivity`.
+        :meth:`updateConnectivity`; the same as ``projectionMode="commonPoint"`` (True) or ``"cell"`` (False).
+    projectionMode
+        The cell-level projection of the cells of an aggregate (e.g. F-bar); overrides ``commonProjectionPoint``:
+
+        - ``"commonPoint"``: every cell evaluates its projection at one common point of the aggregate
+          (``setProjectionPoint``),
+        - ``"cell"``: every cell keeps its own choice,
+        - ``"patch"``: a projection over the aggregate as a patch
+          (:class:`~edelweissmeshfree.constraints.cellpatchprojection.CellPatchProjection`, e.g. the F-bar patch:
+          one volume change per aggregate, the volume-weighted mean over all its material points, with the exact
+          tangent across its cells); every active cell outside an aggregate is a patch of its own. Only cells that
+          support it (``hasPatchProjection``) take part.
     """
 
     slavesYieldToDirichlet = True
 
-    def __init__(self, name: str, model, journal: Journal = None, cells=None, commonProjectionPoint: bool = True):
+    def __init__(
+        self,
+        name: str,
+        model,
+        journal: Journal = None,
+        cells=None,
+        commonProjectionPoint: bool = True,
+        projectionMode: str = None,
+    ):
         self._name = name
         self._model = model
         self._journal = journal
@@ -106,11 +126,26 @@ class AggregatedMaterialPointMethod(MultiPointConstraintBase):
         self._numbering = None
         self._activeCellNumbers = None
         self._aggregationCache = None
-        #: Whether the cells of an aggregate evaluate their cell-level projection at one common point, see
-        #: :meth:`updateConnectivity`.
-        self.commonProjectionPoint = commonProjectionPoint
+        if projectionMode is None:
+            projectionMode = "commonPoint" if commonProjectionPoint else "cell"
+        if projectionMode not in ("commonPoint", "cell", "patch"):
+            raise ValueError("projectionMode must be 'commonPoint', 'cell' or 'patch', not {:}".format(projectionMode))
+        #: The cell-level projection, ``"commonPoint"``, ``"cell"`` or ``"patch"``.
+        self.projectionMode = projectionMode
+        self._patches = None
         #: The aggregation of the last numbering, :class:`~edelweissmeshfree.numerics.aggregation.CellAggregation`.
         self.aggregation = None
+
+    @property
+    def commonProjectionPoint(self) -> bool:
+        """Whether the cells of an aggregate evaluate their cell-level projection at one common point
+        (``projectionMode == "commonPoint"``), see :meth:`updateConnectivity`; setting it selects ``"commonPoint"``
+        or ``"cell"``."""
+        return self.projectionMode == "commonPoint"
+
+    @commonProjectionPoint.setter
+    def commonProjectionPoint(self, value: bool):
+        self.projectionMode = "commonPoint" if value else "cell"
 
     @property
     def name(self) -> str:
@@ -196,10 +231,14 @@ class AggregatedMaterialPointMethod(MultiPointConstraintBase):
         aggregate instead of one per cell. Cells without such a projection ignore the point, so this is
         physics-agnostic; with ``commonProjectionPoint=False``, every cell keeps its own choice."""
 
-        if not self.commonProjectionPoint:
+        if self.projectionMode == "cell":
             return
         activeCells = self._model.activeCellsOf(self._model.mpmManagers)
-        aggregation = self._aggregationOf(activeCells, tuple(cell.cellNumber for cell in activeCells))
+        activeCellNumbers = tuple(cell.cellNumber for cell in activeCells)
+        aggregation = self._aggregationOf(activeCells, activeCellNumbers)
+        if self.projectionMode == "patch":
+            self._updatePatches(aggregation, activeCells, activeCellNumbers)
+            return
         if not aggregation.connectedInteriorCell:
             return
         cellByNumber = {cell.cellNumber: cell for cell in activeCells}
@@ -220,6 +259,40 @@ class AggregatedMaterialPointMethod(MultiPointConstraintBase):
             point = np.ascontiguousarray(x.mean(axis=0)[: self.adjacency.dimension])
             for cell in cells:
                 cell.setProjectionPoint(point)
+
+    def _updatePatches(self, aggregation: CellAggregation, activeCells: list, activeCellNumbers: tuple):
+        """The patches of the active cells: every aggregate, and every other active cell on its own; built once per
+        set of active cells, so that they are the same entities as long as the discrete system lives."""
+
+        if self._patches is not None and self._patches[0] == activeCellNumbers:
+            return
+        groups = {}
+        for boundaryCell, interiorCell in aggregation.connectedInteriorCell.items():
+            groups.setdefault(interiorCell, [interiorCell]).append(boundaryCell)
+        grouped = {c for g in groups.values() for c in g}
+        groupList = list(groups.values()) + [[c] for c in activeCellNumbers if c not in grouped]
+        cellByNumber = {cell.cellNumber: cell for cell in activeCells}
+        patches = patchesOfCells(cellByNumber, groupList, self.adjacency.dimension, name=self._name + " patch")
+        self._patches = (activeCellNumbers, patches)
+        self._message(
+            "F-bar/projection patches: {:} ({:} of several cells)".format(
+                len(patches), sum(len(p.cells) > 1 for p in patches)
+            )
+        )
+
+    def couplingEntities(self) -> list:
+        """The entities the aggregation adds to the discrete system: the patches of the patch projection
+        (``projectionMode="patch"``), see :meth:`~edelweissmeshfree.models.mpmmodel.MPMModel.activeConstraints`.
+
+        Returns
+        -------
+        list[CellPatchProjection]
+            The patches of the current active cells, or none.
+        """
+
+        if self.projectionMode != "patch" or self._patches is None:
+            return []
+        return list(self._patches[1])
 
     def claimedSlaveNodes(self) -> set:
         """The exterior nodes of the last aggregation."""

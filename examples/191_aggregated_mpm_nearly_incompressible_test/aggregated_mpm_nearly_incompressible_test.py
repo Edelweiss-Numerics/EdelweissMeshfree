@@ -54,6 +54,10 @@ points, so the aggregate carries two volumetric constraints on (essentially) one
 mode (tip deflection 0.014 x reference). With the common point: 1.17 x reference at h = 0.25 (here the beam is four
 cells deep, two of which are aggregated, so the volumetric constraint is coarser than the grid) and 0.98 x reference
 at h = 0.125.
+
+The F-bar patch (``projectionMode="patch"``: one volume change per aggregate, the volume-weighted mean over its
+material points, with the exact tangent across its cells) is free of locking too; here, where most aggregates carry
+one polynomial, it is the common point up to terms of higher order (1.166 x reference at h = 0.25 for both).
 """
 
 import argparse
@@ -120,7 +124,7 @@ class DeadPointLoad(MaterialPointPointWiseDistributedLoad):
                 P[cell] += -np.outer(N, force).ravel()
 
 
-def run_sim(cellType: str, aggregate: bool, commonProjectionPoint: bool = True):
+def run_sim(cellType: str, aggregate: bool, commonProjectionPoint: bool = True, projectionMode: str = None):
     dimension = 2
     journal = Journal()
 
@@ -161,7 +165,7 @@ def run_sim(cellType: str, aggregate: bool, commonProjectionPoint: bool = True):
 
     if aggregate:
         mpmModel.multiPointConstraints["agmpm"] = AggregatedMaterialPointMethod(
-            "agmpm", mpmModel, journal, commonProjectionPoint=commonProjectionPoint
+            "agmpm", mpmModel, journal, commonProjectionPoint=commonProjectionPoint, projectionMode=projectionMode
         )
 
     fieldOutputController = MPMFieldOutputController(mpmModel, journal)
@@ -249,6 +253,11 @@ def test_fbar_cell_is_free_of_locking():
 
 def test_aggregated_fbar_cell_is_free_of_locking():
     _, tip = run_sim("DisplacementFBar/Quad4", True)
+    assert tipDeflection(tip) == pytest.approx(timoshenkoTipDeflection(), rel=0.2)
+
+
+def test_aggregated_fbar_patch_is_free_of_locking():
+    _, tip = run_sim("DisplacementFBar/Quad4", True, projectionMode="patch")
     assert tipDeflection(tip) == pytest.approx(timoshenkoTipDeflection(), rel=0.2)
 
 

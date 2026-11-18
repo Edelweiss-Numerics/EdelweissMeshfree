@@ -433,6 +433,24 @@ class MPMModel(FEModel):
             self._reducedToActiveDomain(activeCells, activeNodeFields, activeNodeSets),
         )
 
+    def activeConstraints(self) -> list:
+        """The constraints that take part in the discrete system (see
+        :meth:`~edelweissfe.models.femodel.FEModel.activeConstraints`), followed by the entities the multi-point
+        constraints add to it (``couplingEntities``), e.g. the patches of an F-bar-patch projection over the aggregates
+        of :class:`~edelweissmeshfree.constraints.aggregatedmpm.AggregatedMaterialPointMethod`.
+
+        Returns
+        -------
+        list[ConstraintBase]
+            The active constraints.
+        """
+
+        constraints = super().activeConstraints()
+        for mpc in self.multiPointConstraints.values():
+            if hasattr(mpc, "couplingEntities"):
+                constraints += mpc.couplingEntities()
+        return constraints
+
     @staticmethod
     def activeCellsOf(mpmManagers: list) -> list:
         """The cells that are active in any of the MPM managers.

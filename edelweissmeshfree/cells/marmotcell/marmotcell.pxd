@@ -82,6 +82,14 @@ cdef extern from "Marmot/MarmotCell.h":
 
         bint setProjectionPoint(const double* coordinates) except +
 
+        bint hasPatchProjection()
+
+        void computeProjectionContribution(const double* Q, double* value, double* weight, double* dValue_dQ) except +
+
+        void setProjectedValue(double value) except +
+
+        void getProjectionSensitivity(double* dR_dValue) except +
+
         void computeMaterialPointKernels(   const double* dUc,
                                             double* Pc,
                                             double* Kc,

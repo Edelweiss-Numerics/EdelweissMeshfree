@@ -448,7 +448,8 @@ class ReducedStiffness:
 
 
 def _assembleCellStiffness(system, time: float, dT: float) -> csr_matrix:
-    """The tangent stiffness of the active cells of a discrete system, at a zero increment from the converged state.
+    """The tangent stiffness of the active cells of a discrete system, at a zero increment from the converged state,
+    with the coupling of the patches of a patch projection (e.g. F-bar patch), if any.
 
     Parameters
     ----------
@@ -482,6 +483,11 @@ def _assembleCellStiffness(system, time: float, dT: float) -> csr_matrix:
         Ke = K[cell]
         Pe = np.zeros(cell.nDof)
         cell.computeKernels(Ke, Pe, U[cell], dU[cell], time, dT)
+    # the coupling of the cells of a patch projection (e.g. F-bar patch)
+    timeStep = TimeStep(0, 0.0, 0.0, dT, time, time)
+    for patch in system.cellPatchProjections:
+        Kp = K[patch]
+        patch.computeKernels(U[patch], dU[patch], np.zeros(patch.nDof), Kp, timeStep)
     K.flush()
 
     return K.assembledMatrix().copy()
@@ -498,7 +504,7 @@ def reducedStiffness(
 
     The connectivity of the model (the material points in the cells) is brought up to date first, as at the start of
     an increment; the stiffness is the tangent at the converged state. Only the active cells
-    contribute, no particles, constraints or loads.
+    contribute (with the coupling of the patches of a patch projection), no particles, constraints or loads.
 
     Parameters
     ----------
