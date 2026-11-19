@@ -37,7 +37,7 @@ from edelweissfe.timesteppers.timestep import TimeStep
 
 from edelweissmeshfree.config.mplibrary import getMaterialPointClass
 from edelweissmeshfree.constraints.aggregatedmpm import AggregatedMaterialPointMethod
-from edelweissmeshfree.generators import rectangulargridgenerator
+from edelweissmeshfree.generators import rectangularbsplinegridgenerator, rectangulargridgenerator
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.mpmmanagers.smartmpmmanager import SmartMaterialPointManager
 from edelweissmeshfree.numerics.aggregation import aggregationOfModel
@@ -49,16 +49,23 @@ NEOHOOKE = {"material": "COMPRESSIBLENEOHOOKE", "properties": np.array([833.0, 3
 J2 = {"material": "FINITESTRAINJ2PLASTICITY", "properties": np.array([833.0, 385.0, 6.0, 6.0, 0.0, 0.0, 1, 1.0])}
 
 
-def _model(material):
-    """A 5 x 4 grid of unit FBar cells; material points, off the cell centres, fill a staircase domain, so that
-    there are interior cells, aggregated boundary cells and patches of several cells."""
+def _model(material, order=None):
+    """A 5 x 4 grid of unit FBar cells (Quad4, or B-spline cells of degree ``order``); material points, off the cell
+    centres, fill a staircase domain, so that there are interior cells, aggregated boundary cells and patches of
+    several cells."""
 
     journal = Journal()
     model = MPMModel(2)
-    rectangulargridgenerator.generateModelData(
-        model, journal, x0=0.0, l=5.0, y0=0.0, h=4.0, nX=5, nY=4, cellProvider="LagrangianMarmotCell",
-        cellType="DisplacementFBar/Quad4",
-    )  # fmt: skip
+    if order is None:
+        rectangulargridgenerator.generateModelData(
+            model, journal, x0=0.0, l=5.0, y0=0.0, h=4.0, nX=5, nY=4, cellProvider="LagrangianMarmotCell",
+            cellType="DisplacementFBar/Quad4",
+        )  # fmt: skip
+    else:
+        rectangularbsplinegridgenerator.generateModelData(
+            model, journal, x0=0.0, l=5.0, y0=0.0, h=4.0, nX=5, nY=4, cellProvider="BSplineMarmotCell",
+            cellType="DisplacementFBar/BSpline/{:}".format(order), order=order,
+        )  # fmt: skip
     factory = getMaterialPointClass("marmot")
     rng = np.random.default_rng(3)
     number = 1
@@ -118,9 +125,10 @@ def test_patches_are_the_aggregates():
     assert any(len(p.cells) > 2 for p in patches)
 
 
+@pytest.mark.parametrize("order", [None, 2, 3], ids=["quad4", "bspline2", "bspline3"])
 @pytest.mark.parametrize("material, scale", [(NEOHOOKE, 0.03), (J2, 0.01)], ids=["neohooke", "j2"])
-def test_exact_tangent_across_the_cells_of_a_patch(material, scale):
-    model, system = _model(material)
+def test_exact_tangent_across_the_cells_of_a_patch(material, scale, order):
+    model, system = _model(material, order=order)
     dU = _increment(system, scale)
     P, K = _assemble(system, dU)
 
@@ -155,8 +163,9 @@ def test_exact_tangent_across_the_cells_of_a_patch(material, scale):
     assert np.linalg.norm(patchesOff) > 1e-2 * np.linalg.norm(KFD)
 
 
-def test_tangent_is_symmetric_positive_semidefinite_at_a_zero_increment():
-    model, system = _model(NEOHOOKE)
+@pytest.mark.parametrize("order", [None, 2, 3], ids=["quad4", "bspline2", "bspline3"])
+def test_tangent_is_symmetric_positive_semidefinite_at_a_zero_increment(order):
+    model, system = _model(NEOHOOKE, order=order)
     dU = _increment(system, 0.0)
     _, K = _assemble(system, dU)
     assert np.linalg.norm(K - K.T) <= 1e-12 * np.linalg.norm(K)

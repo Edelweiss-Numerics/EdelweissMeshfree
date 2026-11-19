@@ -264,25 +264,111 @@ def test_hexa8():
     assert sum(w for _, w in weights) == pytest.approx(1.0)
 
 
-def test_bspline_cells_are_not_supported():
+def _bSplineGrid(order, nX=6, nY=5, l=3.0, h=2.5):
+    """A B-spline grid (open uniform knot vectors) of degree ``order``; cell (i, j) = knot span i, j."""
+
     from edelweissmeshfree.generators import rectangularbsplinegridgenerator
 
     model = MPMModel(2)
     rectangularbsplinegridgenerator.generateModelData(
-        model,
-        Journal(),
-        x0=0.0,
-        l=4.0,
-        y0=0.0,
-        h=4.0,
-        nX=4,
-        nY=4,
-        cellProvider="BSplineMarmotCell",
-        cellType="Displacement/BSpline/2",
-        order=2,
+        model, Journal(), x0=0.0, l=l, y0=0.0, h=h, nX=nX, nY=nY, cellProvider="BSplineMarmotCell",
+        cellType="Displacement/BSpline/{:}".format(order), order=order,
+    )  # fmt: skip
+    model.prepareYourself(Journal())
+    return model
+
+
+def _bSplineStaircase(order):
+    model = _bSplineGrid(order)
+    adjacency = GridFaceAdjacency(model.cells.values())
+    active = [c for c in model.cells.values() if (lambda x: x[0] + 0.6 * x[1] < 2.4)(adjacency.centres[c.cellNumber])]
+    return model, adjacency, CellAggregation(adjacency, active)
+
+
+def _bSplineCoefficients(model, u, rng):
+    """The B-spline coefficients of a polynomial field (in the spline space), by least squares on all cells."""
+
+    labels = sorted(model.nodes)
+    index = {label: i for i, label in enumerate(labels)}
+    rows, rhs = [], []
+    for cell in model.cells.values():
+        lo, hi = (np.asarray(v) for v in cell.getBoundingBox())
+        for _ in range(3 * cell.nNodes):
+            y = lo + rng.random(2) * (hi - lo)
+            row = np.zeros(len(labels))
+            for node, N in zip(cell.nodes, cell.getInterpolationVector(np.ascontiguousarray(y))):
+                row[index[node.label]] += N
+            rows.append(row)
+            rhs.append(u(y))
+    return dict(zip(labels, np.linalg.lstsq(np.array(rows), np.array(rhs), rcond=None)[0]))
+
+
+@pytest.mark.parametrize("order", [1, 2, 3])
+def test_bspline_faces_and_exterior_control_points(order):
+    """B-spline cells share control points beyond their faces: the face neighbours come from the knot spans, and the
+    exterior nodes are the control points whose support (the cells that hold them) touches no interior cell."""
+
+    model, adjacency, aggregation = _bSplineStaircase(order)
+    nY = 5
+    assert adjacency.isBSpline and adjacency.degree == order
+    assert adjacency.faceNeighbours[_cell(0, 0, nY)] == [_cell(0, 1, nY), _cell(1, 0, nY)]
+    assert adjacency.faceNeighbours[_cell(1, 2, nY)] == sorted(
+        [_cell(0, 2, nY), _cell(2, 2, nY), _cell(1, 1, nY), _cell(1, 3, nY)]
     )
-    with pytest.raises(NotImplementedError, match="B-spline"):
-        GridFaceAdjacency(model.cells.values())
+    # every control point is held by (p + 1)^2 cells away from the grid boundary
+    assert max(len(c) for c in adjacency.cellsOfNode.values()) == (order + 1) ** 2
+
+    interior = set(aggregation.interiorCells)
+    held = {n.label for c in aggregation.activeCells for n in model.cells[c].nodes}
+    exterior = {n.label for n in aggregation.exteriorNodes}
+    assert exterior == {label for label in held if not interior.intersection(adjacency.cellsOfNode[label])}
+    assert exterior
+
+
+@pytest.mark.parametrize("order", [1, 2, 3])
+def test_bspline_extension_reproduces_polynomials_of_degree_p(order):
+    """The extension of an interior B-spline cell to an exterior control point gives the exterior coefficient of
+    every polynomial of degree <= p exactly (the coefficient of the extended polynomial piece, extended B-splines),
+    on a numbering via the extension matrix E too."""
+
+    model, adjacency, aggregation = _bSplineStaircase(order)
+    rng = np.random.default_rng(0)
+    fields = {
+        1: lambda x: 1.0 + 2.0 * x[0] - 3.0 * x[1],
+        2: lambda x: x[0] ** 2 - x[0] * x[1] + 0.5 * x[1] ** 2 - x[0],
+        3: lambda x: x[0] ** 3 + x[0] ** 2 * x[1] - x[1] ** 3 + 2.0,
+    }
+    numbering, activeNodes = _numbering(model, aggregation)
+    records = aggregation.recordsIn(numbering)
+    E, independent = extensionMatrix(records, numbering.nDof)
+    indices = numbering.idcsOfFieldVariablesInDofVector
+    for degree in range(1, order + 1):
+        coefficients = _bSplineCoefficients(model, fields[degree], rng)
+        for node in aggregation.exteriorNodes:
+            _, weights = aggregation.extension[node.label]
+            assert sum(w for _, w in weights) == pytest.approx(1.0)
+            assert sum(w * coefficients[n.label] for n, w in weights) == pytest.approx(
+                coefficients[node.label], abs=1e-10
+            )
+        u = np.zeros(numbering.nDof)
+        for node in activeNodes:
+            u[indices[node.fields["displacement"]]] = coefficients[node.label] * np.array([1.0, -0.5])
+        assert np.allclose(E @ u[independent], u, atol=1e-10)
+
+
+def test_bspline_extension_is_not_the_value_at_the_control_point():
+    """For p >= 2 the Lagrangian rule (the extrapolated basis evaluated at the control point, eq. 9) is wrong: a
+    control point is not a point of the field; the coefficients of a quadratic field are not reproduced."""
+
+    model, adjacency, aggregation = _bSplineStaircase(2)
+    coefficients = _bSplineCoefficients(model, lambda x: x[0] ** 2 + x[1] ** 2, np.random.default_rng(1))
+    errors = []
+    for node in aggregation.exteriorNodes:
+        interiorCell, _ = aggregation.extension[node.label]
+        cell = model.cells[interiorCell]
+        N = cell.getInterpolationVector(np.ascontiguousarray(node.coordinates, dtype=float))
+        errors.append(abs(sum(w * coefficients[n.label] for n, w in zip(cell.nodes, N)) - coefficients[node.label]))
+    assert max(errors) > 1e-2
 
 
 @pytest.mark.parametrize(

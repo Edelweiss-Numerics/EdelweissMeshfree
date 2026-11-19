@@ -64,6 +64,12 @@ slave of the degrees of freedom of the nodes of its interior cell. The condensed
 condensed residual :math:`E^T R` (eq. 13), and the solution of the exterior nodes is recovered with :math:`E`
 (eq. 14).
 
+**B-spline grids** (knot spans as cells, control points as nodes): the face neighbours come from the knot spans, the
+exterior nodes are the control points whose support touches no interior cell, and the extension is that of extended
+B-splines: the coefficient of an exterior B-spline is the coefficient of the interior cell's polynomial piece,
+extended, in the B-spline basis (see :meth:`CellAggregation._bSplineExtensionTo`), which reproduces all polynomials of
+degree p; eq. 9 (the extrapolated basis evaluated at the node) would be wrong for p >= 2.
+
 :func:`reducedStiffness` gives the stiffness matrix reduced to the free degrees of freedom, with and without
 aggregation, and its condition number, as studied in Section 4 of the paper (Fig. 7).
 """
@@ -88,29 +94,24 @@ _EXTRAPOLATION_TOLERANCE = 1e-8
 _WEIGHT_AT_ROUND_OFF = 1e-12
 
 
-def _checkCellIsLagrangian(cell, dimension: int):
-    """Raise NotImplementedError for a cell this module cannot aggregate.
+def isBSplineCell(cell) -> bool:
+    """Whether a cell is a B-spline cell (a knot span of a tensor-product B-spline grid)."""
 
-    Parameters
-    ----------
-    cell
-        The cell.
-    dimension
-        The spatial dimension.
-    """
+    return "bspline" in type(cell).__name__.lower() or "bspline" in str(getattr(cell, "cellType", "")).lower()
 
-    if "bspline" in type(cell).__name__.lower() or "bspline" in str(getattr(cell, "cellType", "")).lower():
+
+def bSplineDegree(cell, dimension: int) -> int:
+    """The polynomial degree p of a tensor-product B-spline cell with (p + 1)^dimension control points."""
+
+    p = int(round(cell.nNodes ** (1.0 / dimension))) - 1
+    if (p + 1) ** dimension != cell.nNodes or p < 1:
         raise NotImplementedError(
-            "Aggregation (AgMPM) supports Lagrangian cells only; B-spline cell {:} ({:}) shares its control points "
-            "beyond its faces, so the boundary and the exterior nodes are not defined by face connectivity.".format(
-                cell.cellNumber, getattr(cell, "cellType", type(cell).__name__)
-            )
+            "B-spline cell {:} has {:} control points, not (p + 1)^{:}.".format(cell.cellNumber, cell.nNodes, dimension)
         )
-    if dimension not in _LAGRANGIAN_NUMBERS_OF_NODES or cell.nNodes not in _LAGRANGIAN_NUMBERS_OF_NODES[dimension]:
-        raise NotImplementedError(
-            "Aggregation (AgMPM) supports Lagrangian quadrilaterals and hexahedra only, not cell {:} with {:} nodes "
-            "in {:}D.".format(cell.cellNumber, cell.nNodes, dimension)
-        )
+    return p
+
+
+def _checkFieldsOfCell(cell):
     fieldsOfNodes = getattr(cell, "fields", None)
     if fieldsOfNodes is not None and any(sorted(f) != sorted(fieldsOfNodes[0]) for f in fieldsOfNodes):
         raise NotImplementedError(
@@ -121,10 +122,67 @@ def _checkCellIsLagrangian(cell, dimension: int):
         )
 
 
-def _centreOf(cell) -> np.ndarray:
-    """The centre of a cell: the mean of its node coordinates (the centre of a parallelogram or parallelepiped)."""
+def _checkCellIsLagrangian(cell, dimension: int):
+    """Raise NotImplementedError for a Lagrangian cell this module cannot aggregate.
 
+    Parameters
+    ----------
+    cell
+        The cell.
+    dimension
+        The spatial dimension.
+    """
+
+    if dimension not in _LAGRANGIAN_NUMBERS_OF_NODES or cell.nNodes not in _LAGRANGIAN_NUMBERS_OF_NODES[dimension]:
+        raise NotImplementedError(
+            "Aggregation (AgMPM) supports Lagrangian quadrilaterals and hexahedra only, not cell {:} with {:} nodes "
+            "in {:}D.".format(cell.cellNumber, cell.nNodes, dimension)
+        )
+    _checkFieldsOfCell(cell)
+
+
+def _centreOf(cell) -> np.ndarray:
+    """The centre of a cell: the mean of its node coordinates (the centre of a parallelogram or parallelepiped); for a
+    B-spline cell the centre of its knot span (its control points are not points of the cell)."""
+
+    if isBSplineCell(cell):
+        boxMin, boxMax = cell.getBoundingBox()
+        return 0.5 * (np.asarray(boxMin, dtype=float) + np.asarray(boxMax, dtype=float))
     return np.mean([node.coordinates for node in cell.nodes], axis=0)
+
+
+def _bSplineFaceNeighbours(cells, dimension: int) -> dict:
+    """The face neighbours of B-spline cells, from their knot spans: two cells are face neighbours if their spans
+    coincide in all directions but one, and touch in that one. (B-spline cells share control points with cells
+    beyond their faces, so shared nodes do not identify the faces.)"""
+
+    boxes = {}
+    for cell in cells:
+        boxMin, boxMax = cell.getBoundingBox()
+        boxes[cell.cellNumber] = (np.asarray(boxMin, dtype=float), np.asarray(boxMax, dtype=float))
+    size = min(float(np.min(b[1] - b[0])) for b in boxes.values())
+    tolerance = 1e-6 * size
+
+    def key(x):
+        return tuple(int(v) for v in np.round(x / tolerance))
+
+    byLowerCorner = {}
+    for c, (boxMin, _) in boxes.items():
+        byLowerCorner[key(boxMin)] = c
+
+    neighbours = {c: set() for c in boxes}
+    for c, (boxMin, boxMax) in boxes.items():
+        for d in range(dimension):
+            corner = boxMin.copy()
+            corner[d] = boxMax[d]
+            other = byLowerCorner.get(key(corner))
+            if other is None:
+                continue
+            oMin, oMax = boxes[other]
+            if all(abs(oMax[e] - boxMax[e]) <= tolerance for e in range(dimension) if e != d):
+                neighbours[c].add(other)
+                neighbours[other].add(c)
+    return {c: sorted(n) for c, n in neighbours.items()}
 
 
 class GridFaceAdjacency:
@@ -142,8 +200,22 @@ class GridFaceAdjacency:
             raise ValueError("Aggregation (AgMPM): the background grid has no cells.")
 
         self.dimension = len(cells[0].nodes[0].coordinates)
+        bSplines = [isBSplineCell(cell) for cell in cells]
+        if any(bSplines) and not all(bSplines):
+            raise NotImplementedError("Aggregation (AgMPM): a grid of B-spline and Lagrangian cells is not supported.")
+        #: Whether the grid is a B-spline grid (cells = knot spans, nodes = control points).
+        self.isBSpline = all(bSplines)
+        #: The polynomial degree of the B-spline cells (None for Lagrangian cells).
+        self.degree = None
         for cell in cells:
-            _checkCellIsLagrangian(cell, self.dimension)
+            if self.isBSpline:
+                degree = bSplineDegree(cell, self.dimension)
+                if self.degree is not None and degree != self.degree:
+                    raise NotImplementedError("Aggregation (AgMPM): B-spline cells of different degrees.")
+                self.degree = degree
+                _checkFieldsOfCell(cell)
+            else:
+                _checkCellIsLagrangian(cell, self.dimension)
 
         #: The cells, by number.
         self.cells = {cell.cellNumber: cell for cell in cells}
@@ -154,6 +226,13 @@ class GridFaceAdjacency:
         for cell in cells:
             for node in cell.nodes:
                 cellsOfNode.setdefault(node.label, []).append(cell.cellNumber)
+        #: The numbers of the cells that hold every node (for a B-spline grid: the knot spans of the support of the
+        #: control point), by label.
+        self.cellsOfNode = cellsOfNode
+
+        if self.isBSpline:
+            self.faceNeighbours = _bSplineFaceNeighbours(cells, self.dimension)
+            return
 
         nodesOnAFace = _NODES_ON_A_FACE[self.dimension]
         #: The numbers of the face neighbours of every cell, by number.
@@ -167,6 +246,14 @@ class GridFaceAdjacency:
             self.faceNeighbours[cell.cellNumber] = sorted(
                 other for other, nShared in sharedNodes.items() if nShared >= nodesOnAFace
             )
+
+    def positionOf(self, node) -> np.ndarray:
+        """The position of a node for the choice of its interior cell: its coordinates; for a B-spline control point
+        the centre of its support (the mean of the centres of the knot spans it is nonzero on)."""
+
+        if self.isBSpline:
+            return np.mean([self.centres[c] for c in self.cellsOfNode[node.label]], axis=0)
+        return np.asarray(node.coordinates, dtype=float)
 
 
 class CellAggregation:
@@ -290,6 +377,9 @@ class CellAggregation:
             The number of the interior cell, and the weights of its nodes, ``[(node, weight), ...]``.
         """
 
+        if self.adjacency.isBSpline:
+            return self._bSplineExtensionTo(node, boundaryCellsOfNode)
+
         x = np.ascontiguousarray(node.coordinates, dtype=float)
         candidates = sorted({self.connectedInteriorCell[c] for c in boundaryCellsOfNode})
         failures = []
@@ -330,6 +420,41 @@ class CellAggregation:
                 node.label, x, "; ".join(failures)
             )
         )
+
+    def _bSplineExtensionTo(self, node, boundaryCellsOfNode: list) -> tuple:
+        """The extension of an interior B-spline cell to an exterior control point.
+
+        The coefficient of an exterior B-spline is that of the polynomial piece of the interior cell, extended beyond
+        the cell, in the B-spline basis (extended B-splines, Hoellig; aggregated FEM for splines, Badia et al.): if
+        the interior cell carries :math:`u = \\sum_a N^I_a u_a` with its polynomial pieces :math:`N^I_a` extrapolated
+        everywhere, the exterior coefficient is :math:`u_b = \\lambda_b(u) = \\sum_a \\lambda_b(N^I_a) u_a`, with the
+        dual functional :math:`\\lambda_b` of the B-spline of the control point (its coefficient in the B-spline
+        expansion of a polynomial). Since the B-splines nonzero on any knot span of the support of :math:`B_b` span
+        the polynomials of degree p there, :math:`\\lambda_b(N^I_a)` follows from the local interpolation on one
+        boundary cell :math:`S` that holds the control point: with :math:`(p+1)^d` points :math:`y_m` in :math:`S`,
+        :math:`A_{mk} = N^S_k(y_m)` and :math:`B_{ma} = N^I_a(y_m)`, the weights are row :math:`b` of
+        :math:`A^{-1} B`. The extension reproduces every polynomial of degree p (and is a partition of unity); it is
+        not the value of the extrapolated basis at the control point (which is the Lagrangian rule, eq. 9 of the
+        paper, and would reproduce only linear fields, and only with control points at the Greville abscissae).
+        """
+
+        x = self.adjacency.positionOf(node)
+        candidates = sorted({self.connectedInteriorCell[c] for c in boundaryCellsOfNode})
+        interiorCell = self._closest(x, candidates)
+        cell = self.adjacency.cells[interiorCell]
+        # the reference cell: the boundary cell holding the node that is closest to the interior cell
+        reference = self.adjacency.cells[self._closest(self.adjacency.centres[interiorCell], boundaryCellsOfNode)]
+        b = [n.label for n in reference.nodes].index(node.label)
+        A, B = _bSplineInterpolationMatrices(reference, cell, self.adjacency.dimension, self.adjacency.degree)
+        weightsAll = np.linalg.solve(A, B)[b]
+        scale = np.max(np.abs(weightsAll))
+        if not np.all(np.isfinite(weightsAll)) or abs(weightsAll.sum() - 1.0) > _EXTRAPOLATION_TOLERANCE * scale:
+            raise RuntimeError(
+                "Aggregation (AgMPM): the extension of B-spline cell {:} to control point {:} is not a partition of "
+                "unity (sum {:}).".format(interiorCell, node.label, weightsAll.sum())
+            )
+        weights = [(n, w) for n, w in zip(cell.nodes, weightsAll) if abs(w) > _WEIGHT_AT_ROUND_OFF * scale]
+        return interiorCell, weights
 
     def recordsIn(self, numbering) -> list:
         """The linear dependencies of the exterior degrees of freedom on the interior ones, in a numbering of the
@@ -378,6 +503,21 @@ class CellAggregation:
                     )
 
         return records
+
+
+def _bSplineInterpolationMatrices(reference, interior, dimension: int, degree: int) -> tuple:
+    """The local interpolation matrices of :meth:`CellAggregation._bSplineExtensionTo`: ``A[m, k]`` the basis of the
+    reference cell and ``B[m, a]`` the extrapolated basis of the interior cell at :math:`(p+1)^d` tensor-product
+    Chebyshev points of the reference cell's knot span."""
+
+    boxMin, boxMax = (np.asarray(v, dtype=float) for v in reference.getBoundingBox())
+    n = degree + 1
+    t = 0.5 * (1.0 - np.cos((2 * np.arange(n) + 1) * np.pi / (2 * n)))
+    axes = [boxMin[d] + t * (boxMax[d] - boxMin[d]) for d in range(dimension)]
+    points = np.array(np.meshgrid(*axes, indexing="ij")).reshape(dimension, -1).T
+    A = np.array([np.asarray(reference.getInterpolationVector(np.ascontiguousarray(y)), dtype=float) for y in points])
+    B = np.array([np.asarray(interior.getInterpolationVector(np.ascontiguousarray(y)), dtype=float) for y in points])
+    return A, B
 
 
 def extensionMatrix(records: list, nDof: int, keptSlaveDofs=()) -> tuple[csr_matrix, np.ndarray]:

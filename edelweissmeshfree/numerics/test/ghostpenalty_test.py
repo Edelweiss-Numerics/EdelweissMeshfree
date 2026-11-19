@@ -277,3 +277,77 @@ def test_the_constraint_adds_the_penalty_force_of_the_increment_and_its_tangent(
     manager.cells = list(model.cells.values())
     assert ghost.updateConnectivity(model)
     assert not ghost.active and ghost.faces == []
+
+
+def _bSplineGrid(order, nX=10, nY=8, h=0.5):
+    from edelweissmeshfree.generators import rectangularbsplinegridgenerator
+
+    model = MPMModel(2)
+    rectangularbsplinegridgenerator.generateModelData(
+        model, Journal(), x0=0.0, l=nX * h, y0=0.0, h=nY * h, nX=nX, nY=nY, cellProvider="BSplineMarmotCell",
+        cellType="Displacement/BSpline/{:}".format(order), order=order,
+    )  # fmt: skip
+    model.prepareYourself(Journal())
+    return model
+
+
+@pytest.mark.parametrize("order", [1, 2, 3])
+@pytest.mark.parametrize("h", [1.0, 0.5])
+def test_bspline_penalty_of_one_face_is_the_hand_computation(order, h):
+    """A B-spline of degree p is C^(p-1): over a face only the p-th normal derivative jumps, eq. 16 with q = p. For
+    u(x, y) = B_j(x) (a uniform B-spline in x, the partition of unity in y) the jump of the p-th derivative at the
+    i-th knot of its support is (-1)^i C(p + 1, i) / h^p, so u^T J u = h^(2p+1) / ((2p+1) (p!)^2) h jump^2 for a
+    face of length h; the lower derivatives do not jump."""
+
+    from math import comb, factorial
+
+    nX, nY = 10, 8
+    model = _bSplineGrid(order, nX, nY, h)
+    adjacency = GridFaceAdjacency(model.cells.values())
+    face = (_cell(4, 3, nY), _cell(5, 3, nY))  # at x = 5 h
+    nodesY = nY + order
+    for jx in range(5 - order, 6):  # B_jx(x) has support [(jx - p) h, (jx + 1) h] in the uniform part
+        J, nodes = ghostPenaltyMatrix(adjacency, [face])
+        u = np.array([1.0 if (n.label - 1) // nodesY == jx else 0.0 for n in nodes])
+        i = 5 - (jx - order)
+        jump = comb(order + 1, i) / h**order
+        expected = h ** (2 * order + 1) / ((2 * order + 1) * factorial(order) ** 2) * h * jump**2
+        assert u @ J @ u == pytest.approx(expected, rel=1e-9)
+        Jd, _ = ghostPenaltyMatrix(adjacency, [face], faceScaling="dirichlet")
+        assert u @ Jd @ u == pytest.approx(expected / h**2, rel=1e-9)
+
+
+@pytest.mark.parametrize("order", [2, 3])
+def test_bspline_penalty_is_consistent_symmetric_and_positive_semidefinite(order):
+    """No penalty on a global polynomial of degree p (its coefficients in the B-spline basis); symmetric, positive
+    semi-definite, and positive on a spline that is not one polynomial."""
+
+    model = _bSplineGrid(order, 6, 5, 0.5)
+    adjacency = GridFaceAdjacency(model.cells.values())
+    active = [c for c in model.cells.values() if (lambda x: x[0] + 0.6 * x[1] < 1.6)(adjacency.centres[c.cellNumber])]
+    _, faces = boundaryCellsAndGhostFaces(adjacency, active)
+    assert faces
+    J, nodes = ghostPenaltyMatrix(adjacency, faces)
+    J = J.toarray()
+    assert np.abs(J - J.T).max() <= 1e-14 * np.abs(J).max()
+    assert np.linalg.eigvalsh(J).min() >= -1e-12 * np.abs(J).max()
+
+    # coefficients of x^p + y^p - x y by least squares on all cells
+    labels = sorted(model.nodes)
+    index = {label: i for i, label in enumerate(labels)}
+    rng = np.random.default_rng(2)
+    rows, rhs = [], []
+    for cell in model.cells.values():
+        lo, hi = (np.asarray(v) for v in cell.getBoundingBox())
+        for _ in range(3 * cell.nNodes):
+            y = lo + rng.random(2) * (hi - lo)
+            row = np.zeros(len(labels))
+            for node, N in zip(cell.nodes, cell.getInterpolationVector(np.ascontiguousarray(y))):
+                row[index[node.label]] += N
+            rows.append(row)
+            rhs.append(y[0] ** order + y[1] ** order - y[0] * y[1])
+    c = np.linalg.lstsq(np.array(rows), np.array(rhs), rcond=None)[0]
+    u = np.array([c[index[n.label]] for n in nodes])
+    assert np.linalg.norm(J @ u) <= 1e-9 * np.abs(J).max() * np.linalg.norm(u)
+    v = np.random.default_rng(3).standard_normal(len(nodes))
+    assert v @ J @ v > 1e-6 * np.abs(J).max()

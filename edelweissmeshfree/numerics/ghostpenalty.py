@@ -70,9 +70,12 @@ The factor :math:`h^{2k+1}` is the one Coombs adopts after Hansbo et al. for tra
 the penalty of a stiffness parameter :math:`\\gamma \\sim E` scales with :math:`h^2` relative to the stiffness of a
 cell (2D), i.e. it weakens with refinement.
 
-Only the multilinear Lagrangian cells (Quad4, Hexa8) are supported: quadratic cells need the jumps of the second normal
-derivatives (:math:`k = 2` in eq. 16) and B-spline cells share their control points beyond their faces;
-both raise :class:`NotImplementedError`.
+Supported are the multilinear Lagrangian cells (Quad4, Hexa8), and B-spline cells (knot spans, any degree p, axis
+aligned): there eq. 16 is used with q = p, :math:`\\sum_{k=1}^{p} h^{2k+1}/((2k+1)(k!)^2) \\int_F [\\![\\partial_n^k
+N_a]\\!][\\![\\partial_n^k N_b]\\!]`, with p + 1 Gauss points per face direction; the normal derivatives follow
+exactly from p + 1 samples of the extrapolated cell basis along the normal. A B-spline of degree p is
+:math:`C^{p-1}`, so only the jump of the p-th normal derivative is nonzero. Quadratic Lagrangian cells raise
+:class:`NotImplementedError`.
 
 The gradients of the basis are those of the cells,
 :meth:`~edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.getInterpolationGradient` (Marmot
@@ -84,7 +87,7 @@ import math
 import numpy as np
 from scipy.sparse import coo_matrix, csr_matrix
 
-from edelweissmeshfree.numerics.aggregation import GridFaceAdjacency
+from edelweissmeshfree.numerics.aggregation import GridFaceAdjacency, isBSplineCell
 
 #: The numbers of nodes of the cells the ghost penalty supports, by dimension (multilinear Lagrangian cells).
 _MULTILINEAR_NUMBERS_OF_NODES = {2: 4, 3: 8}
@@ -94,12 +97,16 @@ FACE_SCALINGS = {"neumann": 0, "dirichlet": -2}
 
 
 def _checkCellIsMultilinear(cell, dimension: int):
-    """Raise NotImplementedError for a cell whose ghost penalty is not implemented (only Quad4 and Hexa8)."""
+    """Raise NotImplementedError for a cell whose ghost penalty is not implemented (only Quad4, Hexa8 and B-spline
+    cells)."""
 
+    if isBSplineCell(cell):
+        return
     if cell.nNodes != _MULTILINEAR_NUMBERS_OF_NODES.get(dimension):
         raise NotImplementedError(
-            "Ghost penalty: only multilinear Lagrangian cells (Quad4, Hexa8) are supported, not cell {:} ({:}, {:} "
-            "nodes in {:}D); a quadratic basis needs the jumps of its second normal derivatives (k = 2).".format(
+            "Ghost penalty: only multilinear Lagrangian cells (Quad4, Hexa8) and B-spline cells are supported, not "
+            "cell {:} ({:}, {:} nodes in {:}D); a quadratic Lagrangian basis needs the jumps of its second normal "
+            "derivatives (k = 2).".format(
                 cell.cellNumber, getattr(cell, "cellType", type(cell).__name__), cell.nNodes, dimension
             )
         )
@@ -206,6 +213,92 @@ def _faceQuadrature(cellA, cellB, dimension: int) -> tuple[np.ndarray, np.ndarra
     return points, weights, normal, h
 
 
+def _bSplineFaceQuadrature(cellA, cellB, dimension: int, degree: int) -> tuple:
+    """The Gauss points and weights of the face two neighbouring B-spline cells (knot spans) share, its unit normal
+    (outward of ``cellA``) and its size; ``degree + 1`` Gauss points per direction of the face (exact for the
+    product of two jumps of degree p)."""
+
+    aMin, aMax = (np.asarray(v, dtype=float) for v in cellA.getBoundingBox())
+    bMin, bMax = (np.asarray(v, dtype=float) for v in cellB.getBoundingBox())
+    size = float(np.min(aMax - aMin))
+    normal = np.zeros(dimension)
+    d = None
+    for e in range(dimension):
+        if abs(aMax[e] - bMin[e]) <= 1e-6 * size:
+            d, normal[e], position = e, 1.0, aMax[e]
+            break
+        if abs(aMin[e] - bMax[e]) <= 1e-6 * size:
+            d, normal[e], position = e, -1.0, aMin[e]
+            break
+    if d is None:
+        raise ValueError(
+            "Ghost penalty: B-spline cells {:} and {:} do not share a face.".format(cellA.cellNumber, cellB.cellNumber)
+        )
+    xi, w = np.polynomial.legendre.leggauss(degree + 1)
+    tangential = [e for e in range(dimension) if e != d]
+    axes, weights1D = [], []
+    for e in tangential:
+        lo, hi = max(aMin[e], bMin[e]), min(aMax[e], bMax[e])
+        axes.append(0.5 * (lo + hi) + 0.5 * (hi - lo) * xi)
+        weights1D.append(0.5 * (hi - lo) * w)
+    grids = np.meshgrid(*axes, indexing="ij")
+    wgrid = np.ones_like(grids[0])
+    for i, wi in enumerate(weights1D):
+        shape = [1] * len(tangential)
+        shape[i] = -1
+        wgrid = wgrid * wi.reshape(shape)
+    points = np.zeros((wgrid.size, dimension))
+    points[:, d] = position
+    for i, e in enumerate(tangential):
+        points[:, e] = grids[i].ravel()
+    area = float(wgrid.sum())
+    h = area if dimension == 2 else math.sqrt(area)
+    return points, wgrid.ravel(), normal, h
+
+
+def _normalDerivatives(cell, x: np.ndarray, normal: np.ndarray, degree: int, h: float) -> np.ndarray:
+    """The normal derivatives of order 1 ... degree of the (extrapolated) basis of a cell at a point, ``(degree,
+    nNodes)``: the basis along the line :math:`x + s n` is a polynomial of degree p in s (tensor-product cell,
+    axis-aligned face), which ``degree + 1`` samples determine exactly."""
+
+    s = h * np.linspace(-0.5, 0.5, degree + 1)
+    values = np.array(
+        [np.asarray(cell.getInterpolationVector(np.ascontiguousarray(x + si * normal)), dtype=float) for si in s]
+    )
+    V = np.vander(s / h, degree + 1, increasing=True)
+    coefficients = np.linalg.solve(V, values)  # in powers of s / h
+    return np.array([math.factorial(k) * coefficients[k] / h**k for k in range(1, degree + 1)])
+
+
+def _bSplineFaceBlock(cellA, cellB, dimension, degree, index, faceScaling, rows, cols, vals):
+    """The penalty of one face between two B-spline cells of degree p, eq. 16 with q = p:
+    :math:`\\sum_{k=1}^{p} h^{2k+1} / ((2k+1)(k!)^2) \\int_F [\\![\\partial_n^k N_a]\\!]
+    [\\![\\partial_n^k N_b]\\!]` (times :math:`h^{-2}` for the Dirichlet form). A B-spline of degree p is
+    :math:`C^{p-1}` across the face, so only the jump of the p-th normal derivative is nonzero (k < p: round-off)."""
+
+    points, weights, normal, h = _bSplineFaceQuadrature(cellA, cellB, dimension, degree)
+    idxA = [index[node.label] for node in cellA.nodes]
+    idxB = [index[node.label] for node in cellB.nodes]
+    local = sorted(set(idxA) | set(idxB))
+    position = {i: p for p, i in enumerate(local)}
+    pA = [position[i] for i in idxA]
+    pB = [position[i] for i in idxB]
+    Jf = np.zeros((len(local), len(local)))
+    for x, w in zip(points, weights):
+        dA = _normalDerivatives(cellA, x, normal, degree, h)
+        dB = _normalDerivatives(cellB, x, normal, degree, h)
+        for k in range(1, degree + 1):
+            jump = np.zeros(len(local))
+            np.add.at(jump, pA, dA[k - 1])
+            np.add.at(jump, pB, -dB[k - 1])
+            exponent = 2 * k + 1 + FACE_SCALINGS[faceScaling]
+            factor = h**exponent / ((2 * k + 1) * math.factorial(k) ** 2)
+            Jf += factor * w * np.outer(jump, jump)
+    rows.append(np.repeat(local, len(local)))
+    cols.append(np.tile(local, len(local)))
+    vals.append(Jf.ravel())
+
+
 def ghostPenaltyMatrix(
     adjacency: GridFaceAdjacency, faces: list, faceScaling: str = "neumann"
 ) -> tuple[csr_matrix, list]:
@@ -249,6 +342,9 @@ def ghostPenaltyMatrix(
     rows, cols, vals = [], [], []
     for cA, cB in faces:
         cellA, cellB = cells[cA], cells[cB]
+        if getattr(adjacency, "isBSpline", False):
+            _bSplineFaceBlock(cellA, cellB, dimension, adjacency.degree, index, faceScaling, rows, cols, vals)
+            continue
         points, weights, normal, h = _faceQuadrature(cellA, cellB, dimension)
         idxA = [index[node.label] for node in cellA.nodes]
         idxB = [index[node.label] for node in cellB.nodes]
