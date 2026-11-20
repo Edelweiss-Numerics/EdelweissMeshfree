@@ -58,11 +58,11 @@ cdef extern from "Marmot/MarmotMeshfreeApproximation.h":
 
 cdef extern from "Marmot/MarmotMeshfreeReproducingKernelApproximation.h":
     cdef cppclass MarmotMeshfreeReproducingKernelApproximation "Marmot::Discretizations::Meshfree::ReproducingKernelApproximation" nogil:
-        MarmotMeshfreeReproducingKernelApproximation(int dim, int completenessOrder)
+        MarmotMeshfreeReproducingKernelApproximation(int dim, int completenessOrder) except +
 
 cdef extern from "Marmot/MarmotMeshfreeReproducingKernelApproximationImplicit.h":
     cdef cppclass MarmotMeshfreeReproducingKernelApproximationImplicit "Marmot::Discretizations::Meshfree::ReproducingKernelApproximationImplicit" nogil:
-        MarmotMeshfreeReproducingKernelApproximationImplicit(int dim, int completenessOrder)
+        MarmotMeshfreeReproducingKernelApproximationImplicit(int dim, int completenessOrder) except +
 
 
 cdef class MarmotMeshfreeApproximationWrapper:
