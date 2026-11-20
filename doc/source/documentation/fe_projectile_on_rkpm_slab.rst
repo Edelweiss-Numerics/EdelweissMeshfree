@@ -151,8 +151,9 @@ The time increment
 ``NED`` takes the smaller of the critical time step of the elements (their own eigenvalue bound) and the bound of the
 stable time increment of the particles, bounded from their stiffness without assembling it, and scales it by
 ``courant-number``.
-The bound of the particles is computed anew whenever the connectivity changes (see :doc:`choosing_a_solver`,
-"Explicit dynamics"), which here is nearly every increment. It takes the tangent of the gradient-enhanced particles as
+The bound of the particles is computed anew whenever a particle reaches other kernel functions (see
+:doc:`choosing_a_solver`, "Explicit dynamics"); the contact pairs points anew in most increments, but that changes no
+particle. It takes the tangent of the gradient-enhanced particles as
 it is, unsymmetric: while the concrete under the nose is crushed, GM7's stress depends on the nonlocal strain through
 the steep compressive boundary, far more strongly than the nonlocal strain depends on the strain, and the bound follows
 the geometric mean of the two couplings, as the eigenvalues do. Here the limit of the particles is that of the nonlocal
@@ -212,9 +213,9 @@ tenths of a millimetre. A run resumed from a checkpoint after an interruption fo
 scatter of two runs: the runs are not bitwise reproducible, since threaded sums change the last digits, which reach the
 time increment through the bound of the particles.
 
-Two findings matter more than any of these. The bound of the particles' stable time increment, taken whenever the
-connectivity changes, was most of the cost of an increment while it evaluated every particle's tangent; the particles
-now bound the row sums of their absolute stiffness node by node, at a small share of an increment. And the
+Two findings matter more than any of these. The bound of the particles' stable time increment was most of the cost of
+an increment while it evaluated every particle's tangent; the particles now bound the row sums of their absolute
+stiffness node by node, at a small share of an increment, and only when a particle reaches other kernel functions. And the
 response depends on the particle size more than on the time increment, the penalty or the symmetry: with GM7's internal
 length well below the particle size, the softening concrete is resolved by the particles, not by the nonlocal strain.
 
