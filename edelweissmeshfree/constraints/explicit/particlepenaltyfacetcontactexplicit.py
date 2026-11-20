@@ -300,7 +300,7 @@ class ParticlePenaltyFacetContactExplicit(MPMExplicitConstraintBase):
             self._masterNodes, model, self._referenceCoordinatesOfMasterNodes
         )
         coordinatesOfFacet = coordinatesOfMasterNodes[self._masterNodesOfFacet]
-        normalOfFacet = np.array([facetNormalAndMeasure(coordinates)[0] for coordinates in coordinatesOfFacet])
+        normalOfFacet, _ = facetNormalAndMeasure(coordinatesOfFacet)
 
         previousState = self._stateOfPoint
         wasInContact = previousState == ContactState.IN_CONTACT
@@ -444,7 +444,7 @@ class ParticlePenaltyFacetContactExplicit(MPMExplicitConstraintBase):
 
         pairedPoints = self._pairedPoints
         coordinatesOfPoint, coordinatesOfFacet = self._currentCoordinatesOfPairedPoints(U_np)
-        normalOfFacet = np.array([facetNormalAndMeasure(coordinates)[0] for coordinates in coordinatesOfFacet])
+        normalOfFacet, _ = facetNormalAndMeasure(coordinatesOfFacet)
         weights = self._weightsOfPoint[pairedPoints]
         closestPoint = np.einsum("pa,pad->pd", weights, coordinatesOfFacet)
         gap = rowDot(normalOfFacet, coordinatesOfPoint - closestPoint)
