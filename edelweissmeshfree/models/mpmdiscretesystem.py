@@ -53,6 +53,12 @@ from edelweissmeshfree.numerics.doflocations import MPMDofLocations
 #: over round-off.
 MASS_AT_ROUND_OFF = 1e-12
 
+#: The fraction of the stable time increment of the particles' tangent that the explicit scheme of the particles is
+#: stable for. Their NSNI stabilization acts on the increment of the step, not on the total displacement, so the scheme
+#: is not exactly the central difference method with their tangent: measured on 2D and 3D blocks of particles (support
+#: factors 1.6 to 3.4, quadratic and cubic kernels), it was stable up to 0.875 to 0.98 of the tangent's limit.
+STABLE_FRACTION_OF_THE_TANGENT_LIMIT = 0.85
+
 
 class MPMDiscreteSystem(DiscreteSystem):
     """The discrete system of a meshfree model, on its active domain: the background cells that hold
@@ -375,6 +381,141 @@ class MPMDiscreteSystem(DiscreteSystem):
             M[M <= MASS_AT_ROUND_OFF * np.max(M)] = 0.0
 
         return M
+
+    def assembleLumpedDampingOfEntitiesWithOwnInertia(
+        self, forEachChunk: Callable[[list, Callable], None]
+    ) -> DofVector | None:
+        """The lumped damping of the particles at the nodes of their current kernel functions, the coefficients of the
+        first time derivatives, as each particle reports it (``computeLumpedDamping``), summed over the particles: the
+        nonlocal viscosity of a gradient-enhanced field, which integrates a first-order field on its own and damps a
+        second-order one.
+
+        Parameters
+        ----------
+        forEachChunk
+            The solver's loop over chunks of independent entities.
+
+        Returns
+        -------
+        DofVector | None
+            The lumped damping, one value per degree of freedom; None if the model has no particles.
+        """
+
+        if not self.particles:
+            return None
+
+        C = self.locations.constructDofVector()
+        C[:] = 0.0
+        scatterC = C.createScatterVector()
+
+        def assemble(particles):
+            for particle in particles:
+                particle.computeLumpedDamping(scatterC[particle])
+
+        forEachChunk(self.particles, assemble)
+        scatterC.assembleInto(C)
+
+        return C
+
+    def stableTimeIncrementOfEntitiesWithOwnInertia(
+        self, forEachChunk: Callable[[list, Callable], None], nPasses: int = 3
+    ) -> float | None:
+        """A bound of the stable time increment of the central difference method for the particles, from their tangents
+        at the current state (``computeTangentOfTheCurrentState``) and the assembled lumped mass and damping.
+
+        The stable increment is :math:`2/\\omega_\\mathrm{max}`, with :math:`\\omega_\\mathrm{max}^2` the largest
+        eigenvalue of :math:`\\boldsymbol{S} = \\boldsymbol{M}^{-1/2} \\boldsymbol{K} \\boldsymbol{M}^{-1/2}`. It is a property
+        of the ASSEMBLED system: a particle's own bound, :math:`\\lambda_\\mathrm{max}(\\boldsymbol{M}_p^{-1}
+        \\boldsymbol{K}_p)` as for a finite element, is unbounded, because a particle's stiffness couples nodes at which
+        its own lumped mass vanishes (the mass is taken at its centre, its smoothed gradients at its faces), and the
+        limit varies with the support factor, the kernel order and the boundary in no regular way. It is bounded here
+        without the eigenvalue problem, by the Collatz-Wielandt bound of the nonnegative matrix
+        :math:`|\\boldsymbol{S}|`,
+        :math:`\\lambda_\\mathrm{max}(\\boldsymbol{S}) \\le \\rho(|\\boldsymbol{S}|) \\le \\max_A (|\\boldsymbol{S}|
+        \\boldsymbol{w})_A / w_A` for every positive :math:`\\boldsymbol{w}`, with :math:`\\boldsymbol{w} = \\boldsymbol{1}`
+        (the Gershgorin bound) in the first pass and :math:`\\boldsymbol{w} = |\\boldsymbol{S}|^{k} \\boldsymbol{1}` in the
+        following ones, each a power step that tightens it. Every pass evaluates the tangent of every particle once;
+        :math:`|\\boldsymbol{K}|` is accumulated particle by particle, which bounds the absolute value of the sum.
+
+        The degrees of freedom with inertia are second order in time: :math:`\\Delta t \\le 2/\\omega_\\mathrm{max}\\,
+        (\\sqrt{1 + \\zeta^2} - \\zeta)`, with the largest damping ratio :math:`\\zeta = C_A / (2 M_A
+        \\omega_\\mathrm{max})` of their damped nodes (a nonlocal field with a micro-inertia). The degrees of freedom
+        without inertia but with damping are first order (forward Euler): :math:`\\Delta t \\le 2 /
+        \\lambda_\\mathrm{max}(\\boldsymbol{C}^{-1} \\boldsymbol{K})`, bounded the same way with :math:`\\boldsymbol{C}` for
+        :math:`\\boldsymbol{M}`. The coupling between the two sets is not included. The result is scaled by
+        :data:`STABLE_FRACTION_OF_THE_TANGENT_LIMIT`, since the explicit scheme of the particles is not exactly
+        integrated with their tangent: their NSNI stabilization acts on the increment.
+
+        Parameters
+        ----------
+        forEachChunk
+            The solver's loop over chunks of independent entities.
+        nPasses
+            The number of passes, each one evaluation of every particle's tangent; the first gives the Gershgorin bound.
+
+        Returns
+        -------
+        float | None
+            The stable time increment; None if the model has no particles.
+        """
+
+        if not self.particles:
+            return None
+
+        M = np.asarray(self.assembleLumpedMassOfEntitiesWithOwnInertia(forEachChunk))
+        C = np.asarray(self.assembleLumpedDampingOfEntitiesWithOwnInertia(forEachChunk))
+
+        secondOrder = M > 0.0
+        firstOrder = ~secondOrder & (C > 0.0)
+        scaling = np.zeros_like(M)
+        scaling[secondOrder] = 1.0 / np.sqrt(M[secondOrder])
+        scaling[firstOrder] = 1.0 / np.sqrt(C[firstOrder])
+
+        def absoluteTangentTimes(w: np.ndarray) -> np.ndarray:
+            """|S| w on each of the two sets, |S| = D^-1/2 |K| D^-1/2, the coupling between them left out."""
+            x = self.locations.constructDofVector()
+            x[:] = scaling * w
+            y = self.locations.constructDofVector()
+            y[:] = 0.0
+            scatterY = y.createScatterVector()
+
+            def multiply(particles):
+                for particle in particles:
+                    nDof = particle.nDof
+                    K = np.zeros(nDof * nDof)
+                    particle.computeTangentOfTheCurrentState(K)
+                    K = np.abs(0.5 * (K.reshape(nDof, nDof) + K.reshape(nDof, nDof).T))
+                    xp = x[particle]
+                    ofSecondOrder = secondOrder[self.locations.ofEntity[particle]]
+                    yp = scatterY[particle]
+                    yp += np.where(
+                        ofSecondOrder, K @ np.where(ofSecondOrder, xp, 0.0), K @ np.where(ofSecondOrder, 0.0, xp)
+                    )
+
+            forEachChunk(self.particles, multiply)
+            scatterY.assembleInto(y)
+            return scaling * np.asarray(y)
+
+        active = secondOrder | firstOrder
+        w = active.astype(float)
+        bounds = {}
+        for _ in range(nPasses):
+            z = absoluteTangentTimes(w)
+            for name, ofSet in (("second order", secondOrder), ("first order", firstOrder)):
+                if ofSet.any():
+                    bounds[name] = np.max(z[ofSet] / w[ofSet])
+            # the next weights: positive everywhere on the active set, as the bound requires
+            w = np.where(active, z + 1e-12 * np.max(z), 0.0)
+
+        stable = np.inf
+        if "second order" in bounds and bounds["second order"] > 0.0:
+            omega = np.sqrt(bounds["second order"])
+            zeta = np.max(np.where(secondOrder, C, 0.0) / np.where(secondOrder, 2.0 * M * omega, 1.0))
+            stable = 2.0 / omega * (np.sqrt(1.0 + zeta**2) - zeta)
+        if "first order" in bounds and bounds["first order"] > 0.0:
+            stable = min(stable, 2.0 / bounds["first order"])
+
+        return STABLE_FRACTION_OF_THE_TANGENT_LIMIT * stable
 
     def carriersOfTheMotion(self) -> set[str]:
         """Where the model holds the motion of its particles; see

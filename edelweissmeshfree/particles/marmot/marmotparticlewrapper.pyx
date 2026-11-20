@@ -270,13 +270,18 @@ cdef class MarmotParticleWrapper:
 
         self._marmotParticle.computeLumpedDamping(&cLumped[0])
 
-    def computeCriticalTimeStepForExplicitDynamics(self) -> float:
-        """The stable time increment of the particle; see
-        :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeCriticalTimeStepForExplicitDynamics`."""
+    def computeTangentOfTheCurrentState(self, double[::1] K):
+        """The tangent at the current state, which is left unchanged; see
+        :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeTangentOfTheCurrentState`. A zero
+        increment is evaluated on the working copy of the state, which is then reset to the state."""
 
-        cdef double criticalTimeStep = 0.0
-        self._marmotParticle.computeCriticalTimeStepForExplicitDynamics(criticalTimeStep)
-        return criticalTimeStep
+        cdef double[::1] zero = np.zeros(self.nDof)
+        cdef double[::1] P = np.zeros(self.nDof)
+        self._initializeStateVarsTemp()
+        try:
+            self._marmotParticle.computePhysicsKernels(&zero[0], &P[0], &K[0], 0.0, 1.0)
+        finally:
+            self._initializeStateVarsTemp()
 
     cpdef void _initializeStateVarsTemp(self, ) nogil:
         self._stateVarsTemp[:] = self._stateVars

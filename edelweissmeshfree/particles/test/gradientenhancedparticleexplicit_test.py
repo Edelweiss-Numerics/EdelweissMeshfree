@@ -25,7 +25,7 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 """The explicit methods of a gradient-enhanced finite-strain particle with six nonlocal variables (GM7 at finite
-strains) reach Python: its fields, its lumped damping and its critical time step.
+strains) reach Python: its fields, its lumped damping and the tangent of its current state.
 
 Skipped where Marmot is not built.
 """
@@ -98,15 +98,19 @@ def test_the_lumped_damping_is_the_nonlocal_viscosity_on_the_nonlocal_rows():
     np.testing.assert_allclose(C[:, 3:].sum(axis=0), ETA * H**3, rtol=1e-12)
 
 
-def test_the_critical_time_step_is_the_smaller_of_the_mechanical_and_the_nonlocal_limit():
+def test_the_tangent_of_the_current_state_leaves_the_state_unchanged():
     particle = _particle()
+    state = np.array(particle._stateVars)
+    K = np.zeros(particle.nDof**2)
 
-    E, nu, c, rho, m = PROPERTIES[0], PROPERTIES[1], PROPERTIES[7], PROPERTIES[14], PROPERTIES[16]
-    mechanicalLimit = H / np.sqrt(E * (1 - nu) / ((1 + nu) * (1 - 2 * nu)) / rho)
-    omega = np.sqrt((1.0 + 4.0 * 3 * c / H**2) / m)
-    zeta = ETA / (2.0 * m * omega)
-    nonlocalLimit = 2.0 / omega * (np.sqrt(1.0 + zeta**2) - zeta)
+    particle.computeTangentOfTheCurrentState(K)
 
-    assert particle.computeCriticalTimeStepForExplicitDynamics() == pytest.approx(
-        min(mechanicalLimit, nonlocalLimit), rel=1e-6
-    )
+    np.testing.assert_array_equal(particle._stateVars, state)
+    np.testing.assert_array_equal(particle._stateVarsTemp, state)
+    K = K.reshape(particle.nDof, particle.nDof, order="F")
+    # the displacement block of the elastic tangent is symmetric and positive semi-definite, a translation is free of
+    # stress
+    displacement = np.array([i % 9 < 3 for i in range(particle.nDof)])
+    Kuu = K[np.ix_(displacement, displacement)]
+    translation = np.tile([1.0, 0.0, 0.0], particle.nDof // 9)
+    np.testing.assert_allclose(Kuu @ translation, 0.0, atol=1e-8 * np.abs(Kuu).max())

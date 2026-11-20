@@ -417,14 +417,19 @@ class BaseParticle(BaseNodeCouplingEntity):
         """
 
     @abstractmethod
-    def computeCriticalTimeStepForExplicitDynamics(self) -> float:
-        """Explicit dynamics: the stable time increment of the particle, from its size and the wave speed of its
-        material (and the limit of a nonlocal field); a solver takes the minimum over all particles.
+    def computeTangentOfTheCurrentState(
+        self,
+        K: np.ndarray,
+    ):
+        """Explicit dynamics: the tangent of the internal force with respect to the degrees of freedom of the kernel
+        functions currently assigned, at the current state, which is left unchanged (a zero increment, evaluated on a
+        copy of the state). Without inertia. It is what the stable time increment of the particles is bounded with
+        (:meth:`~edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia`).
 
-        Returns
-        -------
-        float
-            The critical time increment.
+        Parameters
+        ----------
+        K
+            The tangent to define, column-major, ``nDof x nDof``.
         """
 
     @abstractmethod

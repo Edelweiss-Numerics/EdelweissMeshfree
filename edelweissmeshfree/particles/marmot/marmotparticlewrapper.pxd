@@ -169,7 +169,6 @@ cdef extern from "Marmot/MarmotParticle.h":
 
         void computeLumpedDamping ( double* cLumped)
 
-        void computeCriticalTimeStepForExplicitDynamics( double& criticalTimeStep ) except +
 
 
 
