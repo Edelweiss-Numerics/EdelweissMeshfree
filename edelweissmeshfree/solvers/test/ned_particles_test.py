@@ -100,10 +100,16 @@ def _material(youngsModulus: float) -> dict:
     }
 
 
-def _ned(journal: Journal) -> NED:
-    """The explicit dynamic solver, reporting (and writing output after) every increment."""
+#: The options of the solver: it reports (and writes output) after every increment, and takes the increments of the step
+#: unchecked for the particles. These tests follow the discrete system and the state the increments carry at a given
+#: increment, not the stability of the body, which the bound of its stable time increment would reduce as it stretches.
+NED_OPTIONS = {"output-frequency": 1, "stable-increment-frequency": 0}
 
-    return NED({}, journal, **{"output-frequency": 1})
+
+def _ned(journal: Journal) -> NED:
+    """The explicit dynamic solver with :data:`NED_OPTIONS`."""
+
+    return NED({}, journal, **NED_OPTIONS)
 
 
 class _SolverRecordingTheBuildPath(NED):
@@ -112,7 +118,7 @@ class _SolverRecordingTheBuildPath(NED):
     locations."""
 
     def __init__(self, journal: Journal):
-        super().__init__({}, journal, **{"output-frequency": 1})
+        super().__init__({}, journal, **NED_OPTIONS)
         self.hooks = []
         self.numberings = []
         self.vectorsAreOnTheLocations = []

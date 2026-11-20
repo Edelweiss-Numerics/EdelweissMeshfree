@@ -48,10 +48,10 @@ from edelweissfe.timesteppers.timestep import TimeStep
 
 from edelweissmeshfree.numerics.doflocations import MPMDofLocations
 
-#: The lumped mass of a node below this fraction of the largest one is zero up to round-off: the particles reach its
-#: kernel function only where it vanishes. A solver that divides by it would give the node an acceleration of round-off
-#: over round-off.
-MASS_AT_ROUND_OFF = 1e-12
+#: A lumped coefficient of a node (a mass, a damping) below this fraction of the largest one of its field is zero up to
+#: round-off: the particles reach its kernel function only where it vanishes. A solver that divides by it would give the
+#: node an acceleration of round-off over round-off.
+COEFFICIENT_AT_ROUND_OFF = 1e-12
 
 #: The fraction of the stable time increment of the particles' tangent that the explicit scheme of the particles is
 #: stable for. Their NSNI stabilization acts on the increment of the step, not on the total displacement, so the scheme
@@ -348,8 +348,8 @@ class MPMDiscreteSystem(DiscreteSystem):
         the mass of the nodes when it integrates the particles' inertia there.
 
         A node carries inertia if its mass is positive beyond round-off, more than
-        :data:`~edelweissmeshfree.models.mpmdiscretesystem.MASS_AT_ROUND_OFF` of the largest one; every other node
-        gets zero, the mass of a node without inertia, which both solvers take as such.
+        :data:`~edelweissmeshfree.models.mpmdiscretesystem.COEFFICIENT_AT_ROUND_OFF` of the largest one of its field;
+        every other node gets zero, the mass of a node without inertia, which both solvers take as such.
 
         Parameters
         ----------
@@ -363,32 +363,18 @@ class MPMDiscreteSystem(DiscreteSystem):
             The lumped mass, one value per degree of freedom; None if the model has no particles.
         """
 
-        if not self.particles:
-            return None
-
-        M = self.locations.constructDofVector()
-        M[:] = 0.0
-        scatterM = M.createScatterVector()
-
-        def assemble(particles):
-            for particle in particles:
-                particle.computeLumpedInertia(scatterM[particle])
-
-        forEachChunk(self.particles, assemble)
-        scatterM.assembleInto(M)
-
-        if M.size:
-            M[M <= MASS_AT_ROUND_OFF * np.max(M)] = 0.0
-
-        return M
+        return self._assembleLumpedCoefficientOfParticles(
+            lambda particle, coefficient: particle.computeLumpedInertia(coefficient), forEachChunk
+        )
 
     def assembleLumpedDampingOfEntitiesWithOwnInertia(
         self, forEachChunk: Callable[[list, Callable], None]
     ) -> DofVector | None:
-        """The lumped damping of the particles at the nodes of their current kernel functions, the coefficients of the
-        first time derivatives, as each particle reports it (``computeLumpedDamping``), summed over the particles: the
-        nonlocal viscosity of a gradient-enhanced field, which integrates a first-order field on its own and damps a
-        second-order one.
+        """The lumped damping of the particles at the nodes of their current kernel functions, as each particle reports
+        it (``computeLumpedDamping``, e.g. :math:`\\eta\\, V_{0,p}\\, T_A(\\boldsymbol{x}_p)` on a nonlocal field with
+        the nonlocal viscosity :math:`\\eta`), summed over the particles; see
+        :meth:`~edelweissfe.models.discretesystem.DiscreteSystem.assembleLumpedDampingOfEntitiesWithOwnInertia`. Zero
+        up to round-off is zero, as for the mass.
 
         Parameters
         ----------
@@ -401,21 +387,53 @@ class MPMDiscreteSystem(DiscreteSystem):
             The lumped damping, one value per degree of freedom; None if the model has no particles.
         """
 
+        return self._assembleLumpedCoefficientOfParticles(
+            lambda particle, coefficient: particle.computeLumpedDamping(coefficient), forEachChunk
+        )
+
+    def _assembleLumpedCoefficientOfParticles(
+        self, computeCoefficient: Callable, forEachChunk: Callable[[list, Callable], None]
+    ) -> DofVector | None:
+        """Assemble a lumped coefficient of the particles (their mass or their damping): each particle adds its own
+        into its part of a scatter vector, in the solver's loop over chunks. A coefficient of a node at or below
+        :data:`~edelweissmeshfree.models.mpmdiscretesystem.COEFFICIENT_AT_ROUND_OFF` of the largest one of its field is
+        zero: field by field, since the coefficients of two fields (a mass and a micro-inertia) are of other units.
+
+        Parameters
+        ----------
+        computeCoefficient
+            ``computeCoefficient(particle, coefficient)`` adds the particle's coefficient to its part.
+        forEachChunk
+            The solver's loop over chunks of independent entities.
+
+        Returns
+        -------
+        DofVector | None
+            The lumped coefficient, one value per degree of freedom; None if the model has no particles.
+        """
+
         if not self.particles:
             return None
 
-        C = self.locations.constructDofVector()
-        C[:] = 0.0
-        scatterC = C.createScatterVector()
+        coefficient = self.locations.constructDofVector()
+        coefficient[:] = 0.0
+        scatterCoefficient = coefficient.createScatterVector()
 
         def assemble(particles):
             for particle in particles:
-                particle.computeLumpedDamping(scatterC[particle])
+                computeCoefficient(particle, scatterCoefficient[particle])
 
         forEachChunk(self.particles, assemble)
-        scatterC.assembleInto(C)
+        scatterCoefficient.assembleInto(coefficient)
 
-        return C
+        values = coefficient.asPlainArray()
+        for indices in self.numbering.idcsOfFieldsInDofVector.values():
+            ofTheField = values[indices]
+            if ofTheField.size:
+                ofTheField[ofTheField <= COEFFICIENT_AT_ROUND_OFF * np.max(ofTheField)] = 0.0
+                values[indices] = ofTheField
+
+        return coefficient
 
     def stableTimeIncrementOfEntitiesWithOwnInertia(
         self, forEachChunk: Callable[[list, Callable], None], nPasses: int = 3

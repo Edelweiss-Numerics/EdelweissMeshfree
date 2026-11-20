@@ -266,8 +266,13 @@ the particles, so every increment
    the loads and the constraints.
 
 The lumped mass of the particles is assembled anew in every increment, and the nodal values are coefficients of the
-current kernel functions; the finite elements keep the mass of their numbering. The particles report no stable time
-increment: the critical time step covers the finite elements, and without them, the increment is the step's.
+current kernel functions; the finite elements keep the mass of their numbering. The lumped damping of the particles
+(the nonlocal viscosity of gradient-enhanced particles) is assembled with it, and decides, with the inertia, how a
+field is integrated. The stable time increment of the particles is bounded from their assembled tangent
+(:meth:`~edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia`) in
+the zero increment, whenever their connectivity changes, and every ``stable-increment-frequency`` increments; the time
+increment is the smaller of it and the elements' critical time step, scaled by ``courant-number``, unless the step asks
+for smaller increments.
 
 What to know
 ************
