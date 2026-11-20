@@ -33,6 +33,7 @@ from types import SimpleNamespace
 
 import numpy as np
 from edelweissfe.numerics.dofvector import DofVector
+from edelweissfe.numerics.scatterdofvector import ScatterDofVectorTemplate
 from edelweissfe.sets.nodeset import NodeSet
 
 from edelweissmeshfree.models.mpmdiscretesystem import (
@@ -60,6 +61,7 @@ class _LocationsOfOneDofPerParticle:
         self.cellElements = []
         self.ofEntity = {particle: np.array([index]) for index, particle in enumerate(particles)}
         self.numbering = SimpleNamespace(idcsOfFieldsInDofVector={"displacement": np.arange(len(particles))})
+        self.scatterTemplate = ScatterDofVectorTemplate(self, len(particles))
 
     def constructDofVector(self) -> DofVector:
         return DofVector(len(self.ofEntity), self)
