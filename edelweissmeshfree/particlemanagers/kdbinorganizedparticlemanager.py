@@ -32,8 +32,7 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 
-import itertools
-from typing import Any, List, Set, Tuple, Union
+from typing import Any, List, Tuple, Union
 
 import numpy as np
 from edelweissfe.journal.journal import Journal
@@ -51,8 +50,12 @@ from edelweissmeshfree.particlemanagers.base.baseparticlemanager import (
 
 
 class _FastKDBinOrganizer:
-    """
-    Optimized Bin Organizer using pure NumPy vectorization and integer indexing.
+    """The kernel functions sorted into a regular grid of bins by their bounding boxes, for the broad phase of the
+    search: a kernel is in every bin its box overlaps. The bins are held in the compressed layout of a sparse matrix:
+    the kernels of bin ``b`` are ``kernelsInBins[firstKernelOfBin[b] : firstKernelOfBin[b + 1]]``, in the order of the
+    kernels. Both are built without a loop over the kernels or the bins, and the kernels of consecutive bins are
+    consecutive, so a query takes one slice per row of bins. ``firstKernelOfBin`` is a list: a query indexes it with
+    plain integers, which is faster than indexing an array.
     """
 
     def __init__(self, kernelFunctions: List[Any], dimension: int, skin: float = 0.0) -> None:
@@ -67,7 +70,8 @@ class _FastKDBinOrganizer:
         if not boundingBoxesPerKernel:
             self._mins = np.empty((0, dimension))
             self._maxs = np.empty((0, dimension))
-            self._bins = []
+            self._kernelsInBins = np.empty(0, dtype=np.intp)
+            self._firstKernelOfBin = [0]
             self._boundingBoxMin = np.zeros(dimension)
             self._boundingBoxMax = np.zeros(dimension)
             self._nBins = np.zeros(dimension, dtype=int)
@@ -95,42 +99,69 @@ class _FastKDBinOrganizer:
             self._strides[2] = self._nBins[0] * self._nBins[1]
 
         numberOfBins = int(np.prod(self._nBins))
-        self._bins = [[] for _ in range(numberOfBins)]
 
         # --- 3. Vectorized Bin Index Calculation ---
         lowestBinIndexPerKernel = ((self._mins - self._boundingBoxMin) / self._binSize).astype(int)
         highestBinIndexPerKernel = ((self._maxs - self._boundingBoxMin) / self._binSize).astype(int)
 
         # --- 4. Fill Bins ---
-        _, strideAlongY, strideAlongZ = self._strides[0], self._strides[1], self._strides[2]
-        bins = self._bins
+        # Every pair of a kernel and a bin its box overlaps: the k-th bin of a kernel's box, counted with the first
+        # dimension fastest, has the offsets (k mod n_x, (k div n_x) mod n_y, k div (n_x n_y)) from its lowest bin.
+        binsPerKernelAndDimension = highestBinIndexPerKernel - lowestBinIndexPerKernel + 1
+        binsPerKernel = np.prod(binsPerKernelAndDimension, axis=1)
+        kernelOfPair = np.repeat(np.arange(len(binsPerKernel)), binsPerKernel)
+        firstPairOfKernel = np.cumsum(binsPerKernel) - binsPerKernel
+        kOfPair = np.arange(len(kernelOfPair)) - firstPairOfKernel[kernelOfPair]
 
-        for kernelIndex, (lowestBinIndex, highestBinIndex) in enumerate(
-            zip(lowestBinIndexPerKernel, highestBinIndexPerKernel)
-        ):
-            if dimension == 3:
-                for z in range(lowestBinIndex[2], highestBinIndex[2] + 1):
-                    offsetOfPlane = z * strideAlongZ
-                    for y in range(lowestBinIndex[1], highestBinIndex[1] + 1):
-                        offsetOfRow = offsetOfPlane + y * strideAlongY
-                        start = offsetOfRow + lowestBinIndex[0]
-                        end = offsetOfRow + highestBinIndex[0] + 1
-                        for binIndex in range(start, end):
-                            bins[binIndex].append(kernelIndex)
-            elif dimension == 2:
-                for y in range(lowestBinIndex[1], highestBinIndex[1] + 1):
-                    offsetOfRow = y * strideAlongY
-                    start = offsetOfRow + lowestBinIndex[0]
-                    end = offsetOfRow + highestBinIndex[0] + 1
-                    for binIndex in range(start, end):
-                        bins[binIndex].append(kernelIndex)
-            else:
-                for binIndex in range(lowestBinIndex[0], highestBinIndex[0] + 1):
-                    bins[binIndex].append(kernelIndex)
+        binOfPair = np.zeros(len(kernelOfPair), dtype=np.intp)
+        binsOfLowerDimensions = np.ones(len(kernelOfPair), dtype=np.intp)
+        for d in range(dimension):
+            binsAlongD = binsPerKernelAndDimension[kernelOfPair, d]
+            offsetAlongD = (kOfPair // binsOfLowerDimensions) % binsAlongD
+            binOfPair += (lowestBinIndexPerKernel[kernelOfPair, d] + offsetAlongD) * self._strides[d]
+            binsOfLowerDimensions *= binsAlongD
 
-    def getCandidateIndices(self, queryBoxMin: NDArray[np.float64], queryBoxMax: NDArray[np.float64]) -> Set[int]:
-        if not self._bins:
-            return set()
+        # sorted by bin, and within a bin by kernel, as filling the bins kernel by kernel would give
+        byBin = np.argsort(binOfPair, kind="stable")
+        self._kernelsInBins = kernelOfPair[byBin]
+        self._firstKernelOfBin = np.searchsorted(binOfPair[byBin], np.arange(numberOfBins + 1)).tolist()
+
+    def kernelsInBin(self, binIndex: int) -> NDArray[np.intp]:
+        """The kernels whose boxes overlap a bin.
+
+        Parameters
+        ----------
+        binIndex
+            The flat index of the bin.
+
+        Returns
+        -------
+        NDArray[np.intp]
+            The indices of the kernels, in ascending order.
+        """
+
+        return self._kernelsInBins[self._firstKernelOfBin[binIndex] : self._firstKernelOfBin[binIndex + 1]]
+
+    def getCandidateIndices(
+        self, queryBoxMin: NDArray[np.float64], queryBoxMax: NDArray[np.float64]
+    ) -> NDArray[np.intp]:
+        """The kernels whose boxes overlap a bin that the query box overlaps, each once.
+
+        Parameters
+        ----------
+        queryBoxMin
+            The lower corner of the query box.
+        queryBoxMax
+            Its upper corner.
+
+        Returns
+        -------
+        NDArray[np.intp]
+            The indices of the candidate kernels, in ascending order.
+        """
+
+        if len(self._kernelsInBins) == 0:
+            return np.empty(0, dtype=np.intp)
 
         lowestQueriedBinIndex = ((queryBoxMin - self._boundingBoxMin) / self._binSize).astype(int)
         highestQueriedBinIndex = ((queryBoxMax - self._boundingBoxMin) / self._binSize).astype(int)
@@ -138,40 +169,22 @@ class _FastKDBinOrganizer:
         np.maximum(lowestQueriedBinIndex, 0, out=lowestQueriedBinIndex)
         np.minimum(highestQueriedBinIndex, self._nBins - 1, out=highestQueriedBinIndex)
 
-        bins = self._bins
-        _, strideAlongY, strideAlongZ = self._strides[0], self._strides[1], self._strides[2]
+        # in three dimensions, a lower dimension being a single layer of bins
+        lowest = lowestQueriedBinIndex.tolist() + [0] * (3 - self._dimension)
+        highest = highestQueriedBinIndex.tolist() + [0] * (3 - self._dimension)
+        first = self._firstKernelOfBin
+        strideAlongY, strideAlongZ = int(self._strides[1]), int(self._strides[2])
 
-        kernelListsInQueriedBins = []
+        # the bins of a row along the first dimension are consecutive, and so are their kernels: one slice per row
+        kernelsOfRows = []
+        for z in range(lowest[2], highest[2] + 1):
+            for y in range(lowest[1], highest[1] + 1):
+                firstBinOfRow = z * strideAlongZ + y * strideAlongY
+                kernelsOfRows.append(
+                    self._kernelsInBins[first[firstBinOfRow + lowest[0]] : first[firstBinOfRow + highest[0] + 1]]
+                )
 
-        if self._dimension == 3:
-            for z in range(lowestQueriedBinIndex[2], highestQueriedBinIndex[2] + 1):
-                offsetOfPlane = z * strideAlongZ
-                for y in range(lowestQueriedBinIndex[1], highestQueriedBinIndex[1] + 1):
-                    offsetOfRow = offsetOfPlane + y * strideAlongY
-                    start = offsetOfRow + lowestQueriedBinIndex[0]
-                    end = offsetOfRow + highestQueriedBinIndex[0] + 1
-                    for binIndex in range(start, end):
-                        if bins[binIndex]:
-                            kernelListsInQueriedBins.append(bins[binIndex])
-
-        elif self._dimension == 2:
-            for y in range(lowestQueriedBinIndex[1], highestQueriedBinIndex[1] + 1):
-                offsetOfRow = y * strideAlongY
-                start = offsetOfRow + lowestQueriedBinIndex[0]
-                end = offsetOfRow + highestQueriedBinIndex[0] + 1
-                for binIndex in range(start, end):
-                    if bins[binIndex]:
-                        kernelListsInQueriedBins.append(bins[binIndex])
-
-        elif self._dimension == 1:
-            for binIndex in range(lowestQueriedBinIndex[0], highestQueriedBinIndex[0] + 1):
-                if bins[binIndex]:
-                    kernelListsInQueriedBins.append(bins[binIndex])
-
-        if not kernelListsInQueriedBins:
-            return set()
-
-        return set(itertools.chain.from_iterable(kernelListsInQueriedBins))
+        return np.unique(np.concatenate(kernelsOfRows))
 
 
 class KDBinOrganizedParticleManager(BaseParticleManager):
@@ -500,12 +513,6 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
                 candidateKernelIndices = binOrganizer.getCandidateIndices(particleBoxMin, particleBoxMax)
 
                 # 2. Vectorized AABB Filter
-                # np.fromiter consumes the candidate set directly; going through list() first
-                # materialises a throwaway Python list of a few hundred ints per particle.
-                candidateKernelIndices = np.fromiter(
-                    candidateKernelIndices, dtype=np.intp, count=len(candidateKernelIndices)
-                )
-
                 candidateBoundingBoxMins = kernelBoundingBoxMins[candidateKernelIndices, :dim]
                 candidateBoundingBoxMaxs = kernelBoundingBoxMaxs[candidateKernelIndices, :dim]
                 particleBoxMaxInDomainDimensions = particleBoxMax[:dim]
@@ -610,7 +617,7 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
         for i in range(nBins[0]):
             for j in range(nBins[1]):
                 flatBinIndex = j * self._theBins._strides[1] + i
-                nKernelFunctions[i, j] = len(self._theBins._bins[flatBinIndex])
+                nKernelFunctions[i, j] = len(self._theBins.kernelsInBin(flatBinIndex))
 
         plt.figure()
         plt.imshow(nKernelFunctions.T, origin="lower")
