@@ -15,7 +15,9 @@ class ParticlePenaltyWeakDirichlet(MPMConstraintBase):
 
     **In an implicit analysis**, it penalizes the difference between the increment of the field at the constrained
     points, :math:`\boldsymbol{N} \cdot \Delta\boldsymbol{U}`, and the prescribed increment, the change of
-    ``prescribedStepDelta`` times ``f_t`` over the increment.
+    ``prescribedStepDelta`` times ``f_t`` over the increment. The shape functions :math:`\boldsymbol{N}` at the point
+    both measure the increment and distribute the force: the stiffness :math:`k\,\boldsymbol{N}\boldsymbol{N}^\mathsf{T}`
+    is symmetric.
 
     **In an explicit analysis**, the nodes of the kernel functions carry no increment to constrain: the particles have
     moved when the constraints are evaluated. There the constraint holds displacement components at zero, as a
@@ -27,8 +29,16 @@ class ParticlePenaltyWeakDirichlet(MPMConstraintBase):
         f_i = -k \left( x_i - X_i \right)
 
     for every constrained component :math:`i`, with :math:`\boldsymbol{X}` the position of the point when the
-    constraint was created, and the particle distributes it over the nodes of its kernel functions with its shape
-    functions at the point. The force acts on both sides of :math:`X_i`. It acts in an explicit analysis
+    constraint was created. The point (the center or a vertex of the particle) is where the particle has put it: it
+    moves with the particle, in an increment by :math:`\boldsymbol{G} \cdot \Delta\boldsymbol{U}`, with the particle's
+    interpolation vector of an attached point
+    (:meth:`~edelweissmeshfree.particles.base.baseparticle.BaseParticle.getAttachedPointInterpolationVector`), which
+    away from the center is not the vector of the shape functions at the point. The force is distributed over the
+    nodes of the kernel functions with the same :math:`\boldsymbol{G}`, the transpose of the point's motion: the
+    penalty stiffness :math:`k\,\boldsymbol{G}\boldsymbol{G}^\mathsf{T}` is symmetric, and the support does no work
+    over a closed cycle of motion. (Distributed with the shape functions at the point, the stiffness would be
+    :math:`k\,\boldsymbol{N}\boldsymbol{G}^\mathsf{T}`, unsymmetric: it pumps energy into the material next to the
+    support once that has softened.) The force acts on both sides of :math:`X_i`. It acts in an explicit analysis
     (:attr:`actsInExplicitAnalysis`) only if it constrains the displacement and every prescribed change is zero: an
     explicit analysis prescribes motion through velocities, not through penalized displacements.
 
@@ -220,11 +230,11 @@ class ParticlePenaltyWeakDirichlet(MPMConstraintBase):
             nodeIdcs = [self._nodes[kf.node] for kf in p.kernelFunctions]
 
             for constrainedCoordinate, initialCoordinate in zip(self._constrainedCoordinatesOf(p), initialCoordinates):
-                N = p.getInterpolationVector(constrainedCoordinate)
+                G = p.getAttachedPointInterpolationVector(constrainedCoordinate)
 
                 for i in self._prescribedStepDelta:
                     P[i :: self._fieldSize][nodeIdcs] += (
-                        N * self._penaltyParameter * (constrainedCoordinate[i] - initialCoordinate[i])
+                        G * self._penaltyParameter * (constrainedCoordinate[i] - initialCoordinate[i])
                     )
 
         for i in self._prescribedStepDelta:

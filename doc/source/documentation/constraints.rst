@@ -60,6 +60,20 @@ measures its condition at the particles' current positions, as the penalty conta
 penalty weak Dirichlet condition does where it holds the displacement at zero (a support). A constraint on the
 increment, such as a weak Dirichlet condition that prescribes a change, would act as if nothing had moved there.
 
+**Points of a particle.** An implicit constraint on a point of a particle works on the increment of the field there,
+:math:`\mathbf{N} \cdot \Delta\mathbf{U}`, with the shape functions at the point, which also distribute its force (a
+symmetric pair). An explicit constraint measures where the point is: the position the particle has given it. The
+particle moves a point of its own -- a vertex, a face center, its center -- as a whole, with its center and its
+smoothed deformation gradient: by :math:`\mathbf{G} \cdot \Delta\mathbf{U}`, with the particle's interpolation vector
+of an attached point,
+:meth:`~edelweissmeshfree.particles.base.baseparticle.BaseParticle.getAttachedPointInterpolationVector`, which away
+from the center is not :math:`\mathbf{N}`. The explicit constraints (the supports, the facet contact and the other
+explicit contacts) therefore distribute their force with :math:`\mathbf{G}`, the transpose of the point's motion, so
+that a penalty on the point is conservative. Measuring the position but distributing the force with :math:`\mathbf{N}`
+gives an unsymmetric stiffness that does work over a closed cycle of motion;
+``edelweissmeshfree/constraints/test/vertexpenaltywork_test.py`` checks that a support and a facet contact on the
+vertices of a real particle do none.
+
 The base classes
 ----------------
 

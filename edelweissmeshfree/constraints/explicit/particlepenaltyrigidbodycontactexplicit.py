@@ -182,11 +182,11 @@ class ParticlePenaltyContactImplicitSurfaceConstraintExplicit(MPMExplicitConstra
 
                 force_vector = self._penaltyParameter * g * normal
 
-                N = self._particle.getInterpolationVector(p_coord).flatten()
+                G = self._particle.getAttachedPointInterpolationVector(p_coord).flatten()
 
                 # the residual contribution is the negative of the force on the nodes
                 for d in range(self._domainSize):
-                    P[d :: self._fieldSize] -= N * force_vector[d]
+                    P[d :: self._fieldSize] -= G * force_vector[d]
 
                 total_reaction += self._penaltyParameter * g
 

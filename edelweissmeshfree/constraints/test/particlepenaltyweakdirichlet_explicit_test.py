@@ -46,7 +46,9 @@ def test_the_support_pulls_a_displaced_point_back_on_both_sides(displacement):
     # in the constrained direction, and nothing in the free one
     assert P[:, 0].sum() == pytest.approx(PENALTY * displacement)
     np.testing.assert_array_equal(P[:, 1], 0.0)
-    np.testing.assert_allclose(P[:, 0], PENALTY * displacement * particle.getInterpolationVector(particle.center))
+    np.testing.assert_allclose(
+        P[:, 0], PENALTY * displacement * particle.getAttachedPointInterpolationVector(particle.center)
+    )
 
 
 def test_the_support_at_vertices_holds_each_vertex_where_it_was():

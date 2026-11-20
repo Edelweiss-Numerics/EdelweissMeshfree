@@ -325,6 +325,12 @@ cdef class MarmotParticleWrapper:
         self._marmotParticle.getInterpolationVector(&Nview_[0], &coordinates[0])
         return N
 
+    def getAttachedPointInterpolationVector(self, double[::1] coordinates) -> np.ndarray:
+        cdef np.ndarray G = np.zeros(len(self._nodes))
+        cdef double[::1] Gview_ = G
+        self._marmotParticle.getAttachedPointInterpolationVector(&Gview_[0], &coordinates[0])
+        return G
+
     def assignKernelFunctions(self, list marmotMeshfreeKernelFunctionWrappers):
         self._assignedKernelFunctions = marmotMeshfreeKernelFunctionWrappers
         self._nAssignedKernelFunctions = len(marmotMeshfreeKernelFunctionWrappers)

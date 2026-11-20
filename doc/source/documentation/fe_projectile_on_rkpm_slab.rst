@@ -110,15 +110,14 @@ vertices of a hexahedral particle on its faces are ``[0, 3, 4, 7]`` (x min), ``[
         "support_x", model, list(model.particleSets["slab_right"]), "displacement", {0: 0.0, 2: 0.0},
         supportPenalty, constrain=[1, 2, 5, 6])
 
-.. warning::
-
-    A vertex moves with the particle's own deformation (its centre displacement and its smoothed deformation
-    gradient), but the constraint distributes the force at the vertex with the shape functions there. The two differ
-    for any nodal pattern that is not linear, so the support's stiffness is unsymmetric and does work over a closed
-    cycle: once the concrete next to it has lost its stiffness, it can feed a growing mode. The production slab of this
-    model blew up this way, whatever the time increment; supports held at the particle centres did not. Until the
-    constraint moves its points with the shape functions it distributes the force with, check the kinetic energy
-    against the initial one (see below).
+A vertex moves with the particle's own deformation, its centre displacement and its smoothed deformation gradient:
+by :math:`\sum_I G_I \Delta\boldsymbol{U}_I` in an increment, with the particle's interpolation vector of an attached
+point :math:`G_I` (:meth:`~edelweissmeshfree.particles.base.baseparticle.BaseParticle.getAttachedPointInterpolationVector`),
+not with the shape functions at the vertex. The support (and the contact below) distributes its force with the same
+:math:`G_I`, the transpose of the vertex motion: its penalty stiffness is symmetric and it does no work over a closed
+cycle of motion (``edelweissmeshfree/constraints/test/vertexpenaltywork_test.py``). Distributing the force with the
+shape functions at the vertex is not conservative: the production slab of this model blew up that way next to the
+symmetry planes, once the concrete there had been crushed, whatever the time increment.
 
 Constrain the vertices, not the centres: the centres lie half a particle off the plane and move with Poisson's
 effect. The support penalty must be stiff against the material next to it, or the plane gives way and springs back

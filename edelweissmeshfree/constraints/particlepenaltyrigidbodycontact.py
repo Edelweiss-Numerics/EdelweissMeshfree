@@ -165,9 +165,9 @@ class ParticlePenaltyContactImplicitSurfaceConstraint(MPMConstraintBase):
                 normal = grad / grad_norm
 
             # 2. Kinematics (Displacement Increment)
-            N_vec = self._particle.getInterpolationVector(constrained_point).flatten()
+            G_vec = self._particle.getAttachedPointInterpolationVector(constrained_point).flatten()
 
-            deltaU_point = N_vec @ dU.reshape((-1, self._fieldSize))
+            deltaU_point = G_vec @ dU.reshape((-1, self._fieldSize))
 
             constraint_vec = -normal
             g = -current_dist + np.dot(constraint_vec, deltaU_point)
@@ -175,13 +175,13 @@ class ParticlePenaltyContactImplicitSurfaceConstraint(MPMConstraintBase):
             if g < 0:
                 continue
 
-            # dg_dU = np.einsum('i,j->ij', constraint_vec, N_vec).flatten()
+            # dg_dU = np.einsum('i,j->ij', constraint_vec, G_vec).flatten()
 
             dg_dU = np.zeros(len(dU.flatten()))
             for i in range(len(self._nodes)):
 
                 start_idx = i * self._fieldSize
-                dg_dU[start_idx : start_idx + self._fieldSize] = N_vec[i] * constraint_vec
+                dg_dU[start_idx : start_idx + self._fieldSize] = G_vec[i] * constraint_vec
 
             # Update Force (Using += just like original)
             P += self._penaltyParameter * dg_dU * g

@@ -42,8 +42,10 @@ whole one; without the support, it spreads about its own center instead.
 The support has to be stiff against the material it holds: a penalty of the wall's (1e5 per point, about twice the
 stiffness of a particle) lets the plane give way and spring back, and the half projectile is then 10 % off the whole
 one, whatever the particle size, since the stiffness of a particle in plane strain does not change with its size. With
-1e6, below the stable limit of the time increment, the deviation is a few % and shrinks with the particle size: the
-largest deviation is 0.28, 0.090 and 0.033 for particles of 10, 5 and 2.5 mm (of a largest displacement of 6.5 to 8.2).
+1e6, below the stable limit of the time increment, the deviation is a few %: the largest deviation is 0.26 of a
+largest displacement of 6.6 here. A refinement study found it shrinking with the particle size, 0.28, 0.090 and 0.033
+for particles of 10, 5 and 2.5 mm, when the support still distributed its force with the shape functions at the
+vertices; it now distributes it with the vector that moves the vertices, which makes it conservative.
 """
 
 import argparse

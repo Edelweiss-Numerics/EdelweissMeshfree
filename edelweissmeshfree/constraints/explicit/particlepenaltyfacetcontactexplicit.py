@@ -56,12 +56,17 @@ class ParticlePenaltyFacetContactExplicit(MPMExplicitConstraintBase):
         g = \boldsymbol{n} \cdot \Big( \boldsymbol{x}_s - \sum_a w_a\, \boldsymbol{x}_a \Big),
 
     negative where the point has entered the master body. There the penalty spring pushes the point back out, with
-    the force :math:`\boldsymbol{f} = -k\, g\, \boldsymbol{n}` on the point, which the particle distributes over the
-    nodes of its kernel functions with its shape functions :math:`N_I` at the point. The reaction
+    the force :math:`\boldsymbol{f} = -k\, g\, \boldsymbol{n}` on the point. The point is a vertex of its particle and
+    moves with it, by :math:`\sum_I G_I \Delta\boldsymbol{U}_I` in an increment, with the particle's interpolation
+    vector of an attached point :math:`G_I`
+    (:meth:`~edelweissmeshfree.particles.base.baseparticle.BaseParticle.getAttachedPointInterpolationVector`), and the
+    force is distributed over the nodes of the kernel functions with the same :math:`G_I`: the transpose of the
+    point's motion, so that the penalty spring is conservative. (The shape functions at the vertex would not be: they
+    do not move it, and the spring would pump energy into a softened particle body.) The reaction
     :math:`-\boldsymbol{f}` acts on the facet, distributed over its nodes with the weights :math:`w_a` (transformed by
-    the facet's weight transform, if the surface element generator gave it one). Both the shape functions and the
-    weights sum to one, so the two forces are equal and opposite, and the contact exchanges momentum without creating
-    any. ``penaltyParameter`` :math:`k` is a force per unit penetration of one contact point, as in the other penalty
+    the facet's weight transform, if the surface element generator gave it one). Both :math:`G_I` and the weights sum
+    to one, so the two forces are equal and opposite, and the contact exchanges momentum without creating any.
+    ``penaltyParameter`` :math:`k` is a force per unit penetration of one contact point, as in the other penalty
     contacts of the particles (e.g.
     :class:`~edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit.ParticlePenaltyCartesianBoundaryConstraintExplicit`);
     EdelweissFE's node-to-surface contact takes a penalty per unit area instead, which is :math:`k` divided by the
@@ -454,10 +459,10 @@ class ParticlePenaltyFacetContactExplicit(MPMExplicitConstraintBase):
             force = -self._penaltyParameter * gap[i] * normalOfFacet[i]
 
             particleIndex = self._particleOfPoint[point]
-            N = self._particles[particleIndex].getInterpolationVector(coordinatesOfPoint[i]).flatten()
+            G = self._particles[particleIndex].getAttachedPointInterpolationVector(coordinatesOfPoint[i]).flatten()
             # the kernel functions of a particle are on distinct nodes, so fancy indexing does not drop any
-            PAtNodes[self._localNodesOfParticle[particleIndex]] -= np.outer(N, force)
-            forceOnParticles += N.sum() * force
+            PAtNodes[self._localNodesOfParticle[particleIndex]] -= np.outer(G, force)
+            forceOnParticles += G.sum() * force
 
             if self._twoWayCoupling:
                 facet = self._facets[self._pairedFacetOfPoint[point]]

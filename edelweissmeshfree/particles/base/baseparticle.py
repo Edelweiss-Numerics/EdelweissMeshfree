@@ -475,6 +475,30 @@ class BaseParticle(BaseNodeCouplingEntity):
         """
 
     @abstractmethod
+    def getAttachedPointInterpolationVector(self, coordinate: np.ndarray) -> np.ndarray:
+        r"""Get the interpolation vector of a point attached to the particle (its center, a vertex, a face center):
+        the coefficients :math:`G_B` with which the particle moves that point in its next increment,
+        :math:`\Delta\boldsymbol{x} = \sum_B G_B \Delta\boldsymbol{U}_B`.
+
+        The particle moves as a whole, its center with the shape functions there and its domain with the homogeneous
+        deformation gradient from the (smoothed) shape function gradients,
+        :math:`G_B = N_B(\boldsymbol{x}_c) + \nabla N_B \cdot (\boldsymbol{x} - \boldsymbol{x}_c)`. Away from the
+        center this is not :meth:`getInterpolationVector` at the point. A constraint that measures a point of the
+        particle where the particle puts it (a support or a contact on a vertex) must distribute its force with this
+        vector: then the force is the transpose of the kinematics and a penalty is conservative.
+
+        Parameters
+        ----------
+        coordinate
+            The point, in the current configuration of the particle.
+
+        Returns
+        -------
+        np.ndarray
+            The interpolation vector for all nodes.
+        """
+
+    @abstractmethod
     def vci_getNumberOfConstraints(
         self,
     ) -> int:
