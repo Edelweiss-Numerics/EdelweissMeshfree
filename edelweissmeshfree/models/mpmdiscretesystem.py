@@ -436,7 +436,10 @@ class MPMDiscreteSystem(DiscreteSystem):
         return coefficient
 
     def stableTimeIncrementOfEntitiesWithOwnInertia(
-        self, forEachChunk: Callable[[list, Callable], None]
+        self,
+        lumpedMass: DofVector,
+        lumpedDamping: DofVector,
+        forEachChunk: Callable[[list, Callable], None],
     ) -> float | None:
         """A bound of the stable time increment of ``NED``'s explicit scheme for the particles, from their stiffness at
         the current state and the assembled lumped mass and damping. No stiffness is assembled: every particle bounds
@@ -498,6 +501,11 @@ class MPMDiscreteSystem(DiscreteSystem):
 
         Parameters
         ----------
+        lumpedMass
+            The lumped mass of the particles at their current configuration
+            (:meth:`assembleLumpedMassOfEntitiesWithOwnInertia`), which the solver has just assembled.
+        lumpedDamping
+            Their lumped damping (:meth:`assembleLumpedDampingOfEntitiesWithOwnInertia`), likewise.
         forEachChunk
             The solver's loop over chunks of independent entities.
 
@@ -510,8 +518,8 @@ class MPMDiscreteSystem(DiscreteSystem):
         if not self.particles:
             return None
 
-        M = np.asarray(self.assembleLumpedMassOfEntitiesWithOwnInertia(forEachChunk))
-        C = np.asarray(self.assembleLumpedDampingOfEntitiesWithOwnInertia(forEachChunk))
+        M = np.asarray(lumpedMass)
+        C = np.asarray(lumpedDamping)
 
         secondOrder = M > 0.0
         firstOrder = ~secondOrder & (C > 0.0)
