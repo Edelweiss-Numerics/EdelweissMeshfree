@@ -167,6 +167,10 @@ cdef extern from "Marmot/MarmotParticle.h":
 
         vector[ string ] getPropertyNames() const
 
+        void computeLumpedDamping ( double* cLumped)
+
+        void computeCriticalTimeStepForExplicitDynamics( double& criticalTimeStep ) except +
+
 
 
 

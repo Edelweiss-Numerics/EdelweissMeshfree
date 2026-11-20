@@ -401,6 +401,32 @@ class BaseParticle(BaseNodeCouplingEntity):
             The lumped momentum to augment, one entry per degree of freedom.
         """
 
+    def computeLumpedDamping(
+        self,
+        C: np.ndarray,
+    ):
+        """Explicit dynamics: add the lumped damping of the particle, on the kernel functions currently assigned: the
+        coefficient of each field's first time derivative, as :meth:`computeLumpedInertia` holds the one of the second.
+        A gradient-enhanced particle reports the nonlocal viscosity there, which integrates a first-order nonlocal field
+        on its own and damps a second-order one. The default adds nothing, which is no damping.
+
+        Parameters
+        ----------
+        C
+            The lumped damping to augment, one entry per degree of freedom.
+        """
+
+    @abstractmethod
+    def computeCriticalTimeStepForExplicitDynamics(self) -> float:
+        """Explicit dynamics: the stable time increment of the particle, from its size and the wave speed of its
+        material (and the limit of a nonlocal field); a solver takes the minimum over all particles.
+
+        Returns
+        -------
+        float
+            The critical time increment.
+        """
+
     @abstractmethod
     def assignMeshfreeKernelFunctions(self, kernelFunctions: list[BaseMeshfreeKernelFunction]):
         """Assign the meshfree kernel functions to the particle.

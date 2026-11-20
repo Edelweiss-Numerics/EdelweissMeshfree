@@ -264,6 +264,20 @@ cdef class MarmotParticleWrapper:
 
         self._marmotParticle.computeLumpedMomentum(&mLumped[0])
 
+    def computeLumpedDamping(self, double[::1] cLumped ):
+        """Add the lumped damping; see
+        :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedDamping`."""
+
+        self._marmotParticle.computeLumpedDamping(&cLumped[0])
+
+    def computeCriticalTimeStepForExplicitDynamics(self) -> float:
+        """The stable time increment of the particle; see
+        :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeCriticalTimeStepForExplicitDynamics`."""
+
+        cdef double criticalTimeStep = 0.0
+        self._marmotParticle.computeCriticalTimeStepForExplicitDynamics(criticalTimeStep)
+        return criticalTimeStep
+
     cpdef void _initializeStateVarsTemp(self, ) nogil:
         self._stateVarsTemp[:] = self._stateVars
 
