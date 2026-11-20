@@ -56,8 +56,9 @@ A constraint written for explicit analyses alone, with forces and without a tang
 :class:`~edelweissmeshfree.constraints.base.mpmexplicitconstraintbase.MPMExplicitConstraintBase` and implements
 ``computeKernelsExplicit(U_np, dU, P, timeStep)``, with the same sign: an implicit solver refuses it. The explicit
 solver, in turn, accepts only a constraint that acts in an explicit analysis (``actsInExplicitAnalysis``): one that
-measures its condition at the particles' current positions, as the penalty contacts do, explicit or not. A constraint on
-the increment, such as a weak Dirichlet condition, would act as if nothing had moved there.
+measures its condition at the particles' current positions, as the penalty contacts do, explicit or not, and as the
+penalty weak Dirichlet condition does where it holds the displacement at zero (a support). A constraint on the
+increment, such as a weak Dirichlet condition that prescribes a change, would act as if nothing had moved there.
 
 The base classes
 ----------------

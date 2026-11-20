@@ -113,12 +113,15 @@ ACTING = {
             configuration=DirectionalSpringPenaltySchema(field="displacement", component=1, penalty=1e3),
         )
     ),
+    "ParticlePenaltyWeakDirichlet holding the displacement at zero": lambda model: (
+        ParticlePenaltyWeakDirichlet("constraint", model, [_particle()], "displacement", {0: 0.0, 1: 0.0}, 1e3)
+    ),
 }
 
 #: name -> a function building, from the model, a constraint that does not act in an explicit analysis
 NOT_ACTING = {
-    "ParticlePenaltyWeakDirichlet": lambda model: (
-        ParticlePenaltyWeakDirichlet("constraint", model, [_particle()], "displacement", {1: 0.1}, 1e3)
+    "ParticlePenaltyWeakDirichlet prescribing a change": lambda model: (
+        ParticlePenaltyWeakDirichlet("constraint", model, [_particle()], "displacement", {0: 0.0, 1: 0.1}, 1e3)
     ),
     "ParticlePenaltyEqualValue": lambda model: (
         ParticlePenaltyEqualValue("constraint", model, [_particle(), _particle()], "displacement", [1], 1e3)

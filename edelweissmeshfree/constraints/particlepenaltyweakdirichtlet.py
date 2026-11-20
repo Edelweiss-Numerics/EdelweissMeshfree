@@ -9,9 +9,33 @@ from edelweissmeshfree.particles.base.baseparticle import BaseParticle
 
 
 class ParticlePenaltyWeakDirichlet(MPMConstraintBase):
-    """
+    r"""
     This is an implementation of weak Dirichlet boundary conditions using a penalty formulation.
     It constrains a material point field increment.
+
+    **In an implicit analysis**, it penalizes the difference between the increment of the field at the constrained
+    points, :math:`\boldsymbol{N} \cdot \Delta\boldsymbol{U}`, and the prescribed increment, the change of
+    ``prescribedStepDelta`` times ``f_t`` over the increment.
+
+    **In an explicit analysis**, the nodes of the kernel functions carry no increment to constrain: the particles have
+    moved when the constraints are evaluated. There the constraint holds displacement components at zero, as a
+    support, e.g. on a symmetry plane or at a clamped edge, and it measures them where the constrained points are now:
+    the force on a constrained point is
+
+    .. math::
+
+        f_i = -k \left( x_i - X_i \right)
+
+    for every constrained component :math:`i`, with :math:`\boldsymbol{X}` the position of the point when the
+    constraint was created, and the particle distributes it over the nodes of its kernel functions with its shape
+    functions at the point. The force acts on both sides of :math:`X_i`. It acts in an explicit analysis
+    (:attr:`actsInExplicitAnalysis`) only if it constrains the displacement and every prescribed change is zero: an
+    explicit analysis prescribes motion through velocities, not through penalized displacements.
+
+    A support holds only as well as its penalty is stiff against the material next to it: a penalty that is merely
+    comparable to the stiffness of a particle lets the support give way and spring back, an error that does not shrink
+    with the particle size. Its upper bound is the stable time increment of the explicit integration,
+    :math:`\Delta t < 2 \sqrt{m / k}` with :math:`m` the mass a constrained point carries; see example 186.
 
     Parameters
     ----------
@@ -32,7 +56,8 @@ class ParticlePenaltyWeakDirichlet(MPMConstraintBase):
         If "center", the center of the particle is constrained. If a list, the vertices at the given indices are constrained.
     """
 
-    #: Carries nothing from one increment to the next.
+    #: Carries nothing from one increment to the next: the positions the points are held at in an explicit analysis
+    #: are those of the model the constraint is created with.
     checkpointedState = {}
 
     def __init__(
@@ -65,10 +90,30 @@ class ParticlePenaltyWeakDirichlet(MPMConstraintBase):
 
         self.penaltyForce = np.zeros(self._fieldSize)
 
+        #: Where the constrained points of each particle are when the constraint is created, the positions an explicit
+        #: analysis holds them at.
+        self._initialCoordinatesOfConstrainedPoints = [
+            np.array(self._constrainedCoordinatesOf(particle)) for particle in self._constrainedParticles
+        ]
+
         if "f_t" in kwargs:
             self._f_t = kwargs["f_t"]
         else:
             self._f_t = lambda x: x
+
+    @property
+    def actsInExplicitAnalysis(self) -> bool:
+        """Whether this constraint acts in an explicit analysis: if it constrains the displacement, and every prescribed
+        change is zero (see the class documentation and
+        :attr:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.actsInExplicitAnalysis`).
+
+        Returns
+        -------
+        bool
+            True if it acts in an explicit analysis.
+        """
+
+        return self._field == "displacement" and all(delta == 0.0 for delta in self._prescribedStepDelta.values())
 
     @property
     def name(self) -> str:
@@ -130,12 +175,7 @@ class ParticlePenaltyWeakDirichlet(MPMConstraintBase):
             K_ij = K.reshape((self.nDof, self.nDof))[i :: self._fieldSize, i :: self._fieldSize]
 
             for p in self._constrainedParticles:
-                if self._constrainVertices:
-                    constrainedCoordinates = p.getVertexCoordinates()[self._constrainVertices]
-                else:
-                    constrainedCoordinates = [p.getCenterCoordinates()]
-
-                for constrainedCoordinate in constrainedCoordinates:
+                for constrainedCoordinate in self._constrainedCoordinatesOf(p):
 
                     N = p.getInterpolationVector(constrainedCoordinate)
 
@@ -158,3 +198,52 @@ class ParticlePenaltyWeakDirichlet(MPMConstraintBase):
                     K_ij[np.ix_(nodeIdcs, nodeIdcs)] += np.outer(N, N) * self._penaltyParameter
 
             self.penaltyForce[i] = np.sum(P_i)
+
+    def computeKernelsExplicit(self, U_np: np.ndarray, dU: np.ndarray, P: np.ndarray, timeStep: TimeStep):
+        """Add the residual contribution of the support in an explicit analysis: the negative of the forces that hold
+        the constrained components of the constrained points at their initial positions, measured where the points are
+        now (see the class documentation).
+
+        Parameters
+        ----------
+        U_np
+            The current solution; unused, the displacement follows from the current positions.
+        dU
+            The solution increment; likewise unused.
+        P
+            The residual contribution to augment.
+        timeStep
+            The current time step; unused.
+        """
+
+        for p, initialCoordinates in zip(self._constrainedParticles, self._initialCoordinatesOfConstrainedPoints):
+            nodeIdcs = [self._nodes[kf.node] for kf in p.kernelFunctions]
+
+            for constrainedCoordinate, initialCoordinate in zip(self._constrainedCoordinatesOf(p), initialCoordinates):
+                N = p.getInterpolationVector(constrainedCoordinate)
+
+                for i in self._prescribedStepDelta:
+                    P[i :: self._fieldSize][nodeIdcs] += (
+                        N * self._penaltyParameter * (constrainedCoordinate[i] - initialCoordinate[i])
+                    )
+
+        for i in self._prescribedStepDelta:
+            self.penaltyForce[i] = np.sum(P[i :: self._fieldSize])
+
+    def _constrainedCoordinatesOf(self, particle: BaseParticle) -> list[np.ndarray]:
+        """The current coordinates of the constrained points of a particle: its center, or the constrained vertices.
+
+        Parameters
+        ----------
+        particle
+            The particle.
+
+        Returns
+        -------
+        list[np.ndarray]
+            The coordinates, one array per point.
+        """
+
+        if self._constrainVertices:
+            return list(particle.getVertexCoordinates()[self._constrainVertices])
+        return [particle.getCenterCoordinates().copy()]
