@@ -436,40 +436,58 @@ class MPMDiscreteSystem(DiscreteSystem):
         return coefficient
 
     def stableTimeIncrementOfEntitiesWithOwnInertia(
-        self, forEachChunk: Callable[[list, Callable], None], nPasses: int = 3
+        self, forEachChunk: Callable[[list, Callable], None]
     ) -> float | None:
-        """A bound of the stable time increment of the central difference method for the particles, from their tangents
-        at the current state (``computeTangentOfTheCurrentState``) and the assembled lumped mass and damping.
+        """A bound of the stable time increment of ``NED``'s explicit scheme for the particles, from their tangents at
+        the current state (``computeTangentOfTheCurrentState``) and the assembled lumped mass and damping. Every
+        particle's tangent is evaluated once.
 
-        The stable increment is :math:`2/\\omega_\\mathrm{max}`, with :math:`\\omega_\\mathrm{max}^2` the largest
-        eigenvalue of :math:`\\boldsymbol{S} = \\boldsymbol{M}^{-1/2} \\boldsymbol{K} \\boldsymbol{M}^{-1/2}`. It is a property
-        of the ASSEMBLED system: a particle's own bound, :math:`\\lambda_\\mathrm{max}(\\boldsymbol{M}_p^{-1}
+        It is a property of the ASSEMBLED system: a particle's own bound, :math:`\\lambda_\\mathrm{max}(\\boldsymbol{M}_p^{-1}
         \\boldsymbol{K}_p)` as for a finite element, is unbounded, because a particle's stiffness couples nodes at which
-        its own lumped mass vanishes (the mass is taken at its centre, its smoothed gradients at its faces), and the
-        limit varies with the support factor, the kernel order and the boundary in no regular way. It is bounded here
-        without the eigenvalue problem, by the Collatz-Wielandt bound of the nonnegative matrix
-        :math:`|\\boldsymbol{S}|`,
-        :math:`\\lambda_\\mathrm{max}(\\boldsymbol{S}) \\le \\rho(|\\boldsymbol{S}|) \\le \\max_A (|\\boldsymbol{S}|
-        \\boldsymbol{w})_A / w_A` for every positive :math:`\\boldsymbol{w}`, with :math:`\\boldsymbol{w} = \\boldsymbol{1}`
-        (the Gershgorin bound) in the first pass and :math:`\\boldsymbol{w} = |\\boldsymbol{S}|^{k} \\boldsymbol{1}` in the
-        following ones, each a power step that tightens it. Every pass evaluates the tangent of every particle once;
-        :math:`|\\boldsymbol{K}|` is accumulated particle by particle, which bounds the absolute value of the sum.
+        its own lumped mass vanishes (the mass is taken at its centre, its smoothed gradients at its faces).
 
-        The degrees of freedom with inertia are second order in time: :math:`\\Delta t \\le 2/\\omega_\\mathrm{max}\\,
-        (\\sqrt{1 + \\zeta^2} - \\zeta)`, with the largest damping ratio :math:`\\zeta = C_A / (2 M_A
-        \\omega_\\mathrm{max})` of their damped nodes (a nonlocal field with a micro-inertia). The degrees of freedom
-        without inertia but with damping are first order (forward Euler): :math:`\\Delta t \\le 2 /
-        \\lambda_\\mathrm{max}(\\boldsymbol{C}^{-1} \\boldsymbol{K})`, bounded the same way with :math:`\\boldsymbol{C}` for
-        :math:`\\boldsymbol{M}`. The coupling between the two sets is not included. The result is scaled by
-        :data:`STABLE_FRACTION_OF_THE_TANGENT_LIMIT`, since the explicit scheme of the particles is not exactly
-        integrated with their tangent: their NSNI stabilization acts on the increment.
+        **What is bounded.** The degrees of freedom with an inertia are integrated by central differences:
+        :math:`\\boldsymbol{M}\\ddot{\\boldsymbol{u}} + \\boldsymbol{C}\\dot{\\boldsymbol{u}} + \\boldsymbol{K}
+        \\boldsymbol{u} = \\boldsymbol{0}` is stable for :math:`\\Delta t \\le 2/\\omega_\\mathrm{max}`, with
+        :math:`\\omega_\\mathrm{max}^2` the largest eigenvalue of :math:`\\boldsymbol{M}^{-1}\\boldsymbol{K}`. The damping
+        does not lower this limit, since ``NED`` takes it with the mean of the velocities before and after the update
+        (a damping evaluated with the old velocity alone would). The degrees of freedom without inertia but with a
+        damping (a first-order nonlocal field) are integrated by forward Euler, stable for :math:`\\Delta t \\le
+        2/\\lambda_\\mathrm{max}(\\boldsymbol{C}^{-1}\\boldsymbol{K})`. The coupling between the two sets is not
+        included.
+
+        **Why the absolute value of the unsymmetric tangent.** The tangent of gradient-enhanced particles is
+        unsymmetric, and its coupling blocks differ by orders of magnitude once scaled by the masses: the stress depends
+        on the nonlocal field as strongly as on the strain (on a boundary of GM7, through the over-nonlocal strain), the
+        nonlocal field depends on the strain with a factor of one, and the micro-inertia of the nonlocal field is far
+        below the mass. An eigenvalue :math:`\\lambda` of the coupled system sees the geometric mean of the two coupling
+        blocks, the symmetric part of the tangent their arithmetic mean: a bound of the symmetric part follows the large
+        block alone and falls far below the stable increment whenever a particle loads a boundary. Instead, every
+        eigenvalue, real or complex, satisfies :math:`|\\lambda| \\le \\rho(|\\boldsymbol{S}|)`, the spectral radius of
+        the absolute value of :math:`\\boldsymbol{S} = \\boldsymbol{D}\\boldsymbol{K}\\boldsymbol{D}` (similar to
+        :math:`\\boldsymbol{M}^{-1}\\boldsymbol{K}`, with :math:`\\boldsymbol{D} = \\boldsymbol{M}^{-1/2}`, or
+        :math:`\\boldsymbol{C}^{-1/2}` on the first-order set). :math:`|\\boldsymbol{K}|` is accumulated particle by
+        particle, which bounds the absolute value of the sum.
+
+        **The bound of** :math:`\\rho(|\\boldsymbol{S}|)` **from one evaluation of the tangents.** The Collatz-Wielandt
+        bound :math:`\\rho(|\\boldsymbol{S}|) \\le \\max_i (|\\boldsymbol{S}|\\boldsymbol{w})_i / w_i` holds for every
+        positive :math:`\\boldsymbol{w}`; the weights are taken constant on each field: :math:`\\boldsymbol{w} =
+        \\sum_f c_f \\boldsymbol{1}_f`. One evaluation of the tangents gives the row sums of :math:`|\\boldsymbol{S}|`
+        over the columns of each field, :math:`Z_{if} = \\sum_{j \\in f} |S_{ij}|`, and with them the field matrix
+        :math:`Q_{gf} = \\max_{i \\in g} Z_{if}`, the largest row sum of the block of fields :math:`g, f`. With
+        :math:`\\boldsymbol{c}` the Perron vector of :math:`\\boldsymbol{Q}`, every row :math:`i` of field :math:`g`
+        gives :math:`(|\\boldsymbol{S}|\\boldsymbol{w})_i \\le (\\boldsymbol{Q}\\boldsymbol{c})_g = \\rho(\\boldsymbol{Q})
+        w_i`, so :math:`\\rho(|\\boldsymbol{S}|) \\le \\rho(\\boldsymbol{Q})`: the Gershgorin bound per block of fields,
+        coupled by the largest eigenvalue of the small field matrix, which takes the geometric mean of the coupling
+        blocks. With a single field it is the Gershgorin bound.
+
+        The result is scaled by :data:`STABLE_FRACTION_OF_THE_TANGENT_LIMIT`, since the explicit scheme of the
+        particles is not exactly integrated with their tangent: their NSNI stabilization acts on the increment.
 
         Parameters
         ----------
         forEachChunk
             The solver's loop over chunks of independent entities.
-        nPasses
-            The number of passes, each one evaluation of every particle's tangent; the first gives the Gershgorin bound.
 
         Returns
         -------
@@ -489,49 +507,63 @@ class MPMDiscreteSystem(DiscreteSystem):
         scaling[secondOrder] = 1.0 / np.sqrt(M[secondOrder])
         scaling[firstOrder] = 1.0 / np.sqrt(C[firstOrder])
 
-        def absoluteTangentTimes(w: np.ndarray) -> np.ndarray:
-            """|S| w on each of the two sets, |S| = D^-1/2 |K| D^-1/2, the coupling between them left out."""
-            x = self.locations.constructDofVector()
-            x[:] = scaling * w
-            y = self.locations.constructDofVector()
-            y[:] = 0.0
-            scatterY = y.createScatterVector()
+        # The blocks of the field matrix: a field's degrees of freedom of each order (a field is one or the other).
+        nDof = len(M)
+        groupOfDof = np.full(nDof, -1)
+        orderOfGroup = []
+        for indices in self.numbering.idcsOfFieldsInDofVector.values():
+            inField = np.zeros(nDof, dtype=bool)
+            inField[indices] = True
+            for order, ofTheOrder in (("second", secondOrder), ("first", firstOrder)):
+                inGroup = inField & ofTheOrder
+                if inGroup.any():
+                    groupOfDof[inGroup] = len(orderOfGroup)
+                    orderOfGroup.append(order)
+        nGroups = len(orderOfGroup)
 
-            def multiply(particles):
-                for particle in particles:
-                    nDof = particle.nDof
-                    K = np.zeros(nDof * nDof)
-                    particle.computeTangentOfTheCurrentState(K)
-                    K = np.abs(0.5 * (K.reshape(nDof, nDof) + K.reshape(nDof, nDof).T))
-                    xp = x[particle]
-                    ofSecondOrder = secondOrder[self.locations.ofEntity[particle]]
-                    yp = scatterY[particle]
-                    yp += np.where(
-                        ofSecondOrder, K @ np.where(ofSecondOrder, xp, 0.0), K @ np.where(ofSecondOrder, 0.0, xp)
-                    )
+        # Z_if = sum_{j in f} |S_ij|, assembled column by column
+        rowSums = [self.locations.constructDofVector() for _ in range(nGroups)]
+        for rowSum in rowSums:
+            rowSum[:] = 0.0
+        scatterRowSums = [rowSum.createScatterVector() for rowSum in rowSums]
 
-            forEachChunk(self.particles, multiply)
-            scatterY.assembleInto(y)
-            return scaling * np.asarray(y)
+        def addAbsoluteTangentRowSums(particles):
+            for particle in particles:
+                nDofOfParticle = particle.nDof
+                K = np.zeros(nDofOfParticle * nDofOfParticle)
+                particle.computeTangentOfTheCurrentState(K)
+                indices = self.locations.ofEntity[particle]
+                scaledIndicatorOfGroup = np.zeros((nDofOfParticle, nGroups))
+                inAGroup = groupOfDof[indices] >= 0
+                scaledIndicatorOfGroup[inAGroup, groupOfDof[indices][inAGroup]] = scaling[indices][inAGroup]
+                # the tangent is column-major: row i is the equation of degree of freedom i
+                absoluteTangentRowSums = np.abs(K.reshape(nDofOfParticle, nDofOfParticle, order="F")) @ (
+                    scaledIndicatorOfGroup
+                )
+                for group, scatterRowSum in enumerate(scatterRowSums):
+                    ofTheParticle = scatterRowSum[particle]
+                    ofTheParticle += absoluteTangentRowSums[:, group]
 
-        active = secondOrder | firstOrder
-        w = active.astype(float)
-        bounds = {}
-        for _ in range(nPasses):
-            z = absoluteTangentTimes(w)
-            for name, ofSet in (("second order", secondOrder), ("first order", firstOrder)):
-                if ofSet.any():
-                    bounds[name] = np.max(z[ofSet] / w[ofSet])
-            # the next weights: positive everywhere on the active set, as the bound requires
-            w = np.where(active, z + 1e-12 * np.max(z), 0.0)
+        forEachChunk(self.particles, addAbsoluteTangentRowSums)
+        Z = np.zeros((nDof, nGroups))
+        for group, (rowSum, scatterRowSum) in enumerate(zip(rowSums, scatterRowSums)):
+            scatterRowSum.assembleInto(rowSum)
+            Z[:, group] = scaling * np.asarray(rowSum)
+
+        Q = np.array([[np.max(Z[groupOfDof == g, f]) for f in range(nGroups)] for g in range(nGroups)])
+
+        def perronRoot(order: str) -> float:
+            """The largest eigenvalue of the nonnegative field matrix of the blocks of the given order."""
+            groups = [group for group, ofGroup in enumerate(orderOfGroup) if ofGroup == order]
+            return float(np.max(np.abs(np.linalg.eigvals(Q[np.ix_(groups, groups)])))) if groups else 0.0
 
         stable = np.inf
-        if "second order" in bounds and bounds["second order"] > 0.0:
-            omega = np.sqrt(bounds["second order"])
-            zeta = np.max(np.where(secondOrder, C, 0.0) / np.where(secondOrder, 2.0 * M * omega, 1.0))
-            stable = 2.0 / omega * (np.sqrt(1.0 + zeta**2) - zeta)
-        if "first order" in bounds and bounds["first order"] > 0.0:
-            stable = min(stable, 2.0 / bounds["first order"])
+        omegaSquared = perronRoot("second")
+        if omegaSquared > 0.0:
+            stable = 2.0 / np.sqrt(omegaSquared)
+        rate = perronRoot("first")
+        if rate > 0.0:
+            stable = min(stable, 2.0 / rate)
 
         return STABLE_FRACTION_OF_THE_TANGENT_LIMIT * stable
 

@@ -272,7 +272,13 @@ field is integrated. The stable time increment of the particles is bounded from 
 (:meth:`~edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia`) in
 the zero increment, whenever their connectivity changes, and every ``stable-increment-frequency`` increments; the time
 increment is the smaller of it and the elements' critical time step, scaled by ``courant-number``, unless the step asks
-for smaller increments.
+for smaller increments. The bound evaluates every particle's tangent once: it is the Gershgorin bound of the absolute
+value of the mass-scaled tangent per block of fields, coupled by the largest eigenvalue of the small matrix of these
+blocks. It takes the tangent as it is, unsymmetric: the tangent of gradient-enhanced particles couples the stress to the
+nonlocal field far more strongly than the nonlocal field to the strain, and an eigenvalue sees the geometric mean of the
+two couplings, the symmetric part their arithmetic mean. The damping does not lower the bound: ``NED`` takes it with the
+mean of the velocities before and after the update, which leaves the stability limit of the central differences where
+it is without damping.
 
 What to know
 ************

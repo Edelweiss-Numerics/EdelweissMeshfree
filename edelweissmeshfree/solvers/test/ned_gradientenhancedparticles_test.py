@@ -33,8 +33,9 @@ follows the strain.
   viscosity alone, by forward Euler. ``NED`` derives this from the particles' lumped inertia and damping, in a model of
   particles alone.
 * The time increment is the bound of the particles' stable time increment, scaled by the courant number. The material
-  parameters make the nonlocal field's limit the smaller one by far, so that this is what is tested: at a courant number
-  of one the run is stable, at two it is not.
+  parameters make the nonlocal field's limit the smaller one by far, so that this is what is tested: the bound lies
+  below the exact stable increment of the particles' tangent, and the explicit scheme is stable up to that exact
+  increment, whatever the damping.
 """
 
 import numpy as np
@@ -60,6 +61,9 @@ from edelweissmeshfree.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunct
     MarmotMeshfreeKernelFunctionWrapper,
 )
 from edelweissmeshfree.meshfree.particlekerneldomain import ParticleKernelDomain
+from edelweissmeshfree.models.mpmdiscretesystem import (
+    STABLE_FRACTION_OF_THE_TANGENT_LIMIT,
+)
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
     KDBinOrganizedParticleManager,
@@ -215,13 +219,68 @@ def test_the_nonlocal_field_is_integrated_by_the_particles_operators_on_their_cr
     assert rate < STABLE_NONLOCAL_RATE
 
 
-@pytest.mark.parametrize("nonlocalField", [WITH_MICRO_INERTIA, VISCOSITY_ONLY], ids=["micro-inertia", "viscosity only"])
-def test_the_critical_time_step_is_stable_and_twice_it_is_not(nonlocalField):
-    """Measured: with a micro-inertia, stable up to a courant number of 1.5 and unstable at 2; with a viscosity alone,
-    stable up to 1 and unstable at 1.5."""
+def exactStableIncrement(model: MPMModel) -> float:
+    """The stable time increment of the explicit scheme for the particles' tangent, from the eigenvalues of the
+    assembled system: :math:`2/\\omega_\\mathrm{max}` of the central differences on the degrees of freedom with an
+    inertia, whatever their damping, and :math:`2/\\lambda_\\mathrm{max}` of forward Euler on those with a damping
+    alone."""
 
-    stable, _ = runBar(**nonlocalField, courantNumber=1.0)
-    unstable, _ = runBar(**nonlocalField, courantNumber=2.0)
+    def serially(entities, work):
+        work(entities)
 
-    assert nonlocalRateAndIncrement(stable)[0] < STABLE_NONLOCAL_RATE
-    assert not nonlocalRateAndIncrement(unstable)[0] < 1e6 * STABLE_NONLOCAL_RATE
+    model.updateConnectivity()
+    system = model.buildDiscreteSystem()
+    M = np.asarray(system.assembleLumpedMassOfEntitiesWithOwnInertia(serially))
+    C = np.asarray(system.assembleLumpedDampingOfEntitiesWithOwnInertia(serially))
+    K = np.zeros((len(M), len(M)))
+    for particle in system.particles:
+        nDof = particle.nDof
+        tangent = np.zeros(nDof * nDof)
+        particle.computeTangentOfTheCurrentState(tangent)
+        indices = np.asarray(system.locations.ofEntity[particle])
+        K[np.ix_(indices, indices)] += tangent.reshape(nDof, nDof, order="F")
+
+    stable = np.inf
+    for ofTheScheme, divisor, stableOfTheLargestEigenvalue in (
+        (M > 0.0, M, lambda largest: 2.0 / np.sqrt(largest)),
+        ((M == 0.0) & (C > 0.0), C, lambda largest: 2.0 / largest),
+    ):
+        if ofTheScheme.any():
+            scaling = 1.0 / np.sqrt(divisor[ofTheScheme])
+            S = scaling[:, None] * K[np.ix_(ofTheScheme, ofTheScheme)] * scaling[None, :]
+            stable = min(stable, stableOfTheLargestEigenvalue(np.max(np.abs(np.linalg.eigvals(S)))))
+    return stable
+
+
+def isStable(model: MPMModel) -> bool:
+    """A run is stable if the rate of the nonlocal field stays that of the stretching; an unstable one exceeds it by
+    orders of magnitude."""
+
+    return nonlocalRateAndIncrement(model)[0] < STABLE_NONLOCAL_RATE
+
+
+@pytest.mark.parametrize(
+    "nonlocalField, tightness",
+    [(WITH_MICRO_INERTIA, 0.5), (VISCOSITY_ONLY, 1.0 / 3.0)],
+    ids=["micro-inertia", "viscosity only"],
+)
+def test_the_bound_is_below_the_exact_stable_increment_and_the_scheme_is_stable_up_to_it(nonlocalField, tightness):
+    """The bound of the particles' stable time increment lies below the exact one of their tangent, scaled by
+    STABLE_FRACTION_OF_THE_TANGENT_LIMIT, and within a factor of it: two for the central differences, three for forward
+    Euler, whose limit is inverse in the largest eigenvalue, so that the overestimate of a Gershgorin bound enters it
+    fully, not by its square root. The explicit scheme is stable just below the exact stable increment and unstable
+    above it: with a micro-inertia, the viscosity does not lower the limit of the central differences, since NED takes
+    the damping with the mean of the velocities before and after the update."""
+
+    model = _bar(Journal(verbose=False), **nonlocalField)
+    exact = exactStableIncrement(model)
+    bound = model.buildDiscreteSystem().stableTimeIncrementOfEntitiesWithOwnInertia(
+        lambda entities, work: work(entities)
+    )
+
+    assert tightness * exact < bound <= STABLE_FRACTION_OF_THE_TANGENT_LIMIT * exact
+
+    below, _ = runBar(**nonlocalField, courantNumber=0.95 * exact / bound)
+    above, _ = runBar(**nonlocalField, courantNumber=1.2 * exact / bound)
+    assert isStable(below)
+    assert not isStable(above)
