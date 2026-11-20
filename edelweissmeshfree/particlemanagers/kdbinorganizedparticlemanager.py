@@ -180,7 +180,13 @@ class _FastKDBinOrganizer:
                     self._kernelsInBins[first[firstBinOfRow + lowest[0]] : first[firstBinOfRow + highest[0] + 1]]
                 )
 
-        return np.unique(np.concatenate(kernelsOfRows))
+        # A kernel whose box overlaps several of the queried bins is in several rows: each once, from the sorted
+        # candidates by comparing neighbours (for the few hundred candidates of a query, this is faster than np.unique,
+        # which hashes them).
+        candidates = np.sort(np.concatenate(kernelsOfRows))
+        isFirstOfItsValue = np.ones(len(candidates), dtype=bool)
+        isFirstOfItsValue[1:] = candidates[1:] != candidates[:-1]
+        return candidates[isFirstOfItsValue]
 
 
 class KDBinOrganizedParticleManager(BaseParticleManager):
