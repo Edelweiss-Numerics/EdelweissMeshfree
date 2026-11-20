@@ -175,3 +175,15 @@ Constraints for explicit analyses
 .. automodule:: edelweissmeshfree.constraints.explicit.particlepenaltyrigidbodycontactexplicit
    :members:
    :private-members:
+
+``ParticlePenaltyFacetContactExplicit`` constraint class
+********************************************************
+
+Contact between particles and a body of finite elements: the vertices of the particles against the faceted boundary
+of the finite elements, which EdelweissFE's surface element generator creates. The theory is in the class
+documentation; its tests are ``edelweissmeshfree/constraints/test/particlepenaltyfacetcontactexplicit_test.py``
+(pairing, entering, tunnelling, the exchange of momentum) and example 185 (the same result as an analytic wall).
+
+.. automodule:: edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit
+   :members:
+   :private-members:
