@@ -271,7 +271,8 @@ current kernel functions; the finite elements keep the mass of their numbering. 
 field is integrated. The stable time increment of the particles is bounded from their stiffness and the assembled
 lumped mass
 (:meth:`~edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia`) in
-the zero increment, whenever their connectivity changes, and every ``stable-increment-frequency`` increments; the time
+the zero increment, whenever a particle reaches other kernel functions (a contact paired anew does not count: it
+changes no particle), and every ``stable-increment-frequency`` increments; the time
 increment is the smaller of it and the elements' critical time step, scaled by ``courant-number``, unless the step asks
 for smaller increments. It is the Gershgorin bound of the absolute value of the mass-scaled tangent per block of fields,
 coupled by the largest eigenvalue of the small matrix of these blocks. No tangent is assembled for it: every particle

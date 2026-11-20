@@ -574,6 +574,22 @@ class MPMDiscreteSystem(DiscreteSystem):
 
         return STABLE_FRACTION_OF_THE_TANGENT_LIMIT * stable
 
+    def entitiesWithOwnInertiaCoupleOtherNodes(self) -> bool:
+        """Whether the last connectivity update changed the set of kernel functions of a particle, as its particle
+        manager reports it; see
+        :meth:`~edelweissfe.models.discretesystem.DiscreteSystem.entitiesWithOwnInertiaCoupleOtherNodes`. A contact
+        paired anew does not count: it changes the locations, not the particles' system.
+
+        Returns
+        -------
+        bool
+            True if a particle reaches other kernel functions since the last connectivity update.
+        """
+
+        return any(
+            particleManager.particlesWithChangedKernelFunctions for particleManager in self.model.particleManagers
+        )
+
     def carriersOfTheMotion(self) -> set[str]:
         """Where the model holds the motion of its particles; see
         :meth:`~edelweissfe.models.discretesystem.DiscreteSystem.carriersOfTheMotion`.
