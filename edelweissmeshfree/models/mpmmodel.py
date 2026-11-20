@@ -42,6 +42,7 @@ from edelweissfe.journal.journal import Journal
 from edelweissfe.models.change import Change
 from edelweissfe.models.femodel import FEModel
 from edelweissfe.numerics.dofnumbering import DofNumbering
+from edelweissfe.numerics.parallelizationutilities import mapChunksInParallel
 from edelweissfe.sets.elementset import ElementSet
 from edelweissfe.sets.nodeset import NodeSet
 from edelweissfe.utils.exceptions import RestartError
@@ -210,7 +211,8 @@ class MPMModel(FEModel):
 
     def advanceToTime(self, time: float):
         """Accept the current state of the model and sub instances, and
-        set the new time.
+        set the new time. The material points and the particles accept theirs across the available threads, as the
+        elements do (see :meth:`~edelweissfe.models.femodel.FEModel.advanceToTime`): each touches only its own state.
 
         Parameters
         ----------
@@ -218,11 +220,8 @@ class MPMModel(FEModel):
             The new time.
         """
 
-        for mp in self.materialPoints.values():
-            mp.acceptStateAndPosition()
-
-        for p in self.particles.values():
-            p.acceptStateAndPosition()
+        mapChunksInParallel(list(self.materialPoints.values()), self._acceptStatesAndPositions)
+        mapChunksInParallel(list(self.particles.values()), self._acceptStatesAndPositions)
 
         self.previousTime = self.time
 
@@ -323,14 +322,12 @@ class MPMModel(FEModel):
 
         if self.mpmManagers:
             # The arguments are those of the converged state; no material point reads them here.
-            for materialPoint in self.materialPoints.values():
-                materialPoint.prepareYourself(self.time, 0.0)
+            mapChunksInParallel(list(self.materialPoints.values()), self._prepareAtTheConvergedState)
             for mpmManager in self.mpmManagers:
                 managersChanged |= mpmManager.updateConnectivity()
 
         if self.particleManagers:
-            for particle in self.particles.values():
-                particle.prepareYourself(self.time, 0.0)
+            mapChunksInParallel(list(self.particles.values()), self._prepareAtTheConvergedState)
             for particleManager in self.particleManagers:
                 managersChanged |= particleManager.updateConnectivity()
 
@@ -345,6 +342,32 @@ class MPMModel(FEModel):
             change = max(change, Change.NUMBERING)
 
         return change
+
+    @staticmethod
+    def _acceptStatesAndPositions(entities: list):
+        """Let material points or particles accept their current state and position (``acceptStateAndPosition``).
+
+        Parameters
+        ----------
+        entities
+            The material points or the particles.
+        """
+
+        for entity in entities:
+            entity.acceptStateAndPosition()
+
+    def _prepareAtTheConvergedState(self, entities: list):
+        """Let material points or particles prepare themselves at the converged state of the model (``prepareYourself``
+        at its time, with a zero increment): each discards a trial state a failed attempt may have left behind.
+
+        Parameters
+        ----------
+        entities
+            The material points or the particles.
+        """
+
+        for entity in entities:
+            entity.prepareYourself(self.time, 0.0)
 
     def _activeNodesAreFixed(self) -> bool:
         """Whether a change of the connectivity leaves the nodes of the active domain as they are, so that a discrete
