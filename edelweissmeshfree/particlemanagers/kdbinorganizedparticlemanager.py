@@ -36,11 +36,7 @@ from typing import Any, List, Tuple, Union
 
 import numpy as np
 from edelweissfe.journal.journal import Journal
-from edelweissfe.numerics.parallelizationutilities import (
-    getNumberOfThreads,
-    getThreadPool,
-    isFreeThreadingSupported,
-)
+from edelweissfe.numerics.parallelizationutilities import mapChunksInParallel
 from numpy.typing import NDArray
 
 from edelweissmeshfree.meshfree.particlekerneldomain import ParticleKernelDomain
@@ -203,11 +199,6 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
         self._dimension = dimension
         self.kernelFunctionsAreBondedToParticles = bondParticlesToKernelFunctions
         self._journal = journal
-
-        if isFreeThreadingSupported():
-            self._numThreads = getNumberOfThreads()
-        else:
-            self._numThreads = 1
 
         # Pre-fetch labels for integer sorting
         self._kernelLabels = np.array([k.node.label for k in self._meshfreeKernelFunctions], dtype=int)
@@ -388,15 +379,7 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
                 coordinates = np.atleast_2d(particles[i].getEvaluationCoordinates())
                 destination[firstCoordinate[i] : firstCoordinate[i + 1], :] = coordinates[:, :dim]
 
-        if self._numThreads <= 1:
-            gatherChunk(range(len(particles)))
-            return
-
-        chunkSize = len(particles) // self._numThreads + 1
-        chunks = [range(start, min(start + chunkSize, len(particles))) for start in range(0, len(particles), chunkSize)]
-
-        executor = getThreadPool(self._numThreads)
-        list(executor.map(gatherChunk, chunks))
+        mapChunksInParallel(range(len(particles)), gatherChunk)
 
     def _aSearchIsDue(self) -> bool:
         """Whether the neighbour lists have to be searched for again.
@@ -471,15 +454,7 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
             for particle in particleChunk:
                 particle.assignKernelFunctions(particle.kernelFunctions)
 
-        if self._numThreads <= 1:
-            rebuildChunk(self._particles)
-            return
-
-        chunkSize = len(self._particles) // self._numThreads + 1
-        chunks = [self._particles[i : i + chunkSize] for i in range(0, len(self._particles), chunkSize)]
-
-        executor = getThreadPool(self._numThreads)
-        list(executor.map(rebuildChunk, chunks))
+        mapChunksInParallel(self._particles, rebuildChunk)
 
     def _searchForCoveringKernelFunctions(self) -> None:
         """Search, for every particle, the kernel functions that cover it within the skin."""
@@ -580,17 +555,10 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
 
             return particlesInChunkWithChangedKernelFunctions
 
-        if self._numThreads <= 1:
-            changedParticlesPerChunk = [processParticleChunk(self._particles)]
-        else:
-            chunkSize = len(self._particles) // self._numThreads + 1
-            chunks = [self._particles[i : i + chunkSize] for i in range(0, len(self._particles), chunkSize)]
+        changedParticlesPerChunk = mapChunksInParallel(self._particles, processParticleChunk)
 
-            executor = getThreadPool(self._numThreads)
-            changedParticlesPerChunk = list(executor.map(processParticleChunk, chunks))
-
-        # Chunks are handed out in particle order and executor.map preserves that order, so the
-        # collected list is the same for any number of threads.
+        # The chunks are consecutive and their results come in their order, so the collected list is the same for any
+        # number of threads.
         self._particlesWithChangedKernelFunctions = [
             particle for chunk in changedParticlesPerChunk for particle in chunk
         ]
