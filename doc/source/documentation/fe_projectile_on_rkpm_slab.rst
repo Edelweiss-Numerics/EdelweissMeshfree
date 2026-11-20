@@ -217,3 +217,17 @@ connectivity changes, was most of the cost of an increment while it evaluated ev
 now bound the row sums of their absolute stiffness node by node, at a small share of an increment. And the
 response depends on the particle size more than on the time increment, the penalty or the symmetry: with GM7's internal
 length well below the particle size, the softening concrete is resolved by the particles, not by the nonlocal strain.
+
+What the run shows
+------------------
+
+The quarter model of the 600 mm slab (3087 particles) ran until the nose reached the stop depth of 40 mm at
+333 us, with the time increment set by the projectile's elements throughout. The checks held over the whole run: the
+kinetic energy never exceeded the initial one, action and reaction cancelled to round-off, the projectile's momentum
+followed the contact impulse to round-off, and no point was found inside. The projectile slowed from 300 to 148 m/s in
+the first 100 us and to 57 m/s at the stop; the contact force averaged over 5 us peaked at 3.3 MN after 20 to 25 us
+(the first touch, a few points at full speed, is a spike set by the penalty). At the stop, about two fifths of the
+particles had cracked, through the whole thickness and out to the supported edges, and the most crushed ones were under
+the nose and in the rear layer. The velocity history agrees with the August prototype of this model (a CDP slab, a
+wider span), which reached 43.4 mm at 398 us; a bonded interface between projectile and slab stops at 34.4 mm. The
+result depends on the particle size (see above), which the regularization of GM7 does not remove at this size.
