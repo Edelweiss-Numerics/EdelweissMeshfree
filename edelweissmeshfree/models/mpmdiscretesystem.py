@@ -35,9 +35,8 @@
 #  ---------------------------------------------------------------------
 
 """What the discrete system of a material point or RKPM model is made of: the answer an
-:class:`~edelweissmeshfree.models.mpmmodel.MPMModel` gives EdelweissFE's implicit solvers and
-:class:`~edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic` whenever they (re)build
-their discrete system, see :meth:`~edelweissmeshfree.models.mpmmodel.MPMModel.buildDiscreteSystem`."""
+:class:`~edelweissmeshfree.models.mpmmodel.MPMModel` gives EdelweissFE's solvers whenever they (re)build their discrete
+system, see :meth:`~edelweissmeshfree.models.mpmmodel.MPMModel.buildDiscreteSystem`."""
 
 from collections.abc import Callable
 
@@ -125,6 +124,87 @@ class MPMDiscreteSystem(DiscreteSystem):
         """The particles of the model, a list the solver hands out in chunks, i.e. the particles of the locations."""
 
         return self.locations.particles
+
+    @property
+    def entitiesWithOwnInertia(self) -> list:
+        """The particles: they carry their state, and with it their inertia, and their kernel functions move with them;
+        see :attr:`~edelweissfe.models.discretesystem.DiscreteSystem.entitiesWithOwnInertia`.
+
+        Returns
+        -------
+        list
+            The particles.
+        """
+
+        return self.particles
+
+    def advanceEntitiesWithOwnInertia(
+        self, dU: DofVector, timeStep: TimeStep, forEachChunk: Callable[[list, Callable], None]
+    ):
+        """Every particle takes the increment of the nodes of the kernel functions it was assigned at the start of the
+        increment (``updatePhysicsExplicit``), and moves; see
+        :meth:`~edelweissfe.models.discretesystem.DiscreteSystem.advanceEntitiesWithOwnInertia`. The particles are
+        independent of each other, so they are advanced in the solver's loop over chunks.
+
+        Parameters
+        ----------
+        dU
+            The increment of the solution.
+        timeStep
+            The increment.
+        forEachChunk
+            The solver's loop over chunks of independent entities.
+        """
+
+        time = timeStep.totalTime
+        dT = timeStep.timeIncrement
+
+        def advance(particles):
+            for particle in particles:
+                particle.updatePhysicsExplicit(dU[particle], time, dT)
+
+        forEachChunk(self.particles, advance)
+
+    def assembleInternalForceAndMomentumOfEntitiesWithOwnInertia(
+        self, forEachChunk: Callable[[list, Callable], None]
+    ) -> tuple[DofVector, DofVector] | None:
+        """The internal force of the particles at the state they accepted (``computePhysicsKernelsExplicit``) and their
+        lumped momentum (``computeLumpedMomentum``), at the nodes of their current kernel functions; see
+        :meth:`~edelweissfe.models.discretesystem.DiscreteSystem.assembleInternalForceAndMomentumOfEntitiesWithOwnInertia`.
+        Each particle adds into its own part of a scatter vector, in the solver's loop over chunks.
+
+        Parameters
+        ----------
+        forEachChunk
+            The solver's loop over chunks of independent entities.
+
+        Returns
+        -------
+        tuple[DofVector, DofVector] | None
+            The internal force and the lumped momentum; None if the model has no particles.
+        """
+
+        if not self.particles:
+            return None
+
+        internalForce = self.locations.constructDofVector()
+        momentum = self.locations.constructDofVector()
+        internalForce[:] = momentum[:] = 0.0
+
+        scatterInternalForce = internalForce.createScatterVector()
+        scatterMomentum = momentum.createScatterVector()
+
+        def evaluate(particles):
+            for particle in particles:
+                particle.computePhysicsKernelsExplicit(scatterInternalForce[particle])
+                particle.computeLumpedMomentum(scatterMomentum[particle])
+
+        forEachChunk(self.particles, evaluate)
+
+        scatterInternalForce.assembleInto(internalForce)
+        scatterMomentum.assembleInto(momentum)
+
+        return internalForce, momentum
 
     @property
     def cellsInterpolatingToMaterialPoints(self) -> list:
@@ -258,8 +338,8 @@ class MPMDiscreteSystem(DiscreteSystem):
         :math:`m_A = \\sum_p \\rho_0\\, V_{0,p}\\, T_A(\\boldsymbol{x}_p)`, as each particle reports it
         (``computeLumpedInertia``), summed over the particles; see
         :meth:`~edelweissfe.models.discretesystem.DiscreteSystem.assembleLumpedMassOfEntitiesWithOwnInertia`. The one
-        assembly of this mass: the explicit solver divides by it, the implicit dynamic solver adds it to the mass of
-        the nodes when it integrates the particles' inertia there.
+        assembly of this mass: the explicit dynamic solver ``NED`` divides by it, the implicit dynamic solver adds it to
+        the mass of the nodes when it integrates the particles' inertia there.
 
         A node carries inertia if its mass is positive beyond round-off, more than
         :data:`~edelweissmeshfree.models.mpmdiscretesystem.MASS_AT_ROUND_OFF` of the largest one; every other node
@@ -304,8 +384,8 @@ class MPMDiscreteSystem(DiscreteSystem):
         ``V`` and ``A`` of the model's node fields.
 
         The implicit dynamic solver keeps the motion in the particles with ``inertia=entities``, at the nodes
-        with ``inertia=nodes``. The explicit solver keeps it in both: the velocity of the nodes is its state,
-        and every particle takes its own from them as it advances.
+        with ``inertia=nodes``. The explicit dynamic solver ``NED`` keeps it in both: the velocity of the nodes is its
+        state, and every particle takes its own from them as it advances.
 
         Returns
         -------
@@ -351,7 +431,7 @@ class MPMDiscreteSystem(DiscreteSystem):
             The time step.
         forEachChunk
             The solver's loop over chunks of independent entities, see
-            :meth:`~edelweissfe.solvers.nonlinearimplicitstatic.NIST.forEachChunk`.
+            :meth:`~edelweissfe.solvers.base.nonlinearsolverbase.NonlinearSolverBase.forEachChunk`.
         """
 
         time = timeStep.totalTime

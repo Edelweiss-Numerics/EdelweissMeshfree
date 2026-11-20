@@ -26,7 +26,7 @@
 #  ---------------------------------------------------------------------
 """The one assembly of the lumped mass of the particles gives a node without inertia zero: a node whose mass is not
 positive, or positive only at round-off, as for a kernel function that the particles reach only where it vanishes. The
-explicit solver divides by this mass, and the implicit dynamic solver integrates the nodes it is positive at."""
+explicit dynamic solver ``NED`` divides by this mass, and the implicit dynamic solver integrates the nodes it is positive at."""
 
 from types import SimpleNamespace
 

@@ -24,12 +24,13 @@
 #  The full text of the license can be found in the file LICENSE.md at
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
-"""``MeshfreeExplicitDynamic`` evaluates the constraints at the configuration it has just accepted: the particles have
-moved, and the nodes of the kernel functions carry neither a solution nor an increment. It refuses a constraint that
-would act as if nothing had moved there (``MPMConstraintBase.actsInExplicitAnalysis``): one on the increment, such as a
-weak Dirichlet condition or an equal value, or one of EdelweissFE, whose nodes carry their solution. The penalty
-contacts act, explicit or not. A constraint switched off from outside takes no part in the step, and is not refused;
-one that is switched on is refused even while it is out of reach, since it may come within reach during the step.
+"""EdelweissFE's explicit dynamic solver ``NED`` evaluates the constraints of a meshfree model at the configuration it
+has just accepted: the particles have moved, and the nodes of the kernel functions carry neither a solution nor an
+increment. It refuses a constraint that would act as if nothing had moved there (``actsInExplicitAnalysis``): one on the
+increment, such as a weak Dirichlet condition or an equal value. The penalty contacts act, explicit or not, and so does
+a constraint of EdelweissFE, which is meant for the nodes of finite elements, which carry their total solution. A
+constraint switched off from outside takes no part in the step, and is not refused; one that is switched on is refused
+even while it is out of reach, since it may come within reach during the step.
 
 The particles are stand-ins, so that no Marmot is needed.
 """
@@ -45,6 +46,7 @@ from edelweissfe.constraints.directionalspringpenalty import (
 from edelweissfe.journal.journal import Journal
 from edelweissfe.points.node import Node
 from edelweissfe.sets.nodeset import NodeSet
+from edelweissfe.solvers.nonlinearexplicitdynamic import NED
 from edelweissfe.solvers.nonlinearexplicitstatic import NEST
 
 from edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit import (
@@ -67,7 +69,6 @@ from edelweissmeshfree.constraints.particlepenaltyweakdirichtlet import (
 )
 from edelweissmeshfree.constraints.test._residualtangent import ParticleStandIn
 from edelweissmeshfree.models.mpmmodel import MPMModel
-from edelweissmeshfree.solvers.meshfreeexplicitdynamic import MeshfreeExplicitDynamic
 
 NODES = [Node(label, np.array(x)) for label, x in enumerate([(0.5, 0.5), (1.0, 0.5), (1.0, 1.0), (0.5, 1.0)])]
 SQUARE = np.array([[0.7, 0.6], [0.9, 0.6], [0.9, 0.8], [0.7, 0.8]])
@@ -104,6 +105,14 @@ ACTING = {
             "constraint", _particle(), _signedDistanceBelowTheBoundary, _gradientOfTheSignedDistance, model
         )
     ),
+    "an EdelweissFE constraint": lambda model: (
+        DirectionalSpringPenalty(
+            "constraint",
+            model,
+            NodeSet("spring", NODES[:2]),
+            configuration=DirectionalSpringPenaltySchema(field="displacement", component=1, penalty=1e3),
+        )
+    ),
 }
 
 #: name -> a function building, from the model, a constraint that does not act in an explicit analysis
@@ -113,14 +122,6 @@ NOT_ACTING = {
     ),
     "ParticlePenaltyEqualValue": lambda model: (
         ParticlePenaltyEqualValue("constraint", model, [_particle(), _particle()], "displacement", [1], 1e3)
-    ),
-    "an EdelweissFE constraint": lambda model: (
-        DirectionalSpringPenalty(
-            "constraint",
-            model,
-            NodeSet("spring", NODES[:2]),
-            configuration=DirectionalSpringPenaltySchema(field="displacement", component=1, penalty=1e3),
-        )
     ),
 }
 
@@ -137,7 +138,7 @@ def _validate(model: MPMModel):
     ``NotImplementedError``, so a refusal must not escape it."""
 
     try:
-        MeshfreeExplicitDynamic({}, Journal(verbose=False)).validateModelCapabilities(model)
+        NED({}, Journal(verbose=False)).validateModelCapabilities(model)
     except NotImplementedError as e:
         pytest.fail(f"refused: {e}")
 
@@ -152,7 +153,7 @@ def test_a_constraint_that_would_act_as_if_nothing_had_moved_is_refused(name):
     model = _modelWith(NOT_ACTING[name])
 
     with pytest.raises(NotImplementedError, match="does not act in an explicit analysis"):
-        MeshfreeExplicitDynamic({}, Journal(verbose=False)).validateModelCapabilities(model)
+        NED({}, Journal(verbose=False)).validateModelCapabilities(model)
 
 
 @pytest.mark.parametrize("name", NOT_ACTING)
@@ -169,10 +170,10 @@ def test_a_constraint_that_is_switched_on_is_refused_even_out_of_reach(name):
     model.constraints["constraint"].withinReach = False
 
     with pytest.raises(NotImplementedError, match="does not act in an explicit analysis"):
-        MeshfreeExplicitDynamic({}, Journal(verbose=False)).validateModelCapabilities(model)
+        NED({}, Journal(verbose=False)).validateModelCapabilities(model)
 
 
-@pytest.mark.parametrize("name", [*ACTING, *[name for name in NOT_ACTING if name != "an EdelweissFE constraint"]])
+@pytest.mark.parametrize("name", [*[name for name in ACTING if name != "an EdelweissFE constraint"], *NOT_ACTING])
 def test_the_explicit_static_solver_refuses_a_meshfree_constraint(name):
     """The nodes of a meshfree constraint follow its particles, so that it has to be updated while they move, which
     ``NEST`` never does."""

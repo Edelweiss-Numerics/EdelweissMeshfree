@@ -344,9 +344,9 @@ class BaseParticle(BaseNodeCouplingEntity):
         dTime: float,
     ):
         """Explicit dynamics: take the solution increment on the kernel functions currently assigned, i.e. update the
-        state and the position of the particle, and its velocity and acceleration; see
-        :class:`~edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic`. A particle that cannot
-        take the increment requests a cutback (:class:`~edelweissfe.utils.exceptions.CutbackRequest`).
+        state and the position of the particle, and its velocity and acceleration; see the explicit dynamic solver
+        :class:`~edelweissfe.solvers.nonlinearexplicitdynamic.NED`. A particle that cannot take the increment requests
+        a cutback (:class:`~edelweissfe.utils.exceptions.CutbackRequest`), which fails the step.
 
         Parameters
         ----------

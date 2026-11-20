@@ -24,7 +24,7 @@
 #  The full text of the license can be found in the file LICENSE.md at
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
-"""The explicit meshfree solver carries the velocity of the kernel functions' nodes in the model, by node: a body
+"""EdelweissFE's explicit dynamic solver ``NED`` integrates the particles of an RKPM model. It carries the velocity of the kernel functions' nodes in the model, by node: a body
 translates over a grid of kernel functions that are not bonded to its particles, so that the active nodes change
 while it moves. A node active before and after a change keeps its velocity, a node that has just become active starts
 at rest, and the model holds the velocity of the active nodes, zero solution, and zero results outside the active
@@ -43,7 +43,10 @@ from edelweissfe.journal.journal import Journal
 from edelweissfe.models.change import Change
 from edelweissfe.outputmanagers.restart import OutputManager as RestartOutputManager
 from edelweissfe.outputmanagers.restart import RestartOutputManagerSchema
-from edelweissfe.steps.adaptivestep import AdaptiveStep
+from edelweissfe.solvers.nonlinearexplicitdynamic import NED
+from edelweissfe.steps.adaptivestepforexplicitsimulations import (
+    AdaptiveStepForExplicitSimulations,
+)
 from edelweissfe.steps.stepmanager import StepActionCollection
 from edelweissfe.utils.checkpoint import ResumeCheckpoint
 from edelweissfe.utils.exceptions import RestartError
@@ -73,7 +76,6 @@ from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
 from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
     MarmotParticleWrapper,
 )
-from edelweissmeshfree.solvers.meshfreeexplicitdynamic import MeshfreeExplicitDynamic
 
 PARTICLE_SIZE = 20.0
 KERNEL_SPACING = 28.0
@@ -98,13 +100,19 @@ def _material(youngsModulus: float) -> dict:
     }
 
 
-class _SolverRecordingTheBuildPath(MeshfreeExplicitDynamic):
-    """The explicit solver, recording what the build path of the discrete system does: every hook it calls, the
-    numbering the discrete system has then, and whether the increment and the velocity are wrapped with its
+def _ned(journal: Journal) -> NED:
+    """The explicit dynamic solver, reporting (and writing output after) every increment."""
+
+    return NED({}, journal, **{"output-frequency": 1})
+
+
+class _SolverRecordingTheBuildPath(NED):
+    """The explicit solver of :func:`_ned`, recording what the build path of the discrete system does: every hook it
+    calls, the numbering the discrete system has then, and whether the increment and the velocity are wrapped with its
     locations."""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, journal: Journal):
+        super().__init__({}, journal, **{"output-frequency": 1})
         self.hooks = []
         self.numberings = []
         self.vectorsAreOnTheLocations = []
@@ -126,8 +134,8 @@ class _SolverRecordingTheVelocityAtReconnection(_SolverRecordingTheBuildPath):
     """The explicit solver, recording the velocity of the active nodes before and after every update of the discrete
     system that changes the active nodes."""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, journal: Journal):
+        super().__init__(journal)
         self.activeNodeChanges = []
 
     def updateDiscreteSystem(self, model, change):
@@ -149,8 +157,8 @@ class _SolverRecordingTheNodesWithoutInertia(_SolverRecordingTheVelocityAtReconn
     """The explicit solver, recording at every acceptance the velocity of the active nodes without inertia, and the
     nodes among them that moved before."""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, journal: Journal):
+        super().__init__(journal)
         self.velocityOfNodesWithoutInertia = []
         self.nodesThatLostTheirInertiaWhileMoving = set()
 
@@ -260,14 +268,14 @@ def _step(
     model: MPMModel,
     journal: Journal,
     fieldOutputController: MPMFieldOutputController,
-    solver: MeshfreeExplicitDynamic,
+    solver: NED,
     nIncrements: int,
     outputManagers: list = (),
     maxNumInc: int = None,
-) -> AdaptiveStep:
+) -> AdaptiveStepForExplicitSimulations:
     """A step of the given number of increments of TIME_INCREMENT, which ends on its increment cap."""
 
-    return AdaptiveStep(
+    return AdaptiveStepForExplicitSimulations(
         number,
         model,
         fieldOutputController,
@@ -299,7 +307,7 @@ def _solve(model: MPMModel, journal: Journal, solversOfTheSteps: list, nIncremen
 def test_the_velocity_is_carried_by_node_across_a_change_of_the_active_nodes():
     journal = Journal()
     model = _translatingBody(journal)
-    solver = _SolverRecordingTheVelocityAtReconnection({}, journal)
+    solver = _SolverRecordingTheVelocityAtReconnection(journal)
 
     _solve(model, journal, [solver], [N_INCREMENTS])
 
@@ -363,7 +371,7 @@ def test_a_node_without_inertia_has_no_velocity(monkeypatch):
 
     journal = Journal()
     model = _translatingBody(journal)
-    solver = _SolverRecordingTheNodesWithoutInertia({}, journal)
+    solver = _SolverRecordingTheNodesWithoutInertia(journal)
 
     _solve(model, journal, [solver], [N_INCREMENTS])
 
@@ -384,12 +392,12 @@ def test_two_explicit_steps_are_one():
 
     journal = Journal()
     oneStep = stretchingBody(journal)
-    _solve(oneStep, journal, [MeshfreeExplicitDynamic({}, journal)], [N_INCREMENTS])
+    _solve(oneStep, journal, [_ned(journal)], [N_INCREMENTS])
     twoSteps = stretchingBody(journal)
     _solve(
         twoSteps,
         journal,
-        [MeshfreeExplicitDynamic({}, journal), MeshfreeExplicitDynamic({}, journal)],
+        [_ned(journal), _ned(journal)],
         [N_INCREMENTS // 2, N_INCREMENTS // 2],
     )
 
@@ -421,7 +429,7 @@ def _stretchingBody(journal: Journal) -> MPMModel:
 def test_particles_reaching_other_nodes_give_new_locations_on_the_same_numbering():
     journal = Journal()
     model = _stretchingBody(journal)
-    solver = _SolverRecordingTheBuildPath({}, journal)
+    solver = _SolverRecordingTheBuildPath(journal)
 
     _solve(model, journal, [solver], [N_INCREMENTS])
 
@@ -438,8 +446,8 @@ def test_new_locations_give_the_state_of_a_discrete_system_built_anew():
 
     journal = Journal()
     relocated, built = _stretchingBody(journal), _stretchingBody(journal)
-    _solve(relocated, journal, [_SolverRecordingTheBuildPath({}, journal)], [N_INCREMENTS])
-    solverBuildingAnew = _SolverWithANewNumberingForEveryChange({}, journal)
+    _solve(relocated, journal, [_SolverRecordingTheBuildPath(journal)], [N_INCREMENTS])
+    solverBuildingAnew = _SolverWithANewNumberingForEveryChange(journal)
     _solve(built, journal, [solverBuildingAnew], [N_INCREMENTS])
 
     assert solverBuildingAnew.hooks.count("numbering") > 1
@@ -455,7 +463,7 @@ def test_the_lumped_mass_is_assembled_anew_in_every_increment_not_only_for_new_l
     """The mass is that of the particles at the kernel functions as they are at the particles' current positions, so it
     changes from one increment to the next, also when no hook is called: it cannot be derived in onNewLocations."""
 
-    solver = _SolverRecordingTheBuildPath({}, Journal())
+    solver = _SolverRecordingTheBuildPath(Journal())
     assembleLumpedMassOfEntitiesWithOwnInertia = MPMDiscreteSystem.assembleLumpedMassOfEntitiesWithOwnInertia
     massesWithTheNumberOfHooksSoFar = []
 
@@ -504,7 +512,7 @@ def _writeCheckpointAndResume(tmp_path, tamper=None):
             model,
             journal,
             fieldOutputController,
-            MeshfreeExplicitDynamic({}, journal),
+            _ned(journal),
             N_INCREMENTS,
             [restartOutputManager],
             maxNumInc=N_INCREMENTS // 2,
@@ -523,9 +531,7 @@ def _writeCheckpointAndResume(tmp_path, tamper=None):
     fieldOutputController = MPMFieldOutputController(resumedModel, journal)
     fieldOutputController.initializeJob()
     try:
-        _step(
-            0, resumedModel, journal, fieldOutputController, MeshfreeExplicitDynamic({}, journal), N_INCREMENTS
-        ).solve(resumeCheckpoint)
+        _step(0, resumedModel, journal, fieldOutputController, _ned(journal), N_INCREMENTS).solve(resumeCheckpoint)
     finally:
         fieldOutputController.finalizeJob()
 
