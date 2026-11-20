@@ -92,6 +92,11 @@ class ParticlePenaltyWeakDirichlet(MPMConstraintBase):
         #: Per constrained particle, where the nodes of its kernel functions sit in the constraint's block (see
         #: :meth:`updateConnectivity`).
         self._localNodesOfParticle = []
+        #: Per constrained particle, where the constrained components of the nodes of its kernel functions sit in the
+        #: constraint's block, node after node (see :meth:`updateConnectivity`).
+        self._localDofsOfParticle = []
+        #: Per constrained particle, its kernel functions as of the last :meth:`updateConnectivity`.
+        self._kernelFunctionsOfParticle = []
         if constrain == "center":
             self._constrainVertices = None
         else:
@@ -164,7 +169,8 @@ class ParticlePenaltyWeakDirichlet(MPMConstraintBase):
 
     def updateConnectivity(self, model):
         """Collect the nodes of the kernel functions of the constrained particles, each once, ordered by label, and
-        record where each particle's nodes sit in the constraint's block.
+        record where each particle's nodes sit in the constraint's block. The nodes stay as they are, and nothing is
+        collected, if no constrained particle has other kernel functions than at the last update.
 
         Parameters
         ----------
@@ -177,12 +183,15 @@ class ParticlePenaltyWeakDirichlet(MPMConstraintBase):
             True if the nodes of the constraint changed.
         """
 
+        kernelFunctionsOfParticle = [particle.kernelFunctions for particle in self._constrainedParticles]
+        if self._nodes and kernelFunctionsOfParticle == self._kernelFunctionsOfParticle:
+            return False
+        self._kernelFunctionsOfParticle = kernelFunctionsOfParticle
+
         nodes = {
             n: i
             for i, n in enumerate(
-                sorted(
-                    set(kf.node for p in self._constrainedParticles for kf in p.kernelFunctions), key=lambda n: n.label
-                )
+                sorted(set(kf.node for kfs in kernelFunctionsOfParticle for kf in kfs), key=lambda n: n.label)
             )
         }
 
@@ -191,8 +200,11 @@ class ParticlePenaltyWeakDirichlet(MPMConstraintBase):
             hasChanged = True
 
         self._nodes = nodes
-        self._localNodesOfParticle = [
-            np.array([nodes[kf.node] for kf in particle.kernelFunctions]) for particle in self._constrainedParticles
+        self._localNodesOfParticle = [np.array([nodes[kf.node] for kf in kfs]) for kfs in kernelFunctionsOfParticle]
+        components = np.array(list(self._prescribedStepDelta), dtype=int)
+        self._localDofsOfParticle = [
+            (self._fieldSize * localNodes[:, np.newaxis] + components).ravel()
+            for localNodes in self._localNodesOfParticle
         ]
 
         return hasChanged
@@ -246,18 +258,18 @@ class ParticlePenaltyWeakDirichlet(MPMConstraintBase):
             The current time step; unused.
         """
 
-        PAtNodes = P.reshape(-1, self._fieldSize)
         components = list(self._prescribedStepDelta)
 
-        for p, localNodes, initialCoordinates in zip(
-            self._constrainedParticles, self._localNodesOfParticle, self._initialCoordinatesOfConstrainedPoints
+        for p, localDofs, initialCoordinates in zip(
+            self._constrainedParticles, self._localDofsOfParticle, self._initialCoordinatesOfConstrainedPoints
         ):
             coordinates = self._constrainedCoordinatesOf(p)
             # one row per constrained point: the interpolation vector with which the particle moves it
             G = np.array([p.getAttachedPointInterpolationVector(x) for x in coordinates])
             displacement = coordinates[:, components] - initialCoordinates[:, components]
-            # the kernel functions of a particle are on distinct nodes, so fancy indexing does not drop any
-            PAtNodes[np.ix_(localNodes, components)] += G.T @ (self._penaltyParameter * displacement)
+            # node after node, the constrained components; the kernel functions of a particle are on distinct nodes, so
+            # fancy indexing does not drop any
+            P[localDofs] += (G.T @ (self._penaltyParameter * displacement)).ravel()
 
         for i in self._prescribedStepDelta:
             self.penaltyForce[i] = np.sum(P[i :: self._fieldSize])
