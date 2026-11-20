@@ -268,13 +268,16 @@ the particles, so every increment
 The lumped mass of the particles is assembled anew in every increment, and the nodal values are coefficients of the
 current kernel functions; the finite elements keep the mass of their numbering. The lumped damping of the particles
 (the nonlocal viscosity of gradient-enhanced particles) is assembled with it, and decides, with the inertia, how a
-field is integrated. The stable time increment of the particles is bounded from their assembled tangent
+field is integrated. The stable time increment of the particles is bounded from their stiffness and the assembled
+lumped mass
 (:meth:`~edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia`) in
 the zero increment, whenever their connectivity changes, and every ``stable-increment-frequency`` increments; the time
 increment is the smaller of it and the elements' critical time step, scaled by ``courant-number``, unless the step asks
-for smaller increments. The bound evaluates every particle's tangent once: it is the Gershgorin bound of the absolute
-value of the mass-scaled tangent per block of fields, coupled by the largest eigenvalue of the small matrix of these
-blocks. It takes the tangent as it is, unsymmetric: the tangent of gradient-enhanced particles couples the stress to the
+for smaller increments. It is the Gershgorin bound of the absolute value of the mass-scaled tangent per block of fields,
+coupled by the largest eigenvalue of the small matrix of these blocks. No tangent is assembled for it: every particle
+bounds the row sums of the absolute value of its own stiffness, node by node, from the derivatives of its forces with
+respect to the increment it interpolates (Marmot), at a cost proportional to its nodes instead of their square. It takes
+the tangent as it is, unsymmetric: the tangent of gradient-enhanced particles couples the stress to the
 nonlocal field far more strongly than the nonlocal field to the strain, and an eigenvalue sees the geometric mean of the
 two couplings, the symmetric part their arithmetic mean. The damping does not lower the bound: ``NED`` takes it with the
 mean of the velocities before and after the update, which leaves the stability limit of the central differences where

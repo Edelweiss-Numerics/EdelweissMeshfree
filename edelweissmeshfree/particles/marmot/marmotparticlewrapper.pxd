@@ -169,6 +169,12 @@ cdef extern from "Marmot/MarmotParticle.h":
 
         void computeLumpedDamping ( double* cLumped)
 
+        void computeBoundOfAbsoluteStiffnessTimes( const double* columnWeights,
+                                                   int nColumns,
+                                                   double* bound,
+                                                   double timeNew,
+                                                   double dT) except +
+
 
 
 

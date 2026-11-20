@@ -438,9 +438,10 @@ class MPMDiscreteSystem(DiscreteSystem):
     def stableTimeIncrementOfEntitiesWithOwnInertia(
         self, forEachChunk: Callable[[list, Callable], None]
     ) -> float | None:
-        """A bound of the stable time increment of ``NED``'s explicit scheme for the particles, from their tangents at
-        the current state (``computeTangentOfTheCurrentState``) and the assembled lumped mass and damping. Every
-        particle's tangent is evaluated once.
+        """A bound of the stable time increment of ``NED``'s explicit scheme for the particles, from their stiffness at
+        the current state and the assembled lumped mass and damping. No stiffness is assembled: every particle bounds
+        the row sums of the absolute value of its own (``computeBoundOfAbsoluteStiffnessTimes``), at a cost
+        proportional to its nodes.
 
         It is a property of the ASSEMBLED system: a particle's own bound, :math:`\\lambda_\\mathrm{max}(\\boldsymbol{M}_p^{-1}
         \\boldsymbol{K}_p)` as for a finite element, is unbounded, because a particle's stiffness couples nodes at which
@@ -469,17 +470,28 @@ class MPMDiscreteSystem(DiscreteSystem):
         :math:`\\boldsymbol{C}^{-1/2}` on the first-order set). :math:`|\\boldsymbol{K}|` is accumulated particle by
         particle, which bounds the absolute value of the sum.
 
-        **The bound of** :math:`\\rho(|\\boldsymbol{S}|)` **from one evaluation of the tangents.** The Collatz-Wielandt
+        **The bound of** :math:`\\rho(|\\boldsymbol{S}|)` **from one pass over the particles.** The Collatz-Wielandt
         bound :math:`\\rho(|\\boldsymbol{S}|) \\le \\max_i (|\\boldsymbol{S}|\\boldsymbol{w})_i / w_i` holds for every
         positive :math:`\\boldsymbol{w}`; the weights are taken constant on each field: :math:`\\boldsymbol{w} =
-        \\sum_f c_f \\boldsymbol{1}_f`. One evaluation of the tangents gives the row sums of :math:`|\\boldsymbol{S}|`
-        over the columns of each field, :math:`Z_{if} = \\sum_{j \\in f} |S_{ij}|`, and with them the field matrix
-        :math:`Q_{gf} = \\max_{i \\in g} Z_{if}`, the largest row sum of the block of fields :math:`g, f`. With
+        \\sum_f c_f \\boldsymbol{1}_f`. The particles give upper bounds :math:`\\hat{Z}_{if} \\ge Z_{if}` of the row
+        sums of :math:`|\\boldsymbol{S}|` over the columns of each field, :math:`Z_{if} = \\sum_{j \\in f} |S_{ij}|`
+        (each particle its share, ``computeBoundOfAbsoluteStiffnessTimes`` with the weights :math:`\\boldsymbol{D}` on
+        the columns of the field), and with them the field matrix :math:`Q_{gf} = \\max_{i \\in g} \\hat{Z}_{if}`, the
+        largest row sum of the block of fields :math:`g, f`. With
         :math:`\\boldsymbol{c}` the Perron vector of :math:`\\boldsymbol{Q}`, every row :math:`i` of field :math:`g`
         gives :math:`(|\\boldsymbol{S}|\\boldsymbol{w})_i \\le (\\boldsymbol{Q}\\boldsymbol{c})_g = \\rho(\\boldsymbol{Q})
         w_i`, so :math:`\\rho(|\\boldsymbol{S}|) \\le \\rho(\\boldsymbol{Q})`: the Gershgorin bound per block of fields,
         coupled by the largest eigenvalue of the small field matrix, which takes the geometric mean of the coupling
         blocks. With a single field it is the Gershgorin bound.
+
+        **The row sums without the stiffness.** A particle's stiffness has as many blocks as the square of its nodes, but
+        it sees the nodal increments only through the increment it interpolates at its evaluation point (value,
+        gradient and, if stabilized, second gradient): the rows of node :math:`A` are linear in the shape functions of
+        the other node :math:`B`, with factors of node :math:`A` alone. Marmot sums :math:`w_B |K_{Ai,Bk}|` over
+        :math:`B` from a few weighted moments of the shape functions, exactly for the value and by the Cauchy-Schwarz
+        inequality over the nodes for the gradients, which keeps their directions (2/sqrt(3) of the exact sum for
+        gradients spread evenly in 3D, exact for parallel ones). Every inequality bounds from above, so the stable
+        increment stays a lower bound of the exact one.
 
         The result is scaled by :data:`STABLE_FRACTION_OF_THE_TANGENT_LIMIT`, since the explicit scheme of the
         particles is not exactly integrated with their tangent: their NSNI stabilization acts on the increment.
@@ -521,30 +533,25 @@ class MPMDiscreteSystem(DiscreteSystem):
                     orderOfGroup.append(order)
         nGroups = len(orderOfGroup)
 
-        # Z_if = sum_{j in f} |S_ij|, assembled column by column
+        # Z_if >= sum_{j in f} |S_ij|, assembled column by column
         rowSums = [self.locations.constructDofVector() for _ in range(nGroups)]
         for rowSum in rowSums:
             rowSum[:] = 0.0
         scatterRowSums = [rowSum.createScatterVector() for rowSum in rowSums]
 
-        def addAbsoluteTangentRowSums(particles):
+        def addAbsoluteStiffnessRowSums(particles):
             for particle in particles:
-                nDofOfParticle = particle.nDof
-                K = np.zeros(nDofOfParticle * nDofOfParticle)
-                particle.computeTangentOfTheCurrentState(K)
                 indices = self.locations.ofEntity[particle]
-                scaledIndicatorOfGroup = np.zeros((nDofOfParticle, nGroups))
                 inAGroup = groupOfDof[indices] >= 0
+                scaledIndicatorOfGroup = np.zeros((len(indices), nGroups), order="F")
                 scaledIndicatorOfGroup[inAGroup, groupOfDof[indices][inAGroup]] = scaling[indices][inAGroup]
-                # the tangent is column-major: row i is the equation of degree of freedom i
-                absoluteTangentRowSums = np.abs(K.reshape(nDofOfParticle, nDofOfParticle, order="F")) @ (
-                    scaledIndicatorOfGroup
-                )
+                absoluteStiffnessRowSums = np.zeros((len(indices), nGroups), order="F")
+                particle.computeBoundOfAbsoluteStiffnessTimes(scaledIndicatorOfGroup, absoluteStiffnessRowSums)
                 for group, scatterRowSum in enumerate(scatterRowSums):
                     ofTheParticle = scatterRowSum[particle]
-                    ofTheParticle += absoluteTangentRowSums[:, group]
+                    ofTheParticle += absoluteStiffnessRowSums[:, group]
 
-        forEachChunk(self.particles, addAbsoluteTangentRowSums)
+        forEachChunk(self.particles, addAbsoluteStiffnessRowSums)
         Z = np.zeros((nDof, nGroups))
         for group, (rowSum, scatterRowSum) in enumerate(zip(rowSums, scatterRowSums)):
             scatterRowSum.assembleInto(rowSum)

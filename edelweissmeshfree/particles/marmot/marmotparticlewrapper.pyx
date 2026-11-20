@@ -283,6 +283,18 @@ cdef class MarmotParticleWrapper:
         finally:
             self._initializeStateVarsTemp()
 
+    def computeBoundOfAbsoluteStiffnessTimes(self, double[::1, :] W, double[::1, :] bound):
+        """Add an upper bound of the absolute value of the stiffness at the current state times the weights, which
+        leaves the state unchanged; see
+        :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeBoundOfAbsoluteStiffnessTimes`. Marmot
+        evaluates a zero increment on the working copy of the state, which is then reset to the state."""
+
+        self._initializeStateVarsTemp()
+        try:
+            self._marmotParticle.computeBoundOfAbsoluteStiffnessTimes(&W[0, 0], W.shape[1], &bound[0, 0], 0.0, 1.0)
+        finally:
+            self._initializeStateVarsTemp()
+
     cpdef void _initializeStateVarsTemp(self, ) nogil:
         self._stateVarsTemp[:] = self._stateVars
 

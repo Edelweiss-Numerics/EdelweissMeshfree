@@ -150,7 +150,8 @@ The time increment
 ------------------
 
 ``NED`` takes the smaller of the critical time step of the elements (their own eigenvalue bound) and the bound of the
-stable time increment of the particles, computed from their assembled tangent, and scales it by ``courant-number``.
+stable time increment of the particles, bounded from their stiffness without assembling it, and scales it by
+``courant-number``.
 The bound of the particles is computed anew whenever the connectivity changes (see :doc:`choosing_a_solver`,
 "Explicit dynamics"), which here is nearly every increment. It takes the tangent of the gradient-enhanced particles as
 it is, unsymmetric: while the concrete under the nose is crushed, GM7's stress depends on the nonlocal strain through
@@ -213,6 +214,7 @@ scatter of two runs: the runs are not bitwise reproducible, since threaded sums 
 time increment through the bound of the particles.
 
 Two findings matter more than any of these. The bound of the particles' stable time increment, taken whenever the
-connectivity changes, is still most of the cost of an increment: one evaluation of every particle's tangent. And the
+connectivity changes, was most of the cost of an increment while it evaluated every particle's tangent; the particles
+now bound the row sums of their absolute stiffness node by node, at a small share of an increment. And the
 response depends on the particle size more than on the time increment, the penalty or the symmetry: with GM7's internal
 length well below the particle size, the softening concrete is resolved by the particles, not by the nonlocal strain.
