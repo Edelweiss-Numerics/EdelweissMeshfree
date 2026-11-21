@@ -61,7 +61,7 @@ class _LocationsOfOneDofPerParticle:
         self.cellElements = []
         self.ofEntity = {particle: np.array([index]) for index, particle in enumerate(particles)}
         self.numbering = SimpleNamespace(idcsOfFieldsInDofVector={"displacement": np.arange(len(particles))})
-        self.scatterTemplate = ScatterDofVectorTemplate(self, len(particles))
+        self.scatterTemplate = ScatterDofVectorTemplate(self.ofEntity, len(particles))
 
     def constructDofVector(self) -> DofVector:
         return DofVector(len(self.ofEntity), self)
