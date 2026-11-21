@@ -273,7 +273,8 @@ cdef class MarmotParticleWrapper:
     def computeTangentOfTheCurrentState(self, double[::1] K):
         """The tangent at the current state, which is left unchanged; see
         :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeTangentOfTheCurrentState`. A zero
-        increment is evaluated on the working copy of the state, which is then reset to the state."""
+        increment is evaluated on the working copy of the state, which is then reset to the state; over a unit time
+        increment at time zero, see there."""
 
         cdef double[::1] zero = np.zeros(self.nDof)
         cdef double[::1] P = np.zeros(self.nDof)
