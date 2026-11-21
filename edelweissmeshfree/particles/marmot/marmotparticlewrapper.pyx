@@ -271,7 +271,7 @@ cdef class MarmotParticleWrapper:
         self._marmotParticle.computeLumpedDamping(&cLumped[0])
 
     def computeTangentOfTheCurrentState(self, double[::1] K):
-        """The tangent at the current state, which is left unchanged; see
+        """The tangent at the current state, whose state variables are left unchanged; see
         :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeTangentOfTheCurrentState`. A zero
         increment is evaluated on the working copy of the state, which is then reset to the state; over a unit time
         increment at time zero, see there."""
@@ -286,7 +286,7 @@ cdef class MarmotParticleWrapper:
 
     def computeBoundOfAbsoluteStiffnessTimes(self, double[::1, :] W, double[::1, :] bound):
         """Add an upper bound of the absolute value of the stiffness at the current state times the weights, which
-        leaves the state unchanged; see
+        leaves the state variables unchanged; see
         :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeBoundOfAbsoluteStiffnessTimes`. Marmot
         evaluates a zero increment on the working copy of the state, which is then reset to the state; over a unit
         time increment at time zero, as
