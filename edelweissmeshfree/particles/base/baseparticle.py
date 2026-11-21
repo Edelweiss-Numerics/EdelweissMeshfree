@@ -445,8 +445,9 @@ class BaseParticle(BaseNodeCouplingEntity):
         bound: np.ndarray,
     ):
         """Explicit dynamics: add an upper bound of :math:`|\\boldsymbol{K}|\\, \\boldsymbol{W}`, the absolute value of
-        the stiffness at the current state (the tangent of :meth:`computeTangentOfTheCurrentState`, without inertia)
-        times nonnegative weights, which leaves the state unchanged. The stiffness itself is not assembled: the bound
+        the stiffness at the current state (the tangent of :meth:`computeTangentOfTheCurrentState`, without inertia,
+        of a zero increment over a unit time increment, see there) times nonnegative weights, which leaves the state
+        unchanged. The stiffness itself is not assembled: the bound
         costs as much as the nodes, the stiffness as their square. It is what the stable time increment of the
         particles is bounded with
         (:meth:`~edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia`).
