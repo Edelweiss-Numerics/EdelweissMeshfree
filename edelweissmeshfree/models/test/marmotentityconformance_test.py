@@ -118,6 +118,19 @@ def test_every_marmot_wrapper_has_every_public_member_of_the_entity_protocol():
         assert [name for name in members if name not in dir(wrapper)] == [], wrapper.__name__
 
 
+def test_the_marmot_particle_has_every_public_member_of_the_particle_contract():
+    """BaseParticle is the documented contract of a particle; the Marmot wrapper, a Cython extension type, cannot
+    inherit from it, so this test keeps the two from drifting apart."""
+
+    from edelweissmeshfree.particles.base.baseparticle import BaseParticle
+    from edelweissmeshfree.particles.marmot import marmotparticlewrapper
+
+    wrapper = _compiled(marmotparticlewrapper).MarmotParticleWrapper
+    members = [name for name in dir(BaseParticle) if not name.startswith("_")]
+
+    assert [name for name in members if name not in dir(wrapper)] == []
+
+
 @pytest.mark.parametrize("makeEntity, changesWithMotion", [(_cell, False), (_particle, True)])
 def test_a_particle_changes_its_connectivity_with_the_motion_and_a_cell_does_not(makeEntity, changesWithMotion):
     entity = makeEntity()
