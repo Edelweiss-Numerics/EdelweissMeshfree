@@ -129,17 +129,6 @@ class BaseParticle(BaseNodeCouplingEntity):
         """The kernel functions assigned to the particle."""
 
     @abstractmethod
-    def getBoundingBox(
-        self,
-    ) -> np.ndarray:
-        """Get the bounding box of the particle.
-
-        Returns
-        -------
-        np.ndarray
-            All coordinates for all bounding vertices."""
-
-    @abstractmethod
     def getVertexCoordinates(
         self,
     ) -> np.ndarray:
@@ -470,13 +459,14 @@ class BaseParticle(BaseNodeCouplingEntity):
         """
 
     @abstractmethod
-    def assignMeshfreeKernelFunctions(self, kernelFunctions: list[BaseMeshfreeKernelFunction]):
-        """Assign the meshfree kernel functions to the particle.
+    def assignKernelFunctions(self, kernelFunctions: list[BaseMeshfreeKernelFunction]):
+        """Assign the meshfree kernel functions whose support covers the particle, as the particle managers do after
+        every search.
 
         Parameters
         ----------
-        shapeFunctions
-            The meshfree shape functions.
+        kernelFunctions
+            The kernel functions.
         """
 
     @abstractmethod
