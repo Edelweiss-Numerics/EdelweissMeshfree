@@ -123,17 +123,6 @@ class BaseParticle(BaseNodeCouplingEntity):
         """The kernel functions assigned to the particle."""
 
     @abstractmethod
-    def getBoundingBox(
-        self,
-    ) -> np.ndarray:
-        """Get the bounding box of the particle.
-
-        Returns
-        -------
-        np.ndarray
-            All coordinates for all bounding vertices."""
-
-    @abstractmethod
     def getVertexCoordinates(
         self,
     ) -> np.ndarray:
@@ -344,9 +333,9 @@ class BaseParticle(BaseNodeCouplingEntity):
         dTime: float,
     ):
         """Explicit dynamics: take the solution increment on the kernel functions currently assigned, i.e. update the
-        state and the position of the particle, and its velocity and acceleration; see
-        :class:`~edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic`. A particle that cannot
-        take the increment requests a cutback (:class:`~edelweissfe.utils.exceptions.CutbackRequest`).
+        state and the position of the particle, and its velocity and acceleration; see the explicit dynamic solver
+        :class:`~edelweissfe.solvers.nonlinearexplicitdynamic.NED`. A particle that cannot take the increment requests
+        a cutback (:class:`~edelweissfe.utils.exceptions.CutbackRequest`), which fails the step.
 
         Parameters
         ----------
@@ -401,14 +390,51 @@ class BaseParticle(BaseNodeCouplingEntity):
             The lumped momentum to augment, one entry per degree of freedom.
         """
 
-    @abstractmethod
-    def assignMeshfreeKernelFunctions(self, kernelFunctions: list[BaseMeshfreeKernelFunction]):
-        """Assign the meshfree kernel functions to the particle.
+    def computeLumpedDamping(
+        self,
+        C: np.ndarray,
+    ):
+        """Explicit dynamics: add the lumped damping of the particle, on the kernel functions currently assigned: the
+        coefficient of each field's first time derivative, as :meth:`computeLumpedInertia` holds the one of the second.
+        A gradient-enhanced particle reports the nonlocal viscosity there, which integrates a first-order nonlocal field
+        on its own and damps a second-order one. The default adds nothing, which is no damping.
 
         Parameters
         ----------
-        shapeFunctions
-            The meshfree shape functions.
+        C
+            The lumped damping to augment, one entry per degree of freedom.
+        """
+
+    @abstractmethod
+    def computeTangentOfTheCurrentState(
+        self,
+        K: np.ndarray,
+    ):
+        """Explicit dynamics: the tangent of the internal force with respect to the degrees of freedom of the kernel
+        functions currently assigned, at the current state, which is left unchanged (a zero increment, evaluated on a
+        copy of the state). Without inertia. It is what the stable time increment of the particles is bounded with
+        (:meth:`~edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia`).
+
+        The zero increment is taken over a unit time increment, at time zero: the time increment is only positive, as a
+        material may divide by it, and the tangent of a rate-independent material does not depend on it. For a
+        rate-dependent material, e.g. with a Duvaut-Lions viscosity, it is the tangent relaxed over that time, softer
+        than the response within an explicit increment, and the bound taken from it may be too large.
+
+        Parameters
+        ----------
+        K
+            The tangent to define, column-major, ``nDof x nDof``.
+        """
+
+    @abstractmethod
+    def assignKernelFunctions(self, kernelFunctions: list[BaseMeshfreeKernelFunction]):
+        """Assign the meshfree kernel functions whose support covers the particle, as the particle managers do after
+        every search.
+
+        Parameters
+        ----------
+        kernelFunctions
+            The kernel functions.
         """
 
     @abstractmethod

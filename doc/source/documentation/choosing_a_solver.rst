@@ -107,8 +107,8 @@ onto EdelweissFE's as follows:
     * - ``skipZeroIncrements`` (it kept the zero increment and skipped only its solve)
       - EdelweissFE's implicit dynamic solver skips the solve of a zero-length increment by itself; for a quasi-static
         solver, a time stepper without the zero increment (``makeZeroIncrementFirst=False``). Neither applies to
-        ``MeshfreeExplicitDynamic``: its step starts with the zero increment, which evaluates the forces of the
-        configuration the step starts from, and takes its velocity (see `Explicit dynamics`_)
+        ``NED``: its step starts with the zero increment, which evaluates the forces of the configuration the step
+        starts from, and takes its velocity (see `Explicit dynamics`_)
     * - ``particle.setProperty("newmark-beta beta", ...)`` and ``"newmark-beta gamma"`` under a quasi-static solver
       - the solver ``NID`` with its options ``newmarkBeta``, ``newmarkGamma`` (see `Implicit dynamics`_); the
         implicit solvers set the particles' Newmark parameters themselves
@@ -192,12 +192,12 @@ the solver option ``inertia`` selects (``entities``: in the particles):
         nodes of the finite elements only. With VCI, the particles' mass :math:`\sum_p \rho_0 V_0 T_A N_B` is not
         symmetric, so the discrete energy is not exactly conserved.
     * - ``nodes``
-      - ``NID``, at the nodes of the kernel functions, with the particles' lumped mass (the one the explicit solver
+      - ``NID``, at the nodes of the kernel functions, with the particles' lumped mass (the one ``NED``
         divides by, assembled anew in every increment, since the particles move); the particles are quasi-static.
         The velocity and the acceleration of these nodes are the model's ``V`` and ``A``, carried by node from one
         increment to the next; a node that has just become active starts at rest, and a node without positive mass is
         quasi-static.
-      - The error of the explicit solver: the nodal velocity and acceleration are coefficients of the kernel functions
+      - The error of ``NED``: the nodal velocity and acceleration are coefficients of the kernel functions
         of the increment they were computed on, and lose that meaning when the support of the particles changes.
         The acceleration at the start of a step is computed from equilibrium, for these nodes as for every node.
 
@@ -206,8 +206,8 @@ velocity and acceleration of the kernel functions' nodes. Nothing transfers the 
 projection from the particles to the nodes is not offered: it works poorly). A step whose mode would take the motion
 from where the model does not hold it therefore refuses to start: ``nodes`` after a step in ``entities``, or after an
 initial velocity given to the particles, and ``entities`` after a step in ``nodes``. Keep the mode of the step before,
-or let a quasi-static step bring the model to rest in between. After the explicit solver, which keeps the motion in
-both places, either mode may follow.
+or let a quasi-static step bring the model to rest in between. After ``NED``, which keeps the motion in both places,
+either mode may follow.
 
 In both, ``P`` is the internal force with the inertial force (see EdelweissFE's "Node field results"): the particles'
 own in ``entities``, the solver's at the nodes in ``nodes``. The zero increment before the first increment of a step
@@ -223,81 +223,90 @@ coupled model.
 Explicit dynamics
 -----------------
 
-An RKPM model in explicit dynamics is solved by
-:class:`~edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic`, an EdelweissFE solver built into an
-EdelweissFE step like the implicit ones. It integrates particles only; finite elements, material points, cell elements
-and constraints with Lagrange multipliers are refused. So is a constraint that does not act in an explicit analysis
-(``actsInExplicitAnalysis``, see :doc:`constraints`): the constraints are evaluated at the configuration just accepted,
-where the nodes of the kernel functions carry neither a solution nor an increment, so a weak Dirichlet condition or an
-equal value on the increment would act as if nothing had moved. The penalty contacts act, explicit or not.
+An RKPM model, alone or with finite elements, is solved in explicit dynamics by EdelweissFE's ``NED`` (or
+``NEDParallel``, which advances and evaluates the particles on all threads), built into an
+``AdaptiveStepForExplicitSimulations`` like any EdelweissFE step. The particles are what ``NED`` calls entities that
+carry their own inertia; its documentation (:class:`~edelweissfe.solvers.nonlinearexplicitdynamic.NED`, "Entities that
+carry their own inertia") gives the scheme. Material points, cells, cell elements and constraints with Lagrange
+multipliers are refused. So is a constraint that does not act in an explicit analysis (``actsInExplicitAnalysis``, see
+:doc:`constraints`): the constraints are evaluated at the configuration just accepted, where the nodes of the kernel
+functions carry neither a solution nor an increment, so a weak Dirichlet condition or an equal value on the increment
+would act as if nothing had moved. The penalty contacts act, explicit or not.
 
 .. code-block:: python
 
-    from edelweissfe.steps.adaptivestep import AdaptiveStep
+    from edelweissfe.solvers.nonlinearexplicitdynamicparallel import NEDParallel
+    from edelweissfe.steps.adaptivestepforexplicitsimulations import AdaptiveStepForExplicitSimulations
     from edelweissfe.steps.stepmanager import StepActionCollection
-
-    from edelweissmeshfree.solvers.meshfreeexplicitdynamic import MeshfreeExplicitDynamic
 
     model.particleManagers.append(particleManager)
     stepActions = StepActionCollection()
     stepActions["distributedload"][pressure.name] = pressure
 
-    step = AdaptiveStep(
-        0, model, fieldOutputController, journal, {}, MeshfreeExplicitDynamic({}, journal), outputManagers, stepActions,
-        stepLength=tMax, startInc=increment, maxInc=increment, minInc=increment, maxNumInc=1000,
+    step = AdaptiveStepForExplicitSimulations(
+        0, model, fieldOutputController, journal, {}, NEDParallel({}, journal, **{"output-frequency": 1}),
+        outputManagers, stepActions, stepLength=tMax, startInc=increment, maxInc=increment, minInc=increment,
+        maxNumInc=1000,
     )
     step.solve()
 
-Why it is not EdelweissFE's explicit solver ``NED``
-***************************************************
+``NED`` writes field output and checkpoints, and reports its energy balance, every ``output-frequency`` increments
+(default 1000).
 
-Both integrate with the same leapfrog: the velocity half an increment behind the displacement, divided by a lumped mass,
-the first increment of motion a half step. They differ in what they integrate. ``NED`` advances nodes that carry their
-total solution on a fixed mesh: an element advances its state and returns its force in one call, the lumped mass is
-assembled once per mesh, and a stable increment follows from the element wave speeds. The kernel functions of an RKPM
-model move with its particles, and the state lives in the particles. Every increment therefore
+The increment
+*************
 
-1. advances the particles on the kernel functions they were assigned at its start,
-2. lets the model assign them to the kernel functions they reach now, and
-3. evaluates the internal forces, the lumped mass and the momentum on the new kernel functions.
+The leapfrog is ``NED``'s: the velocity half an increment behind the displacement, divided by a lumped mass, the first
+increment of motion a half step. The kernel functions of an RKPM model move with its particles, and the state lives in
+the particles, so every increment
 
-The lumped mass is assembled anew in every increment, and the nodal values are coefficients of the current kernel
-functions. ``NED``'s stable increment, damping, multi-point constraints, Dirichlet conditions by prescribed velocity and
-energy balance need what particles do not provide, so the increment is chosen by the step.
+1. advances the particles on the kernel functions they were assigned at its start (and computes the finite elements),
+2. lets the model assign the particles to the kernel functions they reach now, and
+3. evaluates the internal forces, the lumped mass and the momentum of the particles on the new kernel functions, with
+   the loads and the constraints.
+
+The lumped mass of the particles is assembled anew in every increment, and the nodal values are coefficients of the
+current kernel functions; the finite elements keep the mass of their numbering. The lumped damping of the particles
+(the nonlocal viscosity of gradient-enhanced particles) is assembled with it, and decides, with the inertia, how a
+field is integrated. The stable time increment of the particles is bounded from their assembled tangent
+(:meth:`~edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia`) in
+the zero increment, whenever their connectivity changes, and every ``stable-increment-frequency`` increments; the time
+increment is the smaller of it and the elements' critical time step, scaled by ``courant-number``, unless the step asks
+for smaller increments. The tangent is that of a zero increment over a unit time increment: a rate-independent material
+does not depend on the time increment, but for a rate-dependent one, e.g. with a Duvaut-Lions viscosity, it is the
+tangent relaxed over that time, softer than the response within an explicit increment, and the bound may be too large;
+take a smaller ``courant-number`` there.
 
 What to know
 ************
 
-- **The zero increment.** The first increment of a step must be the zero increment (the default of a step): it
-  assembles the lumped mass of the configuration the step starts from. If the model holds the motion at its nodes
-  (after a step of this solver, or of ``NID`` integrating the inertia at the nodes), the step continues it as ``NED``
-  does: from the velocity of the nodes and the net force of their acceleration. Otherwise it evaluates the forces of
-  the configuration and projects the velocity from the particles' momentum: the initial velocity given to the
-  particles, or the velocity of a step of ``NID`` that integrated the inertia in the particles.
+- **The zero increment.** The first increment of a step must be the zero increment (an
+  ``AdaptiveStepForExplicitSimulations`` always begins with it): the particles take an increment of zero length, and
+  the lumped mass of the configuration the step starts from is assembled. If the model holds the motion at the nodes of
+  the kernel functions (after a step of ``NED``, or of ``NID`` integrating the inertia at the nodes), the step
+  continues it: from the velocity of the nodes and the net force of their acceleration. Otherwise it evaluates the
+  forces of the configuration and projects the velocity from the particles' momentum: the initial velocity given to the
+  particles, or the velocity of a step of ``NID`` that integrated the inertia in the particles. The nodes of finite
+  elements always start from the model's velocity.
 - **The velocity** of the kernel functions' nodes is the model's: it is written to the entry ``V`` of the node fields
   at acceptance, and read back by node whenever the discrete system gets a new numbering, also at the start of a step.
   A node keeps its velocity while the active nodes change around it, and a node that has just become active starts at
-  rest.
-  With the option ``projectVelocityEveryIncrement=True``, it is projected from the particles' momentum in every
-  increment instead, which dissipates more.
-- **Consecutive steps.** As in ``NED``, a step leaves the velocity and the acceleration at its end time: within the
-  step, the velocity lags half an increment behind, and the end of the step advances it by that half increment. A
-  step after a step of this solver therefore continues the leapfrog as though the two steps were one.
+  rest. With the option ``project-velocity-every-increment``, it is projected from the particles' momentum in every
+  increment instead, which dissipates more (example 141 runs it in a variant).
+- **Consecutive steps.** A step leaves the velocity and the acceleration at its end time: within the step, the velocity
+  lags half an increment behind, and the end of the step advances it by that half increment. A step after a step of
+  ``NED`` therefore continues the leapfrog as though the two steps were one.
 - **The node field results** (see EdelweissFE's "Node field results"): ``dU`` is the increment on the kernel functions
-  it was taken on, ``P`` the internal force with the inertial force, :math:`\boldsymbol{f}_\mathrm{int} +
-  \boldsymbol{M} \boldsymbol{a}`, ``A`` the acceleration :math:`\boldsymbol{a} = \boldsymbol{M}^{-1}
-  \boldsymbol{f}`, and ``V`` the half-step velocity, as in ``NED``; ``U`` is zero, since the nodes of the kernel
-  functions carry no total solution. ``P``, ``V`` and ``A`` are written on the kernel functions the increment ends on,
-  ``dU`` on those it started on: a node that left the active domain in that increment keeps its ``dU``.
+  it was taken on, ``P`` the internal force with the inertial force, ``A`` the acceleration, and ``V`` the half-step
+  velocity; ``U`` is zero on the nodes of the kernel functions, which carry no total solution. ``P``, ``V`` and ``A``
+  are written on the kernel functions the increment ends on, ``dU`` on those it started on: a node that left the active
+  domain in that increment keeps its ``dU``.
 - **The discrete system** follows the particles through the one build path of EdelweissFE's solvers (see
-  EdelweissFE's *What the solver asks the model*). The model classifies a change of the connectivity
-  (:class:`~edelweissfe.models.change.Change`). When the active nodes cannot change (bonded kernel functions, no
-  material point managers), it is a change of the locations: the discrete system keeps its numbering and locates the
-  changed particles and the constraints anew, and the solver wraps its increment and its velocity with the new
-  locations, their values kept. Otherwise it is a change of the numbering: the model builds a new discrete system, and
-  the solver builds the increment and the velocity, which it reads by node from the model. Nothing changed: nothing to
-  do. The lumped mass is no part of this: it is a function of the particles' current positions, and is assembled in
-  every increment.
+  EdelweissFE's *What the solver asks the model*). When the active nodes cannot change (bonded kernel functions, no
+  material point managers), a change of the connectivity is a change of the locations: the solver wraps its vectors
+  with the new locations, their values kept. Otherwise it is a change of the numbering, and the solver reads the state
+  by node from the model; the stable time increment and the classification of the fields, which belong to the mesh, are
+  kept.
 - **Nodes without mass.** A kernel function that the particles reach only where it vanishes has no positive lumped
   mass; its node has no equation of motion and has no velocity, also after it lost its mass while it moved.
 - **A particle that cannot take an increment** ends the step with ``StepFailed``: the increment is set by stability,
@@ -305,10 +314,11 @@ What to know
 - **Pressure.** A particle pressure is assembled as in implicit runs: as for the finite elements, a positive pressure
   pushes on the face, against its outward normal.
 - **Restart** works as for the implicit solvers (see above): the model's checkpoint carries the half-step velocity,
-  the solver's the net force and the inverse lumped mass, with the digest of the numbering they are vectors of. The
-  resumed step refuses to take them over if its discrete system, built from the resumed model, has another numbering,
-  e.g. because a neighbour list skin makes the first search of the resumed run admit other kernel functions than the
-  checkpointed one had. It also refuses a checkpoint that holds no digest.
+  the solver's the net force and the lumped mass of the particles, with the digest of the numbering they are vectors
+  of; the resumed step finds the connectivity of the particles again. The resumed step refuses to take the
+  vectors over if its discrete system has another numbering, e.g. because a neighbour list skin makes the search of the
+  resumed run admit other kernel functions than the checkpointed one had. It also refuses a checkpoint that holds no
+  digest.
 
 Choosing a linear solver
 ------------------------

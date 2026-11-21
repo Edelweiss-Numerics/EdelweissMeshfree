@@ -33,18 +33,21 @@
 
 import numpy as np
 import pytest
+from edelweissfe.utils.exceptions import ModuleNotBuilt
 
 
 @pytest.hookimpl(wrapper=True)
 def pytest_runtest_call(item):
-    """Automatically skip tests that raise NotImplementedError.
+    """Skip a test that needs a compiled part this environment does not have: a Cython extension of EdelweissMeshfree
+    that was not built, or a Marmot particle, material point, cell or material whose module is not part of the Marmot
+    build (:class:`~edelweissfe.utils.exceptions.ModuleNotBuilt`).
 
-    This handles the case where optional Marmot modules (particles,
-    materialpoints, cells) are not installed in the current environment.
+    Only that is skipped. Every other exception fails the test, including the ``NotImplementedError`` with which a
+    solver refuses a model.
     """
     try:
         return (yield)
-    except NotImplementedError as e:
+    except ModuleNotBuilt as e:
         pytest.skip(str(e))
 
 
