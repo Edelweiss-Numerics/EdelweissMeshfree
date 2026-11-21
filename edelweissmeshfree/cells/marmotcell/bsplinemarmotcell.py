@@ -1,7 +1,9 @@
+from edelweissfe.utils.exceptions import ModuleNotBuilt
+
 from edelweissmeshfree.cells.marmotcell.marmotcell import MarmotCellWrapper
 
 
 # Mock for bsplinemarmotcell.pyx
 class BSplineMarmotCellWrapper(MarmotCellWrapper):
     def __init__(self, *args, **kwargs):
-        raise NotImplementedError("bsplinemarmotcell not available in this environment")
+        raise ModuleNotBuilt("bsplinemarmotcell is not built in this environment")

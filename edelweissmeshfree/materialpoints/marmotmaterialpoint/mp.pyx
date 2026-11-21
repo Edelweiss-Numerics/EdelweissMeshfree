@@ -43,7 +43,7 @@ cimport numpy as np
 
 cimport edelweissmeshfree.materialpoints.marmotmaterialpoint.mp
 
-from edelweissfe.utils.exceptions import CutbackRequest
+from edelweissfe.utils.exceptions import CutbackRequest, ModuleNotBuilt
 
 from libc.stdlib cimport free, malloc
 from libcpp.memory cimport allocator, make_unique, unique_ptr
@@ -81,7 +81,7 @@ cdef class MarmotMaterialPointWrapper:
                                                                                        volume
                                                                                        )
         except ValueError as e:
-            raise NotImplementedError("Failed to create instance of MarmotMaterialPoint {:}: {:}".format(materialPointType, e)) from e
+            raise ModuleNotBuilt("Marmot material point {:} is not built in this environment: {:}".format(materialPointType, e)) from e
 
         self._number                = materialPointNumber
         self._materialPointType     = materialPointType
@@ -207,7 +207,7 @@ cdef class MarmotMaterialPointWrapper:
                             &self._materialProperties[0],
                             self._materialProperties.shape[0] ) )
         except IndexError:
-            raise NotImplementedError("Marmot material {:} not found in library.".format(materialName))
+            raise ModuleNotBuilt("Marmot material {:} is not built in this environment".format(materialName))
 
         self._nStateVars =           self._marmotMaterialPoint.getNumberOfRequiredStateVars()
 
