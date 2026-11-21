@@ -222,12 +222,12 @@ class ParticlePenaltyCartesianBoundaryConstraintExplicit(MPMExplicitConstraintBa
                 # Combined: force_val = -penalty * g * orientation
                 force_scalar = -penalty * g * orientation
 
-                # Get shape functions for this specific constrained point
-                N = self._particle.getInterpolationVector(p).flatten()
+                # the interpolation vector with which the particle moves the point: the force is its transpose
+                G = self._particle.getAttachedPointInterpolationVector(p).flatten()
 
                 # the residual contribution is the negative of the force on the nodes
                 # Using np.add.at is safer if indices repeat (unlikely here) but direct slicing is faster
-                P[comp :: self._fieldSize] -= N * force_scalar
+                P[comp :: self._fieldSize] -= G * force_scalar
 
                 total_penalty_force += g * penalty
 

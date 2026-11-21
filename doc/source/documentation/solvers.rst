@@ -12,11 +12,12 @@ set of EdelweissFE's legacy criterion:
 .. automodule:: edelweissmeshfree.solvers.meshfreeconvergencecriterion
    :members:
 
-The explicit solver
--------------------
+EdelweissFE's explicit solver
+-----------------------------
 
-.. automodule:: edelweissmeshfree.solvers.meshfreeexplicitdynamic
-   :members:
+An RKPM model, alone or with finite elements, is integrated in explicit dynamics by EdelweissFE's ``NED`` and
+``NEDParallel``, which advance its particles, reconnect them and evaluate them on the new kernel functions in every
+increment (see EdelweissFE's documentation of ``NED``, "Entities that carry their own inertia", and *Choosing a solver*).
 
 Deprecated implicit solvers
 ---------------------------

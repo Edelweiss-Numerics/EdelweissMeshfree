@@ -29,9 +29,12 @@ class ParticleLagrangianContactCartesianBoundaryConstraint(MPMConstraintBase):
 
     The orientation is determined based on the initial position of the particle relative to the boundary.
 
-    The particle interpolates its displacement from the nodes of its kernel functions, as an increment on the current
-    configuration, so the gap is measured with the increment :math:`\boldsymbol{N} \cdot \Delta\mathbf{U}_j` of the
-    constrained component :math:`j` from the position at the start of the increment. While the particle is in contact,
+    The constrained point is a point of the particle and moves with it, as an increment on the current configuration,
+    so the gap is measured with the increment :math:`\boldsymbol{G} \cdot \Delta\mathbf{U}_j` of the constrained
+    component :math:`j` from the position at the start of the increment, with the particle's interpolation vector of
+    an attached point
+    (:meth:`~edelweissmeshfree.particles.base.baseparticle.BaseParticle.getAttachedPointInterpolationVector`): the
+    position the particle gives the point at the end of the increment. While the particle is in contact,
     a multiplier :math:`\lambda` enforces :math:`g = 0`, and the constraint adds
 
     .. math::
@@ -41,7 +44,7 @@ class ParticleLagrangianContactCartesianBoundaryConstraint(MPMConstraintBase):
         \mathbf{K}_{U_j \lambda} \mathrel{+}= \frac{\partial g}{\partial \Delta\mathbf{U}_j}, \qquad
         \mathbf{K}_{\lambda U_j} \mathrel{+}= \frac{\partial g}{\partial \Delta\mathbf{U}_j}^T,
 
-    with :math:`\partial g / \partial \Delta\mathbf{U}_j = \boldsymbol{n}_j \boldsymbol{N}`. The multiplier is the
+    with :math:`\partial g / \partial \Delta\mathbf{U}_j = \boldsymbol{n}_j \boldsymbol{G}`. The multiplier is the
     contact force, positive in compression. A particle that does not penetrate the boundary, or whose multiplier would
     pull it towards the boundary, is out of contact: the constraint then adds :math:`P_{\lambda} \mathrel{+}= \lambda`
     and :math:`K_{\lambda\lambda} \mathrel{+}= 1`, which holds the multiplier at zero.
@@ -203,11 +206,11 @@ class ParticleLagrangianContactCartesianBoundaryConstraint(MPMConstraintBase):
 
         self.reactionForce = multiplier
 
-        N = self._particle.getInterpolationVector(self._getConstraintLocation())
+        G = self._particle.getAttachedPointInterpolationVector(self._getConstraintLocation())
 
         nodeIdcs = [self._nodes[kf.node] for kf in self._particle.kernelFunctions]
 
-        deltaU_j = N @ dU_U_j[nodeIdcs]
+        deltaU_j = G @ dU_U_j[nodeIdcs]
 
         g = self._orientation * (
             deltaU_j - (-self._particle_coordinate_j + self._boundaryPosition + self._velocity * timeStep.stepProgress)
@@ -227,7 +230,7 @@ class ParticleLagrangianContactCartesianBoundaryConstraint(MPMConstraintBase):
 
             return
 
-        dg_dU_j = N * self._orientation
+        dg_dU_j = G * self._orientation
 
         P_U_j[nodeIdcs] += multiplier * dg_dU_j
         P_L[lag] += g

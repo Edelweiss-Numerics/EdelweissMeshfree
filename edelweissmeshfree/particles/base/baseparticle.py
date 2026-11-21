@@ -39,6 +39,12 @@ are used for computing the quadrature.
 
 Implementing your own particles can be done easily by subclassing from
 the abstract base class :class:`~BaseParticle`.
+
+In an explicit analysis, the methods of a particle are called in an order its implementation relies on (advance,
+accept twice, reconnect, then the force and the momentum, the lumped inertia and damping, and the bound of the stable
+time increment last); the calls and the contracts that follow from their order are written down once, in Marmot's
+documentation: `the explicit life cycle of a particle
+<https://materialmodelingtoolbox.github.io/Marmot/pages/features/meshfreeparticles.html#explicit-life-cycle-of-a-particle>`_.
 """
 
 from abc import abstractmethod
@@ -121,17 +127,6 @@ class BaseParticle(BaseNodeCouplingEntity):
     @abstractmethod
     def kernelFunctions(self) -> list[BaseMeshfreeKernelFunction]:
         """The kernel functions assigned to the particle."""
-
-    @abstractmethod
-    def getBoundingBox(
-        self,
-    ) -> np.ndarray:
-        """Get the bounding box of the particle.
-
-        Returns
-        -------
-        np.ndarray
-            All coordinates for all bounding vertices."""
 
     @abstractmethod
     def getVertexCoordinates(
@@ -344,9 +339,9 @@ class BaseParticle(BaseNodeCouplingEntity):
         dTime: float,
     ):
         """Explicit dynamics: take the solution increment on the kernel functions currently assigned, i.e. update the
-        state and the position of the particle, and its velocity and acceleration; see
-        :class:`~edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic`. A particle that cannot
-        take the increment requests a cutback (:class:`~edelweissfe.utils.exceptions.CutbackRequest`).
+        state and the position of the particle, and its velocity and acceleration; see the explicit dynamic solver
+        :class:`~edelweissfe.solvers.nonlinearexplicitdynamic.NED`. A particle that cannot take the increment requests
+        a cutback (:class:`~edelweissfe.utils.exceptions.CutbackRequest`), which fails the step.
 
         Parameters
         ----------
@@ -401,19 +396,106 @@ class BaseParticle(BaseNodeCouplingEntity):
             The lumped momentum to augment, one entry per degree of freedom.
         """
 
-    @abstractmethod
-    def assignMeshfreeKernelFunctions(self, kernelFunctions: list[BaseMeshfreeKernelFunction]):
-        """Assign the meshfree kernel functions to the particle.
+    def computeLumpedDamping(
+        self,
+        C: np.ndarray,
+    ):
+        """Explicit dynamics: add the lumped damping of the particle, on the kernel functions currently assigned: the
+        coefficient of each field's first time derivative, as :meth:`computeLumpedInertia` holds the one of the second.
+        A gradient-enhanced particle reports the nonlocal viscosity there, which integrates a first-order nonlocal field
+        on its own and damps a second-order one. The default adds nothing, which is no damping.
 
         Parameters
         ----------
-        shapeFunctions
-            The meshfree shape functions.
+        C
+            The lumped damping to augment, one entry per degree of freedom.
+        """
+
+    @abstractmethod
+    def computeTangentOfTheCurrentState(
+        self,
+        K: np.ndarray,
+    ):
+        """Explicit dynamics: the tangent of the internal force with respect to the degrees of freedom of the kernel
+        functions currently assigned, at the current state (a zero increment, evaluated on a copy of the state). The
+        state variables are left unchanged; the response the material point keeps is overwritten, so in an explicit
+        increment it is called after :meth:`computePhysicsKernelsExplicit`, which reads it. Without inertia. The exact stiffness, e.g. to check the bound of
+        :meth:`computeBoundOfAbsoluteStiffnessTimes` against, which the stable time increment of the particles is
+        bounded with.
+
+        The zero increment is taken over a unit time increment, at time zero: the time increment is only positive, as a
+        material may divide by it, and the tangent of a rate-independent material does not depend on it. For a
+        rate-dependent material, e.g. with a Duvaut-Lions viscosity, it is the tangent relaxed over that time, softer
+        than the response within an explicit increment, and the bound taken from it may be too large.
+
+        Parameters
+        ----------
+        K
+            The tangent to define, column-major, ``nDof x nDof``.
+        """
+
+    @abstractmethod
+    def computeBoundOfAbsoluteStiffnessTimes(
+        self,
+        W: np.ndarray,
+        bound: np.ndarray,
+    ):
+        """Explicit dynamics: add an upper bound of :math:`|\\boldsymbol{K}|\\, \\boldsymbol{W}`, the absolute value of
+        the stiffness at the current state (the tangent of :meth:`computeTangentOfTheCurrentState`, without inertia,
+        of a zero increment over a unit time increment, see there) times nonnegative weights. It leaves the state
+        variables unchanged and overwrites the response the material point keeps, so in an explicit increment it is
+        called after :meth:`computePhysicsKernelsExplicit`, which reads it (the order of the calls: the explicit life
+        cycle of a particle, see the module documentation). The stiffness itself is not assembled: the bound
+        costs as much as the nodes, the stiffness as their square. It is what the stable time increment of the
+        particles is bounded with
+        (:meth:`~edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia`).
+
+        Parameters
+        ----------
+        W
+            The nonnegative weights, ``nDof x nColumns``, column-major (Fortran order).
+        bound
+            The bound to augment, ``nDof x nColumns``, column-major (Fortran order).
+        """
+
+    @abstractmethod
+    def assignKernelFunctions(self, kernelFunctions: list[BaseMeshfreeKernelFunction]):
+        """Assign the meshfree kernel functions whose support covers the particle, as the particle managers do after
+        every search.
+
+        Parameters
+        ----------
+        kernelFunctions
+            The kernel functions.
         """
 
     @abstractmethod
     def getInterpolationVector(self, coordinate: np.ndarray) -> np.ndarray:
         """Get the interpolation vector for a given global coordinate.
+
+        Returns
+        -------
+        np.ndarray
+            The interpolation vector for all nodes.
+        """
+
+    @abstractmethod
+    def getAttachedPointInterpolationVector(self, coordinate: np.ndarray) -> np.ndarray:
+        r"""Get the interpolation vector of a point attached to the particle (its center, a vertex, a face center):
+        the coefficients :math:`G_B` with which the particle moves that point in its next increment,
+        :math:`\Delta\boldsymbol{x} = \sum_B G_B \Delta\boldsymbol{U}_B`.
+
+        The particle moves as a whole, its center with the shape functions there and its domain with the homogeneous
+        deformation gradient from the (smoothed) shape function gradients,
+        :math:`G_B = N_B(\boldsymbol{x}_c) + \nabla N_B \cdot (\boldsymbol{x} - \boldsymbol{x}_c)`. Away from the
+        center this is not :meth:`getInterpolationVector` at the point. A constraint that measures a point of the
+        particle where the particle puts it (a support or a contact on a vertex) must distribute its force with this
+        vector: then the force is the transpose of the kinematics and a penalty is conservative.
+
+        Parameters
+        ----------
+        coordinate
+            The point, in the current configuration of the particle.
 
         Returns
         -------
