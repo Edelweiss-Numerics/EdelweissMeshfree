@@ -35,7 +35,7 @@ cimport numpy as np
 cimport edelweissmeshfree.particles.marmot.marmotparticlewrapper
 
 from edelweissfe.numerics.systemmatrixcontributor import denseBlockLocalEntries
-from edelweissfe.utils.exceptions import CutbackRequest
+from edelweissfe.utils.exceptions import CutbackRequest, ModuleNotBuilt
 
 from cython.operator cimport dereference
 from libc.stdlib cimport free, malloc
@@ -99,19 +99,19 @@ cdef class MarmotParticleWrapper:
         self.materialPropertiesView = self.materialProperties
         cdef int nMaterialProperties = len(self.materialProperties)
 
-        try:
-            self._marmotParticle = MarmotParticleFactory.createParticle(particleType.encode('utf-8'),
-                                                                                       particleNumber,
-                                                                                       &self._vertexCoordinatesView[0,0],
-                                                                                       self._vertexCoordinates.size,
-                                                                                       volume,
-                                                                                       materialName.upper().encode('utf-8'),
-                                                                                       &self.materialPropertiesView[0],
-                                                                                       nMaterialProperties,
-                                                                                       self._approximation._marmotMeshfreeApproximation[0],
-                                                                                       )
-        except ValueError as e:
-            raise NotImplementedError("Failed to create instance of MarmotParticle {:}: {:}".format(particleType, e)) from e
+        # a particle that is not built may be skipped (a test is); a particle that fails to be created is an error
+        if not MarmotParticleFactory.isRegistered(particleType.encode('utf-8')):
+            raise ModuleNotBuilt("Marmot particle {:} is not built in this environment".format(particleType))
+        self._marmotParticle = MarmotParticleFactory.createParticle(particleType.encode('utf-8'),
+                                                                   particleNumber,
+                                                                   &self._vertexCoordinatesView[0,0],
+                                                                   self._vertexCoordinates.size,
+                                                                   volume,
+                                                                   materialName.upper().encode('utf-8'),
+                                                                   &self.materialPropertiesView[0],
+                                                                   nMaterialProperties,
+                                                                   self._approximation._marmotMeshfreeApproximation[0],
+                                                                   )
 
         self._nStateVars =           self._marmotParticle.getNumberOfRequiredStateVars()
 

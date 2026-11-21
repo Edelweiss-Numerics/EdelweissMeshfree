@@ -1,3 +1,6 @@
+from edelweissfe.utils.exceptions import ModuleNotBuilt
+
+
 class MarmotParticleWrapper:
     def __init__(self, *args, **kwargs):
-        raise NotImplementedError("Marmot not available in this environment")
+        raise ModuleNotBuilt("Marmot is not built in this environment")
