@@ -10,7 +10,7 @@ The model:
 
 - **Projectile**: a steel cube of 50 mm, ``C3D20RUL`` (quadratic updated-Lagrangian hexahedra), ``VONMISES/HUGHES-WINGET``,
   300 m/s towards the slab, free.
-- **Slab**: 1000 x 1000 x 100 mm, ``GradientEnhanced6FiniteStrainSQCNIxNSNI/3D/Hexa`` particles of GM7 at finite
+- **Slab**: 600 x 600 x 100 mm, ``GradientEnhanced6FiniteStrainSQCNIxNSNI/3D/Hexa`` particles of GM7 at finite
   strains (``GM7/COROTATIONAL``), held at its edges.
 - **Contact**: the vertices of the slab particles near the impact against the faceted surface of the cube,
   :class:`~edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit`.
@@ -78,7 +78,7 @@ symmetric``), on kernel functions matched to the particles:
                                      0.0, approximation, material)
 
     generateBoxHexaParticleGrid(model, journal, particleFactory, name="slab", x0=0.0, y0=0.0, z0=-100.0,
-                                l=500.0, h=500.0, t=100.0, nX=35, nY=35, nZ=7)
+                                l=300.0, h=300.0, t=100.0, nX=21, nY=21, nZ=7)
     generateKernelMatchingToParticle(model, journal, kernelFunctionFactory, model.particleSets["slab_all"],
                                      supportScalingFactor=2.4)
 
@@ -118,8 +118,8 @@ point :math:`G_I` (:meth:`~edelweissmeshfree.particles.base.baseparticle.BasePar
 not with the shape functions at the vertex. The support (and the contact below) distributes its force with the same
 :math:`G_I`, the transpose of the vertex motion: its penalty stiffness is symmetric and it does no work over a closed
 cycle of motion (``edelweissmeshfree/constraints/test/vertexpenaltywork_test.py``). Distributing the force with the
-shape functions at the vertex is not conservative: the production slab of this model blew up that way next to the
-symmetry planes, once the concrete there had been crushed, whatever the time increment.
+shape functions at the vertex is not conservative: it feeds energy into the particles at the supports, and a crushed,
+soft particle there blows up, whatever the time increment.
 
 Constrain the vertices, not the centres: the centres lie half a particle off the plane and move with Poisson's
 effect. The support penalty must be stiff against the material next to it, or the plane gives way and springs back
@@ -212,22 +212,19 @@ a tenfold penalty range by about half a millimetre, the size of the change of th
 about a tenth of the search distance and no point was found inside; the quarter model followed the whole one to a few
 tenths of a millimetre. A run resumed from a checkpoint after an interruption followed the uninterrupted one.
 
-Two findings matter more than any of these. The bound of the particles' stable time increment, taken whenever the
-connectivity changes, was most of the cost of an increment while it evaluated every particle's tangent; the particles
-now bound the row sums of their absolute stiffness node by node, at a small share of an increment. And the
-response depends on the particle size more than on the time increment, the penalty or the symmetry: with GM7's internal
-length well below the particle size, the softening concrete is resolved by the particles, not by the nonlocal strain.
+One finding matters more than any of these: the response depends on the particle size more than on the time
+increment, the penalty or the symmetry. With GM7's internal length well below the particle size, the softening
+concrete is resolved by the particles, not by the nonlocal strain.
 
 What the run shows
 ------------------
 
-The quarter model of the 600 mm slab (3087 particles) ran until the nose reached the stop depth of 40 mm at
+The quarter model (3087 particles) ran until the nose reached the stop depth of 40 mm at
 333 us, with the time increment set by the projectile's elements throughout. The checks held over the whole run: the
 kinetic energy never exceeded the initial one, action and reaction cancelled to round-off, the projectile's momentum
 followed the contact impulse to round-off, and no point was found inside. The projectile slowed from 300 to 148 m/s in
 the first 100 us and to 57 m/s at the stop; the contact force averaged over 5 us peaked at 3.3 MN after 20 to 25 us
 (the first touch, a few points at full speed, is a spike set by the penalty). At the stop, about two fifths of the
 particles had cracked, through the whole thickness and out to the supported edges, and the most crushed ones were under
-the nose and in the rear layer. The velocity history agrees with the August prototype of this model (a CDP slab, a
-wider span), which reached 43.4 mm at 398 us; a bonded interface between projectile and slab stops at 34.4 mm. The
-result depends on the particle size (see above), which the regularization of GM7 does not remove at this size.
+the nose and in the rear layer. The result depends on the particle size (see above), which the regularization of GM7
+does not remove at this size.
