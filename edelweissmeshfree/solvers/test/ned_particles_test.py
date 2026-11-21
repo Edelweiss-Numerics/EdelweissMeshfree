@@ -49,7 +49,7 @@ from edelweissfe.steps.adaptivestepforexplicitsimulations import (
 )
 from edelweissfe.steps.stepmanager import StepActionCollection
 from edelweissfe.utils.checkpoint import ResumeCheckpoint
-from edelweissfe.utils.exceptions import RestartError
+from edelweissfe.utils.exceptions import RestartError, StepFailed
 
 from edelweissmeshfree.fieldoutput.fieldoutput import MPMFieldOutputController
 from edelweissmeshfree.generators.kernelmatchingtoparticlegenerator import (
@@ -185,6 +185,7 @@ def _translatingBody(
     youngsModulus: float = YOUNGS_MODULUS,
     stretching: float = 0.0,
     bondedKernelFunctions: bool = False,
+    particleType: str = "Displacement/SQCNIxNSNI/PlaneStrain/Quad",
 ) -> MPMModel:
     """A block of particles moving to the right, over a grid of kernel functions that reaches beyond it; with a
     stretching, its velocity grows from its left to its right end by that rate times its length. With bonded kernel
@@ -217,7 +218,7 @@ def _translatingBody(
 
     def particleFactory(number, vertexCoordinates, volume):
         return MarmotParticleWrapper(
-            "Displacement/SQCNIxNSNI/PlaneStrain/Quad",
+            particleType,
             number,
             vertexCoordinates,
             0.0,
@@ -347,6 +348,18 @@ def test_the_velocity_is_carried_by_node_across_a_change_of_the_active_nodes():
                 np.testing.assert_array_equal(displacement[entry][row], 0.0)
     np.testing.assert_array_equal(displacement["U"], 0.0)
     assert np.any(displacement["dU"][:, 0] > 0.0)
+
+
+def test_a_particle_without_the_explicit_path_stops_the_run_with_the_name_of_the_method():
+    """A particle with a mass but without the explicit path (an SQCNI particle of the displacement family) would be
+    integrated with its mass and without its force. Marmot refuses it instead, in the first call of the explicit path,
+    and the refusal reaches Python as an exception that names the method, instead of ending the process."""
+
+    journal = Journal(verbose=False)
+    model = _translatingBody(journal, particleType="DisplacementSQCNI/PlaneStrain/Quad")
+
+    with pytest.raises(StepFailed, match="Particle::updatePhysicsExplicit: not implemented for this particle"):
+        _solve(model, journal, [_ned(journal)], [2])
 
 
 def test_a_node_without_inertia_has_no_velocity(monkeypatch):
