@@ -140,6 +140,9 @@ def _isStable(model, dt: float, nIncrements: int = 400) -> bool:
     [
         ("DisplacementSQCNIxNSNI/PlaneStrain/Quad", 2.2, 3),
         ("DisplacementSQCNIxNSNI/PlaneStrain/Quad", 1.6, 2),
+        # The nonlocal field of this particle has a damping and no mass: _isStable integrates only the degrees of
+        # freedom with a mass, so this case checks the displacement block; the first-order field is tested in
+        # solvers/test/ned_gradientenhancedparticles_test.py.
         ("GradientEnhancedFiniteStrainSQCNIxNSNI/PlaneStrain/Quad", 2.8, 3),
     ],
 )
