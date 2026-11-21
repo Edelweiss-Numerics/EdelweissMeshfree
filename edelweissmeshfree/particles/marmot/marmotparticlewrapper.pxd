@@ -34,6 +34,7 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 cimport numpy as np
+from libcpp cimport bool
 from libcpp.string cimport string
 from libcpp.unordered_map cimport unordered_map
 from libcpp.vector cimport vector
@@ -61,6 +62,9 @@ cdef extern from "Marmot/MarmotUtils.h":
 cdef extern from "Marmot/MarmotParticleLibrary.h" nogil:
     cdef cppclass MarmotParticleFactory "Marmot::Registry::ParticleFactory":
         @staticmethod
+        bool isRegistered(const string& particleName)
+
+        @staticmethod
         MarmotParticle* createParticle(const string& particleName,
                                int particleNumber,
                                const double* particleCoordinates,
@@ -69,7 +73,7 @@ cdef extern from "Marmot/MarmotParticleLibrary.h" nogil:
                                const string& materialName,
                                const double* materialProperties,
                                int sizeMaterialProperties,
-                               const MarmotMeshfreeApproximation& approximation) except +ValueError
+                               const MarmotMeshfreeApproximation& approximation) except +
 
 # Every method of a Marmot particle may throw: a default that refuses (e.g. the explicit path of a particle that
 # has none), or a check of its arguments. Each is declared "except +", which turns the C++ exception into a Python
