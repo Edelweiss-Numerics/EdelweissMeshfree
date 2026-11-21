@@ -282,7 +282,10 @@ the tangent as it is, unsymmetric: the tangent of gradient-enhanced particles co
 nonlocal field far more strongly than the nonlocal field to the strain, and an eigenvalue sees the geometric mean of the
 two couplings, the symmetric part their arithmetic mean. The damping does not lower the bound: ``NED`` takes it with the
 mean of the velocities before and after the update, which leaves the stability limit of the central differences where
-it is without damping.
+it is without damping. The stiffness is that of a zero increment over a unit time increment: a rate-independent
+material does not depend on the time increment, but for a rate-dependent one, e.g. with a Duvaut-Lions viscosity, it is
+the stiffness relaxed over that time, softer than the response within an explicit increment, and the bound may be too
+large; take a smaller ``courant-number`` there.
 
 What to know
 ************
