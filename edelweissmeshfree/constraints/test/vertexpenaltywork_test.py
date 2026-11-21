@@ -49,7 +49,7 @@ from edelweissmeshfree.constraints.particlepenaltyweakdirichtlet import (
     ParticlePenaltyWeakDirichlet,
 )
 from edelweissmeshfree.models.mpmmodel import MPMModel
-from edelweissmeshfree.models.test.stabletimeincrementofparticles_test import H, _model
+from edelweissmeshfree.models.test._particleplate import H, particlePlate
 
 PENALTY = 1e6
 #: The largest nodal displacement of the cycle; small against the particle size, so that the path dependence of the
@@ -114,7 +114,7 @@ def _workAndEnergyOverACycle(constraint, particle, nSteps: int = 200) -> tuple[f
 
 @pytest.mark.parametrize("particleType", PARTICLE_TYPES)
 def test_a_support_on_the_vertices_does_no_work_over_a_closed_cycle(particleType):
-    model = _model(particleType, 2.4, 3)
+    model = particlePlate(particleType, 2.4, 3)
     particle = _particleOnTheTop(model)
     support = ParticlePenaltyWeakDirichlet(
         "support", model, [particle], "displacement", {0: 0.0, 1: 0.0}, PENALTY, constrain=[0, 1, 2, 3]
@@ -132,7 +132,7 @@ def test_a_facet_contact_on_the_vertices_does_no_work_over_a_closed_cycle(partic
     """The top vertices of a particle are pressed 3 a into a flat, fixed master facet (the bottom of a body above it)
     and driven around the cycle while staying in contact."""
 
-    model = _model(particleType, 2.4, 3)
+    model = particlePlate(particleType, 2.4, 3)
     particle = _particleOnTheTop(model)
     vertices = particle.getVertexCoordinates()
     top = vertices[:, 1].max()
