@@ -170,7 +170,10 @@ class ParticlePenaltyWeakDirichlet(MPMConstraintBase):
     def updateConnectivity(self, model):
         """Collect the nodes of the kernel functions of the constrained particles, each once, ordered by label, and
         record where each particle's nodes sit in the constraint's block. The nodes stay as they are, and nothing is
-        collected, if no constrained particle has other kernel functions than at the last update.
+        collected, if no constrained particle has other kernel functions than at the last update. The constraint
+        compares the particles' lists of kernel functions with those of its last update itself, instead of reading the
+        particle managers' report (``particlesWithChangedKernelFunctions``), which covers their last search only: the
+        comparison holds whether or not the constraint was updated after every search.
 
         Parameters
         ----------
