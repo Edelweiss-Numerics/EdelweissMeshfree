@@ -175,8 +175,6 @@ class ParticlePenaltyContactImplicitSurfaceConstraint(MPMConstraintBase):
             if g < 0:
                 continue
 
-            # dg_dU = np.einsum('i,j->ij', constraint_vec, G_vec).flatten()
-
             dg_dU = np.zeros(len(dU.flatten()))
             for i in range(len(self._nodes)):
 
