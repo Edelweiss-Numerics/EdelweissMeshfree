@@ -288,7 +288,9 @@ cdef class MarmotParticleWrapper:
         """Add an upper bound of the absolute value of the stiffness at the current state times the weights, which
         leaves the state unchanged; see
         :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeBoundOfAbsoluteStiffnessTimes`. Marmot
-        evaluates a zero increment on the working copy of the state, which is then reset to the state."""
+        evaluates a zero increment on the working copy of the state, which is then reset to the state; over a unit
+        time increment at time zero, as
+        :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeTangentOfTheCurrentState`."""
 
         self._initializeStateVarsTemp()
         try:
