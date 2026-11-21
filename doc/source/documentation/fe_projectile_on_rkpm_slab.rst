@@ -95,7 +95,9 @@ Supports and symmetry planes
 The particles have no nodes on their boundary, so they are held by penalty constraints at points: the vertices of the
 particles on a face.
 :class:`~edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet` acts in an explicit
-analysis as a support: it holds the given displacement components of its points at their initial positions. The
+analysis as a support: it holds the given displacement components of its points at their initial positions. It does
+so only for the displacement with every prescribed value zero (``{0: 0.0}``); ``NED`` refuses any other, since an
+explicit analysis prescribes motion through velocities. The
 vertices of a hexahedral particle on its faces are ``[0, 3, 4, 7]`` (x min), ``[1, 2, 5, 6]`` (x max), ``[0, 1, 4, 5]``
 (y min) and ``[2, 3, 6, 7]`` (y max):
 
@@ -209,9 +211,7 @@ initial one; action and reaction cancelled to round-off in every increment, and 
 contact impulse to round-off; halving the time increment changed the penetration by a few hundredths of a millimetre,
 a tenfold penalty range by about half a millimetre, the size of the change of the overlap; the deepest overlap was
 about a tenth of the search distance and no point was found inside; the quarter model followed the whole one to a few
-tenths of a millimetre. A run resumed from a checkpoint after an interruption followed the uninterrupted one to the
-scatter of two runs: the runs are not bitwise reproducible, since threaded sums change the last digits, which reach the
-time increment through the bound of the particles.
+tenths of a millimetre. A run resumed from a checkpoint after an interruption followed the uninterrupted one.
 
 Two findings matter more than any of these. The bound of the particles' stable time increment was most of the cost of
 an increment while it evaluated every particle's tangent; the particles now bound the row sums of their absolute
