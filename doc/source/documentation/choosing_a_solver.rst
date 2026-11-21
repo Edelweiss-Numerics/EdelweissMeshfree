@@ -272,7 +272,10 @@ field is integrated. The stable time increment of the particles is bounded from 
 (:meth:`~edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia`) in
 the zero increment, whenever their connectivity changes, and every ``stable-increment-frequency`` increments; the time
 increment is the smaller of it and the elements' critical time step, scaled by ``courant-number``, unless the step asks
-for smaller increments.
+for smaller increments. The tangent is that of a zero increment over a unit time increment: a rate-independent material
+does not depend on the time increment, but for a rate-dependent one, e.g. with a Duvaut-Lions viscosity, it is the
+tangent relaxed over that time, softer than the response within an explicit increment, and the bound may be too large;
+take a smaller ``courant-number`` there.
 
 What to know
 ************

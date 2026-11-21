@@ -426,6 +426,11 @@ class BaseParticle(BaseNodeCouplingEntity):
         copy of the state). Without inertia. It is what the stable time increment of the particles is bounded with
         (:meth:`~edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia`).
 
+        The zero increment is taken over a unit time increment, at time zero: the time increment is only positive, as a
+        material may divide by it, and the tangent of a rate-independent material does not depend on it. For a
+        rate-dependent material, e.g. with a Duvaut-Lions viscosity, it is the tangent relaxed over that time, softer
+        than the response within an explicit increment, and the bound taken from it may be too large.
+
         Parameters
         ----------
         K
