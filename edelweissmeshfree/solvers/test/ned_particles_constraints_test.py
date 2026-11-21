@@ -137,13 +137,9 @@ def _modelWith(build) -> MPMModel:
 
 
 def _validate(model: MPMModel):
-    """Run the solver's check, failing on a refusal: the test configuration skips a test that raises
-    ``NotImplementedError``, so a refusal must not escape it."""
+    """Run the solver's check; a refusal raises and fails the test."""
 
-    try:
-        NED({}, Journal(verbose=False)).validateModelCapabilities(model)
-    except NotImplementedError as e:
-        pytest.fail(f"refused: {e}")
+    NED({}, Journal(verbose=False)).validateModelCapabilities(model)
 
 
 @pytest.mark.parametrize("name", ACTING)

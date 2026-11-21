@@ -42,7 +42,7 @@ from libcpp.string cimport string
 from libcpp.unordered_map cimport unordered_map
 from libcpp.vector cimport vector
 
-from edelweissfe.utils.exceptions import CutbackRequest
+from edelweissfe.utils.exceptions import CutbackRequest, ModuleNotBuilt
 
 from libc.stdlib cimport free, malloc
 from libcpp.memory cimport allocator, make_unique, unique_ptr
@@ -97,7 +97,7 @@ cdef class LagrangianMarmotCellWrapper(MarmotCellWrapper):
         try:
             self._marmotCell = MarmotCellFactory.createCell( cellType.encode('utf-8'), self._cellNumber, &self._nodeCoordinates[0,0], self._nodeCoordinates.size)
         except ValueError as e:
-            raise NotImplementedError("Failed to create instance of Marmot cell {:}: {:}".format(cellType, e)) from e
+            raise ModuleNotBuilt("Marmot cell {:} is not built in this environment: {:}".format(cellType, e)) from e
 
     def __dealloc__(self):
         if isinstance(self, LagrangianMarmotCellWrapper):
