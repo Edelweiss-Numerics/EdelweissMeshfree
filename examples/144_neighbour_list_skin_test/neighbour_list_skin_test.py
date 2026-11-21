@@ -40,7 +40,10 @@ import pytest
 from edelweissfe.journal.journal import Journal
 from edelweissfe.outputmanagers.restart import OutputManager as RestartOutputManager
 from edelweissfe.outputmanagers.restart import RestartOutputManagerSchema
-from edelweissfe.steps.adaptivestep import AdaptiveStep
+from edelweissfe.solvers.nonlinearexplicitdynamicparallel import NEDParallel
+from edelweissfe.steps.adaptivestepforexplicitsimulations import (
+    AdaptiveStepForExplicitSimulations,
+)
 from edelweissfe.steps.stepmanager import StepActionCollection
 from edelweissfe.utils.checkpoint import ResumeCheckpoint
 
@@ -68,7 +71,6 @@ from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
 from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
     MarmotParticleWrapper,
 )
-from edelweissmeshfree.solvers.meshfreeexplicitdynamic import MeshfreeExplicitDynamic
 
 BAR_WIDTH = 4.0
 BAR_LENGTH = 8.0
@@ -223,13 +225,13 @@ def run_sim(
         )
 
     # The step ends on its increment cap, which is how it is meant to end.
-    step = AdaptiveStep(
+    step = AdaptiveStepForExplicitSimulations(
         0,
         theModel,
         fieldOutputController,
         theJournal,
         {},
-        MeshfreeExplicitDynamic({}, theJournal),
+        NEDParallel({}, theJournal, **{"output-frequency": 1}),
         outputManagers,
         StepActionCollection(),
         startInc=INCREMENT_SIZE,

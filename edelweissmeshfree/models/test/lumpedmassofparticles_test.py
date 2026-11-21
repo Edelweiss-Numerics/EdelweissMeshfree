@@ -26,16 +26,18 @@
 #  ---------------------------------------------------------------------
 """The one assembly of the lumped mass of the particles gives a node without inertia zero: a node whose mass is not
 positive, or positive only at round-off, as for a kernel function that the particles reach only where it vanishes. The
-explicit solver divides by this mass, and the implicit dynamic solver integrates the nodes it is positive at."""
+explicit dynamic solver ``NED`` divides by this mass, and the implicit dynamic solver integrates the nodes it is positive
+at."""
 
 from types import SimpleNamespace
 
 import numpy as np
 from edelweissfe.numerics.dofvector import DofVector
+from edelweissfe.numerics.scatterdofvector import ScatterDofVectorTemplate
 from edelweissfe.sets.nodeset import NodeSet
 
 from edelweissmeshfree.models.mpmdiscretesystem import (
-    MASS_AT_ROUND_OFF,
+    COEFFICIENT_AT_ROUND_OFF,
     MPMDiscreteSystem,
 )
 
@@ -58,13 +60,15 @@ class _LocationsOfOneDofPerParticle:
         self.cells = []
         self.cellElements = []
         self.ofEntity = {particle: np.array([index]) for index, particle in enumerate(particles)}
+        self.numbering = SimpleNamespace(idcsOfFieldsInDofVector={"displacement": np.arange(len(particles))})
+        self.scatterTemplate = ScatterDofVectorTemplate(self, len(particles))
 
     def constructDofVector(self) -> DofVector:
         return DofVector(len(self.ofEntity), self)
 
 
 def test_a_node_without_inertia_gets_no_mass():
-    masses = [1.0, 0.1 * MASS_AT_ROUND_OFF, -0.1, 0.25, 10.0 * MASS_AT_ROUND_OFF]
+    masses = [1.0, 0.1 * COEFFICIENT_AT_ROUND_OFF, -0.1, 0.25, 10.0 * COEFFICIENT_AT_ROUND_OFF]
     particles = {number: _ParticleOfMass(mass) for number, mass in enumerate(masses)}
     model = SimpleNamespace(materialPoints={}, particles=particles, cellElements={})
     system = MPMDiscreteSystem(
@@ -77,4 +81,4 @@ def test_a_node_without_inertia_gets_no_mass():
 
     M = system.assembleLumpedMassOfEntitiesWithOwnInertia(lambda entities, work: work(entities))
 
-    np.testing.assert_array_equal(M, [1.0, 0.0, 0.0, 0.25, 10.0 * MASS_AT_ROUND_OFF])
+    np.testing.assert_array_equal(M, [1.0, 0.0, 0.0, 0.25, 10.0 * COEFFICIENT_AT_ROUND_OFF])
