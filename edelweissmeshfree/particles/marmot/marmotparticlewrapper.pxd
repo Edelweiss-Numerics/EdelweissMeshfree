@@ -71,22 +71,25 @@ cdef extern from "Marmot/MarmotParticleLibrary.h" nogil:
                                int sizeMaterialProperties,
                                const MarmotMeshfreeApproximation& approximation) except +ValueError
 
+# Every method of a Marmot particle may throw: a default that refuses (e.g. the explicit path of a particle that
+# has none), or a check of its arguments. Each is declared "except +", which turns the C++ exception into a Python
+# exception (RuntimeError, ValueError, ...); without it, the exception would end the process in std::terminate.
 cdef extern from "Marmot/MarmotParticle.h":
     cdef cppclass MarmotParticle "Marmot::Discretizations::Meshfree::Particle" nogil:
 
-        const vector[string]& getFields()
+        const vector[string]& getFields() except +
 
-        void getVertexCoordinates(double* )
+        void getVertexCoordinates(double* ) except +
 
-        void getFaceCoordinates(int, double* )
+        void getFaceCoordinates(int, double* ) except +
 
-        void getEvaluationCoordinates(double* )
+        void getEvaluationCoordinates(double* ) except +
 
-        void getVisualizationVertexCoordinates(double* )
+        void getVisualizationVertexCoordinates(double* ) except +
 
-        void getCenterCoordinates(double* )
+        void getCenterCoordinates(double* ) except +
 
-        string getParticleShape()
+        string getParticleShape() except +
 
         void assignMeshfreeKernelFunctions (const vector[const MarmotMeshfreeKernelFunction*]& meshfreeKernelFunctions) except +
 
@@ -115,59 +118,59 @@ cdef extern from "Marmot/MarmotParticle.h":
                                             double timeNewTotal,
                                             double dT) except +
 
-        void computePhysicsKernelsExplicit( double* Pc)
+        void computePhysicsKernelsExplicit( double* Pc) except +
 
-        void computeLumpedInertia ( double* mLumped)
+        void computeLumpedInertia ( double* mLumped) except +
 
-        void computeLumpedMomentum ( double* mLumped)
+        void computeLumpedMomentum ( double* mLumped) except +
 
-        const unordered_map[string, int]& getSupportedBodyLoadTypes()
+        const unordered_map[string, int]& getSupportedBodyLoadTypes() except +
 
-        const unordered_map[string, int]& getSupportedDistributedLoadTypes()
+        const unordered_map[string, int]& getSupportedDistributedLoadTypes() except +
 
-        void getInterpolationVector( double* N, const double* coordinates)
+        void getInterpolationVector( double* N, const double* coordinates) except +
 
-        int getNumberOfRequiredStateVars()
+        int getNumberOfRequiredStateVars() except +
 
-        void assignStateVars( double* stateVars, int nStateVars )
+        void assignStateVars( double* stateVars, int nStateVars ) except +
 
-        void initializeYourself()
+        void initializeYourself() except +
 
-        void acceptStateAndPosition()
+        void acceptStateAndPosition() except +
 
-        StateView getStateView( const string& stateName, int qp)
+        StateView getStateView( const string& stateName, int qp) except +
 
-        int getDimension()
+        int getDimension() except +
 
-        int getNumberOfVertices()
+        int getNumberOfVertices() except +
 
-        int getNBaseDof()
+        int getNBaseDof() except +
 
-        int getNumberOfEvaluationPoints()
+        int getNumberOfEvaluationPoints() except +
 
-        int vci_getNumberOfConstraints()
+        int vci_getNumberOfConstraints() except +
 
-        double getVolumeUndeformed()
+        double getVolumeUndeformed() except +
 
-        void vci_compute_Test_P_BoundaryIntegral(double* f_AiC_RowMajor, const double* boundarySurfaceVector, int boundaryFaceID)
+        void vci_compute_Test_P_BoundaryIntegral(double* f_AiC_RowMajor, const double* boundarySurfaceVector, int boundaryFaceID) except +
 
-        void vci_compute_TestGradient_P_Integral(double* f_AiC_RowMajor)
+        void vci_compute_TestGradient_P_Integral(double* f_AiC_RowMajor) except +
 
-        void vci_compute_Test_PGradient_Integral(double* f_AiC_RowMajor)
+        void vci_compute_Test_PGradient_Integral(double* f_AiC_RowMajor) except +
 
-        void vci_compute_MMatrix(double* MMatrix_ACD_RowMajor)
+        void vci_compute_MMatrix(double* MMatrix_ACD_RowMajor) except +
 
-        void vci_assignTestFunctionCorrectionTerms(const double* eta_AjC_RowMajor)
+        void vci_assignTestFunctionCorrectionTerms(const double* eta_AjC_RowMajor) except +
 
         void setProperties( const double* properties, int nProperties ) except +
 
         void setProperty( const string& propertyName, const double* property ) except +
 
-        void setInitialCondition( const string& stateName, const double* stateValue )
+        void setInitialCondition( const string& stateName, const double* stateValue ) except +
 
-        vector[ string ] getPropertyNames() const
+        vector[ string ] getPropertyNames() except +
 
-        void computeLumpedDamping ( double* cLumped)
+        void computeLumpedDamping ( double* cLumped) except +
 
         void computeBoundOfAbsoluteStiffnessTimes( const double* columnWeights,
                                                    int nColumns,
