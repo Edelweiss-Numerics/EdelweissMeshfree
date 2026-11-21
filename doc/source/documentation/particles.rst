@@ -8,6 +8,13 @@ current configuration: its kernel functions move with it, and their nodal values
 not ``U``. A Marmot particle whose material cannot integrate the increment -- Marmot throws -- requests a cutback
 (EdelweissFE's ``CutbackRequest``), as an EdelweissFE element does, and the solver retries the increment smaller.
 
+In an explicit analysis (EdelweissFE's ``NED``), a particle is advanced, accepted twice, reconnected and evaluated in
+every increment, in an order that its implementation relies on: a zero-length increment leaves the rates alone, an
+accept is idempotent, the bound of the stable time increment comes after the force (it overwrites the response the
+material point keeps), and the material's tangent is required. The calls, in their order, and these contracts are
+written down once, in Marmot's documentation: `the explicit life cycle of a particle
+<https://materialmodelingtoolbox.github.io/Marmot/pages/features/meshfreeparticles.html#explicit-life-cycle-of-a-particle>`_.
+
 ``BaseParticle`` class
 ----------------------
 

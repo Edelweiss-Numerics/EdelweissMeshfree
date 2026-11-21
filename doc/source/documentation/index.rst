@@ -12,6 +12,7 @@ Documentation
    solvers
    choosing_a_solver
    coupled_rkpm_fe
+   fe_projectile_on_rkpm_slab
    assembly
    mpm/material_point_managers
    model_generators
