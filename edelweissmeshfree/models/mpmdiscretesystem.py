@@ -35,9 +35,8 @@
 #  ---------------------------------------------------------------------
 
 """What the discrete system of a material point or RKPM model is made of: the answer an
-:class:`~edelweissmeshfree.models.mpmmodel.MPMModel` gives EdelweissFE's implicit solvers and
-:class:`~edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic` whenever they (re)build
-their discrete system, see :meth:`~edelweissmeshfree.models.mpmmodel.MPMModel.buildDiscreteSystem`."""
+:class:`~edelweissmeshfree.models.mpmmodel.MPMModel` gives EdelweissFE's solvers whenever they (re)build their discrete
+system, see :meth:`~edelweissmeshfree.models.mpmmodel.MPMModel.buildDiscreteSystem`."""
 
 from collections.abc import Callable
 
@@ -49,10 +48,16 @@ from edelweissfe.timesteppers.timestep import TimeStep
 
 from edelweissmeshfree.numerics.doflocations import MPMDofLocations
 
-#: The lumped mass of a node below this fraction of the largest one is zero up to round-off: the particles reach its
-#: kernel function only where it vanishes. A solver that divides by it would give the node an acceleration of round-off
-#: over round-off.
-MASS_AT_ROUND_OFF = 1e-12
+#: A lumped coefficient of a node (a mass, a damping) below this fraction of the largest one of its field is zero up to
+#: round-off: the particles reach its kernel function only where it vanishes. A solver that divides by it would give the
+#: node an acceleration of round-off over round-off.
+COEFFICIENT_AT_ROUND_OFF = 1e-12
+
+#: The fraction of the stable time increment of the particles' tangent that the explicit scheme of the particles is
+#: stable for. Their NSNI stabilization acts on the increment of the step, not on the total displacement, so the scheme
+#: is not exactly the central difference method with their tangent: measured on 2D and 3D blocks of particles (support
+#: factors 1.6 to 3.4, quadratic and cubic kernels), it was stable up to 0.875 to 0.98 of the tangent's limit.
+STABLE_FRACTION_OF_THE_TANGENT_LIMIT = 0.85
 
 
 class MPMDiscreteSystem(DiscreteSystem):
@@ -125,6 +130,87 @@ class MPMDiscreteSystem(DiscreteSystem):
         """The particles of the model, a list the solver hands out in chunks, i.e. the particles of the locations."""
 
         return self.locations.particles
+
+    @property
+    def entitiesWithOwnInertia(self) -> list:
+        """The particles: they carry their state, and with it their inertia, and their kernel functions move with them;
+        see :attr:`~edelweissfe.models.discretesystem.DiscreteSystem.entitiesWithOwnInertia`.
+
+        Returns
+        -------
+        list
+            The particles.
+        """
+
+        return self.particles
+
+    def advanceEntitiesWithOwnInertia(
+        self, dU: DofVector, timeStep: TimeStep, forEachChunk: Callable[[list, Callable], None]
+    ):
+        """Every particle takes the increment of the nodes of the kernel functions it was assigned at the start of the
+        increment (``updatePhysicsExplicit``), and moves; see
+        :meth:`~edelweissfe.models.discretesystem.DiscreteSystem.advanceEntitiesWithOwnInertia`. The particles are
+        independent of each other, so they are advanced in the solver's loop over chunks.
+
+        Parameters
+        ----------
+        dU
+            The increment of the solution.
+        timeStep
+            The increment.
+        forEachChunk
+            The solver's loop over chunks of independent entities.
+        """
+
+        time = timeStep.totalTime
+        dT = timeStep.timeIncrement
+
+        def advance(particles):
+            for particle in particles:
+                particle.updatePhysicsExplicit(dU[particle], time, dT)
+
+        forEachChunk(self.particles, advance)
+
+    def assembleInternalForceAndMomentumOfEntitiesWithOwnInertia(
+        self, forEachChunk: Callable[[list, Callable], None]
+    ) -> tuple[DofVector, DofVector] | None:
+        """The internal force of the particles at the state they accepted (``computePhysicsKernelsExplicit``) and their
+        lumped momentum (``computeLumpedMomentum``), at the nodes of their current kernel functions; see
+        :meth:`~edelweissfe.models.discretesystem.DiscreteSystem.assembleInternalForceAndMomentumOfEntitiesWithOwnInertia`.
+        Each particle adds into its own part of a scatter vector, in the solver's loop over chunks.
+
+        Parameters
+        ----------
+        forEachChunk
+            The solver's loop over chunks of independent entities.
+
+        Returns
+        -------
+        tuple[DofVector, DofVector] | None
+            The internal force and the lumped momentum; None if the model has no particles.
+        """
+
+        if not self.particles:
+            return None
+
+        internalForce = self.locations.constructDofVector()
+        momentum = self.locations.constructDofVector()
+        internalForce[:] = momentum[:] = 0.0
+
+        scatterInternalForce = internalForce.createScatterVector()
+        scatterMomentum = momentum.createScatterVector()
+
+        def evaluate(particles):
+            for particle in particles:
+                particle.computePhysicsKernelsExplicit(scatterInternalForce[particle])
+                particle.computeLumpedMomentum(scatterMomentum[particle])
+
+        forEachChunk(self.particles, evaluate)
+
+        scatterInternalForce.assembleInto(internalForce)
+        scatterMomentum.assembleInto(momentum)
+
+        return internalForce, momentum
 
     @property
     def cellsInterpolatingToMaterialPoints(self) -> list:
@@ -258,12 +344,12 @@ class MPMDiscreteSystem(DiscreteSystem):
         :math:`m_A = \\sum_p \\rho_0\\, V_{0,p}\\, T_A(\\boldsymbol{x}_p)`, as each particle reports it
         (``computeLumpedInertia``), summed over the particles; see
         :meth:`~edelweissfe.models.discretesystem.DiscreteSystem.assembleLumpedMassOfEntitiesWithOwnInertia`. The one
-        assembly of this mass: the explicit solver divides by it, the implicit dynamic solver adds it to the mass of
-        the nodes when it integrates the particles' inertia there.
+        assembly of this mass: the explicit dynamic solver ``NED`` divides by it, the implicit dynamic solver adds it to
+        the mass of the nodes when it integrates the particles' inertia there.
 
         A node carries inertia if its mass is positive beyond round-off, more than
-        :data:`~edelweissmeshfree.models.mpmdiscretesystem.MASS_AT_ROUND_OFF` of the largest one; every other node
-        gets zero, the mass of a node without inertia, which both solvers take as such.
+        :data:`~edelweissmeshfree.models.mpmdiscretesystem.COEFFICIENT_AT_ROUND_OFF` of the largest one of its field;
+        every other node gets zero, the mass of a node without inertia, which both solvers take as such.
 
         Parameters
         ----------
@@ -277,24 +363,240 @@ class MPMDiscreteSystem(DiscreteSystem):
             The lumped mass, one value per degree of freedom; None if the model has no particles.
         """
 
+        return self._assembleLumpedCoefficientOfParticles(
+            lambda particle, coefficient: particle.computeLumpedInertia(coefficient), forEachChunk
+        )
+
+    def assembleLumpedDampingOfEntitiesWithOwnInertia(
+        self, forEachChunk: Callable[[list, Callable], None]
+    ) -> DofVector | None:
+        """The lumped damping of the particles at the nodes of their current kernel functions, as each particle reports
+        it (``computeLumpedDamping``, e.g. :math:`\\eta\\, V_{0,p}\\, T_A(\\boldsymbol{x}_p)` on a nonlocal field with
+        the nonlocal viscosity :math:`\\eta`), summed over the particles; see
+        :meth:`~edelweissfe.models.discretesystem.DiscreteSystem.assembleLumpedDampingOfEntitiesWithOwnInertia`. Zero
+        up to round-off is zero, as for the mass.
+
+        Parameters
+        ----------
+        forEachChunk
+            The solver's loop over chunks of independent entities.
+
+        Returns
+        -------
+        DofVector | None
+            The lumped damping, one value per degree of freedom; None if the model has no particles.
+        """
+
+        return self._assembleLumpedCoefficientOfParticles(
+            lambda particle, coefficient: particle.computeLumpedDamping(coefficient), forEachChunk
+        )
+
+    def _assembleLumpedCoefficientOfParticles(
+        self, computeCoefficient: Callable, forEachChunk: Callable[[list, Callable], None]
+    ) -> DofVector | None:
+        """Assemble a lumped coefficient of the particles (their mass or their damping): each particle adds its own
+        into its part of a scatter vector, in the solver's loop over chunks. A coefficient of a node at or below
+        :data:`~edelweissmeshfree.models.mpmdiscretesystem.COEFFICIENT_AT_ROUND_OFF` of the largest one of its field is
+        zero: field by field, since the coefficients of two fields (a mass and a micro-inertia) are of other units.
+
+        Parameters
+        ----------
+        computeCoefficient
+            ``computeCoefficient(particle, coefficient)`` adds the particle's coefficient to its part.
+        forEachChunk
+            The solver's loop over chunks of independent entities.
+
+        Returns
+        -------
+        DofVector | None
+            The lumped coefficient, one value per degree of freedom; None if the model has no particles.
+        """
+
         if not self.particles:
             return None
 
-        M = self.locations.constructDofVector()
-        M[:] = 0.0
-        scatterM = M.createScatterVector()
+        coefficient = self.locations.constructDofVector()
+        coefficient[:] = 0.0
+        scatterCoefficient = coefficient.createScatterVector()
 
         def assemble(particles):
             for particle in particles:
-                particle.computeLumpedInertia(scatterM[particle])
+                computeCoefficient(particle, scatterCoefficient[particle])
 
         forEachChunk(self.particles, assemble)
-        scatterM.assembleInto(M)
+        scatterCoefficient.assembleInto(coefficient)
 
-        if M.size:
-            M[M <= MASS_AT_ROUND_OFF * np.max(M)] = 0.0
+        values = coefficient.asPlainArray()
+        for indices in self.numbering.idcsOfFieldsInDofVector.values():
+            ofTheField = values[indices]
+            if ofTheField.size:
+                ofTheField[ofTheField <= COEFFICIENT_AT_ROUND_OFF * np.max(ofTheField)] = 0.0
+                values[indices] = ofTheField
 
-        return M
+        return coefficient
+
+    def stableTimeIncrementOfEntitiesWithOwnInertia(
+        self,
+        lumpedMass: DofVector,
+        lumpedDamping: DofVector,
+        forEachChunk: Callable[[list, Callable], None],
+    ) -> float | None:
+        """A bound of the stable time increment of ``NED``'s explicit scheme for the particles, from their stiffness at
+        the current state and the assembled lumped mass and damping. No stiffness is assembled: every particle bounds
+        the row sums of the absolute value of its own (``computeBoundOfAbsoluteStiffnessTimes``), at a cost
+        proportional to its nodes.
+
+        It is a property of the ASSEMBLED system: a particle's own bound, :math:`\\lambda_\\mathrm{max}(\\boldsymbol{M}_p^{-1}
+        \\boldsymbol{K}_p)` as for a finite element, is unbounded, because a particle's stiffness couples nodes at which
+        its own lumped mass vanishes (the mass is taken at its centre, its smoothed gradients at its faces).
+
+        **What is bounded.** The degrees of freedom with an inertia are integrated by central differences:
+        :math:`\\boldsymbol{M}\\ddot{\\boldsymbol{u}} + \\boldsymbol{C}\\dot{\\boldsymbol{u}} + \\boldsymbol{K}
+        \\boldsymbol{u} = \\boldsymbol{0}` is stable for :math:`\\Delta t \\le 2/\\omega_\\mathrm{max}`, with
+        :math:`\\omega_\\mathrm{max}^2` the largest eigenvalue of :math:`\\boldsymbol{M}^{-1}\\boldsymbol{K}`. The damping
+        does not lower this limit, since ``NED`` takes it with the mean of the velocities before and after the update
+        (a damping evaluated with the old velocity alone would). The degrees of freedom without inertia but with a
+        damping (a first-order nonlocal field) are integrated by forward Euler, stable for :math:`\\Delta t \\le
+        2/\\lambda_\\mathrm{max}(\\boldsymbol{C}^{-1}\\boldsymbol{K})`. The coupling between the two sets is not
+        included.
+
+        **Why the absolute value of the unsymmetric tangent.** The tangent of gradient-enhanced particles is
+        unsymmetric, and its coupling blocks differ by orders of magnitude once scaled by the masses: the stress depends
+        on the nonlocal field as strongly as on the strain (on a boundary of GM7, through the over-nonlocal strain), the
+        nonlocal field depends on the strain with a factor of one, and the micro-inertia of the nonlocal field is far
+        below the mass. An eigenvalue :math:`\\lambda` of the coupled system sees the geometric mean of the two coupling
+        blocks, the symmetric part of the tangent their arithmetic mean: a bound of the symmetric part follows the large
+        block alone and falls far below the stable increment whenever a particle loads a boundary. Instead, every
+        eigenvalue, real or complex, satisfies :math:`|\\lambda| \\le \\rho(|\\boldsymbol{S}|)`, the spectral radius of
+        the absolute value of :math:`\\boldsymbol{S} = \\boldsymbol{D}\\boldsymbol{K}\\boldsymbol{D}` (similar to
+        :math:`\\boldsymbol{M}^{-1}\\boldsymbol{K}`, with :math:`\\boldsymbol{D} = \\boldsymbol{M}^{-1/2}`, or
+        :math:`\\boldsymbol{C}^{-1/2}` on the first-order set). :math:`|\\boldsymbol{K}|` is accumulated particle by
+        particle, which bounds the absolute value of the sum.
+
+        **The bound of** :math:`\\rho(|\\boldsymbol{S}|)` **from one pass over the particles.** The Collatz-Wielandt
+        bound :math:`\\rho(|\\boldsymbol{S}|) \\le \\max_i (|\\boldsymbol{S}|\\boldsymbol{w})_i / w_i` holds for every
+        positive :math:`\\boldsymbol{w}`; the weights are taken constant on each field: :math:`\\boldsymbol{w} =
+        \\sum_f c_f \\boldsymbol{1}_f`. The particles give upper bounds :math:`\\hat{Z}_{if} \\ge Z_{if}` of the row
+        sums of :math:`|\\boldsymbol{S}|` over the columns of each field, :math:`Z_{if} = \\sum_{j \\in f} |S_{ij}|`
+        (each particle its share, ``computeBoundOfAbsoluteStiffnessTimes`` with the weights :math:`\\boldsymbol{D}` on
+        the columns of the field), and with them the field matrix :math:`Q_{gf} = \\max_{i \\in g} \\hat{Z}_{if}`, the
+        largest row sum of the block of fields :math:`g, f`. With
+        :math:`\\boldsymbol{c}` the Perron vector of :math:`\\boldsymbol{Q}`, every row :math:`i` of field :math:`g`
+        gives :math:`(|\\boldsymbol{S}|\\boldsymbol{w})_i \\le (\\boldsymbol{Q}\\boldsymbol{c})_g = \\rho(\\boldsymbol{Q})
+        w_i`, so :math:`\\rho(|\\boldsymbol{S}|) \\le \\rho(\\boldsymbol{Q})`: the Gershgorin bound per block of fields,
+        coupled by the largest eigenvalue of the small field matrix, which takes the geometric mean of the coupling
+        blocks. With a single field it is the Gershgorin bound.
+
+        **The row sums without the stiffness.** A particle's stiffness has as many blocks as the square of its nodes, but
+        it sees the nodal increments only through the increment it interpolates at its evaluation point (value,
+        gradient and, if stabilized, second gradient): the rows of node :math:`A` are linear in the shape functions of
+        the other node :math:`B`, with factors of node :math:`A` alone. Marmot sums :math:`w_B |K_{Ai,Bk}|` over
+        :math:`B` from a few weighted moments of the shape functions, exactly for the value and by the Cauchy-Schwarz
+        inequality over the nodes for the gradients, which keeps their directions (2/sqrt(3) of the exact sum for
+        gradients spread evenly in 3D, exact for parallel ones). Every inequality bounds from above, so the stable
+        increment stays a lower bound of the exact one.
+
+        The result is scaled by :data:`STABLE_FRACTION_OF_THE_TANGENT_LIMIT`, since the explicit scheme of the
+        particles is not exactly integrated with their tangent: their NSNI stabilization acts on the increment.
+
+        Parameters
+        ----------
+        lumpedMass
+            The lumped mass of the particles at their current configuration
+            (:meth:`assembleLumpedMassOfEntitiesWithOwnInertia`), which the solver has just assembled.
+        lumpedDamping
+            Their lumped damping (:meth:`assembleLumpedDampingOfEntitiesWithOwnInertia`), likewise.
+        forEachChunk
+            The solver's loop over chunks of independent entities.
+
+        Returns
+        -------
+        float | None
+            The stable time increment; None if the model has no particles.
+        """
+
+        if not self.particles:
+            return None
+
+        M = np.asarray(lumpedMass)
+        C = np.asarray(lumpedDamping)
+
+        secondOrder = M > 0.0
+        firstOrder = ~secondOrder & (C > 0.0)
+        scaling = np.zeros_like(M)
+        scaling[secondOrder] = 1.0 / np.sqrt(M[secondOrder])
+        scaling[firstOrder] = 1.0 / np.sqrt(C[firstOrder])
+
+        # The blocks of the field matrix: a field's degrees of freedom of each order (a field is one or the other).
+        nDof = len(M)
+        groupOfDof = np.full(nDof, -1)
+        orderOfGroup = []
+        for indices in self.numbering.idcsOfFieldsInDofVector.values():
+            inField = np.zeros(nDof, dtype=bool)
+            inField[indices] = True
+            for order, ofTheOrder in (("second", secondOrder), ("first", firstOrder)):
+                inGroup = inField & ofTheOrder
+                if inGroup.any():
+                    groupOfDof[inGroup] = len(orderOfGroup)
+                    orderOfGroup.append(order)
+        nGroups = len(orderOfGroup)
+
+        # Z_if >= sum_{j in f} |S_ij|, assembled column by column
+        rowSums = [self.locations.constructDofVector() for _ in range(nGroups)]
+        for rowSum in rowSums:
+            rowSum[:] = 0.0
+        scatterRowSums = [rowSum.createScatterVector() for rowSum in rowSums]
+
+        def addAbsoluteStiffnessRowSums(particles):
+            for particle in particles:
+                indices = self.locations.ofEntity[particle]
+                inAGroup = groupOfDof[indices] >= 0
+                scaledIndicatorOfGroup = np.zeros((len(indices), nGroups), order="F")
+                scaledIndicatorOfGroup[inAGroup, groupOfDof[indices][inAGroup]] = scaling[indices][inAGroup]
+                absoluteStiffnessRowSums = np.zeros((len(indices), nGroups), order="F")
+                particle.computeBoundOfAbsoluteStiffnessTimes(scaledIndicatorOfGroup, absoluteStiffnessRowSums)
+                for group, scatterRowSum in enumerate(scatterRowSums):
+                    ofTheParticle = scatterRowSum[particle]
+                    ofTheParticle += absoluteStiffnessRowSums[:, group]
+
+        forEachChunk(self.particles, addAbsoluteStiffnessRowSums)
+        Z = np.zeros((nDof, nGroups))
+        for group, (rowSum, scatterRowSum) in enumerate(zip(rowSums, scatterRowSums)):
+            scatterRowSum.assembleInto(rowSum)
+            Z[:, group] = scaling * np.asarray(rowSum)
+
+        Q = np.array([[np.max(Z[groupOfDof == g, f]) for f in range(nGroups)] for g in range(nGroups)])
+
+        def perronRoot(order: str) -> float:
+            """The largest eigenvalue of the nonnegative field matrix of the blocks of the given order."""
+            groups = [group for group, ofGroup in enumerate(orderOfGroup) if ofGroup == order]
+            return float(np.max(np.abs(np.linalg.eigvals(Q[np.ix_(groups, groups)])))) if groups else 0.0
+
+        stable = np.inf
+        omegaSquared = perronRoot("second")
+        if omegaSquared > 0.0:
+            stable = 2.0 / np.sqrt(omegaSquared)
+        rate = perronRoot("first")
+        if rate > 0.0:
+            stable = min(stable, 2.0 / rate)
+
+        return STABLE_FRACTION_OF_THE_TANGENT_LIMIT * stable
+
+    def entitiesWithOwnInertiaCoupleOtherNodes(self) -> bool:
+        """Whether the last connectivity update changed the set of kernel functions of a particle, as its particle
+        manager reports it; see
+        :meth:`~edelweissfe.models.discretesystem.DiscreteSystem.entitiesWithOwnInertiaCoupleOtherNodes`. A contact
+        paired anew does not count: it changes the locations, not the particles' system.
+
+        Returns
+        -------
+        bool
+            True if a particle reaches other kernel functions since the last connectivity update.
+        """
+
+        return any(
+            particleManager.particlesWithChangedKernelFunctions for particleManager in self.model.particleManagers
+        )
 
     def carriersOfTheMotion(self) -> set[str]:
         """Where the model holds the motion of its particles; see
@@ -304,8 +606,8 @@ class MPMDiscreteSystem(DiscreteSystem):
         ``V`` and ``A`` of the model's node fields.
 
         The implicit dynamic solver keeps the motion in the particles with ``inertia=entities``, at the nodes
-        with ``inertia=nodes``. The explicit solver keeps it in both: the velocity of the nodes is its state,
-        and every particle takes its own from them as it advances.
+        with ``inertia=nodes``. The explicit dynamic solver ``NED`` keeps it in both: the velocity of the nodes is its
+        state, and every particle takes its own from them as it advances.
 
         Returns
         -------
@@ -351,7 +653,7 @@ class MPMDiscreteSystem(DiscreteSystem):
             The time step.
         forEachChunk
             The solver's loop over chunks of independent entities, see
-            :meth:`~edelweissfe.solvers.nonlinearimplicitstatic.NIST.forEachChunk`.
+            :meth:`~edelweissfe.solvers.base.nonlinearsolverbase.NonlinearSolverBase.forEachChunk`.
         """
 
         time = timeStep.totalTime

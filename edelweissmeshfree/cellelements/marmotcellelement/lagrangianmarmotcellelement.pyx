@@ -42,7 +42,7 @@ from libcpp.string cimport string
 from libcpp.unordered_map cimport unordered_map
 from libcpp.vector cimport vector
 
-from edelweissfe.utils.exceptions import CutbackRequest
+from edelweissfe.utils.exceptions import CutbackRequest, ModuleNotBuilt
 
 from libc.stdlib cimport free, malloc
 from libcpp.memory cimport allocator, make_unique, unique_ptr
@@ -89,8 +89,8 @@ cdef class LagrangianMarmotCellElementWrapper(MarmotCellElementWrapper):
         try:
             # create the MarmotCellElement
             self._marmotCell = self._marmotCellElement = MarmotCellElementFactory.createCellElement( cellType.encode('utf-8'), self._cellNumber, &self._nodeCoordinates[0,0], self._nodeCoordinates.size, quadratureType.encode('utf-8'), quadratureOrder)
-        except IndexError:
-            raise NotImplementedError("Marmot cellelement {:} not found in library.".format(cellType))
+        except ValueError as e:
+            raise ModuleNotBuilt("Marmot cell element {:} is not built in this environment: {:}".format(cellType, e)) from e
 
         self._nMaterialPoints = self._marmotCellElement.getNMaterialPoints()
 

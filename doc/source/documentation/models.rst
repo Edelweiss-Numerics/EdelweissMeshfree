@@ -15,10 +15,10 @@ domain (cells, material points), the materials, the sets, etc.
 ``MPMDiscreteSystem`` class
 ---------------------------------
 
-What an ``MPMModel`` answers EdelweissFE's implicit solvers (``NIST``, ``NISTParallel``, ``NISTPArcLength``) and the
-explicit solver ``MeshfreeExplicitDynamic`` when they (re)build their discrete system: the active domain, its degrees of freedom and the entities computed like elements, how
-the solution passes between the model and the solver's vectors, and the update of the material points before the
-cells are computed. See EdelweissFE's documentation, "What the solver asks the model".
+What an ``MPMModel`` answers EdelweissFE's solvers (``NIST``, ``NISTParallel``, ``NISTPArcLength``, ``NID``, ``NED``)
+when they (re)build their discrete system: the active domain, its degrees of freedom and the entities computed like
+elements, how the solution passes between the model and the solver's vectors, the update of the material points before
+the cells are computed, and the particles as entities that carry their own inertia. See EdelweissFE's documentation, "What the solver asks the model".
 
 .. automodule:: edelweissmeshfree.models.mpmdiscretesystem
    :members:

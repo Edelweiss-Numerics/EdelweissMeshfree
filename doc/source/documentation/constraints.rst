@@ -56,8 +56,26 @@ A constraint written for explicit analyses alone, with forces and without a tang
 :class:`~edelweissmeshfree.constraints.base.mpmexplicitconstraintbase.MPMExplicitConstraintBase` and implements
 ``computeKernelsExplicit(U_np, dU, P, timeStep)``, with the same sign: an implicit solver refuses it. The explicit
 solver, in turn, accepts only a constraint that acts in an explicit analysis (``actsInExplicitAnalysis``): one that
-measures its condition at the particles' current positions, as the penalty contacts do, explicit or not. A constraint on
-the increment, such as a weak Dirichlet condition, would act as if nothing had moved there.
+measures its condition at the particles' current positions, as the penalty contacts do, explicit or not, and as the
+penalty weak Dirichlet condition does where it holds the displacement at zero (a support). A constraint on the
+increment, such as a weak Dirichlet condition that prescribes a change, would act as if nothing had moved there.
+
+**Points of a particle.** What a constraint on a point of a particle uses depends on what it measures. A constraint on
+the increment of a field there, :math:`\mathbf{N} \cdot \Delta\mathbf{U}` with the shape functions at the point,
+distributes its force with :math:`\mathbf{N}` as well (a symmetric pair): the implicit weak Dirichlet conditions. A
+constraint on the position of the point, implicit or explicit -- the supports, the cartesian boundaries, the contacts --
+measures where the particle has moved it. The particle moves a point of its own -- a vertex, a face center, its center
+-- as a whole, with its center and its smoothed deformation gradient: by :math:`\mathbf{G} \cdot \Delta\mathbf{U}`,
+with the particle's interpolation vector of an attached point,
+:meth:`~edelweissmeshfree.particles.base.baseparticle.BaseParticle.getAttachedPointInterpolationVector`, which away
+from the center is not :math:`\mathbf{N}`. Such a constraint therefore measures and distributes its force with
+:math:`\mathbf{G}`, the transpose of the point's motion, so that a penalty on the point is conservative. Measuring
+the position but distributing the force with :math:`\mathbf{N}` gives an unsymmetric stiffness that does work over a
+closed cycle of motion; ``edelweissmeshfree/constraints/test/vertexpenaltywork_test.py`` checks that a support and a
+facet contact on the vertices of a real particle do none. The two operations such a constraint needs besides its own
+physics -- locating the nodes of its particles in its block, and distributing a force on a point with
+:math:`\mathbf{G}` -- are in :mod:`edelweissmeshfree.constraints.base.pointsofparticles`, which the explicit
+constraints and the support use: a new constraint on points of particles is its physics and a constructor.
 
 The base classes
 ----------------
@@ -69,6 +87,9 @@ The base classes
 .. automodule:: edelweissmeshfree.constraints.base.mpmexplicitconstraintbase
    :members:
    :private-members:
+
+.. automodule:: edelweissmeshfree.constraints.base.pointsofparticles
+   :members:
 
 ``PenaltyEqualValue`` constraint class
 --------------------------------------
@@ -172,5 +193,17 @@ Constraints for explicit analyses
 ****************************************************************************
 
 .. automodule:: edelweissmeshfree.constraints.explicit.particlepenaltyrigidbodycontactexplicit
+   :members:
+   :private-members:
+
+``ParticlePenaltyFacetContactExplicit`` constraint class
+********************************************************
+
+Contact between particles and a body of finite elements: the vertices of the particles against the faceted boundary
+of the finite elements, which EdelweissFE's surface element generator creates. The theory is in the class
+documentation; its tests are ``edelweissmeshfree/constraints/test/particlepenaltyfacetcontactexplicit_test.py``
+(pairing, entering, tunnelling, the exchange of momentum) and example 185 (the same result as an analytic wall).
+
+.. automodule:: edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit
    :members:
    :private-members:

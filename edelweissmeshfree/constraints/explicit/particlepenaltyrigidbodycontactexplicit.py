@@ -9,6 +9,10 @@ from edelweissfe.variables.scalarvariable import ScalarVariable
 from edelweissmeshfree.constraints.base.mpmexplicitconstraintbase import (
     MPMExplicitConstraintBase,
 )
+from edelweissmeshfree.constraints.base.pointsofparticles import (
+    addForcesOnPointsOfParticle,
+    locateTheNodesOfParticles,
+)
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.particles.base.baseparticle import BaseParticle
 
@@ -61,7 +65,9 @@ class ParticlePenaltyContactImplicitSurfaceConstraintExplicit(MPMExplicitConstra
         self._name = name
         self._field = "displacement"
         self._fieldSize = getFieldSize(self._field, model.domainSize)
+        # the nodes of the particle's kernel functions, and where they sit in the block (see updateConnectivity)
         self._nodes = []
+        self._localNodes = np.zeros(0, dtype=int)
 
         self._implicit_function = implicit_function
         self._gradient_function = gradient_function
@@ -137,8 +143,10 @@ class ParticlePenaltyContactImplicitSurfaceConstraintExplicit(MPMExplicitConstra
         """
         self._constrained_points = self._getConstraintLocations()
 
-        # Refresh the grid nodes currently influenced by the particle
-        nodes = [kf.node for kf in self._particle.kernelFunctions]
+        # the nodes of the particle's kernel functions, and where they sit in the constraint's block
+        localIndexOfNode = {}
+        [self._localNodes] = locateTheNodesOfParticles([self._particle.kernelFunctions], localIndexOfNode)
+        nodes = list(localIndexOfNode)
         hasChanged = nodes != self._nodes
         self._nodes = nodes
 
@@ -182,11 +190,11 @@ class ParticlePenaltyContactImplicitSurfaceConstraintExplicit(MPMExplicitConstra
 
                 force_vector = self._penaltyParameter * g * normal
 
-                N = self._particle.getInterpolationVector(p_coord).flatten()
-
-                # the residual contribution is the negative of the force on the nodes
-                for d in range(self._domainSize):
-                    P[d :: self._fieldSize] -= N * force_vector[d]
+                # the interpolation vector with which the particle moves the point: the force is its transpose
+                G = self._particle.getAttachedPointInterpolationVector(p_coord).flatten()
+                addForcesOnPointsOfParticle(
+                    P.reshape(-1, self._fieldSize), self._localNodes, G[np.newaxis, :], force_vector[np.newaxis, :]
+                )
 
                 total_reaction += self._penaltyParameter * g
 

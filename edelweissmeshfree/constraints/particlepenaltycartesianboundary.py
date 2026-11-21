@@ -228,11 +228,11 @@ class ParticlePenaltyContactCartesianBoundaryConstraint(MPMConstraintBase):
 
             constrained_point_j = constrained_point[self._component]
 
-            N = self._particle.getInterpolationVector(constrained_point).flatten()
+            G = self._particle.getAttachedPointInterpolationVector(constrained_point).flatten()
 
             nodeIdcs = [self._nodes[kf.node] for kf in self._particle.kernelFunctions]
 
-            deltaU_j = N @ dU_U_j[nodeIdcs]
+            deltaU_j = G @ dU_U_j[nodeIdcs]
 
             g = self._orientation * (
                 deltaU_j - (-constrained_point_j + self._boundaryPosition + self._velocity * timeStep.stepProgress)
@@ -244,7 +244,7 @@ class ParticlePenaltyContactCartesianBoundaryConstraint(MPMConstraintBase):
 
             penaltyForce += g * self._penaltyParameter
 
-            dg_dU_j = N * self._orientation
+            dg_dU_j = G * self._orientation
             P_U_i[nodeIdcs] += self._penaltyParameter * dg_dU_j * g
             K_UU_ij[np.ix_(nodeIdcs, nodeIdcs)] += self._penaltyParameter * np.outer(dg_dU_j, dg_dU_j)
 

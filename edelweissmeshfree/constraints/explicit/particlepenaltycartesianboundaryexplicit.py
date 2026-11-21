@@ -9,6 +9,10 @@ from edelweissfe.variables.scalarvariable import ScalarVariable
 from edelweissmeshfree.constraints.base.mpmexplicitconstraintbase import (
     MPMExplicitConstraintBase,
 )
+from edelweissmeshfree.constraints.base.pointsofparticles import (
+    addForcesOnPointsOfParticle,
+    locateTheNodesOfParticles,
+)
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.particles.base.baseparticle import BaseParticle
 
@@ -78,8 +82,9 @@ class ParticlePenaltyCartesianBoundaryConstraintExplicit(MPMExplicitConstraintBa
         self._field = "displacement"
         self._fieldSize = getFieldSize(self._field, model.domainSize)
 
-        # These are kept for Base Class compatibility, though unused in Explicit assembly
-        self._nodes = dict()
+        # the nodes of the particle's kernel functions, and where they sit in the block (see updateConnectivity)
+        self._nodes = []
+        self._localNodes = np.zeros(0, dtype=int)
 
         self._component = component
         self.reactionForce = 0.0
@@ -128,8 +133,6 @@ class ParticlePenaltyCartesianBoundaryConstraintExplicit(MPMExplicitConstraintBa
         if self._doProximityCheck:
             self._proximityDist = particle.getVolumeUndeformed() ** (1.0 / domainSize) * proximityFactor
 
-        self._dof_indices = np.array([], dtype=np.int32)
-
     @property
     def name(self) -> str:
         return self._name
@@ -164,8 +167,10 @@ class ParticlePenaltyCartesianBoundaryConstraintExplicit(MPMExplicitConstraintBa
         # Update current coordinates of constrained points (particle may have moved)
         self._constrained_points = self._getConstraintLocations()
 
-        # Update node set (for compatibility)
-        nodes = [kf.node for kf in self._particle.kernelFunctions]
+        # the nodes of the particle's kernel functions, and where they sit in the constraint's block
+        localIndexOfNode = {}
+        [self._localNodes] = locateTheNodesOfParticles([self._particle.kernelFunctions], localIndexOfNode)
+        nodes = list(localIndexOfNode)
         hasChanged = nodes != self._nodes
         self._nodes = nodes
 
@@ -222,12 +227,13 @@ class ParticlePenaltyCartesianBoundaryConstraintExplicit(MPMExplicitConstraintBa
                 # Combined: force_val = -penalty * g * orientation
                 force_scalar = -penalty * g * orientation
 
-                # Get shape functions for this specific constrained point
-                N = self._particle.getInterpolationVector(p).flatten()
-
-                # the residual contribution is the negative of the force on the nodes
-                # Using np.add.at is safer if indices repeat (unlikely here) but direct slicing is faster
-                P[comp :: self._fieldSize] -= N * force_scalar
+                force = np.zeros(self._fieldSize)
+                force[comp] = force_scalar
+                # the interpolation vector with which the particle moves the point: the force is its transpose
+                G = self._particle.getAttachedPointInterpolationVector(p).flatten()
+                addForcesOnPointsOfParticle(
+                    P.reshape(-1, self._fieldSize), self._localNodes, G[np.newaxis, :], force[np.newaxis, :]
+                )
 
                 total_penalty_force += g * penalty
 
