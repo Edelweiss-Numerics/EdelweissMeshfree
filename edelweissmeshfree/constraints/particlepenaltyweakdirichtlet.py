@@ -4,6 +4,10 @@ from edelweissfe.timesteppers.timestep import TimeStep
 from edelweissfe.variables.scalarvariable import ScalarVariable
 
 from edelweissmeshfree.constraints.base.mpmconstraintbase import MPMConstraintBase
+from edelweissmeshfree.constraints.base.pointsofparticles import (
+    addForcesOnPointsOfParticle,
+    locateTheNodesOfParticles,
+)
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.particles.base.baseparticle import BaseParticle
 
@@ -92,9 +96,6 @@ class ParticlePenaltyWeakDirichlet(MPMConstraintBase):
         #: Per constrained particle, where the nodes of its kernel functions sit in the constraint's block (see
         #: :meth:`updateConnectivity`).
         self._localNodesOfParticle = []
-        #: Per constrained particle, where the constrained components of the nodes of its kernel functions sit in the
-        #: constraint's block, node after node (see :meth:`updateConnectivity`).
-        self._localDofsOfParticle = []
         #: Per constrained particle, its kernel functions as of the last :meth:`updateConnectivity`.
         self._kernelFunctionsOfParticle = []
         if constrain == "center":
@@ -169,8 +170,10 @@ class ParticlePenaltyWeakDirichlet(MPMConstraintBase):
 
     def updateConnectivity(self, model):
         """Collect the nodes of the kernel functions of the constrained particles, each once, ordered by label, and
-        record where each particle's nodes sit in the constraint's block. The nodes stay as they are, and nothing is
-        collected, if no constrained particle has other kernel functions than at the last update. The constraint
+        record where each particle's nodes sit in the constraint's block
+        (:func:`~edelweissmeshfree.constraints.base.pointsofparticles.locateTheNodesOfParticles`). The nodes stay as
+        they are, and nothing is collected, if no constrained particle has other kernel functions than at the last
+        update. The constraint
         compares the particles' lists of kernel functions with those of its last update itself, instead of reading the
         particle managers' report (``particlesWithChangedKernelFunctions``), which covers their last search only: the
         comparison holds whether or not the constraint was updated after every search.
@@ -191,24 +194,13 @@ class ParticlePenaltyWeakDirichlet(MPMConstraintBase):
             return False
         self._kernelFunctionsOfParticle = kernelFunctionsOfParticle
 
-        nodes = {
-            n: i
-            for i, n in enumerate(
-                sorted(set(kf.node for kfs in kernelFunctionsOfParticle for kf in kfs), key=lambda n: n.label)
-            )
-        }
-
-        hasChanged = False
-        if nodes != self._nodes:
-            hasChanged = True
-
+        # the nodes ordered by label, so that the block, and with it the numbering of the model, does not depend on the
+        # order of the particles
+        nodesByLabel = sorted({kf.node for kfs in kernelFunctionsOfParticle for kf in kfs}, key=lambda node: node.label)
+        nodes = {node: index for index, node in enumerate(nodesByLabel)}
+        self._localNodesOfParticle = locateTheNodesOfParticles(kernelFunctionsOfParticle, nodes)
+        hasChanged = nodes != self._nodes
         self._nodes = nodes
-        self._localNodesOfParticle = [np.array([nodes[kf.node] for kf in kfs]) for kfs in kernelFunctionsOfParticle]
-        components = np.array(list(self._prescribedStepDelta), dtype=int)
-        self._localDofsOfParticle = [
-            (self._fieldSize * localNodes[:, np.newaxis] + components).ravel()
-            for localNodes in self._localNodesOfParticle
-        ]
 
         return hasChanged
 
@@ -247,7 +239,8 @@ class ParticlePenaltyWeakDirichlet(MPMConstraintBase):
         the constrained components of the constrained points at their initial positions, measured where the points are
         now (see the class documentation). Particle by particle, the forces of its constrained points
         :math:`\\boldsymbol{f}_p` reach the nodes of its kernel functions as one product with the interpolation vectors
-        of the points, :math:`\\boldsymbol{G}^\\mathsf{T} \\boldsymbol{f}`.
+        of the points, :math:`\\boldsymbol{G}^\\mathsf{T} \\boldsymbol{f}`
+        (:func:`~edelweissmeshfree.constraints.base.pointsofparticles.addForcesOnPointsOfParticle`).
 
         Parameters
         ----------
@@ -262,17 +255,17 @@ class ParticlePenaltyWeakDirichlet(MPMConstraintBase):
         """
 
         components = list(self._prescribedStepDelta)
+        PAtNodes = P.reshape(-1, self._fieldSize)
 
-        for p, localDofs, initialCoordinates in zip(
-            self._constrainedParticles, self._localDofsOfParticle, self._initialCoordinatesOfConstrainedPoints
+        for p, localNodes, initialCoordinates in zip(
+            self._constrainedParticles, self._localNodesOfParticle, self._initialCoordinatesOfConstrainedPoints
         ):
             coordinates = self._constrainedCoordinatesOf(p)
             # one row per constrained point: the interpolation vector with which the particle moves it
             G = np.array([p.getAttachedPointInterpolationVector(x) for x in coordinates])
-            displacement = coordinates[:, components] - initialCoordinates[:, components]
-            # node after node, the constrained components; the kernel functions of a particle are on distinct nodes, so
-            # fancy indexing does not drop any
-            P[localDofs] += (G.T @ (self._penaltyParameter * displacement)).ravel()
+            # the forces that pull the constrained components of the points back to their initial positions
+            forces = -self._penaltyParameter * (coordinates[:, components] - initialCoordinates[:, components])
+            addForcesOnPointsOfParticle(PAtNodes, localNodes, G, forces, components)
 
         for i in self._prescribedStepDelta:
             self.penaltyForce[i] = np.sum(P[i :: self._fieldSize])

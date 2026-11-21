@@ -23,6 +23,10 @@ from edelweissfe.utils.meshtools import currentNodeCoordinates
 from edelweissmeshfree.constraints.base.mpmexplicitconstraintbase import (
     MPMExplicitConstraintBase,
 )
+from edelweissmeshfree.constraints.base.pointsofparticles import (
+    addForcesOnPointsOfParticle,
+    locateTheNodesOfParticles,
+)
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.particles.base.baseparticle import BaseParticle
 
@@ -407,12 +411,16 @@ class ParticlePenaltyFacetContactExplicit(MPMExplicitConstraintBase):
         """
 
         localIndexOfNode = {}
-        self._localNodesOfParticle = {}
-        for particleIndex in np.unique(self._particleOfPoint[self._pairedPoints]):
-            particle = self._particles[particleIndex]
-            self._localNodesOfParticle[particleIndex] = np.array(
-                [localIndexOfNode.setdefault(kf.node, len(localIndexOfNode)) for kf in particle.kernelFunctions]
+        pairedParticles = np.unique(self._particleOfPoint[self._pairedPoints])
+        self._localNodesOfParticle = dict(
+            zip(
+                pairedParticles,
+                locateTheNodesOfParticles(
+                    [self._particles[particleIndex].kernelFunctions for particleIndex in pairedParticles],
+                    localIndexOfNode,
+                ),
             )
+        )
 
         self._localMasterNodesOfPoint = {}
         if self._twoWayCoupling:
@@ -460,8 +468,9 @@ class ParticlePenaltyFacetContactExplicit(MPMExplicitConstraintBase):
 
             particleIndex = self._particleOfPoint[point]
             G = self._particles[particleIndex].getAttachedPointInterpolationVector(coordinatesOfPoint[i]).flatten()
-            # the kernel functions of a particle are on distinct nodes, so fancy indexing does not drop any
-            PAtNodes[self._localNodesOfParticle[particleIndex]] -= np.outer(G, force)
+            addForcesOnPointsOfParticle(
+                PAtNodes, self._localNodesOfParticle[particleIndex], G[np.newaxis, :], force[np.newaxis, :]
+            )
             forceOnParticles += G.sum() * force
 
             if self._twoWayCoupling:

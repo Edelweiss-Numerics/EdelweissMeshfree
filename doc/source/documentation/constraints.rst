@@ -72,7 +72,10 @@ from the center is not :math:`\mathbf{N}`. Such a constraint therefore measures 
 :math:`\mathbf{G}`, the transpose of the point's motion, so that a penalty on the point is conservative. Measuring
 the position but distributing the force with :math:`\mathbf{N}` gives an unsymmetric stiffness that does work over a
 closed cycle of motion; ``edelweissmeshfree/constraints/test/vertexpenaltywork_test.py`` checks that a support and a
-facet contact on the vertices of a real particle do none.
+facet contact on the vertices of a real particle do none. The two operations such a constraint needs besides its own
+physics -- locating the nodes of its particles in its block, and distributing a force on a point with
+:math:`\mathbf{G}` -- are in :mod:`edelweissmeshfree.constraints.base.pointsofparticles`, which the explicit
+constraints and the support use: a new constraint on points of particles is its physics and a constructor.
 
 The base classes
 ----------------
@@ -84,6 +87,9 @@ The base classes
 .. automodule:: edelweissmeshfree.constraints.base.mpmexplicitconstraintbase
    :members:
    :private-members:
+
+.. automodule:: edelweissmeshfree.constraints.base.pointsofparticles
+   :members:
 
 ``PenaltyEqualValue`` constraint class
 --------------------------------------
