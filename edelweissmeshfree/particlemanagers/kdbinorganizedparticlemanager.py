@@ -166,6 +166,10 @@ class _FastKDBinOrganizer:
         lowestQueriedBinIndex = ((queryBoxMin - self._boundingBoxMin) / self._binSize).astype(int)
         highestQueriedBinIndex = ((queryBoxMax - self._boundingBoxMin) / self._binSize).astype(int)
 
+        # a query box beyond the grid of bins on either side of a dimension overlaps no bin
+        if np.any(highestQueriedBinIndex < 0) or np.any(lowestQueriedBinIndex > self._nBins - 1):
+            return np.empty(0, dtype=np.intp)
+
         np.maximum(lowestQueriedBinIndex, 0, out=lowestQueriedBinIndex)
         np.minimum(highestQueriedBinIndex, self._nBins - 1, out=highestQueriedBinIndex)
 

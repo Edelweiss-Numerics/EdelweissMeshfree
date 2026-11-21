@@ -84,3 +84,20 @@ def test_a_query_returns_every_kernel_whose_box_overlaps_the_query_box(dimension
         overlapping = np.flatnonzero(np.all((upper >= bins._mins) & (lower <= bins._maxs), axis=1))
         assert np.all(np.diff(candidates) > 0), "each candidate once, in ascending order"
         assert set(overlapping) <= set(candidates)
+
+
+@pytest.mark.parametrize("dimension", [1, 2, 3])
+def test_a_query_box_beyond_the_grid_of_bins_finds_no_kernel(dimension):
+    """On either side of every dimension: a particle that left the supports of all kernel functions has no candidates,
+    and the search reports it by its own message."""
+
+    bins = _FastKDBinOrganizer(_kernels(dimension, 20, np.random.default_rng(20 + dimension)), dimension)
+    extent = bins._nBins * bins._binSize
+
+    for d in range(dimension):
+        for side in (-1.0, 1.0):
+            lower = bins._boundingBoxMin + 0.25 * extent
+            lower[d] = bins._boundingBoxMin[d] + (-2.0 if side < 0 else 2.0) * extent[d]
+            upper = lower + 0.1 * extent
+
+            assert bins.getCandidateIndices(lower, upper).size == 0
