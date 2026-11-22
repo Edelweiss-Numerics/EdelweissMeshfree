@@ -31,7 +31,10 @@ import edelweissfe.utils.performancetiming as performancetiming
 import numpy as np
 import pytest
 from edelweissfe.journal.journal import Journal
-from edelweissfe.steps.adaptivestep import AdaptiveStep
+from edelweissfe.solvers.nonlinearexplicitdynamicparallel import NEDParallel
+from edelweissfe.steps.adaptivestepforexplicitsimulations import (
+    AdaptiveStepForExplicitSimulations,
+)
 from edelweissfe.steps.stepmanager import StepActionCollection
 from edelweissfe.utils.exceptions import StepFailed
 
@@ -62,7 +65,6 @@ from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
 from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
     MarmotParticleWrapper,
 )
-from edelweissmeshfree.solvers.meshfreeexplicitdynamic import MeshfreeExplicitDynamic
 
 
 def run_sim():
@@ -231,13 +233,13 @@ def run_sim():
     # cap, not at its end time.
     theModel.particleManagers.append(theParticleManager)
     stepActions = StepActionCollection()
-    step = AdaptiveStep(
+    step = AdaptiveStepForExplicitSimulations(
         0,
         theModel,
         fieldOutputController,
         theJournal,
         {},
-        MeshfreeExplicitDynamic({}, theJournal),
+        NEDParallel({}, theJournal, **{"output-frequency": 1}),
         [ensightOutput],
         stepActions,
         stepLength=tMax,
@@ -245,7 +247,6 @@ def run_sim():
         maxInc=incSize,
         minInc=incSize / 1e8,
         maxNumInc=101,
-        increaseFactor=1.5,
     )
 
     try:

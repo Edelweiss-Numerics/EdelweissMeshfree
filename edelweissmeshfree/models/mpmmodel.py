@@ -229,10 +229,11 @@ class MPMModel(FEModel):
         return super().advanceToTime(time)
 
     def setNewmarkParametersOfEntities(self, beta: float, gamma: float):
-        """Give the particles the Newmark parameters of the solver, at the start of every step of an implicit solver;
+        """Give the particles the Newmark parameters of the solver, at the start of every step;
         see :meth:`~edelweissfe.models.femodel.FEModel.setNewmarkParametersOfEntities`. Each particle integrates the
         Newmark scheme at its own evaluation points, with its velocity and acceleration in its state; with
-        :math:`\\beta = \\gamma = 0`, which every quasi-static solver passes, it carries no inertia. A particle without
+        :math:`\\beta = \\gamma = 0`, which every quasi-static solver passes, and the explicit dynamic solver ``NED``,
+        which integrates the inertia at the nodes, it carries no inertia. A particle without
         the properties ``newmark-beta beta`` and ``newmark-beta gamma`` has no inertia to integrate: it is accepted by a
         quasi-static solver, and refused by a dynamic one.
 
@@ -295,9 +296,9 @@ class MPMModel(FEModel):
     def updateConnectivity(self) -> Change:
         """Bring the connectivity up to date with the converged state, before an increment, and say what that changed;
         see :meth:`~edelweissfe.models.femodel.FEModel.updateConnectivity`. Called by EdelweissFE's implicit solvers at
-        the start of every increment and of every retry after a cutback, and by
-        :class:`~edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic` after every increment, on
-        the kernel functions the particles reached.
+        the start of every increment and of every retry after a cutback, and by the explicit dynamic solver ``NED`` after
+        every increment, on the kernel functions the particles reached, and when it resumes a step (see
+        :class:`~edelweissfe.solvers.nonlinearexplicitdynamic.NED`).
 
         First the managers assign the material points to the cells they lie in (:attr:`mpmManagers`) and the particles
         to the kernel functions they reach (:attr:`particleManagers`), each from its converged state: a failed attempt
@@ -586,8 +587,7 @@ class MPMModel(FEModel):
         The material point method and RKPM are updated-Lagrangian: the material points and particles carry the state,
         and their positions follow from it. The connectivity -- which cells hold which material points, which kernel
         functions reach which particles, where bonded kernel functions sit -- follows from the positions, and is
-        rebuilt by the first connectivity update of the resumed run (:meth:`updateConnectivity`), as before every
-        increment.
+        rebuilt by the first connectivity update of the resumed run (:meth:`updateConnectivity`).
 
         Parameters
         ----------
