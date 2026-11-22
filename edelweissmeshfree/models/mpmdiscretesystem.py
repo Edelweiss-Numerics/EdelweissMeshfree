@@ -443,7 +443,7 @@ class MPMDiscreteSystem(DiscreteSystem):
     ) -> float | None:
         """A bound of the stable time increment of ``NED``'s explicit scheme for the particles, from their stiffness at
         the current state and the assembled lumped mass and damping. No stiffness is assembled: every particle bounds
-        the row sums of the absolute value of its own (``computeBoundOfAbsoluteStiffnessTimes``), at a cost
+        the row sums of the absolute value of its own (``addBoundOfAbsoluteStiffnessTimes``), at a cost
         proportional to its nodes.
 
         It is a property of the ASSEMBLED system: a particle's own bound, :math:`\\lambda_\\mathrm{max}(\\boldsymbol{M}_p^{-1}
@@ -478,7 +478,7 @@ class MPMDiscreteSystem(DiscreteSystem):
         positive :math:`\\boldsymbol{w}`; the weights are taken constant on each field: :math:`\\boldsymbol{w} =
         \\sum_f c_f \\boldsymbol{1}_f`. The particles give upper bounds :math:`\\hat{Z}_{if} \\ge Z_{if}` of the row
         sums of :math:`|\\boldsymbol{S}|` over the columns of each field, :math:`Z_{if} = \\sum_{j \\in f} |S_{ij}|`
-        (each particle its share, ``computeBoundOfAbsoluteStiffnessTimes`` with the weights :math:`\\boldsymbol{D}` on
+        (each particle its share, ``addBoundOfAbsoluteStiffnessTimes`` with the weights :math:`\\boldsymbol{D}` on
         the columns of the field), and with them the field matrix :math:`Q_{gf} = \\max_{i \\in g} \\hat{Z}_{if}`, the
         largest row sum of the block of fields :math:`g, f`. With
         :math:`\\boldsymbol{c}` the Perron vector of :math:`\\boldsymbol{Q}`, every row :math:`i` of field :math:`g`
@@ -554,7 +554,7 @@ class MPMDiscreteSystem(DiscreteSystem):
                 scaledIndicatorOfGroup = np.zeros((len(indices), nGroups), order="F")
                 scaledIndicatorOfGroup[inAGroup, groupOfDof[indices][inAGroup]] = scaling[indices][inAGroup]
                 absoluteStiffnessRowSums = np.zeros((len(indices), nGroups), order="F")
-                particle.computeBoundOfAbsoluteStiffnessTimes(scaledIndicatorOfGroup, absoluteStiffnessRowSums)
+                particle.addBoundOfAbsoluteStiffnessTimes(scaledIndicatorOfGroup, absoluteStiffnessRowSums)
                 for group, scatterRowSum in enumerate(scatterRowSums):
                     ofTheParticle = scatterRowSum[particle]
                     ofTheParticle += absoluteStiffnessRowSums[:, group]
