@@ -48,8 +48,9 @@ class MPMConstraintBase(ConstraintBase):
     #: dynamic solver ``NED`` evaluates the constraints of a meshfree model at the configuration it has just accepted:
     #: the particles have moved, and the nodes of the kernel functions carry neither a solution nor an increment. A
     #: constraint that measures its condition at the particles' current positions acts there, e.g. a contact with a
-    #: boundary; a constraint on the increment, e.g. a weak Dirichlet condition or an equal value, would act as if
-    #: nothing had moved, and the solver refuses it. Not by default, then, unlike a constraint of finite elements.
+    #: boundary, or a weak Dirichlet condition that holds the displacement at zero; a constraint on the increment, e.g.
+    #: a weak Dirichlet condition that prescribes a change, or an equal value, would act as if nothing had moved, and the
+    #: solver refuses it. Not by default, then, unlike a constraint of finite elements.
     actsInExplicitAnalysis: bool = False
 
     #: The nodes of a meshfree constraint are those its particles or material points currently interpolate from, so they
