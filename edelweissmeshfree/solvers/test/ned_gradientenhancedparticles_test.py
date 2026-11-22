@@ -144,8 +144,16 @@ def _bar(journal: Journal, microInertia: float, viscosity: float) -> MPMModel:
     return model
 
 
-def runBar(microInertia: float, viscosity: float, courantNumber: float, nIncrements: int = N_INCREMENTS):
-    """Run the bar for ``nIncrements`` increments of the critical time step, scaled by ``courantNumber``.
+def runBar(
+    microInertia: float,
+    viscosity: float,
+    courantNumber: float,
+    nIncrements: int = N_INCREMENTS,
+    newmarkParametersBefore: tuple[float, float] = (0.0, 0.0),
+):
+    """Run the bar for ``nIncrements`` increments of the critical time step, scaled by ``courantNumber``. Before the
+    step, the particles hold the Newmark parameters ``newmarkParametersBefore``, as the step of a solver before would
+    have left them.
 
     Returns
     -------
@@ -155,6 +163,7 @@ def runBar(microInertia: float, viscosity: float, courantNumber: float, nIncreme
 
     journal = Journal(verbose=False)
     model = _bar(journal, microInertia, viscosity)
+    model.setNewmarkParametersOfEntities(*newmarkParametersBefore)
     solver = NED({}, journal, **{"output-frequency": nIncrements, "courant-number": courantNumber})
     fieldOutputController = MPMFieldOutputController(model, journal)
     fieldOutputController.initializeJob()
@@ -225,3 +234,23 @@ def test_the_critical_time_step_is_stable_and_twice_it_is_not(nonlocalField):
 
     assert nonlocalRateAndIncrement(stable)[0] < STABLE_NONLOCAL_RATE
     assert not nonlocalRateAndIncrement(unstable)[0] < 1e6 * STABLE_NONLOCAL_RATE
+
+
+def test_the_particles_carry_no_newmark_inertia_in_a_step_after_an_implicit_dynamic_one():
+    """An implicit dynamic step with ``inertia=entities`` leaves the particles its Newmark parameters. ``NED``
+    integrates the inertia at the nodes and gives the particles zero parameters at the start of its step: the run, and
+    the tangent of the current state of a particle after it (documented as without inertia), are those of particles
+    that never had any."""
+
+    tangents = []
+    for newmarkParametersBefore in [(0.0, 0.0), (0.25, 0.5)]:
+        model, _ = runBar(
+            **WITH_MICRO_INERTIA, courantNumber=0.5, nIncrements=5, newmarkParametersBefore=newmarkParametersBefore
+        )
+        particle = next(iter(model.particles.values()))
+        tangent = np.zeros(particle.nDof**2)
+        particle.computeTangentOfTheCurrentState(tangent)
+        tangents.append(tangent)
+
+    assert np.any(tangents[0])
+    np.testing.assert_array_equal(tangents[1], tangents[0])
