@@ -73,3 +73,24 @@ def test_a_support_acts_in_an_explicit_analysis_and_a_prescribed_change_does_not
     assert not ParticlePenaltyWeakDirichlet(
         "c", model, [_particle()], "rotation", {0: 0.0}, PENALTY
     ).actsInExplicitAnalysis
+
+
+def test_an_empty_list_of_vertices_is_refused():
+    """An empty list of vertices names no point to hold. It is refused, and not taken for the center of the particle."""
+
+    with pytest.raises(ValueError, match="list of vertex indices that is not empty"):
+        _support(_particle(), constrain=[])
+
+
+def test_the_constrained_particles_may_be_given_as_any_iterable():
+    """The constraint goes over its particles more than once (their initial positions, their nodes, their forces): it
+    keeps them as a list, so that particles given as a generator are held like those of a list."""
+
+    particle = _particle()
+    support = ParticlePenaltyWeakDirichlet(
+        "support", MPMModel(2), (p for p in [particle]), "displacement", {0: 0.0}, PENALTY
+    )
+    support.updateConnectivity(None)
+
+    particle.center = particle.center + np.array([0.1, 0.0])
+    assert _evaluate(support)[:, 0].sum() == pytest.approx(PENALTY * 0.1)
