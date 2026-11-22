@@ -37,9 +37,10 @@ generator: ``projectile_left`` ... ``projectile_front``; ``back`` is the face at
 
 Its faces that can touch the slab are tiled into flat contact facets by EdelweissFE's surface element generator
 (:func:`edelweissfe.generators.surfaceelementgenerator.buildContactFacets`). The quadratic faces are triangulated
-through their midside nodes, and each facet carries the weights that pass a force at a point of the facet to the
-nodes of the element face (``facetConsistent``); the contact uses them for the reaction on the projectile (the second
-half of ``buildProjectile`` above).
+through their midside nodes: every facet is a flat triangle of three nodes of the element face, and the contact
+passes its reaction at a point of a facet to these three nodes, with the weights of the point on the facet
+(``facetConsistent``, the plain distribution; no facet carries weights of its own then). This is the second half of
+``buildProjectile`` above.
 
 The projectile gets its initial velocity at its nodes, in the entry ``V`` of the model's node field, after
 ``model.prepareYourself``: the nodes of finite elements always start from the model's velocity (see
