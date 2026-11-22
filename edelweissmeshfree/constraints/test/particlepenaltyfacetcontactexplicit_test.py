@@ -191,6 +191,24 @@ def test_a_point_that_leaves_is_released_and_one_out_of_reach_takes_the_constrai
     assert not contact.withinReach and contact.nodes == []
 
 
+def test_a_point_that_leaves_its_contact_beyond_the_search_distance_is_free_at_once():
+    """A point in contact is not lost to the search distance; one that has left the master body is. Beyond the search
+    distance it is free, and the constraint out of reach, in the update that sees it leave."""
+
+    particle = _particleWithOneVertexAt([0.5, 1.05])
+    contact = _contact([particle], _squareSurface(4))
+    model = MPMModel(2)
+    contact.updateConnectivity(model)
+    _move(particle, [0.5, 0.99])
+    contact.updateConnectivity(model)
+    assert contact.stateOfPoints[0] == ContactState.IN_CONTACT
+
+    _move(particle, [0.5, 1.5])
+    assert contact.updateConnectivity(model)
+    assert contact.stateOfPoints[0] == ContactState.FREE
+    assert not contact.withinReach and contact.nodes == []
+
+
 def test_a_paired_point_that_penetrates_between_two_updates_is_pushed_back_from_where_it_is_now():
     """The gap is evaluated at the current configuration, so that the contact holds with an analysis that updates the
     connectivity less often than it evaluates the forces."""
@@ -231,6 +249,33 @@ def test_a_point_found_inside_without_having_been_seen_outside_gets_no_force_and
     _move(particle, [0.5, 1.1])
     contact.updateConnectivity(model)
     assert contact.stateOfPoints[0] == ContactState.APPROACHING
+
+
+def test_a_point_found_inside_counts_until_it_is_seen_outside_also_deeper_than_the_search_distance():
+    """A point found inside that goes on, deeper than the search distance, is out of sight of every facet. It has not
+    left the master body: it still counts as found inside, so that a count of zero after a run means that no point is
+    inside unseen. It is reported once."""
+
+    journal = JournalStandIn()
+    particle = _particleWithOneVertexAt([0.5, 0.9])
+    contact = _contact([particle], _squareSurface(4), journal)
+    model = MPMModel(2)
+    contact.updateConnectivity(model)
+    assert contact.stateOfPoints[0] == ContactState.FOUND_INSIDE
+
+    for y in [0.5, 0.9]:  # further from every side than the search distance, and back
+        _move(particle, [0.5, y])
+        contact.updateConnectivity(model)
+        assert contact.stateOfPoints[0] == ContactState.FOUND_INSIDE
+        assert contact.numberOfPointsFoundInside == 1
+        assert not contact.withinReach
+
+    assert sum("found inside" in message for message in journal.messages) == 1
+
+    _move(particle, [0.5, 1.1])
+    contact.updateConnectivity(model)
+    assert contact.stateOfPoints[0] == ContactState.APPROACHING
+    assert contact.numberOfPointsFoundInside == 0
 
 
 def test_a_point_entering_deeper_than_the_warning_fraction_of_the_search_distance_is_reported():
