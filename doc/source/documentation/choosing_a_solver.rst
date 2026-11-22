@@ -31,7 +31,9 @@ the solver asks the model*), and the model answers with its active domain.
 
 The state a quasi-static step accepts is at rest: the velocity ``V`` and the acceleration ``A`` of every node are zero
 (see EdelweissFE's "Node field results"). A quasi-static solver gives the particles the Newmark parameters zero at the
-start of every step, so they carry no inertia, whatever they were given before.
+start of every step, so they carry no inertia, whatever they were given before. So does the explicit dynamic solver
+``NED``, which integrates the inertia at the nodes: the tangent it may ask a particle for holds no inertia of the
+Newmark scheme of an implicit dynamic step before it.
 
 A simulation is set up from Python as any EdelweissFE step. The model holds what defines its connectivity -- the
 managers that assign material points to cells (``mpmManagers``) and particles to kernel functions
