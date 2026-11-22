@@ -53,7 +53,8 @@ class ParticlePenaltyWeakDirichlet(MPMConstraintBase):
         The penalty parameter value.
     constrain
         Either constrain the center of the particle or a list of vertex indices for particles with multiple vertices.
-        If "center", the center of the particle is constrained. If a list, the vertices at the given indices are constrained.
+        If "center", the center of the particle is constrained. If a list, the vertices at the given indices are
+        constrained; it must name at least one vertex.
     """
 
     #: Carries nothing from one increment to the next: the positions the points are held at in an explicit analysis
@@ -73,7 +74,7 @@ class ParticlePenaltyWeakDirichlet(MPMConstraintBase):
     ):
         self._name = name
         self._model = model
-        self._constrainedParticles = constrainedParticles
+        self._constrainedParticles = list(constrainedParticles)
         self._field = field
         self._prescribedStepDelta = prescribedStepDelta
         self._fieldSize = getFieldSize(self._field, model.domainSize)
@@ -82,10 +83,9 @@ class ParticlePenaltyWeakDirichlet(MPMConstraintBase):
         if constrain == "center":
             self._constrainVertices = None
         else:
-            if not isinstance(constrain, list):
-                raise ValueError("Constrain must be 'center' or a list of vertex indices.")
-            if len(constrain) > 0 and not all(isinstance(i, int) for i in constrain):
-                raise ValueError("Constrain must be 'center' or a list of vertex indices.")
+            # an empty list would constrain nothing, and is not taken for "center" either
+            if not isinstance(constrain, list) or not constrain or not all(isinstance(i, int) for i in constrain):
+                raise ValueError("Constrain must be 'center' or a list of vertex indices that is not empty.")
             self._constrainVertices = constrain
 
         self.penaltyForce = np.zeros(self._fieldSize)
