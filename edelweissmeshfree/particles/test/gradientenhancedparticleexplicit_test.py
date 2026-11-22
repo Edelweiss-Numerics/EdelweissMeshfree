@@ -25,7 +25,8 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 """The explicit methods of a gradient-enhanced finite-strain particle with six nonlocal variables (GM7 at finite
-strains) reach Python: its fields, its lumped damping and the tangent of its current state.
+strains) reach Python: its fields, its lumped damping, the tangent of its current state and the bound of its absolute
+stiffness.
 
 Skipped where Marmot is not built.
 """
@@ -114,3 +115,22 @@ def test_the_tangent_of_the_current_state_leaves_the_state_unchanged():
     Kuu = K[np.ix_(displacement, displacement)]
     translation = np.tile([1.0, 0.0, 0.0], particle.nDof // 9)
     np.testing.assert_allclose(Kuu @ translation, 0.0, atol=1e-8 * np.abs(Kuu).max())
+
+
+def test_the_bound_of_the_absolute_stiffness_leaves_the_particle_as_it_was():
+    """The bound is Marmot's visitor of the stiffness the particle describes, which leaves the particle as it was
+    found: in the middle of an increment (advanced, not accepted), its working state and the internal force that
+    follows the bound are those before it, with no reset by the host."""
+    particle = _particle()
+    nDof = particle.nDof
+    particle.updatePhysicsExplicit(1e-4 * np.sin(np.arange(nDof)), 1.0, 1.0)
+    state = np.array(particle._stateVarsTemp)
+    before = np.zeros(nDof)
+    particle.computePhysicsKernelsExplicit(before)
+
+    particle.computeBoundOfAbsoluteStiffnessTimes(np.ones((nDof, 1), order="F"), np.zeros((nDof, 1), order="F"))
+
+    after = np.zeros(nDof)
+    particle.computePhysicsKernelsExplicit(after)
+    np.testing.assert_array_equal(particle._stateVarsTemp, state)
+    np.testing.assert_array_equal(after, before)
