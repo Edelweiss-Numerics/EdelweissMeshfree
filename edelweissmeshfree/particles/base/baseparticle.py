@@ -41,9 +41,8 @@ Implementing your own particles can be done easily by subclassing from
 the abstract base class :class:`~BaseParticle`.
 
 In an explicit analysis, the methods of a particle are called in an order its implementation relies on (advance,
-accept twice, reconnect, then the force and the momentum, the lumped inertia and damping, and the bound of the stable
-time increment last); the calls and the contracts that follow from their order are written down once, in Marmot's
-documentation: `the explicit life cycle of a particle
+accept twice, reconnect, then the force and the momentum, the lumped inertia and damping); the calls and the contracts
+that follow from their order are written down once, in Marmot's documentation: `the explicit life cycle of a particle
 <https://materialmodelingtoolbox.github.io/Marmot/pages/features/meshfreeparticles.html#explicit-life-cycle-of-a-particle>`_.
 """
 
@@ -418,10 +417,9 @@ class BaseParticle(BaseNodeCouplingEntity):
     ):
         """Explicit dynamics: the tangent of the internal force with respect to the degrees of freedom of the kernel
         functions currently assigned, at the current state (a zero increment, evaluated on a copy of the state). The
-        state variables are left unchanged; the response the material point keeps is overwritten, so in an explicit
-        increment it is called after :meth:`computePhysicsKernelsExplicit`, which reads it. Without inertia. The exact stiffness, e.g. to check the bound of
-        :meth:`computeBoundOfAbsoluteStiffnessTimes` against, which the stable time increment of the particles is
-        bounded with.
+        state variables are left unchanged; the response the material point keeps is overwritten: a check of the
+        stiffness, e.g. of the bound of :meth:`computeBoundOfAbsoluteStiffnessTimes`, which the stable time increment
+        of the particles is bounded with, not a call of an explicit increment. Without inertia.
 
         The zero increment is taken over a unit time increment, at time zero: the time increment is only positive, as a
         material may divide by it, and the tangent of a rate-independent material does not depend on it. For a
@@ -442,12 +440,10 @@ class BaseParticle(BaseNodeCouplingEntity):
     ):
         """Explicit dynamics: add an upper bound of :math:`|\\boldsymbol{K}|\\, \\boldsymbol{W}`, the absolute value of
         the stiffness at the current state (the tangent of :meth:`computeTangentOfTheCurrentState`, without inertia,
-        of a zero increment over a unit time increment, see there) times nonnegative weights. It leaves the state
-        variables unchanged and overwrites the response the material point keeps, so in an explicit increment it is
-        called after :meth:`computePhysicsKernelsExplicit`, which reads it (the order of the calls: the explicit life
-        cycle of a particle, see the module documentation). The stiffness itself is not assembled: the bound
-        costs as much as the nodes, the stiffness as their square. It is what the stable time increment of the
-        particles is bounded with
+        of a zero increment over a unit time increment, see there) times nonnegative weights. It leaves the particle
+        as it was found, so a host may ask for it at any point of an increment. The stiffness itself is not assembled:
+        the bound costs as much as the nodes, the stiffness as their square. It is what the stable time increment of
+        the particles is bounded with
         (:meth:`~edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia`).
 
         Parameters
