@@ -120,12 +120,13 @@
 <span class="sd">    constraint acts in an explicit analysis at all, it declares in :attr:`actsInExplicitAnalysis`.</span>
 <span class="sd">    """</span>
 
-    <span class="c1">#: Whether this constraint acts in an explicit analysis</span>
-    <span class="c1">#: (:class:`~edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic`), which evaluates the</span>
-    <span class="c1">#: constraints at the configuration it has just accepted: the particles have moved, and the nodes of the kernel</span>
-    <span class="c1">#: functions carry neither a solution nor an increment. A constraint that measures its condition at the particles'</span>
-    <span class="c1">#: current positions acts there, e.g. a contact with a boundary; a constraint on the increment, e.g. a weak</span>
-    <span class="c1">#: Dirichlet condition or an equal value, would act as if nothing had moved, and the solver refuses it.</span>
+    <span class="c1">#: Whether this constraint acts in an explicit analysis (see</span>
+    <span class="c1">#: :attr:`~edelweissfe.constraints.base.constraintbase.ConstraintBase.actsInExplicitAnalysis`). The explicit</span>
+    <span class="c1">#: dynamic solver ``NED`` evaluates the constraints of a meshfree model at the configuration it has just accepted:</span>
+    <span class="c1">#: the particles have moved, and the nodes of the kernel functions carry neither a solution nor an increment. A</span>
+    <span class="c1">#: constraint that measures its condition at the particles' current positions acts there, e.g. a contact with a</span>
+    <span class="c1">#: boundary; a constraint on the increment, e.g. a weak Dirichlet condition or an equal value, would act as if</span>
+    <span class="c1">#: nothing had moved, and the solver refuses it. Not by default, then, unlike a constraint of finite elements.</span>
     <span class="n">actsInExplicitAnalysis</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 
     <span class="c1">#: The nodes of a meshfree constraint are those its particles or material points currently interpolate from, so they</span>

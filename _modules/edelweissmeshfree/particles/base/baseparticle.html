@@ -205,20 +205,6 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">kernelFunctions</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">BaseMeshfreeKernelFunction</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""The kernel functions assigned to the particle."""</span>
 
-<div class="viewcode-block" id="BaseParticle.getBoundingBox">
-<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getBoundingBox">[docs]</a>
-    <span class="nd">@abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">getBoundingBox</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""Get the bounding box of the particle.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        np.ndarray</span>
-<span class="sd">            All coordinates for all bounding vertices."""</span></div>
-
-
 <div class="viewcode-block" id="BaseParticle.getVertexCoordinates">
 <a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getVertexCoordinates">[docs]</a>
     <span class="nd">@abstractmethod</span>
@@ -471,9 +457,9 @@
         <span class="n">dTime</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">"""Explicit dynamics: take the solution increment on the kernel functions currently assigned, i.e. update the</span>
-<span class="sd">        state and the position of the particle, and its velocity and acceleration; see</span>
-<span class="sd">        :class:`~edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic`. A particle that cannot</span>
-<span class="sd">        take the increment requests a cutback (:class:`~edelweissfe.utils.exceptions.CutbackRequest`).</span>
+<span class="sd">        state and the position of the particle, and its velocity and acceleration; see the explicit dynamic solver</span>
+<span class="sd">        :class:`~edelweissfe.solvers.nonlinearexplicitdynamic.NED`. A particle that cannot take the increment requests</span>
+<span class="sd">        a cutback (:class:`~edelweissfe.utils.exceptions.CutbackRequest`), which fails the step.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -538,16 +524,59 @@
 <span class="sd">        """</span></div>
 
 
-<div class="viewcode-block" id="BaseParticle.assignMeshfreeKernelFunctions">
-<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.assignMeshfreeKernelFunctions">[docs]</a>
-    <span class="nd">@abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">assignMeshfreeKernelFunctions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kernelFunctions</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">BaseMeshfreeKernelFunction</span><span class="p">]):</span>
-<span class="w">        </span><span class="sd">"""Assign the meshfree kernel functions to the particle.</span>
+<div class="viewcode-block" id="BaseParticle.computeLumpedDamping">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedDamping">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">computeLumpedDamping</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">C</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Explicit dynamics: add the lumped damping of the particle, on the kernel functions currently assigned: the</span>
+<span class="sd">        coefficient of each field's first time derivative, as :meth:`computeLumpedInertia` holds the one of the second.</span>
+<span class="sd">        A gradient-enhanced particle reports the nonlocal viscosity there, which integrates a first-order nonlocal field</span>
+<span class="sd">        on its own and damps a second-order one. The default adds nothing, which is no damping.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        shapeFunctions</span>
-<span class="sd">            The meshfree shape functions.</span>
+<span class="sd">        C</span>
+<span class="sd">            The lumped damping to augment, one entry per degree of freedom.</span>
+<span class="sd">        """</span></div>
+
+
+<div class="viewcode-block" id="BaseParticle.computeTangentOfTheCurrentState">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeTangentOfTheCurrentState">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">computeTangentOfTheCurrentState</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">K</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Explicit dynamics: the tangent of the internal force with respect to the degrees of freedom of the kernel</span>
+<span class="sd">        functions currently assigned, at the current state, which is left unchanged (a zero increment, evaluated on a</span>
+<span class="sd">        copy of the state). Without inertia. It is what the stable time increment of the particles is bounded with</span>
+<span class="sd">        (:meth:`~edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia`).</span>
+
+<span class="sd">        The zero increment is taken over a unit time increment, at time zero: the time increment is only positive, as a</span>
+<span class="sd">        material may divide by it, and the tangent of a rate-independent material does not depend on it. For a</span>
+<span class="sd">        rate-dependent material, e.g. with a Duvaut-Lions viscosity, it is the tangent relaxed over that time, softer</span>
+<span class="sd">        than the response within an explicit increment, and the bound taken from it may be too large.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        K</span>
+<span class="sd">            The tangent to define, column-major, ``nDof x nDof``.</span>
+<span class="sd">        """</span></div>
+
+
+<div class="viewcode-block" id="BaseParticle.assignKernelFunctions">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.assignKernelFunctions">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">assignKernelFunctions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kernelFunctions</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">BaseMeshfreeKernelFunction</span><span class="p">]):</span>
+<span class="w">        </span><span class="sd">"""Assign the meshfree kernel functions whose support covers the particle, as the particle managers do after</span>
+<span class="sd">        every search.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        kernelFunctions</span>
+<span class="sd">            The kernel functions.</span>
 <span class="sd">        """</span></div>
 
 

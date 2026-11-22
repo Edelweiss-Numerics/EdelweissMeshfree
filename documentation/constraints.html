@@ -333,12 +333,13 @@ constraint acts in an explicit analysis at all, it declares in <a class="referen
 <dl class="py attribute">
 <dt class="sig sig-object py" id="edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.actsInExplicitAnalysis">
 <span class="sig-name descname"><span class="pre">actsInExplicitAnalysis</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.actsInExplicitAnalysis" title="Link to this definition"></a></dt>
-<dd><p>Whether this constraint acts in an explicit analysis
-(<a class="reference internal" href="solvers.html#edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic" title="edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeshfreeExplicitDynamic</span></code></a>), which evaluates the
-constraints at the configuration it has just accepted: the particles have moved, and the nodes of the kernel
-functions carry neither a solution nor an increment. A constraint that measures its condition at the particles’
-current positions acts there, e.g. a contact with a boundary; a constraint on the increment, e.g. a weak
-Dirichlet condition or an equal value, would act as if nothing had moved, and the solver refuses it.</p>
+<dd><p>Whether this constraint acts in an explicit analysis (see
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">actsInExplicitAnalysis</span></code>). The explicit
+dynamic solver <code class="docutils literal notranslate"><span class="pre">NED</span></code> evaluates the constraints of a meshfree model at the configuration it has just accepted:
+the particles have moved, and the nodes of the kernel functions carry neither a solution nor an increment. A
+constraint that measures its condition at the particles’ current positions acts there, e.g. a contact with a
+boundary; a constraint on the increment, e.g. a weak Dirichlet condition or an equal value, would act as if
+nothing had moved, and the solver refuses it. Not by default, then, unlike a constraint of finite elements.</p>
 </dd></dl>
 
 <dl class="py attribute">

@@ -110,9 +110,8 @@
 <span class="c1">#  ---------------------------------------------------------------------</span>
 
 <span class="sd">"""What the discrete system of a material point or RKPM model is made of: the answer an</span>
-<span class="sd">:class:`~edelweissmeshfree.models.mpmmodel.MPMModel` gives EdelweissFE's implicit solvers and</span>
-<span class="sd">:class:`~edelweissmeshfree.solvers.meshfreeexplicitdynamic.MeshfreeExplicitDynamic` whenever they (re)build</span>
-<span class="sd">their discrete system, see :meth:`~edelweissmeshfree.models.mpmmodel.MPMModel.buildDiscreteSystem`."""</span>
+<span class="sd">:class:`~edelweissmeshfree.models.mpmmodel.MPMModel` gives EdelweissFE's solvers whenever they (re)build their discrete</span>
+<span class="sd">system, see :meth:`~edelweissmeshfree.models.mpmmodel.MPMModel.buildDiscreteSystem`."""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
 
@@ -124,10 +123,16 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.numerics.doflocations</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPMDofLocations</span>
 
-<span class="c1">#: The lumped mass of a node below this fraction of the largest one is zero up to round-off: the particles reach its</span>
-<span class="c1">#: kernel function only where it vanishes. A solver that divides by it would give the node an acceleration of round-off</span>
-<span class="c1">#: over round-off.</span>
-<span class="n">MASS_AT_ROUND_OFF</span> <span class="o">=</span> <span class="mf">1e-12</span>
+<span class="c1">#: A lumped coefficient of a node (a mass, a damping) below this fraction of the largest one of its field is zero up to</span>
+<span class="c1">#: round-off: the particles reach its kernel function only where it vanishes. A solver that divides by it would give the</span>
+<span class="c1">#: node an acceleration of round-off over round-off.</span>
+<span class="n">COEFFICIENT_AT_ROUND_OFF</span> <span class="o">=</span> <span class="mf">1e-12</span>
+
+<span class="c1">#: The fraction of the stable time increment of the particles' tangent that the explicit scheme of the particles is</span>
+<span class="c1">#: stable for. Their NSNI stabilization acts on the increment of the step, not on the total displacement, so the scheme</span>
+<span class="c1">#: is not exactly the central difference method with their tangent: measured on 2D and 3D blocks of particles (support</span>
+<span class="c1">#: factors 1.6 to 3.4, quadratic and cubic kernels), it was stable up to 0.875 to 0.98 of the tangent's limit.</span>
+<span class="n">STABLE_FRACTION_OF_THE_TANGENT_LIMIT</span> <span class="o">=</span> <span class="mf">0.85</span>
 
 
 <div class="viewcode-block" id="MPMDiscreteSystem">
@@ -202,6 +207,93 @@
 <span class="w">        </span><span class="sd">"""The particles of the model, a list the solver hands out in chunks, i.e. the particles of the locations."""</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">locations</span><span class="o">.</span><span class="n">particles</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">entitiesWithOwnInertia</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The particles: they carry their state, and with it their inertia, and their kernel functions move with them;</span>
+<span class="sd">        see :attr:`~edelweissfe.models.discretesystem.DiscreteSystem.entitiesWithOwnInertia`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list</span>
+<span class="sd">            The particles.</span>
+<span class="sd">        """</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">particles</span>
+
+<div class="viewcode-block" id="MPMDiscreteSystem.advanceEntitiesWithOwnInertia">
+<a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.advanceEntitiesWithOwnInertia">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">advanceEntitiesWithOwnInertia</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">dU</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">,</span> <span class="n">forEachChunk</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">list</span><span class="p">,</span> <span class="n">Callable</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Every particle takes the increment of the nodes of the kernel functions it was assigned at the start of the</span>
+<span class="sd">        increment (``updatePhysicsExplicit``), and moves; see</span>
+<span class="sd">        :meth:`~edelweissfe.models.discretesystem.DiscreteSystem.advanceEntitiesWithOwnInertia`. The particles are</span>
+<span class="sd">        independent of each other, so they are advanced in the solver's loop over chunks.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dU</span>
+<span class="sd">            The increment of the solution.</span>
+<span class="sd">        timeStep</span>
+<span class="sd">            The increment.</span>
+<span class="sd">        forEachChunk</span>
+<span class="sd">            The solver's loop over chunks of independent entities.</span>
+<span class="sd">        """</span>
+
+        <span class="n">time</span> <span class="o">=</span> <span class="n">timeStep</span><span class="o">.</span><span class="n">totalTime</span>
+        <span class="n">dT</span> <span class="o">=</span> <span class="n">timeStep</span><span class="o">.</span><span class="n">timeIncrement</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">advance</span><span class="p">(</span><span class="n">particles</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">particle</span> <span class="ow">in</span> <span class="n">particles</span><span class="p">:</span>
+                <span class="n">particle</span><span class="o">.</span><span class="n">updatePhysicsExplicit</span><span class="p">(</span><span class="n">dU</span><span class="p">[</span><span class="n">particle</span><span class="p">],</span> <span class="n">time</span><span class="p">,</span> <span class="n">dT</span><span class="p">)</span>
+
+        <span class="n">forEachChunk</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="p">,</span> <span class="n">advance</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MPMDiscreteSystem.assembleInternalForceAndMomentumOfEntitiesWithOwnInertia">
+<a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.assembleInternalForceAndMomentumOfEntitiesWithOwnInertia">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">assembleInternalForceAndMomentumOfEntitiesWithOwnInertia</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">forEachChunk</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">list</span><span class="p">,</span> <span class="n">Callable</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">DofVector</span><span class="p">,</span> <span class="n">DofVector</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The internal force of the particles at the state they accepted (``computePhysicsKernelsExplicit``) and their</span>
+<span class="sd">        lumped momentum (``computeLumpedMomentum``), at the nodes of their current kernel functions; see</span>
+<span class="sd">        :meth:`~edelweissfe.models.discretesystem.DiscreteSystem.assembleInternalForceAndMomentumOfEntitiesWithOwnInertia`.</span>
+<span class="sd">        Each particle adds into its own part of a scatter vector, in the solver's loop over chunks.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        forEachChunk</span>
+<span class="sd">            The solver's loop over chunks of independent entities.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple[DofVector, DofVector] | None</span>
+<span class="sd">            The internal force and the lumped momentum; None if the model has no particles.</span>
+<span class="sd">        """</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">internalForce</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">locations</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+        <span class="n">momentum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">locations</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+        <span class="n">internalForce</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">momentum</span><span class="p">[:]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+        <span class="n">scatterInternalForce</span> <span class="o">=</span> <span class="n">internalForce</span><span class="o">.</span><span class="n">createScatterVector</span><span class="p">()</span>
+        <span class="n">scatterMomentum</span> <span class="o">=</span> <span class="n">momentum</span><span class="o">.</span><span class="n">createScatterVector</span><span class="p">()</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">evaluate</span><span class="p">(</span><span class="n">particles</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">particle</span> <span class="ow">in</span> <span class="n">particles</span><span class="p">:</span>
+                <span class="n">particle</span><span class="o">.</span><span class="n">computePhysicsKernelsExplicit</span><span class="p">(</span><span class="n">scatterInternalForce</span><span class="p">[</span><span class="n">particle</span><span class="p">])</span>
+                <span class="n">particle</span><span class="o">.</span><span class="n">computeLumpedMomentum</span><span class="p">(</span><span class="n">scatterMomentum</span><span class="p">[</span><span class="n">particle</span><span class="p">])</span>
+
+        <span class="n">forEachChunk</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="p">,</span> <span class="n">evaluate</span><span class="p">)</span>
+
+        <span class="n">scatterInternalForce</span><span class="o">.</span><span class="n">assembleInto</span><span class="p">(</span><span class="n">internalForce</span><span class="p">)</span>
+        <span class="n">scatterMomentum</span><span class="o">.</span><span class="n">assembleInto</span><span class="p">(</span><span class="n">momentum</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">internalForce</span><span class="p">,</span> <span class="n">momentum</span></div>
+
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">cellsInterpolatingToMaterialPoints</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
@@ -349,12 +441,12 @@
 <span class="sd">        :math:`m_A = \\sum_p \\rho_0\\, V_{0,p}\\, T_A(\\boldsymbol{x}_p)`, as each particle reports it</span>
 <span class="sd">        (``computeLumpedInertia``), summed over the particles; see</span>
 <span class="sd">        :meth:`~edelweissfe.models.discretesystem.DiscreteSystem.assembleLumpedMassOfEntitiesWithOwnInertia`. The one</span>
-<span class="sd">        assembly of this mass: the explicit solver divides by it, the implicit dynamic solver adds it to the mass of</span>
-<span class="sd">        the nodes when it integrates the particles' inertia there.</span>
+<span class="sd">        assembly of this mass: the explicit dynamic solver ``NED`` divides by it, the implicit dynamic solver adds it to</span>
+<span class="sd">        the mass of the nodes when it integrates the particles' inertia there.</span>
 
 <span class="sd">        A node carries inertia if its mass is positive beyond round-off, more than</span>
-<span class="sd">        :data:`~edelweissmeshfree.models.mpmdiscretesystem.MASS_AT_ROUND_OFF` of the largest one; every other node</span>
-<span class="sd">        gets zero, the mass of a node without inertia, which both solvers take as such.</span>
+<span class="sd">        :data:`~edelweissmeshfree.models.mpmdiscretesystem.COEFFICIENT_AT_ROUND_OFF` of the largest one of its field;</span>
+<span class="sd">        every other node gets zero, the mass of a node without inertia, which both solvers take as such.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -368,24 +460,183 @@
 <span class="sd">            The lumped mass, one value per degree of freedom; None if the model has no particles.</span>
 <span class="sd">        """</span>
 
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_assembleLumpedCoefficientOfParticles</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">particle</span><span class="p">,</span> <span class="n">coefficient</span><span class="p">:</span> <span class="n">particle</span><span class="o">.</span><span class="n">computeLumpedInertia</span><span class="p">(</span><span class="n">coefficient</span><span class="p">),</span> <span class="n">forEachChunk</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MPMDiscreteSystem.assembleLumpedDampingOfEntitiesWithOwnInertia">
+<a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.assembleLumpedDampingOfEntitiesWithOwnInertia">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">assembleLumpedDampingOfEntitiesWithOwnInertia</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">forEachChunk</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">list</span><span class="p">,</span> <span class="n">Callable</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DofVector</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The lumped damping of the particles at the nodes of their current kernel functions, as each particle reports</span>
+<span class="sd">        it (``computeLumpedDamping``, e.g. :math:`\\eta\\, V_{0,p}\\, T_A(\\boldsymbol{x}_p)` on a nonlocal field with</span>
+<span class="sd">        the nonlocal viscosity :math:`\\eta`), summed over the particles; see</span>
+<span class="sd">        :meth:`~edelweissfe.models.discretesystem.DiscreteSystem.assembleLumpedDampingOfEntitiesWithOwnInertia`. Zero</span>
+<span class="sd">        up to round-off is zero, as for the mass.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        forEachChunk</span>
+<span class="sd">            The solver's loop over chunks of independent entities.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        DofVector | None</span>
+<span class="sd">            The lumped damping, one value per degree of freedom; None if the model has no particles.</span>
+<span class="sd">        """</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_assembleLumpedCoefficientOfParticles</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">particle</span><span class="p">,</span> <span class="n">coefficient</span><span class="p">:</span> <span class="n">particle</span><span class="o">.</span><span class="n">computeLumpedDamping</span><span class="p">(</span><span class="n">coefficient</span><span class="p">),</span> <span class="n">forEachChunk</span>
+        <span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_assembleLumpedCoefficientOfParticles</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">computeCoefficient</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">forEachChunk</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">list</span><span class="p">,</span> <span class="n">Callable</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DofVector</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Assemble a lumped coefficient of the particles (their mass or their damping): each particle adds its own</span>
+<span class="sd">        into its part of a scatter vector, in the solver's loop over chunks. A coefficient of a node at or below</span>
+<span class="sd">        :data:`~edelweissmeshfree.models.mpmdiscretesystem.COEFFICIENT_AT_ROUND_OFF` of the largest one of its field is</span>
+<span class="sd">        zero: field by field, since the coefficients of two fields (a mass and a micro-inertia) are of other units.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        computeCoefficient</span>
+<span class="sd">            ``computeCoefficient(particle, coefficient)`` adds the particle's coefficient to its part.</span>
+<span class="sd">        forEachChunk</span>
+<span class="sd">            The solver's loop over chunks of independent entities.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        DofVector | None</span>
+<span class="sd">            The lumped coefficient, one value per degree of freedom; None if the model has no particles.</span>
+<span class="sd">        """</span>
+
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
 
-        <span class="n">M</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">locations</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
-        <span class="n">M</span><span class="p">[:]</span> <span class="o">=</span> <span class="mf">0.0</span>
-        <span class="n">scatterM</span> <span class="o">=</span> <span class="n">M</span><span class="o">.</span><span class="n">createScatterVector</span><span class="p">()</span>
+        <span class="n">coefficient</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">locations</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+        <span class="n">coefficient</span><span class="p">[:]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">scatterCoefficient</span> <span class="o">=</span> <span class="n">coefficient</span><span class="o">.</span><span class="n">createScatterVector</span><span class="p">()</span>
 
         <span class="k">def</span><span class="w"> </span><span class="nf">assemble</span><span class="p">(</span><span class="n">particles</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">particle</span> <span class="ow">in</span> <span class="n">particles</span><span class="p">:</span>
-                <span class="n">particle</span><span class="o">.</span><span class="n">computeLumpedInertia</span><span class="p">(</span><span class="n">scatterM</span><span class="p">[</span><span class="n">particle</span><span class="p">])</span>
+                <span class="n">computeCoefficient</span><span class="p">(</span><span class="n">particle</span><span class="p">,</span> <span class="n">scatterCoefficient</span><span class="p">[</span><span class="n">particle</span><span class="p">])</span>
 
         <span class="n">forEachChunk</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="p">,</span> <span class="n">assemble</span><span class="p">)</span>
-        <span class="n">scatterM</span><span class="o">.</span><span class="n">assembleInto</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+        <span class="n">scatterCoefficient</span><span class="o">.</span><span class="n">assembleInto</span><span class="p">(</span><span class="n">coefficient</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">M</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
-            <span class="n">M</span><span class="p">[</span><span class="n">M</span> <span class="o">&lt;=</span> <span class="n">MASS_AT_ROUND_OFF</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">M</span><span class="p">)]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="n">coefficient</span><span class="o">.</span><span class="n">asPlainArray</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">indices</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">numbering</span><span class="o">.</span><span class="n">idcsOfFieldsInDofVector</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">ofTheField</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">ofTheField</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+                <span class="n">ofTheField</span><span class="p">[</span><span class="n">ofTheField</span> <span class="o">&lt;=</span> <span class="n">COEFFICIENT_AT_ROUND_OFF</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">ofTheField</span><span class="p">)]</span> <span class="o">=</span> <span class="mf">0.0</span>
+                <span class="n">values</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span> <span class="o">=</span> <span class="n">ofTheField</span>
 
-        <span class="k">return</span> <span class="n">M</span></div>
+        <span class="k">return</span> <span class="n">coefficient</span>
+
+<div class="viewcode-block" id="MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia">
+<a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">stableTimeIncrementOfEntitiesWithOwnInertia</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">forEachChunk</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">list</span><span class="p">,</span> <span class="n">Callable</span><span class="p">],</span> <span class="kc">None</span><span class="p">],</span> <span class="n">nPasses</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""A bound of the stable time increment of the central difference method for the particles, from their tangents</span>
+<span class="sd">        at the current state (``computeTangentOfTheCurrentState``) and the assembled lumped mass and damping.</span>
+
+<span class="sd">        The stable increment is :math:`2/\\omega_\\mathrm{max}`, with :math:`\\omega_\\mathrm{max}^2` the largest</span>
+<span class="sd">        eigenvalue of :math:`\\boldsymbol{S} = \\boldsymbol{M}^{-1/2} \\boldsymbol{K} \\boldsymbol{M}^{-1/2}`. It is a property</span>
+<span class="sd">        of the ASSEMBLED system: a particle's own bound, :math:`\\lambda_\\mathrm{max}(\\boldsymbol{M}_p^{-1}</span>
+<span class="sd">        \\boldsymbol{K}_p)` as for a finite element, is unbounded, because a particle's stiffness couples nodes at which</span>
+<span class="sd">        its own lumped mass vanishes (the mass is taken at its centre, its smoothed gradients at its faces), and the</span>
+<span class="sd">        limit varies with the support factor, the kernel order and the boundary in no regular way. It is bounded here</span>
+<span class="sd">        without the eigenvalue problem, by the Collatz-Wielandt bound of the nonnegative matrix</span>
+<span class="sd">        :math:`|\\boldsymbol{S}|`,</span>
+<span class="sd">        :math:`\\lambda_\\mathrm{max}(\\boldsymbol{S}) \\le \\rho(|\\boldsymbol{S}|) \\le \\max_A (|\\boldsymbol{S}|</span>
+<span class="sd">        \\boldsymbol{w})_A / w_A` for every positive :math:`\\boldsymbol{w}`, with :math:`\\boldsymbol{w} = \\boldsymbol{1}`</span>
+<span class="sd">        (the Gershgorin bound) in the first pass and :math:`\\boldsymbol{w} = |\\boldsymbol{S}|^{k} \\boldsymbol{1}` in the</span>
+<span class="sd">        following ones, each a power step that tightens it. Every pass evaluates the tangent of every particle once;</span>
+<span class="sd">        :math:`|\\boldsymbol{K}|` is accumulated particle by particle, which bounds the absolute value of the sum.</span>
+
+<span class="sd">        The degrees of freedom with inertia are second order in time: :math:`\\Delta t \\le 2/\\omega_\\mathrm{max}\\,</span>
+<span class="sd">        (\\sqrt{1 + \\zeta^2} - \\zeta)`, with the largest damping ratio :math:`\\zeta = C_A / (2 M_A</span>
+<span class="sd">        \\omega_\\mathrm{max})` of their damped nodes (a nonlocal field with a micro-inertia). The degrees of freedom</span>
+<span class="sd">        without inertia but with damping are first order (forward Euler): :math:`\\Delta t \\le 2 /</span>
+<span class="sd">        \\lambda_\\mathrm{max}(\\boldsymbol{C}^{-1} \\boldsymbol{K})`, bounded the same way with :math:`\\boldsymbol{C}` for</span>
+<span class="sd">        :math:`\\boldsymbol{M}`. The coupling between the two sets is not included. The result is scaled by</span>
+<span class="sd">        :data:`STABLE_FRACTION_OF_THE_TANGENT_LIMIT`, since the explicit scheme of the particles is not exactly</span>
+<span class="sd">        integrated with their tangent: their NSNI stabilization acts on the increment.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        forEachChunk</span>
+<span class="sd">            The solver's loop over chunks of independent entities.</span>
+<span class="sd">        nPasses</span>
+<span class="sd">            The number of passes, each one evaluation of every particle's tangent; the first gives the Gershgorin bound.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float | None</span>
+<span class="sd">            The stable time increment; None if the model has no particles.</span>
+<span class="sd">        """</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">M</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">assembleLumpedMassOfEntitiesWithOwnInertia</span><span class="p">(</span><span class="n">forEachChunk</span><span class="p">))</span>
+        <span class="n">C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">assembleLumpedDampingOfEntitiesWithOwnInertia</span><span class="p">(</span><span class="n">forEachChunk</span><span class="p">))</span>
+
+        <span class="n">secondOrder</span> <span class="o">=</span> <span class="n">M</span> <span class="o">&gt;</span> <span class="mf">0.0</span>
+        <span class="n">firstOrder</span> <span class="o">=</span> <span class="o">~</span><span class="n">secondOrder</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">C</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">scaling</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+        <span class="n">scaling</span><span class="p">[</span><span class="n">secondOrder</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">M</span><span class="p">[</span><span class="n">secondOrder</span><span class="p">])</span>
+        <span class="n">scaling</span><span class="p">[</span><span class="n">firstOrder</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">C</span><span class="p">[</span><span class="n">firstOrder</span><span class="p">])</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">absoluteTangentTimes</span><span class="p">(</span><span class="n">w</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">            </span><span class="sd">"""|S| w on each of the two sets, |S| = D^-1/2 |K| D^-1/2, the coupling between them left out."""</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">locations</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+            <span class="n">x</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">scaling</span> <span class="o">*</span> <span class="n">w</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">locations</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
+            <span class="n">y</span><span class="p">[:]</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="n">scatterY</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">createScatterVector</span><span class="p">()</span>
+
+            <span class="k">def</span><span class="w"> </span><span class="nf">multiply</span><span class="p">(</span><span class="n">particles</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">particle</span> <span class="ow">in</span> <span class="n">particles</span><span class="p">:</span>
+                    <span class="n">nDof</span> <span class="o">=</span> <span class="n">particle</span><span class="o">.</span><span class="n">nDof</span>
+                    <span class="n">K</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nDof</span> <span class="o">*</span> <span class="n">nDof</span><span class="p">)</span>
+                    <span class="n">particle</span><span class="o">.</span><span class="n">computeTangentOfTheCurrentState</span><span class="p">(</span><span class="n">K</span><span class="p">)</span>
+                    <span class="n">K</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">nDof</span><span class="p">,</span> <span class="n">nDof</span><span class="p">)</span> <span class="o">+</span> <span class="n">K</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">nDof</span><span class="p">,</span> <span class="n">nDof</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">))</span>
+                    <span class="n">xp</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">particle</span><span class="p">]</span>
+                    <span class="n">ofSecondOrder</span> <span class="o">=</span> <span class="n">secondOrder</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">locations</span><span class="o">.</span><span class="n">ofEntity</span><span class="p">[</span><span class="n">particle</span><span class="p">]]</span>
+                    <span class="n">yp</span> <span class="o">=</span> <span class="n">scatterY</span><span class="p">[</span><span class="n">particle</span><span class="p">]</span>
+                    <span class="n">yp</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+                        <span class="n">ofSecondOrder</span><span class="p">,</span> <span class="n">K</span> <span class="o">@</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ofSecondOrder</span><span class="p">,</span> <span class="n">xp</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="n">K</span> <span class="o">@</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ofSecondOrder</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">xp</span><span class="p">)</span>
+                    <span class="p">)</span>
+
+            <span class="n">forEachChunk</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="p">,</span> <span class="n">multiply</span><span class="p">)</span>
+            <span class="n">scatterY</span><span class="o">.</span><span class="n">assembleInto</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">scaling</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+
+        <span class="n">active</span> <span class="o">=</span> <span class="n">secondOrder</span> <span class="o">|</span> <span class="n">firstOrder</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">active</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">bounds</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nPasses</span><span class="p">):</span>
+            <span class="n">z</span> <span class="o">=</span> <span class="n">absoluteTangentTimes</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">ofSet</span> <span class="ow">in</span> <span class="p">((</span><span class="s2">"second order"</span><span class="p">,</span> <span class="n">secondOrder</span><span class="p">),</span> <span class="p">(</span><span class="s2">"first order"</span><span class="p">,</span> <span class="n">firstOrder</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="n">ofSet</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+                    <span class="n">bounds</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">z</span><span class="p">[</span><span class="n">ofSet</span><span class="p">]</span> <span class="o">/</span> <span class="n">w</span><span class="p">[</span><span class="n">ofSet</span><span class="p">])</span>
+            <span class="c1"># the next weights: positive everywhere on the active set, as the bound requires</span>
+            <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">active</span><span class="p">,</span> <span class="n">z</span> <span class="o">+</span> <span class="mf">1e-12</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">z</span><span class="p">),</span> <span class="mf">0.0</span><span class="p">)</span>
+
+        <span class="n">stable</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+        <span class="k">if</span> <span class="s2">"second order"</span> <span class="ow">in</span> <span class="n">bounds</span> <span class="ow">and</span> <span class="n">bounds</span><span class="p">[</span><span class="s2">"second order"</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="n">omega</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">bounds</span><span class="p">[</span><span class="s2">"second order"</span><span class="p">])</span>
+            <span class="n">zeta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">secondOrder</span><span class="p">,</span> <span class="n">C</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">secondOrder</span><span class="p">,</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">M</span> <span class="o">*</span> <span class="n">omega</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
+            <span class="n">stable</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="n">omega</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">zeta</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="n">zeta</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">"first order"</span> <span class="ow">in</span> <span class="n">bounds</span> <span class="ow">and</span> <span class="n">bounds</span><span class="p">[</span><span class="s2">"first order"</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="n">stable</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">stable</span><span class="p">,</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="n">bounds</span><span class="p">[</span><span class="s2">"first order"</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">STABLE_FRACTION_OF_THE_TANGENT_LIMIT</span> <span class="o">*</span> <span class="n">stable</span></div>
 
 
 <div class="viewcode-block" id="MPMDiscreteSystem.carriersOfTheMotion">
@@ -398,8 +649,8 @@
 <span class="sd">        ``V`` and ``A`` of the model's node fields.</span>
 
 <span class="sd">        The implicit dynamic solver keeps the motion in the particles with ``inertia=entities``, at the nodes</span>
-<span class="sd">        with ``inertia=nodes``. The explicit solver keeps it in both: the velocity of the nodes is its state,</span>
-<span class="sd">        and every particle takes its own from them as it advances.</span>
+<span class="sd">        with ``inertia=nodes``. The explicit dynamic solver ``NED`` keeps it in both: the velocity of the nodes is its</span>
+<span class="sd">        state, and every particle takes its own from them as it advances.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -448,7 +699,7 @@
 <span class="sd">            The time step.</span>
 <span class="sd">        forEachChunk</span>
 <span class="sd">            The solver's loop over chunks of independent entities, see</span>
-<span class="sd">            :meth:`~edelweissfe.solvers.nonlinearimplicitstatic.NIST.forEachChunk`.</span>
+<span class="sd">            :meth:`~edelweissfe.solvers.base.nonlinearsolverbase.NonlinearSolverBase.forEachChunk`.</span>
 <span class="sd">        """</span>
 
         <span class="n">time</span> <span class="o">=</span> <span class="n">timeStep</span><span class="o">.</span><span class="n">totalTime</span>
