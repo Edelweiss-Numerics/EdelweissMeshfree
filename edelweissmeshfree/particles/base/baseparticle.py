@@ -411,15 +411,15 @@ class BaseParticle(BaseNodeCouplingEntity):
         """
 
     @abstractmethod
-    def computeTangentOfTheCurrentState(
+    def assembleStiffness(
         self,
         K: np.ndarray,
     ):
-        """Explicit dynamics: the tangent of the internal force with respect to the degrees of freedom of the kernel
-        functions currently assigned, at the current state (a zero increment, evaluated on a copy of the state). The
-        state variables are left unchanged; the response the material point keeps is overwritten: a check of the
-        stiffness, e.g. of the bound of :meth:`computeBoundOfAbsoluteStiffnessTimes`, which the stable time increment
-        of the particles is bounded with, not a call of an explicit increment. Without inertia.
+        """Explicit dynamics: add the stiffness of the particle, the tangent of the internal force with respect to the
+        degrees of freedom of the kernel functions currently assigned, without inertia, of a zero increment of the
+        last accepted configuration and the working state: after an accept, the stiffness of the accepted state. It
+        leaves the particle as it was found. The stiffness the bound of :meth:`addBoundOfAbsoluteStiffnessTimes`
+        bounds, e.g. to check that bound against.
 
         The zero increment is taken over a unit time increment, at time zero: the time increment is only positive, as a
         material may divide by it, and the tangent of a rate-independent material does not depend on it. For a
@@ -429,21 +429,20 @@ class BaseParticle(BaseNodeCouplingEntity):
         Parameters
         ----------
         K
-            The tangent to define, column-major, ``nDof x nDof``.
+            The stiffness to augment, column-major, ``nDof x nDof``.
         """
 
     @abstractmethod
-    def computeBoundOfAbsoluteStiffnessTimes(
+    def addBoundOfAbsoluteStiffnessTimes(
         self,
         W: np.ndarray,
         bound: np.ndarray,
     ):
         """Explicit dynamics: add an upper bound of :math:`|\\boldsymbol{K}|\\, \\boldsymbol{W}`, the absolute value of
-        the stiffness at the current state (the tangent of :meth:`computeTangentOfTheCurrentState`, without inertia,
-        of a zero increment over a unit time increment, see there) times nonnegative weights. It leaves the particle
-        as it was found, so a host may ask for it at any point of an increment. The stiffness itself is not assembled:
-        the bound costs as much as the nodes, the stiffness as their square. It is what the stable time increment of
-        the particles is bounded with
+        the stiffness of :meth:`assembleStiffness` (see there for the state it is of), times nonnegative weights. It
+        leaves the particle as it was found. The stiffness itself is not assembled: the bound costs as much as the
+        nodes, the stiffness as their square. It is what the stable time increment of the particles is bounded with,
+        after the accept of an increment
         (:meth:`~edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia`).
 
         Parameters
