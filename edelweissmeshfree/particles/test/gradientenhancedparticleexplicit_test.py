@@ -25,8 +25,7 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 """The explicit methods of a gradient-enhanced finite-strain particle with six nonlocal variables (GM7 at finite
-strains) reach Python: its fields, its lumped damping, the tangent of its current state and the bound of its absolute
-stiffness.
+strains) reach Python: its fields, its lumped damping, its stiffness and the bound of its absolute stiffness.
 
 Skipped where Marmot is not built.
 """
@@ -99,17 +98,17 @@ def test_the_lumped_damping_is_the_nonlocal_viscosity_on_the_nonlocal_rows():
     np.testing.assert_allclose(C[:, 3:].sum(axis=0), ETA * H**3, rtol=1e-12)
 
 
-def test_the_tangent_of_the_current_state_leaves_the_state_unchanged():
+def test_the_stiffness_leaves_the_state_unchanged():
     particle = _particle()
     state = np.array(particle._stateVars)
     K = np.zeros(particle.nDof**2)
 
-    particle.computeTangentOfTheCurrentState(K)
+    particle.assembleStiffness(K)
 
     np.testing.assert_array_equal(particle._stateVars, state)
     np.testing.assert_array_equal(particle._stateVarsTemp, state)
     K = K.reshape(particle.nDof, particle.nDof, order="F")
-    # the displacement block of the elastic tangent is symmetric and positive semi-definite, a translation is free of
+    # the displacement block of the elastic stiffness is symmetric and positive semi-definite, a translation is free of
     # stress
     displacement = np.array([i % 9 < 3 for i in range(particle.nDof)])
     Kuu = K[np.ix_(displacement, displacement)]
@@ -128,7 +127,7 @@ def test_the_bound_of_the_absolute_stiffness_leaves_the_particle_as_it_was():
     before = np.zeros(nDof)
     particle.computePhysicsKernelsExplicit(before)
 
-    particle.computeBoundOfAbsoluteStiffnessTimes(np.ones((nDof, 1), order="F"), np.zeros((nDof, 1), order="F"))
+    particle.addBoundOfAbsoluteStiffnessTimes(np.ones((nDof, 1), order="F"), np.zeros((nDof, 1), order="F"))
 
     after = np.zeros(nDof)
     particle.computePhysicsKernelsExplicit(after)

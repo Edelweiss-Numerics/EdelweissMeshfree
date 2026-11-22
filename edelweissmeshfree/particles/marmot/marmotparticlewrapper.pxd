@@ -178,8 +178,11 @@ cdef extern from "Marmot/MarmotParticle.h":
 
         void computeLumpedDamping ( double* cLumped) except +
 
-# The bound of the absolute stiffness is a visitor of the stiffness the particle describes, outside the particle.
-cdef extern from "Marmot/MarmotParticleStiffness.h" namespace "Marmot::Discretizations::Meshfree" nogil:
+# The host's visitors of the stiffness the particle describes, outside the particle: its assembly and the bound of
+# its absolute value.
+cdef extern from "Marmot/MarmotParticleStiffnessVisitors.h" namespace "Marmot::Discretizations::Meshfree" nogil:
+    void assembleStiffness( MarmotParticle& particle, double* K, double timeNew, double dT) except +
+
     void addBoundOfAbsoluteStiffnessTimes( MarmotParticle& particle,
                                            const double* columnWeights,
                                            int nColumns,
