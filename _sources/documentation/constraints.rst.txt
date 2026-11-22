@@ -56,8 +56,9 @@ A constraint written for explicit analyses alone, with forces and without a tang
 :class:`~edelweissmeshfree.constraints.base.mpmexplicitconstraintbase.MPMExplicitConstraintBase` and implements
 ``computeKernelsExplicit(U_np, dU, P, timeStep)``, with the same sign: an implicit solver refuses it. The explicit
 solver, in turn, accepts only a constraint that acts in an explicit analysis (``actsInExplicitAnalysis``): one that
-measures its condition at the particles' current positions, as the penalty contacts do, explicit or not. A constraint on
-the increment, such as a weak Dirichlet condition, would act as if nothing had moved there.
+measures its condition at the particles' current positions, as the penalty contacts do, explicit or not, and as the
+penalty weak Dirichlet condition does where it holds the displacement at zero (a support). A constraint on the
+increment, such as a weak Dirichlet condition that prescribes a change, would act as if nothing had moved there.
 
 The base classes
 ----------------
@@ -172,5 +173,17 @@ Constraints for explicit analyses
 ****************************************************************************
 
 .. automodule:: edelweissmeshfree.constraints.explicit.particlepenaltyrigidbodycontactexplicit
+   :members:
+   :private-members:
+
+``ParticlePenaltyFacetContactExplicit`` constraint class
+********************************************************
+
+Contact between particles and a body of finite elements: the vertices of the particles against the faceted boundary
+of the finite elements, which EdelweissFE's surface element generator creates. The theory is in the class
+documentation; its tests are ``edelweissmeshfree/constraints/test/particlepenaltyfacetcontactexplicit_test.py``
+(pairing, entering, tunnelling, the exchange of momentum) and example 185 (the same result as an analytic wall).
+
+.. automodule:: edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit
    :members:
    :private-members:

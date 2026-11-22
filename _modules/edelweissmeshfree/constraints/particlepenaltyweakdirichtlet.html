@@ -86,9 +86,33 @@
 <div class="viewcode-block" id="ParticlePenaltyWeakDirichlet">
 <a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ParticlePenaltyWeakDirichlet</span><span class="p">(</span><span class="n">MPMConstraintBase</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">    This is an implementation of weak Dirichlet boundary conditions using a penalty formulation.</span>
 <span class="sd">    It constrains a material point field increment.</span>
+
+<span class="sd">    **In an implicit analysis**, it penalizes the difference between the increment of the field at the constrained</span>
+<span class="sd">    points, :math:`\boldsymbol{N} \cdot \Delta\boldsymbol{U}`, and the prescribed increment, the change of</span>
+<span class="sd">    ``prescribedStepDelta`` times ``f_t`` over the increment.</span>
+
+<span class="sd">    **In an explicit analysis**, the nodes of the kernel functions carry no increment to constrain: the particles have</span>
+<span class="sd">    moved when the constraints are evaluated. There the constraint holds displacement components at zero, as a</span>
+<span class="sd">    support, e.g. on a symmetry plane or at a clamped edge, and it measures them where the constrained points are now:</span>
+<span class="sd">    the force on a constrained point is</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        f_i = -k \left( x_i - X_i \right)</span>
+
+<span class="sd">    for every constrained component :math:`i`, with :math:`\boldsymbol{X}` the position of the point when the</span>
+<span class="sd">    constraint was created, and the particle distributes it over the nodes of its kernel functions with its shape</span>
+<span class="sd">    functions at the point. The force acts on both sides of :math:`X_i`. It acts in an explicit analysis</span>
+<span class="sd">    (:attr:`actsInExplicitAnalysis`) only if it constrains the displacement and every prescribed change is zero: an</span>
+<span class="sd">    explicit analysis prescribes motion through velocities, not through penalized displacements.</span>
+
+<span class="sd">    A support holds only as well as its penalty is stiff against the material next to it: a penalty that is merely</span>
+<span class="sd">    comparable to the stiffness of a particle lets the support give way and spring back, an error that does not shrink</span>
+<span class="sd">    with the particle size. Its upper bound is the stable time increment of the explicit integration,</span>
+<span class="sd">    :math:`\Delta t &lt; 2 \sqrt{m / k}` with :math:`m` the mass a constrained point carries; see example 186.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -106,10 +130,12 @@
 <span class="sd">        The penalty parameter value.</span>
 <span class="sd">    constrain</span>
 <span class="sd">        Either constrain the center of the particle or a list of vertex indices for particles with multiple vertices.</span>
-<span class="sd">        If "center", the center of the particle is constrained. If a list, the vertices at the given indices are constrained.</span>
+<span class="sd">        If "center", the center of the particle is constrained. If a list, the vertices at the given indices are</span>
+<span class="sd">        constrained; it must name at least one vertex.</span>
 <span class="sd">    """</span>
 
-    <span class="c1">#: Carries nothing from one increment to the next.</span>
+    <span class="c1">#: Carries nothing from one increment to the next: the positions the points are held at in an explicit analysis</span>
+    <span class="c1">#: are those of the model the constraint is created with.</span>
     <span class="n">checkpointedState</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
@@ -125,7 +151,7 @@
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_model</span> <span class="o">=</span> <span class="n">model</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_constrainedParticles</span> <span class="o">=</span> <span class="n">constrainedParticles</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_constrainedParticles</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">constrainedParticles</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_field</span> <span class="o">=</span> <span class="n">field</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_prescribedStepDelta</span> <span class="o">=</span> <span class="n">prescribedStepDelta</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span> <span class="o">=</span> <span class="n">getFieldSize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_field</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">domainSize</span><span class="p">)</span>
@@ -134,18 +160,37 @@
         <span class="k">if</span> <span class="n">constrain</span> <span class="o">==</span> <span class="s2">"center"</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_constrainVertices</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">constrain</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Constrain must be 'center' or a list of vertex indices."</span><span class="p">)</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">constrain</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">constrain</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Constrain must be 'center' or a list of vertex indices."</span><span class="p">)</span>
+            <span class="c1"># an empty list would constrain nothing, and is not taken for "center" either</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">constrain</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">constrain</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">constrain</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Constrain must be 'center' or a list of vertex indices that is not empty."</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_constrainVertices</span> <span class="o">=</span> <span class="n">constrain</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">penaltyForce</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">)</span>
+
+        <span class="c1">#: Where the constrained points of each particle are when the constraint is created, the positions an explicit</span>
+        <span class="c1">#: analysis holds them at.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialCoordinatesOfConstrainedPoints</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_constrainedCoordinatesOf</span><span class="p">(</span><span class="n">particle</span><span class="p">))</span> <span class="k">for</span> <span class="n">particle</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constrainedParticles</span>
+        <span class="p">]</span>
 
         <span class="k">if</span> <span class="s2">"f_t"</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_f_t</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">"f_t"</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_f_t</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">actsInExplicitAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Whether this constraint acts in an explicit analysis: if it constrains the displacement, and every prescribed</span>
+<span class="sd">        change is zero (see the class documentation and</span>
+<span class="sd">        :attr:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.actsInExplicitAnalysis`).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">            True if it acts in an explicit analysis.</span>
+<span class="sd">        """</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_field</span> <span class="o">==</span> <span class="s2">"displacement"</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span><span class="n">delta</span> <span class="o">==</span> <span class="mf">0.0</span> <span class="k">for</span> <span class="n">delta</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prescribedStepDelta</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -218,12 +263,7 @@
             <span class="n">K_ij</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">nDof</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nDof</span><span class="p">))[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">,</span> <span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span>
 
             <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constrainedParticles</span><span class="p">:</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constrainVertices</span><span class="p">:</span>
-                    <span class="n">constrainedCoordinates</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">getVertexCoordinates</span><span class="p">()[</span><span class="bp">self</span><span class="o">.</span><span class="n">_constrainVertices</span><span class="p">]</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">constrainedCoordinates</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">getCenterCoordinates</span><span class="p">()]</span>
-
-                <span class="k">for</span> <span class="n">constrainedCoordinate</span> <span class="ow">in</span> <span class="n">constrainedCoordinates</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">constrainedCoordinate</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constrainedCoordinatesOf</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
 
                     <span class="n">N</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">getInterpolationVector</span><span class="p">(</span><span class="n">constrainedCoordinate</span><span class="p">)</span>
 
@@ -246,6 +286,61 @@
                     <span class="n">K_ij</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="n">nodeIdcs</span><span class="p">,</span> <span class="n">nodeIdcs</span><span class="p">)]</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_penaltyParameter</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">penaltyForce</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">P_i</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ParticlePenaltyWeakDirichlet.computeKernelsExplicit">
+<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.computeKernelsExplicit">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">computeKernelsExplicit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">U_np</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">dU</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">P</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Add the residual contribution of the support in an explicit analysis: the negative of the forces that hold</span>
+<span class="sd">        the constrained components of the constrained points at their initial positions, measured where the points are</span>
+<span class="sd">        now (see the class documentation).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        U_np</span>
+<span class="sd">            The current solution; unused, the displacement follows from the current positions.</span>
+<span class="sd">        dU</span>
+<span class="sd">            The solution increment; likewise unused.</span>
+<span class="sd">        P</span>
+<span class="sd">            The residual contribution to augment.</span>
+<span class="sd">        timeStep</span>
+<span class="sd">            The current time step; unused.</span>
+<span class="sd">        """</span>
+
+        <span class="k">for</span> <span class="n">p</span><span class="p">,</span> <span class="n">initialCoordinates</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_constrainedParticles</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initialCoordinatesOfConstrainedPoints</span><span class="p">):</span>
+            <span class="n">nodeIdcs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="p">[</span><span class="n">kf</span><span class="o">.</span><span class="n">node</span><span class="p">]</span> <span class="k">for</span> <span class="n">kf</span> <span class="ow">in</span> <span class="n">p</span><span class="o">.</span><span class="n">kernelFunctions</span><span class="p">]</span>
+
+            <span class="k">for</span> <span class="n">constrainedCoordinate</span><span class="p">,</span> <span class="n">initialCoordinate</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_constrainedCoordinatesOf</span><span class="p">(</span><span class="n">p</span><span class="p">),</span> <span class="n">initialCoordinates</span><span class="p">):</span>
+                <span class="n">N</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">getInterpolationVector</span><span class="p">(</span><span class="n">constrainedCoordinate</span><span class="p">)</span>
+
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prescribedStepDelta</span><span class="p">:</span>
+                    <span class="n">P</span><span class="p">[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">][</span><span class="n">nodeIdcs</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span>
+                        <span class="n">N</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_penaltyParameter</span> <span class="o">*</span> <span class="p">(</span><span class="n">constrainedCoordinate</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">initialCoordinate</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                    <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prescribedStepDelta</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">penaltyForce</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">P</span><span class="p">[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ParticlePenaltyWeakDirichlet._constrainedCoordinatesOf">
+<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet._constrainedCoordinatesOf">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_constrainedCoordinatesOf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">particle</span><span class="p">:</span> <span class="n">BaseParticle</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""The current coordinates of the constrained points of a particle: its center, or the constrained vertices.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        particle</span>
+<span class="sd">            The particle.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list[np.ndarray]</span>
+<span class="sd">            The coordinates, one array per point.</span>
+<span class="sd">        """</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constrainVertices</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">particle</span><span class="o">.</span><span class="n">getVertexCoordinates</span><span class="p">()[</span><span class="bp">self</span><span class="o">.</span><span class="n">_constrainVertices</span><span class="p">])</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">particle</span><span class="o">.</span><span class="n">getCenterCoordinates</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()]</span></div>
 </div>
 
 </pre></div>

@@ -58,6 +58,7 @@
 <li class="toctree-l2"><a class="reference internal" href="solvers.html">Solvers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="choosing_a_solver.html">Choosing a solver</a></li>
 <li class="toctree-l2"><a class="reference internal" href="coupled_rkpm_fe.html">Coupled RKPM + FE</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fe_projectile_on_rkpm_slab.html">FE projectile on an RKPM slab</a></li>
 <li class="toctree-l2"><a class="reference internal" href="assembly.html">System matrix assembly</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mpm/material_point_managers.html">Material Point Managers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="model_generators.html">Model generators</a></li>
@@ -135,6 +136,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#constraints-for-explicit-analyses">Constraints for explicit analyses</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#module-edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit"><code class="docutils literal notranslate"><span class="pre">ParticlePenaltyCartesianBoundaryConstraintExplicit</span></code> constraint class</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-edelweissmeshfree.constraints.explicit.particlepenaltyrigidbodycontactexplicit"><code class="docutils literal notranslate"><span class="pre">ParticlePenaltyContactImplicitSurfaceConstraintExplicit</span></code> constraint class</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#particlepenaltyfacetcontactexplicit-constraint-class"><code class="docutils literal notranslate"><span class="pre">ParticlePenaltyFacetContactExplicit</span></code> constraint class</a></li>
 </ul>
 </li>
 </ul>
@@ -216,8 +218,9 @@ checked by central differences of its own <code class="docutils literal notransl
 <a class="reference internal" href="#edelweissmeshfree.constraints.base.mpmexplicitconstraintbase.MPMExplicitConstraintBase" title="edelweissmeshfree.constraints.base.mpmexplicitconstraintbase.MPMExplicitConstraintBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">MPMExplicitConstraintBase</span></code></a> and implements
 <code class="docutils literal notranslate"><span class="pre">computeKernelsExplicit(U_np,</span> <span class="pre">dU,</span> <span class="pre">P,</span> <span class="pre">timeStep)</span></code>, with the same sign: an implicit solver refuses it. The explicit
 solver, in turn, accepts only a constraint that acts in an explicit analysis (<code class="docutils literal notranslate"><span class="pre">actsInExplicitAnalysis</span></code>): one that
-measures its condition at the particles’ current positions, as the penalty contacts do, explicit or not. A constraint on
-the increment, such as a weak Dirichlet condition, would act as if nothing had moved there.</p>
+measures its condition at the particles’ current positions, as the penalty contacts do, explicit or not, and as the
+penalty weak Dirichlet condition does where it holds the displacement at zero (a support). A constraint on the
+increment, such as a weak Dirichlet condition that prescribes a change, would act as if nothing had moved there.</p>
 </section>
 <section id="module-edelweissmeshfree.constraints.base.mpmconstraintbase">
 <span id="the-base-classes"></span><h2>The base classes<a class="headerlink" href="#module-edelweissmeshfree.constraints.base.mpmconstraintbase" title="Link to this heading"></a></h2>
@@ -338,8 +341,9 @@ constraint acts in an explicit analysis at all, it declares in <a class="referen
 dynamic solver <code class="docutils literal notranslate"><span class="pre">NED</span></code> evaluates the constraints of a meshfree model at the configuration it has just accepted:
 the particles have moved, and the nodes of the kernel functions carry neither a solution nor an increment. A
 constraint that measures its condition at the particles’ current positions acts there, e.g. a contact with a
-boundary; a constraint on the increment, e.g. a weak Dirichlet condition or an equal value, would act as if
-nothing had moved, and the solver refuses it. Not by default, then, unlike a constraint of finite elements.</p>
+boundary, or a weak Dirichlet condition that holds the displacement at zero; a constraint on the increment, e.g.
+a weak Dirichlet condition that prescribes a change, or an equal value, would act as if nothing had moved, and the
+solver refuses it. Not by default, then, unlike a constraint of finite elements.</p>
 </dd></dl>
 
 <dl class="py attribute">
@@ -1183,6 +1187,24 @@ not override this method).</p>
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.</span></span><span class="sig-name descname"><span class="pre">ParticlePenaltyWeakDirichlet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constrainedParticles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prescribedStepDelta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">penaltyParameter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constrain</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/particlepenaltyweakdirichtlet.html#ParticlePenaltyWeakDirichlet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet" title="Link to this definition"></a></dt>
 <dd><p>This is an implementation of weak Dirichlet boundary conditions using a penalty formulation.
 It constrains a material point field increment.</p>
+<p><strong>In an implicit analysis</strong>, it penalizes the difference between the increment of the field at the constrained
+points, <span class="math notranslate nohighlight">\(\boldsymbol{N} \cdot \Delta\boldsymbol{U}\)</span>, and the prescribed increment, the change of
+<code class="docutils literal notranslate"><span class="pre">prescribedStepDelta</span></code> times <code class="docutils literal notranslate"><span class="pre">f_t</span></code> over the increment.</p>
+<p><strong>In an explicit analysis</strong>, the nodes of the kernel functions carry no increment to constrain: the particles have
+moved when the constraints are evaluated. There the constraint holds displacement components at zero, as a
+support, e.g. on a symmetry plane or at a clamped edge, and it measures them where the constrained points are now:
+the force on a constrained point is</p>
+<div class="math notranslate nohighlight">
+\[f_i = -k \left( x_i - X_i \right)\]</div>
+<p>for every constrained component <span class="math notranslate nohighlight">\(i\)</span>, with <span class="math notranslate nohighlight">\(\boldsymbol{X}\)</span> the position of the point when the
+constraint was created, and the particle distributes it over the nodes of its kernel functions with its shape
+functions at the point. The force acts on both sides of <span class="math notranslate nohighlight">\(X_i\)</span>. It acts in an explicit analysis
+(<a class="reference internal" href="#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.actsInExplicitAnalysis" title="edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.actsInExplicitAnalysis"><code class="xref py py-attr docutils literal notranslate"><span class="pre">actsInExplicitAnalysis</span></code></a>) only if it constrains the displacement and every prescribed change is zero: an
+explicit analysis prescribes motion through velocities, not through penalized displacements.</p>
+<p>A support holds only as well as its penalty is stiff against the material next to it: a penalty that is merely
+comparable to the stiffness of a particle lets the support give way and spring back, an error that does not shrink
+with the particle size. Its upper bound is the stable time increment of the explicit integration,
+<span class="math notranslate nohighlight">\(\Delta t &lt; 2 \sqrt{m / k}\)</span> with <span class="math notranslate nohighlight">\(m\)</span> the mass a constrained point carries; see example 186.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -1193,12 +1215,15 @@ It constrains a material point field increment.</p>
 <li><p><strong>prescribedStepDelta</strong> (<em>dict</em>) – The dictionary containing the prescribed bc components for the field in the present load step.</p></li>
 <li><p><strong>penaltyParameter</strong> (<em>float</em>) – The penalty parameter value.</p></li>
 <li><p><strong>constrain</strong> (<em>str</em><em> | </em><em>list</em><em>[</em><em>int</em><em>]</em>) – Either constrain the center of the particle or a list of vertex indices for particles with multiple vertices.
-If “center”, the center of the particle is constrained. If a list, the vertices at the given indices are constrained.</p></li>
+If “center”, the center of the particle is constrained. If a list, the vertices at the given indices are
+constrained; it must name at least one vertex.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Attributes<span class="colon">:</span></dt>
 <dd class="field-even"><dl class="simple">
 <dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">active</span></code></dt><dd><p>Whether this constraint takes part in the discrete system, while it is <code class="xref py py-attr docutils literal notranslate"><span class="pre">switchedOn</span></code> and <code class="xref py py-attr docutils literal notranslate"><span class="pre">withinReach</span></code>.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.actsInExplicitAnalysis" title="edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.actsInExplicitAnalysis"><code class="xref py py-obj docutils literal notranslate"><span class="pre">actsInExplicitAnalysis</span></code></a></dt><dd><p>Whether this constraint acts in an explicit analysis: if it constrains the displacement, and every prescribed change is zero (see the class documentation and <a class="reference internal" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.actsInExplicitAnalysis" title="edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.actsInExplicitAnalysis"><code class="xref py py-attr docutils literal notranslate"><span class="pre">actsInExplicitAnalysis</span></code></a>).</p>
 </dd>
 <dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs" title="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">couplesAllItsDofs</span></code></a></dt><dd><p>Whether the entity’s block couples every one of its degrees of freedom with every other one.</p>
 </dd>
@@ -1234,8 +1259,8 @@ If “center”, the center of the particle is constrained. If a list, the verti
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.computeKernels" title="edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.computeKernels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeKernels</span></code></a>(U_np, dU, P, K, timeStep)</p></td>
 <td><p>Add this constraint's contribution <code class="docutils literal notranslate"><span class="pre">P</span></code> to the residual, and its tangent <code class="docutils literal notranslate"><span class="pre">K</span> <span class="pre">=</span> <span class="pre">dP/dU</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeKernelsExplicit</span></code>(U_np, dU, P, timeStep)</p></td>
-<td><p>Add this constraint's contribution to the residual, without a tangent.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.computeKernelsExplicit" title="edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.computeKernelsExplicit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeKernelsExplicit</span></code></a>(U_np, dU, P, timeStep)</p></td>
+<td><p>Add the residual contribution of the support in an explicit analysis: the negative of the forces that hold the constrained components of the constrained points at their initial positions, measured where the points are now (see the class documentation).</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fromConstraintDefinition</span></code>(name, definition, model)</p></td>
 <td><p>Create this constraint from a parsed <code class="docutils literal notranslate"><span class="pre">.inp</span></code> constraint definition.</p></td>
@@ -1250,7 +1275,7 @@ If “center”, the center of the particle is constrained. If a list, the verti
 <td><p>The local row and column of every value of the entity's block, in the order of the values.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">prepareExplicitEvaluation</span></code>()</p></td>
-<td><p>Called by an explicit solver whenever the constraint is located anew in its discrete system (a rebuilt one, or one whose constraints are re-located), before it evaluates the constraint there with <code class="xref py py-meth docutils literal notranslate"><span class="pre">computeKernelsExplicit()</span></code>.</p></td>
+<td><p>Called by an explicit solver whenever the constraint is located anew in its discrete system (a rebuilt one, or one whose constraints are re-located), before it evaluates the constraint there with <a class="reference internal" href="#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.computeKernelsExplicit" title="edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.computeKernelsExplicit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">computeKernelsExplicit()</span></code></a>.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setRestartData</span></code>(data)</p></td>
 <td><p>Restore the state <code class="xref py py-meth docutils literal notranslate"><span class="pre">getRestartData()</span></code> returned.</p></td>
@@ -1263,6 +1288,23 @@ If “center”, the center of the particle is constrained. If a list, the verti
 </tr>
 </tbody>
 </table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet._constrainedCoordinatesOf">
+<span class="sig-name descname"><span class="pre">_constrainedCoordinatesOf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">particle</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/particlepenaltyweakdirichtlet.html#ParticlePenaltyWeakDirichlet._constrainedCoordinatesOf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet._constrainedCoordinatesOf" title="Link to this definition"></a></dt>
+<dd><p>The current coordinates of the constrained points of a particle: its center, or the constrained vertices.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>particle</strong> (<a class="reference internal" href="particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle"><em>BaseParticle</em></a>) – The particle.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The coordinates, one array per point.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[np.ndarray]</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.assignAdditionalScalarVariables">
 <span class="sig-name descname"><span class="pre">assignAdditionalScalarVariables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scalarVariables</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/particlepenaltyweakdirichtlet.html#ParticlePenaltyWeakDirichlet.assignAdditionalScalarVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.assignAdditionalScalarVariables" title="Link to this definition"></a></dt>
@@ -1314,6 +1356,24 @@ is also called with <code class="docutils literal notranslate"><span class="pre"
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.computeKernelsExplicit">
+<span class="sig-name descname"><span class="pre">computeKernelsExplicit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">U_np</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">P</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/particlepenaltyweakdirichtlet.html#ParticlePenaltyWeakDirichlet.computeKernelsExplicit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.computeKernelsExplicit" title="Link to this definition"></a></dt>
+<dd><p>Add the residual contribution of the support in an explicit analysis: the negative of the forces that hold
+the constrained components of the constrained points at their initial positions, measured where the points are
+now (see the class documentation).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>U_np</strong> (<em>ndarray</em>) – The current solution; unused, the displacement follows from the current positions.</p></li>
+<li><p><strong>dU</strong> (<em>ndarray</em>) – The solution increment; likewise unused.</p></li>
+<li><p><strong>P</strong> (<em>ndarray</em>) – The residual contribution to augment.</p></li>
+<li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The current time step; unused.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.getNumberOfAdditionalNeededScalarVariables">
 <span class="sig-name descname"><span class="pre">getNumberOfAdditionalNeededScalarVariables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/particlepenaltyweakdirichtlet.html#ParticlePenaltyWeakDirichlet.getNumberOfAdditionalNeededScalarVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.getNumberOfAdditionalNeededScalarVariables" title="Link to this definition"></a></dt>
 <dd><p>This method is called to determine the additional number of scalar variables
@@ -1354,9 +1414,41 @@ not override this method).</p>
 </dd></dl>
 
 <dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet._initialCoordinatesOfConstrainedPoints">
+<span class="sig-name descname"><span class="pre">_initialCoordinatesOfConstrainedPoints</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet._initialCoordinatesOfConstrainedPoints" title="Link to this definition"></a></dt>
+<dd><p>Where the constrained points of each particle are when the constraint is created, the positions an explicit
+analysis holds them at.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.actsInExplicitAnalysis">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">actsInExplicitAnalysis</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.actsInExplicitAnalysis" title="Link to this definition"></a></dt>
+<dd><p>if it constrains the displacement, and every prescribed
+change is zero (see the class documentation and
+<a class="reference internal" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.actsInExplicitAnalysis" title="edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.actsInExplicitAnalysis"><code class="xref py py-attr docutils literal notranslate"><span class="pre">actsInExplicitAnalysis</span></code></a>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if it acts in an explicit analysis.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Whether this constraint acts in an explicit analysis</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
 <dt class="sig sig-object py" id="edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.checkpointedState">
 <span class="sig-name descname"><span class="pre">checkpointedState</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.checkpointedState" title="Link to this definition"></a></dt>
-<dd><p>Carries nothing from one increment to the next.</p>
+<dd><p>the positions the points are held at in an explicit analysis
+are those of the model the constraint is created with.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Carries nothing from one increment to the next</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py property">
@@ -4139,6 +4231,455 @@ is an EntityBasedSurface (constraints will be created for all faces).</p></li>
 </ul>
 </dd>
 </dl>
+</dd></dl>
+
+</section>
+<section id="particlepenaltyfacetcontactexplicit-constraint-class">
+<h3><code class="docutils literal notranslate"><span class="pre">ParticlePenaltyFacetContactExplicit</span></code> constraint class<a class="headerlink" href="#particlepenaltyfacetcontactexplicit-constraint-class" title="Link to this heading"></a></h3>
+<p>Contact between particles and a body of finite elements: the vertices of the particles against the faceted boundary
+of the finite elements, which EdelweissFE’s surface element generator creates. The theory is in the class
+documentation; its tests are <code class="docutils literal notranslate"><span class="pre">edelweissmeshfree/constraints/test/particlepenaltyfacetcontactexplicit_test.py</span></code>
+(pairing, entering, tunnelling, the exchange of momentum) and example 185 (the same result as an analytic wall).</p>
+<p id="module-edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit">Penalty contact between the vertices of particles and a faceted surface, for explicit analyses.</p>
+<p>The faceted surface (the <em>master</em>) is the boundary of a body made of finite elements, tiled into flat contact facets by
+EdelweissFE’s surface element generator (<code class="xref py py-mod docutils literal notranslate"><span class="pre">edelweissfe.generators.surfaceelementgenerator</span></code>): Line2 facets in 2D,
+Tria3 facets in 3D. The vertices of the particles are the contact points (the <em>slave</em> points). The geometry – the
+closest point on a facet, the facet normal, the search for the closest facet – is EdelweissFE’s
+(<code class="xref py py-mod docutils literal notranslate"><span class="pre">edelweissfe.utils.facetcontactgeometry</span></code>), the same as that of its node-to-surface contact
+(<code class="xref py py-mod docutils literal notranslate"><span class="pre">edelweissfe.constraints.nodetodeformablesurfacepenalty</span></code>).</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ContactState">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.</span></span><span class="sig-name descname"><span class="pre">ContactState</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">values</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/explicit/particlepenaltyfacetcontactexplicit.html#ContactState"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ContactState" title="Link to this definition"></a></dt>
+<dd><p>Where a contact point stands with respect to the master surface, as of the last update of the connectivity.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">denominator</span></code></dt><dd><p>the denominator of a rational number in lowest terms</p>
+</dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">imag</span></code></dt><dd><p>the imaginary part of a complex number</p>
+</dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">numerator</span></code></dt><dd><p>the numerator of a rational number in lowest terms</p>
+</dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">real</span></code></dt><dd><p>the real part of a complex number</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">as_integer_ratio</span></code>(/)</p></td>
+<td><p>Return a pair of integers, whose ratio is equal to the original int.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">bit_count</span></code>(/)</p></td>
+<td><p>Number of ones in the binary representation of the absolute value of self.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">bit_length</span></code>(/)</p></td>
+<td><p>Number of bits necessary to represent self in binary.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">conjugate</span></code>(/)</p></td>
+<td><p>Returns self, the complex conjugate of any int.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_bytes</span></code>(/, bytes[, byteorder, signed])</p></td>
+<td><p>Return the integer represented by the given array of bytes.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_integer</span></code>(/)</p></td>
+<td><p>Returns True.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_bytes</span></code>(/[, length, byteorder, signed])</p></td>
+<td><p>Return an array of bytes representing an integer.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ContactState.APPROACHING">
+<span class="sig-name descname"><span class="pre">APPROACHING</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ContactState.APPROACHING" title="Link to this definition"></a></dt>
+<dd><p>the point is seen before it touches.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A facet within the search distance, the point outside of it</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ContactState.FOUND_INSIDE">
+<span class="sig-name descname"><span class="pre">FOUND_INSIDE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ContactState.FOUND_INSIDE" title="Link to this definition"></a></dt>
+<dd><p>it has tunnelled through
+the search distance in one increment, or the bodies overlapped from the start. It gets no force (the closest
+facet is no indication of the way out), and the constraint reports it. It stays so until it is seen outside
+within the search distance: deeper inside than the search distance, it is out of sight, not free.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The point lies inside the master body without having been seen outside of it before</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ContactState.FREE">
+<span class="sig-name descname"><span class="pre">FREE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ContactState.FREE" title="Link to this definition"></a></dt>
+<dd><p>No facet within the search distance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ContactState.IN_CONTACT">
+<span class="sig-name descname"><span class="pre">IN_CONTACT</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ContactState.IN_CONTACT" title="Link to this definition"></a></dt>
+<dd><p>The point has entered the master body through its paired facet, and is pushed back out through it.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.</span></span><span class="sig-name descname"><span class="pre">ParticlePenaltyFacetContactExplicit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">particles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">masterFacets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">penaltyParameter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">searchDistance</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">journal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">twoWayCoupling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">entryDepthWarningFraction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/explicit/particlepenaltyfacetcontactexplicit.html#ParticlePenaltyFacetContactExplicit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit" title="Link to this definition"></a></dt>
+<dd><p>Penalty contact between the vertices of a set of particles and a faceted master surface, for explicit
+analyses.</p>
+<p><strong>The gap and the force.</strong> A contact point <span class="math notranslate nohighlight">\(\boldsymbol{x}_s\)</span> (a vertex of a particle) is paired with a facet
+of the master surface. Its closest point on the facet has the weights <span class="math notranslate nohighlight">\(w_a\)</span> of the facet’s nodes
+<span class="math notranslate nohighlight">\(\boldsymbol{x}_a\)</span> – non-negative, and summing to one, because the projection is clamped to the facet –
+and the gap is measured along the facet’s outward unit normal <span class="math notranslate nohighlight">\(\boldsymbol{n}\)</span>,</p>
+<div class="math notranslate nohighlight">
+\[g = \boldsymbol{n} \cdot \Big( \boldsymbol{x}_s - \sum_a w_a\, \boldsymbol{x}_a \Big),\]</div>
+<p>negative where the point has entered the master body. There the penalty spring pushes the point back out, with
+the force <span class="math notranslate nohighlight">\(\boldsymbol{f} = -k\, g\, \boldsymbol{n}\)</span> on the point, which the particle distributes over the
+nodes of its kernel functions with its shape functions <span class="math notranslate nohighlight">\(N_I\)</span> at the point. The reaction
+<span class="math notranslate nohighlight">\(-\boldsymbol{f}\)</span> acts on the facet, distributed over its nodes with the weights <span class="math notranslate nohighlight">\(w_a\)</span> (transformed by
+the facet’s weight transform, if the surface element generator gave it one). Both the shape functions and the
+weights sum to one, so the two forces are equal and opposite, and the contact exchanges momentum without creating
+any. <code class="docutils literal notranslate"><span class="pre">penaltyParameter</span></code> <span class="math notranslate nohighlight">\(k\)</span> is a force per unit penetration of one contact point, as in the other penalty
+contacts of the particles (e.g.
+<a class="reference internal" href="#edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit.ParticlePenaltyCartesianBoundaryConstraintExplicit" title="edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit.ParticlePenaltyCartesianBoundaryConstraintExplicit"><code class="xref py py-class docutils literal notranslate"><span class="pre">ParticlePenaltyCartesianBoundaryConstraintExplicit</span></code></a>);
+EdelweissFE’s node-to-surface contact takes a penalty per unit area instead, which is <span class="math notranslate nohighlight">\(k\)</span> divided by the
+area a contact point stands for.</p>
+<p><strong>The pairing.</strong> In every update of the connectivity, the contact points within the search distance of the
+surface are paired with a facet: a point with its closest facet, and with the weights of its closest point there,
+but only while it is outside the master body. Once it is in contact, it keeps the facet it entered through, and moves
+on only to a facet that shares a node with it (its <em>patch</em>), as it slides along the surface. This is what keeps a
+deep contact point from being pushed out of the wrong side: the closest facet of a point deep inside a body
+need not be the one it came in through, and its normal then points the wrong way. A point is admitted to contact
+only if it has been seen outside within the search distance before (<a class="reference internal" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ContactState.APPROACHING" title="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ContactState.APPROACHING"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ContactState.APPROACHING</span></code></a>); a point
+that is first found inside (<a class="reference internal" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ContactState.FOUND_INSIDE" title="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ContactState.FOUND_INSIDE"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ContactState.FOUND_INSIDE</span></code></a>) gets no force and is reported in the journal, and
+counts as found inside until it is seen outside again, also while it is deeper inside than the search distance. The
+search distance must therefore exceed the distance a point travels towards the surface in one increment; the
+constraint warns when a point enters deeper than <code class="docutils literal notranslate"><span class="pre">entryDepthWarningFraction</span></code> of it. A point in contact never
+leaves the search, however deep it is.</p>
+<p><strong>Where it is evaluated.</strong> The pairing (the facet and the weights) holds from one update of the connectivity to the
+next; the gap is evaluated where the bodies are when the forces are: the contact points where the particles are
+now, the facet where its nodes are now – with <code class="docutils literal notranslate"><span class="pre">twoWayCoupling</span></code> from their total displacement in the solution,
+without it from the model’s node field <code class="docutils literal notranslate"><span class="pre">displacement</span></code> – with its normal there. An explicit analysis that
+updates the connectivity in every increment, as one with particles does, evaluates at the configuration of the
+update; one that updates it less often still evaluates the gaps of the current configuration, and a paired point
+that penetrates between two updates is pushed back as well.</p>
+<p><strong>The nodes.</strong> The constraint takes part in the discrete system while a point is paired
+(<code class="xref py py-attr docutils literal notranslate"><span class="pre">withinReach</span></code>). Its nodes are those of the
+kernel functions of the particles with a paired point and, with <code class="docutils literal notranslate"><span class="pre">twoWayCoupling</span></code>, the nodes of the facets they
+are paired with. Without <code class="docutils literal notranslate"><span class="pre">twoWayCoupling</span></code>, the master surface is moved by something else – it is rigid, or its
+motion is prescribed – and the reaction is not applied; its nodes then need no degrees of freedom.</p>
+<p><strong>What it reports</strong>, after each evaluation: the contact force on the particles and on the master surface
+(<a class="reference internal" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.contactForceOnParticles" title="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.contactForceOnParticles"><code class="xref py py-attr docutils literal notranslate"><span class="pre">contactForceOnParticles</span></code></a>, <a class="reference internal" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.contactForceOnMaster" title="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.contactForceOnMaster"><code class="xref py py-attr docutils literal notranslate"><span class="pre">contactForceOnMaster</span></code></a>), whose sum is zero to round-off; the energy stored
+in the penalty springs (<a class="reference internal" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.penaltyEnergy" title="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.penaltyEnergy"><code class="xref py py-attr docutils literal notranslate"><span class="pre">penaltyEnergy</span></code></a>), for an energy balance; the deepest penetration
+(<a class="reference internal" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.deepestPenetration" title="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.deepestPenetration"><code class="xref py py-attr docutils literal notranslate"><span class="pre">deepestPenetration</span></code></a>); and how many points are in contact or were found inside
+(<a class="reference internal" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.numberOfPointsInContact" title="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.numberOfPointsInContact"><code class="xref py py-attr docutils literal notranslate"><span class="pre">numberOfPointsInContact</span></code></a>, <a class="reference internal" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.numberOfPointsFoundInside" title="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.numberOfPointsFoundInside"><code class="xref py py-attr docutils literal notranslate"><span class="pre">numberOfPointsFoundInside</span></code></a>).</p>
+<p>The pairing is checked for a master surface that is convex where it is touched, such as the nose of a
+projectile: at a reentrant corner, the sign of the gap of the closest facet does not tell inside from outside.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – The name of the constraint.</p></li>
+<li><p><strong>model</strong> (<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel"><em>MPMModel</em></a>) – The model.</p></li>
+<li><p><strong>particles</strong> (<em>list</em><em>[</em><a class="reference internal" href="particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle"><em>BaseParticle</em></a><em>]</em>) – The particles whose vertices are the contact points.</p></li>
+<li><p><strong>masterFacets</strong> (<em>list</em>) – The contact facet elements of the master surface (Line2 facets in 2D, Tria3 facets in 3D), e.g. the element
+set the surface element generator creates; their node ordering makes their normals point out of the master
+body.</p></li>
+<li><p><strong>penaltyParameter</strong> (<em>float</em>) – The penalty stiffness, a force per unit penetration of one contact point. It lowers the stable time
+increment of the explicit integration.</p></li>
+<li><p><strong>searchDistance</strong> (<em>float</em>) – The distance from the master surface within which a point is seen, and may come into contact in the next
+increment. It must exceed the distance a point travels towards the surface in one increment.</p></li>
+<li><p><strong>journal</strong> – The journal, for the reports.</p></li>
+<li><p><strong>twoWayCoupling</strong> (<em>bool</em>) – Apply the reaction to the nodes of the master facets. Leave it off only for a master surface that is moved by
+something else, rigid or prescribed.</p></li>
+<li><p><strong>entryDepthWarningFraction</strong> (<em>float</em>) – The fraction of the search distance beyond which the depth at which a point enters contact is reported: a
+point that enters that deep has almost outrun the search.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Attributes<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">active</span></code></dt><dd><p>Whether this constraint takes part in the discrete system, while it is <code class="xref py py-attr docutils literal notranslate"><span class="pre">switchedOn</span></code> and <code class="xref py py-attr docutils literal notranslate"><span class="pre">withinReach</span></code>.</p>
+</dd>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs" title="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.couplesAllItsDofs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">couplesAllItsDofs</span></code></a></dt><dd><p>Whether the entity’s block couples every one of its degrees of freedom with every other one.</p>
+</dd>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.dofIndicesPermutation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dofIndicesPermutation</span></code></a></dt><dd><p>None: the layout of a constraint is nodewise, followed by its scalar variables.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.fields" title="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.fields"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fields</span></code></a></dt><dd><p>The fields on the nodes this constraint is acting on.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.nDof" title="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.nDof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nDof</span></code></a></dt><dd><p>The total number of degrees of freedom this constraint is associated with.</p>
+</dd>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes" title="edelweissmeshfree.cells.pythoncell.cell.PythonCell.nNodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nNodes</span></code></a></dt><dd><p>The number of nodes this constraint is acting on.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.name" title="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></a></dt><dd><p>The name of this constraint.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.nodes" title="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.nodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes</span></code></a></dt><dd><p>The nodes this constraint is acting on.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.numberOfPointsFoundInside" title="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.numberOfPointsFoundInside"><code class="xref py py-obj docutils literal notranslate"><span class="pre">numberOfPointsFoundInside</span></code></a></dt><dd><p>The number of contact points found inside the master body without having been seen outside of it, which get no force (<a class="reference internal" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ContactState.FOUND_INSIDE" title="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ContactState.FOUND_INSIDE"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ContactState.FOUND_INSIDE</span></code></a>); a point counts until it is seen outside again.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.scalarVariables" title="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.scalarVariables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scalarVariables</span></code></a></dt><dd><p>The scalar variables (e.g., Lagrange multipliers) assigned to this constraint.</p>
+</dd>
+<dt><strong>schema</strong></dt><dd></dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.stateOfPoints" title="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.stateOfPoints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">stateOfPoints</span></code></a></dt><dd><p>The <a class="reference internal" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ContactState" title="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ContactState"><code class="xref py py-class docutils literal notranslate"><span class="pre">ContactState</span></code></a> of every contact point, as of the last update of the connectivity, the vertices of the particles particle after particle.</p>
+</dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">switchedOn</span></code></dt><dd><p>Whether this constraint is switched on from outside, e.g.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">acceptLastState</span></code>()</p></td>
+<td><p>Called by <code class="xref py py-meth docutils literal notranslate"><span class="pre">advanceToTime()</span></code> when an increment is accepted, so a stateful constraint (e.g. frictional contact) can promote the state of the last (converged) Newton iterate to its history.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">assignAdditionalScalarVariables</span></code>(scalarVariables)</p></td>
+<td><p>Assign a list of scalar variables associated with this constraint.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeKernels</span></code>(U_np, dU, P, K, timeStep)</p></td>
+<td><p>Refuse an implicit analysis: this constraint has no tangent.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.computeKernelsExplicit" title="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.computeKernelsExplicit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeKernelsExplicit</span></code></a>(U_np, dU, P, timeStep)</p></td>
+<td><p>Add the residual contribution of the penalty forces of the paired points that penetrate their facets now: the negative of the force on the nodes of the particles and, with <code class="docutils literal notranslate"><span class="pre">twoWayCoupling</span></code>, the negative of the reaction on the nodes of the facets.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fromConstraintDefinition</span></code>(name, definition, model)</p></td>
+<td><p>Create this constraint from a parsed <code class="docutils literal notranslate"><span class="pre">.inp</span></code> constraint definition.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getNumberOfAdditionalNeededScalarVariables</span></code>()</p></td>
+<td><p>This method is called to determine the additional number of scalar variables this Constraint needs.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getRestartData</span></code>()</p></td>
+<td><p>The state this constraint carries from one increment to the next; by default the attributes declared in <a class="reference internal" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.checkpointedState" title="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.checkpointedState"><code class="xref py py-attr docutils literal notranslate"><span class="pre">checkpointedState</span></code></a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">localEntriesOfBlock</span></code>()</p></td>
+<td><p>The local row and column of every value of the entity's block, in the order of the values.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">prepareExplicitEvaluation</span></code>()</p></td>
+<td><p>Called by an explicit solver whenever the constraint is located anew in its discrete system (a rebuilt one, or one whose constraints are re-located), before it evaluates the constraint there with <a class="reference internal" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.computeKernelsExplicit" title="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.computeKernelsExplicit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">computeKernelsExplicit()</span></code></a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setRestartData</span></code>(data)</p></td>
+<td><p>Restore the state <code class="xref py py-meth docutils literal notranslate"><span class="pre">getRestartData()</span></code> returned.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">shapeBlock</span></code>(values)</p></td>
+<td><p>The entity's view of the flat array of the values of its block, which it writes its tangent into.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.updateConnectivity" title="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.updateConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code></a>(model)</p></td>
+<td><p>Pair the contact points with the facets of the master surface at the current configuration, and find the nodes the paired points act on (see the class documentation).</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit._collectNodesOfPairedPoints">
+<span class="sig-name descname"><span class="pre">_collectNodesOfPairedPoints</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/explicit/particlepenaltyfacetcontactexplicit.html#ParticlePenaltyFacetContactExplicit._collectNodesOfPairedPoints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit._collectNodesOfPairedPoints" title="Link to this definition"></a></dt>
+<dd><p>The nodes the paired points act on, each once: those of the kernel functions of their particles, then, with
+<code class="docutils literal notranslate"><span class="pre">twoWayCoupling</span></code>, those of their facets. Records where each particle’s and each point’s nodes sit in the
+constraint’s block.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The nodes.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit._currentCoordinatesOfPairedPoints">
+<span class="sig-name descname"><span class="pre">_currentCoordinatesOfPairedPoints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">U_np</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/explicit/particlepenaltyfacetcontactexplicit.html#ParticlePenaltyFacetContactExplicit._currentCoordinatesOfPairedPoints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit._currentCoordinatesOfPairedPoints" title="Link to this definition"></a></dt>
+<dd><p>Where the paired points and the nodes of their facets are now.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>U_np</strong> (<em>ndarray</em>) – The current solution of the constraint’s block.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The coordinates of the paired points, of shape <code class="docutils literal notranslate"><span class="pre">(nPaired,</span> <span class="pre">domainSize)</span></code>, and those of the nodes of their
+facets, of shape <code class="docutils literal notranslate"><span class="pre">(nPaired,</span> <span class="pre">nNodesPerFacet,</span> <span class="pre">domainSize)</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[numpy.ndarray, numpy.ndarray]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit._reportEntriesAndPointsFoundInside">
+<span class="sig-name descname"><span class="pre">_reportEntriesAndPointsFoundInside</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previousState</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gap</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/explicit/particlepenaltyfacetcontactexplicit.html#ParticlePenaltyFacetContactExplicit._reportEntriesAndPointsFoundInside"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit._reportEntriesAndPointsFoundInside" title="Link to this definition"></a></dt>
+<dd><p>Report in the journal the points newly found inside the master body, and a point that enters contact
+deeper than any reported before, beyond <code class="docutils literal notranslate"><span class="pre">entryDepthWarningFraction</span></code> of the search distance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>previousState</strong> (<em>ndarray</em>) – The states before this update.</p></li>
+<li><p><strong>state</strong> (<em>ndarray</em>) – The states after it.</p></li>
+<li><p><strong>gap</strong> (<em>ndarray</em>) – The gaps after it.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.computeKernelsExplicit">
+<span class="sig-name descname"><span class="pre">computeKernelsExplicit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">U_np</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">P</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/explicit/particlepenaltyfacetcontactexplicit.html#ParticlePenaltyFacetContactExplicit.computeKernelsExplicit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.computeKernelsExplicit" title="Link to this definition"></a></dt>
+<dd><p>Add the residual contribution of the penalty forces of the paired points that penetrate their facets now:
+the negative of the force on the nodes of the particles and, with <code class="docutils literal notranslate"><span class="pre">twoWayCoupling</span></code>, the negative of the
+reaction on the nodes of the facets.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>U_np</strong> (<em>ndarray</em>) – The current solution: with <code class="docutils literal notranslate"><span class="pre">twoWayCoupling</span></code>, the total displacement of the nodes of the paired facets
+places them; the nodes of the kernel functions carry none, the particles are where they are.</p></li>
+<li><p><strong>dU</strong> (<em>ndarray</em>) – The solution increment; unused.</p></li>
+<li><p><strong>P</strong> (<em>ndarray</em>) – The residual contribution to augment.</p></li>
+<li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The current time step; unused.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.updateConnectivity">
+<span class="sig-name descname"><span class="pre">updateConnectivity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/explicit/particlepenaltyfacetcontactexplicit.html#ParticlePenaltyFacetContactExplicit.updateConnectivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.updateConnectivity" title="Link to this definition"></a></dt>
+<dd><p>Pair the contact points with the facets of the master surface at the current configuration, and find the
+nodes the paired points act on (see the class documentation).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>model</strong> (<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel"><em>MPMModel</em></a>) – The model, whose node field <code class="docutils literal notranslate"><span class="pre">displacement</span></code> moves the master surface.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if the nodes of the constraint changed.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.checkpointedState">
+<span class="sig-name descname"><span class="pre">checkpointedState</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'_pairedFacetOfPoint':</span> <span class="pre">&lt;class</span> <span class="pre">'numpy.ndarray'&gt;,</span> <span class="pre">'_stateOfPoint':</span> <span class="pre">&lt;class</span> <span class="pre">'numpy.ndarray'&gt;}</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.checkpointedState" title="Link to this definition"></a></dt>
+<dd><p>its state and its paired facet. The weights follow
+from the next update of the connectivity, which comes before the next evaluation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The pairing a point carries from one increment to the next</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.contactForceOnMaster">
+<span class="sig-name descname"><span class="pre">contactForceOnMaster</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.contactForceOnMaster" title="Link to this definition"></a></dt>
+<dd><p>The contact force on the master surface, summed over its nodes, at the last evaluation; zero without
+<code class="docutils literal notranslate"><span class="pre">twoWayCoupling</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.contactForceOnParticles">
+<span class="sig-name descname"><span class="pre">contactForceOnParticles</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.contactForceOnParticles" title="Link to this definition"></a></dt>
+<dd><p>The contact force on the particles, summed over their nodes, at the last evaluation.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.deepestPenetration">
+<span class="sig-name descname"><span class="pre">deepestPenetration</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.deepestPenetration" title="Link to this definition"></a></dt>
+<dd><p>The largest penetration of a point at the last evaluation, a positive length; zero without contact.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.fields">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">fields</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.fields" title="Link to this definition"></a></dt>
+<dd><p>The fields on the nodes this constraint is acting on.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.nDof">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">nDof</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.nDof" title="Link to this definition"></a></dt>
+<dd><p>The total number of degrees of freedom this constraint is associated with.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.name">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.name" title="Link to this definition"></a></dt>
+<dd><p>The name of this constraint.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The name.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.nodes">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">nodes</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.nodes" title="Link to this definition"></a></dt>
+<dd><p>The nodes this constraint is acting on.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.numberOfPointsFoundInside">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">numberOfPointsFoundInside</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.numberOfPointsFoundInside" title="Link to this definition"></a></dt>
+<dd><p>The number of contact points found inside the master body without having been seen outside of it, which
+get no force (<a class="reference internal" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ContactState.FOUND_INSIDE" title="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ContactState.FOUND_INSIDE"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ContactState.FOUND_INSIDE</span></code></a>); a point counts until it is seen outside again.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The number.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.numberOfPointsInContact">
+<span class="sig-name descname"><span class="pre">numberOfPointsInContact</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.numberOfPointsInContact" title="Link to this definition"></a></dt>
+<dd><p>The number of points in contact at the last evaluation.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.penaltyEnergy">
+<span class="sig-name descname"><span class="pre">penaltyEnergy</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.penaltyEnergy" title="Link to this definition"></a></dt>
+<dd><p>The energy stored in the penalty springs at the last evaluation, <span class="math notranslate nohighlight">\(\sum \frac{1}{2} k g^2\)</span>.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.scalarVariables">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">scalarVariables</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.scalarVariables" title="Link to this definition"></a></dt>
+<dd><p>The scalar variables (e.g., Lagrange multipliers) assigned to this constraint.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The list of scalar variables.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list[ScalarVariable]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.stateOfPoints">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">stateOfPoints</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit.stateOfPoints" title="Link to this definition"></a></dt>
+<dd><p>The <a class="reference internal" href="#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ContactState" title="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ContactState"><code class="xref py py-class docutils literal notranslate"><span class="pre">ContactState</span></code></a> of every contact point, as of the last update of the connectivity, the vertices
+of the particles particle after particle.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The states.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 </section>
