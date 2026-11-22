@@ -71,7 +71,8 @@ def _wrapperClasses() -> list[type]:
 def _cell():
     from edelweissmeshfree.cells.marmotcell import lagrangianmarmotcell
 
-    nodes = [Node(label, np.array([*xy, 0.0])) for label, xy in enumerate([(0, 0), (1, 0), (1, 1), (0, 1)])]
+    # A plane cell: its nodes have two coordinates, which Marmot reads as nDim values per node.
+    nodes = [Node(label, np.array(xy, dtype=float)) for label, xy in enumerate([(0, 0), (1, 0), (1, 1), (0, 1)])]
 
     return _compiled(lagrangianmarmotcell).LagrangianMarmotCellWrapper("Displacement/Quad4", 1, nodes)
 
@@ -98,10 +99,12 @@ def _particle():
         MarmotMeshfreeApproximationWrapper("ReproducingKernel", 2, completenessOrder=1),
         material,
     )
+    # A kernel function takes its dimension from its centre, and reads that many coordinates of every point it is
+    # evaluated at: the centres of a plane particle's kernel functions have two.
     particle.assignKernelFunctions(
         [
             MarmotMeshfreeKernelFunctionWrapper(
-                Node(label, np.array([*center, 0.0])), "BSplineBoxed", supportRadius=1.5, continuityOrder=3
+                Node(label, np.array(center, dtype=float)), "BSplineBoxed", supportRadius=1.5, continuityOrder=3
             )
             for label, center in enumerate(itertools.product((-0.5, 0.5, 1.5), repeat=2))
         ]
