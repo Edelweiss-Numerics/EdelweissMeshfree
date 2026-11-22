@@ -42,7 +42,8 @@ class ContactState(IntEnum):
     IN_CONTACT = 2
     #: The point lies inside the master body without having been seen outside of it before: it has tunnelled through
     #: the search distance in one increment, or the bodies overlapped from the start. It gets no force (the closest
-    #: facet is no indication of the way out), and the constraint reports it.
+    #: facet is no indication of the way out), and the constraint reports it. It stays so until it is seen outside
+    #: within the search distance: deeper inside than the search distance, it is out of sight, not free.
     FOUND_INSIDE = 3
 
 
@@ -83,7 +84,8 @@ class ParticlePenaltyFacetContactExplicit(MPMExplicitConstraintBase):
     deep contact point from being pushed out of the wrong side: the closest facet of a point deep inside a body
     need not be the one it came in through, and its normal then points the wrong way. A point is admitted to contact
     only if it has been seen outside within the search distance before (:attr:`ContactState.APPROACHING`); a point
-    that is first found inside (:attr:`ContactState.FOUND_INSIDE`) gets no force and is reported in the journal. The
+    that is first found inside (:attr:`ContactState.FOUND_INSIDE`) gets no force and is reported in the journal, and
+    counts as found inside until it is seen outside again, also while it is deeper inside than the search distance. The
     search distance must therefore exceed the distance a point travels towards the surface in one increment; the
     constraint warns when a point enters deeper than ``entryDepthWarningFraction`` of it. A point in contact never
     leaves the search, however deep it is.
@@ -274,7 +276,7 @@ class ParticlePenaltyFacetContactExplicit(MPMExplicitConstraintBase):
     @property
     def numberOfPointsFoundInside(self) -> int:
         """The number of contact points found inside the master body without having been seen outside of it, which
-        get no force (:attr:`ContactState.FOUND_INSIDE`).
+        get no force (:attr:`ContactState.FOUND_INSIDE`); a point counts until it is seen outside again.
 
         Returns
         -------
@@ -333,9 +335,12 @@ class ParticlePenaltyFacetContactExplicit(MPMExplicitConstraintBase):
 
         penetrating = reached & (gap < 0.0)
         state = np.full(len(coordinatesOfPoint), ContactState.FREE, dtype=np.int8)
-        state[reached & ~penetrating] = ContactState.APPROACHING
+        # (a point that has left its contact is reached by its patch at any distance: beyond the search distance, free)
+        state[reached & ~penetrating & (distance <= self._searchDistance)] = ContactState.APPROACHING
         state[penetrating & wasSeen] = ContactState.IN_CONTACT
         state[penetrating & ~wasSeen] = ContactState.FOUND_INSIDE
+        # a point found inside that no facet reaches any more has gone deeper, not out
+        state[~reached & (previousState == ContactState.FOUND_INSIDE)] = ContactState.FOUND_INSIDE
 
         self._reportEntriesAndPointsFoundInside(previousState, state, gap)
 
