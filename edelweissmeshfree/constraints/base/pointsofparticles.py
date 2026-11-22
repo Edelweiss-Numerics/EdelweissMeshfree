@@ -71,8 +71,12 @@ def locateTheNodesOfParticles(kernelFunctionsOfParticles: Iterable[list], localI
         Per particle, where the nodes of its kernel functions sit in the block, in the order of its kernel functions.
     """
 
+    # indices also for a particle without kernel functions: an empty array without a type would be one of floats
     return [
-        np.array([localIndexOfNode.setdefault(kernelFunction.node, len(localIndexOfNode)) for kernelFunction in kfs])
+        np.array(
+            [localIndexOfNode.setdefault(kernelFunction.node, len(localIndexOfNode)) for kernelFunction in kfs],
+            dtype=np.intp,
+        )
         for kfs in kernelFunctionsOfParticles
     ]
 
