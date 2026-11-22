@@ -229,7 +229,7 @@ def test_the_nonlocal_field_is_integrated_by_the_particles_operators_on_their_cr
 
 
 def exactStableIncrement(model: MPMModel) -> float:
-    """The stable time increment of the explicit scheme for the particles' tangent, from the eigenvalues of the
+    """The stable time increment of the explicit scheme for the particles' stiffness, from the eigenvalues of the
     assembled system: :math:`2/\\omega_\\mathrm{max}` of the central differences on the degrees of freedom with an
     inertia, whatever their damping, and :math:`2/\\lambda_\\mathrm{max}` of forward Euler on those with a damping
     alone."""
@@ -244,10 +244,10 @@ def exactStableIncrement(model: MPMModel) -> float:
     K = np.zeros((len(M), len(M)))
     for particle in system.particles:
         nDof = particle.nDof
-        tangent = np.zeros(nDof * nDof)
-        particle.computeTangentOfTheCurrentState(tangent)
+        stiffness = np.zeros(nDof * nDof)
+        particle.assembleStiffness(stiffness)
         indices = np.asarray(system.locations.ofEntity[particle])
-        K[np.ix_(indices, indices)] += tangent.reshape(nDof, nDof, order="F")
+        K[np.ix_(indices, indices)] += stiffness.reshape(nDof, nDof, order="F")
 
     stable = np.inf
     for ofTheScheme, divisor, stableOfTheLargestEigenvalue in (
@@ -298,8 +298,8 @@ def test_the_bound_is_below_the_exact_stable_increment_and_the_scheme_is_stable_
 def test_the_particles_carry_no_newmark_inertia_in_a_step_after_an_implicit_dynamic_one():
     """An implicit dynamic step with ``inertia=entities`` leaves the particles its Newmark parameters. ``NED``
     integrates the inertia at the nodes and gives the particles zero parameters at the start of its step: the run, and
-    the tangent of the current state of a particle after it (documented as without inertia), are those of particles
-    that never had any."""
+    the tangent of a particle after it (of a zero increment, ``computeKernels``, which adds the Newmark inertia of a
+    particle that carries parameters), are those of particles that never had any."""
 
     tangents = []
     for newmarkParametersBefore in [(0.0, 0.0), (0.25, 0.5)]:
@@ -307,8 +307,9 @@ def test_the_particles_carry_no_newmark_inertia_in_a_step_after_an_implicit_dyna
             **WITH_MICRO_INERTIA, courantNumber=0.5, nIncrements=5, newmarkParametersBefore=newmarkParametersBefore
         )
         particle = next(iter(model.particles.values()))
+        zero = np.zeros(particle.nDof)
         tangent = np.zeros(particle.nDof**2)
-        particle.computeTangentOfTheCurrentState(tangent)
+        particle.computeKernels(tangent, np.zeros(particle.nDof), zero, zero, 0.0, 1.0)
         tangents.append(tangent)
 
     assert np.any(tangents[0])
