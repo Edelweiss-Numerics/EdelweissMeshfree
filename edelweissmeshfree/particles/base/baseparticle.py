@@ -466,7 +466,42 @@ class BaseParticle(BaseNodeCouplingEntity):
 
     @abstractmethod
     def getInterpolationVector(self, coordinate: np.ndarray) -> np.ndarray:
-        """Get the interpolation vector for a given global coordinate.
+        """The shape functions of the assigned kernel functions, evaluated exactly at an arbitrary location,
+        :math:`N_B(\\boldsymbol{x})`: e.g. where a field of the kernel functions is wanted somewhere in the body. Not the
+        particle's own interpolation at its own points (its center, a vertex, a face center), which is
+        :meth:`getInterpolationVectorLinearizedAboutCenter`; away from the center the two differ.
+
+        Parameters
+        ----------
+        coordinate
+            The location.
+
+        Returns
+        -------
+        np.ndarray
+            The interpolation vector for all nodes.
+        """
+
+    @abstractmethod
+    def getInterpolationVectorLinearizedAboutCenter(self, coordinate: np.ndarray) -> np.ndarray:
+        r"""The shape functions linearized about the center of the particle,
+        :math:`G_B(\boldsymbol{x}) = N_B(\boldsymbol{x}_c) + \nabla N_B(\boldsymbol{x}_c) \cdot (\boldsymbol{x} -
+        \boldsymbol{x}_c)`: the particle's own interpolation at its own points.
+
+        A particle knows every field it carries only by its value and its (smoothed) gradient at its center, so at a
+        point of its own (its center, a vertex, a face center) its interpolation of any field is this linearization:
+        for the displacement, the motion of the point in the next increment,
+        :math:`\Delta\boldsymbol{x} = \sum_B G_B \Delta\boldsymbol{U}_B` (the particle moves as a whole, its center
+        with the shape functions there and its domain with the homogeneous deformation gradient); for a nonlocal field
+        or a temperature, the value the particle carries at the point. Away from the center it is not
+        :meth:`getInterpolationVector` at the point, which is exact at an arbitrary location. A constraint that
+        measures a field at a point of the particle and distributes its force there with this vector is symmetric and
+        conservative. The vector sums to one.
+
+        Parameters
+        ----------
+        coordinate
+            The point, in the current configuration of the particle.
 
         Returns
         -------

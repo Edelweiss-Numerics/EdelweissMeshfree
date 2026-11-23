@@ -58,11 +58,17 @@ class ParticlePenaltyFacetContactExplicit(MPMExplicitConstraintBase):
 
     negative where the point has entered the master body. There the penalty spring pushes the point back out, with
     the force :math:`\boldsymbol{f} = -k\, g\, \boldsymbol{n}` on the point, which the particle distributes over the
-    nodes of its kernel functions with its shape functions :math:`N_I` at the point. The reaction
+    nodes of its kernel functions: with its shape functions :math:`N_I` at the point (the default), or, with
+    ``interpolationLinearizedAboutCenter``, with its interpolation linearized about its center :math:`G_I`
+    (:meth:`~edelweissmeshfree.particles.base.baseparticle.BaseParticle.getInterpolationVectorLinearizedAboutCenter`),
+    with which the particle moves the vertex. Only the latter is the transpose of the point's motion, and makes the
+    penalty spring symmetric and conservative; with :math:`N_I` the spring can feed energy into a softened particle
+    body (:meth:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.interpolationVectorAtPointOf`).
+    The reaction
     :math:`-\boldsymbol{f}` acts on the facet, distributed over its nodes with the weights :math:`w_a` (transformed by
-    the facet's weight transform, if the surface element generator gave it one). Both the shape functions and the
-    weights sum to one, so the two forces are equal and opposite, and the contact exchanges momentum without creating
-    any. ``penaltyParameter`` :math:`k` is a force per unit penetration of one contact point, as in the other penalty
+    the facet's weight transform, if the surface element generator gave it one). Either vector and the weights sum
+    to one, so the two forces are equal and opposite, and the contact exchanges momentum without creating any.
+    ``penaltyParameter`` :math:`k` is a force per unit penetration of one contact point, as in the other penalty
     contacts of the particles (e.g.
     :class:`~edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit.ParticlePenaltyCartesianBoundaryConstraintExplicit`);
     EdelweissFE's node-to-surface contact takes a penalty per unit area instead, which is :math:`k` divided by the
@@ -130,6 +136,11 @@ class ParticlePenaltyFacetContactExplicit(MPMExplicitConstraintBase):
     entryDepthWarningFraction
         The fraction of the search distance beyond which the depth at which a point enters contact is reported: a
         point that enters that deep has almost outrun the search.
+    interpolationLinearizedAboutCenter
+        False (default): measure the field at the point and distribute the force there with the shape functions at
+        the point, N. True: with the particle's interpolation linearized about its center, G, with which the particle
+        moves its own points (symmetric and conservative). See
+        :meth:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.interpolationVectorAtPointOf`.
     """
 
     #: The pairing a point carries from one increment to the next: its state and its paired facet. The weights follow
@@ -150,8 +161,10 @@ class ParticlePenaltyFacetContactExplicit(MPMExplicitConstraintBase):
         journal,
         twoWayCoupling: bool = True,
         entryDepthWarningFraction: float = 0.5,
+        interpolationLinearizedAboutCenter: bool = False,
     ):
         self._name = name
+        self.interpolationLinearizedAboutCenter = interpolationLinearizedAboutCenter
         self._model = model
         self._journal = journal
         self._domainSize = model.domainSize
@@ -459,10 +472,12 @@ class ParticlePenaltyFacetContactExplicit(MPMExplicitConstraintBase):
             force = -self._penaltyParameter * gap[i] * normalOfFacet[i]
 
             particleIndex = self._particleOfPoint[point]
-            N = self._particles[particleIndex].getInterpolationVector(coordinatesOfPoint[i]).flatten()
+            interpolation = self.interpolationVectorAtPointOf(
+                self._particles[particleIndex], coordinatesOfPoint[i]
+            ).flatten()
             # the kernel functions of a particle are on distinct nodes, so fancy indexing does not drop any
-            PAtNodes[self._localNodesOfParticle[particleIndex]] -= np.outer(N, force)
-            forceOnParticles += N.sum() * force
+            PAtNodes[self._localNodesOfParticle[particleIndex]] -= np.outer(interpolation, force)
+            forceOnParticles += interpolation.sum() * force
 
             if self._twoWayCoupling:
                 facet = self._facets[self._pairedFacetOfPoint[point]]

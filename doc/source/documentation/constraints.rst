@@ -60,6 +60,27 @@ measures its condition at the particles' current positions, as the penalty conta
 penalty weak Dirichlet condition does where it holds the displacement at zero (a support). A constraint on the
 increment, such as a weak Dirichlet condition that prescribes a change, would act as if nothing had moved there.
 
+**Points of a particle.** A particle knows every field only by its value and its gradient at its center, so its own
+interpolation at a point of its own -- a vertex, a face center, its center -- is its shape functions linearized about
+the center, :math:`\mathbf{G}`
+(:meth:`~edelweissmeshfree.particles.base.baseparticle.BaseParticle.getInterpolationVectorLinearizedAboutCenter`): for
+the displacement, the motion of the point. The shape functions at the point, :math:`\mathbf{N}`
+(:meth:`~edelweissmeshfree.particles.base.baseparticle.BaseParticle.getInterpolationVector`), are exact at an arbitrary
+location and differ from :math:`\mathbf{G}` away from the center. The constraints that act on points of particles (the
+penalty weak Dirichlet condition, the cartesian boundaries, the rigid body contacts, the facet contact, implicit and
+explicit) take one option, ``interpolationLinearizedAboutCenter``
+(:meth:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.interpolationVectorAtPointOf`):
+
+- ``False``, the default: they measure the field at the point and distribute their force there with :math:`\mathbf{N}`.
+  In an explicit analysis, where the point is where the particle has moved it with :math:`\mathbf{G}`, the penalty
+  stiffness :math:`k\,\mathbf{N}\mathbf{G}^\mathsf{T}` is unsymmetric: it does work over a closed cycle of motion and
+  can feed energy into softened material next to a support.
+- ``True``: they use :math:`\mathbf{G}` for both, for every field: the stiffness
+  :math:`k\,\mathbf{G}\mathbf{G}^\mathsf{T}` is symmetric and the constraint conservative;
+  ``edelweissmeshfree/constraints/test/vertexpenaltywork_test.py`` checks that a support and a facet contact on the
+  vertices of a real particle then do no work over a closed cycle.
+  The FE-particle impact (:doc:`fe_projectile_on_rkpm_slab`) opts in.
+
 The base classes
 ----------------
 

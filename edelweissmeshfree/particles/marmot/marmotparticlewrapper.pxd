@@ -134,6 +134,8 @@ cdef extern from "Marmot/MarmotParticle.h":
 
         void getInterpolationVector( double* N, const double* coordinates) except +
 
+        void getInterpolationVectorLinearizedAboutCenter( double* G, const double* coordinates) except +
+
         int getNumberOfRequiredStateVars() except +
 
         void assignStateVars( double* stateVars, int nStateVars ) except +

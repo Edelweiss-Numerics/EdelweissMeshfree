@@ -134,6 +134,33 @@ def interpolationVector(nodes: list, coordinates: np.ndarray) -> np.ndarray:
     return weights / weights.sum()
 
 
+def interpolationVectorLinearizedAboutCenter(nodes: list, center: np.ndarray, coordinates: np.ndarray) -> np.ndarray:
+    """The shape functions of :func:`interpolationVector` linearized about the center of a particle:
+    :math:`G_B = N_B(x_c) + \\nabla N_B(x_c) \\cdot (x - x_c)`.
+
+    Parameters
+    ----------
+    nodes
+        The nodes.
+    center
+        The center of the particle.
+    coordinates
+        A point of the particle.
+
+    Returns
+    -------
+    np.ndarray
+        One value per node, summing to one.
+    """
+
+    offsets = center - np.array([node.coordinates for node in nodes])
+    weights = 1.0 / (1.0 + np.sum(offsets**2, axis=1))
+    dWeights_dx = -2.0 * offsets * weights[:, None] ** 2
+    N = weights / weights.sum()
+    dN_dx = (dWeights_dx - N[:, None] * dWeights_dx.sum(axis=0)) / weights.sum()
+    return N + dN_dx @ (np.asarray(coordinates, dtype=float) - center)
+
+
 class KernelFunctionStandIn:
     """What a constraint asks of a kernel function: its node."""
 
@@ -177,6 +204,9 @@ class ParticleStandIn:
 
     def getInterpolationVector(self, coordinates: np.ndarray) -> np.ndarray:
         return interpolationVector(self._nodes, coordinates)
+
+    def getInterpolationVectorLinearizedAboutCenter(self, coordinates: np.ndarray) -> np.ndarray:
+        return interpolationVectorLinearizedAboutCenter(self._nodes, self.center, coordinates)
 
 
 class CellStandIn:
