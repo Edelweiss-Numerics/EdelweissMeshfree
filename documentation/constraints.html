@@ -74,6 +74,8 @@
 <li class="toctree-l3"><a class="reference internal" href="#module-edelweissmeshfree.constraints.base.mpmconstraintbase">The base classes</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase"><code class="docutils literal notranslate"><span class="pre">MPMConstraintBase</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.constraints.base.mpmexplicitconstraintbase.MPMExplicitConstraintBase"><code class="docutils literal notranslate"><span class="pre">MPMExplicitConstraintBase</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.constraints.base.pointsofparticles.addForcesOnPointsOfParticle"><code class="docutils literal notranslate"><span class="pre">addForcesOnPointsOfParticle()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.constraints.base.pointsofparticles.locateTheNodesOfParticles"><code class="docutils literal notranslate"><span class="pre">locateTheNodesOfParticles()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#module-edelweissmeshfree.constraints.penaltyequalvalue"><code class="docutils literal notranslate"><span class="pre">PenaltyEqualValue</span></code> constraint class</a><ul>
@@ -240,7 +242,11 @@ can feed energy into softened material next to a support.</p></li>
 <span class="math notranslate nohighlight">\(k\,\mathbf{G}\mathbf{G}^\mathsf{T}\)</span> is symmetric and the constraint conservative;
 <code class="docutils literal notranslate"><span class="pre">edelweissmeshfree/constraints/test/vertexpenaltywork_test.py</span></code> checks that a support and a facet contact on the
 vertices of a real particle then do no work over a closed cycle.
-The FE-particle impact (<a class="reference internal" href="fe_projectile_on_rkpm_slab.html"><span class="doc">FE projectile on an RKPM slab</span></a>) opts in.</p></li>
+The FE-particle impact (<a class="reference internal" href="fe_projectile_on_rkpm_slab.html"><span class="doc">FE projectile on an RKPM slab</span></a>) opts in.
+The two operations such a constraint needs besides its own physics – locating the nodes of its particles in its
+block, and distributing a force on a point – are in <a class="reference internal" href="#module-edelweissmeshfree.constraints.base.pointsofparticles" title="edelweissmeshfree.constraints.base.pointsofparticles"><code class="xref py py-mod docutils literal notranslate"><span class="pre">edelweissmeshfree.constraints.base.pointsofparticles</span></code></a>,
+which the explicit constraints and the support use: a new constraint on points of particles is its physics and a
+constructor.</p></li>
 </ul>
 </section>
 <section id="module-edelweissmeshfree.constraints.base.mpmconstraintbase">
@@ -586,6 +592,63 @@ nodes to <code class="docutils literal notranslate"><span class="pre">P</span></
 <a class="reference internal" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.actsInExplicitAnalysis" title="edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.actsInExplicitAnalysis"><code class="xref py py-attr docutils literal notranslate"><span class="pre">actsInExplicitAnalysis</span></code></a>.</p>
 </dd></dl>
 
+</dd></dl>
+
+<p id="module-edelweissmeshfree.constraints.base.pointsofparticles">The two operations every constraint on points of particles needs besides its own physics: where the nodes of its
+particles sit in its block, and how a force on a point of a particle reaches those nodes.</p>
+<p>A constraint that measures a point of a particle – a vertex held by a support, a vertex in contact – acts on the nodes
+of the particle’s kernel functions, which change as the particle moves. Its block holds each of these nodes once
+(<a class="reference internal" href="#edelweissmeshfree.constraints.base.pointsofparticles.locateTheNodesOfParticles" title="edelweissmeshfree.constraints.base.pointsofparticles.locateTheNodesOfParticles"><code class="xref py py-func docutils literal notranslate"><span class="pre">locateTheNodesOfParticles()</span></code></a>). A force on the point reaches the nodes with the vector the constraint chose for
+the point (<a class="reference internal" href="#edelweissmeshfree.constraints.base.pointsofparticles.addForcesOnPointsOfParticle" title="edelweissmeshfree.constraints.base.pointsofparticles.addForcesOnPointsOfParticle"><code class="xref py py-func docutils literal notranslate"><span class="pre">addForcesOnPointsOfParticle()</span></code></a>;
+<a class="reference internal" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.interpolationVectorAtPointOf" title="edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.interpolationVectorAtPointOf"><code class="xref py py-meth docutils literal notranslate"><span class="pre">interpolationVectorAtPointOf()</span></code></a>): the
+shape functions at the point, or the particle’s interpolation linearized about its center, with which it moves the
+point, the transpose of the point’s motion, so that a penalty on the point has a symmetric stiffness and does no work
+over a closed cycle. The constraints of
+<code class="xref py py-mod docutils literal notranslate"><span class="pre">edelweissmeshfree.constraints.explicit</span></code> and
+<a class="reference internal" href="#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet" title="edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet"><code class="xref py py-class docutils literal notranslate"><span class="pre">ParticlePenaltyWeakDirichlet</span></code></a> use both; a new one
+is then its physics – the gap, the pairing, the force – and a constructor.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.base.pointsofparticles.addForcesOnPointsOfParticle">
+<span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.constraints.base.pointsofparticles.</span></span><span class="sig-name descname"><span class="pre">addForcesOnPointsOfParticle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">PAtNodes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">localNodes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interpolations</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forces</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">components</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/base/pointsofparticles.html#addForcesOnPointsOfParticle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.base.pointsofparticles.addForcesOnPointsOfParticle" title="Link to this definition"></a></dt>
+<dd><p>Add the residual contribution of forces on points of one particle, the negative of the forces on the nodes of its
+kernel functions: <span class="math notranslate nohighlight">\(\boldsymbol{P}_B \mathrel{-}= \sum_p I_{pB}\, \boldsymbol{f}_p\)</span>, with the vector
+<span class="math notranslate nohighlight">\(I_{pB}\)</span> the constraint distributes the force on the point <span class="math notranslate nohighlight">\(p\)</span> with
+(<a class="reference internal" href="#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.interpolationVectorAtPointOf" title="edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.interpolationVectorAtPointOf"><code class="xref py py-meth docutils literal notranslate"><span class="pre">interpolationVectorAtPointOf()</span></code></a>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>PAtNodes</strong> (<em>ndarray</em>) – The residual contribution of the constraint, node by node: <code class="docutils literal notranslate"><span class="pre">nNodes</span> <span class="pre">x</span> <span class="pre">fieldSize</span></code>; augmented.</p></li>
+<li><p><strong>localNodes</strong> (<em>ndarray</em>) – Where the nodes of the particle’s kernel functions sit in the block (<a class="reference internal" href="#edelweissmeshfree.constraints.base.pointsofparticles.locateTheNodesOfParticles" title="edelweissmeshfree.constraints.base.pointsofparticles.locateTheNodesOfParticles"><code class="xref py py-func docutils literal notranslate"><span class="pre">locateTheNodesOfParticles()</span></code></a>). They
+are distinct, so the fancy indexing drops no contribution.</p></li>
+<li><p><strong>interpolations</strong> (<em>ndarray</em>) – The vectors of the points, one row per point: <code class="docutils literal notranslate"><span class="pre">nPoints</span> <span class="pre">x</span> <span class="pre">nNodesOfTheParticle</span></code>.</p></li>
+<li><p><strong>forces</strong> (<em>ndarray</em>) – The forces on the points, one row per point: <code class="docutils literal notranslate"><span class="pre">nPoints</span> <span class="pre">x</span> <span class="pre">fieldSize</span></code>, or <code class="docutils literal notranslate"><span class="pre">nPoints</span> <span class="pre">x</span> <span class="pre">len(components)</span></code>.</p></li>
+<li><p><strong>components</strong> (<em>list</em><em>[</em><em>int</em><em>]</em>) – The components the forces act in, e.g. those a support holds; all if None.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.base.pointsofparticles.locateTheNodesOfParticles">
+<span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.constraints.base.pointsofparticles.</span></span><span class="sig-name descname"><span class="pre">locateTheNodesOfParticles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernelFunctionsOfParticles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">localIndexOfNode</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/base/pointsofparticles.html#locateTheNodesOfParticles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.base.pointsofparticles.locateTheNodesOfParticles" title="Link to this definition"></a></dt>
+<dd><p>Locate the nodes of the kernel functions of particles in the block of a constraint: a node not located yet is
+added to <code class="docutils literal notranslate"><span class="pre">localIndexOfNode</span></code> at the next index, in the order in which the particles name their kernel functions;
+a node shared by several particles is located once.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kernelFunctionsOfParticles</strong> (<em>Iterable</em><em>[</em><em>list</em><em>]</em>) – The kernel functions of each particle.</p></li>
+<li><p><strong>localIndexOfNode</strong> (<em>dict</em>) – Where each node located so far sits in the block of the constraint; extended here. The keys, in their order,
+are the nodes of the constraint.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Per particle, where the nodes of its kernel functions sit in the block, in the order of its kernel functions.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[numpy.ndarray]</p>
+</dd>
+</dl>
 </dd></dl>
 
 </section>
@@ -1382,7 +1445,7 @@ moves its own points (symmetric and conservative). See
 <td><p>The entity's view of the flat array of the values of its block, which it writes its tangent into.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.updateConnectivity" title="edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.updateConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code></a>(model)</p></td>
-<td><p>Called once at the start of every increment, before the global discrete system is (re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fields</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have changed since the last call.</p></td>
+<td><p>Collect the nodes of the kernel functions of the constrained particles, each once, ordered by label, and record where each particle's nodes sit in the constraint's block (<a class="reference internal" href="#edelweissmeshfree.constraints.base.pointsofparticles.locateTheNodesOfParticles" title="edelweissmeshfree.constraints.base.pointsofparticles.locateTheNodesOfParticles"><code class="xref py py-func docutils literal notranslate"><span class="pre">locateTheNodesOfParticles()</span></code></a>).</p></td>
 </tr>
 </tbody>
 </table>
@@ -1395,10 +1458,10 @@ moves its own points (symmetric and conservative). See
 <dd class="field-odd"><p><strong>particle</strong> (<a class="reference internal" href="particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle"><em>BaseParticle</em></a>) – The particle.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The coordinates, one array per point.</p>
+<dd class="field-even"><p>The coordinates, one row per point.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>list[np.ndarray]</p>
+<dd class="field-odd"><p>np.ndarray</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1458,7 +1521,10 @@ is also called with <code class="docutils literal notranslate"><span class="pre"
 <span class="sig-name descname"><span class="pre">computeKernelsExplicit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">U_np</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">P</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/particlepenaltyweakdirichtlet.html#ParticlePenaltyWeakDirichlet.computeKernelsExplicit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.computeKernelsExplicit" title="Link to this definition"></a></dt>
 <dd><p>Add the residual contribution of the support in an explicit analysis: the negative of the forces that hold
 the constrained components of the constrained points at their initial positions, measured where the points are
-now (see the class documentation).</p>
+now (see the class documentation). Particle by particle, the forces of its constrained points
+<span class="math notranslate nohighlight">\(\boldsymbol{f}_p\)</span> reach the nodes of its kernel functions as one product with the interpolation vectors
+of the points, <span class="math notranslate nohighlight">\(\boldsymbol{G}^\mathsf{T} \boldsymbol{f}\)</span>
+(<a class="reference internal" href="#edelweissmeshfree.constraints.base.pointsofparticles.addForcesOnPointsOfParticle" title="edelweissmeshfree.constraints.base.pointsofparticles.addForcesOnPointsOfParticle"><code class="xref py py-func docutils literal notranslate"><span class="pre">addForcesOnPointsOfParticle()</span></code></a>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -1489,21 +1555,20 @@ this Constraint needs.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.updateConnectivity">
 <span class="sig-name descname"><span class="pre">updateConnectivity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/constraints/particlepenaltyweakdirichtlet.html#ParticlePenaltyWeakDirichlet.updateConnectivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.updateConnectivity" title="Link to this definition"></a></dt>
-<dd><p>Called once at the start of every increment, before the global discrete system is
-(re)created, so a constraint can refresh a dynamic candidate set (e.g. proximity-based
-contact pairs) and declare whether the nodes it couples (<code class="docutils literal notranslate"><span class="pre">nodes</span></code>/<code class="docutils literal notranslate"><span class="pre">fields</span></code>/<code class="docutils literal notranslate"><span class="pre">nDof</span></code>) have
-changed since the last call. A constraint that is not always within reach also sets
-<code class="xref py py-attr docutils literal notranslate"><span class="pre">withinReach</span></code> here; it does not report the change of <code class="xref py py-attr docutils literal notranslate"><span class="pre">active</span></code> itself, the model compares it (see
-<code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code>).</p>
-<p>The default implementation does nothing and reports no change, which is correct for every
-constraint whose nodes are fixed at construction (i.e. every constraint that does
-not override this method).</p>
+<dd><p>Collect the nodes of the kernel functions of the constrained particles, each once, ordered by label, and
+record where each particle’s nodes sit in the constraint’s block
+(<a class="reference internal" href="#edelweissmeshfree.constraints.base.pointsofparticles.locateTheNodesOfParticles" title="edelweissmeshfree.constraints.base.pointsofparticles.locateTheNodesOfParticles"><code class="xref py py-func docutils literal notranslate"><span class="pre">locateTheNodesOfParticles()</span></code></a>). The nodes stay as
+they are, and nothing is collected, if no constrained particle has other kernel functions than at the last
+update. The constraint
+compares the particles’ lists of kernel functions with those of its last update itself, instead of reading the
+particle managers’ report (<code class="docutils literal notranslate"><span class="pre">particlesWithChangedKernelFunctions</span></code>), which covers their last search only: the
+comparison holds whether or not the constraint was updated after every search.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>model</strong> – The current model.</p>
+<dd class="field-odd"><p><strong>model</strong> – The model; unused, the particles hold their kernel functions.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>True if the nodes this constraint couples have changed.</p>
+<dd class="field-even"><p>True if the nodes of the constraint changed.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>bool</p>
@@ -1516,6 +1581,19 @@ not override this method).</p>
 <span class="sig-name descname"><span class="pre">_initialCoordinatesOfConstrainedPoints</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet._initialCoordinatesOfConstrainedPoints" title="Link to this definition"></a></dt>
 <dd><p>Where the constrained points of each particle are when the constraint is created, the positions an explicit
 analysis holds them at.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet._kernelFunctionsOfParticle">
+<span class="sig-name descname"><span class="pre">_kernelFunctionsOfParticle</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet._kernelFunctionsOfParticle" title="Link to this definition"></a></dt>
+<dd><p>Per constrained particle, its kernel functions as of the last <a class="reference internal" href="#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.updateConnectivity" title="edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.updateConnectivity"><code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet._localNodesOfParticle">
+<span class="sig-name descname"><span class="pre">_localNodesOfParticle</span></span><a class="headerlink" href="#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet._localNodesOfParticle" title="Link to this definition"></a></dt>
+<dd><p>Per constrained particle, where the nodes of its kernel functions sit in the constraint’s block (see
+<a class="reference internal" href="#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.updateConnectivity" title="edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.updateConnectivity"><code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code></a>).</p>
 </dd></dl>
 
 <dl class="py property">

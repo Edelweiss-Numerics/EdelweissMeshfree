@@ -107,16 +107,11 @@
 <span class="c1">#  the top level directory of EdelweissMeshfree.</span>
 <span class="c1">#  ---------------------------------------------------------------------</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.journal.journal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Journal</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.numerics.parallelizationutilities</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">getNumberOfThreads</span><span class="p">,</span>
-    <span class="n">getThreadPool</span><span class="p">,</span>
-    <span class="n">isFreeThreadingSupported</span><span class="p">,</span>
-<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.numerics.parallelizationutilities</span><span class="w"> </span><span class="kn">import</span> <span class="n">mapChunksInParallel</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">NDArray</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.meshfree.particlekerneldomain</span><span class="w"> </span><span class="kn">import</span> <span class="n">ParticleKernelDomain</span>
@@ -128,8 +123,12 @@
 <div class="viewcode-block" id="_FastKDBinOrganizer">
 <a class="viewcode-back" href="../../../documentation/particle_managers.html#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._FastKDBinOrganizer">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">_FastKDBinOrganizer</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
-<span class="sd">    Optimized Bin Organizer using pure NumPy vectorization and integer indexing.</span>
+<span class="w">    </span><span class="sd">"""The kernel functions sorted into a regular grid of bins by their bounding boxes, for the broad phase of the</span>
+<span class="sd">    search: a kernel is in every bin its box overlaps. The bins are held in the compressed layout of a sparse matrix:</span>
+<span class="sd">    the kernels of bin ``b`` are ``kernelsInBins[firstKernelOfBin[b] : firstKernelOfBin[b + 1]]``, in the order of the</span>
+<span class="sd">    kernels. Both are built without a loop over the kernels or the bins, and the kernels of consecutive bins are</span>
+<span class="sd">    consecutive, so a query takes one slice per row of bins. ``firstKernelOfBin`` is a list: a query indexes it with</span>
+<span class="sd">    plain integers, which is faster than indexing an array.</span>
 <span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kernelFunctions</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">dimension</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">skin</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -144,7 +143,8 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">boundingBoxesPerKernel</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_mins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="n">dimension</span><span class="p">))</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_maxs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="n">dimension</span><span class="p">))</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_bins</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_kernelsInBins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">intp</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_firstKernelOfBin</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_boundingBoxMin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">dimension</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_boundingBoxMax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">dimension</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_nBins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">dimension</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
@@ -172,83 +172,108 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_strides</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nBins</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nBins</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
 
         <span class="n">numberOfBins</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nBins</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_bins</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">numberOfBins</span><span class="p">)]</span>
 
         <span class="c1"># --- 3. Vectorized Bin Index Calculation ---</span>
         <span class="n">lowestBinIndexPerKernel</span> <span class="o">=</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">_mins</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_boundingBoxMin</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_binSize</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
         <span class="n">highestBinIndexPerKernel</span> <span class="o">=</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">_maxs</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_boundingBoxMin</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_binSize</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
 
         <span class="c1"># --- 4. Fill Bins ---</span>
-        <span class="n">_</span><span class="p">,</span> <span class="n">strideAlongY</span><span class="p">,</span> <span class="n">strideAlongZ</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_strides</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_strides</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_strides</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
-        <span class="n">bins</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bins</span>
+        <span class="c1"># Every pair of a kernel and a bin its box overlaps: the k-th bin of a kernel's box, counted with the first</span>
+        <span class="c1"># dimension fastest, has the offsets (k mod n_x, (k div n_x) mod n_y, k div (n_x n_y)) from its lowest bin.</span>
+        <span class="n">binsPerKernelAndDimension</span> <span class="o">=</span> <span class="n">highestBinIndexPerKernel</span> <span class="o">-</span> <span class="n">lowestBinIndexPerKernel</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">binsPerKernel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">binsPerKernelAndDimension</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">kernelOfPair</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">binsPerKernel</span><span class="p">)),</span> <span class="n">binsPerKernel</span><span class="p">)</span>
+        <span class="n">firstPairOfKernel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">binsPerKernel</span><span class="p">)</span> <span class="o">-</span> <span class="n">binsPerKernel</span>
+        <span class="n">kOfPair</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">kernelOfPair</span><span class="p">))</span> <span class="o">-</span> <span class="n">firstPairOfKernel</span><span class="p">[</span><span class="n">kernelOfPair</span><span class="p">]</span>
 
-        <span class="k">for</span> <span class="n">kernelIndex</span><span class="p">,</span> <span class="p">(</span><span class="n">lowestBinIndex</span><span class="p">,</span> <span class="n">highestBinIndex</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span>
-            <span class="nb">zip</span><span class="p">(</span><span class="n">lowestBinIndexPerKernel</span><span class="p">,</span> <span class="n">highestBinIndexPerKernel</span><span class="p">)</span>
-        <span class="p">):</span>
-            <span class="k">if</span> <span class="n">dimension</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">lowestBinIndex</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">highestBinIndex</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
-                    <span class="n">offsetOfPlane</span> <span class="o">=</span> <span class="n">z</span> <span class="o">*</span> <span class="n">strideAlongZ</span>
-                    <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">lowestBinIndex</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">highestBinIndex</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
-                        <span class="n">offsetOfRow</span> <span class="o">=</span> <span class="n">offsetOfPlane</span> <span class="o">+</span> <span class="n">y</span> <span class="o">*</span> <span class="n">strideAlongY</span>
-                        <span class="n">start</span> <span class="o">=</span> <span class="n">offsetOfRow</span> <span class="o">+</span> <span class="n">lowestBinIndex</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-                        <span class="n">end</span> <span class="o">=</span> <span class="n">offsetOfRow</span> <span class="o">+</span> <span class="n">highestBinIndex</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
-                        <span class="k">for</span> <span class="n">binIndex</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">):</span>
-                            <span class="n">bins</span><span class="p">[</span><span class="n">binIndex</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">kernelIndex</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">dimension</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">lowestBinIndex</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">highestBinIndex</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
-                    <span class="n">offsetOfRow</span> <span class="o">=</span> <span class="n">y</span> <span class="o">*</span> <span class="n">strideAlongY</span>
-                    <span class="n">start</span> <span class="o">=</span> <span class="n">offsetOfRow</span> <span class="o">+</span> <span class="n">lowestBinIndex</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-                    <span class="n">end</span> <span class="o">=</span> <span class="n">offsetOfRow</span> <span class="o">+</span> <span class="n">highestBinIndex</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
-                    <span class="k">for</span> <span class="n">binIndex</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">):</span>
-                        <span class="n">bins</span><span class="p">[</span><span class="n">binIndex</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">kernelIndex</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">binIndex</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">lowestBinIndex</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">highestBinIndex</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
-                    <span class="n">bins</span><span class="p">[</span><span class="n">binIndex</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">kernelIndex</span><span class="p">)</span>
+        <span class="n">binOfPair</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">kernelOfPair</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">intp</span><span class="p">)</span>
+        <span class="n">binsOfLowerDimensions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">kernelOfPair</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">intp</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">dimension</span><span class="p">):</span>
+            <span class="n">binsAlongD</span> <span class="o">=</span> <span class="n">binsPerKernelAndDimension</span><span class="p">[</span><span class="n">kernelOfPair</span><span class="p">,</span> <span class="n">d</span><span class="p">]</span>
+            <span class="n">offsetAlongD</span> <span class="o">=</span> <span class="p">(</span><span class="n">kOfPair</span> <span class="o">//</span> <span class="n">binsOfLowerDimensions</span><span class="p">)</span> <span class="o">%</span> <span class="n">binsAlongD</span>
+            <span class="n">binOfPair</span> <span class="o">+=</span> <span class="p">(</span><span class="n">lowestBinIndexPerKernel</span><span class="p">[</span><span class="n">kernelOfPair</span><span class="p">,</span> <span class="n">d</span><span class="p">]</span> <span class="o">+</span> <span class="n">offsetAlongD</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_strides</span><span class="p">[</span><span class="n">d</span><span class="p">]</span>
+            <span class="n">binsOfLowerDimensions</span> <span class="o">*=</span> <span class="n">binsAlongD</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">getCandidateIndices</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">queryBoxMin</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span> <span class="n">queryBoxMax</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Set</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bins</span><span class="p">:</span>
-            <span class="k">return</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="c1"># sorted by bin, and within a bin by kernel, as filling the bins kernel by kernel would give</span>
+        <span class="n">byBin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">binOfPair</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">"stable"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_kernelsInBins</span> <span class="o">=</span> <span class="n">kernelOfPair</span><span class="p">[</span><span class="n">byBin</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_firstKernelOfBin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">binOfPair</span><span class="p">[</span><span class="n">byBin</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">numberOfBins</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+<div class="viewcode-block" id="_FastKDBinOrganizer.kernelsInBin">
+<a class="viewcode-back" href="../../../documentation/particle_managers.html#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._FastKDBinOrganizer.kernelsInBin">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">kernelsInBin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">binIndex</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">intp</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""The kernels whose boxes overlap a bin.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        binIndex</span>
+<span class="sd">            The flat index of the bin.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        NDArray[np.intp]</span>
+<span class="sd">            The indices of the kernels, in ascending order.</span>
+<span class="sd">        """</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kernelsInBins</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_firstKernelOfBin</span><span class="p">[</span><span class="n">binIndex</span><span class="p">]</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_firstKernelOfBin</span><span class="p">[</span><span class="n">binIndex</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]]</span></div>
+
+
+<div class="viewcode-block" id="_FastKDBinOrganizer.getCandidateIndices">
+<a class="viewcode-back" href="../../../documentation/particle_managers.html#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._FastKDBinOrganizer.getCandidateIndices">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getCandidateIndices</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">queryBoxMin</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span> <span class="n">queryBoxMax</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">intp</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""The kernels whose boxes overlap a bin that the query box overlaps, each once.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        queryBoxMin</span>
+<span class="sd">            The lower corner of the query box.</span>
+<span class="sd">        queryBoxMax</span>
+<span class="sd">            Its upper corner.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        NDArray[np.intp]</span>
+<span class="sd">            The indices of the candidate kernels, in ascending order.</span>
+<span class="sd">        """</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_kernelsInBins</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">intp</span><span class="p">)</span>
 
         <span class="n">lowestQueriedBinIndex</span> <span class="o">=</span> <span class="p">((</span><span class="n">queryBoxMin</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_boundingBoxMin</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_binSize</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
         <span class="n">highestQueriedBinIndex</span> <span class="o">=</span> <span class="p">((</span><span class="n">queryBoxMax</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_boundingBoxMin</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_binSize</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
 
+        <span class="c1"># a query box beyond the grid of bins on either side of a dimension overlaps no bin</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">highestQueriedBinIndex</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">lowestQueriedBinIndex</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nBins</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">intp</span><span class="p">)</span>
+
         <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">lowestQueriedBinIndex</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">lowestQueriedBinIndex</span><span class="p">)</span>
         <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">highestQueriedBinIndex</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nBins</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">highestQueriedBinIndex</span><span class="p">)</span>
 
-        <span class="n">bins</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bins</span>
-        <span class="n">_</span><span class="p">,</span> <span class="n">strideAlongY</span><span class="p">,</span> <span class="n">strideAlongZ</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_strides</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_strides</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_strides</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="c1"># in three dimensions, a lower dimension being a single layer of bins</span>
+        <span class="n">lowest</span> <span class="o">=</span> <span class="n">lowestQueriedBinIndex</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="o">+</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">3</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dimension</span><span class="p">)</span>
+        <span class="n">highest</span> <span class="o">=</span> <span class="n">highestQueriedBinIndex</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="o">+</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">3</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dimension</span><span class="p">)</span>
+        <span class="n">first</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_firstKernelOfBin</span>
+        <span class="n">strideAlongY</span><span class="p">,</span> <span class="n">strideAlongZ</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_strides</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_strides</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
 
-        <span class="n">kernelListsInQueriedBins</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># the bins of a row along the first dimension are consecutive, and so are their kernels: one slice per row</span>
+        <span class="n">kernelsOfRows</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">lowest</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">highest</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">lowest</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">highest</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="n">firstBinOfRow</span> <span class="o">=</span> <span class="n">z</span> <span class="o">*</span> <span class="n">strideAlongZ</span> <span class="o">+</span> <span class="n">y</span> <span class="o">*</span> <span class="n">strideAlongY</span>
+                <span class="n">kernelsOfRows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_kernelsInBins</span><span class="p">[</span><span class="n">first</span><span class="p">[</span><span class="n">firstBinOfRow</span> <span class="o">+</span> <span class="n">lowest</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="p">:</span> <span class="n">first</span><span class="p">[</span><span class="n">firstBinOfRow</span> <span class="o">+</span> <span class="n">highest</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]]</span>
+                <span class="p">)</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dimension</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">lowestQueriedBinIndex</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">highestQueriedBinIndex</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
-                <span class="n">offsetOfPlane</span> <span class="o">=</span> <span class="n">z</span> <span class="o">*</span> <span class="n">strideAlongZ</span>
-                <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">lowestQueriedBinIndex</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">highestQueriedBinIndex</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
-                    <span class="n">offsetOfRow</span> <span class="o">=</span> <span class="n">offsetOfPlane</span> <span class="o">+</span> <span class="n">y</span> <span class="o">*</span> <span class="n">strideAlongY</span>
-                    <span class="n">start</span> <span class="o">=</span> <span class="n">offsetOfRow</span> <span class="o">+</span> <span class="n">lowestQueriedBinIndex</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-                    <span class="n">end</span> <span class="o">=</span> <span class="n">offsetOfRow</span> <span class="o">+</span> <span class="n">highestQueriedBinIndex</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
-                    <span class="k">for</span> <span class="n">binIndex</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">):</span>
-                        <span class="k">if</span> <span class="n">bins</span><span class="p">[</span><span class="n">binIndex</span><span class="p">]:</span>
-                            <span class="n">kernelListsInQueriedBins</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bins</span><span class="p">[</span><span class="n">binIndex</span><span class="p">])</span>
-
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dimension</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">lowestQueriedBinIndex</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">highestQueriedBinIndex</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
-                <span class="n">offsetOfRow</span> <span class="o">=</span> <span class="n">y</span> <span class="o">*</span> <span class="n">strideAlongY</span>
-                <span class="n">start</span> <span class="o">=</span> <span class="n">offsetOfRow</span> <span class="o">+</span> <span class="n">lowestQueriedBinIndex</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-                <span class="n">end</span> <span class="o">=</span> <span class="n">offsetOfRow</span> <span class="o">+</span> <span class="n">highestQueriedBinIndex</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
-                <span class="k">for</span> <span class="n">binIndex</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">):</span>
-                    <span class="k">if</span> <span class="n">bins</span><span class="p">[</span><span class="n">binIndex</span><span class="p">]:</span>
-                        <span class="n">kernelListsInQueriedBins</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bins</span><span class="p">[</span><span class="n">binIndex</span><span class="p">])</span>
-
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dimension</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">binIndex</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">lowestQueriedBinIndex</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">highestQueriedBinIndex</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
-                <span class="k">if</span> <span class="n">bins</span><span class="p">[</span><span class="n">binIndex</span><span class="p">]:</span>
-                    <span class="n">kernelListsInQueriedBins</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bins</span><span class="p">[</span><span class="n">binIndex</span><span class="p">])</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">kernelListsInQueriedBins</span><span class="p">:</span>
-            <span class="k">return</span> <span class="nb">set</span><span class="p">()</span>
-
-        <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span><span class="n">kernelListsInQueriedBins</span><span class="p">))</span></div>
+        <span class="c1"># A kernel whose box overlaps several of the queried bins is in several rows: each once, from the sorted</span>
+        <span class="c1"># candidates by comparing neighbours (for the few hundred candidates of a query, this is faster than np.unique,</span>
+        <span class="c1"># which hashes them).</span>
+        <span class="n">candidates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">kernelsOfRows</span><span class="p">))</span>
+        <span class="n">isFirstOfItsValue</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">candidates</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="n">isFirstOfItsValue</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">=</span> <span class="n">candidates</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">!=</span> <span class="n">candidates</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">candidates</span><span class="p">[</span><span class="n">isFirstOfItsValue</span><span class="p">]</span></div>
+</div>
 
 
 
@@ -270,11 +295,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_dimension</span> <span class="o">=</span> <span class="n">dimension</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">kernelFunctionsAreBondedToParticles</span> <span class="o">=</span> <span class="n">bondParticlesToKernelFunctions</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_journal</span> <span class="o">=</span> <span class="n">journal</span>
-
-        <span class="k">if</span> <span class="n">isFreeThreadingSupported</span><span class="p">():</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_numThreads</span> <span class="o">=</span> <span class="n">getNumberOfThreads</span><span class="p">()</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_numThreads</span> <span class="o">=</span> <span class="mi">1</span>
 
         <span class="c1"># Pre-fetch labels for integer sorting</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_kernelLabels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">k</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">label</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_meshfreeKernelFunctions</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
@@ -472,15 +492,7 @@
                 <span class="n">coordinates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">particles</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">getEvaluationCoordinates</span><span class="p">())</span>
                 <span class="n">destination</span><span class="p">[</span><span class="n">firstCoordinate</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="p">:</span> <span class="n">firstCoordinate</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">coordinates</span><span class="p">[:,</span> <span class="p">:</span><span class="n">dim</span><span class="p">]</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_numThreads</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">gatherChunk</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">particles</span><span class="p">)))</span>
-            <span class="k">return</span>
-
-        <span class="n">chunkSize</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">particles</span><span class="p">)</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">_numThreads</span> <span class="o">+</span> <span class="mi">1</span>
-        <span class="n">chunks</span> <span class="o">=</span> <span class="p">[</span><span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">start</span> <span class="o">+</span> <span class="n">chunkSize</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">particles</span><span class="p">)))</span> <span class="k">for</span> <span class="n">start</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">particles</span><span class="p">),</span> <span class="n">chunkSize</span><span class="p">)]</span>
-
-        <span class="n">executor</span> <span class="o">=</span> <span class="n">getThreadPool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_numThreads</span><span class="p">)</span>
-        <span class="nb">list</span><span class="p">(</span><span class="n">executor</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">gatherChunk</span><span class="p">,</span> <span class="n">chunks</span><span class="p">))</span></div>
+        <span class="n">mapChunksInParallel</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">particles</span><span class="p">)),</span> <span class="n">gatherChunk</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="KDBinOrganizedParticleManager._aSearchIsDue">
@@ -567,15 +579,7 @@
             <span class="k">for</span> <span class="n">particle</span> <span class="ow">in</span> <span class="n">particleChunk</span><span class="p">:</span>
                 <span class="n">particle</span><span class="o">.</span><span class="n">assignKernelFunctions</span><span class="p">(</span><span class="n">particle</span><span class="o">.</span><span class="n">kernelFunctions</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_numThreads</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">rebuildChunk</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_particles</span><span class="p">)</span>
-            <span class="k">return</span>
-
-        <span class="n">chunkSize</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_particles</span><span class="p">)</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">_numThreads</span> <span class="o">+</span> <span class="mi">1</span>
-        <span class="n">chunks</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_particles</span><span class="p">[</span><span class="n">i</span> <span class="p">:</span> <span class="n">i</span> <span class="o">+</span> <span class="n">chunkSize</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_particles</span><span class="p">),</span> <span class="n">chunkSize</span><span class="p">)]</span>
-
-        <span class="n">executor</span> <span class="o">=</span> <span class="n">getThreadPool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_numThreads</span><span class="p">)</span>
-        <span class="nb">list</span><span class="p">(</span><span class="n">executor</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">rebuildChunk</span><span class="p">,</span> <span class="n">chunks</span><span class="p">))</span></div>
+        <span class="n">mapChunksInParallel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_particles</span><span class="p">,</span> <span class="n">rebuildChunk</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="KDBinOrganizedParticleManager._searchForCoveringKernelFunctions">
@@ -612,12 +616,6 @@
                 <span class="n">candidateKernelIndices</span> <span class="o">=</span> <span class="n">binOrganizer</span><span class="o">.</span><span class="n">getCandidateIndices</span><span class="p">(</span><span class="n">particleBoxMin</span><span class="p">,</span> <span class="n">particleBoxMax</span><span class="p">)</span>
 
                 <span class="c1"># 2. Vectorized AABB Filter</span>
-                <span class="c1"># np.fromiter consumes the candidate set directly; going through list() first</span>
-                <span class="c1"># materialises a throwaway Python list of a few hundred ints per particle.</span>
-                <span class="n">candidateKernelIndices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromiter</span><span class="p">(</span>
-                    <span class="n">candidateKernelIndices</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">intp</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">candidateKernelIndices</span><span class="p">)</span>
-                <span class="p">)</span>
-
                 <span class="n">candidateBoundingBoxMins</span> <span class="o">=</span> <span class="n">kernelBoundingBoxMins</span><span class="p">[</span><span class="n">candidateKernelIndices</span><span class="p">,</span> <span class="p">:</span><span class="n">dim</span><span class="p">]</span>
                 <span class="n">candidateBoundingBoxMaxs</span> <span class="o">=</span> <span class="n">kernelBoundingBoxMaxs</span><span class="p">[</span><span class="n">candidateKernelIndices</span><span class="p">,</span> <span class="p">:</span><span class="n">dim</span><span class="p">]</span>
                 <span class="n">particleBoxMaxInDomainDimensions</span> <span class="o">=</span> <span class="n">particleBoxMax</span><span class="p">[:</span><span class="n">dim</span><span class="p">]</span>
@@ -685,17 +683,10 @@
 
             <span class="k">return</span> <span class="n">particlesInChunkWithChangedKernelFunctions</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_numThreads</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">changedParticlesPerChunk</span> <span class="o">=</span> <span class="p">[</span><span class="n">processParticleChunk</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_particles</span><span class="p">)]</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">chunkSize</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_particles</span><span class="p">)</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">_numThreads</span> <span class="o">+</span> <span class="mi">1</span>
-            <span class="n">chunks</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_particles</span><span class="p">[</span><span class="n">i</span> <span class="p">:</span> <span class="n">i</span> <span class="o">+</span> <span class="n">chunkSize</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_particles</span><span class="p">),</span> <span class="n">chunkSize</span><span class="p">)]</span>
+        <span class="n">changedParticlesPerChunk</span> <span class="o">=</span> <span class="n">mapChunksInParallel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_particles</span><span class="p">,</span> <span class="n">processParticleChunk</span><span class="p">)</span>
 
-            <span class="n">executor</span> <span class="o">=</span> <span class="n">getThreadPool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_numThreads</span><span class="p">)</span>
-            <span class="n">changedParticlesPerChunk</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">executor</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">processParticleChunk</span><span class="p">,</span> <span class="n">chunks</span><span class="p">))</span>
-
-        <span class="c1"># Chunks are handed out in particle order and executor.map preserves that order, so the</span>
-        <span class="c1"># collected list is the same for any number of threads.</span>
+        <span class="c1"># The chunks are consecutive and their results come in their order, so the collected list is the same for any</span>
+        <span class="c1"># number of threads.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_particlesWithChangedKernelFunctions</span> <span class="o">=</span> <span class="p">[</span>
             <span class="n">particle</span> <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">changedParticlesPerChunk</span> <span class="k">for</span> <span class="n">particle</span> <span class="ow">in</span> <span class="n">chunk</span>
         <span class="p">]</span></div>
@@ -723,7 +714,7 @@
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nBins</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
             <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nBins</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
                 <span class="n">flatBinIndex</span> <span class="o">=</span> <span class="n">j</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_theBins</span><span class="o">.</span><span class="n">_strides</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">i</span>
-                <span class="n">nKernelFunctions</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_theBins</span><span class="o">.</span><span class="n">_bins</span><span class="p">[</span><span class="n">flatBinIndex</span><span class="p">])</span>
+                <span class="n">nKernelFunctions</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_theBins</span><span class="o">.</span><span class="n">kernelsInBin</span><span class="p">(</span><span class="n">flatBinIndex</span><span class="p">))</span>
 
         <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">nKernelFunctions</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s2">"lower"</span><span class="p">)</span>

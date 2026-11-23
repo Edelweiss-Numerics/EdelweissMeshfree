@@ -98,6 +98,10 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.constraints.base.mpmexplicitconstraintbase</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">MPMExplicitConstraintBase</span><span class="p">,</span>
 <span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.constraints.base.pointsofparticles</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">addForcesOnPointsOfParticle</span><span class="p">,</span>
+    <span class="n">locateTheNodesOfParticles</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.models.mpmmodel</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPMModel</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.particles.base.baseparticle</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseParticle</span>
 
@@ -392,7 +396,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_masterNodes</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_referenceCoordinatesOfMasterNodes</span>
         <span class="p">)</span>
         <span class="n">coordinatesOfFacet</span> <span class="o">=</span> <span class="n">coordinatesOfMasterNodes</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_masterNodesOfFacet</span><span class="p">]</span>
-        <span class="n">normalOfFacet</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">facetNormalAndMeasure</span><span class="p">(</span><span class="n">coordinates</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">coordinates</span> <span class="ow">in</span> <span class="n">coordinatesOfFacet</span><span class="p">])</span>
+        <span class="n">normalOfFacet</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">facetNormalAndMeasure</span><span class="p">(</span><span class="n">coordinatesOfFacet</span><span class="p">)</span>
 
         <span class="n">previousState</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stateOfPoint</span>
         <span class="n">wasInContact</span> <span class="o">=</span> <span class="n">previousState</span> <span class="o">==</span> <span class="n">ContactState</span><span class="o">.</span><span class="n">IN_CONTACT</span>
@@ -508,12 +512,16 @@
 <span class="sd">        """</span>
 
         <span class="n">localIndexOfNode</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_localNodesOfParticle</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">for</span> <span class="n">particleIndex</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_particleOfPoint</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_pairedPoints</span><span class="p">]):</span>
-            <span class="n">particle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_particles</span><span class="p">[</span><span class="n">particleIndex</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_localNodesOfParticle</span><span class="p">[</span><span class="n">particleIndex</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
-                <span class="p">[</span><span class="n">localIndexOfNode</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">kf</span><span class="o">.</span><span class="n">node</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">localIndexOfNode</span><span class="p">))</span> <span class="k">for</span> <span class="n">kf</span> <span class="ow">in</span> <span class="n">particle</span><span class="o">.</span><span class="n">kernelFunctions</span><span class="p">]</span>
+        <span class="n">pairedParticles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_particleOfPoint</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_pairedPoints</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_localNodesOfParticle</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="nb">zip</span><span class="p">(</span>
+                <span class="n">pairedParticles</span><span class="p">,</span>
+                <span class="n">locateTheNodesOfParticles</span><span class="p">(</span>
+                    <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_particles</span><span class="p">[</span><span class="n">particleIndex</span><span class="p">]</span><span class="o">.</span><span class="n">kernelFunctions</span> <span class="k">for</span> <span class="n">particleIndex</span> <span class="ow">in</span> <span class="n">pairedParticles</span><span class="p">],</span>
+                    <span class="n">localIndexOfNode</span><span class="p">,</span>
+                <span class="p">),</span>
             <span class="p">)</span>
+        <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_localMasterNodesOfPoint</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_twoWayCoupling</span><span class="p">:</span>
@@ -548,7 +556,7 @@
 
         <span class="n">pairedPoints</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pairedPoints</span>
         <span class="n">coordinatesOfPoint</span><span class="p">,</span> <span class="n">coordinatesOfFacet</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_currentCoordinatesOfPairedPoints</span><span class="p">(</span><span class="n">U_np</span><span class="p">)</span>
-        <span class="n">normalOfFacet</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">facetNormalAndMeasure</span><span class="p">(</span><span class="n">coordinates</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">coordinates</span> <span class="ow">in</span> <span class="n">coordinatesOfFacet</span><span class="p">])</span>
+        <span class="n">normalOfFacet</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">facetNormalAndMeasure</span><span class="p">(</span><span class="n">coordinatesOfFacet</span><span class="p">)</span>
         <span class="n">weights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weightsOfPoint</span><span class="p">[</span><span class="n">pairedPoints</span><span class="p">]</span>
         <span class="n">closestPoint</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"pa,pad-&gt;pd"</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">coordinatesOfFacet</span><span class="p">)</span>
         <span class="n">gap</span> <span class="o">=</span> <span class="n">rowDot</span><span class="p">(</span><span class="n">normalOfFacet</span><span class="p">,</span> <span class="n">coordinatesOfPoint</span> <span class="o">-</span> <span class="n">closestPoint</span><span class="p">)</span>
@@ -566,8 +574,9 @@
             <span class="n">interpolation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolationVectorAtPointOf</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_particles</span><span class="p">[</span><span class="n">particleIndex</span><span class="p">],</span> <span class="n">coordinatesOfPoint</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
             <span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
-            <span class="c1"># the kernel functions of a particle are on distinct nodes, so fancy indexing does not drop any</span>
-            <span class="n">PAtNodes</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_localNodesOfParticle</span><span class="p">[</span><span class="n">particleIndex</span><span class="p">]]</span> <span class="o">-=</span> <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">interpolation</span><span class="p">,</span> <span class="n">force</span><span class="p">)</span>
+            <span class="n">addForcesOnPointsOfParticle</span><span class="p">(</span>
+                <span class="n">PAtNodes</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_localNodesOfParticle</span><span class="p">[</span><span class="n">particleIndex</span><span class="p">],</span> <span class="n">interpolation</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:],</span> <span class="n">force</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:]</span>
+            <span class="p">)</span>
             <span class="n">forceOnParticles</span> <span class="o">+=</span> <span class="n">interpolation</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">*</span> <span class="n">force</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_twoWayCoupling</span><span class="p">:</span>

@@ -539,7 +539,10 @@
 <div class="viewcode-block" id="MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia">
 <a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">stableTimeIncrementOfEntitiesWithOwnInertia</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">forEachChunk</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">list</span><span class="p">,</span> <span class="n">Callable</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">lumpedMass</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span>
+        <span class="n">lumpedDamping</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span>
+        <span class="n">forEachChunk</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">list</span><span class="p">,</span> <span class="n">Callable</span><span class="p">],</span> <span class="kc">None</span><span class="p">],</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""A bound of the stable time increment of ``NED``'s explicit scheme for the particles, from their stiffness at</span>
 <span class="sd">        the current state and the assembled lumped mass and damping. No stiffness is assembled: every particle bounds</span>
@@ -601,6 +604,11 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
+<span class="sd">        lumpedMass</span>
+<span class="sd">            The lumped mass of the particles at their current configuration</span>
+<span class="sd">            (:meth:`assembleLumpedMassOfEntitiesWithOwnInertia`), which the solver has just assembled.</span>
+<span class="sd">        lumpedDamping</span>
+<span class="sd">            Their lumped damping (:meth:`assembleLumpedDampingOfEntitiesWithOwnInertia`), likewise.</span>
 <span class="sd">        forEachChunk</span>
 <span class="sd">            The solver's loop over chunks of independent entities.</span>
 
@@ -613,8 +621,8 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
 
-        <span class="n">M</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">assembleLumpedMassOfEntitiesWithOwnInertia</span><span class="p">(</span><span class="n">forEachChunk</span><span class="p">))</span>
-        <span class="n">C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">assembleLumpedDampingOfEntitiesWithOwnInertia</span><span class="p">(</span><span class="n">forEachChunk</span><span class="p">))</span>
+        <span class="n">M</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">lumpedMass</span><span class="p">)</span>
+        <span class="n">C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">lumpedDamping</span><span class="p">)</span>
 
         <span class="n">secondOrder</span> <span class="o">=</span> <span class="n">M</span> <span class="o">&gt;</span> <span class="mf">0.0</span>
         <span class="n">firstOrder</span> <span class="o">=</span> <span class="o">~</span><span class="n">secondOrder</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">C</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">)</span>
@@ -676,6 +684,25 @@
             <span class="n">stable</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">stable</span><span class="p">,</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="n">rate</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">STABLE_FRACTION_OF_THE_TANGENT_LIMIT</span> <span class="o">*</span> <span class="n">stable</span></div>
+
+
+<div class="viewcode-block" id="MPMDiscreteSystem.entitiesWithOwnInertiaCoupleOtherNodes">
+<a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.entitiesWithOwnInertiaCoupleOtherNodes">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">entitiesWithOwnInertiaCoupleOtherNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Whether the last connectivity update changed the set of kernel functions of a particle, as its particle</span>
+<span class="sd">        manager reports it; see</span>
+<span class="sd">        :meth:`~edelweissfe.models.discretesystem.DiscreteSystem.entitiesWithOwnInertiaCoupleOtherNodes`. A contact</span>
+<span class="sd">        paired anew does not count: it changes the locations, not the particles' system.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">            True if a particle reaches other kernel functions since the last connectivity update.</span>
+<span class="sd">        """</span>
+
+        <span class="k">return</span> <span class="nb">any</span><span class="p">(</span>
+            <span class="n">particleManager</span><span class="o">.</span><span class="n">particlesWithChangedKernelFunctions</span> <span class="k">for</span> <span class="n">particleManager</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">particleManagers</span>
+        <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="MPMDiscreteSystem.carriersOfTheMotion">

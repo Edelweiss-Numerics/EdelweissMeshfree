@@ -1,0 +1,226 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>edelweissmeshfree.constraints.base.pointsofparticles &mdash; EdelweissMeshfree v26.11 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/custom.css?v=1d735308" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=57c4c7c7"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            EdelweissMeshfree
+              <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../gallery.html">Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation/index.html">Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">EdelweissMeshfree</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">edelweissmeshfree.constraints.base.pointsofparticles</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for edelweissmeshfree.constraints.base.pointsofparticles</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1">#  ---------------------------------------------------------------------</span>
+<span class="c1">#</span>
+<span class="c1">#  _____    _      _              _</span>
+<span class="c1"># | ____|__| | ___| |_      _____(_)___ ___</span>
+<span class="c1"># |  _| / _` |/ _ \ \ \ /\ / / _ \ / __/ __|</span>
+<span class="c1"># | |__| (_| |  __/ |\ V  V /  __/ \__ \__ \</span>
+<span class="c1"># |_____\__,_|\___|_| \_/\_/_\___|_|___/___/</span>
+<span class="c1"># |  \/  | ___  ___| |__  / _|_ __ ___  ___</span>
+<span class="c1"># | |\/| |/ _ \/ __| '_ \| |_| '__/ _ \/ _ \</span>
+<span class="c1"># | |  | |  __/\__ \ | | |  _| | |  __/  __/</span>
+<span class="c1"># |_|  |_|\___||___/_| |_|_| |_|  \___|\___|</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1">#  Unit of Strength of Materials and Structural Analysis</span>
+<span class="c1">#  University of Innsbruck,</span>
+<span class="c1">#</span>
+<span class="c1">#  Research Group for Computational Mechanics of Materials</span>
+<span class="c1">#  Institute of Structural Engineering, BOKU University, Vienna</span>
+<span class="c1">#</span>
+<span class="c1">#  2023 - today</span>
+<span class="c1">#</span>
+<span class="c1">#  Matthias Neuner |  matthias.neuner@boku.ac.at</span>
+<span class="c1">#  Thomas Mader    |  thomas.mader@bokut.ac.at</span>
+<span class="c1">#</span>
+<span class="c1">#  This file is part of EdelweissMeshfree.</span>
+<span class="c1">#</span>
+<span class="c1">#  This library is free software; you can redistribute it and/or</span>
+<span class="c1">#  modify it under the terms of the GNU Lesser General Public</span>
+<span class="c1">#  License as published by the Free Software Foundation; either</span>
+<span class="c1">#  version 2.1 of the License, or (at your option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1">#  The full text of the license can be found in the file LICENSE.md at</span>
+<span class="c1">#  the top level directory of EdelweissMeshfree.</span>
+<span class="sd">"""The two operations every constraint on points of particles needs besides its own physics: where the nodes of its</span>
+<span class="sd">particles sit in its block, and how a force on a point of a particle reaches those nodes.</span>
+
+<span class="sd">A constraint that measures a point of a particle -- a vertex held by a support, a vertex in contact -- acts on the nodes</span>
+<span class="sd">of the particle's kernel functions, which change as the particle moves. Its block holds each of these nodes once</span>
+<span class="sd">(:func:`locateTheNodesOfParticles`). A force on the point reaches the nodes with the vector the constraint chose for</span>
+<span class="sd">the point (:func:`addForcesOnPointsOfParticle`;</span>
+<span class="sd">:meth:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.interpolationVectorAtPointOf`): the</span>
+<span class="sd">shape functions at the point, or the particle's interpolation linearized about its center, with which it moves the</span>
+<span class="sd">point, the transpose of the point's motion, so that a penalty on the point has a symmetric stiffness and does no work</span>
+<span class="sd">over a closed cycle. The constraints of</span>
+<span class="sd">:mod:`edelweissmeshfree.constraints.explicit` and</span>
+<span class="sd">:class:`~edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet` use both; a new one</span>
+<span class="sd">is then its physics -- the gap, the pairing, the force -- and a constructor.</span>
+<span class="sd">"""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+
+<div class="viewcode-block" id="locateTheNodesOfParticles">
+<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.pointsofparticles.locateTheNodesOfParticles">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">locateTheNodesOfParticles</span><span class="p">(</span><span class="n">kernelFunctionsOfParticles</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">list</span><span class="p">],</span> <span class="n">localIndexOfNode</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Locate the nodes of the kernel functions of particles in the block of a constraint: a node not located yet is</span>
+<span class="sd">    added to ``localIndexOfNode`` at the next index, in the order in which the particles name their kernel functions;</span>
+<span class="sd">    a node shared by several particles is located once.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    kernelFunctionsOfParticles</span>
+<span class="sd">        The kernel functions of each particle.</span>
+<span class="sd">    localIndexOfNode</span>
+<span class="sd">        Where each node located so far sits in the block of the constraint; extended here. The keys, in their order,</span>
+<span class="sd">        are the nodes of the constraint.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list[numpy.ndarray]</span>
+<span class="sd">        Per particle, where the nodes of its kernel functions sit in the block, in the order of its kernel functions.</span>
+<span class="sd">    """</span>
+
+    <span class="c1"># indices also for a particle without kernel functions: an empty array without a type would be one of floats</span>
+    <span class="k">return</span> <span class="p">[</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">localIndexOfNode</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">kernelFunction</span><span class="o">.</span><span class="n">node</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">localIndexOfNode</span><span class="p">))</span> <span class="k">for</span> <span class="n">kernelFunction</span> <span class="ow">in</span> <span class="n">kfs</span><span class="p">],</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">intp</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">kfs</span> <span class="ow">in</span> <span class="n">kernelFunctionsOfParticles</span>
+    <span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="addForcesOnPointsOfParticle">
+<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.pointsofparticles.addForcesOnPointsOfParticle">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">addForcesOnPointsOfParticle</span><span class="p">(</span>
+    <span class="n">PAtNodes</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">localNodes</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">interpolations</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">forces</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">components</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Add the residual contribution of forces on points of one particle, the negative of the forces on the nodes of its</span>
+<span class="sd">    kernel functions: :math:`\\boldsymbol{P}_B \\mathrel{-}= \\sum_p I_{pB}\\, \\boldsymbol{f}_p`, with the vector</span>
+<span class="sd">    :math:`I_{pB}` the constraint distributes the force on the point :math:`p` with</span>
+<span class="sd">    (:meth:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.interpolationVectorAtPointOf`).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    PAtNodes</span>
+<span class="sd">        The residual contribution of the constraint, node by node: ``nNodes x fieldSize``; augmented.</span>
+<span class="sd">    localNodes</span>
+<span class="sd">        Where the nodes of the particle's kernel functions sit in the block (:func:`locateTheNodesOfParticles`). They</span>
+<span class="sd">        are distinct, so the fancy indexing drops no contribution.</span>
+<span class="sd">    interpolations</span>
+<span class="sd">        The vectors of the points, one row per point: ``nPoints x nNodesOfTheParticle``.</span>
+<span class="sd">    forces</span>
+<span class="sd">        The forces on the points, one row per point: ``nPoints x fieldSize``, or ``nPoints x len(components)``.</span>
+<span class="sd">    components</span>
+<span class="sd">        The components the forces act in, e.g. those a support holds; all if None.</span>
+<span class="sd">    """</span>
+
+    <span class="k">if</span> <span class="n">components</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">PAtNodes</span><span class="p">[</span><span class="n">localNodes</span><span class="p">]</span> <span class="o">-=</span> <span class="n">interpolations</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">forces</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">PAtNodes</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="n">localNodes</span><span class="p">,</span> <span class="n">components</span><span class="p">)]</span> <span class="o">-=</span> <span class="n">interpolations</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">forces</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Matthias Neuner.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

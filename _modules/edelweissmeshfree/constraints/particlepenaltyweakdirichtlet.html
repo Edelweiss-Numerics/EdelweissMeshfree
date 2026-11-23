@@ -79,6 +79,10 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.variables.scalarvariable</span><span class="w"> </span><span class="kn">import</span> <span class="n">ScalarVariable</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.constraints.base.mpmconstraintbase</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPMConstraintBase</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.constraints.base.pointsofparticles</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">addForcesOnPointsOfParticle</span><span class="p">,</span>
+    <span class="n">locateTheNodesOfParticles</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.models.mpmmodel</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPMModel</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.particles.base.baseparticle</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseParticle</span>
 
@@ -175,6 +179,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span> <span class="o">=</span> <span class="n">getFieldSize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_field</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">domainSize</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_penaltyParameter</span> <span class="o">=</span> <span class="n">penaltyParameter</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="c1">#: Per constrained particle, where the nodes of its kernel functions sit in the constraint's block (see</span>
+        <span class="c1">#: :meth:`updateConnectivity`).</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_localNodesOfParticle</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1">#: Per constrained particle, its kernel functions as of the last :meth:`updateConnectivity`.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_kernelFunctionsOfParticle</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="n">constrain</span> <span class="o">==</span> <span class="s2">"center"</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_constrainVertices</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">else</span><span class="p">:</span>
@@ -188,7 +197,7 @@
         <span class="c1">#: Where the constrained points of each particle are when the constraint is created, the positions an explicit</span>
         <span class="c1">#: analysis holds them at.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_initialCoordinatesOfConstrainedPoints</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_constrainedCoordinatesOf</span><span class="p">(</span><span class="n">particle</span><span class="p">))</span> <span class="k">for</span> <span class="n">particle</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constrainedParticles</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_constrainedCoordinatesOf</span><span class="p">(</span><span class="n">particle</span><span class="p">)</span> <span class="k">for</span> <span class="n">particle</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constrainedParticles</span>
         <span class="p">]</span>
 
         <span class="k">if</span> <span class="s2">"f_t"</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
@@ -253,19 +262,37 @@
 <div class="viewcode-block" id="ParticlePenaltyWeakDirichlet.updateConnectivity">
 <a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.updateConnectivity">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">updateConnectivity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
-        <span class="n">nodes</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">n</span><span class="p">:</span> <span class="n">i</span>
-            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span>
-                <span class="nb">sorted</span><span class="p">(</span>
-                    <span class="nb">set</span><span class="p">(</span><span class="n">kf</span><span class="o">.</span><span class="n">node</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constrainedParticles</span> <span class="k">for</span> <span class="n">kf</span> <span class="ow">in</span> <span class="n">p</span><span class="o">.</span><span class="n">kernelFunctions</span><span class="p">),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="n">n</span><span class="o">.</span><span class="n">label</span>
-                <span class="p">)</span>
-            <span class="p">)</span>
-        <span class="p">}</span>
+<span class="w">        </span><span class="sd">"""Collect the nodes of the kernel functions of the constrained particles, each once, ordered by label, and</span>
+<span class="sd">        record where each particle's nodes sit in the constraint's block</span>
+<span class="sd">        (:func:`~edelweissmeshfree.constraints.base.pointsofparticles.locateTheNodesOfParticles`). The nodes stay as</span>
+<span class="sd">        they are, and nothing is collected, if no constrained particle has other kernel functions than at the last</span>
+<span class="sd">        update. The constraint</span>
+<span class="sd">        compares the particles' lists of kernel functions with those of its last update itself, instead of reading the</span>
+<span class="sd">        particle managers' report (``particlesWithChangedKernelFunctions``), which covers their last search only: the</span>
+<span class="sd">        comparison holds whether or not the constraint was updated after every search.</span>
 
-        <span class="n">hasChanged</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="k">if</span> <span class="n">nodes</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="p">:</span>
-            <span class="n">hasChanged</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        model</span>
+<span class="sd">            The model; unused, the particles hold their kernel functions.</span>
 
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">            True if the nodes of the constraint changed.</span>
+<span class="sd">        """</span>
+
+        <span class="n">kernelFunctionsOfParticle</span> <span class="o">=</span> <span class="p">[</span><span class="n">particle</span><span class="o">.</span><span class="n">kernelFunctions</span> <span class="k">for</span> <span class="n">particle</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constrainedParticles</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span> <span class="ow">and</span> <span class="n">kernelFunctionsOfParticle</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kernelFunctionsOfParticle</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_kernelFunctionsOfParticle</span> <span class="o">=</span> <span class="n">kernelFunctionsOfParticle</span>
+
+        <span class="c1"># the nodes ordered by label, so that the block, and with it the numbering of the model, does not depend on the</span>
+        <span class="c1"># order of the particles</span>
+        <span class="n">nodesByLabel</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">({</span><span class="n">kf</span><span class="o">.</span><span class="n">node</span> <span class="k">for</span> <span class="n">kfs</span> <span class="ow">in</span> <span class="n">kernelFunctionsOfParticle</span> <span class="k">for</span> <span class="n">kf</span> <span class="ow">in</span> <span class="n">kfs</span><span class="p">},</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">node</span><span class="p">:</span> <span class="n">node</span><span class="o">.</span><span class="n">label</span><span class="p">)</span>
+        <span class="n">nodes</span> <span class="o">=</span> <span class="p">{</span><span class="n">node</span><span class="p">:</span> <span class="n">index</span> <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">node</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">nodesByLabel</span><span class="p">)}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_localNodesOfParticle</span> <span class="o">=</span> <span class="n">locateTheNodesOfParticles</span><span class="p">(</span><span class="n">kernelFunctionsOfParticle</span><span class="p">,</span> <span class="n">nodes</span><span class="p">)</span>
+        <span class="n">hasChanged</span> <span class="o">=</span> <span class="n">nodes</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span> <span class="o">=</span> <span class="n">nodes</span>
 
         <span class="k">return</span> <span class="n">hasChanged</span></div>
@@ -280,12 +307,10 @@
 
             <span class="n">K_ij</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">nDof</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nDof</span><span class="p">))[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">,</span> <span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span>
 
-            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constrainedParticles</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">p</span><span class="p">,</span> <span class="n">nodeIdcs</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_constrainedParticles</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_localNodesOfParticle</span><span class="p">):</span>
                 <span class="k">for</span> <span class="n">constrainedCoordinate</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constrainedCoordinatesOf</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
 
                     <span class="n">interpolation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolationVectorAtPointOf</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">constrainedCoordinate</span><span class="p">)</span>
-
-                    <span class="n">nodeIdcs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="p">[</span><span class="n">kf</span><span class="o">.</span><span class="n">node</span><span class="p">]</span> <span class="k">for</span> <span class="n">kf</span> <span class="ow">in</span> <span class="n">p</span><span class="o">.</span><span class="n">kernelFunctions</span><span class="p">]</span>
 
                     <span class="n">mpValue</span> <span class="o">=</span> <span class="n">interpolation</span> <span class="o">@</span> <span class="n">dU_j</span><span class="p">[</span><span class="n">nodeIdcs</span><span class="p">]</span>
 
@@ -311,7 +336,10 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">computeKernelsExplicit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">U_np</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">dU</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">P</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""Add the residual contribution of the support in an explicit analysis: the negative of the forces that hold</span>
 <span class="sd">        the constrained components of the constrained points at their initial positions, measured where the points are</span>
-<span class="sd">        now (see the class documentation).</span>
+<span class="sd">        now (see the class documentation). Particle by particle, the forces of its constrained points</span>
+<span class="sd">        :math:`\\boldsymbol{f}_p` reach the nodes of its kernel functions as one product with the interpolation vectors</span>
+<span class="sd">        of the points, :math:`\\boldsymbol{G}^\\mathsf{T} \\boldsymbol{f}`</span>
+<span class="sd">        (:func:`~edelweissmeshfree.constraints.base.pointsofparticles.addForcesOnPointsOfParticle`).</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -325,16 +353,18 @@
 <span class="sd">            The current time step; unused.</span>
 <span class="sd">        """</span>
 
-        <span class="k">for</span> <span class="n">p</span><span class="p">,</span> <span class="n">initialCoordinates</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_constrainedParticles</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initialCoordinatesOfConstrainedPoints</span><span class="p">):</span>
-            <span class="n">nodeIdcs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="p">[</span><span class="n">kf</span><span class="o">.</span><span class="n">node</span><span class="p">]</span> <span class="k">for</span> <span class="n">kf</span> <span class="ow">in</span> <span class="n">p</span><span class="o">.</span><span class="n">kernelFunctions</span><span class="p">]</span>
+        <span class="n">components</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_prescribedStepDelta</span><span class="p">)</span>
+        <span class="n">PAtNodes</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">)</span>
 
-            <span class="k">for</span> <span class="n">constrainedCoordinate</span><span class="p">,</span> <span class="n">initialCoordinate</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_constrainedCoordinatesOf</span><span class="p">(</span><span class="n">p</span><span class="p">),</span> <span class="n">initialCoordinates</span><span class="p">):</span>
-                <span class="n">interpolation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolationVectorAtPointOf</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">constrainedCoordinate</span><span class="p">)</span>
-
-                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prescribedStepDelta</span><span class="p">:</span>
-                    <span class="n">P</span><span class="p">[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">][</span><span class="n">nodeIdcs</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span>
-                        <span class="n">interpolation</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_penaltyParameter</span> <span class="o">*</span> <span class="p">(</span><span class="n">constrainedCoordinate</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">initialCoordinate</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
-                    <span class="p">)</span>
+        <span class="k">for</span> <span class="n">p</span><span class="p">,</span> <span class="n">localNodes</span><span class="p">,</span> <span class="n">initialCoordinates</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_constrainedParticles</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_localNodesOfParticle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initialCoordinatesOfConstrainedPoints</span>
+        <span class="p">):</span>
+            <span class="n">coordinates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constrainedCoordinatesOf</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+            <span class="c1"># one row per constrained point: the vector the force is distributed with (see interpolationVectorAtPointOf)</span>
+            <span class="n">interpolations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolationVectorAtPointOf</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">coordinates</span><span class="p">])</span>
+            <span class="c1"># the forces that pull the constrained components of the points back to their initial positions</span>
+            <span class="n">forces</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_penaltyParameter</span> <span class="o">*</span> <span class="p">(</span><span class="n">coordinates</span><span class="p">[:,</span> <span class="n">components</span><span class="p">]</span> <span class="o">-</span> <span class="n">initialCoordinates</span><span class="p">[:,</span> <span class="n">components</span><span class="p">])</span>
+            <span class="n">addForcesOnPointsOfParticle</span><span class="p">(</span><span class="n">PAtNodes</span><span class="p">,</span> <span class="n">localNodes</span><span class="p">,</span> <span class="n">interpolations</span><span class="p">,</span> <span class="n">forces</span><span class="p">,</span> <span class="n">components</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prescribedStepDelta</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">penaltyForce</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">P</span><span class="p">[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">])</span></div>
@@ -342,7 +372,7 @@
 
 <div class="viewcode-block" id="ParticlePenaltyWeakDirichlet._constrainedCoordinatesOf">
 <a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet._constrainedCoordinatesOf">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_constrainedCoordinatesOf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">particle</span><span class="p">:</span> <span class="n">BaseParticle</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_constrainedCoordinatesOf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">particle</span><span class="p">:</span> <span class="n">BaseParticle</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""The current coordinates of the constrained points of a particle: its center, or the constrained vertices.</span>
 
 <span class="sd">        Parameters</span>
@@ -352,13 +382,13 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        list[np.ndarray]</span>
-<span class="sd">            The coordinates, one array per point.</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            The coordinates, one row per point.</span>
 <span class="sd">        """</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constrainVertices</span><span class="p">:</span>
-            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">particle</span><span class="o">.</span><span class="n">getVertexCoordinates</span><span class="p">()[</span><span class="bp">self</span><span class="o">.</span><span class="n">_constrainVertices</span><span class="p">])</span>
-        <span class="k">return</span> <span class="p">[</span><span class="n">particle</span><span class="o">.</span><span class="n">getCenterCoordinates</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()]</span></div>
+            <span class="k">return</span> <span class="n">particle</span><span class="o">.</span><span class="n">getVertexCoordinates</span><span class="p">()[</span><span class="bp">self</span><span class="o">.</span><span class="n">_constrainVertices</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">particle</span><span class="o">.</span><span class="n">getCenterCoordinates</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:]</span></div>
 </div>
 
 </pre></div>

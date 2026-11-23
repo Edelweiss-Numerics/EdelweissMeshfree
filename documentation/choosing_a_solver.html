@@ -265,7 +265,11 @@ implicit solvers set the particles’ Newmark parameters themselves</p></td>
 <p><strong>Restart.</strong> EdelweissFE’s restart output manager writes a checkpoint of the converged state; an <code class="docutils literal notranslate"><span class="pre">MPMModel</span></code> adds the
 state of its material points and particles, from which their positions follow (see
 <a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel.writeRestart" title="edelweissmeshfree.models.mpmmodel.MPMModel.writeRestart"><code class="xref py py-meth docutils literal notranslate"><span class="pre">writeRestart()</span></code></a>), and the state of the output managers of the step.
-A resumed run builds the model as the checkpointed run did, restores its state, and continues the step:</p>
+A resumed run builds the model as the checkpointed run did, restores its state, and continues the step. Create the
+constraints before the checkpoint is restored, as the checkpointed run did: a particle support holds the positions of
+the model it is created with
+(<a class="reference internal" href="constraints.html#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet" title="edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet"><code class="xref py py-class docutils literal notranslate"><span class="pre">ParticlePenaltyWeakDirichlet</span></code></a> in an explicit
+analysis), and one created after the restore would hold the deformed ones:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.outputmanagers.restart</span><span class="w"> </span><span class="kn">import</span> <span class="n">OutputManager</span> <span class="k">as</span> <span class="n">RestartOutputManager</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.outputmanagers.restart</span><span class="w"> </span><span class="kn">import</span> <span class="n">RestartOutputManagerSchema</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.utils.checkpoint</span><span class="w"> </span><span class="kn">import</span> <span class="n">ResumeCheckpoint</span>
@@ -416,7 +420,8 @@ current kernel functions; the finite elements keep the mass of their numbering. 
 field is integrated. The stable time increment of the particles is bounded from their stiffness and the assembled
 lumped mass
 (<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia"><code class="xref py py-meth docutils literal notranslate"><span class="pre">stableTimeIncrementOfEntitiesWithOwnInertia()</span></code></a>) in
-the zero increment, whenever their connectivity changes, and every <code class="docutils literal notranslate"><span class="pre">stable-increment-frequency</span></code> increments; the time
+the zero increment, whenever a particle reaches other kernel functions (a contact paired anew does not count: it
+changes no particle), and every <code class="docutils literal notranslate"><span class="pre">stable-increment-frequency</span></code> increments; the time
 increment is the smaller of it and the elements’ critical time step, scaled by <code class="docutils literal notranslate"><span class="pre">courant-number</span></code>, unless the step asks
 for smaller increments. It is the Gershgorin bound of the absolute value of the mass-scaled tangent per block of fields,
 coupled by the largest eigenvalue of the small matrix of these blocks. No tangent is assembled for it: every particle

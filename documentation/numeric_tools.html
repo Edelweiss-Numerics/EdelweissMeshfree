@@ -153,6 +153,8 @@ particles on the same numbering, see
 <dd class="field-even"><dl class="simple">
 <dt><a class="reference internal" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations.nAccumulatedNodalFluxesFieldwise" title="edelweissmeshfree.numerics.doflocations.MPMDofLocations.nAccumulatedNodalFluxesFieldwise"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nAccumulatedNodalFluxesFieldwise</span></code></a></dt><dd><p>For the Abaqus like convergence test, the number of degrees of freedom ‘entity-wise’ per field, that is Σ_(elements+constraints) Σ_nodes ( nDof (field) ).</p>
 </dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations.scatterTemplate" title="edelweissmeshfree.numerics.doflocations.MPMDofLocations.scatterTemplate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scatterTemplate</span></code></a></dt><dd><p>The layout of the scatter vectors of these locations (<code class="xref py py-meth docutils literal notranslate"><span class="pre">createScatterVector()</span></code>): where each entity writes its local vector, one after the other, and the global index of every entry, from which the scatter vector is assembled.</p>
+</dd>
 </dl>
 </dd>
 </dl>
@@ -337,6 +339,12 @@ which are the only ones that can be moved, see <a class="reference internal" hre
 </dd></dl>
 
 <dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.doflocations.MPMDofLocations._scatterTemplate">
+<span class="sig-name descname"><span class="pre">_scatterTemplate</span></span><a class="headerlink" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations._scatterTemplate" title="Link to this definition"></a></dt>
+<dd><p>The layout of the scatter vectors of these locations, made at the first request (see <a class="reference internal" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations.scatterTemplate" title="edelweissmeshfree.numerics.doflocations.MPMDofLocations.scatterTemplate"><code class="xref py py-attr docutils literal notranslate"><span class="pre">scatterTemplate</span></code></a>).</p>
+</dd></dl>
+
+<dl class="py attribute">
 <dt class="sig sig-object py" id="edelweissmeshfree.numerics.doflocations.MPMDofLocations.cellElements">
 <span class="sig-name descname"><span class="pre">cellElements</span></span><a class="headerlink" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations.cellElements" title="Link to this definition"></a></dt>
 <dd><p>The cell elements that have a location.</p>
@@ -409,6 +417,24 @@ whoever still holds the old locations holds a mapping that stays valid.</p>
 <dt class="sig sig-object py" id="edelweissmeshfree.numerics.doflocations.MPMDofLocations.particles">
 <span class="sig-name descname"><span class="pre">particles</span></span><a class="headerlink" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations.particles" title="Link to this definition"></a></dt>
 <dd><p>The particles that have a location.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.numerics.doflocations.MPMDofLocations.scatterTemplate">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">scatterTemplate</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ScatterDofVectorTemplate</span></span><a class="headerlink" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations.scatterTemplate" title="Link to this definition"></a></dt>
+<dd><p>The layout of the scatter vectors of these locations
+(<code class="xref py py-meth docutils literal notranslate"><span class="pre">createScatterVector()</span></code>): where each entity writes its local
+vector, one after the other, and the global index of every entry, from which the scatter vector is assembled.
+It follows from <a class="reference internal" href="#edelweissmeshfree.numerics.doflocations.MPMDofLocations.ofEntity" title="edelweissmeshfree.numerics.doflocations.MPMDofLocations.ofEntity"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ofEntity</span></code></a> alone, so it is made at the first request and kept: the locations are
+immutable, and every vector of them shares it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The layout.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>ScatterDofVectorTemplate</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>

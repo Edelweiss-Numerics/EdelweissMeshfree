@@ -84,6 +84,10 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.constraints.base.mpmexplicitconstraintbase</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">MPMExplicitConstraintBase</span><span class="p">,</span>
 <span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.constraints.base.pointsofparticles</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">addForcesOnPointsOfParticle</span><span class="p">,</span>
+    <span class="n">locateTheNodesOfParticles</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.models.mpmmodel</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPMModel</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.particles.base.baseparticle</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseParticle</span>
 
@@ -162,8 +166,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_field</span> <span class="o">=</span> <span class="s2">"displacement"</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span> <span class="o">=</span> <span class="n">getFieldSize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_field</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">domainSize</span><span class="p">)</span>
 
-        <span class="c1"># These are kept for Base Class compatibility, though unused in Explicit assembly</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="c1"># the nodes of the particle's kernel functions, and where they sit in the block (see updateConnectivity)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_localNodes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_component</span> <span class="o">=</span> <span class="n">component</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">reactionForce</span> <span class="o">=</span> <span class="mf">0.0</span>
@@ -212,8 +217,6 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_doProximityCheck</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_proximityDist</span> <span class="o">=</span> <span class="n">particle</span><span class="o">.</span><span class="n">getVolumeUndeformed</span><span class="p">()</span> <span class="o">**</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">domainSize</span><span class="p">)</span> <span class="o">*</span> <span class="n">proximityFactor</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_dof_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
-
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
@@ -256,8 +259,10 @@
         <span class="c1"># Update current coordinates of constrained points (particle may have moved)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_constrained_points</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getConstraintLocations</span><span class="p">()</span>
 
-        <span class="c1"># Update node set (for compatibility)</span>
-        <span class="n">nodes</span> <span class="o">=</span> <span class="p">[</span><span class="n">kf</span><span class="o">.</span><span class="n">node</span> <span class="k">for</span> <span class="n">kf</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_particle</span><span class="o">.</span><span class="n">kernelFunctions</span><span class="p">]</span>
+        <span class="c1"># the nodes of the particle's kernel functions, and where they sit in the constraint's block</span>
+        <span class="n">localIndexOfNode</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_localNodes</span><span class="p">]</span> <span class="o">=</span> <span class="n">locateTheNodesOfParticles</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">_particle</span><span class="o">.</span><span class="n">kernelFunctions</span><span class="p">],</span> <span class="n">localIndexOfNode</span><span class="p">)</span>
+        <span class="n">nodes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">localIndexOfNode</span><span class="p">)</span>
         <span class="n">hasChanged</span> <span class="o">=</span> <span class="n">nodes</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span> <span class="o">=</span> <span class="n">nodes</span>
 
@@ -317,12 +322,13 @@
                 <span class="c1"># Combined: force_val = -penalty * g * orientation</span>
                 <span class="n">force_scalar</span> <span class="o">=</span> <span class="o">-</span><span class="n">penalty</span> <span class="o">*</span> <span class="n">g</span> <span class="o">*</span> <span class="n">orientation</span>
 
+                <span class="n">force</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">)</span>
+                <span class="n">force</span><span class="p">[</span><span class="n">comp</span><span class="p">]</span> <span class="o">=</span> <span class="n">force_scalar</span>
                 <span class="c1"># the vector the force is distributed with (see interpolationVectorAtPointOf)</span>
                 <span class="n">interpolation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolationVectorAtPointOf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_particle</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
-
-                <span class="c1"># the residual contribution is the negative of the force on the nodes</span>
-                <span class="c1"># Using np.add.at is safer if indices repeat (unlikely here) but direct slicing is faster</span>
-                <span class="n">P</span><span class="p">[</span><span class="n">comp</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span> <span class="o">-=</span> <span class="n">interpolation</span> <span class="o">*</span> <span class="n">force_scalar</span>
+                <span class="n">addForcesOnPointsOfParticle</span><span class="p">(</span>
+                    <span class="n">P</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_localNodes</span><span class="p">,</span> <span class="n">interpolation</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:],</span> <span class="n">force</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:]</span>
+                <span class="p">)</span>
 
                 <span class="n">total_penalty_force</span> <span class="o">+=</span> <span class="n">g</span> <span class="o">*</span> <span class="n">penalty</span>
 

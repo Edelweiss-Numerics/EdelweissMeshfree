@@ -509,12 +509,20 @@ necessary is merely slower, never wrong.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._FastKDBinOrganizer">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.</span></span><span class="sig-name descname"><span class="pre">_FastKDBinOrganizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernelFunctions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dimension</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particlemanagers/kdbinorganizedparticlemanager.html#_FastKDBinOrganizer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._FastKDBinOrganizer" title="Link to this definition"></a></dt>
-<dd><p>Optimized Bin Organizer using pure NumPy vectorization and integer indexing.</p>
+<dd><p>The kernel functions sorted into a regular grid of bins by their bounding boxes, for the broad phase of the
+search: a kernel is in every bin its box overlaps. The bins are held in the compressed layout of a sparse matrix:
+the kernels of bin <code class="docutils literal notranslate"><span class="pre">b</span></code> are <code class="docutils literal notranslate"><span class="pre">kernelsInBins[firstKernelOfBin[b]</span> <span class="pre">:</span> <span class="pre">firstKernelOfBin[b</span> <span class="pre">+</span> <span class="pre">1]]</span></code>, in the order of the
+kernels. Both are built without a loop over the kernels or the bins, and the kernels of consecutive bins are
+consecutive, so a query takes one slice per row of bins. <code class="docutils literal notranslate"><span class="pre">firstKernelOfBin</span></code> is a list: a query indexes it with
+plain integers, which is faster than indexing an array.</p>
 <p class="rubric">Methods</p>
-<table class="docutils align-default">
+<table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><strong>getCandidateIndices</strong></p></td>
-<td></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._FastKDBinOrganizer.getCandidateIndices" title="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._FastKDBinOrganizer.getCandidateIndices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getCandidateIndices</span></code></a>(queryBoxMin, queryBoxMax)</p></td>
+<td><p>The kernels whose boxes overlap a bin that the query box overlaps, each once.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._FastKDBinOrganizer.kernelsInBin" title="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._FastKDBinOrganizer.kernelsInBin"><code class="xref py py-obj docutils literal notranslate"><span class="pre">kernelsInBin</span></code></a>(binIndex)</p></td>
+<td><p>The kernels whose boxes overlap a bin.</p></td>
 </tr>
 </tbody>
 </table>
@@ -527,6 +535,43 @@ necessary is merely slower, never wrong.</p>
 </ul>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._FastKDBinOrganizer.getCandidateIndices">
+<span class="sig-name descname"><span class="pre">getCandidateIndices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">queryBoxMin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">queryBoxMax</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particlemanagers/kdbinorganizedparticlemanager.html#_FastKDBinOrganizer.getCandidateIndices"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._FastKDBinOrganizer.getCandidateIndices" title="Link to this definition"></a></dt>
+<dd><p>The kernels whose boxes overlap a bin that the query box overlaps, each once.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>queryBoxMin</strong> (<em>NDArray</em><em>[</em><em>float64</em><em>]</em>) – The lower corner of the query box.</p></li>
+<li><p><strong>queryBoxMax</strong> (<em>NDArray</em><em>[</em><em>float64</em><em>]</em>) – Its upper corner.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The indices of the candidate kernels, in ascending order.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>NDArray[np.intp]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._FastKDBinOrganizer.kernelsInBin">
+<span class="sig-name descname"><span class="pre">kernelsInBin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">binIndex</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particlemanagers/kdbinorganizedparticlemanager.html#_FastKDBinOrganizer.kernelsInBin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._FastKDBinOrganizer.kernelsInBin" title="Link to this definition"></a></dt>
+<dd><p>The kernels whose boxes overlap a bin.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>binIndex</strong> (<em>int</em>) – The flat index of the bin.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The indices of the kernels, in ascending order.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>NDArray[np.intp]</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 </section>
