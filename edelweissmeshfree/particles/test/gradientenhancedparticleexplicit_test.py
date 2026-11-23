@@ -25,7 +25,7 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 """The explicit methods of a gradient-enhanced finite-strain particle with six nonlocal variables (GM7 at finite
-strains) reach Python: its fields, its lumped damping and the tangent of its current state.
+strains) reach Python: its fields, its lumped damping, its stiffness and the bound of its absolute stiffness.
 
 Skipped where Marmot is not built.
 """
@@ -98,19 +98,38 @@ def test_the_lumped_damping_is_the_nonlocal_viscosity_on_the_nonlocal_rows():
     np.testing.assert_allclose(C[:, 3:].sum(axis=0), ETA * H**3, rtol=1e-12)
 
 
-def test_the_tangent_of_the_current_state_leaves_the_state_unchanged():
+def test_the_stiffness_leaves_the_state_unchanged():
     particle = _particle()
     state = np.array(particle._stateVars)
     K = np.zeros(particle.nDof**2)
 
-    particle.computeTangentOfTheCurrentState(K)
+    particle.assembleStiffness(K)
 
     np.testing.assert_array_equal(particle._stateVars, state)
     np.testing.assert_array_equal(particle._stateVarsTemp, state)
     K = K.reshape(particle.nDof, particle.nDof, order="F")
-    # the displacement block of the elastic tangent is symmetric and positive semi-definite, a translation is free of
+    # the displacement block of the elastic stiffness is symmetric and positive semi-definite, a translation is free of
     # stress
     displacement = np.array([i % 9 < 3 for i in range(particle.nDof)])
     Kuu = K[np.ix_(displacement, displacement)]
     translation = np.tile([1.0, 0.0, 0.0], particle.nDof // 9)
     np.testing.assert_allclose(Kuu @ translation, 0.0, atol=1e-8 * np.abs(Kuu).max())
+
+
+def test_the_bound_of_the_absolute_stiffness_leaves_the_particle_as_it_was():
+    """The bound is Marmot's visitor of the stiffness the particle describes, which leaves the particle as it was
+    found: in the middle of an increment (advanced, not accepted), its working state and the internal force that
+    follows the bound are those before it, with no reset by the host."""
+    particle = _particle()
+    nDof = particle.nDof
+    particle.updatePhysicsExplicit(1e-4 * np.sin(np.arange(nDof)), 1.0, 1.0)
+    state = np.array(particle._stateVarsTemp)
+    before = np.zeros(nDof)
+    particle.computePhysicsKernelsExplicit(before)
+
+    particle.addBoundOfAbsoluteStiffnessTimes(np.ones((nDof, 1), order="F"), np.zeros((nDof, 1), order="F"))
+
+    after = np.zeros(nDof)
+    particle.computePhysicsKernelsExplicit(after)
+    np.testing.assert_array_equal(particle._stateVarsTemp, state)
+    np.testing.assert_array_equal(after, before)

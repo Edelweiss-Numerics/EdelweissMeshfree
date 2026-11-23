@@ -113,6 +113,16 @@ vertices of a hexahedral particle on its faces are ``[0, 3, 4, 7]`` (x min), ``[
         "support_x", model, list(model.particleSets["slab_right"]), "displacement", {0: 0.0, 2: 0.0},
         supportPenalty, constrain=[1, 2, 5, 6])
 
+.. warning::
+
+    A vertex moves with the particle's own deformation (its centre displacement and its smoothed deformation
+    gradient), but the constraint distributes the force at the vertex with the shape functions there. The two differ
+    for any nodal pattern that is not linear, so the support's stiffness is unsymmetric and does work over a closed
+    cycle: once the concrete next to it has lost its stiffness, it can feed a growing mode. The production slab of this
+    model blew up this way, whatever the time increment; supports held at the particle centres did not. Until the
+    constraint moves its points with the shape functions it distributes the force with, check the kinetic energy
+    against the initial one (see below).
+
 Constrain the vertices, not the centres: the centres lie half a particle off the plane and move with Poisson's
 effect. The support penalty must be stiff against the material next to it, or the plane gives way and springs back
 (example 186), and below the limit :math:`2\sqrt{m/k}` of the time increment. The projectile's nodes on the symmetry
@@ -143,10 +153,16 @@ The time increment
 ------------------
 
 ``NED`` takes the smaller of the critical time step of the elements (their own eigenvalue bound) and the bound of the
-stable time increment of the particles, computed from their assembled tangent, and scales it by ``courant-number``.
+stable time increment of the particles, bounded from their stiffness without assembling it, and scales it by
+``courant-number``.
 The bound of the particles is computed anew whenever the connectivity changes (see :doc:`choosing_a_solver`,
-"Explicit dynamics"). Neither sees the penalty stiffness of the contact or of the supports; check them by hand, and
-check the result by halving the time increment.
+"Explicit dynamics"), which here is nearly every increment. It takes the tangent of the gradient-enhanced particles as
+it is, unsymmetric: while the concrete under the nose is crushed, GM7's stress depends on the nonlocal strain through
+the steep compressive boundary, far more strongly than the nonlocal strain depends on the strain, and the bound follows
+the geometric mean of the two couplings, as the eigenvalues do. Here the limit of the particles is that of the nonlocal
+field, set by its micro-inertia, and it stays above the projectile's elements: the elements set the time increment.
+Neither bound sees the penalty stiffness of the contact or of the supports; check them by hand, and check the result by
+halving the time increment.
 
 Running it
 ----------
@@ -198,8 +214,8 @@ a tenfold penalty range by about half a millimetre, the size of the change of th
 about a tenth of the search distance and no point was found inside; the quarter model followed the whole one to a few
 tenths of a millimetre. A run resumed from a checkpoint after an interruption followed the uninterrupted one.
 
-Two findings matter more than any of these. The bound of the particles' stable time increment drops by up to a third
-from one increment to the next while the concrete under the nose is crushed, so it is taken after every
-increment (``stable-increment-frequency`` 1); it is most of the cost of the run. And the response depends on the
-particle size more than on the time increment, the penalty or the symmetry: with GM7's internal length well below the
-particle size, the softening concrete is resolved by the particles, not by the nonlocal strain.
+Two findings matter more than any of these. The bound of the particles' stable time increment, taken whenever the
+connectivity changes, was most of the cost of an increment while it evaluated every particle's tangent; the particles
+now bound the row sums of their absolute stiffness node by node, at a small share of an increment. And the
+response depends on the particle size more than on the time increment, the penalty or the symmetry: with GM7's internal
+length well below the particle size, the softening concrete is resolved by the particles, not by the nonlocal strain.

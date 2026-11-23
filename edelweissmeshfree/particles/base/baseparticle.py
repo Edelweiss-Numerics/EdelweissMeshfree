@@ -39,6 +39,11 @@ are used for computing the quadrature.
 
 Implementing your own particles can be done easily by subclassing from
 the abstract base class :class:`~BaseParticle`.
+
+In an explicit analysis, the methods of a particle are called in an order its implementation relies on (advance,
+accept twice, reconnect, then the force and the momentum, the lumped inertia and damping); the calls and the contracts
+that follow from their order are written down once, in Marmot's documentation: `the explicit life cycle of a particle
+<https://materialmodelingtoolbox.github.io/Marmot/pages/features/meshfreeparticles.html#explicit-life-cycle-of-a-particle>`_.
 """
 
 from abc import abstractmethod
@@ -406,14 +411,15 @@ class BaseParticle(BaseNodeCouplingEntity):
         """
 
     @abstractmethod
-    def computeTangentOfTheCurrentState(
+    def assembleStiffness(
         self,
         K: np.ndarray,
     ):
-        """Explicit dynamics: the tangent of the internal force with respect to the degrees of freedom of the kernel
-        functions currently assigned, at the current state, which is left unchanged (a zero increment, evaluated on a
-        copy of the state). Without inertia. It is what the stable time increment of the particles is bounded with
-        (:meth:`~edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia`).
+        """Explicit dynamics: add the stiffness of the particle, the tangent of the internal force with respect to the
+        degrees of freedom of the kernel functions currently assigned, without inertia, of a zero increment of the
+        last accepted configuration and the working state: after an accept, the stiffness of the accepted state. It
+        leaves the particle as it was found. The stiffness the bound of :meth:`addBoundOfAbsoluteStiffnessTimes`
+        bounds, e.g. to check that bound against.
 
         The zero increment is taken over a unit time increment, at time zero: the time increment is only positive, as a
         material may divide by it, and the tangent of a rate-independent material does not depend on it. For a
@@ -423,7 +429,28 @@ class BaseParticle(BaseNodeCouplingEntity):
         Parameters
         ----------
         K
-            The tangent to define, column-major, ``nDof x nDof``.
+            The stiffness to augment, column-major, ``nDof x nDof``.
+        """
+
+    @abstractmethod
+    def addBoundOfAbsoluteStiffnessTimes(
+        self,
+        W: np.ndarray,
+        bound: np.ndarray,
+    ):
+        """Explicit dynamics: add an upper bound of :math:`|\\boldsymbol{K}|\\, \\boldsymbol{W}`, the absolute value of
+        the stiffness of :meth:`assembleStiffness` (see there for the state it is of), times nonnegative weights. It
+        leaves the particle as it was found. The stiffness itself is not assembled: the bound costs as much as the
+        nodes, the stiffness as their square. It is what the stable time increment of the particles is bounded with,
+        after the accept of an increment
+        (:meth:`~edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia`).
+
+        Parameters
+        ----------
+        W
+            The nonnegative weights, ``nDof x nColumns``, column-major (Fortran order).
+        bound
+            The bound to augment, ``nDof x nColumns``, column-major (Fortran order).
         """
 
     @abstractmethod
