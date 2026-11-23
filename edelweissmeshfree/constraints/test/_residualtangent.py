@@ -134,10 +134,9 @@ def interpolationVector(nodes: list, coordinates: np.ndarray) -> np.ndarray:
     return weights / weights.sum()
 
 
-def attachedPointInterpolationVector(nodes: list, center: np.ndarray, coordinates: np.ndarray) -> np.ndarray:
-    """The interpolation vector of a point attached to a particle that moves with the shape functions of
-    :func:`interpolationVector` at its center and their gradients there: :math:`G_B = N_B(x_c) + \\nabla N_B(x_c)
-    \\cdot (x - x_c)`.
+def interpolationVectorLinearizedAboutCenter(nodes: list, center: np.ndarray, coordinates: np.ndarray) -> np.ndarray:
+    """The shape functions of :func:`interpolationVector` linearized about the center of a particle:
+    :math:`G_B = N_B(x_c) + \\nabla N_B(x_c) \\cdot (x - x_c)`.
 
     Parameters
     ----------
@@ -146,7 +145,7 @@ def attachedPointInterpolationVector(nodes: list, center: np.ndarray, coordinate
     center
         The center of the particle.
     coordinates
-        The attached point.
+        A point of the particle.
 
     Returns
     -------
@@ -206,8 +205,8 @@ class ParticleStandIn:
     def getInterpolationVector(self, coordinates: np.ndarray) -> np.ndarray:
         return interpolationVector(self._nodes, coordinates)
 
-    def getAttachedPointInterpolationVector(self, coordinates: np.ndarray) -> np.ndarray:
-        return attachedPointInterpolationVector(self._nodes, self.center, coordinates)
+    def getInterpolationVectorLinearizedAboutCenter(self, coordinates: np.ndarray) -> np.ndarray:
+        return interpolationVectorLinearizedAboutCenter(self._nodes, self.center, coordinates)
 
 
 class CellStandIn:

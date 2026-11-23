@@ -24,15 +24,16 @@
 #  The full text of the license can be found in the file LICENSE.md at
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
-"""A penalty on the vertices of particles is conservative in an explicit analysis: driven around a closed cycle of
-nodal motion, a support and a facet contact on the vertices of a real particle do no net work.
+"""A penalty on the vertices of particles with ``interpolationLinearizedAboutCenter`` is conservative in an explicit
+analysis: driven around a closed cycle of nodal motion, a support and a facet contact on the vertices of a real particle
+do no net work.
 
-A vertex moves with its particle, by the particle's interpolation vector of an attached point times the nodal increment,
-and the constraints distribute their force with the same vector: the penalty stiffness is symmetric, and the work over
-a closed cycle vanishes up to the second-order path dependence of the particle's deformation gradient. Distributing the
-force with the shape functions at the vertex instead (which do not move it) makes the stiffness unsymmetric: the cycle
-then does work of the order of the penalty energy, which is what pumped energy into the crushed concrete beside the
-supports of the FE-particle impact. Skipped where Marmot is not built.
+A vertex moves with its particle, by the particle's shape functions linearized about its center times the nodal
+increment, and with the option the constraints distribute their force with the same vector: the penalty stiffness is
+symmetric, and the work over a closed cycle vanishes up to the second-order path dependence of the particle's
+deformation gradient. With the default, the shape functions at the vertex (which do not move it), the stiffness is
+unsymmetric: the cycle then does work of the order of the penalty energy, which is what pumped energy into the crushed
+concrete beside the supports of the FE-particle impact; the last test shows it. Skipped where Marmot is not built.
 """
 
 import numpy as np
@@ -112,19 +113,39 @@ def _workAndEnergyOverACycle(constraint, particle, nSteps: int = 200) -> tuple[f
     return work, energy
 
 
-@pytest.mark.parametrize("particleType", PARTICLE_TYPES)
-def test_a_support_on_the_vertices_does_no_work_over_a_closed_cycle(particleType):
+def _supportWorkAndEnergy(particleType, linearized: bool) -> tuple[float, float]:
+    """The work and the largest penalty energy of a support on the four vertices of a particle over the cycle."""
     model = particlePlate(particleType, 2.4, 3)
     particle = _particleOnTheTop(model)
     support = ParticlePenaltyWeakDirichlet(
-        "support", model, [particle], "displacement", {0: 0.0, 1: 0.0}, PENALTY, constrain=[0, 1, 2, 3]
+        "support",
+        model,
+        [particle],
+        "displacement",
+        {0: 0.0, 1: 0.0},
+        PENALTY,
+        constrain=[0, 1, 2, 3],
+        interpolationLinearizedAboutCenter=linearized,
     )
     support.updateConnectivity(model)
+    return _workAndEnergyOverACycle(support, particle)
 
-    work, energy = _workAndEnergyOverACycle(support, particle)
+
+@pytest.mark.parametrize("particleType", PARTICLE_TYPES)
+def test_a_support_on_the_vertices_does_no_work_over_a_closed_cycle(particleType):
+    work, energy = _supportWorkAndEnergy(particleType, linearized=True)
 
     assert energy > 0.0
     assert abs(work) < 1e-3 * energy, f"the support does net work {work:.3e} over a cycle (penalty energy {energy:.3e})"
+
+
+@pytest.mark.parametrize("particleType", PARTICLE_TYPES)
+def test_with_the_shape_functions_at_the_vertices_a_support_does_work_over_a_closed_cycle(particleType):
+    """The default, the shape functions at the vertices for the force while the vertices move with the linearized
+    interpolation: the stiffness is unsymmetric, and the cycle does work of the order of the penalty energy."""
+    work, energy = _supportWorkAndEnergy(particleType, linearized=False)
+
+    assert abs(work) > 1e-2 * energy, f"the support does only {work:.3e} over a cycle (penalty energy {energy:.3e})"
 
 
 @pytest.mark.parametrize("particleType", PARTICLE_TYPES)
@@ -146,7 +167,15 @@ def test_a_facet_contact_on_the_vertices_does_no_work_over_a_closed_cycle(partic
     facet.setNodes(nodes)
     facet.initializeElement()
     contact = ParticlePenaltyFacetContactExplicit(
-        "contact", MPMModel(2), [particle], [facet], PENALTY, 0.5 * H, _JournalStandIn(), twoWayCoupling=False
+        "contact",
+        MPMModel(2),
+        [particle],
+        [facet],
+        PENALTY,
+        0.5 * H,
+        _JournalStandIn(),
+        twoWayCoupling=False,
+        interpolationLinearizedAboutCenter=True,
     )
 
     contact.updateConnectivity(model)
