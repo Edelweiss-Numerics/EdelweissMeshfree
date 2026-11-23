@@ -117,6 +117,11 @@
 <span class="sd">        If True, the constraint is only active while one of its points is close to the surface.</span>
 <span class="sd">    proximityFactor</span>
 <span class="sd">        How close, as a multiple of the particle's characteristic length.</span>
+<span class="sd">    interpolationLinearizedAboutCenter</span>
+<span class="sd">        False (default): measure the field at the point and distribute the force there with the shape functions at</span>
+<span class="sd">        the point, N. True: with the particle's interpolation linearized about its center, G, with which the particle</span>
+<span class="sd">        moves its own points (symmetric and conservative). See</span>
+<span class="sd">        :meth:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.interpolationVectorAtPointOf`.</span>
 <span class="sd">    """</span>
 
     <span class="c1">#: Carries nothing from one increment to the next.</span>
@@ -140,8 +145,10 @@
         <span class="n">penaltyParameter</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e5</span><span class="p">,</span>
         <span class="n">doProximityCheck</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">proximityFactor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2.0</span><span class="p">,</span>
+        <span class="n">interpolationLinearizedAboutCenter</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interpolationLinearizedAboutCenter</span> <span class="o">=</span> <span class="n">interpolationLinearizedAboutCenter</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_field</span> <span class="o">=</span> <span class="s2">"displacement"</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span> <span class="o">=</span> <span class="n">getFieldSize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_field</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">domainSize</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
@@ -253,9 +260,9 @@
                 <span class="n">normal</span> <span class="o">=</span> <span class="n">grad</span> <span class="o">/</span> <span class="n">grad_norm</span>
 
             <span class="c1"># 2. Kinematics (Displacement Increment)</span>
-            <span class="n">N_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_particle</span><span class="o">.</span><span class="n">getInterpolationVector</span><span class="p">(</span><span class="n">constrained_point</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+            <span class="n">interpolation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolationVectorAtPointOf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_particle</span><span class="p">,</span> <span class="n">constrained_point</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
 
-            <span class="n">deltaU_point</span> <span class="o">=</span> <span class="n">N_vec</span> <span class="o">@</span> <span class="n">dU</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">))</span>
+            <span class="n">deltaU_point</span> <span class="o">=</span> <span class="n">interpolation</span> <span class="o">@</span> <span class="n">dU</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">))</span>
 
             <span class="n">constraint_vec</span> <span class="o">=</span> <span class="o">-</span><span class="n">normal</span>
             <span class="n">g</span> <span class="o">=</span> <span class="o">-</span><span class="n">current_dist</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">constraint_vec</span><span class="p">,</span> <span class="n">deltaU_point</span><span class="p">)</span>
@@ -263,13 +270,11 @@
             <span class="k">if</span> <span class="n">g</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">continue</span>
 
-            <span class="c1"># dg_dU = np.einsum('i,j-&gt;ij', constraint_vec, N_vec).flatten()</span>
-
             <span class="n">dg_dU</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dU</span><span class="o">.</span><span class="n">flatten</span><span class="p">()))</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="p">)):</span>
 
                 <span class="n">start_idx</span> <span class="o">=</span> <span class="n">i</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span>
-                <span class="n">dg_dU</span><span class="p">[</span><span class="n">start_idx</span> <span class="p">:</span> <span class="n">start_idx</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span> <span class="o">=</span> <span class="n">N_vec</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">constraint_vec</span>
+                <span class="n">dg_dU</span><span class="p">[</span><span class="n">start_idx</span> <span class="p">:</span> <span class="n">start_idx</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">]</span> <span class="o">=</span> <span class="n">interpolation</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">constraint_vec</span>
 
             <span class="c1"># Update Force (Using += just like original)</span>
             <span class="n">P</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_penaltyParameter</span> <span class="o">*</span> <span class="n">dg_dU</span> <span class="o">*</span> <span class="n">g</span>
@@ -296,6 +301,7 @@
     <span class="n">penaltyParameter</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e5</span><span class="p">,</span>
     <span class="n">doProximityCheck</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">proximityFactor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2.0</span><span class="p">,</span>
+    <span class="n">interpolationLinearizedAboutCenter</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">):</span>
     <span class="n">constraints</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
 
@@ -314,6 +320,7 @@
                     <span class="n">penaltyParameter</span><span class="o">=</span><span class="n">penaltyParameter</span><span class="p">,</span>
                     <span class="n">doProximityCheck</span><span class="o">=</span><span class="n">doProximityCheck</span><span class="p">,</span>
                     <span class="n">proximityFactor</span><span class="o">=</span><span class="n">proximityFactor</span><span class="p">,</span>
+                    <span class="n">interpolationLinearizedAboutCenter</span><span class="o">=</span><span class="n">interpolationLinearizedAboutCenter</span><span class="p">,</span>
                 <span class="p">)</span>
         <span class="k">return</span> <span class="n">constraints</span>
 
@@ -332,6 +339,7 @@
                 <span class="n">penaltyParameter</span><span class="p">,</span>
                 <span class="n">doProximityCheck</span><span class="p">,</span>
                 <span class="n">proximityFactor</span><span class="p">,</span>
+                <span class="n">interpolationLinearizedAboutCenter</span><span class="o">=</span><span class="n">interpolationLinearizedAboutCenter</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="k">return</span> <span class="n">constraints</span>
 

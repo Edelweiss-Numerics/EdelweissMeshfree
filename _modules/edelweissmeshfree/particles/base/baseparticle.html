@@ -614,7 +614,45 @@
 <a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getInterpolationVector">[docs]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">getInterpolationVector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coordinate</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""Get the interpolation vector for a given global coordinate.</span>
+<span class="w">        </span><span class="sd">"""The shape functions of the assigned kernel functions, evaluated exactly at an arbitrary location,</span>
+<span class="sd">        :math:`N_B(\\boldsymbol{x})`: e.g. where a field of the kernel functions is wanted somewhere in the body. Not the</span>
+<span class="sd">        particle's own interpolation at its own points (its center, a vertex, a face center), which is</span>
+<span class="sd">        :meth:`getInterpolationVectorLinearizedAboutCenter`; away from the center the two differ.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        coordinate</span>
+<span class="sd">            The location.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            The interpolation vector for all nodes.</span>
+<span class="sd">        """</span></div>
+
+
+<div class="viewcode-block" id="BaseParticle.getInterpolationVectorLinearizedAboutCenter">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getInterpolationVectorLinearizedAboutCenter">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getInterpolationVectorLinearizedAboutCenter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coordinate</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""The shape functions linearized about the center of the particle,</span>
+<span class="sd">        :math:`G_B(\boldsymbol{x}) = N_B(\boldsymbol{x}_c) + \nabla N_B(\boldsymbol{x}_c) \cdot (\boldsymbol{x} -</span>
+<span class="sd">        \boldsymbol{x}_c)`: the particle's own interpolation at its own points.</span>
+
+<span class="sd">        A particle knows every field it carries only by its value and its (smoothed) gradient at its center, so at a</span>
+<span class="sd">        point of its own (its center, a vertex, a face center) its interpolation of any field is this linearization:</span>
+<span class="sd">        for the displacement, the motion of the point in the next increment,</span>
+<span class="sd">        :math:`\Delta\boldsymbol{x} = \sum_B G_B \Delta\boldsymbol{U}_B` (the particle moves as a whole, its center</span>
+<span class="sd">        with the shape functions there and its domain with the homogeneous deformation gradient); for a nonlocal field</span>
+<span class="sd">        or a temperature, the value the particle carries at the point. Away from the center it is not</span>
+<span class="sd">        :meth:`getInterpolationVector` at the point, which is exact at an arbitrary location. A constraint that</span>
+<span class="sd">        measures a field at a point of the particle and distributes its force there with this vector is symmetric and</span>
+<span class="sd">        conservative. The vector sums to one.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        coordinate</span>
+<span class="sd">            The point, in the current configuration of the particle.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>

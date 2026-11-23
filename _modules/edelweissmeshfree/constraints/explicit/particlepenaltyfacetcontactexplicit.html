@@ -138,11 +138,17 @@
 
 <span class="sd">    negative where the point has entered the master body. There the penalty spring pushes the point back out, with</span>
 <span class="sd">    the force :math:`\boldsymbol{f} = -k\, g\, \boldsymbol{n}` on the point, which the particle distributes over the</span>
-<span class="sd">    nodes of its kernel functions with its shape functions :math:`N_I` at the point. The reaction</span>
+<span class="sd">    nodes of its kernel functions: with its shape functions :math:`N_I` at the point (the default), or, with</span>
+<span class="sd">    ``interpolationLinearizedAboutCenter``, with its interpolation linearized about its center :math:`G_I`</span>
+<span class="sd">    (:meth:`~edelweissmeshfree.particles.base.baseparticle.BaseParticle.getInterpolationVectorLinearizedAboutCenter`),</span>
+<span class="sd">    with which the particle moves the vertex. Only the latter is the transpose of the point's motion, and makes the</span>
+<span class="sd">    penalty spring symmetric and conservative; with :math:`N_I` the spring can feed energy into a softened particle</span>
+<span class="sd">    body (:meth:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.interpolationVectorAtPointOf`).</span>
+<span class="sd">    The reaction</span>
 <span class="sd">    :math:`-\boldsymbol{f}` acts on the facet, distributed over its nodes with the weights :math:`w_a` (transformed by</span>
-<span class="sd">    the facet's weight transform, if the surface element generator gave it one). Both the shape functions and the</span>
-<span class="sd">    weights sum to one, so the two forces are equal and opposite, and the contact exchanges momentum without creating</span>
-<span class="sd">    any. ``penaltyParameter`` :math:`k` is a force per unit penetration of one contact point, as in the other penalty</span>
+<span class="sd">    the facet's weight transform, if the surface element generator gave it one). Either vector and the weights sum</span>
+<span class="sd">    to one, so the two forces are equal and opposite, and the contact exchanges momentum without creating any.</span>
+<span class="sd">    ``penaltyParameter`` :math:`k` is a force per unit penetration of one contact point, as in the other penalty</span>
 <span class="sd">    contacts of the particles (e.g.</span>
 <span class="sd">    :class:`~edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit.ParticlePenaltyCartesianBoundaryConstraintExplicit`);</span>
 <span class="sd">    EdelweissFE's node-to-surface contact takes a penalty per unit area instead, which is :math:`k` divided by the</span>
@@ -210,6 +216,11 @@
 <span class="sd">    entryDepthWarningFraction</span>
 <span class="sd">        The fraction of the search distance beyond which the depth at which a point enters contact is reported: a</span>
 <span class="sd">        point that enters that deep has almost outrun the search.</span>
+<span class="sd">    interpolationLinearizedAboutCenter</span>
+<span class="sd">        False (default): measure the field at the point and distribute the force there with the shape functions at</span>
+<span class="sd">        the point, N. True: with the particle's interpolation linearized about its center, G, with which the particle</span>
+<span class="sd">        moves its own points (symmetric and conservative). See</span>
+<span class="sd">        :meth:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.interpolationVectorAtPointOf`.</span>
 <span class="sd">    """</span>
 
     <span class="c1">#: The pairing a point carries from one increment to the next: its state and its paired facet. The weights follow</span>
@@ -230,8 +241,10 @@
         <span class="n">journal</span><span class="p">,</span>
         <span class="n">twoWayCoupling</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">entryDepthWarningFraction</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
+        <span class="n">interpolationLinearizedAboutCenter</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interpolationLinearizedAboutCenter</span> <span class="o">=</span> <span class="n">interpolationLinearizedAboutCenter</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_model</span> <span class="o">=</span> <span class="n">model</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_journal</span> <span class="o">=</span> <span class="n">journal</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_domainSize</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">domainSize</span>
@@ -550,10 +563,12 @@
             <span class="n">force</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_penaltyParameter</span> <span class="o">*</span> <span class="n">gap</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">normalOfFacet</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
 
             <span class="n">particleIndex</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_particleOfPoint</span><span class="p">[</span><span class="n">point</span><span class="p">]</span>
-            <span class="n">N</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_particles</span><span class="p">[</span><span class="n">particleIndex</span><span class="p">]</span><span class="o">.</span><span class="n">getInterpolationVector</span><span class="p">(</span><span class="n">coordinatesOfPoint</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+            <span class="n">interpolation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolationVectorAtPointOf</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_particles</span><span class="p">[</span><span class="n">particleIndex</span><span class="p">],</span> <span class="n">coordinatesOfPoint</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
             <span class="c1"># the kernel functions of a particle are on distinct nodes, so fancy indexing does not drop any</span>
-            <span class="n">PAtNodes</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_localNodesOfParticle</span><span class="p">[</span><span class="n">particleIndex</span><span class="p">]]</span> <span class="o">-=</span> <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">force</span><span class="p">)</span>
-            <span class="n">forceOnParticles</span> <span class="o">+=</span> <span class="n">N</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">*</span> <span class="n">force</span>
+            <span class="n">PAtNodes</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_localNodesOfParticle</span><span class="p">[</span><span class="n">particleIndex</span><span class="p">]]</span> <span class="o">-=</span> <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">interpolation</span><span class="p">,</span> <span class="n">force</span><span class="p">)</span>
+            <span class="n">forceOnParticles</span> <span class="o">+=</span> <span class="n">interpolation</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">*</span> <span class="n">force</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_twoWayCoupling</span><span class="p">:</span>
                 <span class="n">facet</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_facets</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_pairedFacetOfPoint</span><span class="p">[</span><span class="n">point</span><span class="p">]]</span>

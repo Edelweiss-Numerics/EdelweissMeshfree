@@ -10,7 +10,7 @@ The model:
 
 - **Projectile**: a steel cube of 50 mm, ``C3D20RUL`` (quadratic updated-Lagrangian hexahedra), ``VONMISES/HUGHES-WINGET``,
   300 m/s towards the slab, free.
-- **Slab**: 1000 x 1000 x 100 mm, ``GradientEnhanced6FiniteStrainSQCNIxNSNI/3D/Hexa`` particles of GM7 at finite
+- **Slab**: 600 x 600 x 100 mm, ``GradientEnhanced6FiniteStrainSQCNIxNSNI/3D/Hexa`` particles of GM7 at finite
   strains (``GM7/COROTATIONAL``), held at its edges.
 - **Contact**: the vertices of the slab particles near the impact against the faceted surface of the cube,
   :class:`~edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit`.
@@ -79,7 +79,7 @@ symmetric``), on kernel functions matched to the particles:
                                      0.0, approximation, material)
 
     generateBoxHexaParticleGrid(model, journal, particleFactory, name="slab", x0=0.0, y0=0.0, z0=-100.0,
-                                l=500.0, h=500.0, t=100.0, nX=35, nY=35, nZ=7)
+                                l=300.0, h=300.0, t=100.0, nX=21, nY=21, nZ=7)
     generateKernelMatchingToParticle(model, journal, kernelFunctionFactory, model.particleSets["slab_all"],
                                      supportScalingFactor=2.4)
 
@@ -107,21 +107,22 @@ vertices of a hexahedral particle on its faces are ``[0, 3, 4, 7]`` (x min), ``[
     # the symmetry plane x = 0: the normal component of the vertices on it
     model.constraints["symmetry_x"] = ParticlePenaltyWeakDirichlet(
         "symmetry_x", model, list(model.particleSets["slab_left"]), "displacement", {0: 0.0}, supportPenalty,
-        constrain=[0, 3, 4, 7])
+        constrain=[0, 3, 4, 7], interpolationLinearizedAboutCenter=True)
     # a supported edge: z and the normal component
     model.constraints["support_x"] = ParticlePenaltyWeakDirichlet(
         "support_x", model, list(model.particleSets["slab_right"]), "displacement", {0: 0.0, 2: 0.0},
-        supportPenalty, constrain=[1, 2, 5, 6])
+        supportPenalty, constrain=[1, 2, 5, 6], interpolationLinearizedAboutCenter=True)
 
-.. warning::
-
-    A vertex moves with the particle's own deformation (its centre displacement and its smoothed deformation
-    gradient), but the constraint distributes the force at the vertex with the shape functions there. The two differ
-    for any nodal pattern that is not linear, so the support's stiffness is unsymmetric and does work over a closed
-    cycle: once the concrete next to it has lost its stiffness, it can feed a growing mode. The production slab of this
-    model blew up this way, whatever the time increment; supports held at the particle centres did not. Until the
-    constraint moves its points with the shape functions it distributes the force with, check the kinetic energy
-    against the initial one (see below).
+A vertex moves with the particle's own deformation, its centre displacement and its smoothed deformation gradient:
+by :math:`\sum_I G_I \Delta\boldsymbol{U}_I` in an increment, with the particle's shape functions linearized about its
+centre :math:`G_I`
+(:meth:`~edelweissmeshfree.particles.base.baseparticle.BaseParticle.getInterpolationVectorLinearizedAboutCenter`),
+not with the shape functions at the vertex. With ``interpolationLinearizedAboutCenter=True`` the support (and the
+contact below) distributes its force with the same :math:`G_I`, the transpose of the vertex motion: its penalty
+stiffness is symmetric and it does no work over a closed cycle of motion
+(``edelweissmeshfree/constraints/test/vertexpenaltywork_test.py``). The default distributes the force with the shape
+functions at the vertex, which is not conservative: it feeds energy into the particles at the supports, and a crushed,
+soft particle there blows up, whatever the time increment. This model therefore opts in everywhere.
 
 Constrain the vertices, not the centres: the centres lie half a particle off the plane and move with Poisson's
 effect. The support penalty must be stiff against the material next to it, or the plane gives way and springs back
@@ -134,7 +135,8 @@ The contact
 .. code-block:: python
 
     contact = ParticlePenaltyFacetContactExplicit(
-        "contact", model, particlesNearTheImpact, facets, penaltyParameter, searchDistance, journal)
+        "contact", model, particlesNearTheImpact, facets, penaltyParameter, searchDistance, journal,
+        interpolationLinearizedAboutCenter=True)
     model.constraints["contact"] = contact
 
 The contact points are the vertices of the given particles (only those the projectile can reach: every point is
@@ -214,8 +216,19 @@ a tenfold penalty range by about half a millimetre, the size of the change of th
 about a tenth of the search distance and no point was found inside; the quarter model followed the whole one to a few
 tenths of a millimetre. A run resumed from a checkpoint after an interruption followed the uninterrupted one.
 
-Two findings matter more than any of these. The bound of the particles' stable time increment, taken whenever the
-connectivity changes, was most of the cost of an increment while it evaluated every particle's tangent; the particles
-now bound the row sums of their absolute stiffness node by node, at a small share of an increment. And the
-response depends on the particle size more than on the time increment, the penalty or the symmetry: with GM7's internal
-length well below the particle size, the softening concrete is resolved by the particles, not by the nonlocal strain.
+One finding matters more than any of these: the response depends on the particle size more than on the time
+increment, the penalty or the symmetry. With GM7's internal length well below the particle size, the softening
+concrete is resolved by the particles, not by the nonlocal strain.
+
+What the run shows
+------------------
+
+The quarter model (3087 particles) ran until the nose reached the stop depth of 40 mm at
+333 us, with the time increment set by the projectile's elements throughout. The checks held over the whole run: the
+kinetic energy never exceeded the initial one, action and reaction cancelled to round-off, the projectile's momentum
+followed the contact impulse to round-off, and no point was found inside. The projectile slowed from 300 to 148 m/s in
+the first 100 us and to 57 m/s at the stop; the contact force averaged over 5 us peaked at 3.3 MN after 20 to 25 us
+(the first touch, a few points at full speed, is a spike set by the penalty). At the stop, about two fifths of the
+particles had cracked, through the whole thickness and out to the supported edges, and the most crushed ones were under
+the nose and in the rear layer. The result depends on the particle size (see above), which the regularization of GM7
+does not remove at this size.

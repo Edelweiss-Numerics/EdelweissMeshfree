@@ -92,7 +92,10 @@
 
 <span class="sd">    **In an implicit analysis**, it penalizes the difference between the increment of the field at the constrained</span>
 <span class="sd">    points, :math:`\boldsymbol{N} \cdot \Delta\boldsymbol{U}`, and the prescribed increment, the change of</span>
-<span class="sd">    ``prescribedStepDelta`` times ``f_t`` over the increment.</span>
+<span class="sd">    ``prescribedStepDelta`` times ``f_t`` over the increment. The same vector measures the increment and distributes the</span>
+<span class="sd">    force, so the stiffness is symmetric: the shape functions at the point, :math:`\boldsymbol{N}` (the default), or,</span>
+<span class="sd">    with ``interpolationLinearizedAboutCenter``, the particle's interpolation linearized about its center,</span>
+<span class="sd">    :math:`\boldsymbol{G}`, its own view of the point.</span>
 
 <span class="sd">    **In an explicit analysis**, the nodes of the kernel functions carry no increment to constrain: the particles have</span>
 <span class="sd">    moved when the constraints are evaluated. There the constraint holds displacement components at zero, as a</span>
@@ -104,8 +107,16 @@
 <span class="sd">        f_i = -k \left( x_i - X_i \right)</span>
 
 <span class="sd">    for every constrained component :math:`i`, with :math:`\boldsymbol{X}` the position of the point when the</span>
-<span class="sd">    constraint was created, and the particle distributes it over the nodes of its kernel functions with its shape</span>
-<span class="sd">    functions at the point. The force acts on both sides of :math:`X_i`. It acts in an explicit analysis</span>
+<span class="sd">    constraint was created. The point (the center or a vertex of the particle) is where the particle has put it: it</span>
+<span class="sd">    moves with the particle, in an increment by :math:`\boldsymbol{G} \cdot \Delta\boldsymbol{U}`. By default the</span>
+<span class="sd">    force is distributed over the nodes of the kernel functions with the shape functions at the point,</span>
+<span class="sd">    :math:`\boldsymbol{N}`, which away from the center is not :math:`\boldsymbol{G}`: the penalty stiffness</span>
+<span class="sd">    :math:`k\,\boldsymbol{N}\boldsymbol{G}^\mathsf{T}` is unsymmetric, does work over a closed cycle of motion, and can</span>
+<span class="sd">    feed energy into the material next to the support once that has softened. With</span>
+<span class="sd">    ``interpolationLinearizedAboutCenter`` it is distributed with :math:`\boldsymbol{G}`, the transpose of the point's</span>
+<span class="sd">    motion: the stiffness :math:`k\,\boldsymbol{G}\boldsymbol{G}^\mathsf{T}` is symmetric and the support conservative</span>
+<span class="sd">    (:meth:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.interpolationVectorAtPointOf`).</span>
+<span class="sd">    The force acts on both sides of :math:`X_i`. It acts in an explicit analysis</span>
 <span class="sd">    (:attr:`actsInExplicitAnalysis`) only if it constrains the displacement and every prescribed change is zero: an</span>
 <span class="sd">    explicit analysis prescribes motion through velocities, not through penalized displacements.</span>
 
@@ -132,6 +143,11 @@
 <span class="sd">        Either constrain the center of the particle or a list of vertex indices for particles with multiple vertices.</span>
 <span class="sd">        If "center", the center of the particle is constrained. If a list, the vertices at the given indices are</span>
 <span class="sd">        constrained; it must name at least one vertex.</span>
+<span class="sd">    interpolationLinearizedAboutCenter</span>
+<span class="sd">        False (default): measure the field at the point and distribute the force there with the shape functions at</span>
+<span class="sd">        the point, N. True: with the particle's interpolation linearized about its center, G, with which the particle</span>
+<span class="sd">        moves its own points (symmetric and conservative). See</span>
+<span class="sd">        :meth:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.interpolationVectorAtPointOf`.</span>
 <span class="sd">    """</span>
 
     <span class="c1">#: Carries nothing from one increment to the next: the positions the points are held at in an explicit analysis</span>
@@ -147,9 +163,11 @@
         <span class="n">prescribedStepDelta</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
         <span class="n">penaltyParameter</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
         <span class="n">constrain</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"center"</span><span class="p">,</span>
+        <span class="n">interpolationLinearizedAboutCenter</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interpolationLinearizedAboutCenter</span> <span class="o">=</span> <span class="n">interpolationLinearizedAboutCenter</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_model</span> <span class="o">=</span> <span class="n">model</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_constrainedParticles</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">constrainedParticles</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_field</span> <span class="o">=</span> <span class="n">field</span>
@@ -265,14 +283,14 @@
             <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constrainedParticles</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">constrainedCoordinate</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constrainedCoordinatesOf</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
 
-                    <span class="n">N</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">getInterpolationVector</span><span class="p">(</span><span class="n">constrainedCoordinate</span><span class="p">)</span>
+                    <span class="n">interpolation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolationVectorAtPointOf</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">constrainedCoordinate</span><span class="p">)</span>
 
                     <span class="n">nodeIdcs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="p">[</span><span class="n">kf</span><span class="o">.</span><span class="n">node</span><span class="p">]</span> <span class="k">for</span> <span class="n">kf</span> <span class="ow">in</span> <span class="n">p</span><span class="o">.</span><span class="n">kernelFunctions</span><span class="p">]</span>
 
-                    <span class="n">mpValue</span> <span class="o">=</span> <span class="n">N</span> <span class="o">@</span> <span class="n">dU_j</span><span class="p">[</span><span class="n">nodeIdcs</span><span class="p">]</span>
+                    <span class="n">mpValue</span> <span class="o">=</span> <span class="n">interpolation</span> <span class="o">@</span> <span class="n">dU_j</span><span class="p">[</span><span class="n">nodeIdcs</span><span class="p">]</span>
 
                     <span class="n">P_i</span><span class="p">[</span><span class="n">nodeIdcs</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span>
-                        <span class="n">N</span>
+                        <span class="n">interpolation</span>
                         <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_penaltyParameter</span>
                         <span class="o">*</span> <span class="p">(</span>
                             <span class="n">mpValue</span>
@@ -283,7 +301,7 @@
                             <span class="p">)</span>
                         <span class="p">)</span>
                     <span class="p">)</span>
-                    <span class="n">K_ij</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="n">nodeIdcs</span><span class="p">,</span> <span class="n">nodeIdcs</span><span class="p">)]</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_penaltyParameter</span>
+                    <span class="n">K_ij</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="n">nodeIdcs</span><span class="p">,</span> <span class="n">nodeIdcs</span><span class="p">)]</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">interpolation</span><span class="p">,</span> <span class="n">interpolation</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_penaltyParameter</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">penaltyForce</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">P_i</span><span class="p">)</span></div>
 
@@ -311,11 +329,11 @@
             <span class="n">nodeIdcs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="p">[</span><span class="n">kf</span><span class="o">.</span><span class="n">node</span><span class="p">]</span> <span class="k">for</span> <span class="n">kf</span> <span class="ow">in</span> <span class="n">p</span><span class="o">.</span><span class="n">kernelFunctions</span><span class="p">]</span>
 
             <span class="k">for</span> <span class="n">constrainedCoordinate</span><span class="p">,</span> <span class="n">initialCoordinate</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_constrainedCoordinatesOf</span><span class="p">(</span><span class="n">p</span><span class="p">),</span> <span class="n">initialCoordinates</span><span class="p">):</span>
-                <span class="n">N</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">getInterpolationVector</span><span class="p">(</span><span class="n">constrainedCoordinate</span><span class="p">)</span>
+                <span class="n">interpolation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolationVectorAtPointOf</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">constrainedCoordinate</span><span class="p">)</span>
 
                 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prescribedStepDelta</span><span class="p">:</span>
                     <span class="n">P</span><span class="p">[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">][</span><span class="n">nodeIdcs</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span>
-                        <span class="n">N</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_penaltyParameter</span> <span class="o">*</span> <span class="p">(</span><span class="n">constrainedCoordinate</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">initialCoordinate</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                        <span class="n">interpolation</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_penaltyParameter</span> <span class="o">*</span> <span class="p">(</span><span class="n">constrainedCoordinate</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">initialCoordinate</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
                     <span class="p">)</span>
 
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prescribedStepDelta</span><span class="p">:</span>

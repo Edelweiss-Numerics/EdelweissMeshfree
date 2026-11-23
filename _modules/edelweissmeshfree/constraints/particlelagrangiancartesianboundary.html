@@ -107,8 +107,13 @@
 <span class="sd">    The orientation is determined based on the initial position of the particle relative to the boundary.</span>
 
 <span class="sd">    The particle interpolates its displacement from the nodes of its kernel functions, as an increment on the current</span>
-<span class="sd">    configuration, so the gap is measured with the increment :math:`\boldsymbol{N} \cdot \Delta\mathbf{U}_j` of the</span>
-<span class="sd">    constrained component :math:`j` from the position at the start of the increment. While the particle is in contact,</span>
+<span class="sd">    configuration, so the gap is measured with the increment :math:`\boldsymbol{I} \cdot \Delta\mathbf{U}_j` of the</span>
+<span class="sd">    constrained component :math:`j` from the position at the start of the increment, where :math:`\boldsymbol{I}` is</span>
+<span class="sd">    the shape functions at the point, :math:`\boldsymbol{N}` (the default), or, with</span>
+<span class="sd">    ``interpolationLinearizedAboutCenter``, the particle's interpolation linearized about its center,</span>
+<span class="sd">    :math:`\boldsymbol{G}`, with which it moves the point</span>
+<span class="sd">    (:meth:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.interpolationVectorAtPointOf`).</span>
+<span class="sd">    While the particle is in contact,</span>
 <span class="sd">    a multiplier :math:`\lambda` enforces :math:`g = 0`, and the constraint adds</span>
 
 <span class="sd">    .. math::</span>
@@ -118,7 +123,7 @@
 <span class="sd">        \mathbf{K}_{U_j \lambda} \mathrel{+}= \frac{\partial g}{\partial \Delta\mathbf{U}_j}, \qquad</span>
 <span class="sd">        \mathbf{K}_{\lambda U_j} \mathrel{+}= \frac{\partial g}{\partial \Delta\mathbf{U}_j}^T,</span>
 
-<span class="sd">    with :math:`\partial g / \partial \Delta\mathbf{U}_j = \boldsymbol{n}_j \boldsymbol{N}`. The multiplier is the</span>
+<span class="sd">    with :math:`\partial g / \partial \Delta\mathbf{U}_j = \boldsymbol{n}_j \boldsymbol{I}`. The multiplier is the</span>
 <span class="sd">    contact force, positive in compression. A particle that does not penetrate the boundary, or whose multiplier would</span>
 <span class="sd">    pull it towards the boundary, is out of contact: the constraint then adds :math:`P_{\lambda} \mathrel{+}= \lambda`</span>
 <span class="sd">    and :math:`K_{\lambda\lambda} \mathrel{+}= 1`, which holds the multiplier at zero.</span>
@@ -148,6 +153,11 @@
 <span class="sd">        The vertex if location is "vertex".</span>
 <span class="sd">    velocity</span>
 <span class="sd">        The velocity of the boundary along the constrained component.</span>
+<span class="sd">    interpolationLinearizedAboutCenter</span>
+<span class="sd">        False (default): measure the field at the point and distribute the force there with the shape functions at</span>
+<span class="sd">        the point, N. True: with the particle's interpolation linearized about its center, G, with which the particle</span>
+<span class="sd">        moves its own points (symmetric and conservative). See</span>
+<span class="sd">        :meth:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.interpolationVectorAtPointOf`.</span>
 <span class="sd">    """</span>
 
     <span class="c1">#: The multiplier is a scalar variable of the model, which the model's checkpoint holds.</span>
@@ -164,8 +174,10 @@
         <span class="n">faceID</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">vertexID</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">velocity</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">interpolationLinearizedAboutCenter</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interpolationLinearizedAboutCenter</span> <span class="o">=</span> <span class="n">interpolationLinearizedAboutCenter</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_field</span> <span class="o">=</span> <span class="s2">"displacement"</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span> <span class="o">=</span> <span class="n">getFieldSize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_field</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">domainSize</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
@@ -291,11 +303,11 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">reactionForce</span> <span class="o">=</span> <span class="n">multiplier</span>
 
-        <span class="n">N</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_particle</span><span class="o">.</span><span class="n">getInterpolationVector</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_getConstraintLocation</span><span class="p">())</span>
+        <span class="n">interpolation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolationVectorAtPointOf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_particle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getConstraintLocation</span><span class="p">())</span>
 
         <span class="n">nodeIdcs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="p">[</span><span class="n">kf</span><span class="o">.</span><span class="n">node</span><span class="p">]</span> <span class="k">for</span> <span class="n">kf</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_particle</span><span class="o">.</span><span class="n">kernelFunctions</span><span class="p">]</span>
 
-        <span class="n">deltaU_j</span> <span class="o">=</span> <span class="n">N</span> <span class="o">@</span> <span class="n">dU_U_j</span><span class="p">[</span><span class="n">nodeIdcs</span><span class="p">]</span>
+        <span class="n">deltaU_j</span> <span class="o">=</span> <span class="n">interpolation</span> <span class="o">@</span> <span class="n">dU_U_j</span><span class="p">[</span><span class="n">nodeIdcs</span><span class="p">]</span>
 
         <span class="n">g</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_orientation</span> <span class="o">*</span> <span class="p">(</span>
             <span class="n">deltaU_j</span> <span class="o">-</span> <span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_particle_coordinate_j</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_boundaryPosition</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_velocity</span> <span class="o">*</span> <span class="n">timeStep</span><span class="o">.</span><span class="n">stepProgress</span><span class="p">)</span>
@@ -315,7 +327,7 @@
 
             <span class="k">return</span>
 
-        <span class="n">dg_dU_j</span> <span class="o">=</span> <span class="n">N</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_orientation</span>
+        <span class="n">dg_dU_j</span> <span class="o">=</span> <span class="n">interpolation</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_orientation</span>
 
         <span class="n">P_U_j</span><span class="p">[</span><span class="n">nodeIdcs</span><span class="p">]</span> <span class="o">+=</span> <span class="n">multiplier</span> <span class="o">*</span> <span class="n">dg_dU_j</span>
         <span class="n">P_L</span><span class="p">[</span><span class="n">lag</span><span class="p">]</span> <span class="o">+=</span> <span class="n">g</span>
@@ -340,6 +352,7 @@
     <span class="n">location</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"center"</span><span class="p">,</span>
     <span class="n">faceID</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">vertexID</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">interpolationLinearizedAboutCenter</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Factory function to create ParticleLagrangianWeakDirichlet constraints on a collection of particles.</span>
@@ -364,6 +377,9 @@
 <span class="sd">        The face ID if location is "face" and if particleCollection is not an EntityBasedSurface.</span>
 <span class="sd">    vertexID</span>
 <span class="sd">        The vertex ID if location is "vertex".</span>
+<span class="sd">    interpolationLinearizedAboutCenter</span>
+<span class="sd">        Passed to every constraint: False (default) the shape functions at the point, N; True the particle's</span>
+<span class="sd">        interpolation linearized about its center, G.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -378,7 +394,14 @@
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">particles</span><span class="p">):</span>
                 <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">baseName</span><span class="si">}</span><span class="s2">_face</span><span class="si">{</span><span class="n">faceID</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">"</span>
                 <span class="n">constraint</span> <span class="o">=</span> <span class="n">ParticleLagrangianContactCartesianBoundaryConstraint</span><span class="p">(</span>
-                    <span class="n">name</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">component</span><span class="p">,</span> <span class="n">boundaryPosition</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="s2">"face"</span><span class="p">,</span> <span class="n">faceID</span><span class="o">=</span><span class="n">faceID</span>
+                    <span class="n">name</span><span class="p">,</span>
+                    <span class="n">p</span><span class="p">,</span>
+                    <span class="n">component</span><span class="p">,</span>
+                    <span class="n">boundaryPosition</span><span class="p">,</span>
+                    <span class="n">model</span><span class="p">,</span>
+                    <span class="n">location</span><span class="o">=</span><span class="s2">"face"</span><span class="p">,</span>
+                    <span class="n">faceID</span><span class="o">=</span><span class="n">faceID</span><span class="p">,</span>
+                    <span class="n">interpolationLinearizedAboutCenter</span><span class="o">=</span><span class="n">interpolationLinearizedAboutCenter</span><span class="p">,</span>
                 <span class="p">)</span>
                 <span class="n">constraints</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">constraint</span>
         <span class="k">return</span> <span class="n">constraints</span>
@@ -388,7 +411,15 @@
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">particleCollection</span><span class="p">):</span>
             <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">baseName</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">"</span>
             <span class="n">constraint</span> <span class="o">=</span> <span class="n">ParticleLagrangianContactCartesianBoundaryConstraint</span><span class="p">(</span>
-                <span class="n">name</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">component</span><span class="p">,</span> <span class="n">boundaryPosition</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">location</span><span class="p">,</span> <span class="n">faceID</span><span class="p">,</span> <span class="n">vertexID</span>
+                <span class="n">name</span><span class="p">,</span>
+                <span class="n">p</span><span class="p">,</span>
+                <span class="n">component</span><span class="p">,</span>
+                <span class="n">boundaryPosition</span><span class="p">,</span>
+                <span class="n">model</span><span class="p">,</span>
+                <span class="n">location</span><span class="p">,</span>
+                <span class="n">faceID</span><span class="p">,</span>
+                <span class="n">vertexID</span><span class="p">,</span>
+                <span class="n">interpolationLinearizedAboutCenter</span><span class="o">=</span><span class="n">interpolationLinearizedAboutCenter</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="n">constraints</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">constraint</span>
 

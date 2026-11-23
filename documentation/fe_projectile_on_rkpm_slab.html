@@ -66,6 +66,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#the-time-increment">The time increment</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#running-it">Running it</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#what-to-check">What to check</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#what-the-run-shows">What the run shows</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="assembly.html">System matrix assembly</a></li>
@@ -121,7 +122,7 @@ must be checked before a result of such a run means anything.</p>
 <ul class="simple">
 <li><p><strong>Projectile</strong>: a steel cube of 50 mm, <code class="docutils literal notranslate"><span class="pre">C3D20RUL</span></code> (quadratic updated-Lagrangian hexahedra), <code class="docutils literal notranslate"><span class="pre">VONMISES/HUGHES-WINGET</span></code>,
 300 m/s towards the slab, free.</p></li>
-<li><p><strong>Slab</strong>: 1000 x 1000 x 100 mm, <code class="docutils literal notranslate"><span class="pre">GradientEnhanced6FiniteStrainSQCNIxNSNI/3D/Hexa</span></code> particles of GM7 at finite
+<li><p><strong>Slab</strong>: 600 x 600 x 100 mm, <code class="docutils literal notranslate"><span class="pre">GradientEnhanced6FiniteStrainSQCNIxNSNI/3D/Hexa</span></code> particles of GM7 at finite
 strains (<code class="docutils literal notranslate"><span class="pre">GM7/COROTATIONAL</span></code>), held at its edges.</p></li>
 <li><p><strong>Contact</strong>: the vertices of the slab particles near the impact against the faceted surface of the cube,
 <a class="reference internal" href="constraints.html#edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit" title="edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit"><code class="xref py py-class docutils literal notranslate"><span class="pre">ParticlePenaltyFacetContactExplicit</span></code></a>.</p></li>
@@ -179,7 +180,7 @@ passes its reaction at a point of a facet to these three nodes, with the weights
                                  <span class="mf">0.0</span><span class="p">,</span> <span class="n">approximation</span><span class="p">,</span> <span class="n">material</span><span class="p">)</span>
 
 <span class="n">generateBoxHexaParticleGrid</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">journal</span><span class="p">,</span> <span class="n">particleFactory</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"slab"</span><span class="p">,</span> <span class="n">x0</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">y0</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">z0</span><span class="o">=-</span><span class="mf">100.0</span><span class="p">,</span>
-                            <span class="n">l</span><span class="o">=</span><span class="mf">500.0</span><span class="p">,</span> <span class="n">h</span><span class="o">=</span><span class="mf">500.0</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="mf">100.0</span><span class="p">,</span> <span class="n">nX</span><span class="o">=</span><span class="mi">35</span><span class="p">,</span> <span class="n">nY</span><span class="o">=</span><span class="mi">35</span><span class="p">,</span> <span class="n">nZ</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
+                            <span class="n">l</span><span class="o">=</span><span class="mf">300.0</span><span class="p">,</span> <span class="n">h</span><span class="o">=</span><span class="mf">300.0</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="mf">100.0</span><span class="p">,</span> <span class="n">nX</span><span class="o">=</span><span class="mi">21</span><span class="p">,</span> <span class="n">nY</span><span class="o">=</span><span class="mi">21</span><span class="p">,</span> <span class="n">nZ</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
 <span class="n">generateKernelMatchingToParticle</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">journal</span><span class="p">,</span> <span class="n">kernelFunctionFactory</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">particleSets</span><span class="p">[</span><span class="s2">"slab_all"</span><span class="p">],</span>
                                  <span class="n">supportScalingFactor</span><span class="o">=</span><span class="mf">2.4</span><span class="p">)</span>
 </pre></div>
@@ -204,23 +205,23 @@ vertices of a hexahedral particle on its faces are <code class="docutils literal
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># the symmetry plane x = 0: the normal component of the vertices on it</span>
 <span class="n">model</span><span class="o">.</span><span class="n">constraints</span><span class="p">[</span><span class="s2">"symmetry_x"</span><span class="p">]</span> <span class="o">=</span> <span class="n">ParticlePenaltyWeakDirichlet</span><span class="p">(</span>
     <span class="s2">"symmetry_x"</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">particleSets</span><span class="p">[</span><span class="s2">"slab_left"</span><span class="p">]),</span> <span class="s2">"displacement"</span><span class="p">,</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">},</span> <span class="n">supportPenalty</span><span class="p">,</span>
-    <span class="n">constrain</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">7</span><span class="p">])</span>
+    <span class="n">constrain</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">7</span><span class="p">],</span> <span class="n">interpolationLinearizedAboutCenter</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="c1"># a supported edge: z and the normal component</span>
 <span class="n">model</span><span class="o">.</span><span class="n">constraints</span><span class="p">[</span><span class="s2">"support_x"</span><span class="p">]</span> <span class="o">=</span> <span class="n">ParticlePenaltyWeakDirichlet</span><span class="p">(</span>
     <span class="s2">"support_x"</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">particleSets</span><span class="p">[</span><span class="s2">"slab_right"</span><span class="p">]),</span> <span class="s2">"displacement"</span><span class="p">,</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">},</span>
-    <span class="n">supportPenalty</span><span class="p">,</span> <span class="n">constrain</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">])</span>
+    <span class="n">supportPenalty</span><span class="p">,</span> <span class="n">constrain</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">],</span> <span class="n">interpolationLinearizedAboutCenter</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>A vertex moves with the particle’s own deformation (its centre displacement and its smoothed deformation
-gradient), but the constraint distributes the force at the vertex with the shape functions there. The two differ
-for any nodal pattern that is not linear, so the support’s stiffness is unsymmetric and does work over a closed
-cycle: once the concrete next to it has lost its stiffness, it can feed a growing mode. The production slab of this
-model blew up this way, whatever the time increment; supports held at the particle centres did not. Until the
-constraint moves its points with the shape functions it distributes the force with, check the kinetic energy
-against the initial one (see below).</p>
-</div>
+<p>A vertex moves with the particle’s own deformation, its centre displacement and its smoothed deformation gradient:
+by <span class="math notranslate nohighlight">\(\sum_I G_I \Delta\boldsymbol{U}_I\)</span> in an increment, with the particle’s shape functions linearized about its
+centre <span class="math notranslate nohighlight">\(G_I\)</span>
+(<a class="reference internal" href="particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getInterpolationVectorLinearizedAboutCenter" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.getInterpolationVectorLinearizedAboutCenter"><code class="xref py py-meth docutils literal notranslate"><span class="pre">getInterpolationVectorLinearizedAboutCenter()</span></code></a>),
+not with the shape functions at the vertex. With <code class="docutils literal notranslate"><span class="pre">interpolationLinearizedAboutCenter=True</span></code> the support (and the
+contact below) distributes its force with the same <span class="math notranslate nohighlight">\(G_I\)</span>, the transpose of the vertex motion: its penalty
+stiffness is symmetric and it does no work over a closed cycle of motion
+(<code class="docutils literal notranslate"><span class="pre">edelweissmeshfree/constraints/test/vertexpenaltywork_test.py</span></code>). The default distributes the force with the shape
+functions at the vertex, which is not conservative: it feeds energy into the particles at the supports, and a crushed,
+soft particle there blows up, whatever the time increment. This model therefore opts in everywhere.</p>
 <p>Constrain the vertices, not the centres: the centres lie half a particle off the plane and move with Poisson’s
 effect. The support penalty must be stiff against the material next to it, or the plane gives way and springs back
 (example 186), and below the limit <span class="math notranslate nohighlight">\(2\sqrt{m/k}\)</span> of the time increment. The projectile’s nodes on the symmetry
@@ -229,7 +230,8 @@ planes are held by ordinary Dirichlet conditions (<code class="docutils literal 
 <section id="the-contact">
 <h2>The contact<a class="headerlink" href="#the-contact" title="Link to this heading"></a></h2>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">contact</span> <span class="o">=</span> <span class="n">ParticlePenaltyFacetContactExplicit</span><span class="p">(</span>
-    <span class="s2">"contact"</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">particlesNearTheImpact</span><span class="p">,</span> <span class="n">facets</span><span class="p">,</span> <span class="n">penaltyParameter</span><span class="p">,</span> <span class="n">searchDistance</span><span class="p">,</span> <span class="n">journal</span><span class="p">)</span>
+    <span class="s2">"contact"</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">particlesNearTheImpact</span><span class="p">,</span> <span class="n">facets</span><span class="p">,</span> <span class="n">penaltyParameter</span><span class="p">,</span> <span class="n">searchDistance</span><span class="p">,</span> <span class="n">journal</span><span class="p">,</span>
+    <span class="n">interpolationLinearizedAboutCenter</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">model</span><span class="o">.</span><span class="n">constraints</span><span class="p">[</span><span class="s2">"contact"</span><span class="p">]</span> <span class="o">=</span> <span class="n">contact</span>
 </pre></div>
 </div>
@@ -306,11 +308,21 @@ contact impulse to round-off; halving the time increment changed the penetration
 a tenfold penalty range by about half a millimetre, the size of the change of the overlap; the deepest overlap was
 about a tenth of the search distance and no point was found inside; the quarter model followed the whole one to a few
 tenths of a millimetre. A run resumed from a checkpoint after an interruption followed the uninterrupted one.</p>
-<p>Two findings matter more than any of these. The bound of the particles’ stable time increment, taken whenever the
-connectivity changes, was most of the cost of an increment while it evaluated every particle’s tangent; the particles
-now bound the row sums of their absolute stiffness node by node, at a small share of an increment. And the
-response depends on the particle size more than on the time increment, the penalty or the symmetry: with GM7’s internal
-length well below the particle size, the softening concrete is resolved by the particles, not by the nonlocal strain.</p>
+<p>One finding matters more than any of these: the response depends on the particle size more than on the time
+increment, the penalty or the symmetry. With GM7’s internal length well below the particle size, the softening
+concrete is resolved by the particles, not by the nonlocal strain.</p>
+</section>
+<section id="what-the-run-shows">
+<h2>What the run shows<a class="headerlink" href="#what-the-run-shows" title="Link to this heading"></a></h2>
+<p>The quarter model (3087 particles) ran until the nose reached the stop depth of 40 mm at
+333 us, with the time increment set by the projectile’s elements throughout. The checks held over the whole run: the
+kinetic energy never exceeded the initial one, action and reaction cancelled to round-off, the projectile’s momentum
+followed the contact impulse to round-off, and no point was found inside. The projectile slowed from 300 to 148 m/s in
+the first 100 us and to 57 m/s at the stop; the contact force averaged over 5 us peaked at 3.3 MN after 20 to 25 us
+(the first touch, a few points at full speed, is a spike set by the penalty). At the stop, about two fifths of the
+particles had cracked, through the whole thickness and out to the supported edges, and the most crushed ones were under
+the nose and in the rear layer. The result depends on the particle size (see above), which the regularization of GM7
+does not remove at this size.</p>
 </section>
 </section>
 
