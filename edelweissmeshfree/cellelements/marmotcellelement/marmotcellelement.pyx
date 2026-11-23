@@ -39,6 +39,7 @@ import numpy as np
 cimport cython
 cimport libcpp.cast
 cimport numpy as np
+from edelweissfe.utils.bufferlength cimport requireLength
 
 cimport edelweissmeshfree.cellelements.marmotcellelement.marmotcellelement
 
@@ -116,7 +117,14 @@ cdef class MarmotCellElementWrapper(MarmotCellWrapper):
         """Add the internal forces of the material points to the residual, and their tangent; see
         :meth:`edelweissmeshfree.cells.base.cell.CellBase.computeKernels`. Unlike a cell, a cell element deforms like
         an element, so Marmot gets the current solution, not its increment. A failure in Marmot requests a cutback,
-        as for an EdelweissFE element."""
+        as for an EdelweissFE element.
+
+        ``Kc`` has ``nDof * nDof`` entries, ``Pc`` and ``Uc`` have ``nDof``. A buffer of another length raises a
+        ``ValueError``."""
+
+        requireLength("computeKernels", "Kc", Kc.shape[0], self._nDof * self._nDof)
+        requireLength("computeKernels", "Pc", Pc.shape[0], self._nDof)
+        requireLength("computeKernels", "Uc", Uc.shape[0], self._nDof)
 
         try:
             with nogil:

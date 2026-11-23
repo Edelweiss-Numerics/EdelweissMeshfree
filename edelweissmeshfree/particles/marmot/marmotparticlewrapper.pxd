@@ -249,3 +249,5 @@ cdef class MarmotParticleWrapper:
     cpdef void _initializeStateVarsTemp(self, ) nogil
 
     cdef double[::1] getStateView(self, string stateName, int qp)
+
+    cdef int _requireVCIShape(self, str method, str name, double[:,:,::1] array, Py_ssize_t nRows) except -1

@@ -35,6 +35,7 @@ cimport numpy as np
 cimport edelweissmeshfree.particles.marmot.marmotparticlewrapper
 
 from edelweissfe.numerics.systemmatrixcontributor import denseBlockLocalEntries
+from edelweissfe.utils.bufferlength cimport requireLength
 from edelweissfe.utils.exceptions import CutbackRequest, ModuleNotBuilt
 
 from cython.operator cimport dereference
@@ -210,7 +211,15 @@ cdef class MarmotParticleWrapper:
         """Add the internal forces of the particle to the residual, and their tangent; see
         :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeKernels`. A particle is incremental,
         so Marmot gets the solution increment. A failure in Marmot, e.g. a material that cannot integrate the
-        increment, requests a cutback, as for an EdelweissFE element."""
+        increment, requests a cutback, as for an EdelweissFE element.
+
+        ``Kc`` has ``nDof * nDof`` entries, ``Pc`` and ``dUc`` have ``nDof``; ``nDof`` changes with every
+        reassignment of the kernel functions. A buffer of another length raises a ``ValueError``."""
+
+        cdef Py_ssize_t nDof = self.nDof
+        requireLength("computeKernels", "Kc", Kc.shape[0], nDof * nDof)
+        requireLength("computeKernels", "Pc", Pc.shape[0], nDof)
+        requireLength("computeKernels", "dUc", dUc.shape[0], nDof)
 
         self._initializeStateVarsTemp()
         try:
@@ -226,7 +235,9 @@ cdef class MarmotParticleWrapper:
                               double dTime, ):
         """Take the solution increment; see
         :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.updatePhysicsExplicit`. A failure in Marmot
-        requests a cutback, as in :meth:`computeKernels`."""
+        requests a cutback, as in :meth:`computeKernels`. ``dUc`` has ``nDof`` entries."""
+
+        requireLength("updatePhysicsExplicit", "dUc", dUc.shape[0], self.nDof)
 
         self._initializeStateVarsTemp()
         try:
@@ -237,14 +248,18 @@ cdef class MarmotParticleWrapper:
     def computePhysicsKernelsExplicit(self,
                                       double[::1] Pc ):
         """Add the internal force of the current state; see
-        :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.computePhysicsKernelsExplicit`."""
+        :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.computePhysicsKernelsExplicit`. ``Pc`` has
+        ``nDof`` entries."""
 
+        requireLength("computePhysicsKernelsExplicit", "Pc", Pc.shape[0], self.nDof)
         self._marmotParticle.computePhysicsKernelsExplicit(&Pc[0])
 
     def computeLumpedInertia(self, double[::1] mLumped ):
         """Add the lumped mass; see
-        :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedInertia`."""
+        :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedInertia`. ``mLumped`` has
+        ``nDof`` entries."""
 
+        requireLength("computeLumpedInertia", "mLumped", mLumped.shape[0], self.nDof)
         self._marmotParticle.computeLumpedInertia(&mLumped[0])
 
     @property
@@ -260,30 +275,39 @@ cdef class MarmotParticleWrapper:
 
     def computeLumpedMomentum(self, double[::1] mLumped ):
         """Add the lumped momentum; see
-        :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedMomentum`."""
+        :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedMomentum`. ``mLumped`` has
+        ``nDof`` entries."""
 
+        requireLength("computeLumpedMomentum", "mLumped", mLumped.shape[0], self.nDof)
         self._marmotParticle.computeLumpedMomentum(&mLumped[0])
 
     def computeLumpedDamping(self, double[::1] cLumped ):
         """Add the lumped damping; see
-        :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedDamping`."""
+        :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedDamping`. ``cLumped`` has
+        ``nDof`` entries."""
 
+        requireLength("computeLumpedDamping", "cLumped", cLumped.shape[0], self.nDof)
         self._marmotParticle.computeLumpedDamping(&cLumped[0])
 
     def assembleStiffness(self, double[::1] K):
         """Add the stiffness; see
         :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.assembleStiffness`: Marmot's assembling
         visitor of the stiffness the particle describes, which leaves the particle as it was found; over a unit time
-        increment at time zero."""
+        increment at time zero. ``K`` has ``nDof * nDof`` entries."""
 
+        requireLength("assembleStiffness", "K", K.shape[0], self.nDof * self.nDof)
         assembleStiffness(dereference(self._marmotParticle), &K[0], 0.0, 1.0)
 
     def addBoundOfAbsoluteStiffnessTimes(self, double[::1, :] W, double[::1, :] bound):
         """Add an upper bound of the absolute value of the stiffness times the weights; see
         :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.addBoundOfAbsoluteStiffnessTimes`: Marmot's
         visitor of the stiffness the particle describes, which leaves the particle as it was found; over a unit time
-        increment at time zero, as :meth:`assembleStiffness`."""
+        increment at time zero, as :meth:`assembleStiffness`. ``W`` and ``bound`` both have ``nDof`` rows and the
+        same number of columns."""
 
+        requireLength("addBoundOfAbsoluteStiffnessTimes", "W rows", W.shape[0], self.nDof)
+        requireLength("addBoundOfAbsoluteStiffnessTimes", "bound rows", bound.shape[0], self.nDof)
+        requireLength("addBoundOfAbsoluteStiffnessTimes", "bound columns", bound.shape[1], W.shape[1])
         addBoundOfAbsoluteStiffnessTimes(
             dereference(self._marmotParticle), &W[0, 0], W.shape[1], &bound[0, 0], 0.0, 1.0
         )
@@ -298,6 +322,13 @@ cdef class MarmotParticleWrapper:
                         double[::1] Kc,
                         double timeNew,
                         double dTime):
+        """Add a body load; see :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeBodyLoad`.
+        ``load`` has ``dimension`` entries, ``Pc`` has ``nDof`` and ``Kc`` has ``nDof * nDof``."""
+
+        cdef Py_ssize_t nDof = self.nDof
+        requireLength("computeBodyLoad", "load", load.shape[0], self._nDim)
+        requireLength("computeBodyLoad", "Pc", Pc.shape[0], nDof)
+        requireLength("computeBodyLoad", "Kc", Kc.shape[0], nDof * nDof)
 
         self._marmotParticle.computeBodyLoad( self._supportedBodyLoads[loadType.upper()], &load[0], &Pc[0], &Kc[0], timeNew, dTime)
 
@@ -309,10 +340,21 @@ cdef class MarmotParticleWrapper:
                                double[::1] Kc,
                                double timeNew,
                                double dTime):
+        """Add a distributed load; see
+        :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeDistributedLoad`. ``Pc`` has
+        ``nDof`` entries and ``Kc`` has ``nDof * nDof``. How many values ``load`` holds depends on the load type,
+        which only the Marmot particle knows, so it is not checked here."""
+
+        cdef Py_ssize_t nDof = self.nDof
+        requireLength("computeDistributedLoad", "Pc", Pc.shape[0], nDof)
+        requireLength("computeDistributedLoad", "Kc", Kc.shape[0], nDof * nDof)
 
         self._marmotParticle.computeDistributedLoad( self._supportedDistributedLoads[loadType.upper()], surfaceID, &load[0], &Pc[0], &Kc[0], timeNew, dTime)
 
     def getInterpolationVector(self, double[::1] coordinates) -> np.ndarray:
+        """The shape functions of the nodes at ``coordinates``, which has ``dimension`` entries."""
+
+        requireLength("getInterpolationVector", "coordinates", coordinates.shape[0], self._nDim)
         cdef np.ndarray N = np.zeros(len(self._nodes))
         cdef double[::1] Nview_ = N
         self._marmotParticle.getInterpolationVector(&Nview_[0], &coordinates[0])
@@ -320,8 +362,10 @@ cdef class MarmotParticleWrapper:
 
     def getInterpolationVectorLinearizedAboutCenter(self, double[::1] coordinates) -> np.ndarray:
         """The shape functions linearized about the center; see
-        :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.getInterpolationVectorLinearizedAboutCenter`."""
+        :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.getInterpolationVectorLinearizedAboutCenter`.
+        ``coordinates`` has ``dimension`` entries."""
 
+        requireLength("getInterpolationVectorLinearizedAboutCenter", "coordinates", coordinates.shape[0], self._nDim)
         cdef np.ndarray G = np.zeros(len(self._nodes))
         cdef double[::1] Gview_ = G
         self._marmotParticle.getInterpolationVectorLinearizedAboutCenter(&Gview_[0], &coordinates[0])
@@ -415,19 +459,45 @@ cdef class MarmotParticleWrapper:
     def vci_getNumberOfConstraints(self, ):
         return self._marmotParticle.vci_getNumberOfConstraints()
 
+    cdef int _requireVCIShape(self, str method, str name, double[:,:,::1] array, Py_ssize_t nRows) except -1:
+        """Require the shape of a VCI array: one block per node, of ``nRows`` x the number of VCI constraints."""
+
+        requireLength(method, name + " nodes", array.shape[0], self._nAssignedKernelFunctions)
+        requireLength(method, name + " rows", array.shape[1], nRows)
+        requireLength(method, name + " constraints", array.shape[2], self._marmotParticle.vci_getNumberOfConstraints())
+        return 0
+
     def vci_compute_Test_P_BoundaryIntegral(self, double[:,:,::1] r_AiC, double[::1] boundarySurfaceVector, int boundaryFaceID ):
+        """Accumulate the boundary integral of a face into ``r_AiC`` (nodes x dimension x constraints);
+        ``boundarySurfaceVector`` has ``dimension`` entries."""
+
+        self._requireVCIShape("vci_compute_Test_P_BoundaryIntegral", "r_AiC", r_AiC, self._nDim)
+        requireLength("vci_compute_Test_P_BoundaryIntegral", "boundarySurfaceVector", boundarySurfaceVector.shape[0], self._nDim)
         self._marmotParticle.vci_compute_Test_P_BoundaryIntegral(&r_AiC[0,0,0], &boundarySurfaceVector[0], boundaryFaceID )
 
     def vci_compute_TestGradient_P_Integral(self, double[:,:,::1]r_AiC):
+        """Accumulate the volume integral of the test function gradients into ``r_AiC`` (nodes x dimension x
+        constraints)."""
+
+        self._requireVCIShape("vci_compute_TestGradient_P_Integral", "r_AiC", r_AiC, self._nDim)
         self._marmotParticle.vci_compute_TestGradient_P_Integral(&r_AiC[0,0,0])
 
     def vci_compute_Test_PGradient_Integral(self, double[:,:,::1] r_AiC):
+        """Accumulate the volume integral of the basis gradients into ``r_AiC`` (nodes x dimension x constraints)."""
+
+        self._requireVCIShape("vci_compute_Test_PGradient_Integral", "r_AiC", r_AiC, self._nDim)
         self._marmotParticle.vci_compute_Test_PGradient_Integral(&r_AiC[0,0,0])
 
     def vci_compute_MMatrix(self, double[:,:,::1] m_ACD):
+        """Accumulate the moment matrix into ``m_ACD`` (nodes x constraints x constraints)."""
+
+        self._requireVCIShape("vci_compute_MMatrix", "m_ACD", m_ACD, self._marmotParticle.vci_getNumberOfConstraints())
         self._marmotParticle.vci_compute_MMatrix(&m_ACD[0,0,0])
 
     def vci_assignTestFunctionCorrectionTerms(self, double[:,:,::1] eta_AjC):
+        """Assign the correction terms ``eta_AjC`` (nodes x dimension x constraints)."""
+
+        self._requireVCIShape("vci_assignTestFunctionCorrectionTerms", "eta_AjC", eta_AjC, self._nDim)
         self._marmotParticle.vci_assignTestFunctionCorrectionTerms(&eta_AjC[0,0,0])
 
     def getRestartData(self,):
