@@ -34,7 +34,11 @@ The solver builds its discrete system on the one path of EdelweissFE's solvers: 
 numbering, particles reaching other kernel functions of the same nodes give new locations on the same numbering, and
 following them through new locations is what building anew gives. The lumped mass is assembled in every increment, not
 only for new locations. A restart checkpoint holds the numbering of the net force and the inverse lumped mass, and a
-resume on another numbering is refused."""
+resume on another numbering is refused.
+
+With ``carry-stable-increment-weights``, the weights of the bound of the particles' stable time increment are carried
+across new locations -- particles reaching other kernel functions -- and the bound stays below the exact stable
+increment and never below the one without weights; they start anew with a new numbering, and after a resume."""
 
 import h5py
 import numpy as np
@@ -68,8 +72,14 @@ from edelweissmeshfree.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunct
     MarmotMeshfreeKernelFunctionWrapper,
 )
 from edelweissmeshfree.meshfree.particlekerneldomain import ParticleKernelDomain
-from edelweissmeshfree.models.mpmdiscretesystem import MPMDiscreteSystem
+from edelweissmeshfree.models.mpmdiscretesystem import (
+    STABLE_FRACTION_OF_THE_TANGENT_LIMIT,
+    MPMDiscreteSystem,
+)
 from edelweissmeshfree.models.mpmmodel import MPMModel
+from edelweissmeshfree.models.test._stableincrement import (
+    exactStableIncrementOfTheSystem,
+)
 from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
     KDBinOrganizedParticleManager,
 )
@@ -106,10 +116,10 @@ def _material(youngsModulus: float) -> dict:
 NED_OPTIONS = {"output-frequency": 1, "stable-increment-frequency": 0}
 
 
-def _ned(journal: Journal) -> NED:
-    """The explicit dynamic solver with :data:`NED_OPTIONS`."""
+def _ned(journal: Journal, **options) -> NED:
+    """The explicit dynamic solver with :data:`NED_OPTIONS`, and the given options besides."""
 
-    return NED({}, journal, **NED_OPTIONS)
+    return NED({}, journal, **{**NED_OPTIONS, **options})
 
 
 class _SolverRecordingTheBuildPath(NED):
@@ -117,8 +127,8 @@ class _SolverRecordingTheBuildPath(NED):
     calls, the numbering the discrete system has then, and whether the increment and the velocity are wrapped with its
     locations."""
 
-    def __init__(self, journal: Journal):
-        super().__init__({}, journal, **NED_OPTIONS)
+    def __init__(self, journal: Journal, **options):
+        super().__init__({}, journal, **{**NED_OPTIONS, **options})
         self.hooks = []
         self.numberings = []
         self.vectorsAreOnTheLocations = []
@@ -543,7 +553,7 @@ def test_the_bound_is_taken_in_the_zero_increment_when_a_particle_reaches_other_
     journal = Journal()
     solver = _SolverRecordingTheBounds(journal, frequency)
 
-    def countingTheBound(system, inertia, damping, forEachChunk):
+    def countingTheBound(system, inertia, damping, forEachChunk, weightsOfTheBound=None):
         solver.numberOfBounds += 1
         return np.inf
 
@@ -559,9 +569,10 @@ def test_the_bound_is_taken_in_the_zero_increment_when_a_particle_reaches_other_
         assert bound == (newLocations or number % frequency == 0), "increment {:}".format(number)
 
 
-def _writeCheckpointAndResume(tmp_path, tamper=None):
+def _writeCheckpointAndResume(tmp_path, tamper=None, **options):
     """Run a few increments of the translating body writing a checkpoint, let ``tamper`` change what the checkpoint holds
-    of the solver, and resume from it for the rest of the step."""
+    of the solver, and resume from it for the rest of the step, with the given solver options besides
+    :data:`NED_OPTIONS`."""
 
     journal = Journal()
     model = _translatingBody(journal)
@@ -582,7 +593,7 @@ def _writeCheckpointAndResume(tmp_path, tamper=None):
             model,
             journal,
             fieldOutputController,
-            _ned(journal),
+            _ned(journal, **options),
             N_INCREMENTS,
             [restartOutputManager],
             maxNumInc=N_INCREMENTS // 2,
@@ -601,7 +612,9 @@ def _writeCheckpointAndResume(tmp_path, tamper=None):
     fieldOutputController = MPMFieldOutputController(resumedModel, journal)
     fieldOutputController.initializeJob()
     try:
-        _step(0, resumedModel, journal, fieldOutputController, _ned(journal), N_INCREMENTS).solve(resumeCheckpoint)
+        _step(0, resumedModel, journal, fieldOutputController, _ned(journal, **options), N_INCREMENTS).solve(
+            resumeCheckpoint
+        )
     finally:
         fieldOutputController.finalizeJob()
 
@@ -627,3 +640,112 @@ def test_a_resume_with_another_numbering_than_the_vectors_were_written_for_is_re
 def test_a_checkpoint_without_the_numbering_of_the_vectors_is_refused(tmp_path):
     with pytest.raises(RestartError, match="does not hold the numbering"):
         _writeCheckpointAndResume(tmp_path, lambda solverGroup: solverGroup.__delitem__("_numberingOfNetForce"))
+
+
+#: The options of a solver that carries the weights of the bound of the particles' stable time increment and takes the
+#: bound in every increment.
+CARRIED_WEIGHTS = {"carry-stable-increment-weights": True, "stable-increment-frequency": 1}
+
+
+class _SolverRecordingTheCarriedWeights(_SolverRecordingTheBuildPath):
+    """The explicit solver with :data:`CARRIED_WEIGHTS`, recording, in the order they happen, the hooks of the build
+    path and every bound: the weights it was handed, the bound with them, the bound of the same system without weights,
+    and the exact stable increment of the system's tangent."""
+
+    def __init__(self, journal: Journal):
+        super().__init__(journal, **CARRIED_WEIGHTS)
+        self.events = []
+
+    def onNewNumbering(self):
+        super().onNewNumbering()
+        self.events.append("numbering")
+
+    def onNewLocations(self):
+        super().onNewLocations()
+        self.events.append("locations")
+
+
+def _stretchingBodyWithinItsBound(journal: Journal) -> MPMModel:
+    """The stretching body, stretching half as fast again: with the bound of its stable time increment taken, the step's
+    increments are lowered to it, and the body still stretches enough for particles to reach other kernel functions."""
+
+    return _translatingBody(journal, stretching=2.25 * VELOCITY / (5 * PARTICLE_SIZE), bondedKernelFunctions=True)
+
+
+def _recordTheBounds(monkeypatch, solver: _SolverRecordingTheCarriedWeights):
+    """Let every bound of the particles' stable time increment be recorded in the solver's events."""
+
+    theBound = MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia
+
+    def recordingTheBound(system, inertia, damping, forEachChunk, weightsOfTheBound=None):
+        handed = np.array(weightsOfTheBound)
+        bound = theBound(system, inertia, damping, forEachChunk, weightsOfTheBound)
+        withoutWeights = theBound(system, inertia, damping, forEachChunk)
+        solver.events.append((handed, bound, withoutWeights, exactStableIncrementOfTheSystem(system)))
+        return bound
+
+    monkeypatch.setattr(MPMDiscreteSystem, "stableTimeIncrementOfEntitiesWithOwnInertia", recordingTheBound)
+
+
+def _bounds(events: list) -> list:
+    return [event for event in events if isinstance(event, tuple)]
+
+
+def test_carried_weights_survive_particles_reaching_other_kernel_functions_and_bound_the_stable_increment(monkeypatch):
+    """In the stretching body, particles reach other kernel functions of the same nodes: new locations on the same
+    numbering. The weights are carried across them, indexed by the degrees of freedom of the numbering, i.e. by node
+    and field; every bound stays below the exact stable increment of the tangent, scaled by
+    STABLE_FRACTION_OF_THE_TANGENT_LIMIT, and never below the bound without weights."""
+
+    journal = Journal()
+    solver = _SolverRecordingTheCarriedWeights(journal)
+    _recordTheBounds(monkeypatch, solver)
+
+    _solve(_stretchingBodyWithinItsBound(journal), journal, [solver], [N_INCREMENTS])
+
+    assert solver.events.count("numbering") == 1
+    afterNewLocations = [
+        later
+        for earlier, later in zip(solver.events, solver.events[1:])
+        if earlier == "locations" and isinstance(later, tuple)
+    ]
+    assert len(afterNewLocations) > 1, "no particle reached other kernel functions"
+    for handed, *_ in afterNewLocations[1:]:
+        assert np.any(handed > 0.0), "the weights were not carried across new locations"
+    for _, bound, withoutWeights, exact in _bounds(solver.events):
+        assert withoutWeights <= bound <= STABLE_FRACTION_OF_THE_TANGENT_LIMIT * exact
+
+
+def test_carried_weights_start_anew_with_a_new_numbering(monkeypatch):
+    """Building the discrete system anew whenever the connectivity changed gives a new numbering each time: the first
+    bound on every numbering is handed no weights, the bounds after it the weights the last one left."""
+
+    journal = Journal()
+
+    class _SolverWithANewNumberingForEveryChangeCarryingTheWeights(_SolverRecordingTheCarriedWeights):
+        def updateDiscreteSystem(self, model, change):
+            super().updateDiscreteSystem(model, max(change, Change.NUMBERING) if change > Change.NONE else change)
+
+    solver = _SolverWithANewNumberingForEveryChangeCarryingTheWeights(journal)
+    _recordTheBounds(monkeypatch, solver)
+
+    _solve(_stretchingBodyWithinItsBound(journal), journal, [solver], [N_INCREMENTS])
+
+    assert solver.events.count("numbering") > 1
+    lastWasNumbering = False
+    for event in solver.events:
+        if event == "numbering":
+            lastWasNumbering = True
+        elif isinstance(event, tuple):
+            handed = event[0]
+            assert np.all(handed == 0.0) if lastWasNumbering else np.any(handed > 0.0)
+            lastWasNumbering = False
+
+
+def test_a_resume_with_carried_weights_goes_on_and_starts_the_weights_anew(tmp_path):
+    """The carried weights are not part of the checkpoint: a resumed step starts them anew, as every step does."""
+
+    checkpoint = _writeCheckpointAndResume(tmp_path, **CARRIED_WEIGHTS)
+
+    with h5py.File(checkpoint, "r") as f:
+        assert "_weightsOfTheStableIncrementBound" not in f["solver"]
