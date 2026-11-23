@@ -508,6 +508,57 @@ def test_the_lumped_mass_is_assembled_anew_in_every_increment_not_only_for_new_l
         assert not np.array_equal(before, after)
 
 
+class _SolverRecordingTheBounds(NED):
+    """The explicit solver with the bound of the particles' stable time increment due every ``frequency`` increments
+    besides its other occasions, recording for every accepted increment its number, whether its reconnection gave new
+    locations, and whether the bound was taken. In the stretching body, which keeps its active nodes and has no contact,
+    new locations are exactly a particle that reached other kernel functions."""
+
+    def __init__(self, journal: Journal, frequency: int):
+        super().__init__({}, journal, **{**NED_OPTIONS, "stable-increment-frequency": frequency})
+        self.numberOfNewLocations = 0
+        self.numberOfBounds = 0
+        self.increments = []
+
+    def onNewLocations(self):
+        super().onNewLocations()
+        self.numberOfNewLocations += 1
+
+    def acceptIncrement(self, step, model, timeStep):
+        newLocationsBefore, boundsBefore = self.numberOfNewLocations, self.numberOfBounds
+        super().acceptIncrement(step, model, timeStep)
+        self.increments.append(
+            (timeStep.number, self.numberOfNewLocations > newLocationsBefore, self.numberOfBounds > boundsBefore)
+        )
+
+
+@pytest.mark.parametrize("frequency", [4, 1000])
+def test_the_bound_is_taken_in_the_zero_increment_when_a_particle_reaches_other_kernel_functions_and_at_the_frequency(
+    monkeypatch, frequency
+):
+    """The bound of the particles' stable time increment is taken in the zero increment, after every increment in which
+    a particle reached other kernel functions, and after every ``stable-increment-frequency``-th increment; after no
+    other. The bound is recorded, not evaluated: it returns no limit, so that the increments stay those of the step."""
+
+    journal = Journal()
+    solver = _SolverRecordingTheBounds(journal, frequency)
+
+    def countingTheBound(system, inertia, damping, forEachChunk):
+        solver.numberOfBounds += 1
+        return np.inf
+
+    monkeypatch.setattr(MPMDiscreteSystem, "stableTimeIncrementOfEntitiesWithOwnInertia", countingTheBound)
+
+    _solve(_stretchingBody(journal), journal, [solver], [N_INCREMENTS])
+
+    (zeroIncrement, _, boundInTheZeroIncrement), *increments = solver.increments
+    assert zeroIncrement == 0 and boundInTheZeroIncrement
+    assert any(newLocations for _, newLocations, _ in increments), "no particle reached other kernel functions"
+    assert any(not newLocations and number % frequency for number, newLocations, _ in increments)
+    for number, newLocations, bound in increments:
+        assert bound == (newLocations or number % frequency == 0), "increment {:}".format(number)
+
+
 def _writeCheckpointAndResume(tmp_path, tamper=None):
     """Run a few increments of the translating body writing a checkpoint, let ``tamper`` change what the checkpoint holds
     of the solver, and resume from it for the rest of the step."""

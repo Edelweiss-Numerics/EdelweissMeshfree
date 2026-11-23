@@ -98,6 +98,9 @@ class ParticlePenaltyWeakDirichlet(MPMConstraintBase):
         self._fieldSize = getFieldSize(self._field, model.domainSize)
         self._penaltyParameter = penaltyParameter
         self._nodes = dict()
+        #: Per constrained particle, where the nodes of its kernel functions sit in the constraint's block (see
+        #: :meth:`updateConnectivity`).
+        self._localNodesOfParticle = []
         if constrain == "center":
             self._constrainVertices = None
         else:
@@ -111,7 +114,7 @@ class ParticlePenaltyWeakDirichlet(MPMConstraintBase):
         #: Where the constrained points of each particle are when the constraint is created, the positions an explicit
         #: analysis holds them at.
         self._initialCoordinatesOfConstrainedPoints = [
-            np.array(self._constrainedCoordinatesOf(particle)) for particle in self._constrainedParticles
+            self._constrainedCoordinatesOf(particle) for particle in self._constrainedParticles
         ]
 
         if "f_t" in kwargs:
@@ -168,6 +171,20 @@ class ParticlePenaltyWeakDirichlet(MPMConstraintBase):
         pass
 
     def updateConnectivity(self, model):
+        """Collect the nodes of the kernel functions of the constrained particles, each once, ordered by label, and
+        record where each particle's nodes sit in the constraint's block.
+
+        Parameters
+        ----------
+        model
+            The model; unused, the particles hold their kernel functions.
+
+        Returns
+        -------
+        bool
+            True if the nodes of the constraint changed.
+        """
+
         nodes = {
             n: i
             for i, n in enumerate(
@@ -182,6 +199,9 @@ class ParticlePenaltyWeakDirichlet(MPMConstraintBase):
             hasChanged = True
 
         self._nodes = nodes
+        self._localNodesOfParticle = [
+            np.array([nodes[kf.node] for kf in particle.kernelFunctions]) for particle in self._constrainedParticles
+        ]
 
         return hasChanged
 
@@ -192,12 +212,10 @@ class ParticlePenaltyWeakDirichlet(MPMConstraintBase):
 
             K_ij = K.reshape((self.nDof, self.nDof))[i :: self._fieldSize, i :: self._fieldSize]
 
-            for p in self._constrainedParticles:
+            for p, nodeIdcs in zip(self._constrainedParticles, self._localNodesOfParticle):
                 for constrainedCoordinate in self._constrainedCoordinatesOf(p):
 
                     interpolation = self.interpolationVectorAtPointOf(p, constrainedCoordinate)
-
-                    nodeIdcs = [self._nodes[kf.node] for kf in p.kernelFunctions]
 
                     mpValue = interpolation @ dU_j[nodeIdcs]
 
@@ -220,7 +238,9 @@ class ParticlePenaltyWeakDirichlet(MPMConstraintBase):
     def computeKernelsExplicit(self, U_np: np.ndarray, dU: np.ndarray, P: np.ndarray, timeStep: TimeStep):
         """Add the residual contribution of the support in an explicit analysis: the negative of the forces that hold
         the constrained components of the constrained points at their initial positions, measured where the points are
-        now (see the class documentation).
+        now (see the class documentation). Particle by particle, the forces of its constrained points
+        :math:`\\boldsymbol{f}_p` reach the nodes of its kernel functions as one product with the interpolation vectors
+        of the points, :math:`\\boldsymbol{G}^\\mathsf{T} \\boldsymbol{f}`.
 
         Parameters
         ----------
@@ -234,21 +254,23 @@ class ParticlePenaltyWeakDirichlet(MPMConstraintBase):
             The current time step; unused.
         """
 
-        for p, initialCoordinates in zip(self._constrainedParticles, self._initialCoordinatesOfConstrainedPoints):
-            nodeIdcs = [self._nodes[kf.node] for kf in p.kernelFunctions]
+        PAtNodes = P.reshape(-1, self._fieldSize)
+        components = list(self._prescribedStepDelta)
 
-            for constrainedCoordinate, initialCoordinate in zip(self._constrainedCoordinatesOf(p), initialCoordinates):
-                interpolation = self.interpolationVectorAtPointOf(p, constrainedCoordinate)
-
-                for i in self._prescribedStepDelta:
-                    P[i :: self._fieldSize][nodeIdcs] += (
-                        interpolation * self._penaltyParameter * (constrainedCoordinate[i] - initialCoordinate[i])
-                    )
+        for p, localNodes, initialCoordinates in zip(
+            self._constrainedParticles, self._localNodesOfParticle, self._initialCoordinatesOfConstrainedPoints
+        ):
+            coordinates = self._constrainedCoordinatesOf(p)
+            # one row per constrained point: the vector the force is distributed with (see interpolationVectorAtPointOf)
+            interpolations = np.array([self.interpolationVectorAtPointOf(p, x) for x in coordinates])
+            displacement = coordinates[:, components] - initialCoordinates[:, components]
+            # the kernel functions of a particle are on distinct nodes, so fancy indexing does not drop any
+            PAtNodes[np.ix_(localNodes, components)] += interpolations.T @ (self._penaltyParameter * displacement)
 
         for i in self._prescribedStepDelta:
             self.penaltyForce[i] = np.sum(P[i :: self._fieldSize])
 
-    def _constrainedCoordinatesOf(self, particle: BaseParticle) -> list[np.ndarray]:
+    def _constrainedCoordinatesOf(self, particle: BaseParticle) -> np.ndarray:
         """The current coordinates of the constrained points of a particle: its center, or the constrained vertices.
 
         Parameters
@@ -258,10 +280,10 @@ class ParticlePenaltyWeakDirichlet(MPMConstraintBase):
 
         Returns
         -------
-        list[np.ndarray]
-            The coordinates, one array per point.
+        np.ndarray
+            The coordinates, one row per point.
         """
 
         if self._constrainVertices:
-            return list(particle.getVertexCoordinates()[self._constrainVertices])
-        return [particle.getCenterCoordinates().copy()]
+            return particle.getVertexCoordinates()[self._constrainVertices]
+        return particle.getCenterCoordinates().copy()[np.newaxis, :]

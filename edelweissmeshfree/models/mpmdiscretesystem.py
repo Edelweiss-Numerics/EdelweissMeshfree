@@ -436,7 +436,10 @@ class MPMDiscreteSystem(DiscreteSystem):
         return coefficient
 
     def stableTimeIncrementOfEntitiesWithOwnInertia(
-        self, forEachChunk: Callable[[list, Callable], None]
+        self,
+        lumpedMass: DofVector,
+        lumpedDamping: DofVector,
+        forEachChunk: Callable[[list, Callable], None],
     ) -> float | None:
         """A bound of the stable time increment of ``NED``'s explicit scheme for the particles, from their stiffness at
         the current state and the assembled lumped mass and damping. No stiffness is assembled: every particle bounds
@@ -498,6 +501,11 @@ class MPMDiscreteSystem(DiscreteSystem):
 
         Parameters
         ----------
+        lumpedMass
+            The lumped mass of the particles at their current configuration
+            (:meth:`assembleLumpedMassOfEntitiesWithOwnInertia`), which the solver has just assembled.
+        lumpedDamping
+            Their lumped damping (:meth:`assembleLumpedDampingOfEntitiesWithOwnInertia`), likewise.
         forEachChunk
             The solver's loop over chunks of independent entities.
 
@@ -510,8 +518,8 @@ class MPMDiscreteSystem(DiscreteSystem):
         if not self.particles:
             return None
 
-        M = np.asarray(self.assembleLumpedMassOfEntitiesWithOwnInertia(forEachChunk))
-        C = np.asarray(self.assembleLumpedDampingOfEntitiesWithOwnInertia(forEachChunk))
+        M = np.asarray(lumpedMass)
+        C = np.asarray(lumpedDamping)
 
         secondOrder = M > 0.0
         firstOrder = ~secondOrder & (C > 0.0)
@@ -573,6 +581,22 @@ class MPMDiscreteSystem(DiscreteSystem):
             stable = min(stable, 2.0 / rate)
 
         return STABLE_FRACTION_OF_THE_TANGENT_LIMIT * stable
+
+    def entitiesWithOwnInertiaCoupleOtherNodes(self) -> bool:
+        """Whether the last connectivity update changed the set of kernel functions of a particle, as its particle
+        manager reports it; see
+        :meth:`~edelweissfe.models.discretesystem.DiscreteSystem.entitiesWithOwnInertiaCoupleOtherNodes`. A contact
+        paired anew does not count: it changes the locations, not the particles' system.
+
+        Returns
+        -------
+        bool
+            True if a particle reaches other kernel functions since the last connectivity update.
+        """
+
+        return any(
+            particleManager.particlesWithChangedKernelFunctions for particleManager in self.model.particleManagers
+        )
 
     def carriersOfTheMotion(self) -> set[str]:
         """Where the model holds the motion of its particles; see

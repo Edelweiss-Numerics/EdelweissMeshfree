@@ -85,8 +85,15 @@ def _isStable(model, dt: float, nIncrements: int = 400) -> bool:
 )
 def test_the_bound_is_stable_and_within_a_factor_of_the_stable_increment(particleType, supportFactor, kernelOrder):
     model = particlePlate(particleType, supportFactor, kernelOrder)
-    bound = model.buildDiscreteSystem().stableTimeIncrementOfEntitiesWithOwnInertia(
-        lambda entities, work: work(entities)
+    system = model.buildDiscreteSystem()
+
+    def serially(entities, work):
+        work(entities)
+
+    bound = system.stableTimeIncrementOfEntitiesWithOwnInertia(
+        system.assembleLumpedMassOfEntitiesWithOwnInertia(serially),
+        system.assembleLumpedDampingOfEntitiesWithOwnInertia(serially),
+        serially,
     )
 
     assert _isStable(particlePlate(particleType, supportFactor, kernelOrder), bound)
