@@ -80,6 +80,10 @@ explicit) take one option, ``interpolationLinearizedAboutCenter``
   ``edelweissmeshfree/constraints/test/vertexpenaltywork_test.py`` checks that a support and a facet contact on the
   vertices of a real particle then do no work over a closed cycle.
   The FE-particle impact (:doc:`fe_projectile_on_rkpm_slab`) opts in.
+  The two operations such a constraint needs besides its own physics -- locating the nodes of its particles in its
+  block, and distributing a force on a point -- are in :mod:`edelweissmeshfree.constraints.base.pointsofparticles`,
+  which the explicit constraints and the support use: a new constraint on points of particles is its physics and a
+  constructor.
 
 The base classes
 ----------------
@@ -91,6 +95,9 @@ The base classes
 .. automodule:: edelweissmeshfree.constraints.base.mpmexplicitconstraintbase
    :members:
    :private-members:
+
+.. automodule:: edelweissmeshfree.constraints.base.pointsofparticles
+   :members:
 
 ``PenaltyEqualValue`` constraint class
 --------------------------------------

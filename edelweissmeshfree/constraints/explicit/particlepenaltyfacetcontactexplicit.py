@@ -23,6 +23,10 @@ from edelweissfe.utils.meshtools import currentNodeCoordinates
 from edelweissmeshfree.constraints.base.mpmexplicitconstraintbase import (
     MPMExplicitConstraintBase,
 )
+from edelweissmeshfree.constraints.base.pointsofparticles import (
+    addForcesOnPointsOfParticle,
+    locateTheNodesOfParticles,
+)
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.particles.base.baseparticle import BaseParticle
 
@@ -310,7 +314,7 @@ class ParticlePenaltyFacetContactExplicit(MPMExplicitConstraintBase):
             self._masterNodes, model, self._referenceCoordinatesOfMasterNodes
         )
         coordinatesOfFacet = coordinatesOfMasterNodes[self._masterNodesOfFacet]
-        normalOfFacet = np.array([facetNormalAndMeasure(coordinates)[0] for coordinates in coordinatesOfFacet])
+        normalOfFacet, _ = facetNormalAndMeasure(coordinatesOfFacet)
 
         previousState = self._stateOfPoint
         wasInContact = previousState == ContactState.IN_CONTACT
@@ -420,12 +424,16 @@ class ParticlePenaltyFacetContactExplicit(MPMExplicitConstraintBase):
         """
 
         localIndexOfNode = {}
-        self._localNodesOfParticle = {}
-        for particleIndex in np.unique(self._particleOfPoint[self._pairedPoints]):
-            particle = self._particles[particleIndex]
-            self._localNodesOfParticle[particleIndex] = np.array(
-                [localIndexOfNode.setdefault(kf.node, len(localIndexOfNode)) for kf in particle.kernelFunctions]
+        pairedParticles = np.unique(self._particleOfPoint[self._pairedPoints])
+        self._localNodesOfParticle = dict(
+            zip(
+                pairedParticles,
+                locateTheNodesOfParticles(
+                    [self._particles[particleIndex].kernelFunctions for particleIndex in pairedParticles],
+                    localIndexOfNode,
+                ),
             )
+        )
 
         self._localMasterNodesOfPoint = {}
         if self._twoWayCoupling:
@@ -457,7 +465,7 @@ class ParticlePenaltyFacetContactExplicit(MPMExplicitConstraintBase):
 
         pairedPoints = self._pairedPoints
         coordinatesOfPoint, coordinatesOfFacet = self._currentCoordinatesOfPairedPoints(U_np)
-        normalOfFacet = np.array([facetNormalAndMeasure(coordinates)[0] for coordinates in coordinatesOfFacet])
+        normalOfFacet, _ = facetNormalAndMeasure(coordinatesOfFacet)
         weights = self._weightsOfPoint[pairedPoints]
         closestPoint = np.einsum("pa,pad->pd", weights, coordinatesOfFacet)
         gap = rowDot(normalOfFacet, coordinatesOfPoint - closestPoint)
@@ -475,8 +483,9 @@ class ParticlePenaltyFacetContactExplicit(MPMExplicitConstraintBase):
             interpolation = self.interpolationVectorAtPointOf(
                 self._particles[particleIndex], coordinatesOfPoint[i]
             ).flatten()
-            # the kernel functions of a particle are on distinct nodes, so fancy indexing does not drop any
-            PAtNodes[self._localNodesOfParticle[particleIndex]] -= np.outer(interpolation, force)
+            addForcesOnPointsOfParticle(
+                PAtNodes, self._localNodesOfParticle[particleIndex], interpolation[np.newaxis, :], force[np.newaxis, :]
+            )
             forceOnParticles += interpolation.sum() * force
 
             if self._twoWayCoupling:

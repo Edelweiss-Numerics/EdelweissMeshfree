@@ -118,7 +118,11 @@ onto EdelweissFE's as follows:
 **Restart.** EdelweissFE's restart output manager writes a checkpoint of the converged state; an ``MPMModel`` adds the
 state of its material points and particles, from which their positions follow (see
 :meth:`~edelweissmeshfree.models.mpmmodel.MPMModel.writeRestart`), and the state of the output managers of the step.
-A resumed run builds the model as the checkpointed run did, restores its state, and continues the step:
+A resumed run builds the model as the checkpointed run did, restores its state, and continues the step. Create the
+constraints before the checkpoint is restored, as the checkpointed run did: a particle support holds the positions of
+the model it is created with
+(:class:`~edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet` in an explicit
+analysis), and one created after the restore would hold the deformed ones:
 
 .. code-block:: python
 

@@ -25,6 +25,19 @@
 #  the top level directory of EdelweissMPM.
 #  ---------------------------------------------------------------------
 
+"""A slab of RKPM particles pushed against a wall and pulled back: the penalty contact of particle faces with a
+Cartesian boundary (:mod:`edelweissmeshfree.constraints.particlepenaltycartesianboundary`), implicit.
+
+The slab, 6 x 1, rests on a frictionless floor (its bottom held vertically). Its left face is pushed 3 to the right,
+against a wall at x = 7: the slab, compressed from 6 to 4, presses on the wall, and spreads vertically. Then the left
+face is pulled back by 6: the slab leaves the wall and comes to rest, unstressed, 3 left of where it started.
+
+The test asserts what this is about: the wall pushes back with the force of the left face, the floor carries nothing,
+the faces at the wall enter it by their force over the penalty and no further, the compression and the vertical
+spreading are uniform, and after the release the slab is back at rest without stress. The force of the wall and the
+vertical stretch are compared with the gold.
+"""
+
 import argparse
 
 import edelweissfe.utils.performancetiming as performancetiming
@@ -33,7 +46,6 @@ import pytest
 from edelweissfe.config.linsolve import getLinSolverByName
 from edelweissfe.journal.journal import Journal
 from edelweissfe.timesteppers.adaptivetimestepper import AdaptiveTimeStepper
-from edelweissfe.utils.exceptions import StepFailed
 
 from edelweissmeshfree.constraints.particlelagrangianweakdirichlet import (
     ParticleLagrangianWeakDirichletOnParticleSetFactory,
@@ -72,7 +84,56 @@ from edelweissmeshfree.solvers.deprecated.nqs import NonlinearQuasistaticSolver
 # )
 
 
-def run_sim(no_limit=False):
+#: The relative tolerance of the gold: far above the sensitivity of the force and the stretch to round-off, which changes
+#: them by less than 1e-13 (another number of threads, increments perturbed by 1e-12).
+GOLD_TOLERANCE = 1e-4
+
+#: The position of the wall.
+WALL = 7.0
+
+#: The penalty of the wall, per face of a particle.
+WALL_PENALTY = 1e7
+
+
+def stateOfTheSlab(model: MPMModel, fieldOutputController: MPMFieldOutputController) -> dict:
+    """What the example is about, at the end of a step: the reactions of the left face, the floor and the wall, where
+    the faces at the wall are, the displacements of the particles' centers, with their reference coordinates, and the
+    vertical stretch of the slab, the least-squares fit of :math:`u_y = (\\lambda - 1) Y`.
+
+    Parameters
+    ----------
+    model
+        The model.
+    fieldOutputController
+        The field outputs, with the displacement of every particle.
+
+    Returns
+    -------
+    dict
+        The state.
+    """
+
+    displacement = np.array(fieldOutputController.fieldOutputs["displacement"].getLastResult())[:, :2]
+    centers = np.array([particle.getCenterCoordinates() for particle in model.particles.values()])
+    constraintsOf = {
+        side: [constraint for name, constraint in model.constraints.items() if name.startswith(side)]
+        for side in ("left", "bottom", "right")
+    }
+    referenceCoordinates = centers - displacement
+    facesAtTheWall = [particle for particles in model.surfaces["slab_right"].values() for particle in particles]
+    return dict(
+        leftReaction=sum(constraint.reactionForce[0] for constraint in constraintsOf["left"]),
+        floorReaction=sum(constraint.reactionForce[1] for constraint in constraintsOf["bottom"]),
+        wallForce=sum(constraint.reactionForce for constraint in constraintsOf["right"]),
+        largestWallForceOfAFace=max(constraint.reactionForce for constraint in constraintsOf["right"]),
+        xOfTheFacesAtTheWall=np.array([particle.getFaceCoordinates(2)[0] for particle in facesAtTheWall]),
+        displacement=displacement,
+        referenceCoordinates=referenceCoordinates,
+        verticalStretch=1.0 + np.linalg.lstsq(referenceCoordinates[:, 1:2], displacement[:, 1], rcond=None)[0][0],
+    )
+
+
+def run_sim():
     dimension = 2
 
     E = 200
@@ -189,7 +250,7 @@ def run_sim(no_limit=False):
         theModel,
         location="face",
         faceIDs=2,
-        penaltyParameter=1e7,
+        penaltyParameter=WALL_PENALTY,
     )
     theModel.constraints.update(boundaryRight)
 
@@ -243,7 +304,7 @@ def run_sim(no_limit=False):
 
     incSize = 1e-1
     adaptiveTimeStepper = AdaptiveTimeStepper(
-        0.0, 1.0, incSize, incSize, incSize / 1e8, 5000 if not no_limit else 10000, theJournal, increaseFactor=1.5
+        0.0, 1.0, incSize, incSize, incSize / 1e8, 5000, theJournal, increaseFactor=1.5
     )
 
     nonlinearSolver = NonlinearQuasistaticSolver(theJournal)
@@ -260,6 +321,7 @@ def run_sim(no_limit=False):
     linearSolver = getLinSolverByName("pardiso", {})
 
     try:
+        # push the left face 3 to the right, against the wall
         nonlinearSolver.solveStep(
             adaptiveTimeStepper,
             linearSolver,
@@ -272,13 +334,16 @@ def run_sim(no_limit=False):
             # predictor=QuadraticPredictor(theJournal)
         )
 
+        compressed = stateOfTheSlab(theModel, fieldOutputController)
+
+        # pull it back by 6, away from the wall
         adaptiveTimeStepper = AdaptiveTimeStepper(
             theModel.time,
             1.0,
             incSize,
             incSize,
             incSize / 1e8,
-            5000 if not no_limit else 10000,
+            5000,
             theJournal,
             increaseFactor=1.5,
         )
@@ -303,12 +368,7 @@ def run_sim(no_limit=False):
             # predictor=QuadraticPredictor(theJournal)
         )
 
-    except StepFailed as e:
-        theJournal.message(f"Step failed: {str(e)}", "error")
-        if not no_limit:
-            theJournal.message(
-                "This is an expected behaviour for this test. Rerun with --no-limit to run until the end.", "error"
-            )
+        released = stateOfTheSlab(theModel, fieldOutputController)
 
     finally:
         fieldOutputController.finalizeJob()
@@ -318,7 +378,7 @@ def run_sim(no_limit=False):
         prettytable.min_table_width = theJournal.linewidth
         theJournal.printPrettyTable(prettytable, "Summary")
 
-    return theModel, fieldOutputController
+    return compressed, released
 
 
 @pytest.fixture(autouse=True)
@@ -339,26 +399,43 @@ def test_sim(assert_gold):
 
     warnings.filterwarnings("ignore")
 
-    theModel, fieldOutputController = run_sim()
+    compressed, released = run_sim()
 
-    res = fieldOutputController.fieldOutputs["displacement"].getLastResult()
+    # pushed against the wall: the wall pushes back with the force of the left face, the frictionless floor carries
+    # nothing
+    wallForce = compressed["wallForce"]
+    assert wallForce > 0.0
+    assert compressed["leftReaction"] == pytest.approx(-wallForce, rel=1e-10)
+    assert abs(compressed["floorReaction"]) < 1e-10 * wallForce
+    # the faces at the wall enter it by their force over the penalty, and no further
+    penetration = compressed["xOfTheFacesAtTheWall"] - WALL
+    assert penetration.min() > 0.0
+    assert penetration.max() <= compressed["largestWallForceOfAFace"] / WALL_PENALTY * (1 + 1e-6)
 
-    gold = np.loadtxt("gold.csv")
+    # compressed uniformly from 6 to 4, between x = 3 and the wall, and spread uniformly upwards: u_y = (stretch - 1) Y;
+    # to the accuracy of the particles
+    X, u = compressed["referenceCoordinates"], compressed["displacement"]
+    np.testing.assert_allclose(u[:, 0], 3.0 - X[:, 0] / 3.0, rtol=0, atol=5e-3)
+    verticalStretch = compressed["verticalStretch"]
+    np.testing.assert_allclose(u[:, 1], (verticalStretch - 1.0) * X[:, 1], rtol=0, atol=5e-3)
 
-    assert_gold(res, gold, atol=1e-12)
+    # pulled back: the slab has left the wall and is at rest without stress, moved 3 to the left
+    assert abs(released["wallForce"]) < 1e-10 * wallForce
+    assert abs(released["leftReaction"]) < 1e-10 * wallForce
+    assert released["xOfTheFacesAtTheWall"].max() < WALL
+    np.testing.assert_allclose(released["displacement"] - [-3.0, 0.0], 0.0, rtol=0, atol=2e-3)
+
+    assert_gold(np.array([wallForce, verticalStretch]), np.loadtxt("gold.csv"), rtol=GOLD_TOLERANCE, atol=0.0)
 
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--create-gold", dest="create_gold", action="store_true", help="create the gold file.")
-    parser.add_argument(
-        "--no-limit", dest="no_limit", action="store_true", help="do not limit the number of time increments."
-    )
     args = parser.parse_args()
 
-    theModel, fieldOutputController = run_sim(args.no_limit)
-    res = fieldOutputController.fieldOutputs["displacement"].getLastResult()
+    compressed, _ = run_sim()
+    print(f"force of the wall {compressed['wallForce']:.10g}, vertical stretch {compressed['verticalStretch']:.10g}")
 
     if args.create_gold:
-        np.savetxt("gold.csv", res.flatten())
+        np.savetxt("gold.csv", [compressed["wallForce"], compressed["verticalStretch"]])
