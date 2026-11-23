@@ -49,21 +49,48 @@ from edelweissmeshfree.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunct
 
 @cython.final # no subclassing -> cpdef with nogil possible
 cdef class MarmotMeshfreeApproximationWrapper:
+    """A meshfree approximation of Marmot: the reproducing kernel approximation with explicit gradients
+    (``"ReproducingKernel"``) or with implicit gradients (``"ReproducingKernelImplicitGradient"``).
 
-    def __cinit__(self, str approximationType, int dim, **kwargs):
+    Parameters
+    ----------
+    approximationType
+        ``"ReproducingKernel"`` or ``"ReproducingKernelImplicitGradient"``.
+    dim
+        The spatial dimension.
+    completenessOrder
+        The order of the polynomials the shape functions reproduce (keyword, required).
+    momentMatrixConditionLimit
+        The limit on the condition of the moment matrix, scaled to a unit diagonal, above which the completeness order
+        of a point is lowered, for the linear basis to the order 0, the Shepard functions (keyword, optional). Such a
+        point lies on one side of all kernels that cover it, which lie nearly in one plane: e.g. a point of a strongly stretched
+        particle reaching into a void. There the linear shape functions extrapolate and grow without bound. The default
+        ``inf`` sets no limit; with a limit, every point below it is evaluated bit for bit as without one. See Marmot's
+        documentation of the meshfree approximation for the condition measure, what the lower order costs, and the
+        range of useful limits.
+    """
 
-        validApproximationTypes = ["ReproducingKernel, ReproducingKernelImplicitGradient"]
+    def __cinit__(
+        self,
+        str approximationType,
+        int dim,
+        *,
+        int completenessOrder,
+        double momentMatrixConditionLimit=float("inf"),
+    ):
+
+        validApproximationTypes = ["ReproducingKernel", "ReproducingKernelImplicitGradient"]
 
         self._nDim = dim
 
         if approximationType == "ReproducingKernel":
                 self._marmotMeshfreeApproximation = <MarmotMeshfreeApproximation*> (
                                                                                     new
-                                                                                    MarmotMeshfreeReproducingKernelApproximation( dim, kwargs['completenessOrder'] ) )
+                                                                                    MarmotMeshfreeReproducingKernelApproximation( dim, completenessOrder, momentMatrixConditionLimit ) )
         elif approximationType == "ReproducingKernelImplicitGradient":
                 self._marmotMeshfreeApproximation = <MarmotMeshfreeApproximation*> (
                                                                                     new
-                                                                                    MarmotMeshfreeReproducingKernelApproximationImplicit( dim, kwargs['completenessOrder'] ) )
+                                                                                    MarmotMeshfreeReproducingKernelApproximationImplicit( dim, completenessOrder, momentMatrixConditionLimit ) )
         else:
                 raise NotImplementedError("Approximation type {:} not found in library. Valid options are {:}".format(approximationType, validApproximationTypes))
 
