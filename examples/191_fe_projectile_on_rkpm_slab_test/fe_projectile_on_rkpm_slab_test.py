@@ -214,6 +214,7 @@ def holdTheSlab(model: MPMModel):
             {normal: 0.0, 2: 0.0},
             SUPPORT_PENALTY,
             constrain=VERTICES_ON_FACE[face],
+            interpolationLinearizedAboutCenter=True,
         )
     for setName, face, normal in [("slab_left", "xMin", 0), ("slab_front", "yMin", 1)]:
         model.constraints[f"symmetry_{setName}"] = ParticlePenaltyWeakDirichlet(
@@ -224,6 +225,7 @@ def holdTheSlab(model: MPMModel):
             {normal: 0.0},
             SUPPORT_PENALTY,
             constrain=VERTICES_ON_FACE[face],
+            interpolationLinearizedAboutCenter=True,
         )
 
 
@@ -236,7 +238,14 @@ def addTheContact(model: MPMModel, facets: list, journal: Journal) -> ParticlePe
         particle for particle in model.particleSets["slab_all"] if np.all(particle.getCenterCoordinates()[:2] <= reach)
     ]
     contact = ParticlePenaltyFacetContactExplicit(
-        "contact", model, particlesNearTheImpact, facets, CONTACT_PENALTY, SEARCH_DISTANCE, journal
+        "contact",
+        model,
+        particlesNearTheImpact,
+        facets,
+        CONTACT_PENALTY,
+        SEARCH_DISTANCE,
+        journal,
+        interpolationLinearizedAboutCenter=True,
     )
     model.constraints["contact"] = contact
     return contact

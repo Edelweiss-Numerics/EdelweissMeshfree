@@ -40,6 +40,11 @@ class ParticlePenaltyContactImplicitSurfaceConstraint(MPMConstraintBase):
         If True, the constraint is only active while one of its points is close to the surface.
     proximityFactor
         How close, as a multiple of the particle's characteristic length.
+    interpolationLinearizedAboutCenter
+        False (default): measure the field at the point and distribute the force there with the shape functions at
+        the point, N. True: with the particle's interpolation linearized about its center, G, with which the particle
+        moves its own points (symmetric and conservative). See
+        :meth:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.interpolationVectorAtPointOf`.
     """
 
     #: Carries nothing from one increment to the next.
@@ -63,8 +68,10 @@ class ParticlePenaltyContactImplicitSurfaceConstraint(MPMConstraintBase):
         penaltyParameter: float = 1e5,
         doProximityCheck: bool = True,
         proximityFactor: float = 2.0,
+        interpolationLinearizedAboutCenter: bool = False,
     ):
         self._name = name
+        self.interpolationLinearizedAboutCenter = interpolationLinearizedAboutCenter
         self._field = "displacement"
         self._fieldSize = getFieldSize(self._field, model.domainSize)
         self._nodes = dict()
@@ -165,9 +172,9 @@ class ParticlePenaltyContactImplicitSurfaceConstraint(MPMConstraintBase):
                 normal = grad / grad_norm
 
             # 2. Kinematics (Displacement Increment)
-            G_vec = self._particle.getAttachedPointInterpolationVector(constrained_point).flatten()
+            interpolation = self.interpolationVectorAtPointOf(self._particle, constrained_point).flatten()
 
-            deltaU_point = G_vec @ dU.reshape((-1, self._fieldSize))
+            deltaU_point = interpolation @ dU.reshape((-1, self._fieldSize))
 
             constraint_vec = -normal
             g = -current_dist + np.dot(constraint_vec, deltaU_point)
@@ -179,7 +186,7 @@ class ParticlePenaltyContactImplicitSurfaceConstraint(MPMConstraintBase):
             for i in range(len(self._nodes)):
 
                 start_idx = i * self._fieldSize
-                dg_dU[start_idx : start_idx + self._fieldSize] = G_vec[i] * constraint_vec
+                dg_dU[start_idx : start_idx + self._fieldSize] = interpolation[i] * constraint_vec
 
             # Update Force (Using += just like original)
             P += self._penaltyParameter * dg_dU * g
@@ -204,6 +211,7 @@ def ParticlePenaltyContactImplicitSurfaceConstraintFactory(
     penaltyParameter: float = 1e5,
     doProximityCheck: bool = True,
     proximityFactor: float = 2.0,
+    interpolationLinearizedAboutCenter: bool = False,
 ):
     constraints = dict()
 
@@ -222,6 +230,7 @@ def ParticlePenaltyContactImplicitSurfaceConstraintFactory(
                     penaltyParameter=penaltyParameter,
                     doProximityCheck=doProximityCheck,
                     proximityFactor=proximityFactor,
+                    interpolationLinearizedAboutCenter=interpolationLinearizedAboutCenter,
                 )
         return constraints
 
@@ -240,6 +249,7 @@ def ParticlePenaltyContactImplicitSurfaceConstraintFactory(
                 penaltyParameter,
                 doProximityCheck,
                 proximityFactor,
+                interpolationLinearizedAboutCenter=interpolationLinearizedAboutCenter,
             )
         return constraints
 

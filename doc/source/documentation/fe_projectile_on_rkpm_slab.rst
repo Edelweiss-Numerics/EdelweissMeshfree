@@ -85,13 +85,15 @@ vertices of a hexahedral particle on its faces are ``[0, 3, 4, 7]`` (x min), ``[
     :pyobject: holdTheSlab
 
 A vertex moves with the particle's own deformation, its centre displacement and its smoothed deformation gradient:
-by :math:`\sum_I G_I \Delta\boldsymbol{U}_I` in an increment, with the particle's interpolation vector of an attached
-point :math:`G_I` (:meth:`~edelweissmeshfree.particles.base.baseparticle.BaseParticle.getAttachedPointInterpolationVector`),
-not with the shape functions at the vertex. The support (and the contact below) distributes its force with the same
-:math:`G_I`, the transpose of the vertex motion: its penalty stiffness is symmetric and it does no work over a closed
-cycle of motion (``edelweissmeshfree/constraints/test/vertexpenaltywork_test.py``). Distributing the force with the
-shape functions at the vertex is not conservative: it feeds energy into the particles at the supports, and a crushed,
-soft particle there blows up, whatever the time increment.
+by :math:`\sum_I G_I \Delta\boldsymbol{U}_I` in an increment, with the particle's shape functions linearized about its
+centre :math:`G_I`
+(:meth:`~edelweissmeshfree.particles.base.baseparticle.BaseParticle.getInterpolationVectorLinearizedAboutCenter`),
+not with the shape functions at the vertex. With ``interpolationLinearizedAboutCenter=True`` the support (and the
+contact below) distributes its force with the same :math:`G_I`, the transpose of the vertex motion: its penalty
+stiffness is symmetric and it does no work over a closed cycle of motion
+(``edelweissmeshfree/constraints/test/vertexpenaltywork_test.py``). The default distributes the force with the shape
+functions at the vertex, which is not conservative: it feeds energy into the particles at the supports, and a crushed,
+soft particle there blows up, whatever the time increment. This model therefore opts in everywhere.
 
 Constrain the vertices, not the centres: the centres lie half a particle off the plane and move with Poisson's
 effect. The support penalty must be stiff against the material next to it, or the plane gives way and springs back

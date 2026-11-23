@@ -43,6 +43,11 @@ class ParticlePenaltyContactImplicitSurfaceConstraintExplicit(MPMExplicitConstra
         If True, constraints are only activated when particles are within a certain proximity to the surface.
     proximityFactor
         Multiplier for the proximity distance threshold, based on particle size. Default is 2.
+    interpolationLinearizedAboutCenter
+        False (default): measure the field at the point and distribute the force there with the shape functions at
+        the point, N. True: with the particle's interpolation linearized about its center, G, with which the particle
+        moves its own points (symmetric and conservative). See
+        :meth:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.interpolationVectorAtPointOf`.
     """
 
     #: Carries nothing from one increment to the next.
@@ -61,8 +66,10 @@ class ParticlePenaltyContactImplicitSurfaceConstraintExplicit(MPMExplicitConstra
         penaltyParameter: float = 1e5,
         doProximityCheck: bool = True,
         proximityFactor: float = 2.0,
+        interpolationLinearizedAboutCenter: bool = False,
     ):
         self._name = name
+        self.interpolationLinearizedAboutCenter = interpolationLinearizedAboutCenter
         self._field = "displacement"
         self._fieldSize = getFieldSize(self._field, model.domainSize)
         # the nodes of the particle's kernel functions, and where they sit in the block (see updateConnectivity)
@@ -190,10 +197,13 @@ class ParticlePenaltyContactImplicitSurfaceConstraintExplicit(MPMExplicitConstra
 
                 force_vector = self._penaltyParameter * g * normal
 
-                # the interpolation vector with which the particle moves the point: the force is its transpose
-                G = self._particle.getAttachedPointInterpolationVector(p_coord).flatten()
+                # the vector the force is distributed with (see interpolationVectorAtPointOf)
+                interpolation = self.interpolationVectorAtPointOf(self._particle, p_coord).flatten()
                 addForcesOnPointsOfParticle(
-                    P.reshape(-1, self._fieldSize), self._localNodes, G[np.newaxis, :], force_vector[np.newaxis, :]
+                    P.reshape(-1, self._fieldSize),
+                    self._localNodes,
+                    interpolation[np.newaxis, :],
+                    force_vector[np.newaxis, :],
                 )
 
                 total_reaction += self._penaltyParameter * g
@@ -213,6 +223,7 @@ def ParticlePenaltyContactImplicitSurfaceConstraintExplicitFactory(
     penaltyParameter: float = 1e5,
     doProximityCheck: bool = True,
     proximityFactor: float = 2.0,
+    interpolationLinearizedAboutCenter: bool = False,
 ):
     """
     Factory function to create Explicit Penalty Contact constraints for collections.
@@ -242,6 +253,9 @@ def ParticlePenaltyContactImplicitSurfaceConstraintExplicitFactory(
         If True, constraints are only activated when particles are within a certain proximity to the surface.
     proximityFactor
         Multiplier for the proximity distance threshold, based on particle size. Default is 2.
+    interpolationLinearizedAboutCenter
+        Passed to every constraint: False (default) the shape functions at the point, N; True the particle's
+        interpolation linearized about its center, G.
     """
     constraints = dict()
 
@@ -260,6 +274,7 @@ def ParticlePenaltyContactImplicitSurfaceConstraintExplicitFactory(
                     penaltyParameter=penaltyParameter,
                     doProximityCheck=doProximityCheck,
                     proximityFactor=proximityFactor,
+                    interpolationLinearizedAboutCenter=interpolationLinearizedAboutCenter,
                 )
         return constraints
 
@@ -278,6 +293,7 @@ def ParticlePenaltyContactImplicitSurfaceConstraintExplicitFactory(
                 penaltyParameter,
                 doProximityCheck,
                 proximityFactor,
+                interpolationLinearizedAboutCenter=interpolationLinearizedAboutCenter,
             )
         return constraints
 

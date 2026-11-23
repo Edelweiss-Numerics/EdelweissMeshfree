@@ -37,11 +37,12 @@ particles sit in its block, and how a force on a point of a particle reaches tho
 
 A constraint that measures a point of a particle -- a vertex held by a support, a vertex in contact -- acts on the nodes
 of the particle's kernel functions, which change as the particle moves. Its block holds each of these nodes once
-(:func:`locateTheNodesOfParticles`). A force on the point reaches the nodes with the interpolation vector with which
-the particle moves the point, :math:`G_B`
-(:meth:`~edelweissmeshfree.particles.base.baseparticle.BaseParticle.getAttachedPointInterpolationVector`), the
-transpose of the point's motion, so that a penalty on the point has a symmetric stiffness and does no work over a
-closed cycle (:func:`addForcesOnPointsOfParticle`). The constraints of
+(:func:`locateTheNodesOfParticles`). A force on the point reaches the nodes with the vector the constraint chose for
+the point (:func:`addForcesOnPointsOfParticle`;
+:meth:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.interpolationVectorAtPointOf`): the
+shape functions at the point, or the particle's interpolation linearized about its center, with which it moves the
+point, the transpose of the point's motion, so that a penalty on the point has a symmetric stiffness and does no work
+over a closed cycle. The constraints of
 :mod:`edelweissmeshfree.constraints.explicit` and
 :class:`~edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet` use both; a new one
 is then its physics -- the gap, the pairing, the force -- and a constructor.
@@ -82,11 +83,16 @@ def locateTheNodesOfParticles(kernelFunctionsOfParticles: Iterable[list], localI
 
 
 def addForcesOnPointsOfParticle(
-    PAtNodes: np.ndarray, localNodes: np.ndarray, G: np.ndarray, forces: np.ndarray, components: list[int] = None
+    PAtNodes: np.ndarray,
+    localNodes: np.ndarray,
+    interpolations: np.ndarray,
+    forces: np.ndarray,
+    components: list[int] = None,
 ):
     """Add the residual contribution of forces on points of one particle, the negative of the forces on the nodes of its
-    kernel functions: :math:`\\boldsymbol{P}_B \\mathrel{-}= \\sum_p G_{pB}\\, \\boldsymbol{f}_p`, with the interpolation
-    vector :math:`G_{pB}` with which the particle moves the point :math:`p`.
+    kernel functions: :math:`\\boldsymbol{P}_B \\mathrel{-}= \\sum_p I_{pB}\\, \\boldsymbol{f}_p`, with the vector
+    :math:`I_{pB}` the constraint distributes the force on the point :math:`p` with
+    (:meth:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.interpolationVectorAtPointOf`).
 
     Parameters
     ----------
@@ -95,8 +101,8 @@ def addForcesOnPointsOfParticle(
     localNodes
         Where the nodes of the particle's kernel functions sit in the block (:func:`locateTheNodesOfParticles`). They
         are distinct, so the fancy indexing drops no contribution.
-    G
-        The interpolation vectors of the points, one row per point: ``nPoints x nNodesOfTheParticle``.
+    interpolations
+        The vectors of the points, one row per point: ``nPoints x nNodesOfTheParticle``.
     forces
         The forces on the points, one row per point: ``nPoints x fieldSize``, or ``nPoints x len(components)``.
     components
@@ -104,6 +110,6 @@ def addForcesOnPointsOfParticle(
     """
 
     if components is None:
-        PAtNodes[localNodes] -= G.T @ forces
+        PAtNodes[localNodes] -= interpolations.T @ forces
     else:
-        PAtNodes[np.ix_(localNodes, components)] -= G.T @ forces
+        PAtNodes[np.ix_(localNodes, components)] -= interpolations.T @ forces
