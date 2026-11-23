@@ -74,7 +74,10 @@
 <li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction.BaseMeshfreeKernelFunction"><code class="docutils literal notranslate"><span class="pre">BaseMeshfreeKernelFunction</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#module-edelweissmeshfree.meshfree.approximations.marmot.marmotmeshfreeapproximation">Marmot wrappers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#marmot-wrappers">Marmot wrappers</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#limit-on-the-condition-of-the-moment-matrix">Limit on the condition of the moment matrix</a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="#module-edelweissmeshfree.meshfree.particlekerneldomain">Integration helpers</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.meshfree.particlekerneldomain.ParticleKernelDomain"><code class="docutils literal notranslate"><span class="pre">ParticleKernelDomain</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.meshfree.vci.VariationallyConsistentIntegrationManager"><code class="docutils literal notranslate"><span class="pre">VariationallyConsistentIntegrationManager</span></code></a></li>
@@ -303,9 +306,67 @@ vectorised box test. Kernel functions whose support is a subset of their boundin
 </dd></dl>
 
 </section>
-<section id="module-edelweissmeshfree.meshfree.approximations.marmot.marmotmeshfreeapproximation">
-<span id="marmot-wrappers"></span><h2>Marmot wrappers<a class="headerlink" href="#module-edelweissmeshfree.meshfree.approximations.marmot.marmotmeshfreeapproximation" title="Link to this heading"></a></h2>
+<section id="marmot-wrappers">
+<h2>Marmot wrappers<a class="headerlink" href="#marmot-wrappers" title="Link to this heading"></a></h2>
+<section id="limit-on-the-condition-of-the-moment-matrix">
+<h3>Limit on the condition of the moment matrix<a class="headerlink" href="#limit-on-the-condition-of-the-moment-matrix" title="Link to this heading"></a></h3>
+<p>A particle that is stretched far beyond its neighbours – torn, with its damage close to one – can reach with a face
+into a void, a borehole or a crack, where only the kernels of one wall of particles cover it. These kernels lie nearly
+in one plane, on one side of the point, and reproducing a linear field there takes shape functions of the size of the
+distance to the wall over the scatter of the kernel centres about it. The particle’s smoothed gradients and its
+stiffness grow with them, and so does its bound of the stable time increment of an explicit analysis: one such
+particle can set the time increment of the whole model.</p>
+<p><code class="docutils literal notranslate"><span class="pre">MarmotMeshfreeApproximationWrapper</span></code> takes the optional keyword argument <code class="docutils literal notranslate"><span class="pre">momentMatrixConditionLimit</span></code>: the
+completeness order of a point whose moment matrix (scaled to a unit diagonal) has a larger condition number is lowered,
+for the linear basis to the order 0, the Shepard functions, which stay between 0 and 1. With implicit gradients
+(<code class="docutils literal notranslate"><span class="pre">&quot;ReproducingKernelImplicitGradient&quot;</span></code>), such a point gets the gradients of the Shepard functions. The default <code class="docutils literal notranslate"><span class="pre">inf</span></code>
+sets no limit. With a limit, every point below it is evaluated bit for bit as without one, so an intact model is
+unchanged; a limit between <code class="docutils literal notranslate"><span class="pre">1e5</span></code> and <code class="docutils literal notranslate"><span class="pre">1e6</span></code> separates the points of intact particles from those of a torn one for the
+usual supports. The lower order has a price where it acts: the shape functions jump when a point crosses the limit,
+and a particle with such points no longer passes the patch test. See Marmot’s documentation of the meshfree
+approximation for the measure, the values it takes, and these costs. The limit acts on the shape functions, not on the
+material: a torn particle keeps its mass and its stiffness, it is not eroded.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">approximation</span> <span class="o">=</span> <span class="n">MarmotMeshfreeApproximationWrapper</span><span class="p">(</span>
+    <span class="s2">"ReproducingKernel"</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">completenessOrder</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">momentMatrixConditionLimit</span><span class="o">=</span><span class="mf">1e5</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<span class="target" id="module-edelweissmeshfree.meshfree.approximations.marmot.marmotmeshfreeapproximation"></span><dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.meshfree.approximations.marmot.marmotmeshfreeapproximation.MarmotMeshfreeApproximationWrapper">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.meshfree.approximations.marmot.marmotmeshfreeapproximation.</span></span><span class="sig-name descname"><span class="pre">MarmotMeshfreeApproximationWrapper</span></span><a class="headerlink" href="#edelweissmeshfree.meshfree.approximations.marmot.marmotmeshfreeapproximation.MarmotMeshfreeApproximationWrapper" title="Link to this definition"></a></dt>
+<dd><p>A meshfree approximation of Marmot: the reproducing kernel approximation with explicit gradients
+(<code class="docutils literal notranslate"><span class="pre">&quot;ReproducingKernel&quot;</span></code>) or with implicit gradients (<code class="docutils literal notranslate"><span class="pre">&quot;ReproducingKernelImplicitGradient&quot;</span></code>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>approximationType</strong> – <code class="docutils literal notranslate"><span class="pre">&quot;ReproducingKernel&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;ReproducingKernelImplicitGradient&quot;</span></code>.</p></li>
+<li><p><strong>dim</strong> – The spatial dimension.</p></li>
+<li><p><strong>completenessOrder</strong> – The order of the polynomials the shape functions reproduce (keyword, required).</p></li>
+<li><p><strong>momentMatrixConditionLimit</strong> – The limit on the condition of the moment matrix, scaled to a unit diagonal, above which the completeness order
+of a point is lowered, for the linear basis to the order 0, the Shepard functions (keyword, optional). Such a
+point lies on one side of all kernels that cover it, which lie nearly in one plane: e.g. a point of a strongly stretched
+particle reaching into a void. There the linear shape functions extrapolate and grow without bound. The default
+<code class="docutils literal notranslate"><span class="pre">inf</span></code> sets no limit; with a limit, every point below it is evaluated bit for bit as without one. See Marmot’s
+documentation of the meshfree approximation for the condition measure, what the lower order costs, and the
+range of useful limits.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><strong>computeShapeFunctions</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>computeShapeFunctionsAndGradients</strong></p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 <span class="target" id="module-edelweissmeshfree.meshfree.kernelfunctions.marmot.marmotmeshfreekernelfunction"></span></section>
+</section>
 <section id="module-edelweissmeshfree.meshfree.particlekerneldomain">
 <span id="integration-helpers"></span><h2>Integration helpers<a class="headerlink" href="#module-edelweissmeshfree.meshfree.particlekerneldomain" title="Link to this heading"></a></h2>
 <p>Particle-Kernel-Domains describe the potential interaction between a set of particles and a set of kernel kernel functions.
