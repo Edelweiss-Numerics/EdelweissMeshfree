@@ -98,11 +98,13 @@ def properties(k1Factor: float = 1.0) -> np.ndarray:
     )
 
 
-def run_sim(nIncrements: int = N_INCREMENTS):
+def run_sim(nIncrements: int = N_INCREMENTS, momentMatrixConditionLimit: float = np.inf):
     journal = Journal()
     dimension = 3
     model = MPMModel(dimension)
-    approximation = MarmotMeshfreeApproximationWrapper("ReproducingKernel", dimension, completenessOrder=1)
+    approximation = MarmotMeshfreeApproximationWrapper(
+        "ReproducingKernel", dimension, completenessOrder=1, momentMatrixConditionLimit=momentMatrixConditionLimit
+    )
 
     def particleFactory(number, vertexCoordinates, volume):
         inTheMiddleLayer = abs(np.mean(vertexCoordinates[:, 2])) < 0.5 * PARTICLE_SIZE
@@ -222,6 +224,17 @@ def test_sim(assert_gold):
 
     gold = np.loadtxt("gold.csv")
     assert_gold(np.c_[r["displacement"], r["nonlocal strain"]], gold)
+
+
+def test_a_limit_on_the_condition_of_the_moment_matrix_leaves_the_bar_bit_for_bit():
+    """Every point of the bar, its free faces and corners and the crack in the middle layer included, has a moment
+    matrix well below a limit of 1e4: with the limit, the bar moves bit for bit as without one."""
+
+    unlimited, _ = run_sim()
+    limited, _ = run_sim(momentMatrixConditionLimit=1e4)
+
+    for name, values in results(unlimited).items():
+        np.testing.assert_array_equal(results(limited)[name], values)
 
 
 if __name__ == "__main__":
