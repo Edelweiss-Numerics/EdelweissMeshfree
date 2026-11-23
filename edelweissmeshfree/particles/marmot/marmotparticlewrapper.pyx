@@ -318,10 +318,13 @@ cdef class MarmotParticleWrapper:
         self._marmotParticle.getInterpolationVector(&Nview_[0], &coordinates[0])
         return N
 
-    def getAttachedPointInterpolationVector(self, double[::1] coordinates) -> np.ndarray:
+    def getInterpolationVectorLinearizedAboutCenter(self, double[::1] coordinates) -> np.ndarray:
+        """The shape functions linearized about the center; see
+        :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.getInterpolationVectorLinearizedAboutCenter`."""
+
         cdef np.ndarray G = np.zeros(len(self._nodes))
         cdef double[::1] Gview_ = G
-        self._marmotParticle.getAttachedPointInterpolationVector(&Gview_[0], &coordinates[0])
+        self._marmotParticle.getInterpolationVectorLinearizedAboutCenter(&Gview_[0], &coordinates[0])
         return G
 
     def assignKernelFunctions(self, list marmotMeshfreeKernelFunctionWrappers):

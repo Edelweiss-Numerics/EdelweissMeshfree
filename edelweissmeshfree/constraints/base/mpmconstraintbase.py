@@ -7,6 +7,7 @@ Unlike elements, constraints are not subject to external loads.
 
 from abc import abstractmethod
 
+import numpy as np
 from edelweissfe.constraints.base.constraintbase import ConstraintBase
 from edelweissfe.variables.scalarvariable import ScalarVariable
 
@@ -58,6 +59,46 @@ class MPMConstraintBase(ConstraintBase):
     #: :attr:`~edelweissfe.nodecouplingentity.base.nodecouplingentity.BaseNodeCouplingEntity.connectivityChangesWithMotion`): a solver that
     #: never updates the connectivity, e.g. ``NEST``, refuses it.
     connectivityChangesWithMotion = True
+
+    #: Whether this constraint uses, at a point of a particle, the particle's interpolation linearized about its center
+    #: (True) or the shape functions at the point (False); see :meth:`interpolationVectorAtPointOf`. The constraints
+    #: that act on points of particles set it from their constructor option ``interpolationLinearizedAboutCenter``.
+    interpolationLinearizedAboutCenter: bool = False
+
+    def interpolationVectorAtPointOf(self, particle, coordinates: np.ndarray) -> np.ndarray:
+        """The vector with which this constraint measures a field at a point of a particle (its center, a vertex, a
+        face center) and distributes its force there over the nodes of the particle's kernel functions.
+
+        - ``interpolationLinearizedAboutCenter = False`` (the default): the shape functions at the point,
+          :meth:`~edelweissmeshfree.particles.base.baseparticle.BaseParticle.getInterpolationVector`, :math:`\\mathbf{N}`.
+          A constraint on the increment of a field there is then symmetric. But the particle itself moves the point
+          with its interpolation linearized about its center, :math:`\\mathbf{G}`, not with :math:`\\mathbf{N}`: a
+          constraint on the position of the point (a support or a contact in an explicit analysis, where the point is
+          where the particle has put it) distributes its force with :math:`\\mathbf{N}` while the point moves with
+          :math:`\\mathbf{G}`. Its stiffness :math:`k\\,\\mathbf{N}\\mathbf{G}^\\mathsf{T}` is unsymmetric and not
+          conservative: it does work over a closed cycle of motion and can feed energy into softened material next to
+          a support.
+        - ``interpolationLinearizedAboutCenter = True``: the particle's own interpolation at its own points,
+          :meth:`~edelweissmeshfree.particles.base.baseparticle.BaseParticle.getInterpolationVectorLinearizedAboutCenter`,
+          :math:`\\mathbf{G}`, for measuring and for distributing, for every field. The stiffness
+          :math:`k\\,\\mathbf{G}\\mathbf{G}^\\mathsf{T}` is symmetric and the constraint conservative.
+
+        Parameters
+        ----------
+        particle
+            The particle.
+        coordinates
+            The point, in the current configuration of the particle.
+
+        Returns
+        -------
+        np.ndarray
+            The vector, one value per kernel function of the particle.
+        """
+
+        if self.interpolationLinearizedAboutCenter:
+            return particle.getInterpolationVectorLinearizedAboutCenter(coordinates)
+        return particle.getInterpolationVector(coordinates)
 
     @property
     @abstractmethod

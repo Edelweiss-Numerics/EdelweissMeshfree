@@ -29,12 +29,14 @@ class ParticleLagrangianContactCartesianBoundaryConstraint(MPMConstraintBase):
 
     The orientation is determined based on the initial position of the particle relative to the boundary.
 
-    The constrained point is a point of the particle and moves with it, as an increment on the current configuration,
-    so the gap is measured with the increment :math:`\boldsymbol{G} \cdot \Delta\mathbf{U}_j` of the constrained
-    component :math:`j` from the position at the start of the increment, with the particle's interpolation vector of
-    an attached point
-    (:meth:`~edelweissmeshfree.particles.base.baseparticle.BaseParticle.getAttachedPointInterpolationVector`): the
-    position the particle gives the point at the end of the increment. While the particle is in contact,
+    The particle interpolates its displacement from the nodes of its kernel functions, as an increment on the current
+    configuration, so the gap is measured with the increment :math:`\boldsymbol{I} \cdot \Delta\mathbf{U}_j` of the
+    constrained component :math:`j` from the position at the start of the increment, where :math:`\boldsymbol{I}` is
+    the shape functions at the point, :math:`\boldsymbol{N}` (the default), or, with
+    ``interpolationLinearizedAboutCenter``, the particle's interpolation linearized about its center,
+    :math:`\boldsymbol{G}`, with which it moves the point
+    (:meth:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.interpolationVectorAtPointOf`).
+    While the particle is in contact,
     a multiplier :math:`\lambda` enforces :math:`g = 0`, and the constraint adds
 
     .. math::
@@ -44,7 +46,7 @@ class ParticleLagrangianContactCartesianBoundaryConstraint(MPMConstraintBase):
         \mathbf{K}_{U_j \lambda} \mathrel{+}= \frac{\partial g}{\partial \Delta\mathbf{U}_j}, \qquad
         \mathbf{K}_{\lambda U_j} \mathrel{+}= \frac{\partial g}{\partial \Delta\mathbf{U}_j}^T,
 
-    with :math:`\partial g / \partial \Delta\mathbf{U}_j = \boldsymbol{n}_j \boldsymbol{G}`. The multiplier is the
+    with :math:`\partial g / \partial \Delta\mathbf{U}_j = \boldsymbol{n}_j \boldsymbol{I}`. The multiplier is the
     contact force, positive in compression. A particle that does not penetrate the boundary, or whose multiplier would
     pull it towards the boundary, is out of contact: the constraint then adds :math:`P_{\lambda} \mathrel{+}= \lambda`
     and :math:`K_{\lambda\lambda} \mathrel{+}= 1`, which holds the multiplier at zero.
@@ -74,6 +76,11 @@ class ParticleLagrangianContactCartesianBoundaryConstraint(MPMConstraintBase):
         The vertex if location is "vertex".
     velocity
         The velocity of the boundary along the constrained component.
+    interpolationLinearizedAboutCenter
+        False (default): measure the field at the point and distribute the force there with the shape functions at
+        the point, N. True: with the particle's interpolation linearized about its center, G, with which the particle
+        moves its own points (symmetric and conservative). See
+        :meth:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.interpolationVectorAtPointOf`.
     """
 
     #: The multiplier is a scalar variable of the model, which the model's checkpoint holds.
@@ -90,8 +97,10 @@ class ParticleLagrangianContactCartesianBoundaryConstraint(MPMConstraintBase):
         faceID: int = None,
         vertexID: int = None,
         velocity: float = 0.0,
+        interpolationLinearizedAboutCenter: bool = False,
     ):
         self._name = name
+        self.interpolationLinearizedAboutCenter = interpolationLinearizedAboutCenter
         self._field = "displacement"
         self._fieldSize = getFieldSize(self._field, model.domainSize)
         self._nodes = dict()
@@ -206,11 +215,11 @@ class ParticleLagrangianContactCartesianBoundaryConstraint(MPMConstraintBase):
 
         self.reactionForce = multiplier
 
-        G = self._particle.getAttachedPointInterpolationVector(self._getConstraintLocation())
+        interpolation = self.interpolationVectorAtPointOf(self._particle, self._getConstraintLocation())
 
         nodeIdcs = [self._nodes[kf.node] for kf in self._particle.kernelFunctions]
 
-        deltaU_j = G @ dU_U_j[nodeIdcs]
+        deltaU_j = interpolation @ dU_U_j[nodeIdcs]
 
         g = self._orientation * (
             deltaU_j - (-self._particle_coordinate_j + self._boundaryPosition + self._velocity * timeStep.stepProgress)
@@ -230,7 +239,7 @@ class ParticleLagrangianContactCartesianBoundaryConstraint(MPMConstraintBase):
 
             return
 
-        dg_dU_j = G * self._orientation
+        dg_dU_j = interpolation * self._orientation
 
         P_U_j[nodeIdcs] += multiplier * dg_dU_j
         P_L[lag] += g
@@ -251,6 +260,7 @@ def ParticleLagrangianContactCartesianBoundaryConstraintFactory(
     location: str = "center",
     faceID: int = None,
     vertexID: int = None,
+    interpolationLinearizedAboutCenter: bool = False,
 ):
     """
     Factory function to create ParticleLagrangianWeakDirichlet constraints on a collection of particles.
@@ -275,6 +285,9 @@ def ParticleLagrangianContactCartesianBoundaryConstraintFactory(
         The face ID if location is "face" and if particleCollection is not an EntityBasedSurface.
     vertexID
         The vertex ID if location is "vertex".
+    interpolationLinearizedAboutCenter
+        Passed to every constraint: False (default) the shape functions at the point, N; True the particle's
+        interpolation linearized about its center, G.
 
     Returns
     -------
@@ -289,7 +302,14 @@ def ParticleLagrangianContactCartesianBoundaryConstraintFactory(
             for i, p in enumerate(particles):
                 name = f"{baseName}_face{faceID}_{i}"
                 constraint = ParticleLagrangianContactCartesianBoundaryConstraint(
-                    name, p, component, boundaryPosition, model, location="face", faceID=faceID
+                    name,
+                    p,
+                    component,
+                    boundaryPosition,
+                    model,
+                    location="face",
+                    faceID=faceID,
+                    interpolationLinearizedAboutCenter=interpolationLinearizedAboutCenter,
                 )
                 constraints[name] = constraint
         return constraints
@@ -299,7 +319,15 @@ def ParticleLagrangianContactCartesianBoundaryConstraintFactory(
         for i, p in enumerate(particleCollection):
             name = f"{baseName}_{i}"
             constraint = ParticleLagrangianContactCartesianBoundaryConstraint(
-                name, p, component, boundaryPosition, model, location, faceID, vertexID
+                name,
+                p,
+                component,
+                boundaryPosition,
+                model,
+                location,
+                faceID,
+                vertexID,
+                interpolationLinearizedAboutCenter=interpolationLinearizedAboutCenter,
             )
             constraints[name] = constraint
 

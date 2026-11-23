@@ -59,6 +59,11 @@ class ParticlePenaltyContactCartesianBoundaryConstraint(MPMConstraintBase):
         Whether to perform a proximity check before applying the constraint.
     proximityFactor : float
         The factor to multiply the particle characteristic length for proximity checking.
+    interpolationLinearizedAboutCenter : bool
+        False (default): measure the field at the point and distribute the force there with the shape functions at
+        the point, N. True: with the particle's interpolation linearized about its center, G, with which the particle
+        moves its own points (symmetric and conservative). See
+        :meth:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.interpolationVectorAtPointOf`.
     """
 
     #: Carries nothing from one increment to the next.
@@ -83,8 +88,10 @@ class ParticlePenaltyContactCartesianBoundaryConstraint(MPMConstraintBase):
         penaltyParameter: float = 1e5,
         doProximityCheck: bool = True,
         proximityFactor: float = 2.0,
+        interpolationLinearizedAboutCenter: bool = False,
     ):
         self._name = name
+        self.interpolationLinearizedAboutCenter = interpolationLinearizedAboutCenter
         self._field = "displacement"
         self._fieldSize = getFieldSize(self._field, model.domainSize)
         self._nodes = dict()
@@ -228,11 +235,11 @@ class ParticlePenaltyContactCartesianBoundaryConstraint(MPMConstraintBase):
 
             constrained_point_j = constrained_point[self._component]
 
-            G = self._particle.getAttachedPointInterpolationVector(constrained_point).flatten()
+            interpolation = self.interpolationVectorAtPointOf(self._particle, constrained_point).flatten()
 
             nodeIdcs = [self._nodes[kf.node] for kf in self._particle.kernelFunctions]
 
-            deltaU_j = G @ dU_U_j[nodeIdcs]
+            deltaU_j = interpolation @ dU_U_j[nodeIdcs]
 
             g = self._orientation * (
                 deltaU_j - (-constrained_point_j + self._boundaryPosition + self._velocity * timeStep.stepProgress)
@@ -244,7 +251,7 @@ class ParticlePenaltyContactCartesianBoundaryConstraint(MPMConstraintBase):
 
             penaltyForce += g * self._penaltyParameter
 
-            dg_dU_j = G * self._orientation
+            dg_dU_j = interpolation * self._orientation
             P_U_i[nodeIdcs] += self._penaltyParameter * dg_dU_j * g
             K_UU_ij[np.ix_(nodeIdcs, nodeIdcs)] += self._penaltyParameter * np.outer(dg_dU_j, dg_dU_j)
 
@@ -264,6 +271,7 @@ def ParticlePenaltyContactCartesianBoundaryConstraintFactory(
     penaltyParameter: float = 1e5,
     doProximityCheck: bool = True,
     proximityFactor: float = 2.0,
+    interpolationLinearizedAboutCenter: bool = False,
 ):
     """
     Factory function to create ParticlePenaltyWeakDirichlet constraints on a collection of particles.
@@ -294,6 +302,9 @@ def ParticlePenaltyContactCartesianBoundaryConstraintFactory(
         Whether to perform a proximity check before applying the constraint.
     proximityFactor
         The factor to multiply the particle characteristic length for proximity checking.
+    interpolationLinearizedAboutCenter
+        Passed to every constraint: False (default) the shape functions at the point, N; True the particle's
+        interpolation linearized about its center, G.
 
     Returns
     -------
@@ -318,6 +329,7 @@ def ParticlePenaltyContactCartesianBoundaryConstraintFactory(
                     penaltyParameter=penaltyParameter,
                     doProximityCheck=doProximityCheck,
                     proximityFactor=proximityFactor,
+                    interpolationLinearizedAboutCenter=interpolationLinearizedAboutCenter,
                 )
                 constraints[name] = constraint
         return constraints
@@ -338,6 +350,7 @@ def ParticlePenaltyContactCartesianBoundaryConstraintFactory(
                 penaltyParameter=penaltyParameter,
                 doProximityCheck=doProximityCheck,
                 proximityFactor=proximityFactor,
+                interpolationLinearizedAboutCenter=interpolationLinearizedAboutCenter,
             )
             constraints[name] = constraint
 
