@@ -200,8 +200,15 @@ def change_test_dir(request, monkeypatch):
     monkeypatch.chdir(request.fspath.dirname)
 
 
-def test_sim(assert_gold):
-    model, solver = run_sim()
+@pytest.fixture(scope="module")
+def unlimitedRun():
+    """The run without a limit on the condition of the moment matrix, shared by the tests of this module."""
+
+    return run_sim()
+
+
+def test_sim(unlimitedRun, assert_gold):
+    model, solver = unlimitedRun
     r = results(model)
 
     assert np.isfinite(r["displacement"]).all() and np.isfinite(r["nonlocal strain"]).all()
@@ -226,11 +233,11 @@ def test_sim(assert_gold):
     assert_gold(np.c_[r["displacement"], r["nonlocal strain"]], gold)
 
 
-def test_a_limit_on_the_condition_of_the_moment_matrix_leaves_the_bar_bit_for_bit():
+def test_a_limit_on_the_condition_of_the_moment_matrix_leaves_the_bar_bit_for_bit(unlimitedRun):
     """Every point of the bar, its free faces and corners and the crack in the middle layer included, has a moment
     matrix well below a limit of 1e4: with the limit, the bar moves bit for bit as without one."""
 
-    unlimited, _ = run_sim()
+    unlimited, _ = unlimitedRun
     limited, _ = run_sim(momentMatrixConditionLimit=1e4)
 
     for name, values in results(unlimited).items():

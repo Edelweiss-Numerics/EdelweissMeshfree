@@ -77,7 +77,21 @@ def test_a_one_sided_point_gets_the_shepard_functions_above_the_limit(approximat
     assert np.abs(N).max() > 10.0
     phi = np.array([kernel.computeKernelFunction(ONE_SIDED_POINT) for kernel in kernels])
     np.testing.assert_allclose(NLimited, phi / phi.sum(), rtol=1e-12, atol=1e-15)
-    assert np.abs(dNLimited).max() * SUPPORT_RADIUS < 10.0
+
+    # the gradients, explicit or implicit, are those of the Shepard functions: their central differences
+    h = 1e-6
+    dNByDifferences = np.array(
+        [
+            (
+                limited.computeShapeFunctions(ONE_SIDED_POINT + h * unit, kernels)
+                - limited.computeShapeFunctions(ONE_SIDED_POINT - h * unit, kernels)
+            )
+            / (2 * h)
+            for unit in np.eye(3)
+        ]
+    ).T
+    assert np.abs(dNByDifferences).max() > 0.1
+    np.testing.assert_allclose(dNLimited, dNByDifferences, rtol=0, atol=1e-7)
 
 
 @pytest.mark.parametrize("approximationType", ["ReproducingKernel", "ReproducingKernelImplicitGradient"])
@@ -95,3 +109,8 @@ def test_a_point_inside_the_kernels_is_bitwise_unchanged_by_the_limit(approximat
 def test_a_limit_below_one_is_refused():
     with pytest.raises(ValueError):
         _kernelsAndApproximation("ReproducingKernel", momentMatrixConditionLimit=0.5)
+
+
+def test_a_misspelt_limit_is_refused():
+    with pytest.raises(TypeError):
+        _kernelsAndApproximation("ReproducingKernel", momentMatrixConditionlimit=1e5)

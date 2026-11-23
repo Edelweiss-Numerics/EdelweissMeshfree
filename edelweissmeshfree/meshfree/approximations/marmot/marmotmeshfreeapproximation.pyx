@@ -61,29 +61,36 @@ cdef class MarmotMeshfreeApproximationWrapper:
     completenessOrder
         The order of the polynomials the shape functions reproduce (keyword, required).
     momentMatrixConditionLimit
-        The limit on the condition of the moment matrix, scaled to a unit diagonal, above which a point is evaluated
-        with the completeness order 0, the Shepard functions (keyword, optional). Such a point lies on one side of all
-        kernels that cover it, which lie nearly in one plane: e.g. a point of a strongly stretched particle reaching
-        into a void. There the linear shape functions extrapolate and grow without bound. The default ``inf`` sets no
-        limit; with a limit, every point below it is evaluated bit for bit as without one. See Marmot's documentation
-        of the meshfree approximation for the condition measure and the range of useful limits.
+        The limit on the condition of the moment matrix, scaled to a unit diagonal, above which the completeness order
+        of a point is lowered, for the linear basis to the order 0, the Shepard functions (keyword, optional). Such a
+        point lies on one side of all kernels that cover it, which lie nearly in one plane: e.g. a point of a strongly stretched
+        particle reaching into a void. There the linear shape functions extrapolate and grow without bound. The default
+        ``inf`` sets no limit; with a limit, every point below it is evaluated bit for bit as without one. See Marmot's
+        documentation of the meshfree approximation for the condition measure, what the lower order costs, and the
+        range of useful limits.
     """
 
-    def __cinit__(self, str approximationType, int dim, **kwargs):
+    def __cinit__(
+        self,
+        str approximationType,
+        int dim,
+        *,
+        int completenessOrder,
+        double momentMatrixConditionLimit=float("inf"),
+    ):
 
-        validApproximationTypes = ["ReproducingKernel, ReproducingKernelImplicitGradient"]
+        validApproximationTypes = ["ReproducingKernel", "ReproducingKernelImplicitGradient"]
 
         self._nDim = dim
-        cdef double momentMatrixConditionLimit = kwargs.get("momentMatrixConditionLimit", np.inf)
 
         if approximationType == "ReproducingKernel":
                 self._marmotMeshfreeApproximation = <MarmotMeshfreeApproximation*> (
                                                                                     new
-                                                                                    MarmotMeshfreeReproducingKernelApproximation( dim, kwargs['completenessOrder'], momentMatrixConditionLimit ) )
+                                                                                    MarmotMeshfreeReproducingKernelApproximation( dim, completenessOrder, momentMatrixConditionLimit ) )
         elif approximationType == "ReproducingKernelImplicitGradient":
                 self._marmotMeshfreeApproximation = <MarmotMeshfreeApproximation*> (
                                                                                     new
-                                                                                    MarmotMeshfreeReproducingKernelApproximationImplicit( dim, kwargs['completenessOrder'], momentMatrixConditionLimit ) )
+                                                                                    MarmotMeshfreeReproducingKernelApproximationImplicit( dim, completenessOrder, momentMatrixConditionLimit ) )
         else:
                 raise NotImplementedError("Approximation type {:} not found in library. Valid options are {:}".format(approximationType, validApproximationTypes))
 
