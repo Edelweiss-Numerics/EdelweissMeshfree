@@ -183,6 +183,10 @@ cdef class MarmotParticleWrapper:
 
     @property
     def nDof(self):
+        return self._numberOfDofs()
+
+    cdef Py_ssize_t _numberOfDofs(self):
+        """The dofs of the particle: those of a node times its kernel functions; changes as they are reassigned."""
         return self._nBaseDof * self._nAssignedKernelFunctions
 
     @property
@@ -216,7 +220,7 @@ cdef class MarmotParticleWrapper:
         ``Kc`` has ``nDof * nDof`` entries, ``Pc`` and ``dUc`` have ``nDof``; ``nDof`` changes with every
         reassignment of the kernel functions. A buffer of another length raises a ``ValueError``."""
 
-        cdef Py_ssize_t nDof = self.nDof
+        cdef Py_ssize_t nDof = self._numberOfDofs()
         requireLength("computeKernels", "Kc", Kc.shape[0], nDof * nDof)
         requireLength("computeKernels", "Pc", Pc.shape[0], nDof)
         requireLength("computeKernels", "dUc", dUc.shape[0], nDof)
@@ -237,7 +241,7 @@ cdef class MarmotParticleWrapper:
         :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.updatePhysicsExplicit`. A failure in Marmot
         requests a cutback, as in :meth:`computeKernels`. ``dUc`` has ``nDof`` entries."""
 
-        requireLength("updatePhysicsExplicit", "dUc", dUc.shape[0], self.nDof)
+        requireLength("updatePhysicsExplicit", "dUc", dUc.shape[0], self._numberOfDofs())
 
         self._initializeStateVarsTemp()
         try:
@@ -251,7 +255,7 @@ cdef class MarmotParticleWrapper:
         :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.computePhysicsKernelsExplicit`. ``Pc`` has
         ``nDof`` entries."""
 
-        requireLength("computePhysicsKernelsExplicit", "Pc", Pc.shape[0], self.nDof)
+        requireLength("computePhysicsKernelsExplicit", "Pc", Pc.shape[0], self._numberOfDofs())
         self._marmotParticle.computePhysicsKernelsExplicit(&Pc[0])
 
     def computeLumpedInertia(self, double[::1] mLumped ):
@@ -259,7 +263,7 @@ cdef class MarmotParticleWrapper:
         :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedInertia`. ``mLumped`` has
         ``nDof`` entries."""
 
-        requireLength("computeLumpedInertia", "mLumped", mLumped.shape[0], self.nDof)
+        requireLength("computeLumpedInertia", "mLumped", mLumped.shape[0], self._numberOfDofs())
         self._marmotParticle.computeLumpedInertia(&mLumped[0])
 
     @property
@@ -278,7 +282,7 @@ cdef class MarmotParticleWrapper:
         :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedMomentum`. ``mLumped`` has
         ``nDof`` entries."""
 
-        requireLength("computeLumpedMomentum", "mLumped", mLumped.shape[0], self.nDof)
+        requireLength("computeLumpedMomentum", "mLumped", mLumped.shape[0], self._numberOfDofs())
         self._marmotParticle.computeLumpedMomentum(&mLumped[0])
 
     def computeLumpedDamping(self, double[::1] cLumped ):
@@ -286,7 +290,7 @@ cdef class MarmotParticleWrapper:
         :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedDamping`. ``cLumped`` has
         ``nDof`` entries."""
 
-        requireLength("computeLumpedDamping", "cLumped", cLumped.shape[0], self.nDof)
+        requireLength("computeLumpedDamping", "cLumped", cLumped.shape[0], self._numberOfDofs())
         self._marmotParticle.computeLumpedDamping(&cLumped[0])
 
     def assembleStiffness(self, double[::1] K):
@@ -295,7 +299,8 @@ cdef class MarmotParticleWrapper:
         visitor of the stiffness the particle describes, which leaves the particle as it was found; over a unit time
         increment at time zero. ``K`` has ``nDof * nDof`` entries."""
 
-        requireLength("assembleStiffness", "K", K.shape[0], self.nDof * self.nDof)
+        cdef Py_ssize_t nDof = self._numberOfDofs()
+        requireLength("assembleStiffness", "K", K.shape[0], nDof * nDof)
         assembleStiffness(dereference(self._marmotParticle), &K[0], 0.0, 1.0)
 
     def addBoundOfAbsoluteStiffnessTimes(self, double[::1, :] W, double[::1, :] bound):
@@ -305,8 +310,9 @@ cdef class MarmotParticleWrapper:
         increment at time zero, as :meth:`assembleStiffness`. ``W`` and ``bound`` both have ``nDof`` rows and the
         same number of columns."""
 
-        requireLength("addBoundOfAbsoluteStiffnessTimes", "W rows", W.shape[0], self.nDof)
-        requireLength("addBoundOfAbsoluteStiffnessTimes", "bound rows", bound.shape[0], self.nDof)
+        cdef Py_ssize_t nDof = self._numberOfDofs()
+        requireLength("addBoundOfAbsoluteStiffnessTimes", "W rows", W.shape[0], nDof)
+        requireLength("addBoundOfAbsoluteStiffnessTimes", "bound rows", bound.shape[0], nDof)
         requireLength("addBoundOfAbsoluteStiffnessTimes", "bound columns", bound.shape[1], W.shape[1])
         addBoundOfAbsoluteStiffnessTimes(
             dereference(self._marmotParticle), &W[0, 0], W.shape[1], &bound[0, 0], 0.0, 1.0
@@ -325,7 +331,7 @@ cdef class MarmotParticleWrapper:
         """Add a body load; see :meth:`edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeBodyLoad`.
         ``load`` has ``dimension`` entries, ``Pc`` has ``nDof`` and ``Kc`` has ``nDof * nDof``."""
 
-        cdef Py_ssize_t nDof = self.nDof
+        cdef Py_ssize_t nDof = self._numberOfDofs()
         requireLength("computeBodyLoad", "load", load.shape[0], self._nDim)
         requireLength("computeBodyLoad", "Pc", Pc.shape[0], nDof)
         requireLength("computeBodyLoad", "Kc", Kc.shape[0], nDof * nDof)
@@ -345,7 +351,7 @@ cdef class MarmotParticleWrapper:
         ``nDof`` entries and ``Kc`` has ``nDof * nDof``. How many values ``load`` holds depends on the load type,
         which only the Marmot particle knows, so it is not checked here."""
 
-        cdef Py_ssize_t nDof = self.nDof
+        cdef Py_ssize_t nDof = self._numberOfDofs()
         requireLength("computeDistributedLoad", "Pc", Pc.shape[0], nDof)
         requireLength("computeDistributedLoad", "Kc", Kc.shape[0], nDof * nDof)
 
