@@ -211,6 +211,16 @@ vertices of a hexahedral particle on its faces are <code class="docutils literal
     <span class="n">supportPenalty</span><span class="p">,</span> <span class="n">constrain</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">])</span>
 </pre></div>
 </div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>A vertex moves with the particle’s own deformation (its centre displacement and its smoothed deformation
+gradient), but the constraint distributes the force at the vertex with the shape functions there. The two differ
+for any nodal pattern that is not linear, so the support’s stiffness is unsymmetric and does work over a closed
+cycle: once the concrete next to it has lost its stiffness, it can feed a growing mode. The production slab of this
+model blew up this way, whatever the time increment; supports held at the particle centres did not. Until the
+constraint moves its points with the shape functions it distributes the force with, check the kinetic energy
+against the initial one (see below).</p>
+</div>
 <p>Constrain the vertices, not the centres: the centres lie half a particle off the plane and move with Poisson’s
 effect. The support penalty must be stiff against the material next to it, or the plane gives way and springs back
 (example 186), and below the limit <span class="math notranslate nohighlight">\(2\sqrt{m/k}\)</span> of the time increment. The projectile’s nodes on the symmetry
@@ -239,10 +249,16 @@ contact is never lost to it. A warning in the journal says when points enter dee
 <section id="the-time-increment">
 <h2>The time increment<a class="headerlink" href="#the-time-increment" title="Link to this heading"></a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">NED</span></code> takes the smaller of the critical time step of the elements (their own eigenvalue bound) and the bound of the
-stable time increment of the particles, computed from their assembled tangent, and scales it by <code class="docutils literal notranslate"><span class="pre">courant-number</span></code>.
+stable time increment of the particles, bounded from their stiffness without assembling it, and scales it by
+<code class="docutils literal notranslate"><span class="pre">courant-number</span></code>.
 The bound of the particles is computed anew whenever the connectivity changes (see <a class="reference internal" href="choosing_a_solver.html"><span class="doc">Choosing a solver</span></a>,
-“Explicit dynamics”). Neither sees the penalty stiffness of the contact or of the supports; check them by hand, and
-check the result by halving the time increment.</p>
+“Explicit dynamics”), which here is nearly every increment. It takes the tangent of the gradient-enhanced particles as
+it is, unsymmetric: while the concrete under the nose is crushed, GM7’s stress depends on the nonlocal strain through
+the steep compressive boundary, far more strongly than the nonlocal strain depends on the strain, and the bound follows
+the geometric mean of the two couplings, as the eigenvalues do. Here the limit of the particles is that of the nonlocal
+field, set by its micro-inertia, and it stays above the projectile’s elements: the elements set the time increment.
+Neither bound sees the penalty stiffness of the contact or of the supports; check them by hand, and check the result by
+halving the time increment.</p>
 </section>
 <section id="running-it">
 <h2>Running it<a class="headerlink" href="#running-it" title="Link to this heading"></a></h2>
@@ -290,11 +306,11 @@ contact impulse to round-off; halving the time increment changed the penetration
 a tenfold penalty range by about half a millimetre, the size of the change of the overlap; the deepest overlap was
 about a tenth of the search distance and no point was found inside; the quarter model followed the whole one to a few
 tenths of a millimetre. A run resumed from a checkpoint after an interruption followed the uninterrupted one.</p>
-<p>Two findings matter more than any of these. The bound of the particles’ stable time increment drops by up to a third
-from one increment to the next while the concrete under the nose is crushed, so it is taken after every
-increment (<code class="docutils literal notranslate"><span class="pre">stable-increment-frequency</span></code> 1); it is most of the cost of the run. And the response depends on the
-particle size more than on the time increment, the penalty or the symmetry: with GM7’s internal length well below the
-particle size, the softening concrete is resolved by the particles, not by the nonlocal strain.</p>
+<p>Two findings matter more than any of these. The bound of the particles’ stable time increment, taken whenever the
+connectivity changes, was most of the cost of an increment while it evaluated every particle’s tangent; the particles
+now bound the row sums of their absolute stiffness node by node, at a small share of an increment. And the
+response depends on the particle size more than on the time increment, the penalty or the symmetry: with GM7’s internal
+length well below the particle size, the softening concrete is resolved by the particles, not by the nonlocal strain.</p>
 </section>
 </section>
 

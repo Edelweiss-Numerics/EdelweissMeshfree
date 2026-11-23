@@ -539,40 +539,70 @@
 <div class="viewcode-block" id="MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia">
 <a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">stableTimeIncrementOfEntitiesWithOwnInertia</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">forEachChunk</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">list</span><span class="p">,</span> <span class="n">Callable</span><span class="p">],</span> <span class="kc">None</span><span class="p">],</span> <span class="n">nPasses</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">forEachChunk</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">list</span><span class="p">,</span> <span class="n">Callable</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""A bound of the stable time increment of the central difference method for the particles, from their tangents</span>
-<span class="sd">        at the current state (``computeTangentOfTheCurrentState``) and the assembled lumped mass and damping.</span>
+<span class="w">        </span><span class="sd">"""A bound of the stable time increment of ``NED``'s explicit scheme for the particles, from their stiffness at</span>
+<span class="sd">        the current state and the assembled lumped mass and damping. No stiffness is assembled: every particle bounds</span>
+<span class="sd">        the row sums of the absolute value of its own (``addBoundOfAbsoluteStiffnessTimes``), at a cost</span>
+<span class="sd">        proportional to its nodes.</span>
 
-<span class="sd">        The stable increment is :math:`2/\\omega_\\mathrm{max}`, with :math:`\\omega_\\mathrm{max}^2` the largest</span>
-<span class="sd">        eigenvalue of :math:`\\boldsymbol{S} = \\boldsymbol{M}^{-1/2} \\boldsymbol{K} \\boldsymbol{M}^{-1/2}`. It is a property</span>
-<span class="sd">        of the ASSEMBLED system: a particle's own bound, :math:`\\lambda_\\mathrm{max}(\\boldsymbol{M}_p^{-1}</span>
+<span class="sd">        It is a property of the ASSEMBLED system: a particle's own bound, :math:`\\lambda_\\mathrm{max}(\\boldsymbol{M}_p^{-1}</span>
 <span class="sd">        \\boldsymbol{K}_p)` as for a finite element, is unbounded, because a particle's stiffness couples nodes at which</span>
-<span class="sd">        its own lumped mass vanishes (the mass is taken at its centre, its smoothed gradients at its faces), and the</span>
-<span class="sd">        limit varies with the support factor, the kernel order and the boundary in no regular way. It is bounded here</span>
-<span class="sd">        without the eigenvalue problem, by the Collatz-Wielandt bound of the nonnegative matrix</span>
-<span class="sd">        :math:`|\\boldsymbol{S}|`,</span>
-<span class="sd">        :math:`\\lambda_\\mathrm{max}(\\boldsymbol{S}) \\le \\rho(|\\boldsymbol{S}|) \\le \\max_A (|\\boldsymbol{S}|</span>
-<span class="sd">        \\boldsymbol{w})_A / w_A` for every positive :math:`\\boldsymbol{w}`, with :math:`\\boldsymbol{w} = \\boldsymbol{1}`</span>
-<span class="sd">        (the Gershgorin bound) in the first pass and :math:`\\boldsymbol{w} = |\\boldsymbol{S}|^{k} \\boldsymbol{1}` in the</span>
-<span class="sd">        following ones, each a power step that tightens it. Every pass evaluates the tangent of every particle once;</span>
-<span class="sd">        :math:`|\\boldsymbol{K}|` is accumulated particle by particle, which bounds the absolute value of the sum.</span>
+<span class="sd">        its own lumped mass vanishes (the mass is taken at its centre, its smoothed gradients at its faces).</span>
 
-<span class="sd">        The degrees of freedom with inertia are second order in time: :math:`\\Delta t \\le 2/\\omega_\\mathrm{max}\\,</span>
-<span class="sd">        (\\sqrt{1 + \\zeta^2} - \\zeta)`, with the largest damping ratio :math:`\\zeta = C_A / (2 M_A</span>
-<span class="sd">        \\omega_\\mathrm{max})` of their damped nodes (a nonlocal field with a micro-inertia). The degrees of freedom</span>
-<span class="sd">        without inertia but with damping are first order (forward Euler): :math:`\\Delta t \\le 2 /</span>
-<span class="sd">        \\lambda_\\mathrm{max}(\\boldsymbol{C}^{-1} \\boldsymbol{K})`, bounded the same way with :math:`\\boldsymbol{C}` for</span>
-<span class="sd">        :math:`\\boldsymbol{M}`. The coupling between the two sets is not included. The result is scaled by</span>
-<span class="sd">        :data:`STABLE_FRACTION_OF_THE_TANGENT_LIMIT`, since the explicit scheme of the particles is not exactly</span>
-<span class="sd">        integrated with their tangent: their NSNI stabilization acts on the increment.</span>
+<span class="sd">        **What is bounded.** The degrees of freedom with an inertia are integrated by central differences:</span>
+<span class="sd">        :math:`\\boldsymbol{M}\\ddot{\\boldsymbol{u}} + \\boldsymbol{C}\\dot{\\boldsymbol{u}} + \\boldsymbol{K}</span>
+<span class="sd">        \\boldsymbol{u} = \\boldsymbol{0}` is stable for :math:`\\Delta t \\le 2/\\omega_\\mathrm{max}`, with</span>
+<span class="sd">        :math:`\\omega_\\mathrm{max}^2` the largest eigenvalue of :math:`\\boldsymbol{M}^{-1}\\boldsymbol{K}`. The damping</span>
+<span class="sd">        does not lower this limit, since ``NED`` takes it with the mean of the velocities before and after the update</span>
+<span class="sd">        (a damping evaluated with the old velocity alone would). The degrees of freedom without inertia but with a</span>
+<span class="sd">        damping (a first-order nonlocal field) are integrated by forward Euler, stable for :math:`\\Delta t \\le</span>
+<span class="sd">        2/\\lambda_\\mathrm{max}(\\boldsymbol{C}^{-1}\\boldsymbol{K})`. The coupling between the two sets is not</span>
+<span class="sd">        included.</span>
+
+<span class="sd">        **Why the absolute value of the unsymmetric tangent.** The tangent of gradient-enhanced particles is</span>
+<span class="sd">        unsymmetric, and its coupling blocks differ by orders of magnitude once scaled by the masses: the stress depends</span>
+<span class="sd">        on the nonlocal field as strongly as on the strain (on a boundary of GM7, through the over-nonlocal strain), the</span>
+<span class="sd">        nonlocal field depends on the strain with a factor of one, and the micro-inertia of the nonlocal field is far</span>
+<span class="sd">        below the mass. An eigenvalue :math:`\\lambda` of the coupled system sees the geometric mean of the two coupling</span>
+<span class="sd">        blocks, the symmetric part of the tangent their arithmetic mean: a bound of the symmetric part follows the large</span>
+<span class="sd">        block alone and falls far below the stable increment whenever a particle loads a boundary. Instead, every</span>
+<span class="sd">        eigenvalue, real or complex, satisfies :math:`|\\lambda| \\le \\rho(|\\boldsymbol{S}|)`, the spectral radius of</span>
+<span class="sd">        the absolute value of :math:`\\boldsymbol{S} = \\boldsymbol{D}\\boldsymbol{K}\\boldsymbol{D}` (similar to</span>
+<span class="sd">        :math:`\\boldsymbol{M}^{-1}\\boldsymbol{K}`, with :math:`\\boldsymbol{D} = \\boldsymbol{M}^{-1/2}`, or</span>
+<span class="sd">        :math:`\\boldsymbol{C}^{-1/2}` on the first-order set). :math:`|\\boldsymbol{K}|` is accumulated particle by</span>
+<span class="sd">        particle, which bounds the absolute value of the sum.</span>
+
+<span class="sd">        **The bound of** :math:`\\rho(|\\boldsymbol{S}|)` **from one pass over the particles.** The Collatz-Wielandt</span>
+<span class="sd">        bound :math:`\\rho(|\\boldsymbol{S}|) \\le \\max_i (|\\boldsymbol{S}|\\boldsymbol{w})_i / w_i` holds for every</span>
+<span class="sd">        positive :math:`\\boldsymbol{w}`; the weights are taken constant on each field: :math:`\\boldsymbol{w} =</span>
+<span class="sd">        \\sum_f c_f \\boldsymbol{1}_f`. The particles give upper bounds :math:`\\hat{Z}_{if} \\ge Z_{if}` of the row</span>
+<span class="sd">        sums of :math:`|\\boldsymbol{S}|` over the columns of each field, :math:`Z_{if} = \\sum_{j \\in f} |S_{ij}|`</span>
+<span class="sd">        (each particle its share, ``addBoundOfAbsoluteStiffnessTimes`` with the weights :math:`\\boldsymbol{D}` on</span>
+<span class="sd">        the columns of the field), and with them the field matrix :math:`Q_{gf} = \\max_{i \\in g} \\hat{Z}_{if}`, the</span>
+<span class="sd">        largest row sum of the block of fields :math:`g, f`. With</span>
+<span class="sd">        :math:`\\boldsymbol{c}` the Perron vector of :math:`\\boldsymbol{Q}`, every row :math:`i` of field :math:`g`</span>
+<span class="sd">        gives :math:`(|\\boldsymbol{S}|\\boldsymbol{w})_i \\le (\\boldsymbol{Q}\\boldsymbol{c})_g = \\rho(\\boldsymbol{Q})</span>
+<span class="sd">        w_i`, so :math:`\\rho(|\\boldsymbol{S}|) \\le \\rho(\\boldsymbol{Q})`: the Gershgorin bound per block of fields,</span>
+<span class="sd">        coupled by the largest eigenvalue of the small field matrix, which takes the geometric mean of the coupling</span>
+<span class="sd">        blocks. With a single field it is the Gershgorin bound.</span>
+
+<span class="sd">        **The row sums without the stiffness.** A particle's stiffness has as many blocks as the square of its nodes, but</span>
+<span class="sd">        it sees the nodal increments only through the increment it interpolates at its evaluation point (value,</span>
+<span class="sd">        gradient and, if stabilized, second gradient): the rows of node :math:`A` are linear in the shape functions of</span>
+<span class="sd">        the other node :math:`B`, with factors of node :math:`A` alone. Marmot sums :math:`w_B |K_{Ai,Bk}|` over</span>
+<span class="sd">        :math:`B` from a few weighted moments of the shape functions, exactly for the value and by the Cauchy-Schwarz</span>
+<span class="sd">        inequality over the nodes for the gradients, which keeps their directions (2/sqrt(3) of the exact sum for</span>
+<span class="sd">        gradients spread evenly in 3D, exact for parallel ones). Every inequality bounds from above, so the stable</span>
+<span class="sd">        increment stays a lower bound of the exact one.</span>
+
+<span class="sd">        The result is scaled by :data:`STABLE_FRACTION_OF_THE_TANGENT_LIMIT`, since the explicit scheme of the</span>
+<span class="sd">        particles is not exactly integrated with their tangent: their NSNI stabilization acts on the increment.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        forEachChunk</span>
 <span class="sd">            The solver's loop over chunks of independent entities.</span>
-<span class="sd">        nPasses</span>
-<span class="sd">            The number of passes, each one evaluation of every particle's tangent; the first gives the Gershgorin bound.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -592,49 +622,58 @@
         <span class="n">scaling</span><span class="p">[</span><span class="n">secondOrder</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">M</span><span class="p">[</span><span class="n">secondOrder</span><span class="p">])</span>
         <span class="n">scaling</span><span class="p">[</span><span class="n">firstOrder</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">C</span><span class="p">[</span><span class="n">firstOrder</span><span class="p">])</span>
 
-        <span class="k">def</span><span class="w"> </span><span class="nf">absoluteTangentTimes</span><span class="p">(</span><span class="n">w</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">            </span><span class="sd">"""|S| w on each of the two sets, |S| = D^-1/2 |K| D^-1/2, the coupling between them left out."""</span>
-            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">locations</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
-            <span class="n">x</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">scaling</span> <span class="o">*</span> <span class="n">w</span>
-            <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">locations</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span>
-            <span class="n">y</span><span class="p">[:]</span> <span class="o">=</span> <span class="mf">0.0</span>
-            <span class="n">scatterY</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">createScatterVector</span><span class="p">()</span>
+        <span class="c1"># The blocks of the field matrix: a field's degrees of freedom of each order (a field is one or the other).</span>
+        <span class="n">nDof</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+        <span class="n">groupOfDof</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">nDof</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">orderOfGroup</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">indices</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">numbering</span><span class="o">.</span><span class="n">idcsOfFieldsInDofVector</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">inField</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nDof</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+            <span class="n">inField</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">for</span> <span class="n">order</span><span class="p">,</span> <span class="n">ofTheOrder</span> <span class="ow">in</span> <span class="p">((</span><span class="s2">"second"</span><span class="p">,</span> <span class="n">secondOrder</span><span class="p">),</span> <span class="p">(</span><span class="s2">"first"</span><span class="p">,</span> <span class="n">firstOrder</span><span class="p">)):</span>
+                <span class="n">inGroup</span> <span class="o">=</span> <span class="n">inField</span> <span class="o">&amp;</span> <span class="n">ofTheOrder</span>
+                <span class="k">if</span> <span class="n">inGroup</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+                    <span class="n">groupOfDof</span><span class="p">[</span><span class="n">inGroup</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">orderOfGroup</span><span class="p">)</span>
+                    <span class="n">orderOfGroup</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">order</span><span class="p">)</span>
+        <span class="n">nGroups</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">orderOfGroup</span><span class="p">)</span>
 
-            <span class="k">def</span><span class="w"> </span><span class="nf">multiply</span><span class="p">(</span><span class="n">particles</span><span class="p">):</span>
-                <span class="k">for</span> <span class="n">particle</span> <span class="ow">in</span> <span class="n">particles</span><span class="p">:</span>
-                    <span class="n">nDof</span> <span class="o">=</span> <span class="n">particle</span><span class="o">.</span><span class="n">nDof</span>
-                    <span class="n">K</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nDof</span> <span class="o">*</span> <span class="n">nDof</span><span class="p">)</span>
-                    <span class="n">particle</span><span class="o">.</span><span class="n">computeTangentOfTheCurrentState</span><span class="p">(</span><span class="n">K</span><span class="p">)</span>
-                    <span class="n">K</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">nDof</span><span class="p">,</span> <span class="n">nDof</span><span class="p">)</span> <span class="o">+</span> <span class="n">K</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">nDof</span><span class="p">,</span> <span class="n">nDof</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">))</span>
-                    <span class="n">xp</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">particle</span><span class="p">]</span>
-                    <span class="n">ofSecondOrder</span> <span class="o">=</span> <span class="n">secondOrder</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">locations</span><span class="o">.</span><span class="n">ofEntity</span><span class="p">[</span><span class="n">particle</span><span class="p">]]</span>
-                    <span class="n">yp</span> <span class="o">=</span> <span class="n">scatterY</span><span class="p">[</span><span class="n">particle</span><span class="p">]</span>
-                    <span class="n">yp</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
-                        <span class="n">ofSecondOrder</span><span class="p">,</span> <span class="n">K</span> <span class="o">@</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ofSecondOrder</span><span class="p">,</span> <span class="n">xp</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="n">K</span> <span class="o">@</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ofSecondOrder</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">xp</span><span class="p">)</span>
-                    <span class="p">)</span>
+        <span class="c1"># Z_if &gt;= sum_{j in f} |S_ij|, assembled column by column</span>
+        <span class="n">rowSums</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">locations</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nGroups</span><span class="p">)]</span>
+        <span class="k">for</span> <span class="n">rowSum</span> <span class="ow">in</span> <span class="n">rowSums</span><span class="p">:</span>
+            <span class="n">rowSum</span><span class="p">[:]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">scatterRowSums</span> <span class="o">=</span> <span class="p">[</span><span class="n">rowSum</span><span class="o">.</span><span class="n">createScatterVector</span><span class="p">()</span> <span class="k">for</span> <span class="n">rowSum</span> <span class="ow">in</span> <span class="n">rowSums</span><span class="p">]</span>
 
-            <span class="n">forEachChunk</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="p">,</span> <span class="n">multiply</span><span class="p">)</span>
-            <span class="n">scatterY</span><span class="o">.</span><span class="n">assembleInto</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">scaling</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">addAbsoluteStiffnessRowSums</span><span class="p">(</span><span class="n">particles</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">particle</span> <span class="ow">in</span> <span class="n">particles</span><span class="p">:</span>
+                <span class="n">indices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">locations</span><span class="o">.</span><span class="n">ofEntity</span><span class="p">[</span><span class="n">particle</span><span class="p">]</span>
+                <span class="n">inAGroup</span> <span class="o">=</span> <span class="n">groupOfDof</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">0</span>
+                <span class="n">scaledIndicatorOfGroup</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">),</span> <span class="n">nGroups</span><span class="p">),</span> <span class="n">order</span><span class="o">=</span><span class="s2">"F"</span><span class="p">)</span>
+                <span class="n">scaledIndicatorOfGroup</span><span class="p">[</span><span class="n">inAGroup</span><span class="p">,</span> <span class="n">groupOfDof</span><span class="p">[</span><span class="n">indices</span><span class="p">][</span><span class="n">inAGroup</span><span class="p">]]</span> <span class="o">=</span> <span class="n">scaling</span><span class="p">[</span><span class="n">indices</span><span class="p">][</span><span class="n">inAGroup</span><span class="p">]</span>
+                <span class="n">absoluteStiffnessRowSums</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">),</span> <span class="n">nGroups</span><span class="p">),</span> <span class="n">order</span><span class="o">=</span><span class="s2">"F"</span><span class="p">)</span>
+                <span class="n">particle</span><span class="o">.</span><span class="n">addBoundOfAbsoluteStiffnessTimes</span><span class="p">(</span><span class="n">scaledIndicatorOfGroup</span><span class="p">,</span> <span class="n">absoluteStiffnessRowSums</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">group</span><span class="p">,</span> <span class="n">scatterRowSum</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">scatterRowSums</span><span class="p">):</span>
+                    <span class="n">ofTheParticle</span> <span class="o">=</span> <span class="n">scatterRowSum</span><span class="p">[</span><span class="n">particle</span><span class="p">]</span>
+                    <span class="n">ofTheParticle</span> <span class="o">+=</span> <span class="n">absoluteStiffnessRowSums</span><span class="p">[:,</span> <span class="n">group</span><span class="p">]</span>
 
-        <span class="n">active</span> <span class="o">=</span> <span class="n">secondOrder</span> <span class="o">|</span> <span class="n">firstOrder</span>
-        <span class="n">w</span> <span class="o">=</span> <span class="n">active</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
-        <span class="n">bounds</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nPasses</span><span class="p">):</span>
-            <span class="n">z</span> <span class="o">=</span> <span class="n">absoluteTangentTimes</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">ofSet</span> <span class="ow">in</span> <span class="p">((</span><span class="s2">"second order"</span><span class="p">,</span> <span class="n">secondOrder</span><span class="p">),</span> <span class="p">(</span><span class="s2">"first order"</span><span class="p">,</span> <span class="n">firstOrder</span><span class="p">)):</span>
-                <span class="k">if</span> <span class="n">ofSet</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
-                    <span class="n">bounds</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">z</span><span class="p">[</span><span class="n">ofSet</span><span class="p">]</span> <span class="o">/</span> <span class="n">w</span><span class="p">[</span><span class="n">ofSet</span><span class="p">])</span>
-            <span class="c1"># the next weights: positive everywhere on the active set, as the bound requires</span>
-            <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">active</span><span class="p">,</span> <span class="n">z</span> <span class="o">+</span> <span class="mf">1e-12</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">z</span><span class="p">),</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">forEachChunk</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="p">,</span> <span class="n">addAbsoluteStiffnessRowSums</span><span class="p">)</span>
+        <span class="n">Z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nDof</span><span class="p">,</span> <span class="n">nGroups</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">group</span><span class="p">,</span> <span class="p">(</span><span class="n">rowSum</span><span class="p">,</span> <span class="n">scatterRowSum</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">rowSums</span><span class="p">,</span> <span class="n">scatterRowSums</span><span class="p">)):</span>
+            <span class="n">scatterRowSum</span><span class="o">.</span><span class="n">assembleInto</span><span class="p">(</span><span class="n">rowSum</span><span class="p">)</span>
+            <span class="n">Z</span><span class="p">[:,</span> <span class="n">group</span><span class="p">]</span> <span class="o">=</span> <span class="n">scaling</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">rowSum</span><span class="p">)</span>
+
+        <span class="n">Q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">Z</span><span class="p">[</span><span class="n">groupOfDof</span> <span class="o">==</span> <span class="n">g</span><span class="p">,</span> <span class="n">f</span><span class="p">])</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nGroups</span><span class="p">)]</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nGroups</span><span class="p">)])</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">perronRoot</span><span class="p">(</span><span class="n">order</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">            </span><span class="sd">"""The largest eigenvalue of the nonnegative field matrix of the blocks of the given order."""</span>
+            <span class="n">groups</span> <span class="o">=</span> <span class="p">[</span><span class="n">group</span> <span class="k">for</span> <span class="n">group</span><span class="p">,</span> <span class="n">ofGroup</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">orderOfGroup</span><span class="p">)</span> <span class="k">if</span> <span class="n">ofGroup</span> <span class="o">==</span> <span class="n">order</span><span class="p">]</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigvals</span><span class="p">(</span><span class="n">Q</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="n">groups</span><span class="p">,</span> <span class="n">groups</span><span class="p">)]))))</span> <span class="k">if</span> <span class="n">groups</span> <span class="k">else</span> <span class="mf">0.0</span>
 
         <span class="n">stable</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
-        <span class="k">if</span> <span class="s2">"second order"</span> <span class="ow">in</span> <span class="n">bounds</span> <span class="ow">and</span> <span class="n">bounds</span><span class="p">[</span><span class="s2">"second order"</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
-            <span class="n">omega</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">bounds</span><span class="p">[</span><span class="s2">"second order"</span><span class="p">])</span>
-            <span class="n">zeta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">secondOrder</span><span class="p">,</span> <span class="n">C</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">secondOrder</span><span class="p">,</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">M</span> <span class="o">*</span> <span class="n">omega</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
-            <span class="n">stable</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="n">omega</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">zeta</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="n">zeta</span><span class="p">)</span>
-        <span class="k">if</span> <span class="s2">"first order"</span> <span class="ow">in</span> <span class="n">bounds</span> <span class="ow">and</span> <span class="n">bounds</span><span class="p">[</span><span class="s2">"first order"</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
-            <span class="n">stable</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">stable</span><span class="p">,</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="n">bounds</span><span class="p">[</span><span class="s2">"first order"</span><span class="p">])</span>
+        <span class="n">omegaSquared</span> <span class="o">=</span> <span class="n">perronRoot</span><span class="p">(</span><span class="s2">"second"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">omegaSquared</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="n">stable</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">omegaSquared</span><span class="p">)</span>
+        <span class="n">rate</span> <span class="o">=</span> <span class="n">perronRoot</span><span class="p">(</span><span class="s2">"first"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">rate</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="n">stable</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">stable</span><span class="p">,</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="n">rate</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">STABLE_FRACTION_OF_THE_TANGENT_LIMIT</span> <span class="o">*</span> <span class="n">stable</span></div>
 

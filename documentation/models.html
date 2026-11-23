@@ -1049,7 +1049,7 @@ the cell elements.</p></li>
 <td><p>Read the state the model carries from increment to increment into the vectors of a (re)built discrete system, from which the next increment starts (see the documentation page <em>Node field results</em>): the solution <code class="docutils literal notranslate"><span class="pre">U</span></code>, and, for a solver that integrates in time, the velocity <code class="docutils literal notranslate"><span class="pre">V</span></code> and the acceleration <code class="docutils literal notranslate"><span class="pre">A</span></code>.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia"><code class="xref py py-obj docutils literal notranslate"><span class="pre">stableTimeIncrementOfEntitiesWithOwnInertia</span></code></a>(...)</p></td>
-<td><p>A bound of the stable time increment of the central difference method for the particles, from their tangents at the current state (<code class="docutils literal notranslate"><span class="pre">computeTangentOfTheCurrentState</span></code>) and the assembled lumped mass and damping.</p></td>
+<td><p>A bound of the stable time increment of <code class="docutils literal notranslate"><span class="pre">NED</span></code>'s explicit scheme for the particles, from their stiffness at the current state and the assembled lumped mass and damping.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.updateMaterialPoints" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.updateMaterialPoints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateMaterialPoints</span></code></a>(dU, timeStep, forEachChunk)</p></td>
 <td><p>Update the material points with the trial solution increment, before the solver computes the cells, which integrate them: the material points return to their converged state, every active cell (and cell element) interpolates the solution increment to the material points it holds, and the material points evaluate their material.</p></td>
@@ -1224,36 +1224,61 @@ rest.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia">
-<span class="sig-name descname"><span class="pre">stableTimeIncrementOfEntitiesWithOwnInertia</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">forEachChunk</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nPasses</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmdiscretesystem.html#MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia" title="Link to this definition"></a></dt>
-<dd><p>A bound of the stable time increment of the central difference method for the particles, from their tangents
-at the current state (<code class="docutils literal notranslate"><span class="pre">computeTangentOfTheCurrentState</span></code>) and the assembled lumped mass and damping.</p>
-<p>The stable increment is <span class="math notranslate nohighlight">\(2/\omega_\mathrm{max}\)</span>, with <span class="math notranslate nohighlight">\(\omega_\mathrm{max}^2\)</span> the largest
-eigenvalue of <span class="math notranslate nohighlight">\(\boldsymbol{S} = \boldsymbol{M}^{-1/2} \boldsymbol{K} \boldsymbol{M}^{-1/2}\)</span>. It is a property
-of the ASSEMBLED system: a particle’s own bound, <span class="math notranslate nohighlight">\(\lambda_\mathrm{max}(\boldsymbol{M}_p^{-1}
+<span class="sig-name descname"><span class="pre">stableTimeIncrementOfEntitiesWithOwnInertia</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">forEachChunk</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmdiscretesystem.html#MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia" title="Link to this definition"></a></dt>
+<dd><p>A bound of the stable time increment of <code class="docutils literal notranslate"><span class="pre">NED</span></code>’s explicit scheme for the particles, from their stiffness at
+the current state and the assembled lumped mass and damping. No stiffness is assembled: every particle bounds
+the row sums of the absolute value of its own (<code class="docutils literal notranslate"><span class="pre">addBoundOfAbsoluteStiffnessTimes</span></code>), at a cost
+proportional to its nodes.</p>
+<p>It is a property of the ASSEMBLED system: a particle’s own bound, <span class="math notranslate nohighlight">\(\lambda_\mathrm{max}(\boldsymbol{M}_p^{-1}
 \boldsymbol{K}_p)\)</span> as for a finite element, is unbounded, because a particle’s stiffness couples nodes at which
-its own lumped mass vanishes (the mass is taken at its centre, its smoothed gradients at its faces), and the
-limit varies with the support factor, the kernel order and the boundary in no regular way. It is bounded here
-without the eigenvalue problem, by the Collatz-Wielandt bound of the nonnegative matrix
-<span class="math notranslate nohighlight">\(|\boldsymbol{S}|\)</span>,
-<span class="math notranslate nohighlight">\(\lambda_\mathrm{max}(\boldsymbol{S}) \le \rho(|\boldsymbol{S}|) \le \max_A (|\boldsymbol{S}|
-\boldsymbol{w})_A / w_A\)</span> for every positive <span class="math notranslate nohighlight">\(\boldsymbol{w}\)</span>, with <span class="math notranslate nohighlight">\(\boldsymbol{w} = \boldsymbol{1}\)</span>
-(the Gershgorin bound) in the first pass and <span class="math notranslate nohighlight">\(\boldsymbol{w} = |\boldsymbol{S}|^{k} \boldsymbol{1}\)</span> in the
-following ones, each a power step that tightens it. Every pass evaluates the tangent of every particle once;
-<span class="math notranslate nohighlight">\(|\boldsymbol{K}|\)</span> is accumulated particle by particle, which bounds the absolute value of the sum.</p>
-<p>The degrees of freedom with inertia are second order in time: <span class="math notranslate nohighlight">\(\Delta t \le 2/\omega_\mathrm{max}\,
-(\sqrt{1 + \zeta^2} - \zeta)\)</span>, with the largest damping ratio <span class="math notranslate nohighlight">\(\zeta = C_A / (2 M_A
-\omega_\mathrm{max})\)</span> of their damped nodes (a nonlocal field with a micro-inertia). The degrees of freedom
-without inertia but with damping are first order (forward Euler): <span class="math notranslate nohighlight">\(\Delta t \le 2 /
-\lambda_\mathrm{max}(\boldsymbol{C}^{-1} \boldsymbol{K})\)</span>, bounded the same way with <span class="math notranslate nohighlight">\(\boldsymbol{C}\)</span> for
-<span class="math notranslate nohighlight">\(\boldsymbol{M}\)</span>. The coupling between the two sets is not included. The result is scaled by
-<a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.STABLE_FRACTION_OF_THE_TANGENT_LIMIT" title="edelweissmeshfree.models.mpmdiscretesystem.STABLE_FRACTION_OF_THE_TANGENT_LIMIT"><code class="xref py py-data docutils literal notranslate"><span class="pre">STABLE_FRACTION_OF_THE_TANGENT_LIMIT</span></code></a>, since the explicit scheme of the particles is not exactly
-integrated with their tangent: their NSNI stabilization acts on the increment.</p>
+its own lumped mass vanishes (the mass is taken at its centre, its smoothed gradients at its faces).</p>
+<p><strong>What is bounded.</strong> The degrees of freedom with an inertia are integrated by central differences:
+<span class="math notranslate nohighlight">\(\boldsymbol{M}\ddot{\boldsymbol{u}} + \boldsymbol{C}\dot{\boldsymbol{u}} + \boldsymbol{K}
+\boldsymbol{u} = \boldsymbol{0}\)</span> is stable for <span class="math notranslate nohighlight">\(\Delta t \le 2/\omega_\mathrm{max}\)</span>, with
+<span class="math notranslate nohighlight">\(\omega_\mathrm{max}^2\)</span> the largest eigenvalue of <span class="math notranslate nohighlight">\(\boldsymbol{M}^{-1}\boldsymbol{K}\)</span>. The damping
+does not lower this limit, since <code class="docutils literal notranslate"><span class="pre">NED</span></code> takes it with the mean of the velocities before and after the update
+(a damping evaluated with the old velocity alone would). The degrees of freedom without inertia but with a
+damping (a first-order nonlocal field) are integrated by forward Euler, stable for <span class="math notranslate nohighlight">\(\Delta t \le
+2/\lambda_\mathrm{max}(\boldsymbol{C}^{-1}\boldsymbol{K})\)</span>. The coupling between the two sets is not
+included.</p>
+<p><strong>Why the absolute value of the unsymmetric tangent.</strong> The tangent of gradient-enhanced particles is
+unsymmetric, and its coupling blocks differ by orders of magnitude once scaled by the masses: the stress depends
+on the nonlocal field as strongly as on the strain (on a boundary of GM7, through the over-nonlocal strain), the
+nonlocal field depends on the strain with a factor of one, and the micro-inertia of the nonlocal field is far
+below the mass. An eigenvalue <span class="math notranslate nohighlight">\(\lambda\)</span> of the coupled system sees the geometric mean of the two coupling
+blocks, the symmetric part of the tangent their arithmetic mean: a bound of the symmetric part follows the large
+block alone and falls far below the stable increment whenever a particle loads a boundary. Instead, every
+eigenvalue, real or complex, satisfies <span class="math notranslate nohighlight">\(|\lambda| \le \rho(|\boldsymbol{S}|)\)</span>, the spectral radius of
+the absolute value of <span class="math notranslate nohighlight">\(\boldsymbol{S} = \boldsymbol{D}\boldsymbol{K}\boldsymbol{D}\)</span> (similar to
+<span class="math notranslate nohighlight">\(\boldsymbol{M}^{-1}\boldsymbol{K}\)</span>, with <span class="math notranslate nohighlight">\(\boldsymbol{D} = \boldsymbol{M}^{-1/2}\)</span>, or
+<span class="math notranslate nohighlight">\(\boldsymbol{C}^{-1/2}\)</span> on the first-order set). <span class="math notranslate nohighlight">\(|\boldsymbol{K}|\)</span> is accumulated particle by
+particle, which bounds the absolute value of the sum.</p>
+<p><strong>The bound of</strong> <span class="math notranslate nohighlight">\(\rho(|\boldsymbol{S}|)\)</span> <strong>from one pass over the particles.</strong> The Collatz-Wielandt
+bound <span class="math notranslate nohighlight">\(\rho(|\boldsymbol{S}|) \le \max_i (|\boldsymbol{S}|\boldsymbol{w})_i / w_i\)</span> holds for every
+positive <span class="math notranslate nohighlight">\(\boldsymbol{w}\)</span>; the weights are taken constant on each field: <span class="math notranslate nohighlight">\(\boldsymbol{w} =
+\sum_f c_f \boldsymbol{1}_f\)</span>. The particles give upper bounds <span class="math notranslate nohighlight">\(\hat{Z}_{if} \ge Z_{if}\)</span> of the row
+sums of <span class="math notranslate nohighlight">\(|\boldsymbol{S}|\)</span> over the columns of each field, <span class="math notranslate nohighlight">\(Z_{if} = \sum_{j \in f} |S_{ij}|\)</span>
+(each particle its share, <code class="docutils literal notranslate"><span class="pre">addBoundOfAbsoluteStiffnessTimes</span></code> with the weights <span class="math notranslate nohighlight">\(\boldsymbol{D}\)</span> on
+the columns of the field), and with them the field matrix <span class="math notranslate nohighlight">\(Q_{gf} = \max_{i \in g} \hat{Z}_{if}\)</span>, the
+largest row sum of the block of fields <span class="math notranslate nohighlight">\(g, f\)</span>. With
+<span class="math notranslate nohighlight">\(\boldsymbol{c}\)</span> the Perron vector of <span class="math notranslate nohighlight">\(\boldsymbol{Q}\)</span>, every row <span class="math notranslate nohighlight">\(i\)</span> of field <span class="math notranslate nohighlight">\(g\)</span>
+gives <span class="math notranslate nohighlight">\((|\boldsymbol{S}|\boldsymbol{w})_i \le (\boldsymbol{Q}\boldsymbol{c})_g = \rho(\boldsymbol{Q})
+w_i\)</span>, so <span class="math notranslate nohighlight">\(\rho(|\boldsymbol{S}|) \le \rho(\boldsymbol{Q})\)</span>: the Gershgorin bound per block of fields,
+coupled by the largest eigenvalue of the small field matrix, which takes the geometric mean of the coupling
+blocks. With a single field it is the Gershgorin bound.</p>
+<p><strong>The row sums without the stiffness.</strong> A particle’s stiffness has as many blocks as the square of its nodes, but
+it sees the nodal increments only through the increment it interpolates at its evaluation point (value,
+gradient and, if stabilized, second gradient): the rows of node <span class="math notranslate nohighlight">\(A\)</span> are linear in the shape functions of
+the other node <span class="math notranslate nohighlight">\(B\)</span>, with factors of node <span class="math notranslate nohighlight">\(A\)</span> alone. Marmot sums <span class="math notranslate nohighlight">\(w_B |K_{Ai,Bk}|\)</span> over
+<span class="math notranslate nohighlight">\(B\)</span> from a few weighted moments of the shape functions, exactly for the value and by the Cauchy-Schwarz
+inequality over the nodes for the gradients, which keeps their directions (2/sqrt(3) of the exact sum for
+gradients spread evenly in 3D, exact for parallel ones). Every inequality bounds from above, so the stable
+increment stays a lower bound of the exact one.</p>
+<p>The result is scaled by <a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.STABLE_FRACTION_OF_THE_TANGENT_LIMIT" title="edelweissmeshfree.models.mpmdiscretesystem.STABLE_FRACTION_OF_THE_TANGENT_LIMIT"><code class="xref py py-data docutils literal notranslate"><span class="pre">STABLE_FRACTION_OF_THE_TANGENT_LIMIT</span></code></a>, since the explicit scheme of the
+particles is not exactly integrated with their tangent: their NSNI stabilization acts on the increment.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>forEachChunk</strong> (<em>Callable</em><em>[</em><em>[</em><em>list</em><em>, </em><em>Callable</em><em>]</em><em>, </em><em>None</em><em>]</em>) – The solver’s loop over chunks of independent entities.</p></li>
-<li><p><strong>nPasses</strong> (<em>int</em>) – The number of passes, each one evaluation of every particle’s tangent; the first gives the Gershgorin bound.</p></li>
-</ul>
+<dd class="field-odd"><p><strong>forEachChunk</strong> (<em>Callable</em><em>[</em><em>[</em><em>list</em><em>, </em><em>Callable</em><em>]</em><em>, </em><em>None</em><em>]</em>) – The solver’s loop over chunks of independent entities.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The stable time increment; None if the model has no particles.</p>

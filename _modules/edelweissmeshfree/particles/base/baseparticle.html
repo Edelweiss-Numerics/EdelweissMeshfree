@@ -114,6 +114,11 @@
 
 <span class="sd">Implementing your own particles can be done easily by subclassing from</span>
 <span class="sd">the abstract base class :class:`~BaseParticle`.</span>
+
+<span class="sd">In an explicit analysis, the methods of a particle are called in an order its implementation relies on (advance,</span>
+<span class="sd">accept twice, reconnect, then the force and the momentum, the lumped inertia and damping); the calls and the contracts</span>
+<span class="sd">that follow from their order are written down once, in Marmot's documentation: `the explicit life cycle of a particle</span>
+<span class="sd">&lt;https://materialmodelingtoolbox.github.io/Marmot/pages/features/meshfreeparticles.html#explicit-life-cycle-of-a-particle&gt;`_.</span>
 <span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">abstractmethod</span>
@@ -542,17 +547,18 @@
 <span class="sd">        """</span></div>
 
 
-<div class="viewcode-block" id="BaseParticle.computeTangentOfTheCurrentState">
-<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeTangentOfTheCurrentState">[docs]</a>
+<div class="viewcode-block" id="BaseParticle.assembleStiffness">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.assembleStiffness">[docs]</a>
     <span class="nd">@abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">computeTangentOfTheCurrentState</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">assembleStiffness</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">K</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Explicit dynamics: the tangent of the internal force with respect to the degrees of freedom of the kernel</span>
-<span class="sd">        functions currently assigned, at the current state, which is left unchanged (a zero increment, evaluated on a</span>
-<span class="sd">        copy of the state). Without inertia. It is what the stable time increment of the particles is bounded with</span>
-<span class="sd">        (:meth:`~edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia`).</span>
+<span class="w">        </span><span class="sd">"""Explicit dynamics: add the stiffness of the particle, the tangent of the internal force with respect to the</span>
+<span class="sd">        degrees of freedom of the kernel functions currently assigned, without inertia, of a zero increment of the</span>
+<span class="sd">        last accepted configuration and the working state: after an accept, the stiffness of the accepted state. It</span>
+<span class="sd">        leaves the particle as it was found. The stiffness the bound of :meth:`addBoundOfAbsoluteStiffnessTimes`</span>
+<span class="sd">        bounds, e.g. to check that bound against.</span>
 
 <span class="sd">        The zero increment is taken over a unit time increment, at time zero: the time increment is only positive, as a</span>
 <span class="sd">        material may divide by it, and the tangent of a rate-independent material does not depend on it. For a</span>
@@ -562,7 +568,31 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        K</span>
-<span class="sd">            The tangent to define, column-major, ``nDof x nDof``.</span>
+<span class="sd">            The stiffness to augment, column-major, ``nDof x nDof``.</span>
+<span class="sd">        """</span></div>
+
+
+<div class="viewcode-block" id="BaseParticle.addBoundOfAbsoluteStiffnessTimes">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.addBoundOfAbsoluteStiffnessTimes">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addBoundOfAbsoluteStiffnessTimes</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">W</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">bound</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Explicit dynamics: add an upper bound of :math:`|\\boldsymbol{K}|\\, \\boldsymbol{W}`, the absolute value of</span>
+<span class="sd">        the stiffness of :meth:`assembleStiffness` (see there for the state it is of), times nonnegative weights. It</span>
+<span class="sd">        leaves the particle as it was found. The stiffness itself is not assembled: the bound costs as much as the</span>
+<span class="sd">        nodes, the stiffness as their square. It is what the stable time increment of the particles is bounded with,</span>
+<span class="sd">        after the accept of an increment</span>
+<span class="sd">        (:meth:`~edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia`).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        W</span>
+<span class="sd">            The nonnegative weights, ``nDof x nColumns``, column-major (Fortran order).</span>
+<span class="sd">        bound</span>
+<span class="sd">            The bound to augment, ``nDof x nColumns``, column-major (Fortran order).</span>
 <span class="sd">        """</span></div>
 
 
