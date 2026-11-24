@@ -135,9 +135,9 @@ cdef class MarmotCellWrapper:
 
     cdef list _assignedMaterialPoints
 
-    cpdef void computeLumpedInertia(self, double[::1] M ) nogil
+    cpdef void computeLumpedInertia(self, double[::1] M ) except *
 
-    cpdef void computeConsistentInertia(self, double[::1] M ) nogil
+    cpdef void computeConsistentInertia(self, double[::1] M ) except *
 
     cpdef void interpolateFieldsToMaterialPoints(self,
-                     double[::1] dUc ) nogil
+                     double[::1] dUc ) except *

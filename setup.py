@@ -37,6 +37,7 @@ import os
 import sys
 from os.path import expanduser, join
 
+import edelweissfe
 import numpy
 from Cython.Build import build_ext, cythonize
 from edelweissfe.utils.extensionbuild import (
@@ -155,6 +156,8 @@ setup(
     ext_modules=cythonize(
         extensions,
         compiler_directives=directives,
+        # The declarations cimported from EdelweissFE (e.g. edelweissfe.utils.bufferlength), wherever it is installed.
+        include_path=[os.path.dirname(os.path.dirname(edelweissfe.__file__))],
         # Generate the HTML annotation files only on demand; they slow down the build.
         annotate=bool(os.environ.get("EDELWEISSMESHFREE_ANNOTATE")),
         language_level=3,

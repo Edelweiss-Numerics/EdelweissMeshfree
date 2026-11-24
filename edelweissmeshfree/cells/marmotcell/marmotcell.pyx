@@ -43,6 +43,7 @@ cimport numpy as np
 cimport edelweissmeshfree.cells.marmotcell.marmotcell
 
 from edelweissfe.numerics.systemmatrixcontributor import denseBlockLocalEntries
+from edelweissfe.utils.bufferlength cimport requireLength
 from edelweissfe.utils.exceptions import CutbackRequest
 
 from libc.stdlib cimport free, malloc
@@ -139,7 +140,14 @@ cdef class MarmotCellWrapper:
                        double dTime):
         """Add the internal forces of the assigned material points to the residual, and their tangent; see
         :meth:`edelweissmeshfree.cells.base.cell.CellBase.computeKernels`. A cell is incremental, so Marmot gets the
-        solution increment. A failure in Marmot requests a cutback, as for an EdelweissFE element."""
+        solution increment. A failure in Marmot requests a cutback, as for an EdelweissFE element.
+
+        ``Kc`` has ``nDof * nDof`` entries, ``Pc`` and ``dUc`` have ``nDof``. A buffer of another length raises a
+        ``ValueError``."""
+
+        requireLength("computeKernels", "Kc", Kc.shape[0], self._nDof * self._nDof)
+        requireLength("computeKernels", "Pc", Pc.shape[0], self._nDof)
+        requireLength("computeKernels", "dUc", dUc.shape[0], self._nDof)
 
         try:
             with nogil:
@@ -147,16 +155,26 @@ cdef class MarmotCellWrapper:
         except (RuntimeError, ValueError) as e:
             raise CutbackRequest(str(e), 0.5)
 
-    cpdef void interpolateFieldsToMaterialPoints(self, double[::1] dUc) nogil:
+    cpdef void interpolateFieldsToMaterialPoints(self, double[::1] dUc) except *:
+        """Interpolate the solution increment ``dUc`` (``nDof`` entries) to the assigned material points."""
 
-        self._marmotCell.interpolateFieldsToMaterialPoints(&dUc[0])
+        requireLength("interpolateFieldsToMaterialPoints", "dUc", dUc.shape[0], self._nDof)
+        with nogil:
+            self._marmotCell.interpolateFieldsToMaterialPoints(&dUc[0])
 
-    cpdef void computeLumpedInertia( self, double[::1] M ) nogil:
-        self._marmotCell.computeLumpedInertia(&M[0])
+    cpdef void computeLumpedInertia( self, double[::1] M ) except *:
+        """Add the lumped mass of the assigned material points to ``M`` (``nDof`` entries)."""
 
+        requireLength("computeLumpedInertia", "M", M.shape[0], self._nDof)
+        with nogil:
+            self._marmotCell.computeLumpedInertia(&M[0])
 
-    cpdef void computeConsistentInertia( self, double[::1] M ) nogil:
-        self._marmotCell.computeConsistentInertia(&M[0])
+    cpdef void computeConsistentInertia( self, double[::1] M ) except *:
+        """Add the consistent mass of the assigned material points to ``M`` (``nDof * nDof`` entries)."""
+
+        requireLength("computeConsistentInertia", "M", M.shape[0], self._nDof * self._nDof)
+        with nogil:
+            self._marmotCell.computeConsistentInertia(&M[0])
 
     @property
     def connectivityChangesWithMotion(self):
@@ -176,6 +194,12 @@ cdef class MarmotCellWrapper:
                          double[::1] Kc,
                          double timeNew,
                          double dTime):
+        """Add a body load on the assigned material points; ``load`` has as many entries as the cell has
+        dimensions, ``Pc`` has ``nDof`` and ``Kc`` has ``nDof * nDof``."""
+
+        requireLength("computeBodyLoad", "load", load.shape[0], self._nodeCoordinates.shape[1])
+        requireLength("computeBodyLoad", "Pc", Pc.shape[0], self._nDof)
+        requireLength("computeBodyLoad", "Kc", Kc.shape[0], self._nDof * self._nDof)
 
         self._marmotCell.computeBodyLoad( self._supportedBodyLoads[loadType.upper()], &load[0], &Pc[0], &Kc[0], timeNew, dTime)
 
@@ -188,6 +212,12 @@ cdef class MarmotCellWrapper:
                          double[::1] Kc,
                          double timeNew,
                          double dTime):
+        """Add a distributed load on a material point; ``Pc`` has ``nDof`` entries and ``Kc`` has ``nDof * nDof``.
+        How many values ``load`` holds depends on the load type, which only the Marmot cell knows, so it is not
+        checked here."""
+
+        requireLength("computeDistributedLoad", "Pc", Pc.shape[0], self._nDof)
+        requireLength("computeDistributedLoad", "Kc", Kc.shape[0], self._nDof * self._nDof)
 
         cdef int mpNumber = materialPoint.number
 
@@ -212,7 +242,10 @@ cdef class MarmotCellWrapper:
         self._assignedMaterialPoints = marmotMaterialPointWrappers
 
     def isCoordinateInCell(self, coordinate: np.ndarray) -> bool:
+        """Whether ``coordinate``, with as many entries as the cell has dimensions, lies in the cell."""
+
         cdef double[::1] coords = coordinate
+        requireLength("isCoordinateInCell", "coordinate", coords.shape[0], self._nodeCoordinates.shape[1])
         return self._marmotCell.isCoordinateInCell(&coords[0])
 
     def getBoundingBox(self, ):
@@ -228,7 +261,10 @@ cdef class MarmotCellWrapper:
         return boundingBoxMin, boundingBoxMax
 
     def getInterpolationVector(self, coordinate: np.ndarray) -> np.ndarray:
+        """The shape functions of the nodes at ``coordinate``, with as many entries as the cell has dimensions."""
+
         cdef double[::1] coords = coordinate
+        requireLength("getInterpolationVector", "coordinate", coords.shape[0], self._nodeCoordinates.shape[1])
         cdef np.ndarray N = np.zeros(self._nNodes)
         cdef double[::1] Nview_ = N
         self._marmotCell.getInterpolationVector(&Nview_[0], &coords[0])
