@@ -23,13 +23,13 @@ NX = NY = 4
 STAIRCASE = [(i, 0) for i in range(4)] + [(i, 1) for i in range(3)] + [(i, 2) for i in range(2)]
 
 
-def _grid(nX=NX, nY=NY, l=None, h=None, cellType="Displacement/Quad4"):
+def _grid(nX=NX, nY=NY, length=None, h=None, cellType="Displacement/Quad4"):
     model = MPMModel(2)
     rectangulargridgenerator.generateModelData(
         model,
         Journal(),
         x0=0.0,
-        l=float(nX) if l is None else l,
+        l=float(nX) if length is None else length,
         y0=0.0,
         h=float(nY) if h is None else h,
         nX=nX,
@@ -59,7 +59,7 @@ def test_cells_give_the_gradients_of_their_extrapolated_basis():
     """Marmot's Cell::getInterpolationGradient, inside and outside of the cell, against central differences of
     getInterpolationVector."""
 
-    model = _grid(nX=1, nY=1, l=2.0, h=1.0)
+    model = _grid(nX=1, nY=1, length=2.0, h=1.0)
     cell = model.cells[1]
     for x in ([0.3, 0.7], [2.0, 0.5], [3.5, -1.0]):
         x = np.array(x)
@@ -103,7 +103,7 @@ def test_penalty_of_two_cells_is_the_hand_computation(h):
     (2h,h), p = (-1, 2, 0, 0, -1, 0) and q = (0, 0, 2, -1, 0, -1); J = h^3/3 * h * h^-2 * (pp/3 + (pq + qp)/6 + qq/3).
     """
 
-    model = _grid(nX=2, nY=1, l=2 * h, h=h)
+    model = _grid(nX=2, nY=1, length=2 * h, h=h)
     adjacency = GridFaceAdjacency(model.cells.values())
     _, faces = boundaryCellsAndGhostFaces(adjacency, [1, 2])
     assert faces == []  # no inactive neighbour: no boundary cell
