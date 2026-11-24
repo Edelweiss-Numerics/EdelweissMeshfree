@@ -36,14 +36,14 @@
 """Implicit quasi-static MPM with ghost stabilisation (Coombs, IJNME 124 (2023) 4841-4875), alone and on top of the
 aggregation (AgMPM).
 
-The cantilever of example 190: a plane strain cantilever under its own weight, clamped on the left edge of the grid,
+The cantilever of example 196: a plane strain cantilever under its own weight, clamped on the left edge of the grid,
 on a background grid of unit Displacement/Quad4 cells, with small cuts in its top and bottom rows and at its right end.
 The ghost penalty (:class:`GhostStabilisation`, gamma = 0.01 E, see :data:`GHOST`) penalises the jumps of the
 normal derivative of the displacement over the faces of the boundary cells.
 
 Checks: the ghost faces of the initial active domain; ghost stabilisation reduces the condition number of the
 stiffness reduced to the free degrees of freedom by orders of magnitude, alone and with aggregation; the runs converge
-to nearly the deflection of the unstabilised run (example 190); the material point displacements match the gold file
+to nearly the deflection of the unstabilised run (example 196); the material point displacements match the gold file
 of each run.
 """
 
@@ -103,7 +103,7 @@ def run_sim(aggregate: bool, ghost: bool = True):
         cellProvider="LagrangianMarmotCell",
         cellType="Displacement/Quad4",
     )
-    # as example 190: 33 x 12 material points with small cuts in the rows y = 0.995 and y = 2.005, and the column
+    # as example 196: 33 x 12 material points with small cuts in the rows y = 0.995 and y = 2.005, and the column
     # x = 8.005
     rectangularmpgenerator.generateModelData(
         mpmModel,
@@ -203,10 +203,10 @@ def test_sim(assert_gold, aggregate):
 
     ghost = mpmModel.constraints["ghost"]
     assert ghost.active
-    # after the deflection (22 active cells, as in example 190): 18 boundary cells, 29 ghost faces
+    # after the deflection (22 active cells, as in example 196): 18 boundary cells, 29 ghost faces
     assert len(ghost.boundaryCells) == 18
     assert len(ghost.faces) == 29
-    # unstabilised: 1.05e7 (example 190)
+    # unstabilised: 1.05e7 (example 196)
     assert stiffness.conditionNumber < 1e5
 
     assert -0.06 < tipDeflection(mpmModel) < -0.02
