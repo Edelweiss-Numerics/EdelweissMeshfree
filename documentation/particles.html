@@ -856,6 +856,12 @@ see <code class="xref py py-attr docutils literal notranslate"><span class="pre"
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.assembleStiffness" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.assembleStiffness"><code class="xref py py-obj docutils literal notranslate"><span class="pre">assembleStiffness</span></code></a>(K)</p></td>
 <td><p>Add the stiffness; see <a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.assembleStiffness" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.assembleStiffness"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissmeshfree.particles.base.baseparticle.BaseParticle.assembleStiffness()</span></code></a>: Marmot's assembling visitor of the stiffness the particle describes, which leaves the particle as it was found; over a unit time increment at time zero.</p></td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeBodyLoad" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeBodyLoad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeBodyLoad</span></code></a>(loadType, load, Pc, Kc, ...)</p></td>
+<td><p>Add a body load; see <a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeBodyLoad" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeBodyLoad"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeBodyLoad()</span></code></a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeDistributedLoad" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeDistributedLoad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeDistributedLoad</span></code></a>(loadType, surfaceID, ...)</p></td>
+<td><p>Add a distributed load; see <a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeDistributedLoad" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeDistributedLoad"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeDistributedLoad()</span></code></a>.</p></td>
+</tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeKernels" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeKernels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeKernels</span></code></a>(Kc, Pc, Uc, dUc, timeNew, dTime)</p></td>
 <td><p>Add the internal forces of the particle to the residual, and their tangent; see <a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeKernels" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeKernels"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeKernels()</span></code></a>.</p></td>
 </tr>
@@ -877,38 +883,56 @@ see <code class="xref py py-attr docutils literal notranslate"><span class="pre"
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getFaceCoordinates" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getFaceCoordinates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getFaceCoordinates</span></code></a>(faceID)</p></td>
 <td><p>Get the underlying coordinates of a given face of the MarmotParticle.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getInterpolationVectorLinearizedAboutCenter" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getInterpolationVectorLinearizedAboutCenter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getInterpolationVectorLinearizedAboutCenter</span></code></a>(...)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getInterpolationVector" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getInterpolationVector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getInterpolationVector</span></code></a>(coordinates)</p></td>
+<td><p>The shape functions of the nodes at <code class="docutils literal notranslate"><span class="pre">coordinates</span></code>, which has <code class="docutils literal notranslate"><span class="pre">dimension</span></code> entries.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getInterpolationVectorLinearizedAboutCenter" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getInterpolationVectorLinearizedAboutCenter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getInterpolationVectorLinearizedAboutCenter</span></code></a>(...)</p></td>
 <td><p>The shape functions linearized about the center; see <a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getInterpolationVectorLinearizedAboutCenter" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.getInterpolationVectorLinearizedAboutCenter"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissmeshfree.particles.base.baseparticle.BaseParticle.getInterpolationVectorLinearizedAboutCenter()</span></code></a>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getResultArray" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getResultArray"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getResultArray</span></code></a>(result[, getPersistentView, qp])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getResultArray" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getResultArray"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getResultArray</span></code></a>(result[, getPersistentView, qp])</p></td>
 <td><p>Get the array of a result, possibly as a persistent view which is continiously updated by the underlying MarmotParticle.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getVertexCoordinates" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getVertexCoordinates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVertexCoordinates</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getVertexCoordinates" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getVertexCoordinates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVertexCoordinates</span></code></a>()</p></td>
 <td><p>Get the underlying MarmotParticle vertex coordinates.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getVolumeUndeformed" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getVolumeUndeformed"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVolumeUndeformed</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getVolumeUndeformed" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getVolumeUndeformed"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getVolumeUndeformed</span></code></a>()</p></td>
 <td><p>Get the underlying MarmotParticle undeformed volume.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.localEntriesOfBlock" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.localEntriesOfBlock"><code class="xref py py-obj docutils literal notranslate"><span class="pre">localEntriesOfBlock</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.localEntriesOfBlock" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.localEntriesOfBlock"><code class="xref py py-obj docutils literal notranslate"><span class="pre">localEntriesOfBlock</span></code></a>()</p></td>
 <td><p>The entries of the dense block, see <code class="xref py py-func docutils literal notranslate"><span class="pre">denseBlockLocalEntries()</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.readRestartData" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.readRestartData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">readRestartData</span></code></a>(data)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.readRestartData" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.readRestartData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">readRestartData</span></code></a>(data)</p></td>
 <td><p>Restore the state <code class="xref py py-meth docutils literal notranslate"><span class="pre">getRestartData()</span></code> returned.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setInitialCondition" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setInitialCondition"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setInitialCondition</span></code></a>(stateType, value)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setInitialCondition" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setInitialCondition"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setInitialCondition</span></code></a>(stateType, value)</p></td>
 <td><p>Set initial condition of the particle.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setProperties" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setProperties"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setProperties</span></code></a>(properties)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setProperties" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setProperties"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setProperties</span></code></a>(properties)</p></td>
 <td><p>Set a list of properties of the particle.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setProperty" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setProperty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setProperty</span></code></a>(propertyName, value)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setProperty" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setProperty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setProperty</span></code></a>(propertyName, value)</p></td>
 <td><p>Set a property of the particle.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.shapeBlock" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.shapeBlock"><code class="xref py py-obj docutils literal notranslate"><span class="pre">shapeBlock</span></code></a>(values)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.shapeBlock" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.shapeBlock"><code class="xref py py-obj docutils literal notranslate"><span class="pre">shapeBlock</span></code></a>(values)</p></td>
 <td><p>Keep the view flat for Cython 1-D memoryview compatibility.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.updatePhysicsExplicit" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.updatePhysicsExplicit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updatePhysicsExplicit</span></code></a>(dUc, timeNew, dTime)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.updatePhysicsExplicit" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.updatePhysicsExplicit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updatePhysicsExplicit</span></code></a>(dUc, timeNew, dTime)</p></td>
 <td><p>Take the solution increment; see <a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.updatePhysicsExplicit" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.updatePhysicsExplicit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissmeshfree.particles.base.baseparticle.BaseParticle.updatePhysicsExplicit()</span></code></a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.vci_assignTestFunctionCorrectionTerms" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.vci_assignTestFunctionCorrectionTerms"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vci_assignTestFunctionCorrectionTerms</span></code></a>(eta_AjC)</p></td>
+<td><p>Assign the correction terms <code class="docutils literal notranslate"><span class="pre">eta_AjC</span></code> (nodes x dimension x constraints).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.vci_compute_MMatrix" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.vci_compute_MMatrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vci_compute_MMatrix</span></code></a>(m_ACD)</p></td>
+<td><p>Accumulate the moment matrix into <code class="docutils literal notranslate"><span class="pre">m_ACD</span></code> (nodes x constraints x constraints).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.vci_compute_TestGradient_P_Integral" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.vci_compute_TestGradient_P_Integral"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vci_compute_TestGradient_P_Integral</span></code></a>(r_AiC)</p></td>
+<td><p>Accumulate the volume integral of the test function gradients into <code class="docutils literal notranslate"><span class="pre">r_AiC</span></code> (nodes x dimension x constraints).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.vci_compute_Test_PGradient_Integral" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.vci_compute_Test_PGradient_Integral"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vci_compute_Test_PGradient_Integral</span></code></a>(r_AiC)</p></td>
+<td><p>Accumulate the volume integral of the basis gradients into <code class="docutils literal notranslate"><span class="pre">r_AiC</span></code> (nodes x dimension x constraints).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.vci_compute_Test_P_BoundaryIntegral" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.vci_compute_Test_P_BoundaryIntegral"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vci_compute_Test_P_BoundaryIntegral</span></code></a>(r_AiC, ...)</p></td>
+<td><p>Accumulate the boundary integral of a face into <code class="docutils literal notranslate"><span class="pre">r_AiC</span></code> (nodes x dimension x constraints); <code class="docutils literal notranslate"><span class="pre">boundarySurfaceVector</span></code> has <code class="docutils literal notranslate"><span class="pre">dimension</span></code> entries.</p></td>
 </tr>
 </tbody>
 </table>
@@ -920,40 +944,16 @@ see <code class="xref py py-attr docutils literal notranslate"><span class="pre"
 <tr class="row-even"><td><p><strong>assignKernelFunctions</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p><strong>computeBodyLoad</strong></p></td>
-<td></td>
-</tr>
-<tr class="row-even"><td><p><strong>computeDistributedLoad</strong></p></td>
-<td></td>
-</tr>
 <tr class="row-odd"><td><p><strong>getEvaluationCoordinates</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p><strong>getInterpolationVector</strong></p></td>
+<tr class="row-even"><td><p><strong>getRestartData</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p><strong>getRestartData</strong></p></td>
+<tr class="row-odd"><td><p><strong>initializeYourself</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p><strong>initializeYourself</strong></p></td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><p><strong>prepareYourself</strong></p></td>
-<td></td>
-</tr>
-<tr class="row-even"><td><p><strong>vci_assignTestFunctionCorrectionTerms</strong></p></td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><p><strong>vci_compute_MMatrix</strong></p></td>
-<td></td>
-</tr>
-<tr class="row-even"><td><p><strong>vci_compute_TestGradient_P_Integral</strong></p></td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><p><strong>vci_compute_Test_PGradient_Integral</strong></p></td>
-<td></td>
-</tr>
-<tr class="row-even"><td><p><strong>vci_compute_Test_P_BoundaryIntegral</strong></p></td>
+<tr class="row-even"><td><p><strong>prepareYourself</strong></p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p><strong>vci_getNumberOfConstraints</strong></p></td>
@@ -967,7 +967,8 @@ see <code class="xref py py-attr docutils literal notranslate"><span class="pre"
 <dd><p>Add an upper bound of the absolute value of the stiffness times the weights; see
 <a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.addBoundOfAbsoluteStiffnessTimes" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.addBoundOfAbsoluteStiffnessTimes"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissmeshfree.particles.base.baseparticle.BaseParticle.addBoundOfAbsoluteStiffnessTimes()</span></code></a>: Marmot’s
 visitor of the stiffness the particle describes, which leaves the particle as it was found; over a unit time
-increment at time zero, as <a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.assembleStiffness" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.assembleStiffness"><code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleStiffness()</span></code></a>.</p>
+increment at time zero, as <a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.assembleStiffness" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.assembleStiffness"><code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleStiffness()</span></code></a>. <code class="docutils literal notranslate"><span class="pre">W</span></code> and <code class="docutils literal notranslate"><span class="pre">bound</span></code> both have <code class="docutils literal notranslate"><span class="pre">nDof</span></code> rows and the
+same number of columns.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -976,7 +977,23 @@ increment at time zero, as <a class="reference internal" href="#edelweissmeshfre
 <dd><p>Add the stiffness; see
 <a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.assembleStiffness" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.assembleStiffness"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissmeshfree.particles.base.baseparticle.BaseParticle.assembleStiffness()</span></code></a>: Marmot’s assembling
 visitor of the stiffness the particle describes, which leaves the particle as it was found; over a unit time
-increment at time zero.</p>
+increment at time zero. <code class="docutils literal notranslate"><span class="pre">K</span></code> has <code class="docutils literal notranslate"><span class="pre">nDof</span> <span class="pre">*</span> <span class="pre">nDof</span></code> entries.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeBodyLoad">
+<span class="sig-name descname"><span class="pre">computeBodyLoad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loadType</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">load</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Pc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Kc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeNew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dTime</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeBodyLoad" title="Link to this definition"></a></dt>
+<dd><p>Add a body load; see <a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeBodyLoad" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeBodyLoad"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeBodyLoad()</span></code></a>.
+<code class="docutils literal notranslate"><span class="pre">load</span></code> has <code class="docutils literal notranslate"><span class="pre">dimension</span></code> entries, <code class="docutils literal notranslate"><span class="pre">Pc</span></code> has <code class="docutils literal notranslate"><span class="pre">nDof</span></code> and <code class="docutils literal notranslate"><span class="pre">Kc</span></code> has <code class="docutils literal notranslate"><span class="pre">nDof</span> <span class="pre">*</span> <span class="pre">nDof</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeDistributedLoad">
+<span class="sig-name descname"><span class="pre">computeDistributedLoad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loadType</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surfaceID</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">load</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Pc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Kc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeNew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dTime</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeDistributedLoad" title="Link to this definition"></a></dt>
+<dd><p>Add a distributed load; see
+<a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeDistributedLoad" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeDistributedLoad"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeDistributedLoad()</span></code></a>. <code class="docutils literal notranslate"><span class="pre">Pc</span></code> has
+<code class="docutils literal notranslate"><span class="pre">nDof</span></code> entries and <code class="docutils literal notranslate"><span class="pre">Kc</span></code> has <code class="docutils literal notranslate"><span class="pre">nDof</span> <span class="pre">*</span> <span class="pre">nDof</span></code>. How many values <code class="docutils literal notranslate"><span class="pre">load</span></code> holds depends on the load type,
+which only the Marmot particle knows, so it is not checked here.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -986,34 +1003,40 @@ increment at time zero.</p>
 <a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeKernels" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeKernels"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeKernels()</span></code></a>. A particle is incremental,
 so Marmot gets the solution increment. A failure in Marmot, e.g. a material that cannot integrate the
 increment, requests a cutback, as for an EdelweissFE element.</p>
+<p><code class="docutils literal notranslate"><span class="pre">Kc</span></code> has <code class="docutils literal notranslate"><span class="pre">nDof</span> <span class="pre">*</span> <span class="pre">nDof</span></code> entries, <code class="docutils literal notranslate"><span class="pre">Pc</span></code> and <code class="docutils literal notranslate"><span class="pre">dUc</span></code> have <code class="docutils literal notranslate"><span class="pre">nDof</span></code>; <code class="docutils literal notranslate"><span class="pre">nDof</span></code> changes with every
+reassignment of the kernel functions. A buffer of another length raises a <code class="docutils literal notranslate"><span class="pre">ValueError</span></code>.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeLumpedDamping">
 <span class="sig-name descname"><span class="pre">computeLumpedDamping</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cLumped</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeLumpedDamping" title="Link to this definition"></a></dt>
 <dd><p>Add the lumped damping; see
-<a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedDamping" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedDamping"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedDamping()</span></code></a>.</p>
+<a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedDamping" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedDamping"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedDamping()</span></code></a>. <code class="docutils literal notranslate"><span class="pre">cLumped</span></code> has
+<code class="docutils literal notranslate"><span class="pre">nDof</span></code> entries.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeLumpedInertia">
 <span class="sig-name descname"><span class="pre">computeLumpedInertia</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mLumped</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeLumpedInertia" title="Link to this definition"></a></dt>
 <dd><p>Add the lumped mass; see
-<a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedInertia" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedInertia"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedInertia()</span></code></a>.</p>
+<a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedInertia" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedInertia"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedInertia()</span></code></a>. <code class="docutils literal notranslate"><span class="pre">mLumped</span></code> has
+<code class="docutils literal notranslate"><span class="pre">nDof</span></code> entries.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeLumpedMomentum">
 <span class="sig-name descname"><span class="pre">computeLumpedMomentum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mLumped</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeLumpedMomentum" title="Link to this definition"></a></dt>
 <dd><p>Add the lumped momentum; see
-<a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedMomentum" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedMomentum"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedMomentum()</span></code></a>.</p>
+<a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedMomentum" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedMomentum"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedMomentum()</span></code></a>. <code class="docutils literal notranslate"><span class="pre">mLumped</span></code> has
+<code class="docutils literal notranslate"><span class="pre">nDof</span></code> entries.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computePhysicsKernelsExplicit">
 <span class="sig-name descname"><span class="pre">computePhysicsKernelsExplicit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Pc</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computePhysicsKernelsExplicit" title="Link to this definition"></a></dt>
 <dd><p>Add the internal force of the current state; see
-<a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computePhysicsKernelsExplicit" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.computePhysicsKernelsExplicit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissmeshfree.particles.base.baseparticle.BaseParticle.computePhysicsKernelsExplicit()</span></code></a>.</p>
+<a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computePhysicsKernelsExplicit" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.computePhysicsKernelsExplicit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissmeshfree.particles.base.baseparticle.BaseParticle.computePhysicsKernelsExplicit()</span></code></a>. <code class="docutils literal notranslate"><span class="pre">Pc</span></code> has
+<code class="docutils literal notranslate"><span class="pre">nDof</span></code> entries.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -1029,10 +1052,22 @@ increment, requests a cutback, as for an EdelweissFE element.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getInterpolationVector">
+<span class="sig-name descname"><span class="pre">getInterpolationVector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coordinates</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getInterpolationVector" title="Link to this definition"></a></dt>
+<dd><p>The shape functions of the nodes at <code class="docutils literal notranslate"><span class="pre">coordinates</span></code>, which has <code class="docutils literal notranslate"><span class="pre">dimension</span></code> entries.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>ndarray</em></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getInterpolationVectorLinearizedAboutCenter">
 <span class="sig-name descname"><span class="pre">getInterpolationVectorLinearizedAboutCenter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coordinates</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.getInterpolationVectorLinearizedAboutCenter" title="Link to this definition"></a></dt>
 <dd><p>The shape functions linearized about the center; see
-<a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getInterpolationVectorLinearizedAboutCenter" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.getInterpolationVectorLinearizedAboutCenter"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissmeshfree.particles.base.baseparticle.BaseParticle.getInterpolationVectorLinearizedAboutCenter()</span></code></a>.</p>
+<a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.getInterpolationVectorLinearizedAboutCenter" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.getInterpolationVectorLinearizedAboutCenter"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissmeshfree.particles.base.baseparticle.BaseParticle.getInterpolationVectorLinearizedAboutCenter()</span></code></a>.
+<code class="docutils literal notranslate"><span class="pre">coordinates</span></code> has <code class="docutils literal notranslate"><span class="pre">dimension</span></code> entries.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><em>ndarray</em></p>
@@ -1124,7 +1159,39 @@ from its state, and is brought to it as at the start of an increment (see <code 
 <span class="sig-name descname"><span class="pre">updatePhysicsExplicit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dUc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeNew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dTime</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.updatePhysicsExplicit" title="Link to this definition"></a></dt>
 <dd><p>Take the solution increment; see
 <a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.updatePhysicsExplicit" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.updatePhysicsExplicit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissmeshfree.particles.base.baseparticle.BaseParticle.updatePhysicsExplicit()</span></code></a>. A failure in Marmot
-requests a cutback, as in <a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeKernels" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeKernels"><code class="xref py py-meth docutils literal notranslate"><span class="pre">computeKernels()</span></code></a>.</p>
+requests a cutback, as in <a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeKernels" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeKernels"><code class="xref py py-meth docutils literal notranslate"><span class="pre">computeKernels()</span></code></a>. <code class="docutils literal notranslate"><span class="pre">dUc</span></code> has <code class="docutils literal notranslate"><span class="pre">nDof</span></code> entries.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.vci_assignTestFunctionCorrectionTerms">
+<span class="sig-name descname"><span class="pre">vci_assignTestFunctionCorrectionTerms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">eta_AjC</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.vci_assignTestFunctionCorrectionTerms" title="Link to this definition"></a></dt>
+<dd><p>Assign the correction terms <code class="docutils literal notranslate"><span class="pre">eta_AjC</span></code> (nodes x dimension x constraints).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.vci_compute_MMatrix">
+<span class="sig-name descname"><span class="pre">vci_compute_MMatrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">m_ACD</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.vci_compute_MMatrix" title="Link to this definition"></a></dt>
+<dd><p>Accumulate the moment matrix into <code class="docutils literal notranslate"><span class="pre">m_ACD</span></code> (nodes x constraints x constraints).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.vci_compute_TestGradient_P_Integral">
+<span class="sig-name descname"><span class="pre">vci_compute_TestGradient_P_Integral</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">r_AiC</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.vci_compute_TestGradient_P_Integral" title="Link to this definition"></a></dt>
+<dd><p>Accumulate the volume integral of the test function gradients into <code class="docutils literal notranslate"><span class="pre">r_AiC</span></code> (nodes x dimension x
+constraints).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.vci_compute_Test_PGradient_Integral">
+<span class="sig-name descname"><span class="pre">vci_compute_Test_PGradient_Integral</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">r_AiC</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.vci_compute_Test_PGradient_Integral" title="Link to this definition"></a></dt>
+<dd><p>Accumulate the volume integral of the basis gradients into <code class="docutils literal notranslate"><span class="pre">r_AiC</span></code> (nodes x dimension x constraints).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.vci_compute_Test_P_BoundaryIntegral">
+<span class="sig-name descname"><span class="pre">vci_compute_Test_P_BoundaryIntegral</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">r_AiC</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundarySurfaceVector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundaryFaceID</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.vci_compute_Test_P_BoundaryIntegral" title="Link to this definition"></a></dt>
+<dd><p>Accumulate the boundary integral of a face into <code class="docutils literal notranslate"><span class="pre">r_AiC</span></code> (nodes x dimension x constraints);
+<code class="docutils literal notranslate"><span class="pre">boundarySurfaceVector</span></code> has <code class="docutils literal notranslate"><span class="pre">dimension</span></code> entries.</p>
 </dd></dl>
 
 <dl class="py attribute">

@@ -318,22 +318,43 @@ This class is not intended to be used directly, but to be subclassed by the actu
 <p class="rubric">Methods</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.cellelements.marmotcellelement.marmotcellelement.MarmotCellElementWrapper.computeKernels" title="edelweissmeshfree.cellelements.marmotcellelement.marmotcellelement.MarmotCellElementWrapper.computeKernels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeKernels</span></code></a>(Kc, Pc, Uc, dUc, timeNew, dTime)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeBodyLoad</span></code>(loadType, load, Pc, Kc, ...)</p></td>
+<td><p>Add a body load on the assigned material points; <code class="docutils literal notranslate"><span class="pre">load</span></code> has as many entries as the cell has dimensions, <code class="docutils literal notranslate"><span class="pre">Pc</span></code> has <code class="docutils literal notranslate"><span class="pre">nDof</span></code> and <code class="docutils literal notranslate"><span class="pre">Kc</span></code> has <code class="docutils literal notranslate"><span class="pre">nDof</span> <span class="pre">*</span> <span class="pre">nDof</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeConsistentInertia</span></code>(M)</p></td>
+<td><p>Add the consistent mass of the assigned material points to <code class="docutils literal notranslate"><span class="pre">M</span></code> (<code class="docutils literal notranslate"><span class="pre">nDof</span> <span class="pre">*</span> <span class="pre">nDof</span></code> entries).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeDistributedLoad</span></code>(loadType, surfaceID, ...)</p></td>
+<td><p>Add a distributed load on a material point; <code class="docutils literal notranslate"><span class="pre">Pc</span></code> has <code class="docutils literal notranslate"><span class="pre">nDof</span></code> entries and <code class="docutils literal notranslate"><span class="pre">Kc</span></code> has <code class="docutils literal notranslate"><span class="pre">nDof</span> <span class="pre">*</span> <span class="pre">nDof</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.cellelements.marmotcellelement.marmotcellelement.MarmotCellElementWrapper.computeKernels" title="edelweissmeshfree.cellelements.marmotcellelement.marmotcellelement.MarmotCellElementWrapper.computeKernels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeKernels</span></code></a>(Kc, Pc, Uc, dUc, timeNew, dTime)</p></td>
 <td><p>Add the internal forces of the material points to the residual, and their tangent; see <a class="reference internal" href="cells.html#edelweissmeshfree.cells.base.cell.CellBase.computeKernels" title="edelweissmeshfree.cells.base.cell.CellBase.computeKernels"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissmeshfree.cells.base.cell.CellBase.computeKernels()</span></code></a>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.cellelements.marmotcellelement.marmotcellelement.MarmotCellElementWrapper.getRequestedMaterialPointCoordinates" title="edelweissmeshfree.cellelements.marmotcellelement.marmotcellelement.MarmotCellElementWrapper.getRequestedMaterialPointCoordinates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getRequestedMaterialPointCoordinates</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeLumpedInertia</span></code>(M)</p></td>
+<td><p>Add the lumped mass of the assigned material points to <code class="docutils literal notranslate"><span class="pre">M</span></code> (<code class="docutils literal notranslate"><span class="pre">nDof</span></code> entries).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getInterpolationVector</span></code>(coordinate)</p></td>
+<td><p>The shape functions of the nodes at <code class="docutils literal notranslate"><span class="pre">coordinate</span></code>, with as many entries as the cell has dimensions.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.cellelements.marmotcellelement.marmotcellelement.MarmotCellElementWrapper.getRequestedMaterialPointCoordinates" title="edelweissmeshfree.cellelements.marmotcellelement.marmotcellelement.MarmotCellElementWrapper.getRequestedMaterialPointCoordinates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getRequestedMaterialPointCoordinates</span></code></a>()</p></td>
 <td><p>Get the coordinates of the material points in the cell.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.cellelements.marmotcellelement.marmotcellelement.MarmotCellElementWrapper.getRequestedMaterialPointType" title="edelweissmeshfree.cellelements.marmotcellelement.marmotcellelement.MarmotCellElementWrapper.getRequestedMaterialPointType"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getRequestedMaterialPointType</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.cellelements.marmotcellelement.marmotcellelement.MarmotCellElementWrapper.getRequestedMaterialPointType" title="edelweissmeshfree.cellelements.marmotcellelement.marmotcellelement.MarmotCellElementWrapper.getRequestedMaterialPointType"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getRequestedMaterialPointType</span></code></a>()</p></td>
 <td><p>Get the type of the material points in the cell.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.cellelements.marmotcellelement.marmotcellelement.MarmotCellElementWrapper.getRequestedMaterialPointVolumes" title="edelweissmeshfree.cellelements.marmotcellelement.marmotcellelement.MarmotCellElementWrapper.getRequestedMaterialPointVolumes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getRequestedMaterialPointVolumes</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.cellelements.marmotcellelement.marmotcellelement.MarmotCellElementWrapper.getRequestedMaterialPointVolumes" title="edelweissmeshfree.cellelements.marmotcellelement.marmotcellelement.MarmotCellElementWrapper.getRequestedMaterialPointVolumes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getRequestedMaterialPointVolumes</span></code></a>()</p></td>
 <td><p>Get the volumes of the material points in the cell.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">localEntriesOfBlock</span></code>()</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">interpolateFieldsToMaterialPoints</span></code>(dUc)</p></td>
+<td><p>Interpolate the solution increment <code class="docutils literal notranslate"><span class="pre">dUc</span></code> (<code class="docutils literal notranslate"><span class="pre">nDof</span></code> entries) to the assigned material points.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">isCoordinateInCell</span></code>(coordinate)</p></td>
+<td><p>Whether <code class="docutils literal notranslate"><span class="pre">coordinate</span></code>, with as many entries as the cell has dimensions, lies in the cell.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">localEntriesOfBlock</span></code>()</p></td>
 <td><p>The entries of the dense block, see <code class="xref py py-func docutils literal notranslate"><span class="pre">denseBlockLocalEntries()</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">shapeBlock</span></code>(values)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">shapeBlock</span></code>(values)</p></td>
 <td><p>Keep the view flat for Cython 1-D memoryview compatibility.</p></td>
 </tr>
 </tbody>
@@ -346,28 +367,7 @@ This class is not intended to be used directly, but to be subclassed by the actu
 <tr class="row-even"><td><p><strong>assignMaterialPoints</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p><strong>computeBodyLoad</strong></p></td>
-<td></td>
-</tr>
-<tr class="row-even"><td><p><strong>computeConsistentInertia</strong></p></td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><p><strong>computeDistributedLoad</strong></p></td>
-<td></td>
-</tr>
-<tr class="row-even"><td><p><strong>computeLumpedInertia</strong></p></td>
-<td></td>
-</tr>
 <tr class="row-odd"><td><p><strong>getBoundingBox</strong></p></td>
-<td></td>
-</tr>
-<tr class="row-even"><td><p><strong>getInterpolationVector</strong></p></td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><p><strong>interpolateFieldsToMaterialPoints</strong></p></td>
-<td></td>
-</tr>
-<tr class="row-even"><td><p><strong>isCoordinateInCell</strong></p></td>
 <td></td>
 </tr>
 </tbody>
@@ -379,6 +379,8 @@ This class is not intended to be used directly, but to be subclassed by the actu
 <a class="reference internal" href="cells.html#edelweissmeshfree.cells.base.cell.CellBase.computeKernels" title="edelweissmeshfree.cells.base.cell.CellBase.computeKernels"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissmeshfree.cells.base.cell.CellBase.computeKernels()</span></code></a>. Unlike a cell, a cell element deforms like
 an element, so Marmot gets the current solution, not its increment. A failure in Marmot requests a cutback,
 as for an EdelweissFE element.</p>
+<p><code class="docutils literal notranslate"><span class="pre">Kc</span></code> has <code class="docutils literal notranslate"><span class="pre">nDof</span> <span class="pre">*</span> <span class="pre">nDof</span></code> entries, <code class="docutils literal notranslate"><span class="pre">Pc</span></code> and <code class="docutils literal notranslate"><span class="pre">Uc</span></code> have <code class="docutils literal notranslate"><span class="pre">nDof</span></code>. A buffer of another length raises a
+<code class="docutils literal notranslate"><span class="pre">ValueError</span></code>.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -434,22 +436,43 @@ as for an EdelweissFE element.</p>
 <p class="rubric">Methods</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeKernels</span></code>(Kc, Pc, Uc, dUc, timeNew, dTime)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeBodyLoad</span></code>(loadType, load, Pc, Kc, ...)</p></td>
+<td><p>Add a body load on the assigned material points; <code class="docutils literal notranslate"><span class="pre">load</span></code> has as many entries as the cell has dimensions, <code class="docutils literal notranslate"><span class="pre">Pc</span></code> has <code class="docutils literal notranslate"><span class="pre">nDof</span></code> and <code class="docutils literal notranslate"><span class="pre">Kc</span></code> has <code class="docutils literal notranslate"><span class="pre">nDof</span> <span class="pre">*</span> <span class="pre">nDof</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeConsistentInertia</span></code>(M)</p></td>
+<td><p>Add the consistent mass of the assigned material points to <code class="docutils literal notranslate"><span class="pre">M</span></code> (<code class="docutils literal notranslate"><span class="pre">nDof</span> <span class="pre">*</span> <span class="pre">nDof</span></code> entries).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeDistributedLoad</span></code>(loadType, surfaceID, ...)</p></td>
+<td><p>Add a distributed load on a material point; <code class="docutils literal notranslate"><span class="pre">Pc</span></code> has <code class="docutils literal notranslate"><span class="pre">nDof</span></code> entries and <code class="docutils literal notranslate"><span class="pre">Kc</span></code> has <code class="docutils literal notranslate"><span class="pre">nDof</span> <span class="pre">*</span> <span class="pre">nDof</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeKernels</span></code>(Kc, Pc, Uc, dUc, timeNew, dTime)</p></td>
 <td><p>Add the internal forces of the material points to the residual, and their tangent; see <a class="reference internal" href="cells.html#edelweissmeshfree.cells.base.cell.CellBase.computeKernels" title="edelweissmeshfree.cells.base.cell.CellBase.computeKernels"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissmeshfree.cells.base.cell.CellBase.computeKernels()</span></code></a>.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getRequestedMaterialPointCoordinates</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeLumpedInertia</span></code>(M)</p></td>
+<td><p>Add the lumped mass of the assigned material points to <code class="docutils literal notranslate"><span class="pre">M</span></code> (<code class="docutils literal notranslate"><span class="pre">nDof</span></code> entries).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getInterpolationVector</span></code>(coordinate)</p></td>
+<td><p>The shape functions of the nodes at <code class="docutils literal notranslate"><span class="pre">coordinate</span></code>, with as many entries as the cell has dimensions.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getRequestedMaterialPointCoordinates</span></code>()</p></td>
 <td><p>Get the coordinates of the material points in the cell.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getRequestedMaterialPointType</span></code>()</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getRequestedMaterialPointType</span></code>()</p></td>
 <td><p>Get the type of the material points in the cell.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getRequestedMaterialPointVolumes</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getRequestedMaterialPointVolumes</span></code>()</p></td>
 <td><p>Get the volumes of the material points in the cell.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">localEntriesOfBlock</span></code>()</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">interpolateFieldsToMaterialPoints</span></code>(dUc)</p></td>
+<td><p>Interpolate the solution increment <code class="docutils literal notranslate"><span class="pre">dUc</span></code> (<code class="docutils literal notranslate"><span class="pre">nDof</span></code> entries) to the assigned material points.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">isCoordinateInCell</span></code>(coordinate)</p></td>
+<td><p>Whether <code class="docutils literal notranslate"><span class="pre">coordinate</span></code>, with as many entries as the cell has dimensions, lies in the cell.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">localEntriesOfBlock</span></code>()</p></td>
 <td><p>The entries of the dense block, see <code class="xref py py-func docutils literal notranslate"><span class="pre">denseBlockLocalEntries()</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">shapeBlock</span></code>(values)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">shapeBlock</span></code>(values)</p></td>
 <td><p>Keep the view flat for Cython 1-D memoryview compatibility.</p></td>
 </tr>
 </tbody>
@@ -462,28 +485,7 @@ as for an EdelweissFE element.</p>
 <tr class="row-even"><td><p><strong>assignMaterialPoints</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p><strong>computeBodyLoad</strong></p></td>
-<td></td>
-</tr>
-<tr class="row-even"><td><p><strong>computeConsistentInertia</strong></p></td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><p><strong>computeDistributedLoad</strong></p></td>
-<td></td>
-</tr>
-<tr class="row-even"><td><p><strong>computeLumpedInertia</strong></p></td>
-<td></td>
-</tr>
 <tr class="row-odd"><td><p><strong>getBoundingBox</strong></p></td>
-<td></td>
-</tr>
-<tr class="row-even"><td><p><strong>getInterpolationVector</strong></p></td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><p><strong>interpolateFieldsToMaterialPoints</strong></p></td>
-<td></td>
-</tr>
-<tr class="row-even"><td><p><strong>isCoordinateInCell</strong></p></td>
 <td></td>
 </tr>
 </tbody>
