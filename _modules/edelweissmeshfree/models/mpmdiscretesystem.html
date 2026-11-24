@@ -543,6 +543,7 @@
         <span class="n">lumpedMass</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span>
         <span class="n">lumpedDamping</span><span class="p">:</span> <span class="n">DofVector</span><span class="p">,</span>
         <span class="n">forEachChunk</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">list</span><span class="p">,</span> <span class="n">Callable</span><span class="p">],</span> <span class="kc">None</span><span class="p">],</span>
+        <span class="n">weightsOfTheBound</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""A bound of the stable time increment of ``NED``'s explicit scheme for the particles, from their stiffness at</span>
 <span class="sd">        the current state and the assembled lumped mass and damping. No stiffness is assembled: every particle bounds</span>
@@ -590,6 +591,47 @@
 <span class="sd">        coupled by the largest eigenvalue of the small field matrix, which takes the geometric mean of the coupling</span>
 <span class="sd">        blocks. With a single field it is the Gershgorin bound.</span>
 
+<span class="sd">        **Weights carried from bound to bound** (``weightsOfTheBound``, ``NED``'s ``carry-stable-increment-weights``).</span>
+<span class="sd">        The weights constant per field are the start of the power iteration towards the Perron vector of</span>
+<span class="sd">        :math:`|\\boldsymbol{S}|`, where the Collatz-Wielandt bound is exact. Weights :math:`\\boldsymbol{w}` carried</span>
+<span class="sd">        from the last bound take the place of the ones in the same pass: the columns of field :math:`f` are the weights</span>
+<span class="sd">        on its degrees of freedom, which gives :math:`\\hat{Z}_{if} \\ge \\sum_{j \\in f} |S_{ij}| w_j`, and</span>
+<span class="sd">        :math:`Q_{gf} = \\max_{i \\in g} \\hat{Z}_{if} / w_i` is the field matrix of</span>
+<span class="sd">        :math:`\\boldsymbol{W}^{-1}|\\boldsymbol{S}|\\boldsymbol{W}`, which has the eigenvalues of</span>
+<span class="sd">        :math:`|\\boldsymbol{S}|`, so again :math:`\\rho(|\\boldsymbol{S}|) \\le \\rho(\\boldsymbol{Q})`. The pass costs</span>
+<span class="sd">        as much as without carried weights: the same columns, other values. With :math:`\\boldsymbol{c}` the Perron</span>
+<span class="sd">        vector of :math:`\\boldsymbol{Q}`, the weights :math:`v_i = c_g w_i` of the rows of field :math:`g` give</span>
+<span class="sd">        :math:`\\hat{\\boldsymbol{a}} = \\sum_f c_f \\hat{\\boldsymbol{Z}}_f \\ge |\\boldsymbol{S}|\\boldsymbol{v}` and</span>
+<span class="sd">        the Collatz-Wielandt bound :math:`\\max_i \\hat{a}_i / v_i`, which is never above</span>
+<span class="sd">        :math:`\\rho(\\boldsymbol{Q})`, since every row gives :math:`\\hat{a}_i / v_i \\le</span>
+<span class="sd">        (\\boldsymbol{Q}\\boldsymbol{c})_g / c_g`; the smaller of the two is taken, against the round-off of the Perron</span>
+<span class="sd">        vector. Both hold for every positive :math:`\\boldsymbol{w}`, whatever state it was refined at: the weights</span>
+<span class="sd">        carried need not fit the stiffness of now to bound it, only to bound it tightly. At the start, with the weights</span>
+<span class="sd">        constant per field, the bound is never above the one without carried weights. The weights for the next bound</span>
+<span class="sd">        are :math:`\\hat{\\boldsymbol{a}}`, scaled to a largest weight of one per scheme: one step of the power</span>
+<span class="sd">        iteration per bound, which tightens the bound towards :math:`\\rho(|\\boldsymbol{S}|)` over a few bounds as long</span>
+<span class="sd">        as the stiffness changes slowly from bound to bound.</span>
+
+<span class="sd">        Where the stiffness changes faster than the weights follow, a bound with carried weights can be above the one</span>
+<span class="sd">        with weights constant per field. ``NED`` starts the weights anew (all zero) whenever a bound with them gives a</span>
+<span class="sd">        smaller stable time increment than the bound they started from, so that an increment that is lowered only never</span>
+<span class="sd">        falls below the smallest bound with weights constant per field of the step (followed, it can fall below the one</span>
+<span class="sd">        of the same configuration, down to the one the weights started from). Taking the smaller of the two bounds in</span>
+<span class="sd">        every bound instead would take the columns with weights constant per field as well, which cost about as much</span>
+<span class="sd">        again as those of the carried weights. A degree of freedom without a weight -- one that has no inertia or damping at the</span>
+<span class="sd">        last bound -- starts at the largest weight of its block of fields, the weight every degree of freedom of the</span>
+<span class="sd">        block has at the start (:meth:`_weightsOfThisBound`).</span>
+
+<span class="sd">        The power iteration shrinks the weights of the degrees of freedom far from the stiffest ones by a factor per</span>
+<span class="sd">        bound, without limit: within a few dozen bounds they fall below what a double resolves next to the largest</span>
+<span class="sd">        weight, and a degree of freedom whose stiffness then changes, e.g. as a particle reaches another kernel function,</span>
+<span class="sd">        is weighted by round-off, which raises the bound far above the one without weights until the iteration has</span>
+<span class="sd">        grown the weight back. So no weight is kept below the machine epsilon of the largest one</span>
+<span class="sd">        (:meth:`_weightsForTheNextBound`): a weight below it adds nothing to a sum with the largest, so the limit removes</span>
+<span class="sd">        only what the arithmetic cannot carry anyway, and every degree of freedom stays weighted, so that a change of its</span>
+<span class="sd">        stiffness is followed within one bound. Any larger limit (a hundredth of the largest weight, say) bounds the</span>
+<span class="sd">        particles of a running analysis as tightly, the machine epsilon is the smallest that can be kept.</span>
+
 <span class="sd">        **The row sums without the stiffness.** A particle's stiffness has as many blocks as the square of its nodes, but</span>
 <span class="sd">        it sees the nodal increments only through the increment it interpolates at its evaluation point (value,</span>
 <span class="sd">        gradient and, if stabilized, second gradient): the rows of node :math:`A` are linear in the shape functions of</span>
@@ -611,6 +653,10 @@
 <span class="sd">            Their lumped damping (:meth:`assembleLumpedDampingOfEntitiesWithOwnInertia`), likewise.</span>
 <span class="sd">        forEachChunk</span>
 <span class="sd">            The solver's loop over chunks of independent entities.</span>
+<span class="sd">        weightsOfTheBound</span>
+<span class="sd">            The weights the last bound left, a vector of the numbering, zero where a degree of freedom has none yet (all</span>
+<span class="sd">            zero: the start, with the weights constant per field); replaced in place by the weights for the next bound.</span>
+<span class="sd">            None for the bound with the weights constant per field alone.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -643,8 +689,17 @@
                     <span class="n">groupOfDof</span><span class="p">[</span><span class="n">inGroup</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">orderOfGroup</span><span class="p">)</span>
                     <span class="n">orderOfGroup</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">order</span><span class="p">)</span>
         <span class="n">nGroups</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">orderOfGroup</span><span class="p">)</span>
+        <span class="n">orders</span> <span class="o">=</span> <span class="p">[</span><span class="n">order</span> <span class="k">for</span> <span class="n">order</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"second"</span><span class="p">,</span> <span class="s2">"first"</span><span class="p">)</span> <span class="k">if</span> <span class="n">order</span> <span class="ow">in</span> <span class="n">orderOfGroup</span><span class="p">]</span>
+        <span class="n">groupsOfOrder</span> <span class="o">=</span> <span class="p">[[</span><span class="n">group</span> <span class="k">for</span> <span class="n">group</span><span class="p">,</span> <span class="n">ofGroup</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">orderOfGroup</span><span class="p">)</span> <span class="k">if</span> <span class="n">ofGroup</span> <span class="o">==</span> <span class="n">order</span><span class="p">]</span> <span class="k">for</span> <span class="n">order</span> <span class="ow">in</span> <span class="n">orders</span><span class="p">]</span>
+        <span class="n">inAnOrder</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">groupOfDof</span><span class="p">,</span> <span class="n">groups</span><span class="p">)</span> <span class="k">for</span> <span class="n">groups</span> <span class="ow">in</span> <span class="n">groupsOfOrder</span><span class="p">]</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weightsOfThisBound</span><span class="p">(</span><span class="n">weightsOfTheBound</span><span class="p">,</span> <span class="n">groupOfDof</span><span class="p">,</span> <span class="n">nGroups</span><span class="p">)</span>
 
-        <span class="c1"># Z_if &gt;= sum_{j in f} |S_ij|, assembled column by column</span>
+        <span class="c1"># Z_if &gt;= sum_{j in f} |S_ij| w_j, assembled column by column. Row f of the scaled weights of the columns holds</span>
+        <span class="c1"># column f on every degree of freedom, so that the columns of a particle are one gather (a new array, whose</span>
+        <span class="c1"># transpose is column-major).</span>
+        <span class="n">inAGroup</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">flatnonzero</span><span class="p">(</span><span class="n">groupOfDof</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">scaledWeightsOfTheColumns</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nGroups</span><span class="p">,</span> <span class="n">nDof</span><span class="p">))</span>
+        <span class="n">scaledWeightsOfTheColumns</span><span class="p">[</span><span class="n">groupOfDof</span><span class="p">[</span><span class="n">inAGroup</span><span class="p">],</span> <span class="n">inAGroup</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">scaling</span> <span class="o">*</span> <span class="n">weights</span><span class="p">)[</span><span class="n">inAGroup</span><span class="p">]</span>
         <span class="n">rowSums</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">locations</span><span class="o">.</span><span class="n">constructDofVector</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nGroups</span><span class="p">)]</span>
         <span class="k">for</span> <span class="n">rowSum</span> <span class="ow">in</span> <span class="n">rowSums</span><span class="p">:</span>
             <span class="n">rowSum</span><span class="p">[:]</span> <span class="o">=</span> <span class="mf">0.0</span>
@@ -653,11 +708,9 @@
         <span class="k">def</span><span class="w"> </span><span class="nf">addAbsoluteStiffnessRowSums</span><span class="p">(</span><span class="n">particles</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">particle</span> <span class="ow">in</span> <span class="n">particles</span><span class="p">:</span>
                 <span class="n">indices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">locations</span><span class="o">.</span><span class="n">ofEntity</span><span class="p">[</span><span class="n">particle</span><span class="p">]</span>
-                <span class="n">inAGroup</span> <span class="o">=</span> <span class="n">groupOfDof</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">0</span>
-                <span class="n">scaledIndicatorOfGroup</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">),</span> <span class="n">nGroups</span><span class="p">),</span> <span class="n">order</span><span class="o">=</span><span class="s2">"F"</span><span class="p">)</span>
-                <span class="n">scaledIndicatorOfGroup</span><span class="p">[</span><span class="n">inAGroup</span><span class="p">,</span> <span class="n">groupOfDof</span><span class="p">[</span><span class="n">indices</span><span class="p">][</span><span class="n">inAGroup</span><span class="p">]]</span> <span class="o">=</span> <span class="n">scaling</span><span class="p">[</span><span class="n">indices</span><span class="p">][</span><span class="n">inAGroup</span><span class="p">]</span>
+                <span class="n">scaledWeights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">scaledWeightsOfTheColumns</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
                 <span class="n">absoluteStiffnessRowSums</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">),</span> <span class="n">nGroups</span><span class="p">),</span> <span class="n">order</span><span class="o">=</span><span class="s2">"F"</span><span class="p">)</span>
-                <span class="n">particle</span><span class="o">.</span><span class="n">addBoundOfAbsoluteStiffnessTimes</span><span class="p">(</span><span class="n">scaledIndicatorOfGroup</span><span class="p">,</span> <span class="n">absoluteStiffnessRowSums</span><span class="p">)</span>
+                <span class="n">particle</span><span class="o">.</span><span class="n">addBoundOfAbsoluteStiffnessTimes</span><span class="p">(</span><span class="n">scaledWeights</span><span class="p">,</span> <span class="n">absoluteStiffnessRowSums</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">group</span><span class="p">,</span> <span class="n">scatterRowSum</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">scatterRowSums</span><span class="p">):</span>
                     <span class="n">ofTheParticle</span> <span class="o">=</span> <span class="n">scatterRowSum</span><span class="p">[</span><span class="n">particle</span><span class="p">]</span>
                     <span class="n">ofTheParticle</span> <span class="o">+=</span> <span class="n">absoluteStiffnessRowSums</span><span class="p">[:,</span> <span class="n">group</span><span class="p">]</span>
@@ -668,23 +721,96 @@
             <span class="n">scatterRowSum</span><span class="o">.</span><span class="n">assembleInto</span><span class="p">(</span><span class="n">rowSum</span><span class="p">)</span>
             <span class="n">Z</span><span class="p">[:,</span> <span class="n">group</span><span class="p">]</span> <span class="o">=</span> <span class="n">scaling</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">rowSum</span><span class="p">)</span>
 
-        <span class="n">Q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">Z</span><span class="p">[</span><span class="n">groupOfDof</span> <span class="o">==</span> <span class="n">g</span><span class="p">,</span> <span class="n">f</span><span class="p">])</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nGroups</span><span class="p">)]</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nGroups</span><span class="p">)])</span>
+        <span class="c1"># the field matrix of the weighted matrix W^-1 |S| W</span>
+        <span class="n">rowSumsPerWeight</span> <span class="o">=</span> <span class="n">Z</span> <span class="o">/</span> <span class="n">weights</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="n">Q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">rowSumsPerWeight</span><span class="p">[</span><span class="n">groupOfDof</span> <span class="o">==</span> <span class="n">g</span><span class="p">,</span> <span class="n">f</span><span class="p">])</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nGroups</span><span class="p">)]</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nGroups</span><span class="p">)])</span>
 
-        <span class="k">def</span><span class="w"> </span><span class="nf">perronRoot</span><span class="p">(</span><span class="n">order</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">            </span><span class="sd">"""The largest eigenvalue of the nonnegative field matrix of the blocks of the given order."""</span>
-            <span class="n">groups</span> <span class="o">=</span> <span class="p">[</span><span class="n">group</span> <span class="k">for</span> <span class="n">group</span><span class="p">,</span> <span class="n">ofGroup</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">orderOfGroup</span><span class="p">)</span> <span class="k">if</span> <span class="n">ofGroup</span> <span class="o">==</span> <span class="n">order</span><span class="p">]</span>
-            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigvals</span><span class="p">(</span><span class="n">Q</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="n">groups</span><span class="p">,</span> <span class="n">groups</span><span class="p">)]))))</span> <span class="k">if</span> <span class="n">groups</span> <span class="k">else</span> <span class="mf">0.0</span>
+        <span class="n">largestEigenvalueOfOrder</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">order</span><span class="p">,</span> <span class="n">groups</span><span class="p">,</span> <span class="n">ofTheOrder</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">orders</span><span class="p">,</span> <span class="n">groupsOfOrder</span><span class="p">,</span> <span class="n">inAnOrder</span><span class="p">):</span>
+            <span class="n">fieldMatrix</span> <span class="o">=</span> <span class="n">Q</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="n">groups</span><span class="p">,</span> <span class="n">groups</span><span class="p">)]</span>
+            <span class="n">rho</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigvals</span><span class="p">(</span><span class="n">fieldMatrix</span><span class="p">))))</span>
+            <span class="k">if</span> <span class="n">weightsOfTheBound</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># the Collatz-Wielandt bound with the weights c_g w_i, c the Perron vector of the field matrix, and its</span>
+                <span class="c1"># image, the weights of the next bound</span>
+                <span class="n">eigenvalues</span><span class="p">,</span> <span class="n">eigenvectors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eig</span><span class="p">(</span><span class="n">fieldMatrix</span><span class="p">)</span>
+                <span class="n">perronVector</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">eigenvectors</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">eigenvalues</span><span class="p">))]))</span>
+                <span class="n">scaleOfGroup</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nGroups</span><span class="p">)</span>
+                <span class="n">scaleOfGroup</span><span class="p">[</span><span class="n">groups</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">perronVector</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">perronVector</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span><span class="p">)</span>
+                <span class="n">image</span> <span class="o">=</span> <span class="n">Z</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="n">ofTheOrder</span><span class="p">,</span> <span class="n">groups</span><span class="p">)]</span> <span class="o">@</span> <span class="n">scaleOfGroup</span><span class="p">[</span><span class="n">groups</span><span class="p">]</span>
+                <span class="n">rho</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">rho</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">image</span> <span class="o">/</span> <span class="p">(</span><span class="n">scaleOfGroup</span><span class="p">[</span><span class="n">groupOfDof</span><span class="p">[</span><span class="n">ofTheOrder</span><span class="p">]]</span> <span class="o">*</span> <span class="n">weights</span><span class="p">[</span><span class="n">ofTheOrder</span><span class="p">]))))</span>
+                <span class="n">weightsOfTheBound</span><span class="p">[</span><span class="n">ofTheOrder</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weightsForTheNextBound</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+            <span class="n">largestEigenvalueOfOrder</span><span class="p">[</span><span class="n">order</span><span class="p">]</span> <span class="o">=</span> <span class="n">rho</span>
+        <span class="k">if</span> <span class="n">weightsOfTheBound</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">weightsOfTheBound</span><span class="p">[</span><span class="n">groupOfDof</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
 
         <span class="n">stable</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
-        <span class="n">omegaSquared</span> <span class="o">=</span> <span class="n">perronRoot</span><span class="p">(</span><span class="s2">"second"</span><span class="p">)</span>
+        <span class="n">omegaSquared</span> <span class="o">=</span> <span class="n">largestEigenvalueOfOrder</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"second"</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">omegaSquared</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
             <span class="n">stable</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">omegaSquared</span><span class="p">)</span>
-        <span class="n">rate</span> <span class="o">=</span> <span class="n">perronRoot</span><span class="p">(</span><span class="s2">"first"</span><span class="p">)</span>
+        <span class="n">rate</span> <span class="o">=</span> <span class="n">largestEigenvalueOfOrder</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"first"</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">rate</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
             <span class="n">stable</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">stable</span><span class="p">,</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="n">rate</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">STABLE_FRACTION_OF_THE_TANGENT_LIMIT</span> <span class="o">*</span> <span class="n">stable</span></div>
 
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_weightsOfThisBound</span><span class="p">(</span><span class="n">weightsOfTheBound</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">groupOfDof</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">nGroups</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The weights a bound of the stable time increment takes, on every degree of freedom: those the last bound</span>
+<span class="sd">        left, where it left one, and the largest weight of its block of fields where it left none (a degree of freedom</span>
+<span class="sd">        without inertia or damping at the last bound). One everywhere -- constant per field -- without carried weights,</span>
+<span class="sd">        at their start (all zero), and if a block of fields has none (see</span>
+<span class="sd">        :meth:`stableTimeIncrementOfEntitiesWithOwnInertia`, "Weights carried from bound to bound").</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        weightsOfTheBound</span>
+<span class="sd">            The weights the last bound left, a vector of the numbering; None without carried weights.</span>
+<span class="sd">        groupOfDof</span>
+<span class="sd">            The block of fields of every degree of freedom, -1 for one in none.</span>
+<span class="sd">        nGroups</span>
+<span class="sd">            The number of blocks of fields.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        numpy.ndarray</span>
+<span class="sd">            The weights, positive, a vector of the numbering.</span>
+<span class="sd">        """</span>
+
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">groupOfDof</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">weightsOfTheBound</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">weights</span>
+        <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nGroups</span><span class="p">):</span>
+            <span class="n">ofTheGroup</span> <span class="o">=</span> <span class="n">groupOfDof</span> <span class="o">==</span> <span class="n">group</span>
+            <span class="n">carried</span> <span class="o">=</span> <span class="n">weightsOfTheBound</span><span class="p">[</span><span class="n">ofTheGroup</span><span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">carried</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">groupOfDof</span><span class="p">))</span>
+            <span class="n">weights</span><span class="p">[</span><span class="n">ofTheGroup</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">carried</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">carried</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">carried</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">weights</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_weightsForTheNextBound</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The weights of a scheme for the next bound of the stable time increment: the image of the weights of this</span>
+<span class="sd">        bound, :math:`\\hat{\\boldsymbol{a}} \\ge |\\boldsymbol{S}|\\boldsymbol{v}`, one step of the power iteration,</span>
+<span class="sd">        scaled to a largest weight of one, and no weight below the machine epsilon of the largest (see</span>
+<span class="sd">        :meth:`stableTimeIncrementOfEntitiesWithOwnInertia`, "Weights carried from bound to bound"). An image of zero</span>
+<span class="sd">        (no stiffness) leaves the weights constant.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        image</span>
+<span class="sd">            The image of the weights, on the degrees of freedom of the scheme.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        numpy.ndarray</span>
+<span class="sd">            The weights, in :math:`[\\varepsilon, 1]`.</span>
+<span class="sd">        """</span>
+
+        <span class="n">largest</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">largest</span> <span class="o">&lt;=</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">image</span> <span class="o">/</span> <span class="n">largest</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span><span class="p">)</span>
 
 <div class="viewcode-block" id="MPMDiscreteSystem.entitiesWithOwnInertiaCoupleOtherNodes">
 <a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.entitiesWithOwnInertiaCoupleOtherNodes">[docs]</a>

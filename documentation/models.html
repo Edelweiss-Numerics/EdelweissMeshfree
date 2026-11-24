@@ -1268,7 +1268,7 @@ rest.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia">
-<span class="sig-name descname"><span class="pre">stableTimeIncrementOfEntitiesWithOwnInertia</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lumpedMass</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lumpedDamping</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forEachChunk</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmdiscretesystem.html#MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">stableTimeIncrementOfEntitiesWithOwnInertia</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lumpedMass</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lumpedDamping</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forEachChunk</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weightsOfTheBound</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmdiscretesystem.html#MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia" title="Link to this definition"></a></dt>
 <dd><p>A bound of the stable time increment of <code class="docutils literal notranslate"><span class="pre">NED</span></code>’s explicit scheme for the particles, from their stiffness at
 the current state and the assembled lumped mass and damping. No stiffness is assembled: every particle bounds
 the row sums of the absolute value of its own (<code class="docutils literal notranslate"><span class="pre">addBoundOfAbsoluteStiffnessTimes</span></code>), at a cost
@@ -1310,6 +1310,44 @@ gives <span class="math notranslate nohighlight">\((|\boldsymbol{S}|\boldsymbol{
 w_i\)</span>, so <span class="math notranslate nohighlight">\(\rho(|\boldsymbol{S}|) \le \rho(\boldsymbol{Q})\)</span>: the Gershgorin bound per block of fields,
 coupled by the largest eigenvalue of the small field matrix, which takes the geometric mean of the coupling
 blocks. With a single field it is the Gershgorin bound.</p>
+<p><strong>Weights carried from bound to bound</strong> (<code class="docutils literal notranslate"><span class="pre">weightsOfTheBound</span></code>, <code class="docutils literal notranslate"><span class="pre">NED</span></code>’s <code class="docutils literal notranslate"><span class="pre">carry-stable-increment-weights</span></code>).
+The weights constant per field are the start of the power iteration towards the Perron vector of
+<span class="math notranslate nohighlight">\(|\boldsymbol{S}|\)</span>, where the Collatz-Wielandt bound is exact. Weights <span class="math notranslate nohighlight">\(\boldsymbol{w}\)</span> carried
+from the last bound take the place of the ones in the same pass: the columns of field <span class="math notranslate nohighlight">\(f\)</span> are the weights
+on its degrees of freedom, which gives <span class="math notranslate nohighlight">\(\hat{Z}_{if} \ge \sum_{j \in f} |S_{ij}| w_j\)</span>, and
+<span class="math notranslate nohighlight">\(Q_{gf} = \max_{i \in g} \hat{Z}_{if} / w_i\)</span> is the field matrix of
+<span class="math notranslate nohighlight">\(\boldsymbol{W}^{-1}|\boldsymbol{S}|\boldsymbol{W}\)</span>, which has the eigenvalues of
+<span class="math notranslate nohighlight">\(|\boldsymbol{S}|\)</span>, so again <span class="math notranslate nohighlight">\(\rho(|\boldsymbol{S}|) \le \rho(\boldsymbol{Q})\)</span>. The pass costs
+as much as without carried weights: the same columns, other values. With <span class="math notranslate nohighlight">\(\boldsymbol{c}\)</span> the Perron
+vector of <span class="math notranslate nohighlight">\(\boldsymbol{Q}\)</span>, the weights <span class="math notranslate nohighlight">\(v_i = c_g w_i\)</span> of the rows of field <span class="math notranslate nohighlight">\(g\)</span> give
+<span class="math notranslate nohighlight">\(\hat{\boldsymbol{a}} = \sum_f c_f \hat{\boldsymbol{Z}}_f \ge |\boldsymbol{S}|\boldsymbol{v}\)</span> and
+the Collatz-Wielandt bound <span class="math notranslate nohighlight">\(\max_i \hat{a}_i / v_i\)</span>, which is never above
+<span class="math notranslate nohighlight">\(\rho(\boldsymbol{Q})\)</span>, since every row gives <span class="math notranslate nohighlight">\(\hat{a}_i / v_i \le
+(\boldsymbol{Q}\boldsymbol{c})_g / c_g\)</span>; the smaller of the two is taken, against the round-off of the Perron
+vector. Both hold for every positive <span class="math notranslate nohighlight">\(\boldsymbol{w}\)</span>, whatever state it was refined at: the weights
+carried need not fit the stiffness of now to bound it, only to bound it tightly. At the start, with the weights
+constant per field, the bound is never above the one without carried weights. The weights for the next bound
+are <span class="math notranslate nohighlight">\(\hat{\boldsymbol{a}}\)</span>, scaled to a largest weight of one per scheme: one step of the power
+iteration per bound, which tightens the bound towards <span class="math notranslate nohighlight">\(\rho(|\boldsymbol{S}|)\)</span> over a few bounds as long
+as the stiffness changes slowly from bound to bound.</p>
+<p>Where the stiffness changes faster than the weights follow, a bound with carried weights can be above the one
+with weights constant per field. <code class="docutils literal notranslate"><span class="pre">NED</span></code> starts the weights anew (all zero) whenever a bound with them gives a
+smaller stable time increment than the bound they started from, so that an increment that is lowered only never
+falls below the smallest bound with weights constant per field of the step (followed, it can fall below the one
+of the same configuration, down to the one the weights started from). Taking the smaller of the two bounds in
+every bound instead would take the columns with weights constant per field as well, which cost about as much
+again as those of the carried weights. A degree of freedom without a weight – one that has no inertia or damping at the
+last bound – starts at the largest weight of its block of fields, the weight every degree of freedom of the
+block has at the start (<code class="xref py py-meth docutils literal notranslate"><span class="pre">_weightsOfThisBound()</span></code>).</p>
+<p>The power iteration shrinks the weights of the degrees of freedom far from the stiffest ones by a factor per
+bound, without limit: within a few dozen bounds they fall below what a double resolves next to the largest
+weight, and a degree of freedom whose stiffness then changes, e.g. as a particle reaches another kernel function,
+is weighted by round-off, which raises the bound far above the one without weights until the iteration has
+grown the weight back. So no weight is kept below the machine epsilon of the largest one
+(<code class="xref py py-meth docutils literal notranslate"><span class="pre">_weightsForTheNextBound()</span></code>): a weight below it adds nothing to a sum with the largest, so the limit removes
+only what the arithmetic cannot carry anyway, and every degree of freedom stays weighted, so that a change of its
+stiffness is followed within one bound. Any larger limit (a hundredth of the largest weight, say) bounds the
+particles of a running analysis as tightly, the machine epsilon is the smallest that can be kept.</p>
 <p><strong>The row sums without the stiffness.</strong> A particle’s stiffness has as many blocks as the square of its nodes, but
 it sees the nodal increments only through the increment it interpolates at its evaluation point (value,
 gradient and, if stabilized, second gradient): the rows of node <span class="math notranslate nohighlight">\(A\)</span> are linear in the shape functions of
@@ -1327,6 +1365,9 @@ particles is not exactly integrated with their tangent: their NSNI stabilization
 (<a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.assembleLumpedMassOfEntitiesWithOwnInertia" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.assembleLumpedMassOfEntitiesWithOwnInertia"><code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleLumpedMassOfEntitiesWithOwnInertia()</span></code></a>), which the solver has just assembled.</p></li>
 <li><p><strong>lumpedDamping</strong> (<em>DofVector</em>) – Their lumped damping (<a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.assembleLumpedDampingOfEntitiesWithOwnInertia" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.assembleLumpedDampingOfEntitiesWithOwnInertia"><code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleLumpedDampingOfEntitiesWithOwnInertia()</span></code></a>), likewise.</p></li>
 <li><p><strong>forEachChunk</strong> (<em>Callable</em><em>[</em><em>[</em><em>list</em><em>, </em><em>Callable</em><em>]</em><em>, </em><em>None</em><em>]</em>) – The solver’s loop over chunks of independent entities.</p></li>
+<li><p><strong>weightsOfTheBound</strong> (<em>ndarray</em><em> | </em><em>None</em>) – The weights the last bound left, a vector of the numbering, zero where a degree of freedom has none yet (all
+zero: the start, with the weights constant per field); replaced in place by the weights for the next bound.
+None for the bound with the weights constant per field alone.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
