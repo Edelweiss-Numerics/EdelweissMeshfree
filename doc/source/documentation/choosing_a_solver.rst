@@ -281,7 +281,18 @@ the zero increment, whenever a particle reaches other kernel functions (a contac
 changes no particle), and every ``stable-increment-frequency`` increments; the time
 increment is the smaller of it and the elements' critical time step, scaled by ``courant-number``, unless the step asks
 for smaller increments. It is the Gershgorin bound of the absolute value of the mass-scaled tangent per block of fields,
-coupled by the largest eigenvalue of the small matrix of these blocks. No tangent is assembled for it: every particle
+coupled by the largest eigenvalue of the small matrix of these blocks: the Collatz-Wielandt bound
+:math:`\rho \le \max_i (|\boldsymbol{S}|\boldsymbol{w})_i / w_i` with weights :math:`\boldsymbol{w}` constant per
+field. With ``carry-stable-increment-weights``, ``NED`` carries the weights from one bound to the next, and every bound
+refines them by one step of the power iteration, :math:`\boldsymbol{w} \leftarrow |\boldsymbol{S}|\boldsymbol{w}`,
+towards the Perron vector, where the bound is exact; the carried weights take the place of the ones in the same pass
+over the particles, which costs as much as without them. Any positive weights bound the largest eigenvalue from above,
+whatever state they were refined at, but weights refined at another state can bound it less tightly than the weights
+constant per field where the stiffness changed faster than they followed: a bound below the one the weights started
+from starts them anew, so an increment that ``NED`` lowers only never falls below the smallest bound with weights
+constant per field (with ``follow-critical-time-step``, it can, down to the bound the weights started from). The
+weights start anew also with a new numbering, every step and after a resume.
+No tangent is assembled for it: every particle
 bounds the row sums of the absolute value of its own stiffness, node by node, from the derivatives of its forces with
 respect to the increment it interpolates (Marmot), at a cost proportional to its nodes instead of their square. It takes
 the tangent as it is, unsymmetric: the tangent of gradient-enhanced particles couples the stress to the
