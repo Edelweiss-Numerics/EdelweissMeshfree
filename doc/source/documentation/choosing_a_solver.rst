@@ -285,10 +285,13 @@ coupled by the largest eigenvalue of the small matrix of these blocks: the Colla
 :math:`\rho \le \max_i (|\boldsymbol{S}|\boldsymbol{w})_i / w_i` with weights :math:`\boldsymbol{w}` constant per
 field. With ``carry-stable-increment-weights``, ``NED`` carries the weights from one bound to the next, and every bound
 refines them by one step of the power iteration, :math:`\boldsymbol{w} \leftarrow |\boldsymbol{S}|\boldsymbol{w}`,
-towards the Perron vector, where the bound is exact; it costs one more column in the same pass over the particles. Any
-positive weights bound the largest eigenvalue from above, whatever state they were refined at, and the bound is the
-smaller of the weighted one and the one with weights constant per field, so the option can only raise the stable time
-increment, never lower it. The weights start anew with a new numbering, every step and after a resume.
+towards the Perron vector, where the bound is exact; the carried weights take the place of the ones in the same pass
+over the particles, which costs as much as without them. Any positive weights bound the largest eigenvalue from above,
+whatever state they were refined at, but weights refined at another state can bound it less tightly than the weights
+constant per field where the stiffness changed faster than they followed: a bound below the one the weights started
+from starts them anew, so an increment that ``NED`` lowers only never falls below the smallest bound with weights
+constant per field (with ``follow-critical-time-step``, it can, down to the bound the weights started from). The
+weights start anew also with a new numbering, every step and after a resume.
 No tangent is assembled for it: every particle
 bounds the row sums of the absolute value of its own stiffness, node by node, from the derivatives of its forces with
 respect to the increment it interpolates (Marmot), at a cost proportional to its nodes instead of their square. It takes

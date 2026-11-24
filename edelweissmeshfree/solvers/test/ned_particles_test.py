@@ -38,7 +38,8 @@ resume on another numbering is refused.
 
 With ``carry-stable-increment-weights``, the weights of the bound of the particles' stable time increment are carried
 across new locations -- particles reaching other kernel functions -- and the bound stays below the exact stable
-increment and never below the one without weights; they start anew with a new numbering, and after a resume."""
+increment; they start anew where a bound with them falls below the one they started from, with a new numbering, and
+after a resume."""
 
 import h5py
 import numpy as np
@@ -695,7 +696,9 @@ def test_carried_weights_survive_particles_reaching_other_kernel_functions_and_b
     """In the stretching body, particles reach other kernel functions of the same nodes: new locations on the same
     numbering. The weights are carried across them, indexed by the degrees of freedom of the numbering, i.e. by node
     and field; every bound stays below the exact stable increment of the tangent, scaled by
-    STABLE_FRACTION_OF_THE_TANGENT_LIMIT, and never below the bound without weights."""
+    STABLE_FRACTION_OF_THE_TANGENT_LIMIT. The bound the weights start from (weights constant per field) is never below
+    the bound without weights, and a bound with carried weights below it starts them anew: the next bound is handed
+    zero weights."""
 
     journal = Journal()
     solver = _SolverRecordingTheCarriedWeights(journal)
@@ -712,13 +715,20 @@ def test_carried_weights_survive_particles_reaching_other_kernel_functions_and_b
     assert len(afterNewLocations) > 1, "no particle reached other kernel functions"
     for handed, *_ in afterNewLocations[1:]:
         assert np.any(handed > 0.0), "the weights were not carried across new locations"
-    for _, bound, withoutWeights, exact in _bounds(solver.events):
-        assert withoutWeights <= bound <= STABLE_FRACTION_OF_THE_TANGENT_LIMIT * exact
+    bounds = _bounds(solver.events)
+    for (handed, bound, withoutWeights, exact), following in zip(bounds, bounds[1:] + [None]):
+        assert bound <= STABLE_FRACTION_OF_THE_TANGENT_LIMIT * exact
+        if not np.any(handed > 0.0):
+            assert bound >= withoutWeights
+            start = bound
+        elif bound < start:
+            assert following is not None and np.all(following[0] == 0.0), "the weights were not started anew"
 
 
 def test_carried_weights_start_anew_with_a_new_numbering(monkeypatch):
     """Building the discrete system anew whenever the connectivity changed gives a new numbering each time: the first
-    bound on every numbering is handed no weights, the bounds after it the weights the last one left."""
+    bound on every numbering is handed no weights, the bounds after it the weights the last one left, unless the last
+    one fell below the bound its weights started from."""
 
     journal = Journal()
 
@@ -732,14 +742,16 @@ def test_carried_weights_start_anew_with_a_new_numbering(monkeypatch):
     _solve(_stretchingBodyWithinItsBound(journal), journal, [solver], [N_INCREMENTS])
 
     assert solver.events.count("numbering") > 1
-    lastWasNumbering = False
+    lastWasNumbering = lastFellBelowTheStart = False
     for event in solver.events:
         if event == "numbering":
             lastWasNumbering = True
         elif isinstance(event, tuple):
-            handed = event[0]
-            assert np.all(handed == 0.0) if lastWasNumbering else np.any(handed > 0.0)
-            lastWasNumbering = False
+            handed, bound = event[:2]
+            assert np.all(handed == 0.0) if lastWasNumbering or lastFellBelowTheStart else np.any(handed > 0.0)
+            if np.all(handed == 0.0):
+                start = bound
+            lastWasNumbering, lastFellBelowTheStart = False, bound < start
 
 
 def test_a_resume_with_carried_weights_goes_on_and_starts_the_weights_anew(tmp_path):

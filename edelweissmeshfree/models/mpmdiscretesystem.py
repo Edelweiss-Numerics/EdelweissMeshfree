@@ -490,19 +490,35 @@ class MPMDiscreteSystem(DiscreteSystem):
 
         **Weights carried from bound to bound** (``weightsOfTheBound``, ``NED``'s ``carry-stable-increment-weights``).
         The weights constant per field are the start of the power iteration towards the Perron vector of
-        :math:`|\\boldsymbol{S}|`, where the Collatz-Wielandt bound is exact. With weights carried from the last bound, the
-        pass takes one more column for each scheme (central differences, forward Euler), the weights on the degrees of
-        freedom of that scheme, and gives :math:`\\hat{\\boldsymbol{a}} \\ge |\\boldsymbol{S}|\\boldsymbol{w}` on them,
-        so that :math:`\\rho(|\\boldsymbol{S}|) \\le \\max_i \\hat{a}_i / w_i`. This holds for every positive
-        :math:`\\boldsymbol{w}`, whatever state it was refined at: the weights carried need not fit the stiffness of now
-        to bound it, only to bound it tightly. The bound is the smaller of the two, :math:`\\rho(\\boldsymbol{Q})` and the
-        weighted one, so carrying the weights never lowers the stable time increment below the one with weights
-        constant per field. The weights for the next bound are :math:`\\hat{\\boldsymbol{a}}` (after the first bound,
-        :math:`\\sum_f c_f \\hat{Z}_{if}`, the same step from the weights constant per field), scaled to a largest weight
-        of one per scheme: one step of the power iteration per bound, which tightens the bound towards
-        :math:`\\rho(|\\boldsymbol{S}|)` over a few bounds as long as the stiffness changes slowly from bound to bound. A
-        degree of freedom without a weight -- one that has no inertia or damping at the last bound -- starts at the
-        largest weight of its block of fields, the weight every degree of freedom of the block has at the start.
+        :math:`|\\boldsymbol{S}|`, where the Collatz-Wielandt bound is exact. Weights :math:`\\boldsymbol{w}` carried
+        from the last bound take the place of the ones in the same pass: the columns of field :math:`f` are the weights
+        on its degrees of freedom, which gives :math:`\\hat{Z}_{if} \\ge \\sum_{j \\in f} |S_{ij}| w_j`, and
+        :math:`Q_{gf} = \\max_{i \\in g} \\hat{Z}_{if} / w_i` is the field matrix of
+        :math:`\\boldsymbol{W}^{-1}|\\boldsymbol{S}|\\boldsymbol{W}`, which has the eigenvalues of
+        :math:`|\\boldsymbol{S}|`, so again :math:`\\rho(|\\boldsymbol{S}|) \\le \\rho(\\boldsymbol{Q})`. The pass costs
+        as much as without carried weights: the same columns, other values. With :math:`\\boldsymbol{c}` the Perron
+        vector of :math:`\\boldsymbol{Q}`, the weights :math:`v_i = c_g w_i` of the rows of field :math:`g` give
+        :math:`\\hat{\\boldsymbol{a}} = \\sum_f c_f \\hat{\\boldsymbol{Z}}_f \\ge |\\boldsymbol{S}|\\boldsymbol{v}` and
+        the Collatz-Wielandt bound :math:`\\max_i \\hat{a}_i / v_i`, which is never above
+        :math:`\\rho(\\boldsymbol{Q})`, since every row gives :math:`\\hat{a}_i / v_i \\le
+        (\\boldsymbol{Q}\\boldsymbol{c})_g / c_g`; the smaller of the two is taken, against the round-off of the Perron
+        vector. Both hold for every positive :math:`\\boldsymbol{w}`, whatever state it was refined at: the weights
+        carried need not fit the stiffness of now to bound it, only to bound it tightly. At the start, with the weights
+        constant per field, the bound is never above the one without carried weights. The weights for the next bound
+        are :math:`\\hat{\\boldsymbol{a}}`, scaled to a largest weight of one per scheme: one step of the power
+        iteration per bound, which tightens the bound towards :math:`\\rho(|\\boldsymbol{S}|)` over a few bounds as long
+        as the stiffness changes slowly from bound to bound.
+
+        Where the stiffness changes faster than the weights follow, a bound with carried weights can be above the one
+        with weights constant per field. ``NED`` starts the weights anew (all zero) whenever a bound with them gives a
+        smaller stable time increment than the bound they started from, so that an increment that is lowered only never
+        falls below the smallest bound with weights constant per field of the step (followed, it can fall below the one
+        of the same configuration, down to the one the weights started from). Taking the smaller of the two bounds in
+        every bound instead would take the columns with weights constant per field as well, which cost about as much
+        again as those of the carried weights. A degree of freedom without a weight -- one that has no inertia or damping at the
+        last bound -- starts at the largest weight of its block of fields, the weight every degree of freedom of the
+        block has at the start (:meth:`_weightsOfThisBound`).
+
         The power iteration shrinks the weights of the degrees of freedom far from the stiffest ones by a factor per
         bound, without limit: within a few dozen bounds they fall below what a double resolves next to the largest
         weight, and a degree of freedom whose stiffness then changes, e.g. as a particle reaches another kernel function,
@@ -536,8 +552,8 @@ class MPMDiscreteSystem(DiscreteSystem):
             The solver's loop over chunks of independent entities.
         weightsOfTheBound
             The weights the last bound left, a vector of the numbering, zero where a degree of freedom has none yet (all
-            zero: the first bound); replaced in place by the weights for the next bound. None for the bound with the
-            weights constant per field alone.
+            zero: the start, with the weights constant per field); replaced in place by the weights for the next bound.
+            None for the bound with the weights constant per field alone.
 
         Returns
         -------
@@ -573,30 +589,15 @@ class MPMDiscreteSystem(DiscreteSystem):
         orders = [order for order in ("second", "first") if order in orderOfGroup]
         groupsOfOrder = [[group for group, ofGroup in enumerate(orderOfGroup) if ofGroup == order] for order in orders]
         inAnOrder = [np.isin(groupOfDof, groups) for groups in groupsOfOrder]
+        weights = self._weightsOfThisBound(weightsOfTheBound, groupOfDof, nGroups)
 
-        # The weights carried from the last bound, if there are any: a degree of freedom without one starts at the
-        # largest weight of its block of fields.
-        weights = None
-        if weightsOfTheBound is not None and np.any(weightsOfTheBound > 0.0):
-            weights = np.where(groupOfDof >= 0, weightsOfTheBound, 0.0)
-            for group in range(nGroups):
-                ofTheGroup = groupOfDof == group
-                unweighted = ofTheGroup & (weights <= 0.0)
-                if unweighted.any():
-                    weights[unweighted] = np.max(weights[ofTheGroup])
-            if not np.all(weights[groupOfDof >= 0] > 0.0):
-                weights = None  # a block of fields without any weight: start anew
-
-        # Z_if >= sum_{j in f} |S_ij|, assembled column by column; with carried weights, one more column per scheme,
-        # the scaled weights on its degrees of freedom
-        nColumns = nGroups + (len(orders) if weights is not None else 0)
-        columnOfDof = [groupOfDof] + (
-            [np.where(ofTheOrder, nGroups + k, -1) for k, ofTheOrder in enumerate(inAnOrder)]
-            if weights is not None
-            else []
-        )
-        valueOfDof = [scaling] + ([scaling * weights] * len(orders) if weights is not None else [])
-        rowSums = [self.locations.constructDofVector() for _ in range(nColumns)]
+        # Z_if >= sum_{j in f} |S_ij| w_j, assembled column by column. Row f of the scaled weights of the columns holds
+        # column f on every degree of freedom, so that the columns of a particle are one gather (a new array, whose
+        # transpose is column-major).
+        inAGroup = np.flatnonzero(groupOfDof >= 0)
+        scaledWeightsOfTheColumns = np.zeros((nGroups, nDof))
+        scaledWeightsOfTheColumns[groupOfDof[inAGroup], inAGroup] = (scaling * weights)[inAGroup]
+        rowSums = [self.locations.constructDofVector() for _ in range(nGroups)]
         for rowSum in rowSums:
             rowSum[:] = 0.0
         scatterRowSums = [rowSum.createScatterVector() for rowSum in rowSums]
@@ -604,39 +605,36 @@ class MPMDiscreteSystem(DiscreteSystem):
         def addAbsoluteStiffnessRowSums(particles):
             for particle in particles:
                 indices = self.locations.ofEntity[particle]
-                scaledColumns = np.zeros((len(indices), nColumns), order="F")
-                for columnOfTheDof, valueOfTheDof in zip(columnOfDof, valueOfDof):
-                    columns = columnOfTheDof[indices]
-                    inAColumn = columns >= 0
-                    scaledColumns[inAColumn, columns[inAColumn]] = valueOfTheDof[indices][inAColumn]
-                absoluteStiffnessRowSums = np.zeros((len(indices), nColumns), order="F")
-                particle.addBoundOfAbsoluteStiffnessTimes(scaledColumns, absoluteStiffnessRowSums)
-                for column, scatterRowSum in enumerate(scatterRowSums):
+                scaledWeights = np.take(scaledWeightsOfTheColumns, indices, axis=1).T
+                absoluteStiffnessRowSums = np.zeros((len(indices), nGroups), order="F")
+                particle.addBoundOfAbsoluteStiffnessTimes(scaledWeights, absoluteStiffnessRowSums)
+                for group, scatterRowSum in enumerate(scatterRowSums):
                     ofTheParticle = scatterRowSum[particle]
-                    ofTheParticle += absoluteStiffnessRowSums[:, column]
+                    ofTheParticle += absoluteStiffnessRowSums[:, group]
 
         forEachChunk(self.particles, addAbsoluteStiffnessRowSums)
-        Z = np.zeros((nDof, nColumns))
-        for column, (rowSum, scatterRowSum) in enumerate(zip(rowSums, scatterRowSums)):
+        Z = np.zeros((nDof, nGroups))
+        for group, (rowSum, scatterRowSum) in enumerate(zip(rowSums, scatterRowSums)):
             scatterRowSum.assembleInto(rowSum)
-            Z[:, column] = scaling * np.asarray(rowSum)
+            Z[:, group] = scaling * np.asarray(rowSum)
 
-        Q = np.array([[np.max(Z[groupOfDof == g, f]) for f in range(nGroups)] for g in range(nGroups)])
+        # the field matrix of the weighted matrix W^-1 |S| W
+        rowSumsPerWeight = Z / weights[:, None]
+        Q = np.array([[np.max(rowSumsPerWeight[groupOfDof == g, f]) for f in range(nGroups)] for g in range(nGroups)])
 
         largestEigenvalueOfOrder = {}
-        for k, (order, groups) in enumerate(zip(orders, groupsOfOrder)):
+        for order, groups, ofTheOrder in zip(orders, groupsOfOrder, inAnOrder):
             fieldMatrix = Q[np.ix_(groups, groups)]
             rho = float(np.max(np.abs(np.linalg.eigvals(fieldMatrix))))
             if weightsOfTheBound is not None:
-                ofTheOrder = inAnOrder[k]
-                if weights is not None:
-                    image = Z[ofTheOrder, nGroups + k]
-                    rho = min(rho, float(np.max(image / weights[ofTheOrder])))
-                else:
-                    # the first bound: one step from the weights constant per field, the Perron vector of Q
-                    eigenvalues, eigenvectors = np.linalg.eig(fieldMatrix)
-                    perronVector = np.abs(np.real(eigenvectors[:, np.argmax(np.abs(eigenvalues))]))
-                    image = Z[np.ix_(ofTheOrder, groups)] @ perronVector
+                # the Collatz-Wielandt bound with the weights c_g w_i, c the Perron vector of the field matrix, and its
+                # image, the weights of the next bound
+                eigenvalues, eigenvectors = np.linalg.eig(fieldMatrix)
+                perronVector = np.abs(np.real(eigenvectors[:, np.argmax(np.abs(eigenvalues))]))
+                scaleOfGroup = np.zeros(nGroups)
+                scaleOfGroup[groups] = np.maximum(perronVector / np.max(perronVector), np.finfo(float).eps)
+                image = Z[np.ix_(ofTheOrder, groups)] @ scaleOfGroup[groups]
+                rho = min(rho, float(np.max(image / (scaleOfGroup[groupOfDof[ofTheOrder]] * weights[ofTheOrder]))))
                 weightsOfTheBound[ofTheOrder] = self._weightsForTheNextBound(image)
             largestEigenvalueOfOrder[order] = rho
         if weightsOfTheBound is not None:
@@ -653,11 +651,46 @@ class MPMDiscreteSystem(DiscreteSystem):
         return STABLE_FRACTION_OF_THE_TANGENT_LIMIT * stable
 
     @staticmethod
+    def _weightsOfThisBound(weightsOfTheBound: np.ndarray | None, groupOfDof: np.ndarray, nGroups: int) -> np.ndarray:
+        """The weights a bound of the stable time increment takes, on every degree of freedom: those the last bound
+        left, where it left one, and the largest weight of its block of fields where it left none (a degree of freedom
+        without inertia or damping at the last bound). One everywhere -- constant per field -- without carried weights,
+        at their start (all zero), and if a block of fields has none (see
+        :meth:`stableTimeIncrementOfEntitiesWithOwnInertia`, "Weights carried from bound to bound").
+
+        Parameters
+        ----------
+        weightsOfTheBound
+            The weights the last bound left, a vector of the numbering; None without carried weights.
+        groupOfDof
+            The block of fields of every degree of freedom, -1 for one in none.
+        nGroups
+            The number of blocks of fields.
+
+        Returns
+        -------
+        numpy.ndarray
+            The weights, positive, a vector of the numbering.
+        """
+
+        weights = np.ones(len(groupOfDof))
+        if weightsOfTheBound is None:
+            return weights
+        for group in range(nGroups):
+            ofTheGroup = groupOfDof == group
+            carried = weightsOfTheBound[ofTheGroup]
+            if not np.any(carried > 0.0):
+                return np.ones(len(groupOfDof))
+            weights[ofTheGroup] = np.where(carried > 0.0, carried, np.max(carried))
+        return weights
+
+    @staticmethod
     def _weightsForTheNextBound(image: np.ndarray) -> np.ndarray:
         """The weights of a scheme for the next bound of the stable time increment: the image of the weights of this
-        bound, :math:`\\hat{\\boldsymbol{a}} \\ge |\\boldsymbol{S}|\\boldsymbol{w}`, one step of the power iteration,
+        bound, :math:`\\hat{\\boldsymbol{a}} \\ge |\\boldsymbol{S}|\\boldsymbol{v}`, one step of the power iteration,
         scaled to a largest weight of one, and no weight below the machine epsilon of the largest (see
-        :meth:`stableTimeIncrementOfEntitiesWithOwnInertia`, "Weights carried from bound to bound").
+        :meth:`stableTimeIncrementOfEntitiesWithOwnInertia`, "Weights carried from bound to bound"). An image of zero
+        (no stiffness) leaves the weights constant.
 
         Parameters
         ----------
@@ -670,7 +703,10 @@ class MPMDiscreteSystem(DiscreteSystem):
             The weights, in :math:`[\\varepsilon, 1]`.
         """
 
-        return np.maximum(image / np.max(image), np.finfo(float).eps)
+        largest = np.max(image)
+        if largest <= 0.0:
+            return np.ones_like(image)
+        return np.maximum(image / largest, np.finfo(float).eps)
 
     def entitiesWithOwnInertiaCoupleOtherNodes(self) -> bool:
         """Whether the last connectivity update changed the set of kernel functions of a particle, as its particle

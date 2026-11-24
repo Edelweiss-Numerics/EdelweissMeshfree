@@ -235,10 +235,10 @@ def test_the_nonlocal_field_is_integrated_by_the_particles_operators_on_their_cr
 
 @pytest.mark.parametrize("nonlocalField", [WITH_MICRO_INERTIA, VISCOSITY_ONLY], ids=["micro-inertia", "viscosity only"])
 def test_carried_weights_tighten_the_bound_and_keep_it_below_the_exact_stable_increment(nonlocalField):
-    """Carried from bound to bound on the same state, the weights take one step of the power iteration per bound: the
-    first bound is the one without weights, every later one is at least as large and stays below the exact stable
-    increment of the tangent, scaled by STABLE_FRACTION_OF_THE_TANGENT_LIMIT, and a few bounds tighten it. The weights
-    left are positive on the degrees of freedom of the particles' schemes, at most one, and zero elsewhere."""
+    """Carried from bound to bound on the same state, the weights take one step of the power iteration per bound: every
+    bound, the first from the weights constant per field, is at least the one without weights and stays below the exact
+    stable increment of the tangent, scaled by STABLE_FRACTION_OF_THE_TANGENT_LIMIT, and a few bounds tighten it. The
+    weights left are positive on the degrees of freedom of the particles' schemes, at most one, and zero elsewhere."""
 
     model = _bar(Journal(verbose=False), **nonlocalField)
     exact = exactStableIncrement(model)
@@ -248,7 +248,6 @@ def test_carried_weights_tighten_the_bound_and_keep_it_below_the_exact_stable_in
 
     bounds = [boundOfTheSystem(system, weights) for _ in range(8)]
 
-    assert bounds[0] == withoutWeights
     for bound in bounds:
         assert withoutWeights <= bound <= STABLE_FRACTION_OF_THE_TANGENT_LIMIT * exact
     assert bounds[-1] > 1.05 * withoutWeights
