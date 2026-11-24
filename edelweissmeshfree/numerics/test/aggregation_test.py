@@ -264,14 +264,14 @@ def test_hexa8():
     assert sum(w for _, w in weights) == pytest.approx(1.0)
 
 
-def _bSplineGrid(order, nX=6, nY=5, l=3.0, h=2.5):
+def _bSplineGrid(order, nX=6, nY=5, length=3.0, h=2.5):
     """A B-spline grid (open uniform knot vectors) of degree ``order``; cell (i, j) = knot span i, j."""
 
     from edelweissmeshfree.generators import rectangularbsplinegridgenerator
 
     model = MPMModel(2)
     rectangularbsplinegridgenerator.generateModelData(
-        model, Journal(), x0=0.0, l=l, y0=0.0, h=h, nX=nX, nY=nY, cellProvider="BSplineMarmotCell",
+        model, Journal(), x0=0.0, l=length, y0=0.0, h=h, nX=nX, nY=nY, cellProvider="BSplineMarmotCell",
         cellType="Displacement/BSpline/{:}".format(order), order=order,
     )  # fmt: skip
     model.prepareYourself(Journal())

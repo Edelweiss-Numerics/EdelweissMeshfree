@@ -37,7 +37,10 @@ from edelweissfe.timesteppers.timestep import TimeStep
 
 from edelweissmeshfree.config.mplibrary import getMaterialPointClass
 from edelweissmeshfree.constraints.aggregatedmpm import AggregatedMaterialPointMethod
-from edelweissmeshfree.generators import rectangularbsplinegridgenerator, rectangulargridgenerator
+from edelweissmeshfree.generators import (
+    rectangularbsplinegridgenerator,
+    rectangulargridgenerator,
+)
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.mpmmanagers.smartmpmmanager import SmartMaterialPointManager
 from edelweissmeshfree.numerics.aggregation import aggregationOfModel
