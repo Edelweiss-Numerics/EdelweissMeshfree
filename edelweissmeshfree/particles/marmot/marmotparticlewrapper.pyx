@@ -381,16 +381,24 @@ cdef class MarmotParticleWrapper:
         self._assignedKernelFunctions = marmotMeshfreeKernelFunctionWrappers
         self._nAssignedKernelFunctions = len(marmotMeshfreeKernelFunctionWrappers)
 
-        cdef vector[const MarmotMeshfreeKernelFunction*] kernelFunctions
-
+        self._marmotKernelFunctions.clear()
         cdef MarmotMeshfreeKernelFunctionWrapper k
         for k in marmotMeshfreeKernelFunctionWrappers:
-            kernelFunctions.push_back(k._marmotMeshfreeKernelFunction)
+            self._marmotKernelFunctions.push_back(k._marmotMeshfreeKernelFunction)
 
-        self._marmotParticle.assignMeshfreeKernelFunctions(kernelFunctions)
+        self._marmotParticle.assignMeshfreeKernelFunctions(self._marmotKernelFunctions)
 
         self._nodes = [kf.node for kf in self._assignedKernelFunctions]
         self._fields = [ self._baseFields for n in self._nodes ]
+
+    def updateShapeFunctions(self):
+        """Evaluate the shape functions anew at the particle's current position, with the kernel functions it has.
+
+        The kernel functions are the Marmot ones kept by :meth:`assignKernelFunctions`: no Python object is touched, so
+        the particles of several threads do not contend for the reference counts of the kernel functions they share.
+        """
+        with nogil:
+            self._marmotParticle.assignMeshfreeKernelFunctions(self._marmotKernelFunctions)
 
     def prepareYourself(self, timeTotal: float, dTime: float):
         self._stateVarsTemp[:] = self._stateVars

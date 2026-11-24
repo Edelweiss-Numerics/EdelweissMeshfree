@@ -24,80 +24,80 @@
 #  The full text of the license can be found in the file LICENSE.md at
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
-"""The bins of the kernel functions, the broad phase of the particle manager's search: built as arrays, every kernel is
-in exactly the bins its box overlaps, so a query returns every kernel whose box overlaps the query box."""
+"""The bins of the kernel functions, the search of the particle manager: every kernel function is in exactly the bins
+its box overlaps, and for every group of points the search returns exactly the kernel functions whose box holds one of
+the points strictly inside, each once, in ascending order."""
 
 import itertools
 
 import numpy as np
 import pytest
 
-from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
-    _FastKDBinOrganizer,
+from edelweissmeshfree.particlemanagers.binsofkernelfunctions import (
+    BinsOfKernelFunctions,
 )
 
 
-class _BoxKernel:
-    """A kernel function as the bins see it: its bounding box."""
-
-    def __init__(self, lower: np.ndarray, upper: np.ndarray):
-        self._box = (lower, upper)
-
-    def getBoundingBox(self):
-        return self._box
-
-
-def _kernels(dimension: int, n: int, rng: np.random.Generator) -> list:
+def _boxes(dimension: int, n: int, rng: np.random.Generator) -> tuple[np.ndarray, np.ndarray]:
     centres = rng.uniform(0.0, 10.0, (n, dimension))
     halfWidths = rng.uniform(0.5, 2.0, (n, 1)) * np.ones(dimension)
-    return [_BoxKernel(c - h, c + h) for c, h in zip(centres, halfWidths)]
+    return centres - halfWidths, centres + halfWidths
 
 
 @pytest.mark.parametrize("dimension", [1, 2, 3])
 def test_every_kernel_is_in_exactly_the_bins_its_box_overlaps(dimension):
-    rng = np.random.default_rng(dimension)
-    kernels = _kernels(dimension, 60, rng)
-    bins = _FastKDBinOrganizer(kernels, dimension)
+    lower, upper = _boxes(dimension, 60, np.random.default_rng(dimension))
+    bins = BinsOfKernelFunctions(lower, upper)
 
-    lowest = ((bins._mins - bins._boundingBoxMin) / bins._binSize).astype(int)
-    highest = ((bins._maxs - bins._boundingBoxMin) / bins._binSize).astype(int)
-    expected = [[] for _ in range(int(np.prod(bins._nBins)))]
+    lowest = np.floor((lower - bins.gridLowerCorner) / bins.binSize).astype(int)
+    highest = np.floor((upper - bins.gridLowerCorner) / bins.binSize).astype(int)
+    assert np.all(highest < bins.numberOfBins), "the grid holds every box"
+    expected = [[] for _ in range(int(np.prod(bins.numberOfBins)))]
     for kernel, (lo, hi) in enumerate(zip(lowest, highest)):
         for index in itertools.product(*[range(lo[d], hi[d] + 1) for d in range(dimension)]):
-            expected[sum(i * bins._strides[d] for d, i in enumerate(index))].append(kernel)
+            expected[sum(i * bins.strides[d] for d, i in enumerate(index))].append(kernel)
 
     for binIndex, kernelsInBin in enumerate(expected):
         assert bins.kernelsInBin(binIndex).tolist() == kernelsInBin
 
 
 @pytest.mark.parametrize("dimension", [1, 2, 3])
-def test_a_query_returns_every_kernel_whose_box_overlaps_the_query_box(dimension):
+def test_the_search_returns_the_kernels_whose_boxes_hold_a_point_of_the_group(dimension):
+    """Groups of 1 to 6 points, some beyond the grid on either side, some on the boundary of a box (not inside)."""
+
     rng = np.random.default_rng(10 + dimension)
-    kernels = _kernels(dimension, 80, rng)
-    bins = _FastKDBinOrganizer(kernels, dimension)
+    lower, upper = _boxes(dimension, 80, rng)
+    bins = BinsOfKernelFunctions(lower, upper)
 
-    for _ in range(50):
-        lower = rng.uniform(0.0, 10.0, dimension)
-        upper = lower + rng.uniform(0.0, 1.0, dimension)
-        candidates = bins.getCandidateIndices(lower, upper)
+    pointsOfGroups = [rng.uniform(-4.0, 14.0, (rng.integers(1, 7), dimension)) for _ in range(200)]
+    for points in pointsOfGroups[::10]:
+        points[0, rng.integers(dimension)] = lower[rng.integers(len(lower)), rng.integers(dimension)]
+    firstPointOfGroup = np.cumsum([0] + [len(points) for points in pointsOfGroups], dtype=np.intp)
 
-        overlapping = np.flatnonzero(np.all((upper >= bins._mins) & (lower <= bins._maxs), axis=1))
-        assert np.all(np.diff(candidates) > 0), "each candidate once, in ascending order"
-        assert set(overlapping) <= set(candidates)
+    firstKernelOfGroup, kernels = bins.kernelsWhoseBoxesHoldThePoints(np.concatenate(pointsOfGroups), firstPointOfGroup)
+
+    for g, points in enumerate(pointsOfGroups):
+        holds = np.all((points[:, None, :] > lower[None]) & (points[:, None, :] < upper[None]), axis=2)
+        expected = np.flatnonzero(np.any(holds, axis=0))
+        assert kernels[firstKernelOfGroup[g] : firstKernelOfGroup[g + 1]].tolist() == expected.tolist()
 
 
 @pytest.mark.parametrize("dimension", [1, 2, 3])
-def test_a_query_box_beyond_the_grid_of_bins_finds_no_kernel(dimension):
-    """On either side of every dimension: a particle that left the supports of all kernel functions has no candidates,
-    and the search reports it by its own message."""
+def test_a_point_beyond_the_grid_of_bins_is_in_no_box(dimension):
+    """On either side of every dimension: a particle that left the supports of all kernel functions has no kernel
+    functions, and the manager reports it by its own message."""
 
-    bins = _FastKDBinOrganizer(_kernels(dimension, 20, np.random.default_rng(20 + dimension)), dimension)
-    extent = bins._nBins * bins._binSize
+    bins = BinsOfKernelFunctions(*_boxes(dimension, 20, np.random.default_rng(20 + dimension)))
+    extent = bins.gridUpperCorner - bins.gridLowerCorner
 
+    points = []
     for d in range(dimension):
         for side in (-1.0, 1.0):
-            lower = bins._boundingBoxMin + 0.25 * extent
-            lower[d] = bins._boundingBoxMin[d] + (-2.0 if side < 0 else 2.0) * extent[d]
-            upper = lower + 0.1 * extent
+            point = bins.gridLowerCorner + 0.5 * extent
+            point[d] = (bins.gridLowerCorner if side < 0 else bins.gridUpperCorner)[d] + side * 0.1 * extent[d]
+            points.append(point)
 
-            assert bins.getCandidateIndices(lower, upper).size == 0
+    firstKernelOfGroup, kernels = bins.kernelsWhoseBoxesHoldThePoints(
+        np.array(points), np.arange(len(points) + 1, dtype=np.intp)
+    )
+    assert kernels.size == 0 and np.all(firstKernelOfGroup == 0)
