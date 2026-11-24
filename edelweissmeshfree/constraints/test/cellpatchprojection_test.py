@@ -39,8 +39,8 @@ from edelweissmeshfree.config.mplibrary import getMaterialPointClass
 from edelweissmeshfree.constraints.aggregatedmpm import AggregatedMaterialPointMethod
 from edelweissmeshfree.generators import rectangulargridgenerator
 from edelweissmeshfree.models.mpmmodel import MPMModel
-from edelweissmeshfree.numerics.aggregation import aggregationOfModel
 from edelweissmeshfree.mpmmanagers.smartmpmmanager import SmartMaterialPointManager
+from edelweissmeshfree.numerics.aggregation import aggregationOfModel
 from edelweissmeshfree.sets.materialpointset import MaterialPointSet
 
 pytest.importorskip("edelweissmeshfree.cells.marmotcell.lagrangianmarmotcell")

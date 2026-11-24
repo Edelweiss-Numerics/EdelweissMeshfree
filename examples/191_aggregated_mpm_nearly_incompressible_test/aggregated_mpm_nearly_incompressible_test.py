@@ -70,9 +70,9 @@ from edelweissfe.stepactions.dirichlet import StepAction as Dirichlet
 from edelweissfe.steps.adaptivestep import AdaptiveStep
 from edelweissfe.steps.stepmanager import StepActionCollection
 
+from edelweissmeshfree.config.mplibrary import getMaterialPointClass
 from edelweissmeshfree.constraints.aggregatedmpm import AggregatedMaterialPointMethod
 from edelweissmeshfree.fieldoutput.fieldoutput import MPMFieldOutputController
-from edelweissmeshfree.config.mplibrary import getMaterialPointClass
 from edelweissmeshfree.generators import rectangulargridgenerator
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.mpmmanagers.smartmpmmanager import SmartMaterialPointManager
