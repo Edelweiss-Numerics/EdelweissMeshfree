@@ -41,8 +41,6 @@ across new locations -- particles reaching other kernel functions -- and the est
 time step; they start anew where an estimate with them falls below the one they started from, with a new numbering, and
 after a resume."""
 
-from types import SimpleNamespace
-
 import h5py
 import numpy as np
 import pytest
@@ -50,6 +48,7 @@ from edelweissfe.journal.journal import Journal
 from edelweissfe.models.change import Change
 from edelweissfe.outputmanagers.restart import OutputManager as RestartOutputManager
 from edelweissfe.outputmanagers.restart import RestartOutputManagerSchema
+from edelweissfe.solvers.base.criticaltimestep import CriticalTimeStepEstimate
 from edelweissfe.solvers.nonlinearexplicitdynamic import NED
 from edelweissfe.steps.adaptivestepforexplicitsimulations import (
     AdaptiveStepForExplicitSimulations,
@@ -123,7 +122,7 @@ ESTIMATE_OF_THE_PARTICLES = MPMDiscreteSystem.criticalTimeStepOfEntitiesWithOwnI
 def _estimateOf(value: float):
     """A stand-in for the particles' estimate that gives the critical time step ``value``, whatever their state."""
 
-    return lambda *args: SimpleNamespace(value=value)
+    return lambda *args: CriticalTimeStepEstimate(value)
 
 
 @pytest.fixture(autouse=True)
@@ -631,8 +630,8 @@ def test_where_the_particles_have_a_margin_they_are_estimated_when_their_masses_
         else:
             withInertia = (increment["inertia"] > 0) & (last["inertia"] > 0)
             alpha = min(1.0, np.min(increment["inertia"][withInertia] / last["inertia"][withInertia]))
-            lowerBound = value * np.sqrt(alpha) * (1 - delta) ** (increment["number"] - last["number"])
-            isDue = courantNumber * lowerBound < increment["timeIncrementInUse"]
+            criticalTimeStepAtWorst = value * np.sqrt(alpha) * (1 - delta) ** (increment["number"] - last["number"])
+            isDue = courantNumber * criticalTimeStepAtWorst < increment["timeIncrementInUse"]
         expected.append(isDue)
         if isDue:
             last = increment
@@ -776,9 +775,9 @@ def _stretchingBodyWithinItsCriticalTimeStep(journal: Journal) -> MPMModel:
 def _recordTheEstimates(monkeypatch, solver: _SolverRecordingTheCarriedWeights):
     """Let every estimate of the particles' critical time step be recorded in the solver's events."""
 
-    def recordingTheEstimate(system, inertia, damping, forEachChunk, weightsOfTheBound=None):
-        handed = np.array(weightsOfTheBound)
-        estimate = ESTIMATE_OF_THE_PARTICLES(system, inertia, damping, forEachChunk, weightsOfTheBound)
+    def recordingTheEstimate(system, inertia, damping, forEachChunk, weightsOfTheEstimate=None):
+        handed = np.array(weightsOfTheEstimate)
+        estimate = ESTIMATE_OF_THE_PARTICLES(system, inertia, damping, forEachChunk, weightsOfTheEstimate)
         withoutWeights = ESTIMATE_OF_THE_PARTICLES(system, inertia, damping, forEachChunk).value
         solver.events.append((handed, estimate.value, withoutWeights, exactCriticalTimeStepOfTheSystem(system)))
         return estimate

@@ -31,7 +31,7 @@ and the exact one, from the eigenvalues of the assembled tangent."""
 import numpy as np
 
 from edelweissmeshfree.models.mpmdiscretesystem import (
-    CriticalTimeStepBoundOfEachFieldBlock,
+    CriticalTimeStepEstimateFromTheFieldMatrix,
 )
 
 
@@ -41,7 +41,9 @@ def serially(entities, work):
     work(entities)
 
 
-def estimateOfTheSystem(system, weightsOfTheBound: np.ndarray | None = None) -> CriticalTimeStepBoundOfEachFieldBlock:
+def estimateOfTheSystem(
+    system, weightsOfTheEstimate: np.ndarray | None = None
+) -> CriticalTimeStepEstimateFromTheFieldMatrix:
     """The estimate of the particles' critical time step of a discrete system, from the lumped mass and damping it
     assembles, with the given carried weights (None: without)."""
 
@@ -49,7 +51,7 @@ def estimateOfTheSystem(system, weightsOfTheBound: np.ndarray | None = None) -> 
         system.assembleLumpedMassOfEntitiesWithOwnInertia(serially),
         system.assembleLumpedDampingOfEntitiesWithOwnInertia(serially),
         serially,
-        weightsOfTheBound,
+        weightsOfTheEstimate,
     )
 
 
@@ -77,13 +79,15 @@ def exactCriticalTimeStepOfTheSystem(system) -> float:
         indices = np.asarray(system.locations.ofEntity[particle])
         K[np.ix_(indices, indices)] += stiffness.reshape(nDof, nDof, order="F")
 
-    stable = np.inf
-    for ofTheScheme, divisor, stableOfTheLargestEigenvalue in (
+    criticalTimeStep = np.inf
+    for ofTheScheme, divisor, criticalTimeStepOfTheLargestEigenvalue in (
         (M > 0.0, M, lambda largest: 2.0 / np.sqrt(largest)),
         ((M == 0.0) & (C > 0.0), C, lambda largest: 2.0 / largest),
     ):
         if ofTheScheme.any():
             scaling = 1.0 / np.sqrt(divisor[ofTheScheme])
             S = scaling[:, None] * K[np.ix_(ofTheScheme, ofTheScheme)] * scaling[None, :]
-            stable = min(stable, stableOfTheLargestEigenvalue(np.max(np.abs(np.linalg.eigvals(S)))))
-    return stable
+            criticalTimeStep = min(
+                criticalTimeStep, criticalTimeStepOfTheLargestEigenvalue(np.max(np.abs(np.linalg.eigvals(S))))
+            )
+    return criticalTimeStep

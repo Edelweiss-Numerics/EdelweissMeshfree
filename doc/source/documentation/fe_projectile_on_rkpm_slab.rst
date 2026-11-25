@@ -122,17 +122,22 @@ gap, the pairing and what the constraint reports.
 The time increment
 ------------------
 
-``NED`` takes the smaller of the critical time step of the elements (their own eigenvalue bound) and the critical time
-step of the particles, estimated from their stiffness without assembling it, and scales it by ``courant-number``.
-The particles are estimated anew when the margin of their last estimate over the time increment may be used up (see
-:doc:`choosing_a_solver`, "Explicit dynamics"): while the elements of the projectile set the time increment, every few
-increments; once the particles set it, in every increment. The estimate takes the tangent of the gradient-enhanced
-particles as it is, unsymmetric: while the concrete under the nose is crushed, GM7's stress depends on the nonlocal strain through
-the steep compressive boundary, far more strongly than the nonlocal strain depends on the strain, and the bound follows
-the geometric mean of the two couplings, as the eigenvalues do. Here the limit of the particles is that of the nonlocal
-field, set by its micro-inertia, and it stays above the projectile's elements: the elements set the time increment.
-Neither bound sees the penalty stiffness of the contact or of the supports; check them by hand, and check the result by
-halving the time increment.
+``NED`` takes the smaller of the critical time step of the elements (their own estimate, from an eigenvalue bound)
+and the critical time step of the particles, estimated from their stiffness without assembling it, and scales it by
+``courant-number``. The particles are estimated anew when the margin of their last estimate over the time increment in
+use may be used up (see :doc:`choosing_a_solver`, "Explicit dynamics"): the larger the margin, the longer an estimate
+lasts, and once the particles set the time increment, they are estimated in every increment. The estimate takes the
+tangent of the gradient-enhanced particles as it is, unsymmetric: while the concrete under the nose is crushed, GM7's
+stress depends on the nonlocal strain through the steep compressive boundary, far more strongly than the nonlocal
+strain depends on the strain, and the bound follows the geometric mean of the two couplings, as the eigenvalues do.
+
+In this model, the limit of the particles is that of the nonlocal field, set by its micro-inertia. It starts only a
+little above the projectile's elements, so the elements set the time increment, and the margin of the particles is so
+small that they are estimated in every increment from the start. As the concrete under the nose is crushed, the
+estimate of the particles falls below the elements': the particles take the time increment over, it follows their
+falling estimate down, and they are estimated in every increment from then on. The tests of this page check that they
+take it over. Neither estimate sees the penalty stiffness of the contact or of the supports; check them by hand, and
+check the result by halving the time increment.
 
 Running it
 ----------

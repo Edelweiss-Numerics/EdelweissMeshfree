@@ -213,10 +213,10 @@ def test_sim(unlimitedRun, assert_gold):
 
     assert np.isfinite(r["displacement"]).all() and np.isfinite(r["nonlocal strain"]).all()
 
-    # stable at the solver's own time increment: the critical time step of the particles, scaled by the courant number,
-    # and estimated anew in every increment, since the particles alone set it
-    assert solver._criticalTimeStep == solver.options["courant-number"] * solver._criticalTimeStepOfTheEntities.value
-    assert solver.prevTimeStep.timeIncrement == pytest.approx(solver._criticalTimeStep, rel=0.2)
+    # stable at the solver's own time increment: the particles alone set the critical time step of the model, estimated
+    # anew in every increment, and the time increment is close to the courant fraction of it
+    assert solver._criticalTimeStepOfTheModel() == solver._criticalTimeStepOfTheEntities.value
+    assert solver.prevTimeStep.timeIncrement == pytest.approx(solver._largestTimeIncrement, rel=0.2)
 
     # the strain localizes in the middle layer, and the nonlocal strain follows it
     strain = axialStrainByLayer(r)

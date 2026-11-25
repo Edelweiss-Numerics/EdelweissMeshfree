@@ -45,7 +45,8 @@ larger and longer.
 The tests assert the checks of the tutorial's "What to check", on the first microseconds of the impact: the kinetic
 energy never exceeds the projectile's initial one, action and reaction cancel in every increment, no contact point is
 found inside, the deepest overlap stays far below the search distance, the projectile slows down, and halving the time
-increment changes the nose's motion by little.
+increment changes the nose's motion by little; and, from its "The time increment", that the crushed slab takes the time
+increment over from the projectile, after which the particles are estimated in every increment.
 
 Units: N, mm, t, s.
 """
@@ -268,7 +269,9 @@ def startTheProjectile(model: MPMModel):
 
 class ImpactRecord(OutputManagerBase):
     """Records, in every increment, what the checks need: the contact forces on both sides, the points in contact and
-    found inside, the deepest overlap, the projectile's momentum along z and its nose, and the total kinetic energy."""
+    found inside, the deepest overlap, the projectile's momentum along z and its nose, the total kinetic energy, the
+    critical time steps of the elements and of the particles as last estimated, and how often the particles were
+    estimated."""
 
     checkpointedState = {}
 
@@ -289,6 +292,8 @@ class ImpactRecord(OutputManagerBase):
 
     def finalizeIncrement(self, **kwargs):
         contact, displacement = self._contact, self._model.nodeFields["displacement"]
+        ofTheElements = self._solver._criticalTimeStepOfTheElements
+        ofTheParticles = self._solver._criticalTimeStepOfTheEntities
         self.rows.append(
             dict(
                 time=self._model.time,
@@ -300,6 +305,9 @@ class ImpactRecord(OutputManagerBase):
                 kineticEnergy=self._solver.kineticEnergy(self._solver._V),
                 velocityOfTheProjectile=float(np.mean(displacement["V"][self._projectileNodes, 2])),
                 nose=float(np.min(self._projectileZ + displacement["U"][self._projectileNodes, 2])),
+                elements=ofTheElements.value,
+                particles=ofTheParticles.value,
+                estimatesOfTheParticles=ofTheParticles.numberOfEstimates,
             )
         )
 
@@ -375,8 +383,18 @@ def _changeTestDir(request, monkeypatch):
     monkeypatch.chdir(request.fspath.dirname)
 
 
-def test_the_checks_of_the_tutorial_hold_on_the_first_microseconds_of_the_impact():
-    record, initialKineticEnergy = run(END_TIME)
+@pytest.fixture(scope="module")
+def impact(request) -> tuple[ImpactRecord, float]:
+    """The run up to :data:`END_TIME`, shared by the tests: what it recorded, and the projectile's initial kinetic
+    energy."""
+
+    with pytest.MonkeyPatch.context() as monkeypatch:
+        monkeypatch.chdir(request.fspath.dirname)
+        return run(END_TIME)
+
+
+def test_the_checks_of_the_tutorial_hold_on_the_first_microseconds_of_the_impact(impact):
+    record, initialKineticEnergy = impact
     rows = record.rows
 
     # the contact acted, and slowed the projectile down by more than a fifth
@@ -393,8 +411,8 @@ def test_the_checks_of_the_tutorial_hold_on_the_first_microseconds_of_the_impact
     assert max(row["deepestPenetration"] for row in rows) < 0.5 * SEARCH_DISTANCE
 
 
-def test_halving_the_time_increment_changes_the_motion_of_the_nose_little():
-    record, _ = run(END_TIME)
+def test_halving_the_time_increment_changes_the_motion_of_the_nose_little(impact):
+    record, _ = impact
     halved, _ = run(END_TIME, courantNumber=0.4)
 
     def noseAt(record, time):
@@ -404,3 +422,18 @@ def test_halving_the_time_increment_changes_the_motion_of_the_nose_little():
     penetration = -noseAt(record, END_TIME)
     assert penetration > 0.0
     assert abs(noseAt(halved, END_TIME) - noseAt(record, END_TIME)) < 0.05 * penetration
+
+
+def test_the_crushed_slab_takes_over_the_time_increment_and_is_then_estimated_in_every_increment(impact):
+    """The particles start with an estimate above the projectile's elements. As the concrete under the nose is crushed,
+    their estimate falls below the elements': from then on they set the time increment, and their margin over it is
+    used up in every increment, so they are estimated in every increment."""
+
+    rows = impact[0].rows
+
+    last = rows[-1]
+    assert rows[0]["particles"] > rows[0]["elements"], "the elements set the time increment at the start"
+    assert last["particles"] < last["elements"], "the particles set the time increment at the end"
+    takenOver = next(i for i, row in enumerate(rows) if row["particles"] < row["elements"])
+    counts = [row["estimatesOfTheParticles"] for row in rows[takenOver:]]
+    assert all(b == a + 1 for a, b in zip(counts, counts[1:])), "estimated in every increment from then on"

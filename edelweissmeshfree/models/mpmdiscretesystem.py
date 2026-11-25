@@ -44,7 +44,7 @@ import numpy as np
 from edelweissfe.models.discretesystem import DiscreteSystem
 from edelweissfe.numerics.dofvector import DofVector
 from edelweissfe.sets.nodeset import NodeSet
-from edelweissfe.solvers.base.criticaltimestep import CriticalTimeStepBound
+from edelweissfe.solvers.base.criticaltimestep import CriticalTimeStepEstimate
 from edelweissfe.timesteppers.timestep import TimeStep
 
 from edelweissmeshfree.numerics.doflocations import MPMDofLocations
@@ -61,7 +61,7 @@ COEFFICIENT_AT_ROUND_OFF = 1e-12
 STABLE_FRACTION_OF_THE_TANGENT_LIMIT = 0.85
 
 
-class CriticalTimeStepBoundOfEachFieldBlock(CriticalTimeStepBound):
+class CriticalTimeStepEstimateFromTheFieldMatrix(CriticalTimeStepEstimate):
     """The estimate of the critical time step of the particles, from the field matrix :math:`\\boldsymbol{Q}` of the
     largest row sums of their mass-scaled stiffness per block of fields (see
     :meth:`MPMDiscreteSystem.criticalTimeStepOfEntitiesWithOwnInertia`).
@@ -97,7 +97,7 @@ class CriticalTimeStepBoundOfEachFieldBlock(CriticalTimeStepBound):
         self._orderOfGroup = orderOfGroup
         self._groupOfDof = groupOfDof
         self._collatzWielandtRows = collatzWielandtRows
-        self.value = self._criticalTimeStepOf(fieldMatrix, collatzWielandtRows)
+        super().__init__(value=self._criticalTimeStepOf(fieldMatrix, collatzWielandtRows))
 
     def _criticalTimeStepOf(self, fieldMatrix: np.ndarray, collatzWielandtRows: np.ndarray | None) -> float:
         """:data:`STABLE_FRACTION_OF_THE_TANGENT_LIMIT` times the smaller of :math:`2/\\sqrt{\\rho}` of the blocks
@@ -130,15 +130,15 @@ class CriticalTimeStepBoundOfEachFieldBlock(CriticalTimeStepBound):
                 rho = min(rho, float(np.max(collatzWielandtRows[np.isin(self._groupOfDof, groups)])))
             return rho
 
-        stable = np.inf
+        criticalTimeStep = np.inf
         omegaSquared = perronRoot("second")
         if omegaSquared > 0.0:
-            stable = 2.0 / np.sqrt(omegaSquared)
+            criticalTimeStep = 2.0 / np.sqrt(omegaSquared)
         rate = perronRoot("first")
         if rate > 0.0:
-            stable = min(stable, 2.0 / rate)
+            criticalTimeStep = min(criticalTimeStep, 2.0 / rate)
 
-        return STABLE_FRACTION_OF_THE_TANGENT_LIMIT * stable
+        return STABLE_FRACTION_OF_THE_TANGENT_LIMIT * criticalTimeStep
 
 
 class MPMDiscreteSystem(DiscreteSystem):
@@ -521,8 +521,8 @@ class MPMDiscreteSystem(DiscreteSystem):
         lumpedMass: DofVector,
         lumpedDamping: DofVector,
         forEachChunk: Callable[[list, Callable], None],
-        weightsOfTheBound: np.ndarray | None = None,
-    ) -> CriticalTimeStepBoundOfEachFieldBlock | None:
+        weightsOfTheEstimate: np.ndarray | None = None,
+    ) -> CriticalTimeStepEstimateFromTheFieldMatrix | None:
         """An estimate of the critical time step of ``NED``'s explicit scheme for the particles, a lower bound of it, from
         their stiffness at the current state and the assembled lumped mass and damping; ``NED`` decides when it is taken
         anew (:class:`~edelweissfe.solvers.base.criticaltimestep.CriticalTimeStepOfEntitiesWithOwnInertia`). No stiffness is assembled: every particle bounds
@@ -570,7 +570,7 @@ class MPMDiscreteSystem(DiscreteSystem):
         coupled by the largest eigenvalue of the small field matrix, which takes the geometric mean of the coupling
         blocks. With a single field it is the Gershgorin bound.
 
-        **Weights carried from estimate to estimate** (``weightsOfTheBound``, ``NED``'s
+        **Weights carried from estimate to estimate** (``weightsOfTheEstimate``, ``NED``'s
         ``carry-critical-time-step-weights``). The weights constant per field are the start of the power iteration
         towards the Perron vector of :math:`|\\boldsymbol{S}|`, where the Collatz-Wielandt bound is exact. Weights
         :math:`\\boldsymbol{w}` carried from the last estimate take the place of the ones in the same pass: the columns
@@ -620,8 +620,8 @@ class MPMDiscreteSystem(DiscreteSystem):
         the other node :math:`B`, with factors of node :math:`A` alone. Marmot sums :math:`w_B |K_{Ai,Bk}|` over
         :math:`B` from a few weighted moments of the shape functions, exactly for the value and by the Cauchy-Schwarz
         inequality over the nodes for the gradients, which keeps their directions (2/sqrt(3) of the exact sum for
-        gradients spread evenly in 3D, exact for parallel ones). Every inequality bounds from above, so the stable
-        increment stays a lower bound of the exact one.
+        gradients spread evenly in 3D, exact for parallel ones). Every inequality bounds from above, so the estimate
+        stays a lower bound of the critical time step.
 
         The result is scaled by :data:`STABLE_FRACTION_OF_THE_TANGENT_LIMIT`, since the explicit scheme of the
         particles is not exactly integrated with their tangent: their NSNI stabilization acts on the increment.
@@ -635,15 +635,16 @@ class MPMDiscreteSystem(DiscreteSystem):
             Their lumped damping (:meth:`assembleLumpedDampingOfEntitiesWithOwnInertia`), likewise.
         forEachChunk
             The solver's loop over chunks of independent entities.
-        weightsOfTheBound
+        weightsOfTheEstimate
             The weights the last estimate left, a vector of the numbering, zero where a degree of freedom has none yet
             (all zero: the start, with the weights constant per field); replaced in place by the weights for the next
             estimate. None for the estimate with the weights constant per field alone.
 
         Returns
         -------
-        CriticalTimeStepBoundOfEachFieldBlock | None
-            The estimate, its critical time step its ``value``; None if the model has no particles.
+        CriticalTimeStepEstimateFromTheFieldMatrix | None
+            The estimate; its ``value`` is the critical time step, not scaled by a courant number. None if the model
+            has no particles.
         """
 
         if not self.particles:
@@ -674,7 +675,7 @@ class MPMDiscreteSystem(DiscreteSystem):
         orders = [order for order in ("second", "first") if order in orderOfGroup]
         groupsOfOrder = [[group for group, ofGroup in enumerate(orderOfGroup) if ofGroup == order] for order in orders]
         inAnOrder = [np.isin(groupOfDof, groups) for groups in groupsOfOrder]
-        weights = self._weightsOfThisEstimate(weightsOfTheBound, groupOfDof, nGroups)
+        weights = self._weightsOfThisEstimate(weightsOfTheEstimate, groupOfDof, nGroups)
 
         # Z_if >= sum_{j in f} |S_ij| w_j, assembled column by column. Row f of the scaled weights of the columns holds
         # column f on every degree of freedom, so that the columns of a particle are one gather (a new array, whose
@@ -708,7 +709,7 @@ class MPMDiscreteSystem(DiscreteSystem):
         Q = np.array([[np.max(rowSumsPerWeight[groupOfDof == g, f]) for f in range(nGroups)] for g in range(nGroups)])
 
         collatzWielandtRows = None
-        if weightsOfTheBound is not None:
+        if weightsOfTheEstimate is not None:
             # the rows of the Collatz-Wielandt bound with the weights c_g w_i, c the Perron vector of the field matrix
             # of each order, and their image, the weights of the next estimate
             collatzWielandtRows = np.zeros(nDof)
@@ -719,14 +720,14 @@ class MPMDiscreteSystem(DiscreteSystem):
                 scaleOfGroup[groups] = np.maximum(perronVector / np.max(perronVector), np.finfo(float).eps)
                 image = Z[np.ix_(ofTheOrder, groups)] @ scaleOfGroup[groups]
                 collatzWielandtRows[ofTheOrder] = image / (scaleOfGroup[groupOfDof[ofTheOrder]] * weights[ofTheOrder])
-                weightsOfTheBound[ofTheOrder] = self._weightsForTheNextEstimate(image)
-            weightsOfTheBound[groupOfDof < 0] = 0.0
+                weightsOfTheEstimate[ofTheOrder] = self._weightsForTheNextEstimate(image)
+            weightsOfTheEstimate[groupOfDof < 0] = 0.0
 
-        return CriticalTimeStepBoundOfEachFieldBlock(Q, orderOfGroup, groupOfDof, collatzWielandtRows)
+        return CriticalTimeStepEstimateFromTheFieldMatrix(Q, orderOfGroup, groupOfDof, collatzWielandtRows)
 
     @staticmethod
     def _weightsOfThisEstimate(
-        weightsOfTheBound: np.ndarray | None, groupOfDof: np.ndarray, nGroups: int
+        weightsOfTheEstimate: np.ndarray | None, groupOfDof: np.ndarray, nGroups: int
     ) -> np.ndarray:
         """The weights an estimate of the critical time step takes, on every degree of freedom: those the last estimate
         left, where it left one, and the largest weight of its block of fields where it left none (a degree of freedom
@@ -736,7 +737,7 @@ class MPMDiscreteSystem(DiscreteSystem):
 
         Parameters
         ----------
-        weightsOfTheBound
+        weightsOfTheEstimate
             The weights the last estimate left, a vector of the numbering; None without carried weights.
         groupOfDof
             The block of fields of every degree of freedom, -1 for one in none.
@@ -750,11 +751,11 @@ class MPMDiscreteSystem(DiscreteSystem):
         """
 
         weights = np.ones(len(groupOfDof))
-        if weightsOfTheBound is None:
+        if weightsOfTheEstimate is None:
             return weights
         for group in range(nGroups):
             ofTheGroup = groupOfDof == group
-            carried = weightsOfTheBound[ofTheGroup]
+            carried = weightsOfTheEstimate[ofTheGroup]
             if not np.any(carried > 0.0):
                 return np.ones(len(groupOfDof))
             weights[ofTheGroup] = np.where(carried > 0.0, carried, np.max(carried))

@@ -49,7 +49,7 @@ class ParticlePenaltyWeakDirichlet(MPMConstraintBase):
 
     A support holds only as well as its penalty is stiff against the material next to it: a penalty that is merely
     comparable to the stiffness of a particle lets the support give way and spring back, an error that does not shrink
-    with the particle size. Its upper bound is the stable time increment of the explicit integration,
+    with the particle size. Its upper bound is set by the critical time step of the explicit integration,
     :math:`\Delta t < 2 \sqrt{m / k}` with :math:`m` the mass a constrained point carries; see example 186.
 
     Parameters

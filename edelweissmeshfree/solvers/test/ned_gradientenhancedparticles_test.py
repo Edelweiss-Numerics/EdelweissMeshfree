@@ -224,8 +224,8 @@ def test_the_nonlocal_field_is_integrated_by_the_particles_operators_on_their_cr
     assert "displacement" in solver.secondOrderFields
 
     # the time increment is the critical time step of the particles, scaled by the courant number
-    assert solver._criticalTimeStep == 0.5 * solver._criticalTimeStepOfTheEntities.value
-    assert solver.prevTimeStep.timeIncrement == pytest.approx(solver._criticalTimeStep, rel=1e-12)
+    assert solver._largestTimeIncrement == 0.5 * solver._criticalTimeStepOfTheEntities.value
+    assert solver.prevTimeStep.timeIncrement == pytest.approx(solver._largestTimeIncrement, rel=1e-12)
 
     # the nonlocal field follows the strain of the stretching bar
     rate, increment = nonlocalRateAndIncrement(model)
