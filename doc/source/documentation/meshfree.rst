@@ -25,8 +25,8 @@ A particle that is stretched far beyond its neighbours -- torn, with its damage 
 into a void, a borehole or a crack, where only the kernels of one wall of particles cover it. These kernels lie nearly
 in one plane, on one side of the point, and reproducing a linear field there takes shape functions of the size of the
 distance to the wall over the scatter of the kernel centres about it. The particle's smoothed gradients and its
-stiffness grow with them, and so does its bound of the stable time increment of an explicit analysis: one such
-particle can set the time increment of the whole model.
+stiffness grow with them, and its critical time step in an explicit analysis falls: one such particle can set the
+time increment of the whole model.
 
 ``MarmotMeshfreeApproximationWrapper`` takes the optional keyword argument ``momentMatrixConditionLimit``: the
 completeness order of a point whose moment matrix (scaled to a unit diagonal) has a larger condition number is lowered,

@@ -441,9 +441,9 @@ class BaseParticle(BaseNodeCouplingEntity):
         """Explicit dynamics: add an upper bound of :math:`|\\boldsymbol{K}|\\, \\boldsymbol{W}`, the absolute value of
         the stiffness of :meth:`assembleStiffness` (see there for the state it is of), times nonnegative weights. It
         leaves the particle as it was found. The stiffness itself is not assembled: the bound costs as much as the
-        nodes, the stiffness as their square. It is what the stable time increment of the particles is bounded with,
+        nodes, the stiffness as their square. It is what the critical time step of the particles is estimated with,
         after the accept of an increment
-        (:meth:`~edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia`).
+        (:meth:`~edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.criticalTimeStepOfEntitiesWithOwnInertia`).
 
         Parameters
         ----------

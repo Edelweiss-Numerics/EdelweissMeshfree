@@ -40,11 +40,11 @@ strains (``GM7/COROTATIONAL``, with the micro-inertia eta^2/4 of its nonlocal st
 velocity, a uniform stretching along its axis: no boundary condition, the inertia of the two halves loads the middle.
 The middle layer of particles is slightly weaker (k1 reduced by 5 %), so that the crack has a place to start.
 EdelweissFE's explicit dynamic solver ``NED`` integrates the displacement and the nonlocal strain (``strain
-symmetric``) by the particles' own lumped inertia and damping, on the bound of the particles' stable time increment.
+symmetric``) by the particles' own lumped inertia and damping, on the critical time step of the particles.
 
 Checked: the strain localizes in the middle layer, the nonlocal strain follows, the kinetic energy at the end does not
-exceed the energy the bar started with, the time increment is the solver's bound of the particles' stable time
-increment, and the particle displacements and the nonlocal strain match the gold file.
+exceed the energy the bar started with, the time increment is the solver's estimate of the particles' critical time
+step, and the particle displacements and the nonlocal strain match the gold file.
 """
 
 import argparse
@@ -213,10 +213,10 @@ def test_sim(unlimitedRun, assert_gold):
 
     assert np.isfinite(r["displacement"]).all() and np.isfinite(r["nonlocal strain"]).all()
 
-    # stable at the solver's own time increment: the bound of the particles' stable time increment, scaled by the
-    # courant number, and evaluated anew every few increments as the material softens
-    assert solver._criticalTimeStep == solver.options["courant-number"] * solver._stableTimeIncrementOfEntities
-    assert solver.prevTimeStep.timeIncrement == pytest.approx(solver._criticalTimeStep, rel=0.2)
+    # stable at the solver's own time increment: the particles alone set the critical time step of the model, estimated
+    # anew in every increment, and the time increment is close to the courant fraction of it
+    assert solver._criticalTimeStepOfTheModel() == solver._criticalTimeStepOfTheEntities.value
+    assert solver.prevTimeStep.timeIncrement == pytest.approx(solver._largestTimeIncrement, rel=0.2)
 
     # the strain localizes in the middle layer, and the nonlocal strain follows it
     strain = axialStrainByLayer(r)

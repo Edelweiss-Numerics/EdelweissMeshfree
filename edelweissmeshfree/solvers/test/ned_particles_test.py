@@ -36,9 +36,9 @@ following them through new locations is what building anew gives. The lumped mas
 only for new locations. A restart checkpoint holds the numbering of the net force and the inverse lumped mass, and a
 resume on another numbering is refused.
 
-With ``carry-stable-increment-weights``, the weights of the bound of the particles' stable time increment are carried
-across new locations -- particles reaching other kernel functions -- and the bound stays below the exact stable
-increment; they start anew where a bound with them falls below the one they started from, with a new numbering, and
+With ``carry-critical-time-step-weights``, the weights of the estimate of the particles' critical time step are carried
+across new locations -- particles reaching other kernel functions -- and the estimate stays below the exact critical
+time step; they start anew where an estimate with them falls below the one they started from, with a new numbering, and
 after a resume."""
 
 import h5py
@@ -48,6 +48,7 @@ from edelweissfe.journal.journal import Journal
 from edelweissfe.models.change import Change
 from edelweissfe.outputmanagers.restart import OutputManager as RestartOutputManager
 from edelweissfe.outputmanagers.restart import RestartOutputManagerSchema
+from edelweissfe.solvers.base.criticaltimestep import CriticalTimeStepEstimate
 from edelweissfe.solvers.nonlinearexplicitdynamic import NED
 from edelweissfe.steps.adaptivestepforexplicitsimulations import (
     AdaptiveStepForExplicitSimulations,
@@ -78,8 +79,8 @@ from edelweissmeshfree.models.mpmdiscretesystem import (
     MPMDiscreteSystem,
 )
 from edelweissmeshfree.models.mpmmodel import MPMModel
-from edelweissmeshfree.models.test._stableincrement import (
-    exactStableIncrementOfTheSystem,
+from edelweissmeshfree.models.test._criticaltimestep import (
+    exactCriticalTimeStepOfTheSystem,
 )
 from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
     KDBinOrganizedParticleManager,
@@ -95,7 +96,7 @@ VELOCITY = 1.0e6
 TIME_INCREMENT = 1.0e-6
 N_INCREMENTS = 40
 
-# soft, so that the body translates nearly rigidly, far within the stable time increment
+# soft, so that the body translates nearly rigidly, far within the critical time step
 YOUNGS_MODULUS, POISSONS_RATIO = 1.0, 0.3
 
 
@@ -111,10 +112,26 @@ def _material(youngsModulus: float) -> dict:
     }
 
 
-#: The options of the solver: it reports (and writes output) after every increment, and takes the increments of the step
-#: unchecked for the particles. These tests follow the discrete system and the state the increments carry at a given
-#: increment, not the stability of the body, which the bound of its stable time increment would reduce as it stretches.
-NED_OPTIONS = {"output-frequency": 1, "stable-increment-frequency": 0}
+#: The options of the solver: it reports (and writes output) after every increment.
+NED_OPTIONS = {"output-frequency": 1}
+
+#: The critical time step of the particles, as MPMDiscreteSystem estimates it.
+ESTIMATE_OF_THE_PARTICLES = MPMDiscreteSystem.criticalTimeStepOfEntitiesWithOwnInertia
+
+
+def _estimateOf(value: float):
+    """A stand-in for the particles' estimate that gives the critical time step ``value``, whatever their state."""
+
+    return lambda *args: CriticalTimeStepEstimate(value)
+
+
+@pytest.fixture(autouse=True)
+def _theIncrementsOfTheStepAreTakenAsTheyAre(monkeypatch):
+    """The particles' critical time step is replaced by an infinite one, so that the increments are the step's: these
+    tests follow the discrete system and the state the increments carry at a given increment, not the stability of the
+    body, whose critical time step falls as it stretches. The tests of the critical time step set their own."""
+
+    monkeypatch.setattr(MPMDiscreteSystem, "criticalTimeStepOfEntitiesWithOwnInertia", _estimateOf(np.inf))
 
 
 def _ned(journal: Journal, **options) -> NED:
@@ -412,7 +429,7 @@ def test_a_node_without_inertia_has_no_velocity(monkeypatch):
 
 def test_two_explicit_steps_are_one():
     """A step continues from the velocity and the acceleration the step before ends with: a body that stretches as it
-    translates, stiff enough to accelerate visibly within an increment and still far within the stable time increment,
+    translates, stiff enough to accelerate visibly within an increment and still far within the critical time step,
     solved by one step and by two steps of half its length, each by its own solver, ends in the same state. The second
     step takes the velocity of the nodes the first one leaves, rather than projecting it again from the particles, and
     its first increment of motion continues the leapfrog."""
@@ -449,11 +466,13 @@ class _SolverWithANewNumberingForEveryChange(_SolverRecordingTheBuildPath):
         super().updateDiscreteSystem(model, max(change, Change.NUMBERING) if change > Change.NONE else change)
 
 
-def _stretchingBody(journal: Journal) -> MPMModel:
+def _stretchingBody(journal: Journal, youngsModulus: float = YOUNGS_MODULUS) -> MPMModel:
     """A body with bonded kernel functions that stretches enough for particles to leave the support of kernel functions
     and to enter that of others, while the active nodes stay the same."""
 
-    return _translatingBody(journal, stretching=1.5 * VELOCITY / (5 * PARTICLE_SIZE), bondedKernelFunctions=True)
+    return _translatingBody(
+        journal, youngsModulus, stretching=1.5 * VELOCITY / (5 * PARTICLE_SIZE), bondedKernelFunctions=True
+    )
 
 
 def test_particles_reaching_other_nodes_give_new_locations_on_the_same_numbering():
@@ -519,55 +538,135 @@ def test_the_lumped_mass_is_assembled_anew_in_every_increment_not_only_for_new_l
         assert not np.array_equal(before, after)
 
 
-class _SolverRecordingTheBounds(NED):
-    """The explicit solver with the bound of the particles' stable time increment due every ``frequency`` increments
-    besides its other occasions, recording for every accepted increment its number, whether its reconnection gave new
-    locations, and whether the bound was taken. In the stretching body, which keeps its active nodes and has no contact,
-    new locations are exactly a particle that reached other kernel functions."""
+class _SolverRecordingTheEstimates(NED):
+    """The explicit solver recording, for every accepted increment, its number, the numbering, the lumped inertia of the
+    particles, the time increment the step takes next, and whether the particles' critical time step was estimated."""
 
-    def __init__(self, journal: Journal, frequency: int):
-        super().__init__({}, journal, **{**NED_OPTIONS, "stable-increment-frequency": frequency})
-        self.numberOfNewLocations = 0
-        self.numberOfBounds = 0
+    def __init__(self, journal: Journal, **options):
+        super().__init__({}, journal, **{**NED_OPTIONS, **options})
         self.increments = []
 
-    def onNewLocations(self):
-        super().onNewLocations()
-        self.numberOfNewLocations += 1
-
     def acceptIncrement(self, step, model, timeStep):
-        newLocationsBefore, boundsBefore = self.numberOfNewLocations, self.numberOfBounds
+        estimatesBefore = self._criticalTimeStepOfTheEntities.numberOfEstimates
         super().acceptIncrement(step, model, timeStep)
         self.increments.append(
-            (timeStep.number, self.numberOfNewLocations > newLocationsBefore, self.numberOfBounds > boundsBefore)
+            {
+                "number": timeStep.number,
+                "numbering": self.system.numbering,
+                "inertia": np.array(self._inertiaOfEntities),
+                "timeIncrementInUse": self._timeIncrementInUse(step),
+                "estimated": self._criticalTimeStepOfTheEntities.numberOfEstimates > estimatesBefore,
+            }
         )
 
 
-@pytest.mark.parametrize("frequency", [4, 1000])
-def test_the_bound_is_taken_in_the_zero_increment_when_a_particle_reaches_other_kernel_functions_and_at_the_frequency(
-    monkeypatch, frequency
+def test_with_any_margin_the_particles_are_estimated_in_the_zero_increment_after_a_new_numbering_and_when_a_node_gains_a_mass(
+    monkeypatch,
 ):
-    """The bound of the particles' stable time increment is taken in the zero increment, after every increment in which
-    a particle reached other kernel functions, and after every ``stable-increment-frequency``-th increment; after no
-    other. The bound is recorded, not evaluated: it returns no limit, so that the increments stay those of the step."""
+    """With a critical time step of the particles that leaves any margin (infinite), they are estimated exactly in the
+    zero increment, after a new numbering, and when a node has a mass it did not have at the last estimate: a node
+    becomes active when a kernel function reaches an evaluation point of a particle, and gets its mass when the
+    particle's centre enters its support, from zero (review of #344, finding 2). In this body a node gets its mass
+    together with a new numbering; a gain on the same numbering is tested on the policy itself (EdelweissFE,
+    ``tests/test_critical_time_step.py``)."""
 
+    monkeypatch.setattr(MPMDiscreteSystem, "criticalTimeStepOfEntitiesWithOwnInertia", _estimateOf(np.inf))
     journal = Journal()
-    solver = _SolverRecordingTheBounds(journal, frequency)
+    solver = _SolverRecordingTheEstimates(journal)
+    _solve(_translatingBody(journal), journal, [solver], [N_INCREMENTS])
 
-    def countingTheBound(system, inertia, damping, forEachChunk, weightsOfTheBound=None):
-        solver.numberOfBounds += 1
-        return np.inf
+    expected, last = [], None
+    for increment in solver.increments:
+        isDue = (
+            last is None
+            or increment["numbering"] is not last["numbering"]
+            or bool(np.any((increment["inertia"] > 0) & ~(last["inertia"] > 0)))
+        )
+        expected.append(isDue)
+        if isDue:
+            last = increment
+    assert [increment["estimated"] for increment in solver.increments] == expected
+    assert 1 < sum(expected) < len(expected)
 
-    monkeypatch.setattr(MPMDiscreteSystem, "stableTimeIncrementOfEntitiesWithOwnInertia", countingTheBound)
 
+def test_the_particles_are_estimated_in_every_increment_where_they_set_the_time_increment(monkeypatch):
+    """Where the particles' critical time step sets the time increment, there is no margin left after an increment: they
+    are estimated in every one."""
+
+    courantNumber = 0.8
+    monkeypatch.setattr(
+        MPMDiscreteSystem,
+        "criticalTimeStepOfEntitiesWithOwnInertia",
+        _estimateOf(0.5 * TIME_INCREMENT / courantNumber),
+    )
+    journal = Journal()
+    solver = _SolverRecordingTheEstimates(journal, **{"courant-number": courantNumber})
+    _solve(_stretchingBody(journal), journal, [solver], [N_INCREMENTS // 2])
+
+    assert all(increment["estimated"] for increment in solver.increments)
+    assert solver.increments[-1]["timeIncrementInUse"] == pytest.approx(0.5 * TIME_INCREMENT)
+
+
+def test_where_the_particles_have_a_margin_they_are_estimated_when_their_masses_and_the_assumed_decrease_may_use_it_up(
+    monkeypatch,
+):
+    """Where the finite elements, or the step, set the time increment, the particles are estimated anew only when
+    ``courant-number`` times v (M/M0)^(1/2) (1 - delta)^n, the lower bound of their critical time step n increments
+    after an estimate v, could fall below the increment in use."""
+
+    courantNumber, delta, margin = 0.8, 0.1, 1.6
+    value = margin * TIME_INCREMENT / courantNumber
+    monkeypatch.setattr(MPMDiscreteSystem, "criticalTimeStepOfEntitiesWithOwnInertia", _estimateOf(value))
+    journal = Journal()
+    solver = _SolverRecordingTheEstimates(
+        journal, **{"courant-number": courantNumber, "critical-time-step-decrease-per-increment": delta}
+    )
     _solve(_stretchingBody(journal), journal, [solver], [N_INCREMENTS])
 
-    (zeroIncrement, _, boundInTheZeroIncrement), *increments = solver.increments
-    assert zeroIncrement == 0 and boundInTheZeroIncrement
-    assert any(newLocations for _, newLocations, _ in increments), "no particle reached other kernel functions"
-    assert any(not newLocations and number % frequency for number, newLocations, _ in increments)
-    for number, newLocations, bound in increments:
-        assert bound == (newLocations or number % frequency == 0), "increment {:}".format(number)
+    expected, last = [], None
+    for increment in solver.increments:
+        if last is None:
+            isDue = True
+        else:
+            withInertia = (increment["inertia"] > 0) & (last["inertia"] > 0)
+            alpha = min(1.0, np.min(increment["inertia"][withInertia] / last["inertia"][withInertia]))
+            criticalTimeStepAtWorst = value * np.sqrt(alpha) * (1 - delta) ** (increment["number"] - last["number"])
+            isDue = courantNumber * criticalTimeStepAtWorst < increment["timeIncrementInUse"]
+        expected.append(isDue)
+        if isDue:
+            last = increment
+    assert [increment["estimated"] for increment in solver.increments] == expected
+    assert 2 < sum(expected) < len(expected), "the margin should be used up a few times, not never or always"
+
+
+def test_the_time_increment_never_exceeds_the_courant_fraction_of_a_fresh_estimate(monkeypatch):
+    """With the particles' own estimate, in a stiff body that stretches fast, the margin policy takes the critical time
+    step anew often enough: after every increment the time increment the step takes next is at most ``courant-number``
+    times the critical time step of the configuration it starts from, estimated afresh."""
+
+    monkeypatch.setattr(MPMDiscreteSystem, "criticalTimeStepOfEntitiesWithOwnInertia", ESTIMATE_OF_THE_PARTICLES)
+    youngsModulus = 2.0e5
+    journal = Journal()
+
+    # the courant number that makes the particles' critical time step of the start twice the step's increment
+    probe = _SolverRecordingTheEstimates(journal)
+    _solve(_stretchingBody(journal, youngsModulus), journal, [probe], [1])
+    courantNumber = 2.0 * TIME_INCREMENT / probe._criticalTimeStepOfTheEntities.value
+
+    class _SolverCheckingTheTimeIncrement(_SolverRecordingTheEstimates):
+        def acceptIncrement(self, step, model, timeStep):
+            super().acceptIncrement(step, model, timeStep)
+            fresh = ESTIMATE_OF_THE_PARTICLES(
+                self.system, self._inertiaOfEntities, self._dampingOfEntities, self.forEachChunk
+            ).value
+            self.increments[-1]["fresh"] = fresh
+
+    solver = _SolverCheckingTheTimeIncrement(journal, **{"courant-number": courantNumber})
+    _solve(_stretchingBody(journal, youngsModulus), journal, [solver], [N_INCREMENTS])
+
+    assert 2 < sum(increment["estimated"] for increment in solver.increments) < len(solver.increments)
+    for increment in solver.increments:
+        assert increment["timeIncrementInUse"] <= courantNumber * increment["fresh"], increment["number"]
 
 
 def _writeCheckpointAndResume(tmp_path, tamper=None, **options):
@@ -643,15 +742,15 @@ def test_a_checkpoint_without_the_numbering_of_the_vectors_is_refused(tmp_path):
         _writeCheckpointAndResume(tmp_path, lambda solverGroup: solverGroup.__delitem__("_numberingOfNetForce"))
 
 
-#: The options of a solver that carries the weights of the bound of the particles' stable time increment and takes the
-#: bound in every increment.
-CARRIED_WEIGHTS = {"carry-stable-increment-weights": True, "stable-increment-frequency": 1}
+#: The options of a solver that carries the weights of the estimate of the particles' critical time step and estimates
+#: them in every increment.
+CARRIED_WEIGHTS = {"carry-critical-time-step-weights": True, "critical-time-step-decrease-per-increment": 1.0}
 
 
 class _SolverRecordingTheCarriedWeights(_SolverRecordingTheBuildPath):
     """The explicit solver with :data:`CARRIED_WEIGHTS`, recording, in the order they happen, the hooks of the build
-    path and every bound: the weights it was handed, the bound with them, the bound of the same system without weights,
-    and the exact stable increment of the system's tangent."""
+    path and every estimate: the weights it was handed, the critical time step with them, the one of the same system
+    without weights, and the exact critical time step of the system's tangent."""
 
     def __init__(self, journal: Journal):
         super().__init__(journal, **CARRIED_WEIGHTS)
@@ -666,45 +765,45 @@ class _SolverRecordingTheCarriedWeights(_SolverRecordingTheBuildPath):
         self.events.append("locations")
 
 
-def _stretchingBodyWithinItsBound(journal: Journal) -> MPMModel:
-    """The stretching body, stretching half as fast again: with the bound of its stable time increment taken, the step's
-    increments are lowered to it, and the body still stretches enough for particles to reach other kernel functions."""
+def _stretchingBodyWithinItsCriticalTimeStep(journal: Journal) -> MPMModel:
+    """The stretching body, stretching half as fast again: with its critical time step estimated, the step's increments
+    are lowered to it, and the body still stretches enough for particles to reach other kernel functions."""
 
     return _translatingBody(journal, stretching=2.25 * VELOCITY / (5 * PARTICLE_SIZE), bondedKernelFunctions=True)
 
 
-def _recordTheBounds(monkeypatch, solver: _SolverRecordingTheCarriedWeights):
-    """Let every bound of the particles' stable time increment be recorded in the solver's events."""
+def _recordTheEstimates(monkeypatch, solver: _SolverRecordingTheCarriedWeights):
+    """Let every estimate of the particles' critical time step be recorded in the solver's events."""
 
-    theBound = MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia
+    def recordingTheEstimate(system, inertia, damping, forEachChunk, weightsOfTheEstimate=None):
+        handed = np.array(weightsOfTheEstimate)
+        estimate = ESTIMATE_OF_THE_PARTICLES(system, inertia, damping, forEachChunk, weightsOfTheEstimate)
+        withoutWeights = ESTIMATE_OF_THE_PARTICLES(system, inertia, damping, forEachChunk).value
+        solver.events.append((handed, estimate.value, withoutWeights, exactCriticalTimeStepOfTheSystem(system)))
+        return estimate
 
-    def recordingTheBound(system, inertia, damping, forEachChunk, weightsOfTheBound=None):
-        handed = np.array(weightsOfTheBound)
-        bound = theBound(system, inertia, damping, forEachChunk, weightsOfTheBound)
-        withoutWeights = theBound(system, inertia, damping, forEachChunk)
-        solver.events.append((handed, bound, withoutWeights, exactStableIncrementOfTheSystem(system)))
-        return bound
-
-    monkeypatch.setattr(MPMDiscreteSystem, "stableTimeIncrementOfEntitiesWithOwnInertia", recordingTheBound)
+    monkeypatch.setattr(MPMDiscreteSystem, "criticalTimeStepOfEntitiesWithOwnInertia", recordingTheEstimate)
 
 
-def _bounds(events: list) -> list:
+def _estimates(events: list) -> list:
     return [event for event in events if isinstance(event, tuple)]
 
 
-def test_carried_weights_survive_particles_reaching_other_kernel_functions_and_bound_the_stable_increment(monkeypatch):
+def test_carried_weights_survive_particles_reaching_other_kernel_functions_and_bound_the_critical_time_step(
+    monkeypatch,
+):
     """In the stretching body, particles reach other kernel functions of the same nodes: new locations on the same
     numbering. The weights are carried across them, indexed by the degrees of freedom of the numbering, i.e. by node
-    and field; every bound stays below the exact stable increment of the tangent, scaled by
-    STABLE_FRACTION_OF_THE_TANGENT_LIMIT. The bound the weights start from (weights constant per field) is never below
-    the bound without weights, and a bound with carried weights below it starts them anew: the next bound is handed
-    zero weights."""
+    and field; every estimate stays below the exact critical time step of the tangent, scaled by
+    STABLE_FRACTION_OF_THE_TANGENT_LIMIT. The estimate the weights start from (weights constant per field) is never below
+    the estimate without weights, and an estimate with carried weights below it starts them anew: the next estimate is
+    handed zero weights."""
 
     journal = Journal()
     solver = _SolverRecordingTheCarriedWeights(journal)
-    _recordTheBounds(monkeypatch, solver)
+    _recordTheEstimates(monkeypatch, solver)
 
-    _solve(_stretchingBodyWithinItsBound(journal), journal, [solver], [N_INCREMENTS])
+    _solve(_stretchingBodyWithinItsCriticalTimeStep(journal), journal, [solver], [N_INCREMENTS])
 
     assert solver.events.count("numbering") == 1
     afterNewLocations = [
@@ -715,20 +814,20 @@ def test_carried_weights_survive_particles_reaching_other_kernel_functions_and_b
     assert len(afterNewLocations) > 1, "no particle reached other kernel functions"
     for handed, *_ in afterNewLocations[1:]:
         assert np.any(handed > 0.0), "the weights were not carried across new locations"
-    bounds = _bounds(solver.events)
-    for (handed, bound, withoutWeights, exact), following in zip(bounds, bounds[1:] + [None]):
-        assert bound <= STABLE_FRACTION_OF_THE_TANGENT_LIMIT * exact
+    estimates = _estimates(solver.events)
+    for (handed, estimate, withoutWeights, exact), following in zip(estimates, estimates[1:] + [None]):
+        assert estimate <= STABLE_FRACTION_OF_THE_TANGENT_LIMIT * exact
         if not np.any(handed > 0.0):
-            assert bound >= withoutWeights
-            start = bound
-        elif bound < start:
+            assert estimate >= withoutWeights
+            start = estimate
+        elif estimate < start:
             assert following is not None and np.all(following[0] == 0.0), "the weights were not started anew"
 
 
 def test_carried_weights_start_anew_with_a_new_numbering(monkeypatch):
     """Building the discrete system anew whenever the connectivity changed gives a new numbering each time: the first
-    bound on every numbering is handed no weights, the bounds after it the weights the last one left, unless the last
-    one fell below the bound its weights started from."""
+    estimate on every numbering is handed no weights, the estimates after it the weights the last one left, unless the
+    last one fell below the estimate its weights started from."""
 
     journal = Journal()
 
@@ -737,9 +836,9 @@ def test_carried_weights_start_anew_with_a_new_numbering(monkeypatch):
             super().updateDiscreteSystem(model, max(change, Change.NUMBERING) if change > Change.NONE else change)
 
     solver = _SolverWithANewNumberingForEveryChangeCarryingTheWeights(journal)
-    _recordTheBounds(monkeypatch, solver)
+    _recordTheEstimates(monkeypatch, solver)
 
-    _solve(_stretchingBodyWithinItsBound(journal), journal, [solver], [N_INCREMENTS])
+    _solve(_stretchingBodyWithinItsCriticalTimeStep(journal), journal, [solver], [N_INCREMENTS])
 
     assert solver.events.count("numbering") > 1
     lastWasNumbering = lastFellBelowTheStart = False
@@ -747,17 +846,18 @@ def test_carried_weights_start_anew_with_a_new_numbering(monkeypatch):
         if event == "numbering":
             lastWasNumbering = True
         elif isinstance(event, tuple):
-            handed, bound = event[:2]
+            handed, estimate = event[:2]
             assert np.all(handed == 0.0) if lastWasNumbering or lastFellBelowTheStart else np.any(handed > 0.0)
             if np.all(handed == 0.0):
-                start = bound
-            lastWasNumbering, lastFellBelowTheStart = False, bound < start
+                start = estimate
+            lastWasNumbering, lastFellBelowTheStart = False, estimate < start
 
 
-def test_a_resume_with_carried_weights_goes_on_and_starts_the_weights_anew(tmp_path):
+def test_a_resume_with_carried_weights_goes_on_and_starts_the_weights_anew(tmp_path, monkeypatch):
     """The carried weights are not part of the checkpoint: a resumed step starts them anew, as every step does."""
 
+    monkeypatch.setattr(MPMDiscreteSystem, "criticalTimeStepOfEntitiesWithOwnInertia", ESTIMATE_OF_THE_PARTICLES)
     checkpoint = _writeCheckpointAndResume(tmp_path, **CARRIED_WEIGHTS)
 
     with h5py.File(checkpoint, "r") as f:
-        assert "_weightsOfTheStableIncrementBound" not in f["solver"]
+        assert not [name for name in f["solver"] if "weights" in name.lower()]

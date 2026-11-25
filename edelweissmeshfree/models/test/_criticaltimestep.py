@@ -24,11 +24,15 @@
 #  The full text of the license can be found in the file LICENSE.md at
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
-"""The stable time increment of the particles' explicit scheme for the tests: the bound the discrete system gives
-(:meth:`~edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia`)
+"""The critical time step of the particles' explicit scheme for the tests: the estimate the discrete system gives
+(:meth:`~edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.criticalTimeStepOfEntitiesWithOwnInertia`)
 and the exact one, from the eigenvalues of the assembled tangent."""
 
 import numpy as np
+
+from edelweissmeshfree.models.mpmdiscretesystem import (
+    CriticalTimeStepEstimateFromTheFieldMatrix,
+)
 
 
 def serially(entities, work):
@@ -37,28 +41,30 @@ def serially(entities, work):
     work(entities)
 
 
-def boundOfTheSystem(system, weightsOfTheBound: np.ndarray | None = None) -> float:
-    """The bound of the particles' stable time increment of a discrete system, from the lumped mass and damping it
+def estimateOfTheSystem(
+    system, weightsOfTheEstimate: np.ndarray | None = None
+) -> CriticalTimeStepEstimateFromTheFieldMatrix:
+    """The estimate of the particles' critical time step of a discrete system, from the lumped mass and damping it
     assembles, with the given carried weights (None: without)."""
 
-    return system.stableTimeIncrementOfEntitiesWithOwnInertia(
+    return system.criticalTimeStepOfEntitiesWithOwnInertia(
         system.assembleLumpedMassOfEntitiesWithOwnInertia(serially),
         system.assembleLumpedDampingOfEntitiesWithOwnInertia(serially),
         serially,
-        weightsOfTheBound,
+        weightsOfTheEstimate,
     )
 
 
-def exactStableIncrement(model) -> float:
-    """The stable time increment of the explicit scheme for the particles' stiffness of the model, connected anew
-    (:func:`exactStableIncrementOfTheSystem`)."""
+def exactCriticalTimeStep(model) -> float:
+    """The critical time step of the explicit scheme for the particles' stiffness of the model, connected anew
+    (:func:`exactCriticalTimeStepOfTheSystem`)."""
 
     model.updateConnectivity()
-    return exactStableIncrementOfTheSystem(model.buildDiscreteSystem())
+    return exactCriticalTimeStepOfTheSystem(model.buildDiscreteSystem())
 
 
-def exactStableIncrementOfTheSystem(system) -> float:
-    """The stable time increment of the explicit scheme for the particles' stiffness of a discrete system as it is, from
+def exactCriticalTimeStepOfTheSystem(system) -> float:
+    """The critical time step of the explicit scheme for the particles' stiffness of a discrete system as it is, from
     the eigenvalues of the assembled system: :math:`2/\\omega_\\mathrm{max}` of the central differences on the degrees
     of freedom with an inertia, whatever their damping, and :math:`2/\\lambda_\\mathrm{max}` of forward Euler on those
     with a damping alone."""
@@ -73,13 +79,15 @@ def exactStableIncrementOfTheSystem(system) -> float:
         indices = np.asarray(system.locations.ofEntity[particle])
         K[np.ix_(indices, indices)] += stiffness.reshape(nDof, nDof, order="F")
 
-    stable = np.inf
-    for ofTheScheme, divisor, stableOfTheLargestEigenvalue in (
+    criticalTimeStep = np.inf
+    for ofTheScheme, divisor, criticalTimeStepOfTheLargestEigenvalue in (
         (M > 0.0, M, lambda largest: 2.0 / np.sqrt(largest)),
         ((M == 0.0) & (C > 0.0), C, lambda largest: 2.0 / largest),
     ):
         if ofTheScheme.any():
             scaling = 1.0 / np.sqrt(divisor[ofTheScheme])
             S = scaling[:, None] * K[np.ix_(ofTheScheme, ofTheScheme)] * scaling[None, :]
-            stable = min(stable, stableOfTheLargestEigenvalue(np.max(np.abs(np.linalg.eigvals(S)))))
-    return stable
+            criticalTimeStep = min(
+                criticalTimeStep, criticalTimeStepOfTheLargestEigenvalue(np.max(np.abs(np.linalg.eigvals(S))))
+            )
+    return criticalTimeStep

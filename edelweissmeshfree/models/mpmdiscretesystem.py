@@ -44,6 +44,7 @@ import numpy as np
 from edelweissfe.models.discretesystem import DiscreteSystem
 from edelweissfe.numerics.dofvector import DofVector
 from edelweissfe.sets.nodeset import NodeSet
+from edelweissfe.solvers.base.criticaltimestep import CriticalTimeStepEstimate
 from edelweissfe.timesteppers.timestep import TimeStep
 
 from edelweissmeshfree.numerics.doflocations import MPMDofLocations
@@ -53,11 +54,91 @@ from edelweissmeshfree.numerics.doflocations import MPMDofLocations
 #: node an acceleration of round-off over round-off.
 COEFFICIENT_AT_ROUND_OFF = 1e-12
 
-#: The fraction of the stable time increment of the particles' tangent that the explicit scheme of the particles is
+#: The fraction of the critical time step of the particles' tangent that the explicit scheme of the particles is
 #: stable for. Their NSNI stabilization acts on the increment of the step, not on the total displacement, so the scheme
 #: is not exactly the central difference method with their tangent: measured on 2D and 3D blocks of particles (support
 #: factors 1.6 to 3.4, quadratic and cubic kernels), it was stable up to 0.875 to 0.98 of the tangent's limit.
 STABLE_FRACTION_OF_THE_TANGENT_LIMIT = 0.85
+
+
+class CriticalTimeStepEstimateFromTheFieldMatrix(CriticalTimeStepEstimate):
+    """The estimate of the critical time step of the particles, from the field matrix :math:`\\boldsymbol{Q}` of the
+    largest row sums of their mass-scaled stiffness per block of fields (see
+    :meth:`MPMDiscreteSystem.criticalTimeStepOfEntitiesWithOwnInertia`).
+
+    **With carried weights** (see :meth:`MPMDiscreteSystem.criticalTimeStepOfEntitiesWithOwnInertia`, "Weights carried
+    from estimate to estimate"), :math:`\\boldsymbol{Q}` is the field matrix of the weighted matrix
+    :math:`\\boldsymbol{W}^{-1}|\\boldsymbol{S}|\\boldsymbol{W}`, and the critical time step of the blocks of each order
+    is the larger of the one from :math:`\\boldsymbol{Q}` and the one from the rows of the Collatz-Wielandt bound with
+    the weights scaled by the Perron vector of :math:`\\boldsymbol{Q}`.
+
+    Parameters
+    ----------
+    fieldMatrix
+        The field matrix :math:`\\boldsymbol{Q}` of the particles.
+    orderOfGroup
+        Whether each block of fields is integrated by central differences ("second") or by forward Euler ("first").
+    groupOfDof
+        The block of fields of each degree of freedom of the numbering; -1 for one of no block.
+    collatzWielandtRows
+        The rows :math:`(|\\boldsymbol{S}|\\boldsymbol{v})_i / v_i` of the Collatz-Wielandt bound with the weights
+        :math:`v_i = c_{g(i)} w_i`, :math:`\\boldsymbol{c}` the Perron vector of the field matrix of the order; None
+        without carried weights.
+    """
+
+    def __init__(
+        self,
+        fieldMatrix: np.ndarray,
+        orderOfGroup: list[str],
+        groupOfDof: np.ndarray,
+        collatzWielandtRows: np.ndarray | None = None,
+    ):
+        self._fieldMatrix = fieldMatrix
+        self._orderOfGroup = orderOfGroup
+        self._groupOfDof = groupOfDof
+        self._collatzWielandtRows = collatzWielandtRows
+        super().__init__(value=self._criticalTimeStepOf(fieldMatrix, collatzWielandtRows))
+
+    def _criticalTimeStepOf(self, fieldMatrix: np.ndarray, collatzWielandtRows: np.ndarray | None) -> float:
+        """:data:`STABLE_FRACTION_OF_THE_TANGENT_LIMIT` times the smaller of :math:`2/\\sqrt{\\rho}` of the blocks
+        integrated by central differences and :math:`2/\\rho` of those integrated by forward Euler, with :math:`\\rho`
+        the bound of the largest eigenvalue of the blocks of the order: :math:`\\rho(\\boldsymbol{Q})`, or the largest
+        of their Collatz-Wielandt rows if that is smaller.
+
+        Parameters
+        ----------
+        fieldMatrix
+            The field matrix.
+        collatzWielandtRows
+            The rows of the Collatz-Wielandt bound with the weights scaled by the Perron vector; None without carried
+            weights.
+
+        Returns
+        -------
+        float
+            The critical time step.
+        """
+
+        def perronRoot(order: str) -> float:
+            """The bound of the largest eigenvalue of the blocks of the given order: the largest eigenvalue of their
+            nonnegative field matrix, or the largest of their Collatz-Wielandt rows if that is smaller."""
+            groups = [group for group, ofGroup in enumerate(self._orderOfGroup) if ofGroup == order]
+            if not groups:
+                return 0.0
+            rho = float(np.max(np.abs(np.linalg.eigvals(fieldMatrix[np.ix_(groups, groups)]))))
+            if collatzWielandtRows is not None:
+                rho = min(rho, float(np.max(collatzWielandtRows[np.isin(self._groupOfDof, groups)])))
+            return rho
+
+        criticalTimeStep = np.inf
+        omegaSquared = perronRoot("second")
+        if omegaSquared > 0.0:
+            criticalTimeStep = 2.0 / np.sqrt(omegaSquared)
+        rate = perronRoot("first")
+        if rate > 0.0:
+            criticalTimeStep = min(criticalTimeStep, 2.0 / rate)
+
+        return STABLE_FRACTION_OF_THE_TANGENT_LIMIT * criticalTimeStep
 
 
 class MPMDiscreteSystem(DiscreteSystem):
@@ -298,7 +379,7 @@ class MPMDiscreteSystem(DiscreteSystem):
 
     @property
     def elementsWithNodalInertia(self) -> list:
-        """The finite elements, whose inertia, damping and stable time increment a solver assembles element by
+        """The finite elements, whose inertia, damping and critical time step a solver assembles element by
         element, at the nodes. The cells, the cell elements and the particles contribute nothing there: the particles
         carry the state, and with it the inertia, which they integrate themselves, or which a solver lumps to the nodes
         of their kernel functions (see :meth:`assembleLumpedMassOfEntitiesWithOwnInertia`).
@@ -435,15 +516,16 @@ class MPMDiscreteSystem(DiscreteSystem):
 
         return coefficient
 
-    def stableTimeIncrementOfEntitiesWithOwnInertia(
+    def criticalTimeStepOfEntitiesWithOwnInertia(
         self,
         lumpedMass: DofVector,
         lumpedDamping: DofVector,
         forEachChunk: Callable[[list, Callable], None],
-        weightsOfTheBound: np.ndarray | None = None,
-    ) -> float | None:
-        """A bound of the stable time increment of ``NED``'s explicit scheme for the particles, from their stiffness at
-        the current state and the assembled lumped mass and damping. No stiffness is assembled: every particle bounds
+        weightsOfTheEstimate: np.ndarray | None = None,
+    ) -> CriticalTimeStepEstimateFromTheFieldMatrix | None:
+        """An estimate of the critical time step of ``NED``'s explicit scheme for the particles, a lower bound of it, from
+        their stiffness at the current state and the assembled lumped mass and damping; ``NED`` decides when it is taken
+        anew (:class:`~edelweissfe.solvers.base.criticaltimestep.CriticalTimeStepOfEntitiesWithOwnInertia`). No stiffness is assembled: every particle bounds
         the row sums of the absolute value of its own (``addBoundOfAbsoluteStiffnessTimes``), at a cost
         proportional to its nodes.
 
@@ -467,7 +549,7 @@ class MPMDiscreteSystem(DiscreteSystem):
         nonlocal field depends on the strain with a factor of one, and the micro-inertia of the nonlocal field is far
         below the mass. An eigenvalue :math:`\\lambda` of the coupled system sees the geometric mean of the two coupling
         blocks, the symmetric part of the tangent their arithmetic mean: a bound of the symmetric part follows the large
-        block alone and falls far below the stable increment whenever a particle loads a boundary. Instead, every
+        block alone and falls far below the critical time step whenever a particle loads a boundary. Instead, every
         eigenvalue, real or complex, satisfies :math:`|\\lambda| \\le \\rho(|\\boldsymbol{S}|)`, the spectral radius of
         the absolute value of :math:`\\boldsymbol{S} = \\boldsymbol{D}\\boldsymbol{K}\\boldsymbol{D}` (similar to
         :math:`\\boldsymbol{M}^{-1}\\boldsymbol{K}`, with :math:`\\boldsymbol{D} = \\boldsymbol{M}^{-1/2}`, or
@@ -488,46 +570,49 @@ class MPMDiscreteSystem(DiscreteSystem):
         coupled by the largest eigenvalue of the small field matrix, which takes the geometric mean of the coupling
         blocks. With a single field it is the Gershgorin bound.
 
-        **Weights carried from bound to bound** (``weightsOfTheBound``, ``NED``'s ``carry-stable-increment-weights``).
-        The weights constant per field are the start of the power iteration towards the Perron vector of
-        :math:`|\\boldsymbol{S}|`, where the Collatz-Wielandt bound is exact. Weights :math:`\\boldsymbol{w}` carried
-        from the last bound take the place of the ones in the same pass: the columns of field :math:`f` are the weights
-        on its degrees of freedom, which gives :math:`\\hat{Z}_{if} \\ge \\sum_{j \\in f} |S_{ij}| w_j`, and
-        :math:`Q_{gf} = \\max_{i \\in g} \\hat{Z}_{if} / w_i` is the field matrix of
-        :math:`\\boldsymbol{W}^{-1}|\\boldsymbol{S}|\\boldsymbol{W}`, which has the eigenvalues of
-        :math:`|\\boldsymbol{S}|`, so again :math:`\\rho(|\\boldsymbol{S}|) \\le \\rho(\\boldsymbol{Q})`. The pass costs
-        as much as without carried weights: the same columns, other values. With :math:`\\boldsymbol{c}` the Perron
-        vector of :math:`\\boldsymbol{Q}`, the weights :math:`v_i = c_g w_i` of the rows of field :math:`g` give
-        :math:`\\hat{\\boldsymbol{a}} = \\sum_f c_f \\hat{\\boldsymbol{Z}}_f \\ge |\\boldsymbol{S}|\\boldsymbol{v}` and
-        the Collatz-Wielandt bound :math:`\\max_i \\hat{a}_i / v_i`, which is never above
-        :math:`\\rho(\\boldsymbol{Q})`, since every row gives :math:`\\hat{a}_i / v_i \\le
-        (\\boldsymbol{Q}\\boldsymbol{c})_g / c_g`; the smaller of the two is taken, against the round-off of the Perron
-        vector. Both hold for every positive :math:`\\boldsymbol{w}`, whatever state it was refined at: the weights
-        carried need not fit the stiffness of now to bound it, only to bound it tightly. At the start, with the weights
-        constant per field, the bound is never above the one without carried weights. The weights for the next bound
-        are :math:`\\hat{\\boldsymbol{a}}`, scaled to a largest weight of one per scheme: one step of the power
-        iteration per bound, which tightens the bound towards :math:`\\rho(|\\boldsymbol{S}|)` over a few bounds as long
-        as the stiffness changes slowly from bound to bound.
+        **Weights carried from estimate to estimate** (``weightsOfTheEstimate``, ``NED``'s
+        ``carry-critical-time-step-weights``). The weights constant per field are the start of the power iteration
+        towards the Perron vector of :math:`|\\boldsymbol{S}|`, where the Collatz-Wielandt bound is exact. Weights
+        :math:`\\boldsymbol{w}` carried from the last estimate take the place of the ones in the same pass: the columns
+        of field :math:`f` are the weights on its degrees of freedom, which gives :math:`\\hat{Z}_{if} \\ge
+        \\sum_{j \\in f} |S_{ij}| w_j`, and :math:`Q_{gf} = \\max_{i \\in g} \\hat{Z}_{if} / w_i` is the field matrix
+        of :math:`\\boldsymbol{W}^{-1}|\\boldsymbol{S}|\\boldsymbol{W}`, which has the eigenvalues of
+        :math:`|\\boldsymbol{S}|`, so again :math:`\\rho(|\\boldsymbol{S}|) \\le \\rho(\\boldsymbol{Q})`. The pass
+        costs as much as without carried weights: the same columns, other values. With :math:`\\boldsymbol{c}` the
+        Perron vector of :math:`\\boldsymbol{Q}`, the weights :math:`v_i = c_g w_i` of the rows of field :math:`g`
+        give :math:`\\hat{\\boldsymbol{a}} = \\sum_f c_f \\hat{\\boldsymbol{Z}}_f \\ge
+        |\\boldsymbol{S}|\\boldsymbol{v}` and the Collatz-Wielandt bound :math:`\\max_i \\hat{a}_i / v_i`, which is
+        never above :math:`\\rho(\\boldsymbol{Q})`, since every row gives :math:`\\hat{a}_i / v_i \\le
+        (\\boldsymbol{Q}\\boldsymbol{c})_g / c_g`; the smaller of the two is taken, against the round-off of the
+        Perron vector. Both hold for every positive :math:`\\boldsymbol{w}`, whatever state it was refined at: the
+        weights carried need not fit the stiffness of now to bound it, only to bound it tightly. At the start, with
+        the weights constant per field, the estimate is never below the one without carried weights. The weights for
+        the next estimate are :math:`\\hat{\\boldsymbol{a}}`, scaled to a largest weight of one per scheme: one step
+        of the power iteration per estimate, which tightens the estimate towards :math:`\\rho(|\\boldsymbol{S}|)`
+        over a few estimates as long as the stiffness changes slowly from estimate to estimate.
 
-        Where the stiffness changes faster than the weights follow, a bound with carried weights can be above the one
-        with weights constant per field. ``NED`` starts the weights anew (all zero) whenever a bound with them gives a
-        smaller stable time increment than the bound they started from, so that an increment that is lowered only never
-        falls below the smallest bound with weights constant per field of the step (followed, it can fall below the one
-        of the same configuration, down to the one the weights started from). Taking the smaller of the two bounds in
-        every bound instead would take the columns with weights constant per field as well, which cost about as much
-        again as those of the carried weights. A degree of freedom without a weight -- one that has no inertia or damping at the
-        last bound -- starts at the largest weight of its block of fields, the weight every degree of freedom of the
-        block has at the start (:meth:`_weightsOfThisBound`).
+        Where the stiffness changes faster than the weights follow, an estimate with carried weights can be below the
+        one with weights constant per field. ``NED`` starts the weights anew (all zero) whenever an estimate with them
+        is below the estimate they started from
+        (:class:`~edelweissfe.solvers.base.criticaltimestep.CriticalTimeStepOfEntitiesWithOwnInertia`), so that an
+        increment that is lowered only never falls below the smallest estimate with weights constant per field of the
+        step (followed, it can fall below the one of the same configuration, down to the one the weights started
+        from). Taking the smaller of the two estimates in every estimate instead would take the columns with weights
+        constant per field as well, which cost about as much again as those of the carried weights. A degree of
+        freedom without a weight -- one that has no inertia or damping at the last estimate -- starts at the largest
+        weight of its block of fields, the weight every degree of freedom of the block has at the start
+        (:meth:`_weightsOfThisEstimate`).
 
         The power iteration shrinks the weights of the degrees of freedom far from the stiffest ones by a factor per
-        bound, without limit: within a few dozen bounds they fall below what a double resolves next to the largest
-        weight, and a degree of freedom whose stiffness then changes, e.g. as a particle reaches another kernel function,
-        is weighted by round-off, which raises the bound far above the one without weights until the iteration has
-        grown the weight back. So no weight is kept below the machine epsilon of the largest one
-        (:meth:`_weightsForTheNextBound`): a weight below it adds nothing to a sum with the largest, so the limit removes
-        only what the arithmetic cannot carry anyway, and every degree of freedom stays weighted, so that a change of its
-        stiffness is followed within one bound. Any larger limit (a hundredth of the largest weight, say) bounds the
-        particles of a running analysis as tightly, the machine epsilon is the smallest that can be kept.
+        estimate, without limit: within a few dozen estimates they fall below what a double resolves next to the
+        largest weight, and a degree of freedom whose stiffness then changes, e.g. as a particle reaches another kernel
+        function, is weighted by round-off, which raises the bound far above the one without weights until the
+        iteration has grown the weight back. So no weight is kept below the machine epsilon of the largest one
+        (:meth:`_weightsForTheNextEstimate`): a weight below it adds nothing to a sum with the largest, so the limit
+        removes only what the arithmetic cannot carry anyway, and every degree of freedom stays weighted, so that a
+        change of its stiffness is followed within one estimate. Any larger limit (a hundredth of the largest weight,
+        say) bounds the particles of a running analysis as tightly, the machine epsilon is the smallest that can be
+        kept.
 
         **The row sums without the stiffness.** A particle's stiffness has as many blocks as the square of its nodes, but
         it sees the nodal increments only through the increment it interpolates at its evaluation point (value,
@@ -535,8 +620,8 @@ class MPMDiscreteSystem(DiscreteSystem):
         the other node :math:`B`, with factors of node :math:`A` alone. Marmot sums :math:`w_B |K_{Ai,Bk}|` over
         :math:`B` from a few weighted moments of the shape functions, exactly for the value and by the Cauchy-Schwarz
         inequality over the nodes for the gradients, which keeps their directions (2/sqrt(3) of the exact sum for
-        gradients spread evenly in 3D, exact for parallel ones). Every inequality bounds from above, so the stable
-        increment stays a lower bound of the exact one.
+        gradients spread evenly in 3D, exact for parallel ones). Every inequality bounds from above, so the estimate
+        stays a lower bound of the critical time step.
 
         The result is scaled by :data:`STABLE_FRACTION_OF_THE_TANGENT_LIMIT`, since the explicit scheme of the
         particles is not exactly integrated with their tangent: their NSNI stabilization acts on the increment.
@@ -550,15 +635,16 @@ class MPMDiscreteSystem(DiscreteSystem):
             Their lumped damping (:meth:`assembleLumpedDampingOfEntitiesWithOwnInertia`), likewise.
         forEachChunk
             The solver's loop over chunks of independent entities.
-        weightsOfTheBound
-            The weights the last bound left, a vector of the numbering, zero where a degree of freedom has none yet (all
-            zero: the start, with the weights constant per field); replaced in place by the weights for the next bound.
-            None for the bound with the weights constant per field alone.
+        weightsOfTheEstimate
+            The weights the last estimate left, a vector of the numbering, zero where a degree of freedom has none yet
+            (all zero: the start, with the weights constant per field); replaced in place by the weights for the next
+            estimate. None for the estimate with the weights constant per field alone.
 
         Returns
         -------
-        float | None
-            The stable time increment; None if the model has no particles.
+        CriticalTimeStepEstimateFromTheFieldMatrix | None
+            The estimate; its ``value`` is the critical time step, not scaled by a courant number. None if the model
+            has no particles.
         """
 
         if not self.particles:
@@ -589,7 +675,7 @@ class MPMDiscreteSystem(DiscreteSystem):
         orders = [order for order in ("second", "first") if order in orderOfGroup]
         groupsOfOrder = [[group for group, ofGroup in enumerate(orderOfGroup) if ofGroup == order] for order in orders]
         inAnOrder = [np.isin(groupOfDof, groups) for groups in groupsOfOrder]
-        weights = self._weightsOfThisBound(weightsOfTheBound, groupOfDof, nGroups)
+        weights = self._weightsOfThisEstimate(weightsOfTheEstimate, groupOfDof, nGroups)
 
         # Z_if >= sum_{j in f} |S_ij| w_j, assembled column by column. Row f of the scaled weights of the columns holds
         # column f on every degree of freedom, so that the columns of a particle are one gather (a new array, whose
@@ -622,46 +708,37 @@ class MPMDiscreteSystem(DiscreteSystem):
         rowSumsPerWeight = Z / weights[:, None]
         Q = np.array([[np.max(rowSumsPerWeight[groupOfDof == g, f]) for f in range(nGroups)] for g in range(nGroups)])
 
-        largestEigenvalueOfOrder = {}
-        for order, groups, ofTheOrder in zip(orders, groupsOfOrder, inAnOrder):
-            fieldMatrix = Q[np.ix_(groups, groups)]
-            rho = float(np.max(np.abs(np.linalg.eigvals(fieldMatrix))))
-            if weightsOfTheBound is not None:
-                # the Collatz-Wielandt bound with the weights c_g w_i, c the Perron vector of the field matrix, and its
-                # image, the weights of the next bound
-                eigenvalues, eigenvectors = np.linalg.eig(fieldMatrix)
+        collatzWielandtRows = None
+        if weightsOfTheEstimate is not None:
+            # the rows of the Collatz-Wielandt bound with the weights c_g w_i, c the Perron vector of the field matrix
+            # of each order, and their image, the weights of the next estimate
+            collatzWielandtRows = np.zeros(nDof)
+            for groups, ofTheOrder in zip(groupsOfOrder, inAnOrder):
+                eigenvalues, eigenvectors = np.linalg.eig(Q[np.ix_(groups, groups)])
                 perronVector = np.abs(np.real(eigenvectors[:, np.argmax(np.abs(eigenvalues))]))
                 scaleOfGroup = np.zeros(nGroups)
                 scaleOfGroup[groups] = np.maximum(perronVector / np.max(perronVector), np.finfo(float).eps)
                 image = Z[np.ix_(ofTheOrder, groups)] @ scaleOfGroup[groups]
-                rho = min(rho, float(np.max(image / (scaleOfGroup[groupOfDof[ofTheOrder]] * weights[ofTheOrder]))))
-                weightsOfTheBound[ofTheOrder] = self._weightsForTheNextBound(image)
-            largestEigenvalueOfOrder[order] = rho
-        if weightsOfTheBound is not None:
-            weightsOfTheBound[groupOfDof < 0] = 0.0
+                collatzWielandtRows[ofTheOrder] = image / (scaleOfGroup[groupOfDof[ofTheOrder]] * weights[ofTheOrder])
+                weightsOfTheEstimate[ofTheOrder] = self._weightsForTheNextEstimate(image)
+            weightsOfTheEstimate[groupOfDof < 0] = 0.0
 
-        stable = np.inf
-        omegaSquared = largestEigenvalueOfOrder.get("second", 0.0)
-        if omegaSquared > 0.0:
-            stable = 2.0 / np.sqrt(omegaSquared)
-        rate = largestEigenvalueOfOrder.get("first", 0.0)
-        if rate > 0.0:
-            stable = min(stable, 2.0 / rate)
-
-        return STABLE_FRACTION_OF_THE_TANGENT_LIMIT * stable
+        return CriticalTimeStepEstimateFromTheFieldMatrix(Q, orderOfGroup, groupOfDof, collatzWielandtRows)
 
     @staticmethod
-    def _weightsOfThisBound(weightsOfTheBound: np.ndarray | None, groupOfDof: np.ndarray, nGroups: int) -> np.ndarray:
-        """The weights a bound of the stable time increment takes, on every degree of freedom: those the last bound
+    def _weightsOfThisEstimate(
+        weightsOfTheEstimate: np.ndarray | None, groupOfDof: np.ndarray, nGroups: int
+    ) -> np.ndarray:
+        """The weights an estimate of the critical time step takes, on every degree of freedom: those the last estimate
         left, where it left one, and the largest weight of its block of fields where it left none (a degree of freedom
-        without inertia or damping at the last bound). One everywhere -- constant per field -- without carried weights,
+        without inertia or damping at the last estimate). One everywhere -- constant per field -- without carried weights,
         at their start (all zero), and if a block of fields has none (see
-        :meth:`stableTimeIncrementOfEntitiesWithOwnInertia`, "Weights carried from bound to bound").
+        :meth:`criticalTimeStepOfEntitiesWithOwnInertia`, "Weights carried from estimate to estimate").
 
         Parameters
         ----------
-        weightsOfTheBound
-            The weights the last bound left, a vector of the numbering; None without carried weights.
+        weightsOfTheEstimate
+            The weights the last estimate left, a vector of the numbering; None without carried weights.
         groupOfDof
             The block of fields of every degree of freedom, -1 for one in none.
         nGroups
@@ -674,23 +751,23 @@ class MPMDiscreteSystem(DiscreteSystem):
         """
 
         weights = np.ones(len(groupOfDof))
-        if weightsOfTheBound is None:
+        if weightsOfTheEstimate is None:
             return weights
         for group in range(nGroups):
             ofTheGroup = groupOfDof == group
-            carried = weightsOfTheBound[ofTheGroup]
+            carried = weightsOfTheEstimate[ofTheGroup]
             if not np.any(carried > 0.0):
                 return np.ones(len(groupOfDof))
             weights[ofTheGroup] = np.where(carried > 0.0, carried, np.max(carried))
         return weights
 
     @staticmethod
-    def _weightsForTheNextBound(image: np.ndarray) -> np.ndarray:
-        """The weights of a scheme for the next bound of the stable time increment: the image of the weights of this
-        bound, :math:`\\hat{\\boldsymbol{a}} \\ge |\\boldsymbol{S}|\\boldsymbol{v}`, one step of the power iteration,
-        scaled to a largest weight of one, and no weight below the machine epsilon of the largest (see
-        :meth:`stableTimeIncrementOfEntitiesWithOwnInertia`, "Weights carried from bound to bound"). An image of zero
-        (no stiffness) leaves the weights constant.
+    def _weightsForTheNextEstimate(image: np.ndarray) -> np.ndarray:
+        """The weights of a scheme for the next estimate of the critical time step: the image of the weights of this
+        estimate, :math:`\\hat{\\boldsymbol{a}} \\ge |\\boldsymbol{S}|\\boldsymbol{v}`, one step of the power
+        iteration, scaled to a largest weight of one, and no weight below the machine epsilon of the largest (see
+        :meth:`criticalTimeStepOfEntitiesWithOwnInertia`, "Weights carried from estimate to estimate"). An image of
+        zero (no stiffness) leaves the weights constant.
 
         Parameters
         ----------
@@ -707,22 +784,6 @@ class MPMDiscreteSystem(DiscreteSystem):
         if largest <= 0.0:
             return np.ones_like(image)
         return np.maximum(image / largest, np.finfo(float).eps)
-
-    def entitiesWithOwnInertiaCoupleOtherNodes(self) -> bool:
-        """Whether the last connectivity update changed the set of kernel functions of a particle, as its particle
-        manager reports it; see
-        :meth:`~edelweissfe.models.discretesystem.DiscreteSystem.entitiesWithOwnInertiaCoupleOtherNodes`. A contact
-        paired anew does not count: it changes the locations, not the particles' system.
-
-        Returns
-        -------
-        bool
-            True if a particle reaches other kernel functions since the last connectivity update.
-        """
-
-        return any(
-            particleManager.particlesWithChangedKernelFunctions for particleManager in self.model.particleManagers
-        )
 
     def carriersOfTheMotion(self) -> set[str]:
         """Where the model holds the motion of its particles; see

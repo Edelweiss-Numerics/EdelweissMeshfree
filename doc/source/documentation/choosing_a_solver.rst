@@ -274,35 +274,39 @@ the particles, so every increment
 The lumped mass of the particles is assembled anew in every increment, and the nodal values are coefficients of the
 current kernel functions; the finite elements keep the mass of their numbering. The lumped damping of the particles
 (the nonlocal viscosity of gradient-enhanced particles) is assembled with it, and decides, with the inertia, how a
-field is integrated. The stable time increment of the particles is bounded from their stiffness and the assembled
+field is integrated. The critical time step of the particles is estimated from their stiffness and the assembled
 lumped mass
-(:meth:`~edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia`) in
-the zero increment, whenever a particle reaches other kernel functions (a contact paired anew does not count: it
-changes no particle), and every ``stable-increment-frequency`` increments; the time
+(:meth:`~edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.criticalTimeStepOfEntitiesWithOwnInertia`) in
+the zero increment, and anew whenever the margin of the last estimate over the time increment in use may be used up:
+by the fall of their lumped mass since, which ``NED`` follows in every increment (a node a particle reaches for the
+first time gets a mass from zero: then at once), or by the assumed fall per increment from their stiffness, option
+``critical-time-step-decrease-per-increment`` (see the theory page on the critical time step of EdelweissFE). Where
+the particles set the time increment, they are estimated in every increment; where the finite elements set it, every
+so many increments as their margin allows. The time
 increment is the smaller of it and the elements' critical time step, scaled by ``courant-number``, unless the step asks
 for smaller increments. It is the Gershgorin bound of the absolute value of the mass-scaled tangent per block of fields,
 coupled by the largest eigenvalue of the small matrix of these blocks: the Collatz-Wielandt bound
 :math:`\rho \le \max_i (|\boldsymbol{S}|\boldsymbol{w})_i / w_i` with weights :math:`\boldsymbol{w}` constant per
-field. With ``carry-stable-increment-weights``, ``NED`` carries the weights from one bound to the next, and every bound
-refines them by one step of the power iteration, :math:`\boldsymbol{w} \leftarrow |\boldsymbol{S}|\boldsymbol{w}`,
-towards the Perron vector, where the bound is exact; the carried weights take the place of the ones in the same pass
-over the particles, which costs as much as without them. Any positive weights bound the largest eigenvalue from above,
-whatever state they were refined at, but weights refined at another state can bound it less tightly than the weights
-constant per field where the stiffness changed faster than they followed: a bound below the one the weights started
-from starts them anew, so an increment that ``NED`` lowers only never falls below the smallest bound with weights
-constant per field (with ``follow-critical-time-step``, it can, down to the bound the weights started from). The
-weights start anew also with a new numbering, every step and after a resume.
+field. With ``carry-critical-time-step-weights``, ``NED`` carries the weights from one estimate to the next, and every
+estimate refines them by one step of the power iteration, :math:`\boldsymbol{w} \leftarrow
+|\boldsymbol{S}|\boldsymbol{w}`, towards the Perron vector, where the bound is exact; the carried weights take the
+place of the ones in the same pass over the particles, which costs as much as without them. Any positive weights bound
+the largest eigenvalue from above, whatever state they were refined at, but weights refined at another state can bound
+it less tightly than the weights constant per field where the stiffness changed faster than they followed: an estimate
+below the one the weights started from starts them anew, so an increment that ``NED`` lowers only never falls below the
+smallest estimate with weights constant per field (with ``follow-critical-time-step``, it can, down to the estimate the
+weights started from). The weights start anew also with a new numbering, every step and after a resume.
 No tangent is assembled for it: every particle
 bounds the row sums of the absolute value of its own stiffness, node by node, from the derivatives of its forces with
 respect to the increment it interpolates (Marmot), at a cost proportional to its nodes instead of their square. It takes
 the tangent as it is, unsymmetric: the tangent of gradient-enhanced particles couples the stress to the
 nonlocal field far more strongly than the nonlocal field to the strain, and an eigenvalue sees the geometric mean of the
-two couplings, the symmetric part their arithmetic mean. The damping does not lower the bound: ``NED`` takes it with the
-mean of the velocities before and after the update, which leaves the stability limit of the central differences where
-it is without damping. The stiffness is that of a zero increment over a unit time increment: a rate-independent
-material does not depend on the time increment, but for a rate-dependent one, e.g. with a Duvaut-Lions viscosity, it is
-the stiffness relaxed over that time, softer than the response within an explicit increment, and the bound may be too
-large; take a smaller ``courant-number`` there.
+two couplings, the symmetric part their arithmetic mean. The damping does not lower the estimate: ``NED`` takes it
+with the mean of the velocities before and after the update, which leaves the stability limit of the central
+differences where it is without damping. The stiffness is that of a zero increment over a unit time increment: a
+rate-independent material does not depend on the time increment, but for a rate-dependent one, e.g. with a
+Duvaut-Lions viscosity, it is the stiffness relaxed over that time, softer than the response within an explicit
+increment, and the estimate may be too large; take a smaller ``courant-number`` there.
 
 What to know
 ************
@@ -332,7 +336,7 @@ What to know
   EdelweissFE's *What the solver asks the model*). When the active nodes cannot change (bonded kernel functions, no
   material point managers), a change of the connectivity is a change of the locations: the solver wraps its vectors
   with the new locations, their values kept. Otherwise it is a change of the numbering, and the solver reads the state
-  by node from the model; the stable time increment and the classification of the fields, which belong to the mesh, are
+  by node from the model; the critical time step and the classification of the fields, which belong to the mesh, are
   kept.
 - **Nodes without mass.** A kernel function that the particles reach only where it vanishes has no positive lumped
   mass; its node has no equation of motion and has no velocity, also after it lost its mass while it moved.

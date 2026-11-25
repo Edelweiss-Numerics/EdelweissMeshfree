@@ -24,7 +24,7 @@
 #  The full text of the license can be found in the file LICENSE.md at
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
-"""The bound of the stable time increment of the particles is safe and tight: the explicit particle scheme, integrated
+"""The estimate of the critical time step of the particles is safe and tight: the explicit particle scheme, integrated
 by hand with the central difference method on fixed kernel functions, is stable at the bound and unstable at twice
 it. The particles bound the row sums of their absolute stiffness by the Cauchy-Schwarz inequality over their nodes,
 which costs a little of the increment (the scheme's limit lies between 1.7 and 1.9 times the bound on these blocks).
@@ -33,8 +33,8 @@ Skipped where Marmot is not built."""
 import numpy as np
 import pytest
 
+from edelweissmeshfree.models.test._criticaltimestep import estimateOfTheSystem
 from edelweissmeshfree.models.test._particleplate import particlePlate
-from edelweissmeshfree.models.test._stableincrement import boundOfTheSystem
 
 
 def _isStable(model, dt: float, nIncrements: int = 400) -> bool:
@@ -85,7 +85,7 @@ def _isStable(model, dt: float, nIncrements: int = 400) -> bool:
     ],
 )
 def test_the_bound_is_stable_and_within_a_factor_of_the_stable_increment(particleType, supportFactor, kernelOrder):
-    bound = boundOfTheSystem(particlePlate(particleType, supportFactor, kernelOrder).buildDiscreteSystem())
+    bound = estimateOfTheSystem(particlePlate(particleType, supportFactor, kernelOrder).buildDiscreteSystem()).value
 
     assert _isStable(particlePlate(particleType, supportFactor, kernelOrder), bound)
     assert not _isStable(particlePlate(particleType, supportFactor, kernelOrder), 2.0 * bound)

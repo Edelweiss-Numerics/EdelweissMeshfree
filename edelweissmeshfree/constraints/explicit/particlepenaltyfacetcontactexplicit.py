@@ -127,8 +127,8 @@ class ParticlePenaltyFacetContactExplicit(MPMExplicitConstraintBase):
         set the surface element generator creates; their node ordering makes their normals point out of the master
         body.
     penaltyParameter
-        The penalty stiffness, a force per unit penetration of one contact point. It lowers the stable time
-        increment of the explicit integration.
+        The penalty stiffness, a force per unit penetration of one contact point. It lowers the critical time
+        step of the explicit integration.
     searchDistance
         The distance from the master surface within which a point is seen, and may come into contact in the next
         increment. It must exceed the distance a point travels towards the surface in one increment.

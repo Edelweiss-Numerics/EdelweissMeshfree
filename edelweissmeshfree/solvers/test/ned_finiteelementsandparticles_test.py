@@ -203,7 +203,7 @@ def _model(journal: Journal, withElements: bool, withParticles: bool) -> MPMMode
 
 
 #: The fraction of the critical time step of the elements the increments use. The critical time step ``CPE8UL`` reports
-#: is above the stable one of its lumped mass: at the default courant number, round-off grows into a deformation of the
+#: is above the true one of its lumped mass: at the default courant number, round-off grows into a deformation of the
 #: free block within a few increments.
 COURANT_NUMBER = 0.3
 
@@ -270,7 +270,7 @@ def _solveTheThreeModels():
     journal = Journal(verbose=False)
     coupled = _model(journal, withElements=True, withParticles=True)
     coupledSolver, ensightOutput = _solve(coupled, journal, 1.0, withEnsightOutput=True)
-    timeIncrement = coupledSolver._criticalTimeStep
+    timeIncrement = coupledSolver._largestTimeIncrement
 
     elementsAlone = _model(journal, withElements=True, withParticles=False)
     _solve(elementsAlone, journal, 1.0)
