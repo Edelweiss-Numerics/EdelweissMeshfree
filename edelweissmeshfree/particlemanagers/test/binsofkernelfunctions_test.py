@@ -1,18 +1,25 @@
 # -*- coding: utf-8 -*-
-#  ---------------------------------------------------------------------
-#
-#  _____    _      _              _         __  __ ____  __  __
-# | ____|__| | ___| |_      _____(_)___ ___|  \/  |  _ \|  \/  |
-# |  _| / _` |/ _ \ \ \ /\ / / _ \ / __/ __| |\/| | |_) | |\/| |
-# | |__| (_| |  __/ |\ V  V /  __/ \__ \__ \ |  | |  __/| |  | |
-# |_____\__,_|\___|_| \_/\_/ \___|_|___/___/_|  |_|_|   |_|  |_|
+#  _____    _      _              _
+# | ____|__| | ___| |_      _____(_)___ ___
+# |  _| / _` |/ _ \ \ \ /\ / / _ \ / __/ __|
+# | |__| (_| |  __/ |\ V  V /  __/ \__ \__ \
+# |_____\__,_|\___|_| \_/\_/_\___|_|___/___/
+# |  \/  | ___  ___| |__  / _|_ __ ___  ___
+# | |\/| |/ _ \/ __| '_ \| |_| '__/ _ \/ _ \
+# | |  | |  __/\__ \ | | |  _| | |  __/  __/
+# |_|  |_|\___||___/_| |_|_| |_|  \___|\___|
 #
 #
 #  Unit of Strength of Materials and Structural Analysis
 #  University of Innsbruck,
+#
+#  Research Group for Computational Mechanics of Materials
+#  Institute of Structural Engineering, BOKU University, Vienna
+#
 #  2023 - today
 #
-#  Matthias Neuner matthias.neuner@uibk.ac.at
+#  Matthias Neuner |  matthias.neuner@boku.ac.at
+#  Thomas Mader    |  thomas.mader@bokut.ac.at
 #
 #  This file is part of EdelweissMeshfree.
 #
@@ -71,7 +78,9 @@ def test_the_search_returns_the_kernels_whose_boxes_hold_a_point_of_the_group(di
 
     pointsOfGroups = [rng.uniform(-4.0, 14.0, (rng.integers(1, 7), dimension)) for _ in range(200)]
     for points in pointsOfGroups[::10]:
-        points[0, rng.integers(dimension)] = lower[rng.integers(len(lower)), rng.integers(dimension)]
+        k, d = rng.integers(len(lower)), rng.integers(dimension)
+        points[0] = 0.5 * (lower[k] + upper[k])
+        points[0, d] = lower[k, d]  # on the lower face of box k: not inside it
     firstPointOfGroup = np.cumsum([0] + [len(points) for points in pointsOfGroups], dtype=np.intp)
 
     firstKernelOfGroup, kernels = bins.kernelsWhoseBoxesHoldThePoints(np.concatenate(pointsOfGroups), firstPointOfGroup)

@@ -42,17 +42,23 @@ increment.
 
 import numpy as np
 
+cimport cython
 from libcpp.algorithm cimport sort
 from libcpp.vector cimport vector
 
 
+# final: the methods are called directly, not through the table of a class that might derive from it, in the loop over
+# the points
+@cython.final
 cdef class BinsOfKernelFunctions:
     """The boxes of the kernel functions sorted into a regular grid of bins: a kernel function is in every bin its box
     overlaps.
 
-    The grid spans all boxes; a bin is half as wide as the mean box along each dimension. The bins are held in the compressed layout of a
-    sparse matrix: the kernel functions of bin ``b`` are ``kernelsInBins[firstKernelOfBin[b] : firstKernelOfBin[b +
-    1]]``, in ascending order. The bins are numbered with the first dimension fastest.
+    The grid spans all boxes; a bin is half as wide as the mean box along each dimension. The bins are held in the
+    compressed layout of a sparse matrix: the kernel functions of bin ``b`` are
+    ``kernelsInBins[firstKernelOfBin[b] : firstKernelOfBin[b + 1]]``, in ascending order. The bins are numbered with the
+    first dimension fastest: the flat index of a bin is the sum, over the dimensions, of its index along the dimension
+    times the stride of the dimension (:attr:`strides`).
 
     A point lies in one bin, and every box that holds the point overlaps that bin. So the kernel functions whose box
     holds a point are among the kernel functions of its bin, and only they are tested
@@ -67,96 +73,152 @@ cdef class BinsOfKernelFunctions:
     """
 
     cdef readonly int dimension
-    cdef readonly object lowerCorners, upperCorners, gridLowerCorner, gridUpperCorner, binSize, numberOfBins, strides
-    cdef readonly object kernelsInBins, firstKernelOfBin
-
-    cdef double[:, ::1] _lower, _upper
-    cdef double[::1] _origin, _binSize
-    cdef Py_ssize_t[::1] _numberOfBins, _strides, _kernelsInBins, _firstKernelOfBin
+    cdef double[:, ::1] lowerCorners, upperCorners
+    cdef Py_ssize_t[::1] kernelsInBins, firstKernelOfBin
+    cdef double[::1] _gridLowerCorner, _gridUpperCorner, _binSize
+    # along each of three dimensions: a lacking dimension has one layer of bins, and the stride 0
+    cdef Py_ssize_t _numberOfBins[3]
+    cdef Py_ssize_t _strides[3]
 
     def __init__(self, lowerCorners, upperCorners):
-        self.lowerCorners = np.ascontiguousarray(lowerCorners, dtype=np.float64)
-        self.upperCorners = np.ascontiguousarray(upperCorners, dtype=np.float64)
-        self.dimension = self.lowerCorners.shape[1]
-        nKernels = self.lowerCorners.shape[0]
+        lower = np.ascontiguousarray(lowerCorners, dtype=np.float64)
+        upper = np.ascontiguousarray(upperCorners, dtype=np.float64)
+        self.lowerCorners, self.upperCorners = lower, upper
+        self.dimension = lower.shape[1]
+        cdef Py_ssize_t nKernels = lower.shape[0]
+        cdef int d
 
         if not 1 <= self.dimension <= 3:
             raise ValueError("The bins are for one, two or three dimensions.")
 
         if nKernels:
-            self.gridLowerCorner = np.min(self.lowerCorners, axis=0)
-            self.gridUpperCorner = np.max(self.upperCorners, axis=0)
-            self.binSize = np.mean(self.upperCorners - self.lowerCorners, axis=0) / 2.0
+            self._gridLowerCorner = np.min(lower, axis=0)
+            self._gridUpperCorner = np.max(upper, axis=0)
+            # Half the mean box: smaller bins hold fewer kernel functions for a point to test, but every box then lies
+            # in more bins (from 2^d to 3^d for a box of mean size).
+            self._binSize = np.mean(upper - lower, axis=0) / 2.0
         else:
-            self.gridLowerCorner = np.zeros(self.dimension)
-            self.gridUpperCorner = np.zeros(self.dimension)
-            self.binSize = np.ones(self.dimension)
-        self._lower, self._upper = self.lowerCorners, self.upperCorners
-        self._origin, self._binSize = self.gridLowerCorner, self.binSize
+            self._gridLowerCorner = np.zeros(self.dimension)
+            self._gridUpperCorner = np.zeros(self.dimension)
+            self._binSize = np.ones(self.dimension)
 
-        # along each dimension, as many layers of bins as the upper corner of the grid needs to lie in the last one
-        self.numberOfBins = np.array(
-            [self._binAlong(d, self.gridUpperCorner[d]) + 1 if nKernels else 0 for d in range(self.dimension)],
-            dtype=np.intp,
-        )
-        # the flat index of a bin is the sum of its index along each dimension times the stride of the dimension
-        self.strides = np.array([np.prod(self.numberOfBins[:d]) for d in range(self.dimension)], dtype=np.intp)
-        self._numberOfBins, self._strides = self.numberOfBins, self.strides
+        for d in range(3):
+            self._numberOfBins[d], self._strides[d] = 1, 0
+        for d in range(self.dimension):
+            # as many layers of bins as the upper corner of the grid needs to lie in the last one
+            self._numberOfBins[d] = (
+                <Py_ssize_t> ((self._gridUpperCorner[d] - self._gridLowerCorner[d]) / self._binSize[d]) + 1
+                if nKernels
+                else 0
+            )
+            self._strides[d] = 1 if d == 0 else self._strides[d - 1] * self._numberOfBins[d - 1]
 
         self._sortTheKernelsIntoTheBins()
 
-    def _sortTheKernelsIntoTheBins(self):
+    @property
+    def gridLowerCorner(self):
+        """The lower corner of the grid of bins, the lowest corner of all boxes."""
+        return np.asarray(self._gridLowerCorner)
+
+    @property
+    def gridUpperCorner(self):
+        """The upper corner of the grid of bins, the highest corner of all boxes."""
+        return np.asarray(self._gridUpperCorner)
+
+    @property
+    def binSize(self):
+        """The size of a bin along each dimension."""
+        return np.asarray(self._binSize)
+
+    @property
+    def numberOfBins(self):
+        """The number of layers of bins along each dimension."""
+        return np.array([self._numberOfBins[d] for d in range(self.dimension)], dtype=np.intp)
+
+    @property
+    def strides(self):
+        """The stride of each dimension in the flat index of a bin."""
+        return np.array([self._strides[d] for d in range(self.dimension)], dtype=np.intp)
+
+    cdef _sortTheKernelsIntoTheBins(self):
         """Fill the bins by a counting sort: count the kernel functions of each bin, place the first kernel function of
         each bin after those of all bins before it, then place the kernel functions in ascending order."""
 
-        cdef Py_ssize_t nBins = int(np.prod(self.numberOfBins))
-        cdef Py_ssize_t nKernels = self._lower.shape[0]
+        cdef Py_ssize_t nBins = self._numberOfBins[0] * self._numberOfBins[1] * self._numberOfBins[2]
+        cdef Py_ssize_t nKernels = self.lowerCorners.shape[0]
         cdef Py_ssize_t[::1] count = np.zeros(nBins + 1, dtype=np.intp)
         cdef Py_ssize_t[:, ::1] lowest = np.zeros((nKernels, 3), dtype=np.intp)
         cdef Py_ssize_t[:, ::1] highest = np.zeros((nKernels, 3), dtype=np.intp)
-        cdef Py_ssize_t[3] strides = [0, 0, 0]
-        cdef Py_ssize_t k, d, i, j, l, b
+        cdef Py_ssize_t k, binX, binY, binZ, b
+        cdef int d
 
-        for d in range(self.dimension):
-            strides[d] = self._strides[d]
-
-        # the bins a box overlaps along each dimension, from the one of its lower to the one of its upper corner; a
-        # lacking dimension has one layer of bins
+        # The bins a box overlaps along each dimension, from the one of its lower to the one of its upper corner (along
+        # a lacking dimension, the one layer of bins). Rounding down is monotonic, so the bin of a point inside a box
+        # lies between the bins of the box's corners: the box is in the bin of every point it holds.
         for k in range(nKernels):
             for d in range(self.dimension):
-                lowest[k, d] = self._binAlong(d, self._lower[k, d])
-                highest[k, d] = self._binAlong(d, self._upper[k, d])
+                lowest[k, d] = self._binIndexAlong(d, self.lowerCorners[k, d])
+                highest[k, d] = self._binIndexAlong(d, self.upperCorners[k, d])
 
+        # counted one place further, so that the cumulative sum gives the first place of every bin
         for k in range(nKernels):
-            for l in range(lowest[k, 2], highest[k, 2] + 1):
-                for j in range(lowest[k, 1], highest[k, 1] + 1):
-                    for i in range(lowest[k, 0], highest[k, 0] + 1):
-                        count[i * strides[0] + j * strides[1] + l * strides[2] + 1] += 1
+            for binZ in range(lowest[k, 2], highest[k, 2] + 1):
+                for binY in range(lowest[k, 1], highest[k, 1] + 1):
+                    for binX in range(lowest[k, 0], highest[k, 0] + 1):
+                        count[self._flatBinIndex(binX, binY, binZ) + 1] += 1
 
-        firstKernelOfBin = np.cumsum(count).astype(np.intp)
-        cdef Py_ssize_t[::1] nextPlaceInBin = firstKernelOfBin.copy()
-        cdef Py_ssize_t[::1] kernelsInBins = np.empty(firstKernelOfBin[nBins], dtype=np.intp)
+        self.firstKernelOfBin = np.cumsum(count).astype(np.intp)
+        cdef Py_ssize_t[::1] nextPlaceInBin = np.asarray(self.firstKernelOfBin).copy()
+        self.kernelsInBins = np.empty(self.firstKernelOfBin[nBins], dtype=np.intp)
 
+        # the kernel functions in ascending order, so every bin lists its kernel functions in ascending order
         for k in range(nKernels):
-            for l in range(lowest[k, 2], highest[k, 2] + 1):
-                for j in range(lowest[k, 1], highest[k, 1] + 1):
-                    for i in range(lowest[k, 0], highest[k, 0] + 1):
-                        b = i * strides[0] + j * strides[1] + l * strides[2]
-                        kernelsInBins[nextPlaceInBin[b]] = k
+            for binZ in range(lowest[k, 2], highest[k, 2] + 1):
+                for binY in range(lowest[k, 1], highest[k, 1] + 1):
+                    for binX in range(lowest[k, 0], highest[k, 0] + 1):
+                        b = self._flatBinIndex(binX, binY, binZ)
+                        self.kernelsInBins[nextPlaceInBin[b]] = k
                         nextPlaceInBin[b] += 1
 
-        self.firstKernelOfBin = firstKernelOfBin
-        self.kernelsInBins = np.asarray(kernelsInBins)
-        self._firstKernelOfBin, self._kernelsInBins = self.firstKernelOfBin, self.kernelsInBins
+    cdef inline Py_ssize_t _binIndexAlong(self, int d, double x) noexcept nogil:
+        """The index of the layer of bins along dimension ``d`` that holds the coordinate ``x``: -1 below the grid (and
+        for a NaN), the number of layers above it.
 
-    cdef inline Py_ssize_t _binAlong(self, int d, double x) noexcept nogil:
-        """The index of the layer of bins along dimension ``d`` that holds the coordinate ``x``; -1 below the grid.
-        Rounding is monotonic: a coordinate between two others lies in a layer between theirs."""
+        Rounding down is monotonic, so the layer of a coordinate between two others lies between their layers. The
+        explicit ends keep the conversion to an integer in range: converting a NaN or a too large double is undefined in
+        C."""
 
-        cdef double distance = (x - self._origin[d]) / self._binSize[d]
-        if distance < 0.0:
+        cdef double distance = (x - self._gridLowerCorner[d]) / self._binSize[d]
+        if not distance >= 0.0:
             return -1
+        if distance >= self._numberOfBins[d]:
+            return self._numberOfBins[d]
         return <Py_ssize_t> distance
+
+    cdef inline Py_ssize_t _flatBinIndex(self, Py_ssize_t binX, Py_ssize_t binY, Py_ssize_t binZ) noexcept nogil:
+        """The flat index of the bin with the given indices along the dimensions (0 along a lacking dimension)."""
+
+        return binX * self._strides[0] + binY * self._strides[1] + binZ * self._strides[2]
+
+    cdef inline Py_ssize_t _binOfPoint(self, const double* point) noexcept nogil:
+        """The flat index of the bin that holds the point; -1 beyond the grid, where no box holds it."""
+
+        cdef Py_ssize_t[3] binAlong = [0, 0, 0]
+        cdef int d
+        for d in range(self.dimension):
+            binAlong[d] = self._binIndexAlong(d, point[d])
+            if binAlong[d] < 0 or binAlong[d] >= self._numberOfBins[d]:
+                return -1
+        return self._flatBinIndex(binAlong[0], binAlong[1], binAlong[2])
+
+    cdef inline bint _boxHoldsPoint(self, Py_ssize_t k, const double* point) noexcept nogil:
+        """Whether the box of kernel function ``k`` holds the point strictly inside."""
+
+        cdef int d
+        for d in range(self.dimension):
+            if not (self.lowerCorners[k, d] < point[d] < self.upperCorners[k, d]):
+                return False
+        return True
 
     def kernelsInBin(self, Py_ssize_t binIndex):
         """The kernel functions whose boxes overlap a bin.
@@ -172,7 +234,7 @@ cdef class BinsOfKernelFunctions:
             The indices of the kernel functions, in ascending order.
         """
 
-        return self.kernelsInBins[self.firstKernelOfBin[binIndex] : self.firstKernelOfBin[binIndex + 1]]
+        return np.asarray(self.kernelsInBins[self.firstKernelOfBin[binIndex] : self.firstKernelOfBin[binIndex + 1]])
 
     def kernelsWhoseBoxesHoldThePoints(self, const double[:, ::1] points, const Py_ssize_t[::1] firstPointOfGroup):
         """For every group of points (the evaluation points of a particle), the kernel functions whose box holds one of
@@ -195,45 +257,27 @@ cdef class BinsOfKernelFunctions:
         """
 
         cdef Py_ssize_t nGroups = firstPointOfGroup.shape[0] - 1
-        cdef Py_ssize_t nKernels = self._lower.shape[0]
-        cdef int dim = self.dimension
         cdef Py_ssize_t[::1] firstKernelOfGroup = np.zeros(nGroups + 1, dtype=np.intp)
         cdef vector[Py_ssize_t] kernels
         # whether a kernel function is already found for the group at hand: reset after each group
-        cdef unsigned char[::1] isFound = np.zeros(nKernels, dtype=np.uint8)
-        cdef Py_ssize_t g, p, d, n, k, b, layer, firstOfGroup
-        cdef bint isInside
+        cdef unsigned char[::1] isFound = np.zeros(self.lowerCorners.shape[0], dtype=np.uint8)
+        cdef Py_ssize_t g, p, n, k, b
 
         with nogil:
             for g in range(nGroups):
-                firstOfGroup = kernels.size()
                 for p in range(firstPointOfGroup[g], firstPointOfGroup[g + 1]):
-                    # the bin of the point; a point beyond the grid lies in no box
-                    b = 0
-                    for d in range(dim):
-                        layer = self._binAlong(d, points[p, d])
-                        if layer < 0 or layer >= self._numberOfBins[d]:
-                            b = -1
-                            break
-                        b += layer * self._strides[d]
+                    b = self._binOfPoint(&points[p, 0])
                     if b < 0:
                         continue
-
-                    for n in range(self._firstKernelOfBin[b], self._firstKernelOfBin[b + 1]):
-                        k = self._kernelsInBins[n]
-                        if isFound[k]:
-                            continue
-                        isInside = True
-                        for d in range(dim):
-                            if not (self._lower[k, d] < points[p, d] < self._upper[k, d]):
-                                isInside = False
-                                break
-                        if isInside:
+                    for n in range(self.firstKernelOfBin[b], self.firstKernelOfBin[b + 1]):
+                        k = self.kernelsInBins[n]
+                        if not isFound[k] and self._boxHoldsPoint(k, &points[p, 0]):
                             isFound[k] = 1
                             kernels.push_back(k)
 
-                sort(kernels.begin() + firstOfGroup, kernels.end())
-                for n in range(firstOfGroup, <Py_ssize_t> kernels.size()):
+                # ascending numbers are the label order, the order a particle lists its kernel functions in
+                sort(kernels.begin() + firstKernelOfGroup[g], kernels.end())
+                for n in range(firstKernelOfGroup[g], <Py_ssize_t> kernels.size()):
                     isFound[kernels[n]] = 0
                 firstKernelOfGroup[g + 1] = kernels.size()
 

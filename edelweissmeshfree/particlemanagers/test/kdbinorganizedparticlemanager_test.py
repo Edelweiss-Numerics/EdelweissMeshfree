@@ -1,18 +1,25 @@
 # -*- coding: utf-8 -*-
-#  ---------------------------------------------------------------------
-#
-#  _____    _      _              _         __  __ ____  __  __
-# | ____|__| | ___| |_      _____(_)___ ___|  \/  |  _ \|  \/  |
-# |  _| / _` |/ _ \ \ \ /\ / / _ \ / __/ __| |\/| | |_) | |\/| |
-# | |__| (_| |  __/ |\ V  V /  __/ \__ \__ \ |  | |  __/| |  | |
-# |_____\__,_|\___|_| \_/\_/ \___|_|___/___/_|  |_|_|   |_|  |_|
+#  _____    _      _              _
+# | ____|__| | ___| |_      _____(_)___ ___
+# |  _| / _` |/ _ \ \ \ /\ / / _ \ / __/ __|
+# | |__| (_| |  __/ |\ V  V /  __/ \__ \__ \
+# |_____\__,_|\___|_| \_/\_/_\___|_|___/___/
+# |  \/  | ___  ___| |__  / _|_ __ ___  ___
+# | |\/| |/ _ \/ __| '_ \| |_| '__/ _ \/ _ \
+# | |  | |  __/\__ \ | | |  _| | |  __/  __/
+# |_|  |_|\___||___/_| |_|_| |_|  \___|\___|
 #
 #
 #  Unit of Strength of Materials and Structural Analysis
 #  University of Innsbruck,
+#
+#  Research Group for Computational Mechanics of Materials
+#  Institute of Structural Engineering, BOKU University, Vienna
+#
 #  2023 - today
 #
-#  Matthias Neuner matthias.neuner@uibk.ac.at
+#  Matthias Neuner |  matthias.neuner@boku.ac.at
+#  Thomas Mader    |  thomas.mader@bokut.ac.at
 #
 #  This file is part of EdelweissMeshfree.
 #
@@ -25,15 +32,16 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 """The search of the KD-bin particle manager: every particle gets the kernel functions that cover one of its evaluation
-points, in the order of their labels, whatever the number of threads; the particles whose kernel functions changed
-are reported, and every particle is assigned its kernel functions in every search (its shape functions are evaluated
-anew); a kernel function whose support is smaller than its box covers only what its support holds."""
+points, in the order of their labels, whatever the number of threads. A particle whose kernel functions changed is
+assigned them and reported; every other particle only updates its shape functions. A kernel function whose support is
+smaller than its box covers only what its support holds."""
 
 from types import SimpleNamespace
 
 import numpy as np
 import pytest
 from edelweissfe.journal.journal import Journal
+from edelweissfe.numerics.parallelizationutilities import isFreeThreadingSupported
 
 from edelweissmeshfree.meshfree.particlekerneldomain import ParticleKernelDomain
 from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
@@ -64,7 +72,8 @@ class _Kernel:
 
 
 class _Particle:
-    """A particle as the manager sees it: its evaluation points, and the kernel functions assigned to it, counted."""
+    """A particle as the manager sees it: its evaluation points, and the kernel functions assigned to it; the
+    assignments and the updates of its shape functions are counted."""
 
     def __init__(self, points: np.ndarray):
         self.points = np.array(points, dtype=float)
@@ -103,37 +112,73 @@ def _expected(kernels: list, particle: _Particle) -> list:
     return sorted([k for k in kernels if k.covers(particle.points)], key=lambda k: k.node.label)
 
 
-@pytest.mark.parametrize("threads", ["1", "4"])
-@pytest.mark.parametrize("hasBoxSupport", [True, False])
-def test_every_particle_gets_the_kernels_that_cover_it_and_the_changed_ones_are_reported(
-    monkeypatch, threads, hasBoxSupport
-):
+# with more than one thread only where the threads run in parallel: without free threading, the search runs serially
+_threads = [
+    "1",
+    pytest.param("4", marks=pytest.mark.skipif(not isFreeThreadingSupported(), reason="no free threading")),
+]
+
+
+def _searchedOnce(monkeypatch, threads: str, hasBoxSupport: bool, **options):
     monkeypatch.setenv("OMP_NUM_THREADS", threads)
     rng = np.random.default_rng(1)
     kernels, particles = _model(rng, hasBoxSupport)
-    manager = KDBinOrganizedParticleManager(ParticleKernelDomain(particles, kernels), 2, Journal(verbose=False))
+    manager = KDBinOrganizedParticleManager(
+        ParticleKernelDomain(particles, kernels), 2, Journal(verbose=False), **options
+    )
+    hasChanged = manager.updateConnectivity()
+    return rng, kernels, particles, manager, hasChanged
 
-    assert manager.updateConnectivity()
-    assert manager.particlesWithChangedKernelFunctions == particles, "the first search changes every particle"
+
+@pytest.mark.parametrize("threads", _threads)
+@pytest.mark.parametrize("hasBoxSupport", [True, False])
+def test_the_first_search_assigns_every_particle(monkeypatch, threads, hasBoxSupport):
+    _, kernels, particles, manager, hasChanged = _searchedOnce(monkeypatch, threads, hasBoxSupport)
+
+    assert hasChanged
+    assert manager.particlesWithChangedKernelFunctions == particles
     for particle in particles:
         assert particle.kernelFunctions == _expected(kernels, particle)
+        assert particle.assignments == 1 and particle.shapeFunctionUpdates == 0
 
-    assert not manager.updateConnectivity(), "nothing moved"
+
+@pytest.mark.parametrize("threads", _threads)
+@pytest.mark.parametrize("hasBoxSupport", [True, False])
+def test_without_motion_only_the_shape_functions_are_updated(monkeypatch, threads, hasBoxSupport):
+    _, _, particles, manager, _ = _searchedOnce(monkeypatch, threads, hasBoxSupport)
+
+    assert not manager.updateConnectivity()
     assert manager.particlesWithChangedKernelFunctions == []
-    assert all(
-        particle.assignments == 1 and particle.shapeFunctionUpdates == 1 for particle in particles
-    ), "the kernel functions are the same, the shape functions are evaluated anew"
+    assert all(particle.assignments == 1 and particle.shapeFunctionUpdates == 1 for particle in particles)
 
-    moved = particles[3::7]
-    for particle in moved:
+
+@pytest.mark.parametrize("threads", _threads)
+@pytest.mark.parametrize("hasBoxSupport", [True, False])
+def test_after_motion_the_changed_particles_are_reported(monkeypatch, threads, hasBoxSupport):
+    rng, kernels, particles, manager, _ = _searchedOnce(monkeypatch, threads, hasBoxSupport)
+
+    for particle in particles[3::7]:
         particle.points += rng.uniform(-0.8, 0.8, 2)
     before = [list(particle.kernelFunctions) for particle in particles]
 
-    manager.updateConnectivity()
-    for particle, kernelsBefore in zip(particles, before):
+    assert manager.updateConnectivity()
+    for particle in particles:
         assert particle.kernelFunctions == _expected(kernels, particle)
-    changed = [p for p, kernelsBefore in zip(particles, before) if p.kernelFunctions != kernelsBefore]
+    changed = [
+        particle for particle, kernelsBefore in zip(particles, before) if particle.kernelFunctions != kernelsBefore
+    ]
     assert changed and manager.particlesWithChangedKernelFunctions == changed
+    for particle in particles:
+        assert particle.assignments + particle.shapeFunctionUpdates == 2
+        assert particle.assignments == (2 if particle in changed else 1)
+
+
+def test_with_a_skin_and_without_motion_only_the_shape_functions_are_updated(monkeypatch):
+    _, _, particles, manager, _ = _searchedOnce(monkeypatch, "1", True, neighbourListSkinFraction=0.1)
+
+    assert not manager.updateConnectivity()
+    assert manager.particlesWithChangedKernelFunctions == []
+    assert all(particle.assignments == 1 and particle.shapeFunctionUpdates == 1 for particle in particles)
 
 
 def test_a_particle_beyond_every_support_is_reported():
