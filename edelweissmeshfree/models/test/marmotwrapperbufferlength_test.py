@@ -60,7 +60,7 @@ def _particleCalls(particle):
             lambda b: particle.computePhysicsKernelsExplicit(b["Pc"]),
         ),
         "computeLumpedInertia": (dict(mLumped=np.zeros(n)), lambda b: particle.computeLumpedInertia(b["mLumped"])),
-        "computeLumpedMomentum": (dict(mLumped=np.zeros(n)), lambda b: particle.computeLumpedMomentum(b["mLumped"])),
+        "computeLumpedMomentum": (dict(pLumped=np.zeros(n)), lambda b: particle.computeLumpedMomentum(b["pLumped"])),
         "computeLumpedDamping": (dict(cLumped=np.zeros(n)), lambda b: particle.computeLumpedDamping(b["cLumped"])),
         "assembleStiffness": (dict(K=np.zeros(n * n)), lambda b: particle.assembleStiffness(b["K"])),
         "addBoundOfAbsoluteStiffnessTimes": (

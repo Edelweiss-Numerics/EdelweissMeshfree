@@ -122,13 +122,12 @@ gap, the pairing and what the constraint reports.
 The time increment
 ------------------
 
-``NED`` takes the smaller of the critical time step of the elements (their own eigenvalue bound) and the bound of the
-stable time increment of the particles, bounded from their stiffness without assembling it, and scales it by
-``courant-number``.
-The bound of the particles is computed anew whenever a particle reaches other kernel functions (see
-:doc:`choosing_a_solver`, "Explicit dynamics"); the contact pairs points anew in most increments, but that changes no
-particle. It takes the tangent of the gradient-enhanced particles as
-it is, unsymmetric: while the concrete under the nose is crushed, GM7's stress depends on the nonlocal strain through
+``NED`` takes the smaller of the critical time step of the elements (their own eigenvalue bound) and the critical time
+step of the particles, estimated from their stiffness without assembling it, and scales it by ``courant-number``.
+The particles are estimated anew when the margin of their last estimate over the time increment may be used up (see
+:doc:`choosing_a_solver`, "Explicit dynamics"): while the elements of the projectile set the time increment, every few
+increments; once the particles set it, in every increment. The estimate takes the tangent of the gradient-enhanced
+particles as it is, unsymmetric: while the concrete under the nose is crushed, GM7's stress depends on the nonlocal strain through
 the steep compressive boundary, far more strongly than the nonlocal strain depends on the strain, and the bound follows
 the geometric mean of the two couplings, as the eigenvalues do. Here the limit of the particles is that of the nonlocal
 field, set by its micro-inertia, and it stays above the projectile's elements: the elements set the time increment.
@@ -186,8 +185,8 @@ a tenfold penalty range by about half a millimetre, the size of the change of th
 about a tenth of the search distance and no point was found inside; the quarter model followed the whole one to a few
 tenths of a millimetre. A run resumed from a checkpoint after an interruption followed the uninterrupted one.
 
-The bound of the particles' stable time increment costs a small share of an increment: the particles bound the row
-sums of their absolute stiffness node by node, and only when a particle reaches other kernel functions.
+The critical time step of the particles costs a small share of an increment: the particles bound the row
+sums of their absolute stiffness node by node, and only when the margin policy asks for it.
 
 One finding matters more than any of these: the response depends on the particle size more than on the time
 increment, the penalty or the symmetry. With GM7's internal length well below the particle size, the softening
