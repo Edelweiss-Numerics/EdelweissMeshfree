@@ -32,7 +32,7 @@
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
 
-from typing import Any, List, Tuple, Union
+from typing import Any, List, NamedTuple, Tuple, Union
 
 import numpy as np
 from edelweissfe.journal.journal import Journal
@@ -43,157 +43,80 @@ from edelweissmeshfree.meshfree.particlekerneldomain import ParticleKernelDomain
 from edelweissmeshfree.particlemanagers.base.baseparticlemanager import (
     BaseParticleManager,
 )
+from edelweissmeshfree.particlemanagers.binsofkernelfunctions import (
+    BinsOfKernelFunctions,
+)
 
 
-class _FastKDBinOrganizer:
-    """The kernel functions sorted into a regular grid of bins by their bounding boxes, for the broad phase of the
-    search: a kernel is in every bin its box overlaps. The bins are held in the compressed layout of a sparse matrix:
-    the kernels of bin ``b`` are ``kernelsInBins[firstKernelOfBin[b] : firstKernelOfBin[b + 1]]``, in the order of the
-    kernels. Both are built without a loop over the kernels or the bins, and the kernels of consecutive bins are
-    consecutive, so a query takes one slice per row of bins. ``firstKernelOfBin`` is a list: a query indexes it with
-    plain integers, which is faster than indexing an array.
+class _KernelFunctionsOfAChunk(NamedTuple):
+    """What the search found for a chunk of consecutive particles. The offsets are those of the chunk: they start at
+    0."""
+
+    firstKernelOfParticle: NDArray[np.intp]
+    kernelsOfParticles: NDArray[np.intp]
+    particlesWithChangedKernelFunctions: list
+
+
+def _keepKernelsWhoseSupportHoldsAPoint(
+    firstKernelOfParticle: NDArray[np.intp],
+    kernelsOfParticles: NDArray[np.intp],
+    evaluationPointsOfParticles: List[NDArray[np.float64]],
+    kernelFunctions: list,
+) -> Tuple[NDArray[np.intp], NDArray[np.intp]]:
+    """The narrow phase for kernel functions whose support is smaller than their box: of the kernel functions whose box
+    holds a point of a particle, keep those whose support holds one.
+
+    Parameters
+    ----------
+    firstKernelOfParticle
+        The offsets of the kernel functions of the particles: those of particle ``i`` are
+        ``kernelsOfParticles[firstKernelOfParticle[i] : firstKernelOfParticle[i + 1]]``.
+    kernelsOfParticles
+        The numbers of the kernel functions whose box holds a point of the particle.
+    evaluationPointsOfParticles
+        The evaluation points of every particle.
+    kernelFunctions
+        The kernel functions, in the order of their numbers.
+
+    Returns
+    -------
+    tuple[NDArray[np.intp], NDArray[np.intp]]
+        The kept kernel functions, in the same layout.
     """
 
-    def __init__(self, kernelFunctions: List[Any], dimension: int, skin: float = 0.0) -> None:
-        self._dimension = dimension
+    isKept = np.zeros(len(kernelsOfParticles), dtype=bool)
+    for i, points in enumerate(evaluationPointsOfParticles):
+        for n in range(firstKernelOfParticle[i], firstKernelOfParticle[i + 1]):
+            isKept[n] = kernelFunctions[kernelsOfParticles[n]].isAnyCoordinateInSupport(points)
 
-        # --- 1. Vectorized Bounding Box Extraction ---
-        # Every bounding box is grown by `skin` on all sides. A search then reports the kernels that
-        # cover a particle *or come within skin of doing so*, which is what allows a later increment
-        # to reuse the answer -- see KDBinOrganizedParticleManager.
-        boundingBoxesPerKernel = [sf.getBoundingBox() for sf in kernelFunctions]
-
-        if not boundingBoxesPerKernel:
-            self._mins = np.empty((0, dimension))
-            self._maxs = np.empty((0, dimension))
-            self._kernelsInBins = np.empty(0, dtype=np.intp)
-            self._firstKernelOfBin = [0]
-            self._boundingBoxMin = np.zeros(dimension)
-            self._boundingBoxMax = np.zeros(dimension)
-            self._nBins = np.zeros(dimension, dtype=int)
-            self._binSize = np.ones(dimension)
-            self._strides = np.ones(3, dtype=int)
-            return
-
-        boundingBoxes = np.array(boundingBoxesPerKernel)
-        self._mins = boundingBoxes[:, 0, :] - skin
-        self._maxs = boundingBoxes[:, 1, :] + skin
-
-        # --- 2. Grid Setup ---
-        self._boundingBoxMin = np.min(self._mins, axis=0) - 1e-12
-        self._boundingBoxMax = np.max(self._maxs, axis=0) + 1e-12
-
-        averageBoundingBoxExtent = np.mean(self._maxs - self._mins, axis=0)
-        self._binSize = averageBoundingBoxExtent / 2.0
-
-        self._nBins = np.ceil((self._boundingBoxMax - self._boundingBoxMin) / self._binSize).astype(int)
-
-        self._strides = np.ones(3, dtype=int)
-        if dimension >= 2:
-            self._strides[1] = self._nBins[0]
-        if dimension == 3:
-            self._strides[2] = self._nBins[0] * self._nBins[1]
-
-        numberOfBins = int(np.prod(self._nBins))
-
-        # --- 3. Vectorized Bin Index Calculation ---
-        lowestBinIndexPerKernel = ((self._mins - self._boundingBoxMin) / self._binSize).astype(int)
-        highestBinIndexPerKernel = ((self._maxs - self._boundingBoxMin) / self._binSize).astype(int)
-
-        # --- 4. Fill Bins ---
-        # Every pair of a kernel and a bin its box overlaps: the k-th bin of a kernel's box, counted with the first
-        # dimension fastest, has the offsets (k mod n_x, (k div n_x) mod n_y, k div (n_x n_y)) from its lowest bin.
-        binsPerKernelAndDimension = highestBinIndexPerKernel - lowestBinIndexPerKernel + 1
-        binsPerKernel = np.prod(binsPerKernelAndDimension, axis=1)
-        kernelOfPair = np.repeat(np.arange(len(binsPerKernel)), binsPerKernel)
-        firstPairOfKernel = np.cumsum(binsPerKernel) - binsPerKernel
-        kOfPair = np.arange(len(kernelOfPair)) - firstPairOfKernel[kernelOfPair]
-
-        binOfPair = np.zeros(len(kernelOfPair), dtype=np.intp)
-        binsOfLowerDimensions = np.ones(len(kernelOfPair), dtype=np.intp)
-        for d in range(dimension):
-            binsAlongD = binsPerKernelAndDimension[kernelOfPair, d]
-            offsetAlongD = (kOfPair // binsOfLowerDimensions) % binsAlongD
-            binOfPair += (lowestBinIndexPerKernel[kernelOfPair, d] + offsetAlongD) * self._strides[d]
-            binsOfLowerDimensions *= binsAlongD
-
-        # sorted by bin, and within a bin by kernel, as filling the bins kernel by kernel would give
-        byBin = np.argsort(binOfPair, kind="stable")
-        self._kernelsInBins = kernelOfPair[byBin]
-        self._firstKernelOfBin = np.searchsorted(binOfPair[byBin], np.arange(numberOfBins + 1)).tolist()
-
-    def kernelsInBin(self, binIndex: int) -> NDArray[np.intp]:
-        """The kernels whose boxes overlap a bin.
-
-        Parameters
-        ----------
-        binIndex
-            The flat index of the bin.
-
-        Returns
-        -------
-        NDArray[np.intp]
-            The indices of the kernels, in ascending order.
-        """
-
-        return self._kernelsInBins[self._firstKernelOfBin[binIndex] : self._firstKernelOfBin[binIndex + 1]]
-
-    def getCandidateIndices(
-        self, queryBoxMin: NDArray[np.float64], queryBoxMax: NDArray[np.float64]
-    ) -> NDArray[np.intp]:
-        """The kernels whose boxes overlap a bin that the query box overlaps, each once.
-
-        Parameters
-        ----------
-        queryBoxMin
-            The lower corner of the query box.
-        queryBoxMax
-            Its upper corner.
-
-        Returns
-        -------
-        NDArray[np.intp]
-            The indices of the candidate kernels, in ascending order.
-        """
-
-        if len(self._kernelsInBins) == 0:
-            return np.empty(0, dtype=np.intp)
-
-        lowestQueriedBinIndex = ((queryBoxMin - self._boundingBoxMin) / self._binSize).astype(int)
-        highestQueriedBinIndex = ((queryBoxMax - self._boundingBoxMin) / self._binSize).astype(int)
-
-        # a query box beyond the grid of bins on either side of a dimension overlaps no bin
-        if np.any(highestQueriedBinIndex < 0) or np.any(lowestQueriedBinIndex > self._nBins - 1):
-            return np.empty(0, dtype=np.intp)
-
-        np.maximum(lowestQueriedBinIndex, 0, out=lowestQueriedBinIndex)
-        np.minimum(highestQueriedBinIndex, self._nBins - 1, out=highestQueriedBinIndex)
-
-        # in three dimensions, a lower dimension being a single layer of bins
-        lowest = lowestQueriedBinIndex.tolist() + [0] * (3 - self._dimension)
-        highest = highestQueriedBinIndex.tolist() + [0] * (3 - self._dimension)
-        first = self._firstKernelOfBin
-        strideAlongY, strideAlongZ = int(self._strides[1]), int(self._strides[2])
-
-        # the bins of a row along the first dimension are consecutive, and so are their kernels: one slice per row
-        kernelsOfRows = []
-        for z in range(lowest[2], highest[2] + 1):
-            for y in range(lowest[1], highest[1] + 1):
-                firstBinOfRow = z * strideAlongZ + y * strideAlongY
-                kernelsOfRows.append(
-                    self._kernelsInBins[first[firstBinOfRow + lowest[0]] : first[firstBinOfRow + highest[0] + 1]]
-                )
-
-        # A kernel whose box overlaps several of the queried bins is in several rows: each once, from the sorted
-        # candidates by comparing neighbours (for the few hundred candidates of a query, this is faster than np.unique,
-        # which hashes them).
-        candidates = np.sort(np.concatenate(kernelsOfRows))
-        isFirstOfItsValue = np.ones(len(candidates), dtype=bool)
-        isFirstOfItsValue[1:] = candidates[1:] != candidates[:-1]
-        return candidates[isFirstOfItsValue]
+    # the first kept kernel function of a particle comes after all kept ones of the particles before it
+    numberKeptBefore = np.concatenate(([0], np.cumsum(isKept))).astype(np.intp)
+    return numberKeptBefore[firstKernelOfParticle], kernelsOfParticles[isKept]
 
 
 class KDBinOrganizedParticleManager(BaseParticleManager):
+    """Assigns every particle the kernel functions that cover one of its evaluation points, searched in the bins of
+    the kernel functions (:class:`BinsOfKernelFunctions`) in every increment, or, with a neighbour list skin, when the
+    motion since the last search makes it due. See the documentation page "Particle managers" for the steps of the
+    search.
+
+    Parameters
+    ----------
+    particleKernelDomain
+        The particles and the kernel functions that may cover them.
+    dimension
+        The spatial dimension.
+    journal
+        The journal for messages.
+    bondParticlesToKernelFunctions
+        Whether every kernel function is bonded to the particle of the same position in the domain and moves with it.
+    randomlyShiftPartliceShapeFunctions
+        With bonded kernel functions and a float: shift each kernel function off its particle centre at random, scaled
+        by this factor.
+    neighbourListSkinFraction
+        The skin, as a fraction of the smallest support half-width; 0 searches in every increment.
+    """
+
     def __init__(
         self,
         particleKernelDomain: ParticleKernelDomain,
@@ -210,13 +133,24 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
         self.kernelFunctionsAreBondedToParticles = bondParticlesToKernelFunctions
         self._journal = journal
 
-        # Pre-fetch labels for integer sorting
-        self._kernelLabels = np.array([k.node.label for k in self._meshfreeKernelFunctions], dtype=int)
+        # A particle lists its kernel functions in the order of their labels, so that the order of its nodes, and so of
+        # its degrees of freedom, does not depend on where the search found them. The bins and the record of the last
+        # search number the kernel functions in this order; bonding pairs them with the particles in the order of the
+        # domain (self._meshfreeKernelFunctions).
+        self._kernelFunctionsInLabelOrder = sorted(self._meshfreeKernelFunctions, key=lambda k: k.node.label)
 
         self._particlesWithChangedKernelFunctions = []
 
-        # If every kernel's support is exactly its bounding box, the precise support check reduces
-        # to a strict box test that can be vectorised over all surviving candidates at once.
+        # The record of the last search, as numbers: the kernel functions of particle i (positions in the label order)
+        # are _kernelsOfParticlesAtLastSearch[_firstKernelOfParticleAtLastSearch[i] : ...[i + 1]]. A search compares
+        # what it finds against this record to decide whether the kernel functions of a particle changed. The record is
+        # what the particles hold because the manager is the only one that assigns their kernel functions
+        # (BaseParticle.assignKernelFunctions). Before the first search, no particle has kernel functions, so the first
+        # search finds every particle changed.
+        self._firstKernelOfParticleAtLastSearch = np.zeros(len(self._particles) + 1, dtype=np.intp)
+        self._kernelsOfParticlesAtLastSearch = np.empty(0, dtype=np.intp)
+
+        # If every kernel's support is exactly its bounding box, the box test of the bins is the whole search.
         self._allKernelsHaveBoxSupport = all(k.hasBoxSupport for k in self._meshfreeKernelFunctions)
 
         self._neighbourListSkin = self._computeNeighbourListSkin(neighbourListSkinFraction)
@@ -287,21 +221,35 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
         return neighbourListSkinFraction * smallestSupportHalfWidth
 
     def signalizeKernelFunctionUpdate(self) -> None:
-        self._theBins = _FastKDBinOrganizer(
-            list(self._meshfreeKernelFunctions), self._dimension, skin=self._neighbourListSkin
-        )
+        """Sort the kernel functions into the bins anew (:class:`BinsOfKernelFunctions`), at the boxes they have now.
+        Every box is grown by the skin on all sides: a search then reports the kernel functions that cover a particle
+        *or come within the skin of doing so*, which is what allows a later increment to reuse the answer."""
+
+        kernelFunctions, dim = self._kernelFunctionsInLabelOrder, self._dimension
+        lowerCorners, upperCorners = np.empty((len(kernelFunctions), dim)), np.empty((len(kernelFunctions), dim))
+
+        def boxesOfChunk(kernelIndices) -> None:
+            for k in kernelIndices:
+                lower, upper = kernelFunctions[k].getBoundingBox()
+                lowerCorners[k], upperCorners[k] = lower[:dim], upper[:dim]
+
+        mapChunksInParallel(range(len(kernelFunctions)), boxesOfChunk)
+
+        skin = self._neighbourListSkin
+        self._theBins = BinsOfKernelFunctions(lowerCorners - skin, upperCorners + skin)
 
     def updateConnectivity(self) -> bool:
         """Bring the particle-to-kernel-function connectivity up to date.
 
-        A full search is expensive and, in a dynamic simulation, usually pointless: neighbours change
-        through deformation, not through the bar as a whole moving, so from one increment to the next
-        almost no particle changes its set of kernel functions.
+        Bonded kernel functions are moved to their particles first, and sorted into the bins anew before a search. A
+        particle whose kernel functions changed is assigned the new ones (``assignKernelFunctions``). Every other
+        particle keeps its kernel functions and only evaluates its shape functions anew (``updateShapeFunctions``),
+        because it has moved.
 
-        With a neighbour list skin the search therefore reports every kernel function that covers a
+        With a neighbour list skin the search reports every kernel function that covers a
         particle *or comes within the skin of covering it*, and that answer stays usable until
         accumulated motion could have carried something across the remaining margin. Increments in
-        between only rebuild the shape functions, which have to be rebuilt in any case because the
+        between only update the shape functions, which have to be updated in any case because the
         particles have moved.
 
         The extra kernel functions this admits are harmless rather than approximate: they evaluate to
@@ -318,7 +266,7 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
             self._moveKernelFunctionsToTheirParticles()
 
         if not self._aSearchIsDue():
-            self._rebuildShapeFunctionsWithUnchangedNeighbours()
+            self._updateShapeFunctionsOfAllParticles()
             self._particlesWithChangedKernelFunctions = []
             return False
 
@@ -453,128 +401,115 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
         self._kernelCentresAtLastSearch = self._currentKernelCentres()
         self._gatherEvaluationCoordinates(self._evaluationCoordinatesAtLastSearch)
 
-    def _rebuildShapeFunctionsWithUnchangedNeighbours(self) -> None:
-        """Rebuild every particle's shape functions from its existing set of kernel functions.
+    def _updateShapeFunctionsOfAllParticles(self) -> None:
+        """Update the shape functions of every particle, with the kernel functions it has: the particles have moved,
+        so their shape functions are out of date even though their kernel functions are not."""
 
-        The particles have moved, so the shape functions are stale even though the neighbour lists are
-        not. Reassigning the unchanged set is what recomputes them.
+        def updateChunk(particleChunk: List[Any]) -> None:
+            for particle in particleChunk:
+                particle.updateShapeFunctions()
+
+        mapChunksInParallel(self._particles, updateChunk)
+
+    def _kernelsOfChunkAtLastSearch(self, first: int, last: int) -> Tuple[NDArray[np.intp], NDArray[np.intp]]:
+        """The record of the last search for the particles ``first`` to ``last`` (exclusive), with the offsets of the
+        chunk: they start at 0.
+
+        Parameters
+        ----------
+        first
+            The first particle of the chunk.
+        last
+            One past the last particle of the chunk.
+
+        Returns
+        -------
+        tuple[NDArray[np.intp], NDArray[np.intp]]
+            ``firstKernelAtLastSearch`` and ``kernelsAtLastSearch``: the kernel functions of particle ``first + i`` at
+            the last search were ``kernelsAtLastSearch[firstKernelAtLastSearch[i] : firstKernelAtLastSearch[i + 1]]``.
         """
 
-        def rebuildChunk(particleChunk: List[Any]) -> None:
-            for particle in particleChunk:
-                particle.assignKernelFunctions(particle.kernelFunctions)
-
-        mapChunksInParallel(self._particles, rebuildChunk)
+        firstKernelOfParticle = self._firstKernelOfParticleAtLastSearch
+        return (
+            firstKernelOfParticle[first : last + 1] - firstKernelOfParticle[first],
+            self._kernelsOfParticlesAtLastSearch[firstKernelOfParticle[first] : firstKernelOfParticle[last]],
+        )
 
     def _searchForCoveringKernelFunctions(self) -> None:
-        """Search, for every particle, the kernel functions that cover it within the skin."""
+        """Search, for every particle, the kernel functions that cover one of its evaluation points (within the skin).
+        Assign them to a particle whose kernel functions changed since the last search, and update the shape functions
+        of every other particle. The particles are searched chunk by chunk, in parallel. See "Searching the kernel
+        functions of the particles" on the page "Particle managers"."""
 
         self._journal.message("Searching particle-kernel connectivity...", "ParticleManager", level=1)
 
-        # Capture variables for closure
-        allKernels = self._meshfreeKernelFunctions
-        kernelBoundingBoxMins = self._theBins._mins
-        kernelBoundingBoxMaxs = self._theBins._maxs
-        binOrganizer = self._theBins
-        kernelLabels = self._kernelLabels
+        if not self._particles:
+            return
+
+        kernelFunctions = self._kernelFunctionsInLabelOrder
+        bins = self._theBins
         dim = self._dimension
-        boxSupport = self._allKernelsHaveBoxSupport
+        allKernelsHaveBoxSupport = self._allKernelsHaveBoxSupport
+        particles = self._particles
 
-        def processParticleChunk(particleChunk: List[Any]) -> List[Any]:
-            particlesInChunkWithChangedKernelFunctions = []
+        def searchChunk(particleIndices) -> _KernelFunctionsOfAChunk:
+            first, last = particleIndices[0], particleIndices[-1] + 1
+            particleChunk = particles[first:last]
 
-            for particle in particleChunk:
-                evaluationCoordinates = particle.getEvaluationCoordinates()
-
-                # Broad Phase Min/Max Calculation
-                if len(evaluationCoordinates) == 1:
-                    particleBoxMin = evaluationCoordinates[0]
-                    particleBoxMax = evaluationCoordinates[0]
-                else:
-                    particleBoxMin = np.min(evaluationCoordinates, axis=0)
-                    particleBoxMax = np.max(evaluationCoordinates, axis=0)
-
-                # 1. Grid Search
-                candidateKernelIndices = binOrganizer.getCandidateIndices(particleBoxMin, particleBoxMax)
-
-                # 2. Vectorized AABB Filter
-                candidateBoundingBoxMins = kernelBoundingBoxMins[candidateKernelIndices, :dim]
-                candidateBoundingBoxMaxs = kernelBoundingBoxMaxs[candidateKernelIndices, :dim]
-                particleBoxMaxInDomainDimensions = particleBoxMax[:dim]
-                particleBoxMinInDomainDimensions = particleBoxMin[:dim]
-
-                candidateBoxOverlapsParticleBox = np.all(
-                    (particleBoxMaxInDomainDimensions >= candidateBoundingBoxMins)
-                    & (particleBoxMinInDomainDimensions <= candidateBoundingBoxMaxs),
-                    axis=1,
+            evaluationPointsOfParticles = [
+                np.atleast_2d(particle.getEvaluationCoordinates()) for particle in particleChunk
+            ]
+            firstPointOfParticle = np.cumsum(
+                [0] + [len(points) for points in evaluationPointsOfParticles], dtype=np.intp
+            )
+            firstKernelOfParticle, kernelsOfParticles = bins.kernelsWhoseBoxesHoldThePoints(
+                np.ascontiguousarray(np.concatenate(evaluationPointsOfParticles)[:, :dim]), firstPointOfParticle
+            )
+            if not allKernelsHaveBoxSupport:
+                firstKernelOfParticle, kernelsOfParticles = _keepKernelsWhoseSupportHoldsAPoint(
+                    firstKernelOfParticle, kernelsOfParticles, evaluationPointsOfParticles, kernelFunctions
                 )
-                overlappingKernelIndices = candidateKernelIndices[candidateBoxOverlapsParticleBox]
+            firstKernelAtLastSearch, kernelsAtLastSearch = self._kernelsOfChunkAtLastSearch(first, last)
 
-                # 3. Precise Check (Geometric)
-                # Ensure coordinates are 2D for the Cython signature
-                evaluationCoordinates2D = evaluationCoordinates
-                if evaluationCoordinates2D.ndim == 1:
-                    # Reshape (dim,) -> (1, dim)
-                    evaluationCoordinates2D = evaluationCoordinates2D.reshape(1, -1)
+            # Compared as lists of Python ints: slicing and comparing a list costs far less per particle than comparing
+            # small NumPy arrays. Each chunk converts only its own part, so no thread takes references to ints that
+            # another thread created (in free-threaded Python, every such reference is an atomic operation).
+            found, firstFound = kernelsOfParticles.tolist(), firstKernelOfParticle.tolist()
+            atLastSearch, firstAtLastSearch = kernelsAtLastSearch.tolist(), firstKernelAtLastSearch.tolist()
 
-                if boxSupport:
-                    # A kernel with box support covers a coordinate exactly when the coordinate lies
-                    # strictly inside its bounding box, and the bounds of every candidate are already
-                    # to hand from the broad phase -- so the whole per-candidate support query becomes
-                    # one vectorised test. Both comparisons are strict: a coordinate on the boundary
-                    # sits where the kernel is exactly zero and is not covered.
-                    overlappingBoundingBoxMins = kernelBoundingBoxMins[overlappingKernelIndices, :dim]
-                    overlappingBoundingBoxMaxs = kernelBoundingBoxMaxs[overlappingKernelIndices, :dim]
-                    evaluationPoints = evaluationCoordinates2D[:, None, :dim]
-                    kernelCoversParticle = np.any(
-                        np.all(
-                            (evaluationPoints > overlappingBoundingBoxMins[None, :, :])
-                            & (evaluationPoints < overlappingBoundingBoxMaxs[None, :, :]),
-                            axis=2,
-                        ),
-                        axis=0,
-                    )
-                    coveringKernelIndicesUnsorted = overlappingKernelIndices[kernelCoversParticle]
-                    coveringKernelIndices = list(
-                        coveringKernelIndicesUnsorted[
-                            np.argsort(kernelLabels[coveringKernelIndicesUnsorted], kind="stable")
-                        ]
-                    )
-                else:
-                    coveringKernelIndices = []
-                    for kernelIndex in overlappingKernelIndices:
-                        candidateKernel = allKernels[kernelIndex]
-
-                        if candidateKernel.isAnyCoordinateInSupport(evaluationCoordinates2D):
-                            coveringKernelIndices.append(kernelIndex)
-
-                    coveringKernelIndices.sort(key=lambda idx: kernelLabels[idx])
-                validKernels = [allKernels[i] for i in coveringKernelIndices]
-
-                if not validKernels:
+            particlesWithChangedKernelFunctions = []
+            for i, particle in enumerate(particleChunk):
+                kernels = found[firstFound[i] : firstFound[i + 1]]
+                if not kernels:
                     raise ValueError(
-                        f"Particle at {particle.getCenterCoordinates()} has no associated kernel functions after connectivity update."
+                        f"Particle at {particle.getCenterCoordinates()} has no associated kernel functions after "
+                        "connectivity update."
                     )
 
-                if validKernels != particle.kernelFunctions:
-                    particlesInChunkWithChangedKernelFunctions.append(particle)
+                if kernels == atLastSearch[firstAtLastSearch[i] : firstAtLastSearch[i + 1]]:
+                    particle.updateShapeFunctions()
+                else:
+                    particle.assignKernelFunctions([kernelFunctions[k] for k in kernels])
+                    particlesWithChangedKernelFunctions.append(particle)
 
-                particle.assignKernelFunctions(
-                    validKernels
-                )  # assign the kernel functions. This happens even if they are the same, because the overlap with the particle usually changes due to movement.
+            return _KernelFunctionsOfAChunk(
+                firstKernelOfParticle, kernelsOfParticles, particlesWithChangedKernelFunctions
+            )
 
-            return particlesInChunkWithChangedKernelFunctions
+        resultsOfChunks = mapChunksInParallel(range(len(particles)), searchChunk)
 
-        changedParticlesPerChunk = mapChunksInParallel(self._particles, processParticleChunk)
-
-        # The chunks are consecutive and their results come in their order, so the collected list is the same for any
+        # The chunks are consecutive and their results come in their order, so what is collected is the same for any
         # number of threads.
         self._particlesWithChangedKernelFunctions = [
-            particle for chunk in changedParticlesPerChunk for particle in chunk
+            particle for chunk in resultsOfChunks for particle in chunk.particlesWithChangedKernelFunctions
         ]
+        self._kernelsOfParticlesAtLastSearch = np.concatenate([chunk.kernelsOfParticles for chunk in resultsOfChunks])
+        # the offsets of a chunk start at 0; the offsets of all particles are the cumulative numbers of kernel functions
+        numbersOfKernels = np.concatenate([np.diff(chunk.firstKernelOfParticle) for chunk in resultsOfChunks])
+        self._firstKernelOfParticleAtLastSearch = np.concatenate(([0], np.cumsum(numbersOfKernels))).astype(np.intp)
 
     def getCoveredDomain(self) -> Tuple[NDArray[np.float64], NDArray[np.float64]]:
-        return self._theBins._boundingBoxMin, self._theBins._boundingBoxMax
+        return self._theBins.gridLowerCorner, self._theBins.gridUpperCorner
 
     def __str__(self) -> str:
         return (
@@ -589,12 +524,12 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
 
         import matplotlib.pyplot as plt
 
-        nBins = self._theBins._nBins
+        nBins = self._theBins.numberOfBins
         nKernelFunctions = np.zeros(nBins)
 
         for i in range(nBins[0]):
             for j in range(nBins[1]):
-                flatBinIndex = j * self._theBins._strides[1] + i
+                flatBinIndex = j * self._theBins.strides[1] + i
                 nKernelFunctions[i, j] = len(self._theBins.kernelsInBin(flatBinIndex))
 
         plt.figure()

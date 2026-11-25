@@ -97,6 +97,8 @@ cdef extern from "Marmot/MarmotParticle.h":
 
         void assignMeshfreeKernelFunctions (const vector[const MarmotMeshfreeKernelFunction*]& meshfreeKernelFunctions) except +
 
+        void updateShapeFunctions() except +
+
         void computePhysicsKernels(   const double* dUc,
                                             double* Pc,
                                             double* Kc,

@@ -124,6 +124,18 @@ extensions += [
     Extension(
         "*",
         sources=[
+            "edelweissmeshfree/particlemanagers/binsofkernelfunctions.pyx",
+        ],
+        include_dirs=[numpy.get_include()],
+        language="c++",
+        extra_compile_args=compile_flags(arch=arch_flags),
+    )
+]
+
+extensions += [
+    Extension(
+        "*",
+        sources=[
             "edelweissmeshfree/fieldoutput/mpresultcollector.pyx",
         ],
         include_dirs=[join(marmot_dir, "include"), numpy.get_include()],

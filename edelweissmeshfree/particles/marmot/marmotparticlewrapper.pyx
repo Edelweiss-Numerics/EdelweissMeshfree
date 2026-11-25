@@ -392,6 +392,15 @@ cdef class MarmotParticleWrapper:
         self._nodes = [kf.node for kf in self._assignedKernelFunctions]
         self._fields = [ self._baseFields for n in self._nodes ]
 
+    def updateShapeFunctions(self):
+        """Evaluate the shape functions anew at the particle's current position, with the kernel functions it has.
+
+        Marmot holds the kernel functions, so no Python object is touched: the particles of several threads do not
+        contend for the reference counts of the kernel functions they share.
+        """
+        with nogil:
+            self._marmotParticle.updateShapeFunctions()
+
     def prepareYourself(self, timeTotal: float, dTime: float):
         self._stateVarsTemp[:] = self._stateVars
         self._marmotParticle.acceptStateAndPosition() # this is to set the state of the particle to "ready"
