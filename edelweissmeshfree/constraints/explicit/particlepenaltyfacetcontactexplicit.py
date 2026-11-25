@@ -11,6 +11,7 @@ closest point on a facet, the facet normal, the search for the closest facet -- 
 from enum import IntEnum
 
 import numpy as np
+from edelweissfe.constraints.base.constraintbase import NextIncrement
 from edelweissfe.timesteppers.timestep import TimeStep
 from edelweissfe.utils.facetcontactgeometry import (
     closestFacetCandidates,
@@ -501,6 +502,36 @@ class ParticlePenaltyFacetContactExplicit(MPMExplicitConstraintBase):
         self.penaltyEnergy = float(0.5 * self._penaltyParameter * np.sum(gap[penetrating] ** 2))
         self.numberOfPointsInContact = len(penetrating)
         self.deepestPenetration = float(-gap[penetrating].min()) if len(penetrating) else 0.0
+
+    def addBoundOfAbsoluteStiffnessTimes(
+        self,
+        U_np: np.ndarray,
+        dU: np.ndarray,
+        weights: np.ndarray,
+        bound: np.ndarray,
+        timeStep: TimeStep,
+        nextIncrement: NextIncrement | None = None,
+    ):
+        """Add nothing: the stiffness of this contact is not in the critical time step of ``NED``. It has no tangent for
+        the default of :meth:`~edelweissfe.constraints.base.constraintbase.ConstraintBase.addBoundOfAbsoluteStiffnessTimes`
+        to bound, and does not give its springs. Keep :math:`2\\sqrt{m/k}`, with :math:`m` the mass a contact point
+        carries, well above the time increment.
+
+        Parameters
+        ----------
+        U_np
+            The current solution; unused.
+        dU
+            The solution increment; unused.
+        weights
+            The weight of each column; unused.
+        bound
+            The row sums; left as they are.
+        timeStep
+            The current time step; unused.
+        nextIncrement
+            The next increment the solver may take; unused.
+        """
 
     def _currentCoordinatesOfPairedPoints(self, U_np: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """Where the paired points and the nodes of their facets are now.

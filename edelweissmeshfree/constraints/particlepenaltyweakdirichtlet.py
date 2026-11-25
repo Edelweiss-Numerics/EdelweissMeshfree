@@ -1,11 +1,14 @@
 import numpy as np
 from edelweissfe.config.phenomena import getFieldSize
+from edelweissfe.constraints.base.constraintbase import NextIncrement
 from edelweissfe.timesteppers.timestep import TimeStep
 from edelweissfe.variables.scalarvariable import ScalarVariable
 
 from edelweissmeshfree.constraints.base.mpmconstraintbase import MPMConstraintBase
 from edelweissmeshfree.constraints.base.pointsofparticles import (
-    addForcesOnPointsOfParticle,
+    SpringsOnPointsOfParticle,
+    addBoundOfAbsoluteStiffnessOfPointsOfParticle,
+    addForcesOfSpringsOnPointsOfParticle,
     locateTheNodesOfParticles,
 )
 from edelweissmeshfree.models.mpmmodel import MPMModel
@@ -49,8 +52,10 @@ class ParticlePenaltyWeakDirichlet(MPMConstraintBase):
 
     A support holds only as well as its penalty is stiff against the material next to it: a penalty that is merely
     comparable to the stiffness of a particle lets the support give way and spring back, an error that does not shrink
-    with the particle size. Its upper bound is set by the critical time step of the explicit integration,
-    :math:`\Delta t < 2 \sqrt{m / k}` with :math:`m` the mass a constrained point carries; see example 186.
+    with the particle size. A stiffer one costs time increments: the explicit solver adds its springs to the
+    frequencies of the nodes they hold (:meth:`addBoundOfAbsoluteStiffnessTimes`), and a support far stiffer than
+    the particles sets the critical time step, about :math:`2 \sqrt{m / k}` with :math:`m` the mass a constrained point
+    carries; see example 186.
 
     Parameters
     ----------
@@ -245,10 +250,7 @@ class ParticlePenaltyWeakDirichlet(MPMConstraintBase):
     def computeKernelsExplicit(self, U_np: np.ndarray, dU: np.ndarray, P: np.ndarray, timeStep: TimeStep):
         """Add the residual contribution of the support in an explicit analysis: the negative of the forces that hold
         the constrained components of the constrained points at their initial positions, measured where the points are
-        now (see the class documentation). Particle by particle, the forces of its constrained points
-        :math:`\\boldsymbol{f}_p` reach the nodes of its kernel functions as one product with the interpolation vectors
-        of the points, :math:`\\boldsymbol{G}^\\mathsf{T} \\boldsymbol{f}`
-        (:func:`~edelweissmeshfree.constraints.base.pointsofparticles.addForcesOnPointsOfParticle`).
+        now (see the class documentation), from its springs (:meth:`_springsOfEachParticle`).
 
         Parameters
         ----------
@@ -262,21 +264,82 @@ class ParticlePenaltyWeakDirichlet(MPMConstraintBase):
             The current time step; unused.
         """
 
-        components = list(self._prescribedStepDelta)
         PAtNodes = P.reshape(-1, self._fieldSize)
-
-        for p, localNodes, initialCoordinates in zip(
-            self._constrainedParticles, self._localNodesOfParticle, self._initialCoordinatesOfConstrainedPoints
-        ):
-            coordinates = self._constrainedCoordinatesOf(p)
-            # one row per constrained point: the vector the force is distributed with (see interpolationVectorAtPointOf)
-            interpolations = np.array([self.interpolationVectorAtPointOf(p, x) for x in coordinates])
-            # the forces that pull the constrained components of the points back to their initial positions
-            forces = -self._penaltyParameter * (coordinates[:, components] - initialCoordinates[:, components])
-            addForcesOnPointsOfParticle(PAtNodes, localNodes, interpolations, forces, components)
+        for localNodes, springs in self._springsOfEachParticle():
+            addForcesOfSpringsOnPointsOfParticle(PAtNodes, localNodes, springs)
 
         for i in self._prescribedStepDelta:
             self.penaltyForce[i] = np.sum(P[i :: self._fieldSize])
+
+    def addBoundOfAbsoluteStiffnessTimes(
+        self,
+        U_np: np.ndarray,
+        dU: np.ndarray,
+        weights: np.ndarray,
+        bound: np.ndarray,
+        timeStep: TimeStep,
+        nextIncrement: NextIncrement | None = None,
+    ):
+        """Add the row sums of the absolute value of the stiffness of the support in an explicit analysis, weighted by
+        column, from the same springs as its force (:meth:`_springsOfEachParticle`,
+        :func:`~edelweissmeshfree.constraints.base.pointsofparticles.addBoundOfAbsoluteStiffnessOfPointsOfParticle`).
+
+        Parameters
+        ----------
+        U_np
+            The current solution; unused.
+        dU
+            The solution increment; unused.
+        weights
+            The weight of each column.
+        bound
+            The row sums to augment.
+        timeStep
+            The current time step; unused.
+        nextIncrement
+            The next increment the solver may take; unused: the springs of a support act at every state.
+        """
+
+        for localNodes, springs in self._springsOfEachParticle():
+            addBoundOfAbsoluteStiffnessOfPointsOfParticle(bound, weights, localNodes, springs)
+
+    def _springsOfEachParticle(self) -> list[tuple[np.ndarray, SpringsOnPointsOfParticle]]:
+        """The springs of the support in an explicit analysis, per constrained particle and per constrained component
+        :math:`i`: one of the penalty stiffness :math:`k` at each constrained point, along the axis :math:`i`, whose gap
+        is the displacement of the point from where it is held, :math:`g_p = x_{pi} - X_{pi}`, and whose force
+        :math:`f_p = -k\\, g_p` pulls it back; with the vector the force is distributed with
+        (:meth:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.interpolationVectorAtPointOf`).
+        What the force (:meth:`computeKernelsExplicit`) and the bound of the stiffness
+        (:meth:`addBoundOfAbsoluteStiffnessTimes`) are made from.
+
+        Returns
+        -------
+        list[tuple[numpy.ndarray, SpringsOnPointsOfParticle]]
+            Where the nodes of the particle's kernel functions sit in the block, and the springs.
+        """
+
+        springsOfEachParticle = []
+        for particle, localNodes, initialCoordinates in zip(
+            self._constrainedParticles, self._localNodesOfParticle, self._initialCoordinatesOfConstrainedPoints
+        ):
+            coordinates = self._constrainedCoordinatesOf(particle)
+            interpolations = np.array([self.interpolationVectorAtPointOf(particle, x) for x in coordinates]).reshape(
+                (len(coordinates), len(localNodes))
+            )
+            stiffness = np.full(len(coordinates), self._penaltyParameter)
+            for i in self._prescribedStepDelta:
+                directions = np.zeros((len(coordinates), self._fieldSize))
+                directions[:, i] = 1.0
+                gaps = coordinates[:, i] - initialCoordinates[:, i]
+                springsOfEachParticle.append(
+                    (
+                        localNodes,
+                        SpringsOnPointsOfParticle(
+                            interpolations, directions, -self._penaltyParameter * gaps, stiffness
+                        ),
+                    )
+                )
+        return springsOfEachParticle
 
     def _constrainedCoordinatesOf(self, particle: BaseParticle) -> np.ndarray:
         """The current coordinates of the constrained points of a particle: its center, or the constrained vertices.

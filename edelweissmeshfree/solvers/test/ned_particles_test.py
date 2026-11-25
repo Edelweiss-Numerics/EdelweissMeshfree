@@ -48,7 +48,9 @@ from edelweissfe.journal.journal import Journal
 from edelweissfe.models.change import Change
 from edelweissfe.outputmanagers.restart import OutputManager as RestartOutputManager
 from edelweissfe.outputmanagers.restart import RestartOutputManagerSchema
-from edelweissfe.solvers.base.criticaltimestep import CriticalTimeStepEstimate
+from edelweissfe.solvers.base.criticaltimestep import (
+    CriticalTimeStepEstimateFromTheBoundOfEachDof,
+)
 from edelweissfe.solvers.nonlinearexplicitdynamic import NED
 from edelweissfe.steps.adaptivestepforexplicitsimulations import (
     AdaptiveStepForExplicitSimulations,
@@ -122,7 +124,7 @@ ESTIMATE_OF_THE_PARTICLES = MPMDiscreteSystem.criticalTimeStepOfEntitiesWithOwnI
 def _estimateOf(value: float):
     """A stand-in for the particles' estimate that gives the critical time step ``value``, whatever their state."""
 
-    return lambda *args: CriticalTimeStepEstimate(value)
+    return lambda *args: CriticalTimeStepEstimateFromTheBoundOfEachDof(value, np.zeros(0, dtype=int), np.zeros(0))
 
 
 @pytest.fixture(autouse=True)

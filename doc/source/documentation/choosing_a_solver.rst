@@ -295,8 +295,9 @@ the largest eigenvalue from above, whatever state they were refined at, but weig
 it less tightly than the weights constant per field where the stiffness changed faster than they followed: an estimate
 below the one the weights started from starts them anew, so an increment that ``NED`` lowers only never falls below the
 smallest estimate with weights constant per field (with ``follow-critical-time-step``, it can, down to the estimate the
-weights started from). The weights start anew also with a new numbering, every step and after a resume.
-No tangent is assembled for it: every particle
+weights started from). The weights start anew also with a new numbering, every step and after a resume. In a field a
+constraint acts on, the weights stay constant per field, so that the rows of a penalty constraint add to the
+particles' as they are (below). No tangent is assembled for it: every particle
 bounds the row sums of the absolute value of its own stiffness, node by node, from the derivatives of its forces with
 respect to the increment it interpolates (Marmot), at a cost proportional to its nodes instead of their square. It takes
 the tangent as it is, unsymmetric: the tangent of gradient-enhanced particles couples the stress to the
@@ -307,6 +308,29 @@ differences where it is without damping. The stiffness is that of a zero increme
 rate-independent material does not depend on the time increment, but for a rate-dependent one, e.g. with a
 Duvaut-Lions viscosity, it is the stiffness relaxed over that time, softer than the response within an explicit
 increment, and the estimate may be too large; take a smaller ``courant-number`` there.
+
+A penalty constraint on the particles -- a support (``ParticlePenaltyWeakDirichlet``), a Cartesian boundary or a
+contact with an analytical surface held by a penalty -- adds its stiffness to the frequencies of the nodes it couples.
+The constraints bound the row sums of their own stiffness, scaled by the lumped mass, in every increment, and these are
+added to the particles' row sums inside the field matrix
+(:class:`~edelweissmeshfree.models.mpmdiscretesystem.CriticalTimeStepEstimateFromTheFieldMatrix`): with weights constant
+per field, where they raise no diagonal entry of it, the particles' estimate stands; with carried weights, they also add
+to the rows of the Collatz-Wielandt bound, which can lower the estimate a little where they raise no diagonal entry. A
+support or a contact far stiffer than the particles sets the critical time step. The margin policy of the particles
+watches the estimate with the constraints of the current increment as well (theory page on the critical time step of
+EdelweissFE, "The particles: the rows inside their field matrix"). This holds for the particles and the constraints
+together, for the unsymmetric tangent of the particles as well, as long as every constraint couples degrees of freedom
+of one field of the particles only (a support or a contact of the displacement; a penalty between two fields is not
+covered, and this is assumed, not checked). A constraint that couples particles and finite elements at once -- a
+projectile of elements on a slab of particles -- is taken with the larger of the elements' bound and the particles'
+field matrix with its rows; that this bounds the two together is not proven. The contact of the vertices of particles
+with a faceted surface (``ParticlePenaltyFacetContactExplicit``) is not in the estimate: keep :math:`2\sqrt{m/k}` of its
+penalty, with :math:`m` the mass a contact point carries, well above the time increment. A constraint on a point
+away from the center of a particle distributes its force, by default, with the shape functions there,
+:math:`\mathbf{N}`, while the point moves with the particle's interpolation linearized about its center,
+:math:`\mathbf{G}`: its stiffness is :math:`k\,\mathbf{N}\mathbf{G}^\mathsf{T}`, and the bound, which takes
+:math:`\mathbf{N}` on both sides, holds only where the two agree -- at the center, or with
+``interpolationLinearizedAboutCenter`` (:class:`~edelweissmeshfree.constraints.base.pointsofparticles.SpringsOnPointsOfParticle`).
 
 What to know
 ************

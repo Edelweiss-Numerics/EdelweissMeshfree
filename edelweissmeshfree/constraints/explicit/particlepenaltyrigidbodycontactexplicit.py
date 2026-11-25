@@ -6,20 +6,22 @@ from edelweissfe.surfaces.entitybasedsurface import EntityBasedSurface
 from edelweissfe.timesteppers.timestep import TimeStep
 from edelweissfe.variables.scalarvariable import ScalarVariable
 
-from edelweissmeshfree.constraints.base.mpmexplicitconstraintbase import (
-    MPMExplicitConstraintBase,
+from edelweissmeshfree.constraints.base.penaltyspringsexplicit import (
+    PenaltySpringsOnPointsOfOneParticleExplicit,
 )
 from edelweissmeshfree.constraints.base.pointsofparticles import (
-    addForcesOnPointsOfParticle,
     locateTheNodesOfParticles,
 )
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.particles.base.baseparticle import BaseParticle
 
 
-class ParticlePenaltyContactImplicitSurfaceConstraintExplicit(MPMExplicitConstraintBase):
+class ParticlePenaltyContactImplicitSurfaceConstraintExplicit(PenaltySpringsOnPointsOfOneParticleExplicit):
     """
-    Penalty contact constraint for arbitrary implicit surfaces in EXPLICIT simulations.
+    Penalty contact constraint for arbitrary implicit surfaces in EXPLICIT simulations: the surface gives the signed
+    distance of a point (:meth:`_gapsOfPoints`) and its gradient (:meth:`_gradientsOfTheGaps`), the force and the bound
+    of its stiffness for the critical time step are those of
+    :class:`~edelweissmeshfree.constraints.base.penaltyspringsexplicit.PenaltySpringsOnPointsOfOneParticleExplicit`.
 
     Parameters
     ----------
@@ -167,48 +169,41 @@ class ParticlePenaltyContactImplicitSurfaceConstraintExplicit(MPMExplicitConstra
 
         return hasChanged
 
-    def computeKernelsExplicit(self, U_np: np.ndarray, dU: np.ndarray, P: np.ndarray, timeStep: TimeStep):
-        """Add the residual contribution of the penalty forces: the negative of the forces with which the surface
-        pushes the particle back, evaluated at the particle's current position.
+    def _gapsOfPoints(self, points: np.ndarray, timeStep: TimeStep) -> np.ndarray:
+        """The signed distance of each point to the surface, negative inside it.
 
         Parameters
         ----------
-        U_np
-            The current solution; unused, the penetration follows from the particle's current position.
-        dU
-            The solution increment; likewise unused.
-        P
-            The residual contribution to augment.
+        points
+            The points, one row each.
         timeStep
-            The current time step information (not used in this constraint but included for interface consistency).
+            The time step; unused, the surface does not move.
+
+        Returns
+        -------
+        np.ndarray
+            The signed distances.
         """
 
-        total_reaction = 0.0
+        return np.array([self._implicit_function(p) for p in points], dtype=float)
 
-        for p_coord in self._constrained_points:
-            dist = self._implicit_function(p_coord)
+    def _gradientsOfTheGaps(self, points: np.ndarray) -> np.ndarray:
+        """The gradient of the signed distance at each point, pointing out of the surface.
 
-            if dist < 0:
-                g = abs(dist)
-                grad = self._gradient_function(p_coord)
-                grad_norm = np.linalg.norm(grad)
+        Parameters
+        ----------
+        points
+            The points, one row each.
 
-                normal = grad / grad_norm if grad_norm > 1e-14 else np.zeros(self._domainSize)
+        Returns
+        -------
+        np.ndarray
+            The gradients, one row each.
+        """
 
-                force_vector = self._penaltyParameter * g * normal
-
-                # the vector the force is distributed with (see interpolationVectorAtPointOf)
-                interpolation = self.interpolationVectorAtPointOf(self._particle, p_coord).flatten()
-                addForcesOnPointsOfParticle(
-                    P.reshape(-1, self._fieldSize),
-                    self._localNodes,
-                    interpolation[np.newaxis, :],
-                    force_vector[np.newaxis, :],
-                )
-
-                total_reaction += self._penaltyParameter * g
-
-        self.reactionForce = total_reaction
+        return np.array([self._gradient_function(p) for p in points], dtype=float).reshape(
+            (len(points), self._fieldSize)
+        )
 
 
 def ParticlePenaltyContactImplicitSurfaceConstraintExplicitFactory(

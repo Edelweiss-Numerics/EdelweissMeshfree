@@ -44,7 +44,7 @@ import numpy as np
 from edelweissfe.models.discretesystem import DiscreteSystem
 from edelweissfe.numerics.dofvector import DofVector
 from edelweissfe.sets.nodeset import NodeSet
-from edelweissfe.solvers.base.criticaltimestep import CriticalTimeStepEstimate
+from edelweissfe.solvers.base.criticaltimestep import CriticalTimeStepEstimateOfTheDofs
 from edelweissfe.timesteppers.timestep import TimeStep
 
 from edelweissmeshfree.numerics.doflocations import MPMDofLocations
@@ -61,16 +61,38 @@ COEFFICIENT_AT_ROUND_OFF = 1e-12
 STABLE_FRACTION_OF_THE_TANGENT_LIMIT = 0.85
 
 
-class CriticalTimeStepEstimateFromTheFieldMatrix(CriticalTimeStepEstimate):
+class CriticalTimeStepEstimateFromTheFieldMatrix(CriticalTimeStepEstimateOfTheDofs):
     """The estimate of the critical time step of the particles, from the field matrix :math:`\\boldsymbol{Q}` of the
     largest row sums of their mass-scaled stiffness per block of fields (see
-    :meth:`MPMDiscreteSystem.criticalTimeStepOfEntitiesWithOwnInertia`).
+    :meth:`MPMDiscreteSystem.criticalTimeStepOfEntitiesWithOwnInertia`), in the form the penalty constraints add to.
+
+    A penalty constraint acts on one field, and couples it with itself: its row sums :math:`r_i` add to the particles'
+    row sums :math:`Z_{i g}` within the field block :math:`g` of the degree of freedom :math:`i`, so the diagonal entry of
+    the field matrix becomes :math:`Q_{gg} = \\max_{i \\in g} (Z_{ig} + r_i)`, the other entries stay. Entry by entry,
+    the absolute value of the particles' and the constraints' stiffness together is at most the sum of their absolute
+    values, so the raised field matrix bounds it block by block, and its Perron root, which grows with its entries,
+    bounds every eigenvalue -- for an unsymmetric tangent as well (theory page on the critical time step of EdelweissFE,
+    "The particles: the rows inside their field matrix"). Where the constraints raise no diagonal entry, and the weights
+    are constant per field, the estimate is the particles' own. This holds under one condition: every constraint couples
+    degrees of freedom of one field of the particles only (a support or a contact of the displacement); a penalty that
+    coupled two fields, e.g. the displacement with the nonlocal field, would add to an off-diagonal entry of the field
+    matrix, which this form does not hold. This is assumed, not checked. A constraint that couples particles and finite
+    elements at once is taken with the larger of the elements' bound and this one; that this bounds the two together
+    is not proven (same page, "What the estimate does not see").
 
     **With carried weights** (see :meth:`MPMDiscreteSystem.criticalTimeStepOfEntitiesWithOwnInertia`, "Weights carried
     from estimate to estimate"), :math:`\\boldsymbol{Q}` is the field matrix of the weighted matrix
-    :math:`\\boldsymbol{W}^{-1}|\\boldsymbol{S}|\\boldsymbol{W}`, and the critical time step of the blocks of each order
-    is the larger of the one from :math:`\\boldsymbol{Q}` and the one from the rows of the Collatz-Wielandt bound with
-    the weights scaled by the Perron vector of :math:`\\boldsymbol{Q}`.
+    :math:`\\boldsymbol{W}^{-1}|\\boldsymbol{S}|\\boldsymbol{W}`, the row sums are those of its rows, and the
+    critical time step of the blocks of each order is the larger of the one from :math:`\\boldsymbol{Q}` and the one
+    from the rows of the Collatz-Wielandt bound with the weights scaled by the Perron vector of :math:`\\boldsymbol{Q}`,
+    to both of which the rows of the penalty constraints add. A constraint's row :math:`r_i` is the row of
+    :math:`\\boldsymbol{W}^{-1}|\\boldsymbol{S}^\\mathrm{c}|\\boldsymbol{W}` where the weights are constant on its
+    field, and the particles keep them constant in every field a constraint acts on at the estimate. Elsewhere -- a constraint
+    that acts on another field since the estimate, e.g. a contact paired anew -- the row is at most :math:`r_i
+    \\max_{j \\in g} w_j / w_i`, which is added instead: a bound that holds, if loosely; where it lowers the
+    critical time step below the one in use, the particles are estimated anew
+    (:meth:`~edelweissfe.solvers.base.criticaltimestep.CriticalTimeStepOfEntitiesWithOwnInertia.isDue`), now with
+    weights constant on that field.
 
     Parameters
     ----------
@@ -80,6 +102,11 @@ class CriticalTimeStepEstimateFromTheFieldMatrix(CriticalTimeStepEstimate):
         Whether each block of fields is integrated by central differences ("second") or by forward Euler ("first").
     groupOfDof
         The block of fields of each degree of freedom of the numbering; -1 for one of no block.
+    rowSumsInTheOwnBlock
+        The row sum :math:`Z_{i g(i)} / w_i` of each degree of freedom within its own block; zero for one of no block.
+    factorOfThePenaltyRows
+        The factor :math:`\\max_{j \\in g(i)} w_j / w_i` of the row of a penalty constraint at each degree of freedom:
+        one where the weights are constant on the block, as they are without carried weights.
     collatzWielandtRows
         The rows :math:`(|\\boldsymbol{S}|\\boldsymbol{v})_i / v_i` of the Collatz-Wielandt bound with the weights
         :math:`v_i = c_{g(i)} w_i`, :math:`\\boldsymbol{c}` the Perron vector of the field matrix of the order; None
@@ -91,13 +118,36 @@ class CriticalTimeStepEstimateFromTheFieldMatrix(CriticalTimeStepEstimate):
         fieldMatrix: np.ndarray,
         orderOfGroup: list[str],
         groupOfDof: np.ndarray,
+        rowSumsInTheOwnBlock: np.ndarray,
+        factorOfThePenaltyRows: np.ndarray,
         collatzWielandtRows: np.ndarray | None = None,
     ):
         self._fieldMatrix = fieldMatrix
         self._orderOfGroup = orderOfGroup
         self._groupOfDof = groupOfDof
+        self._rowSumsInTheOwnBlock = rowSumsInTheOwnBlock
+        self._factorOfThePenaltyRows = factorOfThePenaltyRows
         self._collatzWielandtRows = collatzWielandtRows
-        super().__init__(value=self._criticalTimeStepOf(fieldMatrix, collatzWielandtRows))
+        super().__init__(
+            value=self._criticalTimeStepOf(fieldMatrix, collatzWielandtRows), dofs=np.flatnonzero(groupOfDof >= 0)
+        )
+
+    def criticalTimeStep(self, rowSumsOfThePenaltyConstraints: np.ndarray) -> float:
+        fieldMatrix = self._fieldMatrix
+        coupled = (rowSumsOfThePenaltyConstraints > 0.0) & (self._groupOfDof >= 0)
+        if not coupled.any():
+            return self.value
+
+        penaltyRows = rowSumsOfThePenaltyConstraints * self._factorOfThePenaltyRows
+        fieldMatrix = fieldMatrix.copy()
+        sums = self._rowSumsInTheOwnBlock[coupled] + penaltyRows[coupled]
+        groups = self._groupOfDof[coupled]
+        for group in np.unique(groups):
+            fieldMatrix[group, group] = max(fieldMatrix[group, group], np.max(sums[groups == group]))
+        collatzWielandtRows = self._collatzWielandtRows
+        if collatzWielandtRows is not None:
+            collatzWielandtRows = collatzWielandtRows + penaltyRows
+        return self._criticalTimeStepOf(fieldMatrix, collatzWielandtRows)
 
     def _criticalTimeStepOf(self, fieldMatrix: np.ndarray, collatzWielandtRows: np.ndarray | None) -> float:
         """:data:`STABLE_FRACTION_OF_THE_TANGENT_LIMIT` times the smaller of :math:`2/\\sqrt{\\rho}` of the blocks
@@ -601,7 +651,9 @@ class MPMDiscreteSystem(DiscreteSystem):
         constant per field as well, which cost about as much again as those of the carried weights. A degree of
         freedom without a weight -- one that has no inertia or damping at the last estimate -- starts at the largest
         weight of its block of fields, the weight every degree of freedom of the block has at the start
-        (:meth:`_weightsOfThisEstimate`).
+        (:meth:`_weightsOfThisEstimate`). So does every degree of freedom of a field a constraint of the discrete system
+        acts on: there the weights stay constant per field, so that the rows of the penalty constraints add as they are
+        (:class:`CriticalTimeStepEstimateFromTheFieldMatrix`).
 
         The power iteration shrinks the weights of the degrees of freedom far from the stiffest ones by a factor per
         estimate, without limit: within a few dozen estimates they fall below what a double resolves next to the
@@ -625,6 +677,9 @@ class MPMDiscreteSystem(DiscreteSystem):
 
         The result is scaled by :data:`STABLE_FRACTION_OF_THE_TANGENT_LIMIT`, since the explicit scheme of the
         particles is not exactly integrated with their tangent: their NSNI stabilization acts on the increment.
+
+        It is returned with the field matrix and the row sums of every degree of freedom in its own block, to which the
+        row sums of penalty constraints add (:class:`CriticalTimeStepEstimateFromTheFieldMatrix`).
 
         Parameters
         ----------
@@ -723,16 +778,25 @@ class MPMDiscreteSystem(DiscreteSystem):
                 weightsOfTheEstimate[ofTheOrder] = self._weightsForTheNextEstimate(image)
             weightsOfTheEstimate[groupOfDof < 0] = 0.0
 
-        return CriticalTimeStepEstimateFromTheFieldMatrix(Q, orderOfGroup, groupOfDof, collatzWielandtRows)
+        rowSumsInTheOwnBlock = np.zeros(nDof)
+        rowSumsInTheOwnBlock[inAGroup] = rowSumsPerWeight[inAGroup, groupOfDof[inAGroup]]
+        factorOfThePenaltyRows = np.ones(nDof)
+        for group in range(nGroups):
+            ofTheGroup = groupOfDof == group
+            factorOfThePenaltyRows[ofTheGroup] = np.max(weights[ofTheGroup]) / weights[ofTheGroup]
 
-    @staticmethod
+        return CriticalTimeStepEstimateFromTheFieldMatrix(
+            Q, orderOfGroup, groupOfDof, rowSumsInTheOwnBlock, factorOfThePenaltyRows, collatzWielandtRows
+        )
+
     def _weightsOfThisEstimate(
-        weightsOfTheEstimate: np.ndarray | None, groupOfDof: np.ndarray, nGroups: int
+        self, weightsOfTheEstimate: np.ndarray | None, groupOfDof: np.ndarray, nGroups: int
     ) -> np.ndarray:
         """The weights an estimate of the critical time step takes, on every degree of freedom: those the last estimate
         left, where it left one, and the largest weight of its block of fields where it left none (a degree of freedom
-        without inertia or damping at the last estimate). One everywhere -- constant per field -- without carried weights,
-        at their start (all zero), and if a block of fields has none (see
+        without inertia or damping at the last estimate) or where a constraint of the discrete system acts on its field
+        (:meth:`_dofsOfTheFieldsOfTheConstraints`). One everywhere -- constant per field -- without carried weights, at
+        their start (all zero), and if a block of fields has none (see
         :meth:`criticalTimeStepOfEntitiesWithOwnInertia`, "Weights carried from estimate to estimate").
 
         Parameters
@@ -753,13 +817,32 @@ class MPMDiscreteSystem(DiscreteSystem):
         weights = np.ones(len(groupOfDof))
         if weightsOfTheEstimate is None:
             return weights
+        constantPerField = self._dofsOfTheFieldsOfTheConstraints()
         for group in range(nGroups):
             ofTheGroup = groupOfDof == group
             carried = weightsOfTheEstimate[ofTheGroup]
             if not np.any(carried > 0.0):
                 return np.ones(len(groupOfDof))
-            weights[ofTheGroup] = np.where(carried > 0.0, carried, np.max(carried))
+            weights[ofTheGroup] = np.where((carried > 0.0) & ~constantPerField[ofTheGroup], carried, np.max(carried))
         return weights
+
+    def _dofsOfTheFieldsOfTheConstraints(self) -> np.ndarray:
+        """The degrees of freedom of the fields the constraints of the discrete system act on, whose weights stay
+        constant per field (see :class:`CriticalTimeStepEstimateFromTheFieldMatrix`).
+
+        Returns
+        -------
+        numpy.ndarray
+            True for every degree of freedom of such a field, a vector of the numbering.
+        """
+
+        fields = {
+            field for constraint in self.constraints for fieldsOfNode in constraint.fields for field in fieldsOfNode
+        }
+        ofTheFields = np.zeros(self.numbering.nDof, dtype=bool)
+        for field in fields & self.numbering.idcsOfFieldsInDofVector.keys():
+            ofTheFields[self.numbering.idcsOfFieldsInDofVector[field]] = True
+        return ofTheFields
 
     @staticmethod
     def _weightsForTheNextEstimate(image: np.ndarray) -> np.ndarray:
