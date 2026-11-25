@@ -455,8 +455,9 @@ class BaseParticle(BaseNodeCouplingEntity):
 
     @abstractmethod
     def assignKernelFunctions(self, kernelFunctions: list[BaseMeshfreeKernelFunction]):
-        """Assign the meshfree kernel functions whose support covers the particle, as the particle managers do after
-        every search.
+        """Assign the meshfree kernel functions whose support covers the particle, and evaluate the shape functions
+        with them. In a simulation, only the particle manager of the particle calls it, for a particle whose kernel
+        functions changed: the manager decides from its own record of the last search whether they changed.
 
         Parameters
         ----------
@@ -467,8 +468,8 @@ class BaseParticle(BaseNodeCouplingEntity):
     @abstractmethod
     def updateShapeFunctions(self):
         """Evaluate the shape functions anew at the particle's current position, with the kernel functions it has been
-        assigned: the particle managers call it in every increment for the particles whose kernel functions did not
-        change (the particles have moved), and :meth:`assignKernelFunctions` for the others."""
+        assigned. The particle managers call it in every increment for the particles whose kernel functions did not
+        change, because the particles have moved, and :meth:`assignKernelFunctions` for the others."""
 
     @abstractmethod
     def getInterpolationVector(self, coordinate: np.ndarray) -> np.ndarray:
