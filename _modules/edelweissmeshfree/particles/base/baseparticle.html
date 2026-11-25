@@ -600,14 +600,24 @@
 <a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.assignKernelFunctions">[docs]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">assignKernelFunctions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kernelFunctions</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">BaseMeshfreeKernelFunction</span><span class="p">]):</span>
-<span class="w">        </span><span class="sd">"""Assign the meshfree kernel functions whose support covers the particle, as the particle managers do after</span>
-<span class="sd">        every search.</span>
+<span class="w">        </span><span class="sd">"""Assign the meshfree kernel functions whose support covers the particle, and evaluate the shape functions</span>
+<span class="sd">        with them. In a simulation, only the particle manager of the particle calls it, for a particle whose kernel</span>
+<span class="sd">        functions changed: the manager decides from its own record of the last search whether they changed.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        kernelFunctions</span>
 <span class="sd">            The kernel functions.</span>
 <span class="sd">        """</span></div>
+
+
+<div class="viewcode-block" id="BaseParticle.updateShapeFunctions">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.updateShapeFunctions">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">updateShapeFunctions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Evaluate the shape functions anew at the particle's current position, with the kernel functions it has been</span>
+<span class="sd">        assigned. The particle managers call it in every increment for the particles whose kernel functions did not</span>
+<span class="sd">        change, because the particles have moved, and :meth:`assignKernelFunctions` for the others."""</span></div>
 
 
 <div class="viewcode-block" id="BaseParticle.getInterpolationVector">

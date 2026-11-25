@@ -70,10 +70,16 @@
 <li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager.particlesWithChangedKernelFunctions"><code class="docutils literal notranslate"><span class="pre">BaseParticleManager.particlesWithChangedKernelFunctions</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="#searching-the-kernel-functions-of-the-particles">Searching the kernel functions of the particles</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#reusing-neighbour-lists-the-skin">Reusing neighbour lists: the skin</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#module-edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager"><code class="docutils literal notranslate"><span class="pre">KDBinOrganizedParticleManager</span></code> class</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager"><code class="docutils literal notranslate"><span class="pre">KDBinOrganizedParticleManager</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._FastKDBinOrganizer"><code class="docutils literal notranslate"><span class="pre">_FastKDBinOrganizer</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._KernelFunctionsOfAChunk"><code class="docutils literal notranslate"><span class="pre">_KernelFunctionsOfAChunk</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._keepKernelsWhoseSupportHoldsAPoint"><code class="docutils literal notranslate"><span class="pre">_keepKernelsWhoseSupportHoldsAPoint()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-edelweissmeshfree.particlemanagers.binsofkernelfunctions">The bins of the kernel functions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.particlemanagers.binsofkernelfunctions.BinsOfKernelFunctions"><code class="docutils literal notranslate"><span class="pre">BinsOfKernelFunctions</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#module-edelweissmeshfree.particlemanagers.oldkdbinorganizedparticlemanager">Legacy implementation</a><ul>
@@ -212,93 +218,125 @@ necessary is merely slower, never wrong.</p>
 
 </dd></dl>
 
+<section id="searching-the-kernel-functions-of-the-particles">
+<h2>Searching the kernel functions of the particles<a class="headerlink" href="#searching-the-kernel-functions-of-the-particles" title="Link to this heading"></a></h2>
+<p>In every increment, a particle needs the kernel functions that <em>cover</em> it: those whose support holds one of its
+evaluation points (the centres of its faces, or its vertices, depending on the particle). The particles move, and with
+kernel functions bonded to the particles the kernel functions move too, so
+<a class="reference internal" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager" title="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager"><code class="xref py py-class docutils literal notranslate"><span class="pre">KDBinOrganizedParticleManager</span></code></a> searches anew
+in every increment.</p>
+<p><strong>Why bins?</strong> Without any order, every evaluation point would be tested against every kernel function: the cost grows
+with the number of points <em>times</em> the number of kernel functions, and both grow with the model. Sorted into bins, a
+point is tested only against the few kernel functions of its own bin, and the cost grows with the number of points
+alone. This is the <em>broad phase</em> of the search; the test of a candidate is the <em>narrow phase</em>.</p>
+<p>The search works on <em>groups of points</em>: the evaluation points of one particle form a group, consecutive in one array
+of all points, and <code class="docutils literal notranslate"><span class="pre">firstPointOfGroup[g]</span></code> is where group <code class="docutils literal notranslate"><span class="pre">g</span></code> starts (<code class="docutils literal notranslate"><span class="pre">firstPointOfGroup[g</span> <span class="pre">+</span> <span class="pre">1]</span></code>, where it ends).
+The search returns its answer in the same layout: the kernel functions found for group <code class="docutils literal notranslate"><span class="pre">g</span></code> are
+<code class="docutils literal notranslate"><span class="pre">kernels[firstKernelOfGroup[g]</span> <span class="pre">:</span> <span class="pre">firstKernelOfGroup[g</span> <span class="pre">+</span> <span class="pre">1]]</span></code>. It goes in three steps.</p>
+<ol class="arabic simple">
+<li><p><strong>Bins.</strong> The boxes of the kernel functions are sorted into a regular grid of bins, each bin half as wide as the
+mean box: a kernel function is in every bin its box overlaps
+(<a class="reference internal" href="#edelweissmeshfree.particlemanagers.binsofkernelfunctions.BinsOfKernelFunctions" title="edelweissmeshfree.particlemanagers.binsofkernelfunctions.BinsOfKernelFunctions"><code class="xref py py-class docutils literal notranslate"><span class="pre">BinsOfKernelFunctions</span></code></a>). The bins are filled by a
+<em>counting sort</em>: count the kernel functions of every bin, take the cumulative sum of the counts as the first place
+of every bin, then put every kernel function into its places. The result is the compressed layout of a sparse
+matrix, one row per bin: the kernel functions of bin <code class="docutils literal notranslate"><span class="pre">b</span></code> are
+<code class="docutils literal notranslate"><span class="pre">kernelsInBins[firstKernelOfBin[b]</span> <span class="pre">:</span> <span class="pre">firstKernelOfBin[b</span> <span class="pre">+</span> <span class="pre">1]]</span></code>. An evaluation point lies in exactly one bin, and
+every box that holds the point overlaps that bin, so the kernel functions of that bin are the only candidates for
+the point.</p></li>
+<li><p><strong>Box test.</strong> A candidate covers the point if the point lies strictly inside its box. For the kernel functions of
+EdelweissMeshfree (tensor-product B-splines) the support <em>is</em> the box, so this is the answer; a point on the boundary
+lies where the kernel function is zero and is not covered. A kernel function whose support is smaller than its box
+(<code class="docutils literal notranslate"><span class="pre">hasBoxSupport</span></code> is false) is asked in addition whether its support holds one of the points.</p></li>
+<li><p><strong>Assignment.</strong> A particle gets its kernel functions in the order of their labels, each once. The kernel functions of
+a particle <em>changed</em> if the numbers of the kernel functions found differ from the numbers the last search recorded
+for it. A particle whose kernel functions changed is assigned the new ones (<code class="docutils literal notranslate"><span class="pre">assignKernelFunctions</span></code>); every other
+particle keeps its kernel functions and only updates its shape functions (<code class="docutils literal notranslate"><span class="pre">updateShapeFunctions</span></code>), because it has
+moved. The particles whose kernel functions changed are reported
+(<a class="reference internal" href="#edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager.particlesWithChangedKernelFunctions" title="edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager.particlesWithChangedKernelFunctions"><code class="xref py py-attr docutils literal notranslate"><span class="pre">particlesWithChangedKernelFunctions</span></code></a>):
+only they are located anew in the degrees of freedom.</p></li>
+</ol>
+<p>A grid of 4 x 3 bins with the boxes <code class="docutils literal notranslate"><span class="pre">A</span></code>, <code class="docutils literal notranslate"><span class="pre">B</span></code> and <code class="docutils literal notranslate"><span class="pre">C</span></code> of three kernel functions. The point <code class="docutils literal notranslate"><span class="pre">x</span></code> lies in the
+second bin of the middle row, which lists <code class="docutils literal notranslate"><span class="pre">A</span></code> and <code class="docutils literal notranslate"><span class="pre">B</span></code>: they are its only candidates, and the box test keeps <code class="docutils literal notranslate"><span class="pre">A</span></code>.
+<code class="docutils literal notranslate"><span class="pre">C</span></code> is never tested for <code class="docutils literal notranslate"><span class="pre">x</span></code>.</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>+---------+---------+---------+---------+
+|  **************   |         |         |
+|  * A    |     *   |        ********** |
+|  *      |     *   |        *|       * |
++--*------+-----*---+--------*+-------*-+
+|  *      |x **************  *|       * |
+|  **************   |     *  *|    C  * |
+|         |  *      |     *  *|       * |
++---------+--*------+-----*--*+-------*-+
+|         |  *      |  B  *  ********** |
+|         |  **************   |         |
+|         |         |         |         |
++---------+---------+---------+---------+
+</pre></div>
+</div>
+<p>The particles are searched in chunks on the thread pool, and two things make that pay off:</p>
+<ul class="simple">
+<li><p>The loops of steps 1 and 2 run in compiled code (<code class="docutils literal notranslate"><span class="pre">binsofkernelfunctions.pyx</span></code>): they visit every evaluation point and
+its candidates in every increment, and a few interpreted operations per point would cost more than all the rest of
+an explicit increment.</p></li>
+<li><p>Python objects are touched only for the particles whose kernel functions changed. In free-threaded Python, every
+reference a worker thread takes to an object created by another thread is an atomic operation on that object, and
+building new lists of the kernel functions for all particles in every increment takes <em>longer</em> with more threads.
+So the search compares numbers, and a Marmot particle updates its shape functions with the kernel functions Marmot
+holds, without a Python object.</p></li>
+</ul>
+<p>What remains of the update is mostly the evaluation of the shape functions, in Marmot, which no search can save.</p>
+</section>
 <section id="reusing-neighbour-lists-the-skin">
 <h2>Reusing neighbour lists: the skin<a class="headerlink" href="#reusing-neighbour-lists-the-skin" title="Link to this heading"></a></h2>
-<p>Searching for the kernel functions that cover each particle is the single most expensive part of a
-dynamic meshfree simulation, and in a dynamic simulation it is also largely redundant. Kernel functions
-are bonded to particle centres, so a neighbour set changes through <em>deformation</em>, not through the body
-as a whole moving: on an explicit Taylor bar impact, a mean of 0.41% of particles change their set from
-one increment to the next, and most increments change none at all.</p>
-<p><a class="reference internal" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager" title="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager"><code class="xref py py-class docutils literal notranslate"><span class="pre">KDBinOrganizedParticleManager</span></code></a>
-can therefore be given a <strong>neighbour list skin</strong>. The search then reports every kernel function that
-covers a particle <em>or comes within the skin of covering it</em>, and that answer is reused until accumulated
-motion could have carried something across the remaining margin. Increments in between still rebuild the
-shape functions, which have to be rebuilt in any case because the particles have moved.</p>
-<p>This is exact rather than approximate. The kernel functions the skin admits early evaluate to exactly
-zero at the particle, and the reproducing-kernel reconstruction discards anything that does, so the
-shape functions are the ones a full search would have produced. A kernel function that <em>leaves</em> the
-support is handled by the same mechanism. <code class="docutils literal notranslate"><span class="pre">examples/144_neighbour_list_skin_test</span></code> asserts this, by
-running the same impact with the skin off and on and requiring the two displacement fields to be equal.</p>
-<p>Choosing the skin is a trade-off, not a monotone improvement. A larger skin searches less often but
-admits more kernel functions, and each of those costs something in the reconstruction and in the wider
-degree-of-freedom stencil that the physics then has to touch. Measured on an explicit Taylor bar impact
-at 108,864 degrees of freedom, over 20 increments:</p>
-<table class="docutils align-default">
-<thead>
-<tr class="row-odd"><th class="head"><p><code class="docutils literal notranslate"><span class="pre">neighbourListSkin</span></code></p></th>
-<th class="head"><p>searches out of 21</p></th>
-<th class="head"><p>time for the step</p></th>
-</tr>
-<tr class="row-even"><th class="head"><p><code class="docutils literal notranslate"><span class="pre">Fraction</span></code></p></th>
-<th class="head"></th>
-<th class="head"></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-odd"><td><p>0.0 (search every step)</p></td>
-<td><p>22</p></td>
-<td><p>75.4 s</p></td>
-</tr>
-<tr class="row-even"><td><p>0.02</p></td>
-<td><p>7</p></td>
-<td><p>59.7 s</p></td>
-</tr>
-<tr class="row-odd"><td><p><strong>0.05</strong></p></td>
-<td><p><strong>3</strong></p></td>
-<td><p><strong>52.8 s</strong></p></td>
-</tr>
-<tr class="row-even"><td><p>0.10</p></td>
-<td><p>2</p></td>
-<td><p>63.7 s</p></td>
-</tr>
-</tbody>
-</table>
-<p>So 0.05 is best here and 0.10 is worse than 0.05 despite searching less often. Since the optimum depends
-on the impact velocity, the increment size, the support radius and how fast the body deforms, the
-default is <code class="docutils literal notranslate"><span class="pre">0.0</span></code> – every increment searches, exactly as before – and a value has to be chosen
-deliberately for the problem at hand.</p>
-<p>A skin requires every kernel function to have box support, because the reuse argument relies on the
-search testing an inflated bounding box; the manager refuses a non-zero skin otherwise rather than
-silently over-reporting neighbours.</p>
+<p>The manager can be given a <strong>neighbour list skin</strong> (<code class="docutils literal notranslate"><span class="pre">neighbourListSkinFraction</span></code>, a fraction of the smallest support
+half-width). Every box is then grown by the skin, so the search reports every kernel function that covers a particle
+<em>or comes within the skin of covering it</em>, and that answer is reused until the motion since the search – of the
+particles and of the kernel functions relative to each other – could have carried a point across the skin. Increments
+in between still update the shape functions, which have to be updated in any case because the particles have moved.</p>
+<p>This is exact rather than approximate. The kernel functions the skin admits early evaluate to exactly zero at the
+particle, and the reproducing-kernel approximation skips every kernel function that does, so the shape functions are
+the ones a search without the skin would have produced. A kernel function that <em>leaves</em> the support is handled by the
+same mechanism. <code class="docutils literal notranslate"><span class="pre">examples/144_neighbour_list_skin_test</span></code> asserts this, by running the same impact with the skin off
+and on and requiring the two displacement fields to be equal.</p>
+<p>Since the search is compiled, the skin saves little: it saves the search and the bins, which are small next to the
+shape functions, and it pays for the motion check in every increment and for the extra kernel functions, which every
+particle evaluates and assembles. The default is therefore <code class="docutils literal notranslate"><span class="pre">0.0</span></code>: every increment searches.</p>
+<p>A skin requires every kernel function to have box support, because the reuse argument relies on the search testing a
+grown box; the manager refuses a non-zero skin otherwise rather than silently over-reporting neighbours.</p>
 </section>
 <section id="module-edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager">
 <span id="kdbinorganizedparticlemanager-class"></span><h2><code class="docutils literal notranslate"><span class="pre">KDBinOrganizedParticleManager</span></code> class<a class="headerlink" href="#module-edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.</span></span><span class="sig-name descname"><span class="pre">KDBinOrganizedParticleManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">particleKernelDomain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dimension</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">journal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bondParticlesToKernelFunctions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">randomlyShiftPartliceShapeFunctions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighbourListSkinFraction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particlemanagers/kdbinorganizedparticlemanager.html#KDBinOrganizedParticleManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager" title="Link to this definition"></a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Attributes<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
+<dd><p>Assigns every particle the kernel functions that cover one of its evaluation points, searched in the bins of
+the kernel functions (<code class="xref py py-class docutils literal notranslate"><span class="pre">BinsOfKernelFunctions</span></code>) in every increment, or, with a neighbour list skin, when the
+motion since the last search makes it due. See the documentation page “Particle managers” for the steps of the
+search.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>particleKernelDomain</strong> (<a class="reference internal" href="meshfree.html#edelweissmeshfree.meshfree.particlekerneldomain.ParticleKernelDomain" title="edelweissmeshfree.meshfree.particlekerneldomain.ParticleKernelDomain"><em>ParticleKernelDomain</em></a>) – The particles and the kernel functions that may cover them.</p></li>
+<li><p><strong>dimension</strong> (<em>int</em>) – The spatial dimension.</p></li>
+<li><p><strong>journal</strong> (<em>Journal</em>) – The journal for messages.</p></li>
+<li><p><strong>bondParticlesToKernelFunctions</strong> (<em>bool</em>) – Whether every kernel function is bonded to the particle of the same position in the domain and moves with it.</p></li>
+<li><p><strong>randomlyShiftPartliceShapeFunctions</strong> (<em>bool</em><em> | </em><em>float</em>) – With bonded kernel functions and a float: shift each kernel function off its particle centre at random, scaled
+by this factor.</p></li>
+<li><p><strong>neighbourListSkinFraction</strong> (<em>float</em>) – The skin, as a fraction of the smallest support half-width; 0 searches in every increment.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Attributes<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
 <dt><a class="reference internal" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager.particlesWithChangedKernelFunctions" title="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager.particlesWithChangedKernelFunctions"><code class="xref py py-obj docutils literal notranslate"><span class="pre">particlesWithChangedKernelFunctions</span></code></a></dt><dd><p>The particles whose set of kernel functions changed during the last connectivity update.</p>
 </dd>
 </dl>
-</dd>
-<dt class="field-even">Parameters<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
-<li><p><strong>particleKernelDomain</strong> (<a class="reference internal" href="meshfree.html#edelweissmeshfree.meshfree.particlekerneldomain.ParticleKernelDomain" title="edelweissmeshfree.meshfree.particlekerneldomain.ParticleKernelDomain"><em>ParticleKernelDomain</em></a>)</p></li>
-<li><p><strong>dimension</strong> (<em>int</em>)</p></li>
-<li><p><strong>journal</strong> (<em>Journal</em>)</p></li>
-<li><p><strong>bondParticlesToKernelFunctions</strong> (<em>bool</em>)</p></li>
-<li><p><strong>randomlyShiftPartliceShapeFunctions</strong> (<em>bool</em><em> | </em><em>float</em>)</p></li>
-<li><p><strong>neighbourListSkinFraction</strong> (<em>float</em>)</p></li>
-</ul>
 </dd>
 </dl>
 <p class="rubric">Methods</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager.signalizeKernelFunctionUpdate" title="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager.signalizeKernelFunctionUpdate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">signalizeKernelFunctionUpdate</span></code></a>()</p></td>
-<td><p>For semi-Lagrangian methods, the kernel function locations may change.</p></td>
+<td><p>Sort the kernel functions into the bins anew (<code class="xref py py-class docutils literal notranslate"><span class="pre">BinsOfKernelFunctions</span></code>), at the boxes they have now.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager.updateConnectivity" title="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager.updateConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code></a>()</p></td>
 <td><p>Bring the particle-to-kernel-function connectivity up to date.</p></td>
@@ -400,22 +438,31 @@ disables neighbour list reuse, so that every increment performs a full search.</
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager._moveKernelFunctionsToTheirParticles">
-<span class="sig-name descname"><span class="pre">_moveKernelFunctionsToTheirParticles</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particlemanagers/kdbinorganizedparticlemanager.html#KDBinOrganizedParticleManager._moveKernelFunctionsToTheirParticles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager._moveKernelFunctionsToTheirParticles" title="Link to this definition"></a></dt>
-<dd><p>Move every kernel function onto the centre of the particle it is bonded to.</p>
+<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager._kernelsOfChunkAtLastSearch">
+<span class="sig-name descname"><span class="pre">_kernelsOfChunkAtLastSearch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">first</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">last</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particlemanagers/kdbinorganizedparticlemanager.html#KDBinOrganizedParticleManager._kernelsOfChunkAtLastSearch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager._kernelsOfChunkAtLastSearch" title="Link to this definition"></a></dt>
+<dd><p>The record of the last search for the particles <code class="docutils literal notranslate"><span class="pre">first</span></code> to <code class="docutils literal notranslate"><span class="pre">last</span></code> (exclusive), with the offsets of the
+chunk: they start at 0.</p>
 <dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>first</strong> (<em>int</em>) – The first particle of the chunk.</p></li>
+<li><p><strong>last</strong> (<em>int</em>) – One past the last particle of the chunk.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">firstKernelAtLastSearch</span></code> and <code class="docutils literal notranslate"><span class="pre">kernelsAtLastSearch</span></code>: the kernel functions of particle <code class="docutils literal notranslate"><span class="pre">first</span> <span class="pre">+</span> <span class="pre">i</span></code> at
+the last search were <code class="docutils literal notranslate"><span class="pre">kernelsAtLastSearch[firstKernelAtLastSearch[i]</span> <span class="pre">:</span> <span class="pre">firstKernelAtLastSearch[i</span> <span class="pre">+</span> <span class="pre">1]]</span></code>.</p>
+</dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
+<dd class="field-odd"><p>tuple[NDArray[np.intp], NDArray[np.intp]]</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager._rebuildShapeFunctionsWithUnchangedNeighbours">
-<span class="sig-name descname"><span class="pre">_rebuildShapeFunctionsWithUnchangedNeighbours</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particlemanagers/kdbinorganizedparticlemanager.html#KDBinOrganizedParticleManager._rebuildShapeFunctionsWithUnchangedNeighbours"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager._rebuildShapeFunctionsWithUnchangedNeighbours" title="Link to this definition"></a></dt>
-<dd><p>Rebuild every particle’s shape functions from its existing set of kernel functions.</p>
-<p>The particles have moved, so the shape functions are stale even though the neighbour lists are
-not. Reassigning the unchanged set is what recomputes them.</p>
+<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager._moveKernelFunctionsToTheirParticles">
+<span class="sig-name descname"><span class="pre">_moveKernelFunctionsToTheirParticles</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particlemanagers/kdbinorganizedparticlemanager.html#KDBinOrganizedParticleManager._moveKernelFunctionsToTheirParticles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager._moveKernelFunctionsToTheirParticles" title="Link to this definition"></a></dt>
+<dd><p>Move every kernel function onto the centre of the particle it is bonded to.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>None</p>
@@ -437,7 +484,22 @@ not. Reassigning the unchanged set is what recomputes them.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager._searchForCoveringKernelFunctions">
 <span class="sig-name descname"><span class="pre">_searchForCoveringKernelFunctions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particlemanagers/kdbinorganizedparticlemanager.html#KDBinOrganizedParticleManager._searchForCoveringKernelFunctions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager._searchForCoveringKernelFunctions" title="Link to this definition"></a></dt>
-<dd><p>Search, for every particle, the kernel functions that cover it within the skin.</p>
+<dd><p>Search, for every particle, the kernel functions that cover one of its evaluation points (within the skin).
+Assign them to a particle whose kernel functions changed since the last search, and update the shape functions
+of every other particle. The particles are searched chunk by chunk, in parallel. See “Searching the kernel
+functions of the particles” on the page “Particle managers”.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager._updateShapeFunctionsOfAllParticles">
+<span class="sig-name descname"><span class="pre">_updateShapeFunctionsOfAllParticles</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particlemanagers/kdbinorganizedparticlemanager.html#KDBinOrganizedParticleManager._updateShapeFunctionsOfAllParticles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager._updateShapeFunctionsOfAllParticles" title="Link to this definition"></a></dt>
+<dd><p>Update the shape functions of every particle, with the kernel functions it has: the particles have moved,
+so their shape functions are out of date even though their kernel functions are not.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>None</p>
@@ -448,8 +510,9 @@ not. Reassigning the unchanged set is what recomputes them.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager.signalizeKernelFunctionUpdate">
 <span class="sig-name descname"><span class="pre">signalizeKernelFunctionUpdate</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particlemanagers/kdbinorganizedparticlemanager.html#KDBinOrganizedParticleManager.signalizeKernelFunctionUpdate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager.signalizeKernelFunctionUpdate" title="Link to this definition"></a></dt>
-<dd><p>For semi-Lagrangian methods, the kernel function locations may change.
-This method is to signalize such a to the material point manager, so that it can account for the changed supports.</p>
+<dd><p>Sort the kernel functions into the bins anew (<code class="xref py py-class docutils literal notranslate"><span class="pre">BinsOfKernelFunctions</span></code>), at the boxes they have now.
+Every box is grown by the skin on all sides: a search then reports the kernel functions that cover a particle
+<em>or come within the skin of doing so</em>, which is what allows a later increment to reuse the answer.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>None</p>
@@ -461,13 +524,14 @@ This method is to signalize such a to the material point manager, so that it can
 <dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager.updateConnectivity">
 <span class="sig-name descname"><span class="pre">updateConnectivity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particlemanagers/kdbinorganizedparticlemanager.html#KDBinOrganizedParticleManager.updateConnectivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager.updateConnectivity" title="Link to this definition"></a></dt>
 <dd><p>Bring the particle-to-kernel-function connectivity up to date.</p>
-<p>A full search is expensive and, in a dynamic simulation, usually pointless: neighbours change
-through deformation, not through the bar as a whole moving, so from one increment to the next
-almost no particle changes its set of kernel functions.</p>
-<p>With a neighbour list skin the search therefore reports every kernel function that covers a
+<p>Bonded kernel functions are moved to their particles first, and sorted into the bins anew before a search. A
+particle whose kernel functions changed is assigned the new ones (<code class="docutils literal notranslate"><span class="pre">assignKernelFunctions</span></code>). Every other
+particle keeps its kernel functions and only evaluates its shape functions anew (<code class="docutils literal notranslate"><span class="pre">updateShapeFunctions</span></code>),
+because it has moved.</p>
+<p>With a neighbour list skin the search reports every kernel function that covers a
 particle <em>or comes within the skin of covering it</em>, and that answer stays usable until
 accumulated motion could have carried something across the remaining margin. Increments in
-between only rebuild the shape functions, which have to be rebuilt in any case because the
+between only update the shape functions, which have to be updated in any case because the
 particles have moved.</p>
 <p>The extra kernel functions this admits are harmless rather than approximate: they evaluate to
 exactly zero at the particle, and the reconstruction discards anything that does, so the shape
@@ -507,69 +571,217 @@ necessary is merely slower, never wrong.</p>
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._FastKDBinOrganizer">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.</span></span><span class="sig-name descname"><span class="pre">_FastKDBinOrganizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernelFunctions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dimension</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particlemanagers/kdbinorganizedparticlemanager.html#_FastKDBinOrganizer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._FastKDBinOrganizer" title="Link to this definition"></a></dt>
-<dd><p>The kernel functions sorted into a regular grid of bins by their bounding boxes, for the broad phase of the
-search: a kernel is in every bin its box overlaps. The bins are held in the compressed layout of a sparse matrix:
-the kernels of bin <code class="docutils literal notranslate"><span class="pre">b</span></code> are <code class="docutils literal notranslate"><span class="pre">kernelsInBins[firstKernelOfBin[b]</span> <span class="pre">:</span> <span class="pre">firstKernelOfBin[b</span> <span class="pre">+</span> <span class="pre">1]]</span></code>, in the order of the
-kernels. Both are built without a loop over the kernels or the bins, and the kernels of consecutive bins are
-consecutive, so a query takes one slice per row of bins. <code class="docutils literal notranslate"><span class="pre">firstKernelOfBin</span></code> is a list: a query indexes it with
-plain integers, which is faster than indexing an array.</p>
+<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._KernelFunctionsOfAChunk">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.</span></span><span class="sig-name descname"><span class="pre">_KernelFunctionsOfAChunk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">firstKernelOfParticle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernelsOfParticles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">particlesWithChangedKernelFunctions</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particlemanagers/kdbinorganizedparticlemanager.html#_KernelFunctionsOfAChunk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._KernelFunctionsOfAChunk" title="Link to this definition"></a></dt>
+<dd><p>What the search found for a chunk of consecutive particles. The offsets are those of the chunk: they start at
+0.</p>
 <p class="rubric">Methods</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._FastKDBinOrganizer.getCandidateIndices" title="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._FastKDBinOrganizer.getCandidateIndices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getCandidateIndices</span></code></a>(queryBoxMin, queryBoxMax)</p></td>
-<td><p>The kernels whose boxes overlap a bin that the query box overlaps, each once.</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">count</span></code>(value, /)</p></td>
+<td><p>Return number of occurrences of value.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._FastKDBinOrganizer.kernelsInBin" title="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._FastKDBinOrganizer.kernelsInBin"><code class="xref py py-obj docutils literal notranslate"><span class="pre">kernelsInBin</span></code></a>(binIndex)</p></td>
-<td><p>The kernels whose boxes overlap a bin.</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">index</span></code>(value[, start, stop])</p></td>
+<td><p>Return first index of value.</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>kernelFunctions</strong> (<em>List</em><em>[</em><em>Any</em><em>]</em>)</p></li>
-<li><p><strong>dimension</strong> (<em>int</em>)</p></li>
-<li><p><strong>skin</strong> (<em>float</em>)</p></li>
+<li><p><strong>firstKernelOfParticle</strong> (<em>NDArray</em><em>[</em><em>int64</em><em>]</em>)</p></li>
+<li><p><strong>kernelsOfParticles</strong> (<em>NDArray</em><em>[</em><em>int64</em><em>]</em>)</p></li>
+<li><p><strong>particlesWithChangedKernelFunctions</strong> (<em>list</em>)</p></li>
 </ul>
 </dd>
 </dl>
 <dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._FastKDBinOrganizer.getCandidateIndices">
-<span class="sig-name descname"><span class="pre">getCandidateIndices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">queryBoxMin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">queryBoxMax</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particlemanagers/kdbinorganizedparticlemanager.html#_FastKDBinOrganizer.getCandidateIndices"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._FastKDBinOrganizer.getCandidateIndices" title="Link to this definition"></a></dt>
-<dd><p>The kernels whose boxes overlap a bin that the query box overlaps, each once.</p>
+<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._KernelFunctionsOfAChunk._make">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">_make</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iterable</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._KernelFunctionsOfAChunk._make" title="Link to this definition"></a></dt>
+<dd><p>Make a new _KernelFunctionsOfAChunk object from a sequence or iterable</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._KernelFunctionsOfAChunk._asdict">
+<span class="sig-name descname"><span class="pre">_asdict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._KernelFunctionsOfAChunk._asdict" title="Link to this definition"></a></dt>
+<dd><p>Return a new dict which maps field names to their values.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._KernelFunctionsOfAChunk._replace">
+<span class="sig-name descname"><span class="pre">_replace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwds</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._KernelFunctionsOfAChunk._replace" title="Link to this definition"></a></dt>
+<dd><p>Return a new _KernelFunctionsOfAChunk object replacing specified fields with new values</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._KernelFunctionsOfAChunk.firstKernelOfParticle">
+<span class="sig-name descname"><span class="pre">firstKernelOfParticle</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">NDArray</span><span class="p"><span class="pre">[</span></span><span class="pre">int64</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._KernelFunctionsOfAChunk.firstKernelOfParticle" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._KernelFunctionsOfAChunk.kernelsOfParticles">
+<span class="sig-name descname"><span class="pre">kernelsOfParticles</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">NDArray</span><span class="p"><span class="pre">[</span></span><span class="pre">int64</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._KernelFunctionsOfAChunk.kernelsOfParticles" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._KernelFunctionsOfAChunk.particlesWithChangedKernelFunctions">
+<span class="sig-name descname"><span class="pre">particlesWithChangedKernelFunctions</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._KernelFunctionsOfAChunk.particlesWithChangedKernelFunctions" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._keepKernelsWhoseSupportHoldsAPoint">
+<span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.</span></span><span class="sig-name descname"><span class="pre">_keepKernelsWhoseSupportHoldsAPoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">firstKernelOfParticle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernelsOfParticles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evaluationPointsOfParticles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernelFunctions</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particlemanagers/kdbinorganizedparticlemanager.html#_keepKernelsWhoseSupportHoldsAPoint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._keepKernelsWhoseSupportHoldsAPoint" title="Link to this definition"></a></dt>
+<dd><p>The narrow phase for kernel functions whose support is smaller than their box: of the kernel functions whose box
+holds a point of a particle, keep those whose support holds one.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>queryBoxMin</strong> (<em>NDArray</em><em>[</em><em>float64</em><em>]</em>) – The lower corner of the query box.</p></li>
-<li><p><strong>queryBoxMax</strong> (<em>NDArray</em><em>[</em><em>float64</em><em>]</em>) – Its upper corner.</p></li>
+<li><p><strong>firstKernelOfParticle</strong> (<em>NDArray</em><em>[</em><em>int64</em><em>]</em>) – The offsets of the kernel functions of the particles: those of particle <code class="docutils literal notranslate"><span class="pre">i</span></code> are
+<code class="docutils literal notranslate"><span class="pre">kernelsOfParticles[firstKernelOfParticle[i]</span> <span class="pre">:</span> <span class="pre">firstKernelOfParticle[i</span> <span class="pre">+</span> <span class="pre">1]]</span></code>.</p></li>
+<li><p><strong>kernelsOfParticles</strong> (<em>NDArray</em><em>[</em><em>int64</em><em>]</em>) – The numbers of the kernel functions whose box holds a point of the particle.</p></li>
+<li><p><strong>evaluationPointsOfParticles</strong> (<em>List</em><em>[</em><em>NDArray</em><em>[</em><em>float64</em><em>]</em><em>]</em>) – The evaluation points of every particle.</p></li>
+<li><p><strong>kernelFunctions</strong> (<em>list</em>) – The kernel functions, in the order of their numbers.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The indices of the candidate kernels, in ascending order.</p>
+<dd class="field-even"><p>The kept kernel functions, in the same layout.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>NDArray[np.intp]</p>
+<dd class="field-odd"><p>tuple[NDArray[np.intp], NDArray[np.intp]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-edelweissmeshfree.particlemanagers.binsofkernelfunctions">
+<span id="the-bins-of-the-kernel-functions"></span><h2>The bins of the kernel functions<a class="headerlink" href="#module-edelweissmeshfree.particlemanagers.binsofkernelfunctions" title="Link to this heading"></a></h2>
+<p>The search for the kernel functions that cover a point: the kernel functions sorted into a regular grid of bins by
+their boxes (the broad phase), and the test whether a point lies inside a box (the narrow phase for kernel functions
+whose support is their box).</p>
+<p>Both loops run in compiled code, without the Python interpreter: a search visits every evaluation point of every
+particle in every increment, and a few Python operations per point would cost more than all the rest of an explicit
+increment.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.binsofkernelfunctions.BinsOfKernelFunctions">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.particlemanagers.binsofkernelfunctions.</span></span><span class="sig-name descname"><span class="pre">BinsOfKernelFunctions</span></span><a class="headerlink" href="#edelweissmeshfree.particlemanagers.binsofkernelfunctions.BinsOfKernelFunctions" title="Link to this definition"></a></dt>
+<dd><p>The boxes of the kernel functions sorted into a regular grid of bins: a kernel function is in every bin its box
+overlaps.</p>
+<p>The grid spans all boxes; a bin is half as wide as the mean box along each dimension. The bins are held in the
+compressed layout of a sparse matrix: the kernel functions of bin <code class="docutils literal notranslate"><span class="pre">b</span></code> are
+<code class="docutils literal notranslate"><span class="pre">kernelsInBins[firstKernelOfBin[b]</span> <span class="pre">:</span> <span class="pre">firstKernelOfBin[b</span> <span class="pre">+</span> <span class="pre">1]]</span></code>, in ascending order. The bins are numbered with the
+first dimension fastest: the flat index of a bin is the sum, over the dimensions, of its index along the dimension
+times the stride of the dimension (<a class="reference internal" href="#edelweissmeshfree.particlemanagers.binsofkernelfunctions.BinsOfKernelFunctions.strides" title="edelweissmeshfree.particlemanagers.binsofkernelfunctions.BinsOfKernelFunctions.strides"><code class="xref py py-attr docutils literal notranslate"><span class="pre">strides</span></code></a>).</p>
+<p>A point lies in one bin, and every box that holds the point overlaps that bin. So the kernel functions whose box
+holds a point are among the kernel functions of its bin, and only they are tested
+(<a class="reference internal" href="#edelweissmeshfree.particlemanagers.binsofkernelfunctions.BinsOfKernelFunctions.kernelsWhoseBoxesHoldThePoints" title="edelweissmeshfree.particlemanagers.binsofkernelfunctions.BinsOfKernelFunctions.kernelsWhoseBoxesHoldThePoints"><code class="xref py py-meth docutils literal notranslate"><span class="pre">kernelsWhoseBoxesHoldThePoints()</span></code></a>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lowerCorners</strong> – The lower corner of the box of every kernel function, one row per kernel function.</p></li>
+<li><p><strong>upperCorners</strong> – The upper corners.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Attributes<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><a class="reference internal" href="#edelweissmeshfree.particlemanagers.binsofkernelfunctions.BinsOfKernelFunctions.binSize" title="edelweissmeshfree.particlemanagers.binsofkernelfunctions.BinsOfKernelFunctions.binSize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">binSize</span></code></a></dt><dd><p>The size of a bin along each dimension.</p>
+</dd>
+<dt><strong>dimension</strong></dt><dd></dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.particlemanagers.binsofkernelfunctions.BinsOfKernelFunctions.gridLowerCorner" title="edelweissmeshfree.particlemanagers.binsofkernelfunctions.BinsOfKernelFunctions.gridLowerCorner"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gridLowerCorner</span></code></a></dt><dd><p>The lower corner of the grid of bins, the lowest corner of all boxes.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.particlemanagers.binsofkernelfunctions.BinsOfKernelFunctions.gridUpperCorner" title="edelweissmeshfree.particlemanagers.binsofkernelfunctions.BinsOfKernelFunctions.gridUpperCorner"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gridUpperCorner</span></code></a></dt><dd><p>The upper corner of the grid of bins, the highest corner of all boxes.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.particlemanagers.binsofkernelfunctions.BinsOfKernelFunctions.numberOfBins" title="edelweissmeshfree.particlemanagers.binsofkernelfunctions.BinsOfKernelFunctions.numberOfBins"><code class="xref py py-obj docutils literal notranslate"><span class="pre">numberOfBins</span></code></a></dt><dd><p>The number of layers of bins along each dimension.</p>
+</dd>
+<dt><a class="reference internal" href="#edelweissmeshfree.particlemanagers.binsofkernelfunctions.BinsOfKernelFunctions.strides" title="edelweissmeshfree.particlemanagers.binsofkernelfunctions.BinsOfKernelFunctions.strides"><code class="xref py py-obj docutils literal notranslate"><span class="pre">strides</span></code></a></dt><dd><p>The stride of each dimension in the flat index of a bin.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particlemanagers.binsofkernelfunctions.BinsOfKernelFunctions.kernelsInBin" title="edelweissmeshfree.particlemanagers.binsofkernelfunctions.BinsOfKernelFunctions.kernelsInBin"><code class="xref py py-obj docutils literal notranslate"><span class="pre">kernelsInBin</span></code></a>(binIndex)</p></td>
+<td><p>The kernel functions whose boxes overlap a bin.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particlemanagers.binsofkernelfunctions.BinsOfKernelFunctions.kernelsWhoseBoxesHoldThePoints" title="edelweissmeshfree.particlemanagers.binsofkernelfunctions.BinsOfKernelFunctions.kernelsWhoseBoxesHoldThePoints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">kernelsWhoseBoxesHoldThePoints</span></code></a>(points, ...)</p></td>
+<td><p>For every group of points (the evaluation points of a particle), the kernel functions whose box holds one of its points strictly inside: each once, in ascending order.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.binsofkernelfunctions.BinsOfKernelFunctions.kernelsInBin">
+<span class="sig-name descname"><span class="pre">kernelsInBin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">binIndex</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particlemanagers.binsofkernelfunctions.BinsOfKernelFunctions.kernelsInBin" title="Link to this definition"></a></dt>
+<dd><p>The kernel functions whose boxes overlap a bin.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>binIndex</strong> – The flat index of the bin.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The indices of the kernel functions, in ascending order.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._FastKDBinOrganizer.kernelsInBin">
-<span class="sig-name descname"><span class="pre">kernelsInBin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">binIndex</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particlemanagers/kdbinorganizedparticlemanager.html#_FastKDBinOrganizer.kernelsInBin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager._FastKDBinOrganizer.kernelsInBin" title="Link to this definition"></a></dt>
-<dd><p>The kernels whose boxes overlap a bin.</p>
+<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.binsofkernelfunctions.BinsOfKernelFunctions.kernelsWhoseBoxesHoldThePoints">
+<span class="sig-name descname"><span class="pre">kernelsWhoseBoxesHoldThePoints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">firstPointOfGroup</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particlemanagers.binsofkernelfunctions.BinsOfKernelFunctions.kernelsWhoseBoxesHoldThePoints" title="Link to this definition"></a></dt>
+<dd><p>For every group of points (the evaluation points of a particle), the kernel functions whose box holds one of
+its points strictly inside: each once, in ascending order. Strictly: a point on the boundary of a box lies where
+a kernel function with box support is zero.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>binIndex</strong> (<em>int</em>) – The flat index of the bin.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>points</strong> – The points, one row each, the points of a group consecutive.</p></li>
+<li><p><strong>firstPointOfGroup</strong> – The first point of every group, and the number of points at the end: the points of group <code class="docutils literal notranslate"><span class="pre">g</span></code> are
+<code class="docutils literal notranslate"><span class="pre">points[firstPointOfGroup[g]</span> <span class="pre">:</span> <span class="pre">firstPointOfGroup[g</span> <span class="pre">+</span> <span class="pre">1]]</span></code>.</p></li>
+</ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The indices of the kernels, in ascending order.</p>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">firstKernelOfGroup</span></code> and <code class="docutils literal notranslate"><span class="pre">kernels</span></code>, in the same layout: the kernel functions of group <code class="docutils literal notranslate"><span class="pre">g</span></code> are
+<code class="docutils literal notranslate"><span class="pre">kernels[firstKernelOfGroup[g]</span> <span class="pre">:</span> <span class="pre">firstKernelOfGroup[g</span> <span class="pre">+</span> <span class="pre">1]]</span></code>.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>NDArray[np.intp]</p>
+<dd class="field-odd"><p>tuple[np.ndarray, np.ndarray]</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.binsofkernelfunctions.BinsOfKernelFunctions.binSize">
+<span class="sig-name descname"><span class="pre">binSize</span></span><a class="headerlink" href="#edelweissmeshfree.particlemanagers.binsofkernelfunctions.BinsOfKernelFunctions.binSize" title="Link to this definition"></a></dt>
+<dd><p>The size of a bin along each dimension.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.binsofkernelfunctions.BinsOfKernelFunctions.gridLowerCorner">
+<span class="sig-name descname"><span class="pre">gridLowerCorner</span></span><a class="headerlink" href="#edelweissmeshfree.particlemanagers.binsofkernelfunctions.BinsOfKernelFunctions.gridLowerCorner" title="Link to this definition"></a></dt>
+<dd><p>The lower corner of the grid of bins, the lowest corner of all boxes.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.binsofkernelfunctions.BinsOfKernelFunctions.gridUpperCorner">
+<span class="sig-name descname"><span class="pre">gridUpperCorner</span></span><a class="headerlink" href="#edelweissmeshfree.particlemanagers.binsofkernelfunctions.BinsOfKernelFunctions.gridUpperCorner" title="Link to this definition"></a></dt>
+<dd><p>The upper corner of the grid of bins, the highest corner of all boxes.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.binsofkernelfunctions.BinsOfKernelFunctions.numberOfBins">
+<span class="sig-name descname"><span class="pre">numberOfBins</span></span><a class="headerlink" href="#edelweissmeshfree.particlemanagers.binsofkernelfunctions.BinsOfKernelFunctions.numberOfBins" title="Link to this definition"></a></dt>
+<dd><p>The number of layers of bins along each dimension.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.particlemanagers.binsofkernelfunctions.BinsOfKernelFunctions.strides">
+<span class="sig-name descname"><span class="pre">strides</span></span><a class="headerlink" href="#edelweissmeshfree.particlemanagers.binsofkernelfunctions.BinsOfKernelFunctions.strides" title="Link to this definition"></a></dt>
+<dd><p>The stride of each dimension in the flat index of a bin.</p>
 </dd></dl>
 
 </dd></dl>
