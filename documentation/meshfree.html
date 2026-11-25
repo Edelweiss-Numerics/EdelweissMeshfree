@@ -314,8 +314,8 @@ vectorised box test. Kernel functions whose support is a subset of their boundin
 into a void, a borehole or a crack, where only the kernels of one wall of particles cover it. These kernels lie nearly
 in one plane, on one side of the point, and reproducing a linear field there takes shape functions of the size of the
 distance to the wall over the scatter of the kernel centres about it. The particle’s smoothed gradients and its
-stiffness grow with them, and so does its bound of the stable time increment of an explicit analysis: one such
-particle can set the time increment of the whole model.</p>
+stiffness grow with them, and its critical time step in an explicit analysis falls: one such particle can set the
+time increment of the whole model.</p>
 <p><code class="docutils literal notranslate"><span class="pre">MarmotMeshfreeApproximationWrapper</span></code> takes the optional keyword argument <code class="docutils literal notranslate"><span class="pre">momentMatrixConditionLimit</span></code>: the
 completeness order of a point whose moment matrix (scaled to a unit diagonal) has a larger condition number is lowered,
 for the linear basis to the order 0, the Shepard functions, which stay between 0 and 1. With implicit gradients

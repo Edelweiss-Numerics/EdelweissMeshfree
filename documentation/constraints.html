@@ -1357,7 +1357,7 @@ The force acts on both sides of <span class="math notranslate nohighlight">\(X_i
 explicit analysis prescribes motion through velocities, not through penalized displacements.</p>
 <p>A support holds only as well as its penalty is stiff against the material next to it: a penalty that is merely
 comparable to the stiffness of a particle lets the support give way and spring back, an error that does not shrink
-with the particle size. Its upper bound is the stable time increment of the explicit integration,
+with the particle size. Its upper bound is set by the critical time step of the explicit integration,
 <span class="math notranslate nohighlight">\(\Delta t &lt; 2 \sqrt{m / k}\)</span> with <span class="math notranslate nohighlight">\(m\)</span> the mass a constrained point carries; see example 186.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -4637,8 +4637,8 @@ projectile: at a reentrant corner, the sign of the gap of the closest facet does
 <li><p><strong>masterFacets</strong> (<em>list</em>) – The contact facet elements of the master surface (Line2 facets in 2D, Tria3 facets in 3D), e.g. the element
 set the surface element generator creates; their node ordering makes their normals point out of the master
 body.</p></li>
-<li><p><strong>penaltyParameter</strong> (<em>float</em>) – The penalty stiffness, a force per unit penetration of one contact point. It lowers the stable time
-increment of the explicit integration.</p></li>
+<li><p><strong>penaltyParameter</strong> (<em>float</em>) – The penalty stiffness, a force per unit penetration of one contact point. It lowers the critical time
+step of the explicit integration.</p></li>
 <li><p><strong>searchDistance</strong> (<em>float</em>) – The distance from the master surface within which a point is seen, and may come into contact in the next
 increment. It must exceed the distance a point travels towards the surface in one increment.</p></li>
 <li><p><strong>journal</strong> – The journal, for the reports.</p></li>

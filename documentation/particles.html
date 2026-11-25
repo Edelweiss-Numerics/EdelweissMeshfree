@@ -122,7 +122,7 @@ not <code class="docutils literal notranslate"><span class="pre">U</span></code>
 (EdelweissFE’s <code class="docutils literal notranslate"><span class="pre">CutbackRequest</span></code>), as an EdelweissFE element does, and the solver retries the increment smaller.</p>
 <p>In an explicit analysis (EdelweissFE’s <code class="docutils literal notranslate"><span class="pre">NED</span></code>), a particle is advanced, accepted twice, reconnected and evaluated in
 every increment, in an order that its implementation relies on: a zero-length increment leaves the rates alone, an
-accept is idempotent, and the material’s tangent is required. The bound of the stable time increment is not part of
+accept is idempotent, and the material’s tangent is required. The estimate of the critical time step is not part of
 that order: the particle describes its stiffness to Marmot’s bound and is left as it was found, wherever it is asked;
 the stiffness is that of an accepted state after the accept, where <code class="docutils literal notranslate"><span class="pre">NED</span></code> asks for it. The calls, in their
 order, and these contracts are written down once, in Marmot’s documentation: <a class="reference external" href="https://materialmodelingtoolbox.github.io/Marmot/pages/features/meshfreeparticles.html#explicit-life-cycle-of-a-particle">the explicit life cycle of a particle</a>.</p>
@@ -293,9 +293,9 @@ For particles generally a node-wise layout is assumed.</p>
 <dd><p>Explicit dynamics: add an upper bound of <span class="math notranslate nohighlight">\(|\boldsymbol{K}|\, \boldsymbol{W}\)</span>, the absolute value of
 the stiffness of <a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.assembleStiffness" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.assembleStiffness"><code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleStiffness()</span></code></a> (see there for the state it is of), times nonnegative weights. It
 leaves the particle as it was found. The stiffness itself is not assembled: the bound costs as much as the
-nodes, the stiffness as their square. It is what the stable time increment of the particles is bounded with,
+nodes, the stiffness as their square. It is what the critical time step of the particles is estimated with,
 after the accept of an increment
-(<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia"><code class="xref py py-meth docutils literal notranslate"><span class="pre">stableTimeIncrementOfEntitiesWithOwnInertia()</span></code></a>).</p>
+(<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.criticalTimeStepOfEntitiesWithOwnInertia" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.criticalTimeStepOfEntitiesWithOwnInertia"><code class="xref py py-meth docutils literal notranslate"><span class="pre">criticalTimeStepOfEntitiesWithOwnInertia()</span></code></a>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -883,7 +883,7 @@ see <code class="xref py py-attr docutils literal notranslate"><span class="pre"
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeLumpedInertia" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeLumpedInertia"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeLumpedInertia</span></code></a>(mLumped)</p></td>
 <td><p>Add the lumped mass; see <a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedInertia" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedInertia"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedInertia()</span></code></a>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeLumpedMomentum" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeLumpedMomentum"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeLumpedMomentum</span></code></a>(mLumped)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeLumpedMomentum" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeLumpedMomentum"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeLumpedMomentum</span></code></a>(pLumped)</p></td>
 <td><p>Add the lumped momentum; see <a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedMomentum" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedMomentum"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedMomentum()</span></code></a>.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computePhysicsKernelsExplicit" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computePhysicsKernelsExplicit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computePhysicsKernelsExplicit</span></code></a>(Pc)</p></td>
@@ -1040,9 +1040,9 @@ reassignment of the kernel functions. A buffer of another length raises a <code 
 
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeLumpedMomentum">
-<span class="sig-name descname"><span class="pre">computeLumpedMomentum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mLumped</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeLumpedMomentum" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">computeLumpedMomentum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pLumped</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.computeLumpedMomentum" title="Link to this definition"></a></dt>
 <dd><p>Add the lumped momentum; see
-<a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedMomentum" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedMomentum"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedMomentum()</span></code></a>. <code class="docutils literal notranslate"><span class="pre">mLumped</span></code> has
+<a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedMomentum" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedMomentum"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedMomentum()</span></code></a>. <code class="docutils literal notranslate"><span class="pre">pLumped</span></code> has
 <code class="docutils literal notranslate"><span class="pre">nDof</span></code> entries.</p>
 </dd></dl>
 

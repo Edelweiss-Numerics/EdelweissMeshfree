@@ -583,9 +583,9 @@
 <span class="w">        </span><span class="sd">"""Explicit dynamics: add an upper bound of :math:`|\\boldsymbol{K}|\\, \\boldsymbol{W}`, the absolute value of</span>
 <span class="sd">        the stiffness of :meth:`assembleStiffness` (see there for the state it is of), times nonnegative weights. It</span>
 <span class="sd">        leaves the particle as it was found. The stiffness itself is not assembled: the bound costs as much as the</span>
-<span class="sd">        nodes, the stiffness as their square. It is what the stable time increment of the particles is bounded with,</span>
+<span class="sd">        nodes, the stiffness as their square. It is what the critical time step of the particles is estimated with,</span>
 <span class="sd">        after the accept of an increment</span>
-<span class="sd">        (:meth:`~edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.stableTimeIncrementOfEntitiesWithOwnInertia`).</span>
+<span class="sd">        (:meth:`~edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.criticalTimeStepOfEntitiesWithOwnInertia`).</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
