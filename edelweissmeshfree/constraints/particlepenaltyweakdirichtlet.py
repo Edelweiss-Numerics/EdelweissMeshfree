@@ -1,5 +1,6 @@
 import numpy as np
 from edelweissfe.config.phenomena import getFieldSize
+from edelweissfe.solvers.base.criticaltimestep import NextIncrement
 from edelweissfe.timesteppers.timestep import TimeStep
 from edelweissfe.variables.scalarvariable import ScalarVariable
 
@@ -277,6 +278,7 @@ class ParticlePenaltyWeakDirichlet(MPMConstraintBase):
         weights: np.ndarray,
         bound: np.ndarray,
         timeStep: TimeStep,
+        nextIncrement: NextIncrement | None = None,
     ):
         """Add the row sums of the absolute value of the stiffness of the support in an explicit analysis, weighted by
         column, from the same springs as its force (:meth:`_springsOfEachParticle`,
@@ -294,6 +296,8 @@ class ParticlePenaltyWeakDirichlet(MPMConstraintBase):
             The row sums to augment.
         timeStep
             The current time step; unused.
+        nextIncrement
+            The next increment the solver may take; unused: the springs of a support act at every state.
         """
 
         for localNodes, springs in self._springsOfEachParticle():

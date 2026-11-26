@@ -18,8 +18,9 @@ The model:
   300 m/s towards the slab, free.
 - **Slab**: 100 mm thick, ``GradientEnhanced6FiniteStrainSQCNIxNSNI/3D/Hexa`` particles of GM7 at finite strains
   (``GM7/COROTATIONAL``), held at its edges.
-- **Contact**: the vertices of the slab particles near the impact against the faceted surface of the cube,
-  :class:`~edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit`.
+- **Contact**: quadrature points on the faces of the slab particles near the impact against the faceted surface of
+  the cube, through EdelweissFE's contact constraint (:mod:`edelweissfe.constraints.surfacetodeformablesurfacepenalty`)
+  with :class:`~edelweissmeshfree.constraints.base.contactpointsonparticlefaces.ContactPointsOnParticleFaces`.
 - A **quarter model**, with the symmetry planes x = 0 and y = 0.
 
 Units are N, mm, t and s throughout.
@@ -89,11 +90,11 @@ by :math:`\sum_I G_I \Delta\boldsymbol{U}_I` in an increment, with the particle'
 centre :math:`G_I`
 (:meth:`~edelweissmeshfree.particles.base.baseparticle.BaseParticle.getInterpolationVectorLinearizedAboutCenter`),
 not with the shape functions at the vertex. With ``interpolationLinearizedAboutCenter=True`` the support (and the
-contact below) distributes its force with the same :math:`G_I`, the transpose of the vertex motion: its penalty
+contact below, always) distributes its force with the same :math:`G_I`, the transpose of the vertex motion: its penalty
 stiffness is symmetric and it does no work over a closed cycle of motion
 (``edelweissmeshfree/constraints/test/vertexpenaltywork_test.py``). The default distributes the force with the shape
 functions at the vertex, which is not conservative: it feeds energy into the particles at the supports, and a crushed,
-soft particle there blows up, whatever the time increment. This model therefore opts in everywhere.
+soft particle there blows up, whatever the time increment. This model therefore opts in for every support.
 
 Constrain the vertices, not the centres: the centres lie half a particle off the plane and move with Poisson's
 effect. The support penalty must be stiff against the material next to it, or the plane gives way and springs back
@@ -107,17 +108,25 @@ The contact
     :language: python
     :pyobject: addTheContact
 
-The contact points are the vertices of the given particles (only those the projectile can reach: every point is
-searched in every increment); the master is the faceted surface. The constraint pairs a point with a facet while the
-point approaches, pushes it back out through that facet once it has entered, and lets it slide only onto the facets
-next to it; a point found inside without having been seen outside gets no force and is reported. The force on the
-particles and the reaction on the projectile's nodes are equal and opposite. See the class documentation for the
-gap, the pairing and what the constraint reports.
+The contact points are four quadrature points on every face of the given particles (only those the projectile can
+reach: every point within the search distance is searched in every increment), the faces inside the slab included,
+which the projectile meets as it penetrates; the master is the faceted surface. It is the contact constraint that
+couples two bodies of finite elements, with the particles' own contact points: each moves with its particle and
+stands for its share of the face. The constraint pairs a point with a facet while the point approaches, pushes it
+back out once it has entered -- never across a convex edge of the projectile, onto the side of the nose it entered
+next to -- and lets it slide from facet to facet; a point that flows past the nose's edge, beside the projectile, is
+released. At the edges, the gap is the distance to the edge (EdelweissFE's contact theory, *Corners of the master*).
+A point found inside without having been seen approaching gets no force and is reported. The force
+on the particles and the reaction on the projectile's nodes are equal and opposite. See the documentation of the
+constraint for the gap, the pairing and what it reports.
 
-- **The penalty** is a force per unit penetration of one contact point. It is a stiffness the critical time step does
-  not see: keep :math:`2\sqrt{m/k}`, with :math:`m` the mass a contact point carries, well above the time increment.
-- **The search distance** must exceed the distance a point travels towards the surface in one increment; a point in
-  contact is never lost to it. A warning in the journal says when points enter deeper than half of it.
+- **The penalty** is a stiffness per unit area, times the area a contact point stands for. The critical time step sees
+  it: in every increment, the stiffness of the closed points is added to the frequencies of the nodes they couple, on
+  the particles' side and on the projectile's (EdelweissFE's theory page on the critical time step, "Penalty
+  constraints"). A penalty far stiffer than the concrete costs time increments, not stability.
+- **The search distance** must exceed the distance a point travels towards the surface between two updates of the
+  connectivity: a model with particles updates it in every increment (a model of finite elements alone only every
+  ``contact-update-frequency`` increments). A point in contact is never lost to it. A warning in the journal says when points enter deeper than half of it.
 
 The time increment
 ------------------
@@ -133,11 +142,11 @@ strain depends on the strain, and the bound follows the geometric mean of the tw
 
 In this model, the limit of the particles is that of the nonlocal field, set by its micro-inertia. It starts only a
 little above the projectile's elements, so the elements set the time increment, and the margin of the particles is so
-small that they are estimated in every increment from the start. As the concrete under the nose is crushed, the
-estimate of the particles falls below the elements': the particles take the time increment over, it follows their
-falling estimate down, and they are estimated in every increment from then on. The tests of this page check that they
-take it over. Neither estimate sees the penalty stiffness of the contact or of the supports; check them by hand, and
-check the result by halving the time increment.
+small that they are estimated in every increment from the start. The penalty springs of the contact and of the
+supports add to the frequencies of the nodes they couple, in every increment: from the first touch on, the contact
+springs at the nose set the time increment, a few percent below the limit of the projectile's elements and of the
+particles. As the concrete under the nose is crushed, the particles' own estimate falls, at times below the
+elements'. The tests of this page check this sequence. Check the result by halving the time increment.
 
 Running it
 ----------
@@ -168,7 +177,7 @@ projectile's motion, and check:
   of the velocity: a penalty spring can push the projectile out only with energy the projectile brought in. ``NED``'s
   own energy table says that its balance is not usable in a run without external work and asks to watch the kinetic
   energy directly: this is that check.
-- **Momentum.** ``contactForceOnParticles + contactForceOnMaster`` vanishes to round-off in every increment, and the
+- **Momentum.** ``contactForceOnSlave + contactForceOnMaster`` vanishes to round-off in every increment, and the
   projectile's momentum (its nodal masses times the nodal velocities) changes by the accumulated impulse of
   ``contactForceOnMaster``, the force of an increment times the mean of the increments before and after it (``NED``'s
   leapfrog), along the axis free of supports, to round-off.
@@ -183,12 +192,13 @@ projectile's motion, and check:
   quartered. The whole model is not exactly symmetric itself: the facets split every face along a fixed diagonal.
 
 Example 191 asserts the checks of energy, action and reaction, time increment and search distance on its first 40 us.
-Done on a small slab of the particle size of the production run, the checks came out as follows: the kinetic energy never exceeded the
-initial one; action and reaction cancelled to round-off in every increment, and the projectile's momentum followed the
-contact impulse to round-off; halving the time increment changed the penetration by a few hundredths of a millimetre,
-a tenfold penalty range by about half a millimetre, the size of the change of the overlap; the deepest overlap was
-about a tenth of the search distance and no point was found inside; the quarter model followed the whole one to a few
-tenths of a millimetre. A run resumed from a checkpoint after an interruption followed the uninterrupted one.
+Done on a small slab of the particle size of the production run, over its first 100 us, the checks came out as follows:
+the kinetic energy never exceeded the initial one; action and reaction cancelled to round-off in every increment, and the
+projectile's momentum followed the contact impulse to round-off; halving the time increment changed the penetration by
+about a hundredth of a millimetre, a tenfold larger or smaller penalty by a few tenths of a millimetre, of the order of
+the change of the overlap; the deepest overlap was about a tenth of the search distance and no point was found inside;
+the quarter model followed the whole one to a few tenths of a millimetre. A run resumed from a checkpoint after an
+interruption followed the uninterrupted one.
 
 The critical time step of the particles costs a small share of an increment: the particles bound the row
 sums of their absolute stiffness node by node, and only when the margin policy asks for it.
@@ -201,13 +211,18 @@ What the run shows
 ------------------
 
 The production run is the quarter of a slab of 600 x 600 x 100 mm in seven layers of particles (3087 particles) and of
-the projectile in 2 x 2 x 4 elements, with the restart output manager and an output manager that stops the step at a
-nose depth of 40 mm. It ran until the nose reached the stop depth of 40 mm at
-333 us, with the time increment set by the projectile's elements throughout. The checks held over the whole run: the
-kinetic energy never exceeded the initial one, action and reaction cancelled to round-off, the projectile's momentum
-followed the contact impulse to round-off, and no point was found inside. The projectile slowed from 300 to 148 m/s in
-the first 100 us and to 57 m/s at the stop; the contact force averaged over 5 us peaked at 3.3 MN after 20 to 25 us
-(the first touch, a few points at full speed, is a spike set by the penalty). At the stop, about two fifths of the
-particles had cracked, through the whole thickness and out to the supported edges, and the most crushed ones were under
-the nose and in the rear layer. The result depends on the particle size (see above), which the regularization of GM7
-does not remove at this size.
+the projectile in 2 x 2 x 4 elements, with the contact of this page (four points on every face of the particles near the
+impact), the restart output manager and an output manager that stops the step at a nose depth of 40 mm. The checks held
+over the whole run: the kinetic energy never exceeded the initial one, action and reaction cancelled to round-off, the
+projectile's momentum followed the contact impulse to round-off, no point was found inside, and the deepest overlap
+stayed below a seventh of the search distance. The nose was 12.4 mm deep after 50 us and 20.6 mm after 100 us; with one
+contact point per face instead of four, or with the contact on the vertices of the particles that the points on their
+faces replaced, these depths differ by a few percent.
+
+Later quantities are not results of this model: when the nose reaches the stop depth, its velocity then and the force
+late in the run change by tens of percent with the number of contact points per face. Once the concrete under the nose
+is crushed, a handful of contact points carries the projectile, and their number decides how fast it is braked. A study
+of the particle size and the contact points per face together has to come before such a number is quoted. When the
+nose reached the stop depth, two fifths of the particles or more had cracked, through the whole thickness and out to
+the supported edges, and the most crushed ones were under the nose and in the rear layer. The result depends on the
+particle size (see above), which the regularization of GM7 does not remove at this size.

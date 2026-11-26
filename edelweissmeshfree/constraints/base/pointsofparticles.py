@@ -45,12 +45,13 @@ point, the transpose of the point's motion, so that a penalty on the point has a
 over a closed cycle. The explicit solver bounds that stiffness for its critical time step
 (:func:`addBoundOfAbsoluteStiffnessOfPointsOfParticle`, the one bound of penalty springs of EdelweissFE,
 :mod:`edelweissfe.constraints.base.penaltysprings`). A penalty constraint gives its springs on the points of a particle
-as :class:`SpringsOnPointsOfParticle`, from one method for its force and its bound, so that the two cannot drift apart.
-A contact of points of one particle with an obstacle in an explicit analysis derives from
+as :class:`SpringsOnPointsOfParticle`, from one method for its force and its bound, so that the two cannot drift
+apart. A contact of points of one particle with an obstacle in an explicit analysis derives from
 :class:`~edelweissmeshfree.constraints.base.penaltyspringsexplicit.PenaltySpringsOnPointsOfOneParticleExplicit`, which
-owns the force and the bound: a new one is then its physics -- the gap and its gradient -- and a constructor. The
-support :class:`~edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet` gives its
-springs per particle the same way.
+owns the force, the bound and the gaps over the next increment: a new one is then its physics -- the gap and its
+gradient -- and a constructor. The support
+:class:`~edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet` gives its springs per
+particle the same way.
 """
 
 from collections.abc import Iterable

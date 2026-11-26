@@ -33,16 +33,20 @@
 #  The full text of the license can be found in the file LICENSE.md at
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
-"""Two-way contact between particles and finite elements in one explicit analysis
-(:class:`~edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit`
-with ``twoWayCoupling``), integrated by EdelweissFE's ``NED``:
+"""Two-way contact between particles and finite elements in one explicit analysis, integrated by EdelweissFE's
+``NED``, with EdelweissFE's one contact constraint (:mod:`edelweissfe.constraints.surfacetodeformablesurfacepenalty`)
+for both kinds of impactor: its contact points are the quadrature points of the bottom faces of the particles
+(:class:`~edelweissmeshfree.constraints.base.contactpointsonparticlefaces.ContactPointsOnParticleFaces`) or of the
+bottom faces of the finite elements:
 
 - a particle block falls onto a free-floating plate of finite elements, whose only load is the contact: the impulses
   the contact gives to the two bodies are equal and opposite in every increment;
 - an elastic block falls onto a supported elastic block: with an impactor of particles, the contact force history and
-  the rebound agree with those of an impactor of finite elements, which meets the target through EdelweissFE's
-  node-to-surface contact (:mod:`edelweissfe.constraints.nodetodeformablesurfacepenalty`);
-- halving the time increment changes the penetration history by less than the stated tolerance.
+  the rebound agree with those of an impactor of finite elements;
+- halving the time increment changes the penetration history by less than the stated tolerance;
+- the contact's stiffness enters the critical time step: a contact far stiffer than the bodies lowers the time
+  increment, and the impact stays stable, where the time increment of the bodies alone lets the impactor rebound faster
+  than it came.
 """
 
 import argparse
@@ -50,11 +54,14 @@ import argparse
 import numpy as np
 import pytest
 from edelweissfe.config.configurator import loadConfiguration
-from edelweissfe.constraints.nodetodeformablesurfacepenalty import (
-    Constraint as NodeToDeformableSurfacePenalty,
+from edelweissfe.constraints.base.contactpointsonslavesurface import (
+    ContactPointsOnSlaveSurface,
 )
-from edelweissfe.constraints.nodetodeformablesurfacepenalty import (
-    NodeToDeformableSurfacePenaltySchema,
+from edelweissfe.constraints.surfacetodeformablesurfacepenalty import (
+    Constraint as SurfaceContact,
+)
+from edelweissfe.constraints.surfacetodeformablesurfacepenalty import (
+    SurfaceToDeformableSurfacePenaltySchema,
 )
 from edelweissfe.generators.planerectquad import Generator as PlaneRectQuadGenerator
 from edelweissfe.generators.planerectquad import PlaneRectQuadSchema
@@ -63,6 +70,10 @@ from edelweissfe.journal.journal import Journal
 from edelweissfe.outputmanagers.base.outputmanagerbase import OutputManagerBase
 from edelweissfe.sections.plane import PlaneSectionSchema
 from edelweissfe.sections.plane import Section as PlaneSection
+from edelweissfe.solvers.base.criticaltimestep import (
+    CriticalTimeStepEstimate,
+    CriticalTimeStepWithThePenaltyConstraints,
+)
 from edelweissfe.solvers.nonlinearexplicitdynamic import NED
 from edelweissfe.stepactions.dirichlet import StepAction as Dirichlet
 from edelweissfe.steps.adaptivestepforexplicitsimulations import (
@@ -70,8 +81,8 @@ from edelweissfe.steps.adaptivestepforexplicitsimulations import (
 )
 from edelweissfe.steps.stepmanager import StepActionCollection
 
-from edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit import (
-    ParticlePenaltyFacetContactExplicit,
+from edelweissmeshfree.constraints.base.contactpointsonparticlefaces import (
+    ContactPointsOnParticleFaces,
 )
 from edelweissmeshfree.fieldoutput.fieldoutput import MPMFieldOutputController
 from edelweissmeshfree.generators.rectangularkernelfunctiongridgenerator import (
@@ -114,11 +125,9 @@ IMPACTOR_SIZE, STANDOFF, IMPACT_VELOCITY = 20.0, 0.05, -10e3
 COURANT_NUMBER = NED.SolverSpecificOptions["courant-number"]
 #: The size of the particles and of the finite elements of the impactor and the target.
 ENTITY_SIZE = 2.5
-#: The interface stiffness per unit area of the finite element contact; the particle contact takes it per contact point,
-#: times the length a point stands for: two vertices meet at every point of the bottom of the particle block, half a
-#: particle apart, so a point stands for half a particle.
+#: The interface stiffness per unit area of the contact, for both impactors: each contact point stands for its share
+#: of the face it lies on.
 PENALTY_PER_AREA = 2e5
-PENALTY_PER_POINT = PENALTY_PER_AREA * ENTITY_SIZE / 2
 SEARCH_DISTANCE = 1.0
 
 
@@ -225,7 +234,11 @@ def addParticleBlock(model: MPMModel, journal: Journal, name: str, x0: float, y0
 
 
 def run_sim(
-    impactor: str, target: str, courantNumber: float = COURANT_NUMBER, duration: float = 40e-6
+    impactor: str,
+    target: str,
+    courantNumber: float = COURANT_NUMBER,
+    duration: float = 40e-6,
+    penaltyPerArea: float = PENALTY_PER_AREA,
 ) -> ContactHistory:
     """Let an impactor fall onto a target.
 
@@ -239,6 +252,8 @@ def run_sim(
         The Courant number of NED, which sets the time increment.
     duration
         The duration of the step.
+    penaltyPerArea
+        The interface stiffness per unit area of the contact.
 
     Returns
     -------
@@ -254,23 +269,11 @@ def run_sim(
     addContactFacets(model, journal, "target_top", "targetTop")
 
     x0Impactor = -0.5 * IMPACTOR_SIZE
+    configuration = SurfaceToDeformableSurfacePenaltySchema(penalty=penaltyPerArea, searchDistance=SEARCH_DISTANCE)
     if impactor == "particles":
         addParticleBlock(model, journal, "impactor", x0Impactor, STANDOFF, IMPACTOR_SIZE, IMPACTOR_SIZE)
-        contact = ParticlePenaltyFacetContactExplicit(
-            "contact",
-            model,
-            list(model.particleSets["impactor_bottom"]),
-            list(model.elementSets["targetTop_facets"]),
-            PENALTY_PER_POINT,
-            SEARCH_DISTANCE,
-            journal,
-        )
-
-        def contactForces():
-            return np.array([contact.contactForceOnParticles, contact.contactForceOnMaster])
-
-        def deepestPenetration():
-            return contact.deepestPenetration
+        # two quadrature points on the bottom face of every particle of the bottom row
+        contactPoints = ContactPointsOnParticleFaces(model.surfaces["impactor_bottom"], nQuadraturePoints=2)
 
         def impactorVelocity():
             # the particles have the same mass
@@ -279,32 +282,23 @@ def run_sim(
     else:
         addFiniteElementBlock(model, journal, "impactor", x0Impactor, STANDOFF, IMPACTOR_SIZE, IMPACTOR_SIZE)
         addContactFacets(model, journal, "impactor_bottom", "impactorBottom")
-        contact = NodeToDeformableSurfacePenalty(
-            "contact",
-            model,
-            model.elementSets["impactorBottom_facets"],
-            model.elementSets["targetTop_facets"],
-            journal,
-            configuration=NodeToDeformableSurfacePenaltySchema(
-                slaveSurface="impactorBottom_facets",
-                masterSurface="targetTop_facets",
-                penalty=PENALTY_PER_AREA,
-                searchDistance=SEARCH_DISTANCE,
-                sliding="small",
-            ),
-        )
-
-        def contactForces():
-            return np.array([[0.0, contact.totalNormalForce], [0.0, -contact.totalNormalForce]])
-
-        def deepestPenetration():
-            gaps = contact.getGaps()
-            return float(max(0.0, -gaps.min())) if len(gaps) else 0.0
+        # three quadrature points on every facet of the bottom faces of the elements
+        contactPoints = ContactPointsOnSlaveSurface(model.elementSets["impactorBottom_facets"], 3, "contact")
 
         def impactorVelocity():
             V = model.nodeFields["displacement"]["V"]
             nodes = model.nodeSets["impactor_all"]
             return np.mean([V[model.nodeFields["displacement"].indexOfNode(node)][1] for node in nodes])
+
+    contact = SurfaceContact(
+        "contact", model, contactPoints, model.elementSets["targetTop_facets"], journal, configuration=configuration
+    )
+
+    def contactForces():
+        return np.array([contact.contactForceOnSlave, contact.contactForceOnMaster])
+
+    def deepestPenetration():
+        return contact.deepestPenetration
 
     model.constraints["contact"] = contact
     model.prepareYourself(journal)
@@ -371,7 +365,10 @@ def test_the_contact_gives_equal_and_opposite_impulses_to_a_free_floating_plate(
     assert largestForce > 0.0
     np.testing.assert_allclose(forces[:, 0] + forces[:, 1], 0.0, atol=1e-12 * largestForce)
 
-    impulses = np.cumsum(forces * np.diff(history.times, prepend=0.0)[:, None, None], axis=0)
+    # the force of an increment accelerates the nodes over the mean of the increments before and after it (the leapfrog
+    # of NED), which differ where the contact lowers the time increment
+    timeIncrements = np.diff(history.times, prepend=0.0)
+    impulses = np.cumsum(forces * (0.5 * (timeIncrements + np.append(timeIncrements[1:], 0.0)))[:, None, None], axis=0)
     np.testing.assert_allclose(impulses[:, 0] + impulses[:, 1], 0.0, atol=1e-12 * np.abs(impulses).max())
 
     # the impulse the particle block received is the change of its momentum (it has no other load)
@@ -386,9 +383,12 @@ def test_an_impactor_of_particles_rebounds_as_one_of_finite_elements(assert_gold
 
     ofFiniteElements = run_sim("finite elements", "supported block")
 
-    peakForceOfParticles = np.abs(np.array(ofParticles.forces)[:, 0, 1]).max()
-    peakForceOfFiniteElements = np.abs(np.array(ofFiniteElements.forces)[:, 0, 1]).max()
-    assert peakForceOfParticles == pytest.approx(peakForceOfFiniteElements, rel=0.1)
+    # The force of a single increment rings with the penalty springs of the contact points, which differ between the
+    # two impactors; averaged over 21 increments, which smooths that ringing, the peaks agree.
+    def peakOfTheAveragedForce(history):
+        return np.convolve(np.abs(np.array(history.forces)[:, 0, 1]), np.ones(21) / 21, "valid").max()
+
+    assert peakOfTheAveragedForce(ofParticles) == pytest.approx(peakOfTheAveragedForce(ofFiniteElements), rel=0.1)
 
     reboundOfParticles, reboundOfFiniteElements = ofParticles.velocities[-1], ofFiniteElements.velocities[-1]
     assert reboundOfFiniteElements > 0.0
@@ -414,6 +414,28 @@ def test_halving_the_time_increment_changes_the_impact_little():
 
     assert impulse(coarse) == pytest.approx(impulse(fine), rel=0.005)
     assert max(coarse.penetrations) == pytest.approx(max(fine.penetrations), rel=0.03)
+
+
+def test_a_stiff_contact_lowers_the_time_increment_and_the_impact_stays_stable(monkeypatch):
+    """With a contact a hundred times stiffer, its springs set the critical time step: the time increment falls far
+    below the one of the bodies, and the impactor rebounds slower than it came. Without the contact in the critical
+    time step (the part with the penalty constraints replaced by an infinite estimate), the step keeps the bodies' time
+    increment, which is above the critical time step with the contact, and the impactor leaves the contact faster than
+    it came: energy from nowhere."""
+
+    stiff = 100 * PENALTY_PER_AREA
+
+    withTheEstimate = run_sim("particles", "supported block", penaltyPerArea=stiff)
+    assert 0.0 < withTheEstimate.velocities[-1] < abs(IMPACT_VELOCITY)
+
+    monkeypatch.setattr(
+        CriticalTimeStepWithThePenaltyConstraints,
+        "estimate",
+        lambda self, *args: self._take(CriticalTimeStepEstimate(np.inf)),
+    )
+    withoutTheEstimate = run_sim("particles", "supported block", penaltyPerArea=stiff)
+    assert len(withTheEstimate.times) > 5 * len(withoutTheEstimate.times)
+    assert withoutTheEstimate.velocities[-1] > abs(IMPACT_VELOCITY)
 
 
 if __name__ == "__main__":
