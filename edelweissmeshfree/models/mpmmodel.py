@@ -326,6 +326,10 @@ class MPMModel(FEModel):
             mapChunksInParallel(list(self.materialPoints.values()), self._prepareAtTheConvergedState)
             for mpmManager in self.mpmManagers:
                 managersChanged |= mpmManager.updateConnectivity()
+            # multi-point constraints that depend on the assignment (aggregation: projection points of the cells)
+            for mpc in self.multiPointConstraints.values():
+                if hasattr(mpc, "updateConnectivity"):
+                    mpc.updateConnectivity()
 
         if self.particleManagers:
             mapChunksInParallel(list(self.particles.values()), self._prepareAtTheConvergedState)
@@ -428,6 +432,24 @@ class MPMModel(FEModel):
             nodesWithVolatileFieldValues,
             self._reducedToActiveDomain(activeCells, activeNodeFields, activeNodeSets),
         )
+
+    def activeConstraints(self) -> list:
+        """The constraints that take part in the discrete system (see
+        :meth:`~edelweissfe.models.femodel.FEModel.activeConstraints`), followed by the entities the multi-point
+        constraints add to it (``couplingEntities``), e.g. the patches of an F-bar-patch projection over the aggregates
+        of :class:`~edelweissmeshfree.constraints.aggregatedmpm.AggregatedMaterialPointMethod`.
+
+        Returns
+        -------
+        list[ConstraintBase]
+            The active constraints.
+        """
+
+        constraints = super().activeConstraints()
+        for mpc in self.multiPointConstraints.values():
+            if hasattr(mpc, "couplingEntities"):
+                constraints += mpc.couplingEntities()
+        return constraints
 
     @staticmethod
     def activeCellsOf(mpmManagers: list) -> list:

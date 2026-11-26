@@ -80,6 +80,16 @@ cdef extern from "Marmot/MarmotCell.h":
 
         void assignMaterialPoints(const vector[MarmotMaterialPoint*] materialPoints)
 
+        bint setProjectionPoint(const double* coordinates) except +
+
+        bint hasPatchProjection()
+
+        void computeProjectionContribution(const double* Q, double* value, double* weight, double* dValue_dQ) except +
+
+        void setProjectedValue(double value) except +
+
+        void getProjectionSensitivity(double* dR_dValue) except +
+
         void computeMaterialPointKernels(   const double* dUc,
                                             double* Pc,
                                             double* Kc,
@@ -112,7 +122,9 @@ cdef extern from "Marmot/MarmotCell.h":
 
         void interpolateFieldsToMaterialPoints( const double* Q)
 
-        void getInterpolationVector( double* N, const double* coordinates)
+        void getInterpolationVector( double* N, const double* coordinates) except +
+
+        void getInterpolationGradient( double* dNdX, const double* coordinates) except +
 
         void getBoundingBox(double* boundingBoxMin, double* boundingBoxMax)
 
