@@ -36,6 +36,8 @@ follows the strain.
   parameters make the nonlocal field's limit the smaller one by far, so that this is what is tested: the bound lies
   below the exact critical time step of the particles' tangent, and the explicit scheme is stable up to that exact
   increment, whatever the damping.
+* A support of the displacement held by a penalty adds its rows to the particles' field matrix with carried weights
+  on the nonlocal field: two 1x1 blocks (a viscosity alone) or one 2x2 block (a micro-inertia).
 """
 
 import numpy as np
@@ -46,7 +48,11 @@ from edelweissfe.steps.adaptivestepforexplicitsimulations import (
     AdaptiveStepForExplicitSimulations,
 )
 from edelweissfe.steps.stepmanager import StepActionCollection
+from edelweissfe.timesteppers.timestep import TimeStep
 
+from edelweissmeshfree.constraints.particlepenaltyweakdirichtlet import (
+    ParticlePenaltyWeakDirichlet,
+)
 from edelweissmeshfree.fieldoutput.fieldoutput import MPMFieldOutputController
 from edelweissmeshfree.generators.boxhexaparticlegridgenerator import (
     generateBoxHexaParticleGrid,
@@ -68,6 +74,7 @@ from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.models.test._criticaltimestep import (
     estimateOfTheSystem,
     exactCriticalTimeStep,
+    exactCriticalTimeStepOfTheSystem,
     serially,
 )
 from edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager import (
@@ -257,6 +264,79 @@ def test_carried_weights_tighten_the_estimate_and_keep_it_below_the_exact_critic
     ofTheSchemes = (M > 0.0) | (C > 0.0)
     assert np.all(weights[ofTheSchemes] > 0.0) and np.all(weights[~ofTheSchemes] == 0.0)
     assert np.max(weights) == 1.0
+
+
+def _barWithAPenaltySupport(nonlocalField: dict, penalty: float):
+    """The bar with a support of the displacement along z held by a penalty at the vertices of its bottom face
+    (:class:`~edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet`, with the
+    particles' interpolation linearized about their centers): its discrete system, the lumped mass and damping of the
+    particles, the row sums of the support's mass-scaled stiffness as ``NED`` takes them, and the exact critical time
+    step of the particles' tangent with the support's springs."""
+
+    model = _bar(Journal(verbose=False), **nonlocalField)
+    bottom = -N_ALONG * PARTICLE_SIZE / 2
+    atTheBottom = [p for p in model.particles.values() if p.getCenterCoordinates()[2] < bottom + PARTICLE_SIZE]
+    vertices = [i for i, x in enumerate(atTheBottom[0].getVertexCoordinates()) if np.isclose(x[2], bottom)]
+    support = ParticlePenaltyWeakDirichlet(
+        "support",
+        model,
+        atTheBottom,
+        "displacement",
+        {2: 0.0},
+        penalty,
+        vertices,
+        interpolationLinearizedAboutCenter=True,
+    )
+    model.constraints["support"] = support
+    model.updateConnectivity()
+    system = model.buildDiscreteSystem()
+
+    M = np.asarray(system.assembleLumpedMassOfEntitiesWithOwnInertia(serially))
+    C = np.asarray(system.assembleLumpedDampingOfEntitiesWithOwnInertia(serially))
+    s = np.zeros_like(M)
+    s[M > 0.0] = 1.0 / np.sqrt(M[M > 0.0])
+    indices = np.asarray(system.locations[support])
+    bound = np.zeros(support.nDof)
+    zero = np.zeros(support.nDof)
+    support.addBoundOfAbsoluteStiffnessTimes(zero, zero, s[indices], bound, TimeStep(0, 0.0, 0.0, 0.0, 0.0, 0.0))
+    rowSums = np.zeros_like(M)
+    np.add.at(rowSums, indices, bound)
+    rowSums *= s
+
+    return system, M, C, rowSums, exactCriticalTimeStepOfTheSystem(system, (support,))
+
+
+@pytest.mark.parametrize("penalty", [1e5, 1e12], ids=["soft support", "stiff support"])
+@pytest.mark.parametrize("nonlocalField", [VISCOSITY_ONLY, WITH_MICRO_INERTIA], ids=["two 1x1 blocks", "one 2x2 block"])
+def test_with_carried_weights_the_rows_of_a_penalty_support_bound_the_exact_critical_time_step(nonlocalField, penalty):
+    """A support of the displacement, held by a penalty, with weights carried over a few estimates: the weights of the
+    displacement, the field the support acts on, stay constant per field, those of the nonlocal field are carried.
+    With a viscosity alone, the nonlocal field is of first order, and the field matrix has one 1x1 block per order;
+    with a micro-inertia, both fields are of second order, in one 2x2 block, whose Perron root the support's rows raise
+    through its diagonal entry of the displacement. Either way the estimate with the rows lies below the exact
+    critical time step of the particles' tangent with the support's springs, scaled by
+    STABLE_FRACTION_OF_THE_TANGENT_LIMIT; the soft support leaves the estimate as it is, the stiff one sets it."""
+
+    system, M, C, rowSums, exact = _barWithAPenaltySupport(nonlocalField, penalty)
+    weights = np.zeros(system.numbering.nDof)
+    for _ in range(8):
+        estimate = system.criticalTimeStepOfEntitiesWithOwnInertia(M, C, serially, weights)
+
+    displacement = system.numbering.idcsOfFieldsInDofVector["displacement"]
+    strainSymmetric = system.numbering.idcsOfFieldsInDofVector["strain symmetric"]
+    assert np.all(estimate._factorOfThePenaltyRows[displacement] == 1.0), "constant weights on the support's field"
+    assert np.any(estimate._factorOfThePenaltyRows[strainSymmetric] > 1.0), "carried weights on the nonlocal field"
+
+    withTheSupport = estimate.criticalTimeStep(rowSums)
+    assert (
+        0.5 * STABLE_FRACTION_OF_THE_TANGENT_LIMIT * exact
+        < withTheSupport
+        <= STABLE_FRACTION_OF_THE_TANGENT_LIMIT * exact
+    )
+    if penalty < 1e6:
+        assert withTheSupport == estimate.value, "the soft support leaves the estimate as it is"
+    else:
+        assert withTheSupport < 0.1 * estimate.value, "the stiff support sets the critical time step"
 
 
 def isStable(model: MPMModel) -> bool:

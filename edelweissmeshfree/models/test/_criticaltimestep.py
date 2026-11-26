@@ -29,6 +29,8 @@
 and the exact one, from the eigenvalues of the assembled tangent."""
 
 import numpy as np
+from edelweissfe.timesteppers.timestep import TimeStep
+from edelweissfe.utils.residualtangentcheck import residualContributionAndTangent
 
 from edelweissmeshfree.models.mpmdiscretesystem import (
     CriticalTimeStepEstimateFromTheFieldMatrix,
@@ -63,11 +65,11 @@ def exactCriticalTimeStep(model) -> float:
     return exactCriticalTimeStepOfTheSystem(model.buildDiscreteSystem())
 
 
-def exactCriticalTimeStepOfTheSystem(system) -> float:
-    """The critical time step of the explicit scheme for the particles' stiffness of a discrete system as it is, from
-    the eigenvalues of the assembled system: :math:`2/\\omega_\\mathrm{max}` of the central differences on the degrees
-    of freedom with an inertia, whatever their damping, and :math:`2/\\lambda_\\mathrm{max}` of forward Euler on those
-    with a damping alone."""
+def exactCriticalTimeStepOfTheSystem(system, constraints: tuple = ()) -> float:
+    """The critical time step of the explicit scheme for the particles' stiffness of a discrete system as it is, and
+    for the tangent of the given constraints of it, from the eigenvalues of the assembled system:
+    :math:`2/\\omega_\\mathrm{max}` of the central differences on the degrees of freedom with an inertia, whatever their
+    damping, and :math:`2/\\lambda_\\mathrm{max}` of forward Euler on those with a damping alone."""
 
     M = np.asarray(system.assembleLumpedMassOfEntitiesWithOwnInertia(serially))
     C = np.asarray(system.assembleLumpedDampingOfEntitiesWithOwnInertia(serially))
@@ -78,6 +80,11 @@ def exactCriticalTimeStepOfTheSystem(system) -> float:
         particle.assembleStiffness(stiffness)
         indices = np.asarray(system.locations.ofEntity[particle])
         K[np.ix_(indices, indices)] += stiffness.reshape(nDof, nDof, order="F")
+    for constraint in constraints:
+        zero = np.zeros(constraint.nDof)
+        _, tangent = residualContributionAndTangent(constraint, zero, zero, TimeStep(0, 0.0, 0.0, 0.0, 0.0, 0.0))
+        indices = np.asarray(system.locations[constraint])
+        K[np.ix_(indices, indices)] += tangent
 
     criticalTimeStep = np.inf
     for ofTheScheme, divisor, criticalTimeStepOfTheLargestEigenvalue in (

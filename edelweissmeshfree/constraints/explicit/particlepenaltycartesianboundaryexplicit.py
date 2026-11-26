@@ -1,23 +1,17 @@
 from collections.abc import Iterable
 
 import numpy as np
-from edelweissfe.config.phenomena import getFieldSize
 from edelweissfe.surfaces.entitybasedsurface import EntityBasedSurface
 from edelweissfe.timesteppers.timestep import TimeStep
-from edelweissfe.variables.scalarvariable import ScalarVariable
 
-from edelweissmeshfree.constraints.base.mpmexplicitconstraintbase import (
-    MPMExplicitConstraintBase,
-)
-from edelweissmeshfree.constraints.base.pointsofparticles import (
-    addForcesOnPointsOfParticle,
-    locateTheNodesOfParticles,
+from edelweissmeshfree.constraints.base.penaltyspringsexplicit import (
+    PenaltySpringsOnPointsOfOneParticleExplicit,
 )
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.particles.base.baseparticle import BaseParticle
 
 
-class ParticlePenaltyCartesianBoundaryConstraintExplicit(MPMExplicitConstraintBase):
+class ParticlePenaltyCartesianBoundaryConstraintExplicit(PenaltySpringsOnPointsOfOneParticleExplicit):
     r"""
     This class implements a Penalty contact boundary constraint for EXPLICIT simulations.
     It prevents a particle from penetrating a defined boundary surface by applying
@@ -30,7 +24,12 @@ class ParticlePenaltyCartesianBoundaryConstraintExplicit(MPMExplicitConstraintBa
 
         \boldsymbol{F}_{\mathrm{penalty}} = -k\, g\, \boldsymbol{n},
 
-    where :math:`g` is the penetration depth, :math:`k` the penalty parameter and :math:`\boldsymbol{n}` the normal.
+    where :math:`g < 0` is the gap of the point to the boundary, :math:`k` the penalty parameter and
+    :math:`\boldsymbol{n}` the unit normal pointing away from the boundary, the gradient of the gap. The force and the
+    bound of its stiffness for the critical time step are those of
+    :class:`~edelweissmeshfree.constraints.base.penaltyspringsexplicit.PenaltySpringsOnPointsOfOneParticleExplicit`; the
+    boundary gives the gap (:meth:`_gapsOfPoints`), its gradient (:meth:`_gradientsOfTheGaps`) and its reach
+    (:meth:`_isWithinReach`).
 
     Parameters
     ----------
@@ -65,9 +64,6 @@ class ParticlePenaltyCartesianBoundaryConstraintExplicit(MPMExplicitConstraintBa
         :meth:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.interpolationVectorAtPointOf`.
     """
 
-    #: Carries nothing from one increment to the next.
-    checkpointedState = {}
-
     def __init__(
         self,
         name: str,
@@ -84,43 +80,23 @@ class ParticlePenaltyCartesianBoundaryConstraintExplicit(MPMExplicitConstraintBa
         proximityFactor: float = 2.0,
         interpolationLinearizedAboutCenter: bool = False,
     ):
-        self._name = name
-        self.interpolationLinearizedAboutCenter = interpolationLinearizedAboutCenter
-        self._field = "displacement"
-        self._fieldSize = getFieldSize(self._field, model.domainSize)
-
-        # the nodes of the particle's kernel functions, and where they sit in the block (see updateConnectivity)
-        self._nodes = []
-        self._localNodes = np.zeros(0, dtype=int)
-
         self._component = component
-        self.reactionForce = 0.0
-
         self._boundaryPosition = boundaryPosition
-        self._vertexIDs = vertexIDs
-        self._faceIDs = faceIDs
+        self._velocity = velocity
+        super().__init__(
+            name,
+            particle,
+            model,
+            location,
+            faceIDs,
+            vertexIDs,
+            penaltyParameter,
+            doProximityCheck,
+            proximityFactor,
+            interpolationLinearizedAboutCenter,
+        )
 
-        def _getConstraintLocations():
-            if location == "center":
-                return [particle.getCenterCoordinates()]
-            elif location == "face":
-                if self._faceIDs is None:
-                    raise ValueError("faceID must be specified when location is 'face'.")
-                ids = [self._faceIDs] if isinstance(self._faceIDs, int) else self._faceIDs
-                return [particle.getFaceCoordinates(idx) for idx in ids]
-            elif location == "vertex":
-                if self._vertexIDs is None:
-                    raise ValueError("vertexID must be specified when location is 'vertex'.")
-                ids = [self._vertexIDs] if isinstance(self._vertexIDs, int) else self._vertexIDs
-                vertices = particle.getVertexCoordinates()
-                return [vertices[idx] for idx in ids]
-            return []
-
-        self._getConstraintLocations = _getConstraintLocations
         domainSize = model.domainSize
-        self._constrained_points = self._getConstraintLocations()
-        self._particle = particle
-
         if component < 0 or component >= domainSize:
             raise ValueError(f"Component {component} is out of bounds for domain size {domainSize}.")
 
@@ -133,118 +109,60 @@ class ParticlePenaltyCartesianBoundaryConstraintExplicit(MPMExplicitConstraintBa
         # Determine orientation: 1.0 if boundary is "above" particle, -1.0 if "below"
         self._orientation = 1.0 if boundaryPosition > first_pos else -1.0
 
-        self._velocity = velocity
-        self._penaltyParameter = penaltyParameter
-        self._doProximityCheck = doProximityCheck
-
-        if self._doProximityCheck:
-            self._proximityDist = particle.getVolumeUndeformed() ** (1.0 / domainSize) * proximityFactor
-
-    @property
-    def name(self) -> str:
-        return self._name
-
-    @property
-    def nodes(self) -> list:
-        return self._nodes
-
-    @property
-    def fields(self) -> list:
-        return [[self._field]] * len(self._nodes)
-
-    @property
-    def nDof(self) -> int:
-        return len(self._nodes) * self._fieldSize
-
-    @property
-    def scalarVariables(self) -> list:
-        return []
-
-    def getNumberOfAdditionalNeededScalarVariables(self) -> int:
-        return 0
-
-    def assignAdditionalScalarVariables(self, scalarVariables: list[ScalarVariable]):
-        pass
-
-    def updateConnectivity(self, model):
-        """
-        Updates the constraint connectivity.
-        In explicit, this caches the global indices of the nodes for fast access.
-        """
-        # Update current coordinates of constrained points (particle may have moved)
-        self._constrained_points = self._getConstraintLocations()
-
-        # the nodes of the particle's kernel functions, and where they sit in the constraint's block
-        localIndexOfNode = {}
-        [self._localNodes] = locateTheNodesOfParticles([self._particle.kernelFunctions], localIndexOfNode)
-        nodes = list(localIndexOfNode)
-        hasChanged = nodes != self._nodes
-        self._nodes = nodes
-
-        # within reach if one of the constrained points is close enough to the boundary
-        self.withinReach = not self._doProximityCheck or any(
-            abs(p[self._component] - self._boundaryPosition) <= self._proximityDist for p in self._constrained_points
-        )
-
-        if not self.active:
-            self.reactionForce = 0.0
-
-        return hasChanged
-
-    def computeKernelsExplicit(self, U_np: np.ndarray, dU: np.ndarray, P: np.ndarray, timeStep: TimeStep):
-        """Add the residual contribution of the penalty force: the negative of the force with which the boundary
-        pushes the particle back, evaluated at the particle's current position.
+    def _isWithinReach(self, points: list) -> bool:
+        """Whether one of the points is within reach of the boundary, at its position at the start, on either side.
 
         Parameters
         ----------
-        U_np
-            The current solution; unused, the penetration follows from the particle's current position.
-        dU
-            The solution increment; likewise unused.
-        P
-            The residual contribution to augment.
-        timeStep
-            The current time step.
+        points
+            The coordinates of each point.
+
+        Returns
+        -------
+        bool
+            True if the boundary is within reach.
         """
 
-        # Explicit: calculate wall position at current time
-        # Assuming stepProgress handles linear motion within step or total time
-        currentWallPos = self._boundaryPosition + self._velocity * timeStep.stepProgress
+        return any(abs(p[self._component] - self._boundaryPosition) <= self._proximityDist for p in points)
 
-        penalty = self._penaltyParameter
-        orientation = self._orientation
-        comp = self._component
+    def _gapsOfPoints(self, points: np.ndarray, timeStep: TimeStep) -> np.ndarray:
+        """The gaps of points to the boundary where it is at the end of a time step, negative beyond it: the boundary
+        above the particle (orientation 1.0) or below it (-1.0).
 
-        total_penalty_force = 0.0
+        Parameters
+        ----------
+        points
+            The points, one row each.
+        timeStep
+            The time step, for the position of the moving boundary.
 
-        for p in self._constrained_points:
-            val = p[comp]
+        Returns
+        -------
+        np.ndarray
+            The gaps.
+        """
 
-            # Calculate penetration g
-            # g > 0 implies penetration
-            # orientation 1.0 (Wall > Point): Penetration if (Point > Wall) -> (Point - Wall) * 1 > 0
-            # orientation -1.0 (Wall < Point): Penetration if (Point < Wall) -> (Point - Wall) * -1 > 0
-            g = orientation * (val - currentWallPos)
+        wallPosition = self._boundaryPosition + self._velocity * timeStep.stepProgress
+        return -self._orientation * (points[:, self._component] - wallPosition)
 
-            if g > 0:
-                # Force magnitude: proportional to penetration
-                # Force direction: Opposite to penetration direction (pushes particle back)
-                # If orientation is 1.0 (Normal points -x), force should be -x.
-                # If orientation is -1.0 (Normal points +x), force should be +x.
-                # Combined: force_val = -penalty * g * orientation
-                force_scalar = -penalty * g * orientation
+    def _gradientsOfTheGaps(self, points: np.ndarray) -> np.ndarray:
+        """The gradient of the gap of each point: the unit vector along the component the boundary is normal to,
+        pointing away from the boundary, the same for every point.
 
-                force = np.zeros(self._fieldSize)
-                force[comp] = force_scalar
-                # the vector the force is distributed with (see interpolationVectorAtPointOf)
-                interpolation = self.interpolationVectorAtPointOf(self._particle, p).flatten()
-                addForcesOnPointsOfParticle(
-                    P.reshape(-1, self._fieldSize), self._localNodes, interpolation[np.newaxis, :], force[np.newaxis, :]
-                )
+        Parameters
+        ----------
+        points
+            The points, one row each.
 
-                total_penalty_force += g * penalty
+        Returns
+        -------
+        np.ndarray
+            The gradients, one row each.
+        """
 
-        self.reactionForce = total_penalty_force
+        gradients = np.zeros((len(points), self._fieldSize))
+        gradients[:, self._component] = -self._orientation
+        return gradients
 
 
 def ParticleExplicitPenaltyCartesianBoundaryConstraintFactory(

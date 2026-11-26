@@ -1,25 +1,22 @@
 from collections.abc import Callable, Iterable
 
 import numpy as np
-from edelweissfe.config.phenomena import getFieldSize
 from edelweissfe.surfaces.entitybasedsurface import EntityBasedSurface
 from edelweissfe.timesteppers.timestep import TimeStep
-from edelweissfe.variables.scalarvariable import ScalarVariable
 
-from edelweissmeshfree.constraints.base.mpmexplicitconstraintbase import (
-    MPMExplicitConstraintBase,
-)
-from edelweissmeshfree.constraints.base.pointsofparticles import (
-    addForcesOnPointsOfParticle,
-    locateTheNodesOfParticles,
+from edelweissmeshfree.constraints.base.penaltyspringsexplicit import (
+    PenaltySpringsOnPointsOfOneParticleExplicit,
 )
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.particles.base.baseparticle import BaseParticle
 
 
-class ParticlePenaltyContactImplicitSurfaceConstraintExplicit(MPMExplicitConstraintBase):
+class ParticlePenaltyContactImplicitSurfaceConstraintExplicit(PenaltySpringsOnPointsOfOneParticleExplicit):
     """
-    Penalty contact constraint for arbitrary implicit surfaces in EXPLICIT simulations.
+    Penalty contact constraint for arbitrary implicit surfaces in EXPLICIT simulations: the surface gives the signed
+    distance of a point (:meth:`_gapsOfPoints`), its gradient (:meth:`_gradientsOfTheGaps`) and its reach
+    (:meth:`_isWithinReach`); the force and the bound of its stiffness for the critical time step are those of
+    :class:`~edelweissmeshfree.constraints.base.penaltyspringsexplicit.PenaltySpringsOnPointsOfOneParticleExplicit`.
 
     Parameters
     ----------
@@ -50,9 +47,6 @@ class ParticlePenaltyContactImplicitSurfaceConstraintExplicit(MPMExplicitConstra
         :meth:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.interpolationVectorAtPointOf`.
     """
 
-    #: Carries nothing from one increment to the next.
-    checkpointedState = {}
-
     def __init__(
         self,
         name: str,
@@ -68,147 +62,72 @@ class ParticlePenaltyContactImplicitSurfaceConstraintExplicit(MPMExplicitConstra
         proximityFactor: float = 2.0,
         interpolationLinearizedAboutCenter: bool = False,
     ):
-        self._name = name
-        self.interpolationLinearizedAboutCenter = interpolationLinearizedAboutCenter
-        self._field = "displacement"
-        self._fieldSize = getFieldSize(self._field, model.domainSize)
-        # the nodes of the particle's kernel functions, and where they sit in the block (see updateConnectivity)
-        self._nodes = []
-        self._localNodes = np.zeros(0, dtype=int)
-
         self._implicit_function = implicit_function
         self._gradient_function = gradient_function
+        super().__init__(
+            name,
+            particle,
+            model,
+            location,
+            faceIDs,
+            vertexIDs,
+            penaltyParameter,
+            doProximityCheck,
+            proximityFactor,
+            interpolationLinearizedAboutCenter,
+        )
 
-        self.reactionForce = 0.0
-
-        def _getConstraintLocations():
-            if location == "center":
-                return [particle.getCenterCoordinates()]
-            elif location == "face":
-                if faceIDs is None:
-                    raise ValueError("faceID must be specified when location is 'face'.")
-                ids = [faceIDs] if isinstance(faceIDs, int) else faceIDs
-                return [particle.getFaceCoordinates(idx) for idx in ids]
-            elif location == "vertex":
-                if vertexIDs is None:
-                    raise ValueError("vertexID must be specified when location is 'vertex'.")
-                ids = [vertexIDs] if isinstance(vertexIDs, int) else vertexIDs
-                vertices = particle.getVertexCoordinates()
-                return [vertices[idx] for idx in ids]
-            return []
-
-        self._getConstraintLocations = _getConstraintLocations
-        self._domainSize = model.domainSize
-        self._constrained_points = self._getConstraintLocations()
-        self._particle = particle
-
-        self._penaltyParameter = penaltyParameter
-        self._doProximityCheck = doProximityCheck
-
-        if self._doProximityCheck:
-            self._proximityDist = particle.getVolumeUndeformed() ** (1.0 / self._domainSize) * proximityFactor
-
-    @property
-    def name(self) -> str:
-        return self._name
-
-    @property
-    def nodes(self) -> list:
-        return self._nodes
-
-    @property
-    def fields(self) -> list:
-        return [[self._field]] * len(self._nodes)
-
-    @property
-    def nDof(self) -> int:
-        return len(self._nodes) * self._fieldSize
-
-    @property
-    def scalarVariables(self) -> list:
-        return []
-
-    def getNumberOfAdditionalNeededScalarVariables(self) -> int:
-        return 0
-
-    def assignAdditionalScalarVariables(self, scalarVariables: list[ScalarVariable]):
-        pass
-
-    def updateConnectivity(self, model: MPMModel) -> bool:
-        """
-        Updates the constraint connectivity by refreshing active nodes and positions.
+    def _isWithinReach(self, points: list) -> bool:
+        """Whether the signed distance of one of the points to the surface is below the reach.
 
         Parameters
         ----------
-        model
-            The MPM model instance, used to access grid information if needed.
+        points
+            The coordinates of each point.
 
         Returns
         -------
         bool
-            True if the connectivity has changed (e.g., active nodes or positions), False otherwise.
+            True if the surface is within reach.
         """
-        self._constrained_points = self._getConstraintLocations()
 
-        # the nodes of the particle's kernel functions, and where they sit in the constraint's block
-        localIndexOfNode = {}
-        [self._localNodes] = locateTheNodesOfParticles([self._particle.kernelFunctions], localIndexOfNode)
-        nodes = list(localIndexOfNode)
-        hasChanged = nodes != self._nodes
-        self._nodes = nodes
+        return any(self._implicit_function(p) < self._proximityDist for p in points)
 
-        # within reach if one of the constrained points is close enough to the surface (signed distance below it)
-        self.withinReach = not self._doProximityCheck or any(
-            self._implicit_function(p_coord) < self._proximityDist for p_coord in self._constrained_points
-        )
-
-        if not self.active:
-            self.reactionForce = 0.0
-
-        return hasChanged
-
-    def computeKernelsExplicit(self, U_np: np.ndarray, dU: np.ndarray, P: np.ndarray, timeStep: TimeStep):
-        """Add the residual contribution of the penalty forces: the negative of the forces with which the surface
-        pushes the particle back, evaluated at the particle's current position.
+    def _gapsOfPoints(self, points: np.ndarray, timeStep: TimeStep) -> np.ndarray:
+        """The signed distance of each point to the surface, negative inside it.
 
         Parameters
         ----------
-        U_np
-            The current solution; unused, the penetration follows from the particle's current position.
-        dU
-            The solution increment; likewise unused.
-        P
-            The residual contribution to augment.
+        points
+            The points, one row each.
         timeStep
-            The current time step information (not used in this constraint but included for interface consistency).
+            The time step; unused, the surface does not move.
+
+        Returns
+        -------
+        np.ndarray
+            The signed distances.
         """
 
-        total_reaction = 0.0
+        return np.array([self._implicit_function(p) for p in points], dtype=float)
 
-        for p_coord in self._constrained_points:
-            dist = self._implicit_function(p_coord)
+    def _gradientsOfTheGaps(self, points: np.ndarray) -> np.ndarray:
+        """The gradient of the signed distance at each point, pointing out of the surface.
 
-            if dist < 0:
-                g = abs(dist)
-                grad = self._gradient_function(p_coord)
-                grad_norm = np.linalg.norm(grad)
+        Parameters
+        ----------
+        points
+            The points, one row each.
 
-                normal = grad / grad_norm if grad_norm > 1e-14 else np.zeros(self._domainSize)
+        Returns
+        -------
+        np.ndarray
+            The gradients, one row each.
+        """
 
-                force_vector = self._penaltyParameter * g * normal
-
-                # the vector the force is distributed with (see interpolationVectorAtPointOf)
-                interpolation = self.interpolationVectorAtPointOf(self._particle, p_coord).flatten()
-                addForcesOnPointsOfParticle(
-                    P.reshape(-1, self._fieldSize),
-                    self._localNodes,
-                    interpolation[np.newaxis, :],
-                    force_vector[np.newaxis, :],
-                )
-
-                total_reaction += self._penaltyParameter * g
-
-        self.reactionForce = total_reaction
+        return np.array([self._gradient_function(p) for p in points], dtype=float).reshape(
+            (len(points), self._fieldSize)
+        )
 
 
 def ParticlePenaltyContactImplicitSurfaceConstraintExplicitFactory(

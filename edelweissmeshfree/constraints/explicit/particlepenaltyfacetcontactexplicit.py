@@ -502,6 +502,33 @@ class ParticlePenaltyFacetContactExplicit(MPMExplicitConstraintBase):
         self.numberOfPointsInContact = len(penetrating)
         self.deepestPenetration = float(-gap[penetrating].min()) if len(penetrating) else 0.0
 
+    def addBoundOfAbsoluteStiffnessTimes(
+        self,
+        U_np: np.ndarray,
+        dU: np.ndarray,
+        weights: np.ndarray,
+        bound: np.ndarray,
+        timeStep: TimeStep,
+    ):
+        """Add nothing: the stiffness of this contact is not in the critical time step of ``NED``. It has no tangent for
+        the default of :meth:`~edelweissfe.constraints.base.constraintbase.ConstraintBase.addBoundOfAbsoluteStiffnessTimes`
+        to bound, and does not give its springs. Keep :math:`2\\sqrt{m/k}`, with :math:`m` the mass a contact point
+        carries, well above the time increment.
+
+        Parameters
+        ----------
+        U_np
+            The current solution; unused.
+        dU
+            The solution increment; unused.
+        weights
+            The weight of each column; unused.
+        bound
+            The row sums; left as they are.
+        timeStep
+            The current time step; unused.
+        """
+
     def _currentCoordinatesOfPairedPoints(self, U_np: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """Where the paired points and the nodes of their facets are now.
 
