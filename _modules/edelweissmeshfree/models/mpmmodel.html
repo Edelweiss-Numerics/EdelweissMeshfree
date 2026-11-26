@@ -144,11 +144,16 @@
 <span class="sd">    ----------</span>
 <span class="sd">    dimension</span>
 <span class="sd">        The dimension of the model.</span>
+<span class="sd">    axisymmetric</span>
+<span class="sd">        True if the model is the section r-z of a body of revolution, see</span>
+<span class="sd">        :attr:`~edelweissfe.models.femodel.FEModel.axisymmetric`; its particles must be axisymmetric ones, and it</span>
+<span class="sd">        takes no material points, cells or cell elements, which integrate over the section, not over the rings</span>
+<span class="sd">        (:meth:`prepareYourself`).</span>
 <span class="sd">    """</span>
 
     <span class="n">identification</span> <span class="o">=</span> <span class="s2">"MPMModel"</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dimension</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dimension</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">axisymmetric</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cells</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1">#: The collection of Cells in the present model.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cellSets</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1">#: The collection of CellSets in the present model.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">materialPoints</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1">#: The collection of MaterialPoints in the present model.</span>
@@ -168,7 +173,7 @@
         <span class="c1">#: update of the connectivity, see :meth:`updateConnectivity`.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vciManagers</span> <span class="o">=</span> <span class="p">[]</span>
 
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">dimension</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">dimension</span><span class="p">,</span> <span class="n">axisymmetric</span><span class="p">)</span>
 
 <div class="viewcode-block" id="MPMModel._populateNodeFieldVariablesFromCells">
 <a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel._populateNodeFieldVariablesFromCells">[docs]</a>
@@ -251,12 +256,27 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_prepareMaterialPoints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">journal</span><span class="p">:</span> <span class="n">Journal</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""Initialize the material points for a simulation. They carry their material from their creation; the</span>
 <span class="sd">        sections are assigned to the finite elements by :meth:`~edelweissfe.models.femodel.FEModel.prepareYourself`.</span>
+<span class="sd">        An axisymmetric model takes none: the material points, cells and cell elements of EdelweissMeshfree integrate</span>
+<span class="sd">        over the section, not over the rings about the axis, and their forces would not balance the ring forces of the</span>
+<span class="sd">        elements, particles and contact points next to them.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        journal</span>
 <span class="sd">            The journal instance.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If the model is axisymmetric and holds material points, cells or cell elements.</span>
 <span class="sd">        """</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">axisymmetric</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">materialPoints</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">cells</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">cellElements</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"The model is axisymmetric (MPMModel(..., axisymmetric=True)), but it holds </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">materialPoints</span><span class="p">)</span><span class="si">}</span><span class="s2"> "</span>
+                <span class="sa">f</span><span class="s2">"material points, </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="p">)</span><span class="si">}</span><span class="s2"> cells and </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cellElements</span><span class="p">)</span><span class="si">}</span><span class="s2"> cell elements: these integrate "</span>
+                <span class="s2">"over the section, not over the rings about the axis; an axisymmetric model takes axisymmetric "</span>
+                <span class="s2">"particles and elements only."</span>
+            <span class="p">)</span>
         <span class="k">for</span> <span class="n">mp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">materialPoints</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
             <span class="n">mp</span><span class="o">.</span><span class="n">initializeYourself</span><span class="p">()</span></div>
 
@@ -264,17 +284,33 @@
 <div class="viewcode-block" id="MPMModel._prepareParticles">
 <a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel._prepareParticles">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_prepareParticles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">journal</span><span class="p">:</span> <span class="n">Journal</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Prepare elements for a simulation.</span>
-<span class="sd">        In detail, sections are assigned.</span>
-
+<span class="w">        </span><span class="sd">"""Initialize the particles for a simulation, once they are known to integrate as the model does: an</span>
+<span class="sd">        axisymmetric model integrates over the rings about the axis, and so must its particles</span>
+<span class="sd">        (:attr:`~edelweissmeshfree.particles.base.baseparticle.BaseParticle.axisymmetric`), and a plane or a 3D model</span>
+<span class="sd">        holds no axisymmetric particle.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        journal</span>
 <span class="sd">            The journal instance.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If a particle is axisymmetric and the model is not, or vice versa.</span>
 <span class="sd">        """</span>
-        <span class="c1"># for section in self.sections.values():</span>
-        <span class="c1">#     section.assignSectionPropertiesToModel(self)</span>
+
+        <span class="n">numbersOfOtherParticles</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">number</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">axisymmetric</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">axisymmetric</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">numbersOfOtherParticles</span><span class="p">:</span>
+            <span class="n">modelKind</span> <span class="o">=</span> <span class="s2">"axisymmetric"</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">axisymmetric</span> <span class="k">else</span> <span class="s2">"not axisymmetric"</span>
+            <span class="n">particleKind</span> <span class="o">=</span> <span class="s2">"not axisymmetric"</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">axisymmetric</span> <span class="k">else</span> <span class="s2">"axisymmetric"</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"The model is </span><span class="si">{</span><span class="n">modelKind</span><span class="si">}</span><span class="s2"> (MPMModel(..., axisymmetric=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">axisymmetric</span><span class="si">}</span><span class="s2">)), but "</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">numbersOfOtherParticles</span><span class="p">)</span><span class="si">}</span><span class="s2"> of its particles are </span><span class="si">{</span><span class="n">particleKind</span><span class="si">}</span><span class="s2"> (e.g. particle "</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">numbersOfOtherParticles</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">): in an axisymmetric model every "</span>
+                <span class="s2">"particle integrates over the rings about the axis (Marmot's '&lt;name&gt;/Axisymmetric/&lt;shape&gt;' particles), "</span>
+                <span class="s2">"in any other model none does."</span>
+            <span class="p">)</span>
 
         <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
             <span class="n">p</span><span class="o">.</span><span class="n">initializeYourself</span><span class="p">()</span></div>
@@ -307,12 +343,13 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">prepareYourself</span><span class="p">(</span><span class="n">journal</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="MPMModel.advanceToTime">
-<a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.advanceToTime">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">advanceToTime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Accept the current state of the model and sub instances, and</span>
-<span class="sd">        set the new time. The material points and the particles accept theirs across the available threads, as the</span>
-<span class="sd">        elements do (see :meth:`~edelweissfe.models.femodel.FEModel.advanceToTime`): each touches only its own state.</span>
+<div class="viewcode-block" id="MPMModel.acceptTheStateOfTheEntities">
+<a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmmodel.MPMModel.acceptTheStateOfTheEntities">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">acceptTheStateOfTheEntities</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Let the entities accept their state, and set the new time; see</span>
+<span class="sd">        :meth:`~edelweissfe.models.femodel.FEModel.acceptTheStateOfTheEntities`. The material points and the particles</span>
+<span class="sd">        accept theirs, and their positions, across the available threads, as the elements do: each touches only its own</span>
+<span class="sd">        state.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -325,7 +362,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">previousTime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">time</span>
 
-        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">advanceToTime</span><span class="p">(</span><span class="n">time</span><span class="p">)</span></div>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">acceptTheStateOfTheEntities</span><span class="p">(</span><span class="n">time</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="MPMModel.setNewmarkParametersOfEntities">

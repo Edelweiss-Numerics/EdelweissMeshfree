@@ -180,6 +180,42 @@
         <span class="k">return</span> <span class="n">particle</span><span class="o">.</span><span class="n">getInterpolationVector</span><span class="p">(</span><span class="n">coordinates</span><span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="MPMConstraintBase.motionOfPointsOfParticle">
+<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.motionOfPointsOfParticle">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">motionOfPointsOfParticle</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">dU</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">particle</span><span class="p">,</span> <span class="n">points</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">localNodes</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">fieldSize</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""How far points of a particle move in an increment of the nodes of its kernel functions,</span>
+<span class="sd">        :math:`\\mathbf{I}_p \\Delta\\boldsymbol{U}`, with the vector the constraint measures a field at the point with</span>
+<span class="sd">        (:meth:`interpolationVectorAtPointOf`): for a contact on the points where they are now, the change of its gaps</span>
+<span class="sd">        over the next increment of an explicit analysis</span>
+<span class="sd">        (:func:`~edelweissfe.constraints.base.penaltysprings.smallestGapsWithin`).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dU</span>
+<span class="sd">            The increment, restricted to the constraint.</span>
+<span class="sd">        particle</span>
+<span class="sd">            The particle.</span>
+<span class="sd">        points</span>
+<span class="sd">            The points now, one row each.</span>
+<span class="sd">        localNodes</span>
+<span class="sd">            Where the nodes of the particle's kernel functions sit in the constraint's block.</span>
+<span class="sd">        fieldSize</span>
+<span class="sd">            The size of the field the constraint acts on.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            The motion of each point, one row each.</span>
+<span class="sd">        """</span>
+
+        <span class="n">incrementOfTheKernelFunctions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">dU</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">fieldSize</span><span class="p">))[</span><span class="n">localNodes</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolationVectorAtPointOf</span><span class="p">(</span><span class="n">particle</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span> <span class="o">@</span> <span class="n">incrementOfTheKernelFunctions</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">points</span><span class="p">]</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">points</span><span class="p">))</span></div>
+
+
     <span class="nd">@property</span>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>

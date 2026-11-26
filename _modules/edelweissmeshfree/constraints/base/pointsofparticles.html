@@ -120,12 +120,13 @@
 <span class="sd">over a closed cycle. The explicit solver bounds that stiffness for its critical time step</span>
 <span class="sd">(:func:`addBoundOfAbsoluteStiffnessOfPointsOfParticle`, the one bound of penalty springs of EdelweissFE,</span>
 <span class="sd">:mod:`edelweissfe.constraints.base.penaltysprings`). A penalty constraint gives its springs on the points of a particle</span>
-<span class="sd">as :class:`SpringsOnPointsOfParticle`, from one method for its force and its bound, so that the two cannot drift apart.</span>
-<span class="sd">A contact of points of one particle with an obstacle in an explicit analysis derives from</span>
+<span class="sd">as :class:`SpringsOnPointsOfParticle`, from one method for its force and its bound, so that the two cannot drift</span>
+<span class="sd">apart. A contact of points of one particle with an obstacle in an explicit analysis derives from</span>
 <span class="sd">:class:`~edelweissmeshfree.constraints.base.penaltyspringsexplicit.PenaltySpringsOnPointsOfOneParticleExplicit`, which</span>
-<span class="sd">owns the force and the bound: a new one is then its physics -- the gap and its gradient -- and a constructor. The</span>
-<span class="sd">support :class:`~edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet` gives its</span>
-<span class="sd">springs per particle the same way.</span>
+<span class="sd">owns the force, the bound and the gaps over the next increment: a new one is then its physics -- the gap and its</span>
+<span class="sd">gradient -- and a constructor. The support</span>
+<span class="sd">:class:`~edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet` gives its springs per</span>
+<span class="sd">particle the same way.</span>
 <span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span>

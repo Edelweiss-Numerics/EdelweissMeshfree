@@ -1,0 +1,641 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>edelweissmeshfree.constraints.base.contactpointsonparticlefaces &mdash; EdelweissMeshfree v26.11 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/custom.css?v=1d735308" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=57c4c7c7"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            EdelweissMeshfree
+              <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../gallery.html">Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation/index.html">Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">EdelweissMeshfree</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">edelweissmeshfree.constraints.base.contactpointsonparticlefaces</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for edelweissmeshfree.constraints.base.contactpointsonparticlefaces</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1">#  ---------------------------------------------------------------------</span>
+<span class="c1">#</span>
+<span class="c1">#  _____    _      _              _</span>
+<span class="c1"># | ____|__| | ___| |_      _____(_)___ ___</span>
+<span class="c1"># |  _| / _` |/ _ \ \ \ /\ / / _ \ / __/ __|</span>
+<span class="c1"># | |__| (_| |  __/ |\ V  V /  __/ \__ \__ \</span>
+<span class="c1"># |_____\__,_|\___|_| \_/\_/_\___|_|___/___/</span>
+<span class="c1"># |  \/  | ___  ___| |__  / _|_ __ ___  ___</span>
+<span class="c1"># | |\/| |/ _ \/ __| '_ \| |_| '__/ _ \/ _ \</span>
+<span class="c1"># | |  | |  __/\__ \ | | |  _| | |  __/  __/</span>
+<span class="c1"># |_|  |_|\___||___/_| |_|_| |_|  \___|\___|</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1">#  Unit of Strength of Materials and Structural Analysis</span>
+<span class="c1">#  University of Innsbruck,</span>
+<span class="c1">#</span>
+<span class="c1">#  Research Group for Computational Mechanics of Materials</span>
+<span class="c1">#  Institute of Structural Engineering, BOKU University, Vienna</span>
+<span class="c1">#</span>
+<span class="c1">#  2023 - today</span>
+<span class="c1">#</span>
+<span class="c1">#  Matthias Neuner |  matthias.neuner@boku.ac.at</span>
+<span class="c1">#  Thomas Mader    |  thomas.mader@bokut.ac.at</span>
+<span class="c1">#</span>
+<span class="c1">#  This file is part of EdelweissMeshfree.</span>
+<span class="c1">#</span>
+<span class="c1">#  This library is free software; you can redistribute it and/or</span>
+<span class="c1">#  modify it under the terms of the GNU Lesser General Public</span>
+<span class="c1">#  License as published by the Free Software Foundation; either</span>
+<span class="c1">#  version 2.1 of the License, or (at your option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1">#  The full text of the license can be found in the file LICENSE.md at</span>
+<span class="c1">#  the top level directory of EdelweissMeshfree.</span>
+<span class="c1">#  ---------------------------------------------------------------------</span>
+<span class="sd">"""The contact points of particles: quadrature points on the faces of particles at the boundary of a body, for the</span>
+<span class="sd">contact constraints of EdelweissFE, which pair them with a master surface of finite element faces</span>
+<span class="sd">(:mod:`edelweissfe.constraints.surfacetodeformablesurfacepenalty`) or with a discrete rigid body</span>
+<span class="sd">(:mod:`edelweissfe.constraints.surfacetodiscreterigidbodypenalty`). They are a third kind of EdelweissFE's contact</span>
+<span class="sd">points (:mod:`edelweissfe.constraints.base.contactpoints`), next to the nodes and the quadrature points of finite</span>
+<span class="sd">element faces: a point :math:`\\boldsymbol{x}_q` of a particle face, with :math:`c = G(\\boldsymbol{x}_q)`, at</span>
+<span class="sd">:math:`\\boldsymbol{x} = \\boldsymbol{x}_q^n + G(\\boldsymbol{x}_q) \\cdot \\Delta\\boldsymbol{U}`, standing for the</span>
+<span class="sd">area of its share of the face (*The area of a point*, below). The contact with the law ``type=tied``, a tie, takes</span>
+<span class="sd">them alike: it ties faces of particles to finite elements. A change of the mesh never regenerates them</span>
+<span class="sd">(:meth:`~edelweissfe.constraints.base.contactpoints.ContactPoints.regenerated`), so a tie hands its state on across a</span>
+<span class="sd">new mesh of the master only.</span>
+
+<span class="sd">A face of a particle moves with its particle: the particle moves every point of its own, a vertex or a point on a</span>
+<span class="sd">face, by :math:`\\Delta\\boldsymbol{x} = \\sum_B G_B(\\boldsymbol{x}) \\Delta\\boldsymbol{U}_B`, with its</span>
+<span class="sd">shape functions linearized about its center</span>
+<span class="sd">(:meth:`~edelweissmeshfree.particles.base.baseparticle.BaseParticle.getInterpolationVectorLinearizedAboutCenter`), which</span>
+<span class="sd">are affine in :math:`\\boldsymbol{x}`. So a face stays flat if it is flat, and a point at fixed parametric coordinates</span>
+<span class="sd">:math:`\\xi_q` of the face stays there. Such a point is a contact point: it sits at</span>
+<span class="sd">:math:`\\boldsymbol{x}_q = \\sum_a N_a(\\xi_q) \\boldsymbol{x}_a` (the face's vertices :math:`\\boldsymbol{x}_a`),</span>
+<span class="sd">and stands for the area of its share of the face, of the measure :math:`J_q w_q`. The contact measures its motion with</span>
+<span class="sd">:math:`G(\\boldsymbol{x}_q)`, and its contact force reaches the nodes of the particle's kernel functions with the same</span>
+<span class="sd">:math:`G`, the transpose of its motion: the penalty stiffness :math:`k\\, G G^T` is symmetric and the contact</span>
+<span class="sd">conservative. It is always :math:`G`, because a point at fixed :math:`\\xi_q` stays on the face only if it moves as</span>
+<span class="sd">the particle moves the face: with the shape functions at the point, :math:`N(\\boldsymbol{x}_q)`, it would drift off</span>
+<span class="sd">the face within an increment and jump back, by :math:`\\boldsymbol{n} \\cdot (G - N) \\Delta\\boldsymbol{U}`, when the</span>
+<span class="sd">next update takes its origin from the face again.</span>
+
+<span class="sd">The particles are updated-Lagrangian: the nodes of their kernel functions carry the increment</span>
+<span class="sd">:math:`\\Delta\\boldsymbol{U}` since the last update of the connectivity, which a model with particles makes at the</span>
+<span class="sd">start of every increment, not a total displacement. So the displacement a point moves with is that increment: its origin</span>
+<span class="sd">:math:`\\boldsymbol{x}_q^n` is where it was at the update, and its displacement from there is :math:`c \\cdot</span>
+<span class="sd">\\Delta\\boldsymbol{U}` (:meth:`ContactPointsOnParticleFaces.displacementsOfLocatedPoints`). The contact constraints</span>
+<span class="sd">pass the total displacement ``U`` and the increment ``dU`` alike, and these points take ``dU``.</span>
+
+<span class="sd">For a constant pressure on a face, :math:`\\sum_q w_q J_q G(\\boldsymbol{x}_q) = A\\, G(\\boldsymbol{x}_c)` for every</span>
+<span class="sd">rule that integrates a linear function exactly: one point at the face's center already delivers the resultant and its</span>
+<span class="sd">first moment, everything a particle with a homogeneous deformation can feel. Two points per edge (2 in 2D, 2 x 2 in</span>
+<span class="sd">3D) integrate exactly as well the linearly varying gap of a tilted face, and the quadratic shape functions of a master</span>
+<span class="sd">face of the same size, with which the contact loads the master</span>
+<span class="sd">(:mod:`edelweissfe.constraints.surfacetodeformablesurfacepenalty`).</span>
+
+<span class="sd">**The area of a point** is the area of the body its share of the face stands for, as the particles integrate, measured</span>
+<span class="sd">from the model when the points are made, by the rule of every contact point</span>
+<span class="sd">(:mod:`edelweissfe.constraints.base.contactpoints`): its measure :math:`J_q w_q` in the model's own space -- an area in</span>
+<span class="sd">3D, a length in 2D -- times the out-of-plane extent :math:`b` of the body at the point, :math:`A_q = b\\, J_q w_q`.</span>
+
+<span class="sd">- In 3D, :math:`b = 1`.</span>
+<span class="sd">- A **plane model** with particles is a slice of **unit thickness**, :math:`b = 1`: Marmot's plane-strain particles</span>
+<span class="sd">  integrate their forces and masses per unit thickness, and so do their points. The finite elements the particles meet</span>
+<span class="sd">  must then be of plane sections of thickness 1 for the forces to balance; nothing checks this.</span>
+<span class="sd">- In an **axisymmetric model**, the section r-z of a body of revolution</span>
+<span class="sd">  (:attr:`~edelweissfe.models.femodel.FEModel.axisymmetric`), the particles are axisymmetric</span>
+<span class="sd">  (:meth:`~edelweissmeshfree.models.mpmmodel.MPMModel.prepareYourself` checks them), and a face of a particle is an</span>
+<span class="sd">  edge of the section that sweeps a ring (a conical, cylindrical or plane annular strip) about the axis. A point stands</span>
+<span class="sd">  for the area of its ring, :math:`b = 2 \\pi r_q`, with the radius :math:`r_q` of the point, so that the contact forces</span>
+<span class="sd">  are those of the full rings, as the particles' forces and masses are. A point on the axis stands for a ring of radius</span>
+<span class="sd">  0, no area: the axis is a line, not a surface of the body. A point below the axis by no more than the round-off of</span>
+<span class="sd">  the diagonal of its particle's bounding box (:data:`~edelweissfe.constraints.base.contactpoints.axisTolerance`, the</span>
+<span class="sd">  rule of Marmot's axisymmetric particles and elements for their vertices) is on it; one further below is refused.</span>
+<span class="sd">  The rule is EdelweissFE's, for every kind of contact point</span>
+<span class="sd">  (:func:`~edelweissfe.constraints.base.contactpoints.circumferenceAt`); the particles give it their diagonals.</span>
+
+<span class="sd">The ring weight is linear in :math:`r` along an edge, so one point at the edge's center already gives the exact area of</span>
+<span class="sd">its ring, :math:`2 \\pi \\bar r L`. The nodal forces of a constant pressure on the ring,</span>
+<span class="sd">:math:`\\int 2 \\pi r\\, G(\\boldsymbol{x})\\, \\mathrm{d}s`, are quadratic along the edge: two points per edge</span>
+<span class="sd">integrate them exactly, one point does not.</span>
+
+<span class="sd">The load at a free end. The particles balance a homogeneous stress with the traction on their faces distributed with</span>
+<span class="sd">their shape functions at the centers of the faces, :math:`N(\\boldsymbol{x}_f)`, one point per face: their smoothed</span>
+<span class="sd">gradients integrate :math:`N` over their faces with that rule, and a particle distributes its own pressure on a face</span>
+<span class="sd">so. Only that load keeps the homogeneous state. The contact distributes with :math:`G` instead, alike at one or two</span>
+<span class="sd">points per face; the shape functions at the points, :math:`N(\\boldsymbol{x}_q)`, at two points per face would differ</span>
+<span class="sd">from it as well, since :math:`N` is not affine. On each face, the difference has no resultant and no moment, and it</span>
+<span class="sd">does not cancel between neighbouring particles, since :math:`G` is not continuous from one particle to the next. Along</span>
+<span class="sd">a straight row of equal particles it repeats from one column of kernel nodes to the next, without resultant in each</span>
+<span class="sd">column, so it changes the pressure alike along the row. Where the row ends at a free corner of the body, the kernel</span>
+<span class="sd">functions are no longer translates of each other, and the pressure on the last two or three particles deviates from</span>
+<span class="sd">uniform by a few percent, by the same profile at every particle size. Two points per face, which a quadratic master</span>
+<span class="sd">needs, also hold the tilt of a face: at a free end the pressure varies within each face as well (example 192, the</span>
+<span class="sd">contact patch test).</span>
+<span class="sd">"""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.constraints.base.contactpoints</span><span class="w"> </span><span class="kn">import</span> <span class="n">ContactPoints</span><span class="p">,</span> <span class="n">circumferenceAt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.generators.surfaceelementgenerator</span><span class="w"> </span><span class="kn">import</span> <span class="n">canonicalParentFace</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.models.femodel</span><span class="w"> </span><span class="kn">import</span> <span class="n">FEModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.utils.isoparametricshapes</span><span class="w"> </span><span class="kn">import</span> <span class="n">shapeFunctionsAndDerivatives</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.sparse</span><span class="w"> </span><span class="kn">import</span> <span class="n">csr_matrix</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.constraints.base.pointsofparticles</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">locateTheNodesOfParticles</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1">#: The vertices of each face of a particle, in the Abaqus numbering of the faces (face ID 1 first) that Marmot's</span>
+<span class="c1">#: particles and the generators of EdelweissMeshfree use; by the number of vertices of the particle. They are the</span>
+<span class="c1">#: parent faces of the finite element with the same vertices (``quad4``, ``hexa8``), from EdelweissFE's face tables</span>
+<span class="c1">#: (:func:`~edelweissfe.generators.surfaceelementgenerator.canonicalParentFace`): each face lists its vertices</span>
+<span class="c1">#: cyclically, in the order of the face shape functions ``bar2`` and ``quad4``.</span>
+<span class="n">verticesOfFace</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">nVertices</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">canonicalParentFace</span><span class="p">(</span><span class="n">elementType</span><span class="p">,</span> <span class="n">face</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">face</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">nFaces</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)])</span>
+    <span class="k">for</span> <span class="n">nVertices</span><span class="p">,</span> <span class="n">elementType</span><span class="p">,</span> <span class="n">nFaces</span> <span class="ow">in</span> <span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="s2">"quad4"</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s2">"hexa8"</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="quadratureRuleOfFace">
+<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.contactpointsonparticlefaces.quadratureRuleOfFace">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">quadratureRuleOfFace</span><span class="p">(</span><span class="n">nDim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">nQuadraturePoints</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The Gauss rule on a face of a particle: Gauss-Legendre on an edge (2D), its tensor product on a face (3D).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    nDim</span>
+<span class="sd">        The spatial dimension.</span>
+<span class="sd">    nQuadraturePoints</span>
+<span class="sd">        The number of points on the face: :math:`n` on an edge, :math:`n^2` on a face.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple[numpy.ndarray, numpy.ndarray]</span>
+<span class="sd">        The parametric coordinates of the points, (nQuadraturePoints, nDim - 1), and their weights.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If the number of points is not :math:`n` (2D) or :math:`n^2` (3D) for some :math:`n \\ge 1`.</span>
+<span class="sd">    """</span>
+
+    <span class="n">perEdge</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">nQuadraturePoints</span> <span class="o">**</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">nDim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)))</span> <span class="k">if</span> <span class="n">nQuadraturePoints</span> <span class="o">&gt;=</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="n">perEdge</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">perEdge</span> <span class="o">**</span> <span class="p">(</span><span class="n">nDim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">!=</span> <span class="n">nQuadraturePoints</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">nQuadraturePoints</span><span class="si">}</span><span class="s2"> quadrature points per face are not a Gauss rule in </span><span class="si">{</span><span class="n">nDim</span><span class="si">}</span><span class="s2">D: use n points per edge, "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'n'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">nDim</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'n x n'</span><span class="si">}</span><span class="s2"> per face."</span>
+        <span class="p">)</span>
+    <span class="n">coordinates</span><span class="p">,</span> <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">polynomial</span><span class="o">.</span><span class="n">legendre</span><span class="o">.</span><span class="n">leggauss</span><span class="p">(</span><span class="n">perEdge</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">nDim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">coordinates</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">weights</span>
+    <span class="n">eta</span><span class="p">,</span> <span class="n">xi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">coordinates</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">,</span> <span class="n">indexing</span><span class="o">=</span><span class="s2">"ij"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">((</span><span class="n">xi</span><span class="o">.</span><span class="n">ravel</span><span class="p">(),</span> <span class="n">eta</span><span class="o">.</span><span class="n">ravel</span><span class="p">())),</span> <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">weights</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="ContactPointsOnParticleFaces">
+<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.contactpointsonparticlefaces.ContactPointsOnParticleFaces">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ContactPointsOnParticleFaces</span><span class="p">(</span><span class="n">ContactPoints</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""The quadrature points of faces of particles, used as contact points.</span>
+
+<span class="sd">    The points are numbered face after face, in the order the faces are given, and within a face by quadrature point.</span>
+<span class="sd">    The area each point stands for is measured when the points are made, from the model, in the configuration of the</span>
+<span class="sd">    particles then, the reference of the contact: its measure times the out-of-plane extent of the body at it</span>
+<span class="sd">    (see *The area of a point* in the module documentation). A penalty per unit area times it is the constant</span>
+<span class="sd">    stiffness of the point's spring.</span>
+
+<span class="sd">    A located point takes the nodes of its particle's kernel functions into the block of the constraint; a node shared</span>
+<span class="sd">    by several located points, of one particle or of neighbouring ones, is located once</span>
+<span class="sd">    (:func:`~edelweissmeshfree.constraints.base.pointsofparticles.locateTheNodesOfParticles`). The interpolation</span>
+<span class="sd">    vectors of the located points form one sparse matrix :math:`C` over these nodes, made once per update of the</span>
+<span class="sd">    connectivity: the points move by :math:`C\\, \\Delta\\boldsymbol{U}` from their origins, where they were at</span>
+<span class="sd">    the update, and their forces reach the nodes with :math:`C^T`. The vectors are :math:`G(\\boldsymbol{x}_q)`, the</span>
+<span class="sd">    particle's interpolation linearized about its center.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    faces</span>
+<span class="sd">        The faces: a surface of particles (face ID -&gt; particles, e.g. from the generators of EdelweissMeshfree or from</span>
+<span class="sd">        the side sets of an Exodus mesh), or (particle, face ID) pairs. The face IDs follow the Abaqus numbering, from</span>
+<span class="sd">        1 (:data:`verticesOfFace`); others are refused.</span>
+<span class="sd">    model</span>
+<span class="sd">        The model of the particles, whose kind -- 3D, plane or axisymmetric -- the areas are measured as.</span>
+<span class="sd">    nQuadraturePoints</span>
+<span class="sd">        The number of Gauss points per face: :math:`n` on an edge (2D), :math:`n \\times n` on a face (3D). One point,</span>
+<span class="sd">        the face's center, loads a quadratic master face only at its midside node and does not integrate the ring</span>
+<span class="sd">        weight of an axisymmetric model: take 2 per edge (2 in 2D, 4 in 3D) for a quadratic master or an axisymmetric</span>
+<span class="sd">        model (see the module documentation).</span>
+<span class="sd">    """</span>
+
+    <span class="c1">#: The points are located on the kernel functions of their particles, which the model connects at an update of the</span>
+    <span class="c1">#: connectivity (and a checkpoint does not hold).</span>
+    <span class="n">locatedOnlyWhenConnected</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">faces</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">FEModel</span><span class="p">,</span> <span class="n">nQuadraturePoints</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="n">pairs</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">[(</span><span class="n">particle</span><span class="p">,</span> <span class="n">faceID</span><span class="p">)</span> <span class="k">for</span> <span class="n">faceID</span><span class="p">,</span> <span class="n">particles</span> <span class="ow">in</span> <span class="n">faces</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">for</span> <span class="n">particle</span> <span class="ow">in</span> <span class="n">particles</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">faces</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
+            <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="n">faces</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">pairs</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"No particle faces were given."</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">particlesOfFaces</span> <span class="o">=</span> <span class="p">[</span><span class="n">particle</span> <span class="k">for</span> <span class="n">particle</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">pairs</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">faceIDs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">faceID</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">faceID</span> <span class="ow">in</span> <span class="n">pairs</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_particles</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">particlesOfFaces</span><span class="p">))</span>
+        <span class="n">indexOfParticle</span> <span class="o">=</span> <span class="p">{</span><span class="n">particle</span><span class="p">:</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">particle</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_particles</span><span class="p">)}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_particleOfFace</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">indexOfParticle</span><span class="p">[</span><span class="n">particle</span><span class="p">]</span> <span class="k">for</span> <span class="n">particle</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">particlesOfFaces</span><span class="p">])</span>
+
+        <span class="n">vertices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_verticesOfParticles</span><span class="p">()</span>
+        <span class="n">nVertices</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nDim</span> <span class="o">=</span> <span class="n">vertices</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="k">if</span> <span class="n">nVertices</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">verticesOfFace</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">nDim</span> <span class="o">!=</span> <span class="p">{</span><span class="mi">4</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">8</span><span class="p">:</span> <span class="mi">3</span><span class="p">}[</span><span class="n">nVertices</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"Contact points on particle faces need quadrilateral (2D) or hexahedral (3D) particles; these have "</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">nVertices</span><span class="si">}</span><span class="s2"> vertices in </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">nDim</span><span class="si">}</span><span class="s2">D."</span>
+            <span class="p">)</span>
+        <span class="n">nFacesOfParticle</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">verticesOfFace</span><span class="p">[</span><span class="n">nVertices</span><span class="p">])</span>
+        <span class="n">outside</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">faceIDs</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">faceIDs</span> <span class="o">&gt;</span> <span class="n">nFacesOfParticle</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">outside</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"Particle face IDs follow the Abaqus numbering, 1 to </span><span class="si">{</span><span class="n">nFacesOfParticle</span><span class="si">}</span><span class="s2"> for these particles; got "</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">faceIDs</span><span class="p">[</span><span class="n">outside</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()))</span><span class="si">}</span><span class="s2">."</span>
+            <span class="p">)</span>
+        <span class="n">parametric</span><span class="p">,</span> <span class="n">weights</span> <span class="o">=</span> <span class="n">quadratureRuleOfFace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nDim</span><span class="p">,</span> <span class="n">nQuadraturePoints</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nQuadraturePoints</span> <span class="o">=</span> <span class="n">nQuadraturePoints</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verticesOfFace</span> <span class="o">=</span> <span class="n">verticesOfFace</span><span class="p">[</span><span class="n">nVertices</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">faceIDs</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">shapeOfFace</span> <span class="o">=</span> <span class="s2">"bar2"</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">nDim</span> <span class="o">==</span> <span class="mi">2</span> <span class="k">else</span> <span class="s2">"quad4"</span>
+        <span class="n">shapeFunctions</span><span class="p">,</span> <span class="n">derivatives</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">shapeFunctionsAndDerivatives</span><span class="p">(</span><span class="n">shapeOfFace</span><span class="p">,</span> <span class="n">xi</span><span class="p">)</span> <span class="k">for</span> <span class="n">xi</span> <span class="ow">in</span> <span class="n">parametric</span><span class="p">))</span>
+        <span class="c1">#: The face's shape functions at its quadrature points, (nQuadraturePoints, nFaceVertices).</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_shapeFunctions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">shapeFunctions</span><span class="p">)</span>
+        <span class="c1">#: Their derivatives with respect to the face's parametric coordinates, (nQuadraturePoints, nFaceVertices,</span>
+        <span class="c1">#: nDim - 1).</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_shapeFunctionDerivatives</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">derivatives</span><span class="p">)</span>
+
+        <span class="n">nFaces</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">faceIDs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nPoints</span> <span class="o">=</span> <span class="n">nFaces</span> <span class="o">*</span> <span class="n">nQuadraturePoints</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_faceOfPoint</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">nFaces</span><span class="p">),</span> <span class="n">nQuadraturePoints</span><span class="p">)</span>
+        <span class="n">faceVertices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coordinatesOfFaceVertices</span><span class="p">(</span><span class="n">vertices</span><span class="p">)</span>
+        <span class="n">measures</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_jacobians</span><span class="p">(</span><span class="n">faceVertices</span><span class="p">)</span> <span class="o">*</span> <span class="n">weights</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+        <span class="n">extents</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_outOfPlaneExtentAt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_coordinatesOfPointsOnFaces</span><span class="p">(</span><span class="n">faceVertices</span><span class="p">),</span> <span class="n">vertices</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">areas</span> <span class="o">=</span> <span class="n">measures</span> <span class="o">*</span> <span class="n">extents</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">axisymmetric</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">axisymmetric</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">locatePoints</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_outOfPlaneExtentAt</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">verticesOfParticles</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">FEModel</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The out-of-plane extent :math:`b` of the body at the points, by which a point's measure becomes its area: 1</span>
+<span class="sd">        in 3D and in a plane model, whose particles are slices of unit thickness, :math:`2 \\pi r` in an axisymmetric</span>
+<span class="sd">        model, by EdelweissFE's rule of the axis (:func:`~edelweissfe.constraints.base.contactpoints.circumferenceAt`),</span>
+<span class="sd">        with the diagonal of the bounding box of each point's particle for the round-off (see the module</span>
+<span class="sd">        documentation).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        coordinates</span>
+<span class="sd">            The points, (nPoints, nDim).</span>
+<span class="sd">        verticesOfParticles</span>
+<span class="sd">            The vertices of the particles of the faces, (nParticles, nVertices, nDim): the diagonals of their bounding</span>
+<span class="sd">            boxes give the round-off of the axis.</span>
+<span class="sd">        model</span>
+<span class="sd">            The model.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        numpy.ndarray</span>
+<span class="sd">            :math:`b` at each point.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If a point of an axisymmetric model lies below the axis by more than the round-off.</span>
+<span class="sd">        """</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">model</span><span class="o">.</span><span class="n">axisymmetric</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">coordinates</span><span class="p">))</span>
+
+        <span class="n">diagonals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">verticesOfParticles</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">verticesOfParticles</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">particleOfPoint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_particleOfFace</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_faceOfPoint</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">circumferenceAt</span><span class="p">(</span>
+            <span class="n">coordinates</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+            <span class="n">diagonals</span><span class="p">[</span><span class="n">particleOfPoint</span><span class="p">],</span>
+            <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"a face of particle </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_particles</span><span class="p">[</span><span class="n">particleOfPoint</span><span class="p">[</span><span class="n">p</span><span class="p">]]</span><span class="o">.</span><span class="n">number</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_verticesOfParticles</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The current vertices of the particles of the faces, (nParticles, nVertices, nDim)."""</span>
+
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">particle</span><span class="o">.</span><span class="n">getVertexCoordinates</span><span class="p">()</span> <span class="k">for</span> <span class="n">particle</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_particles</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_coordinatesOfFaceVertices</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">verticesOfParticles</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The current vertices of each face, (nFaces, nFaceVertices, nDim)."""</span>
+
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">take_along_axis</span><span class="p">(</span><span class="n">verticesOfParticles</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_particleOfFace</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_verticesOfFace</span><span class="p">[:,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_jacobians</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">faceVertices</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The area (length in 2D) per unit parametric measure at each quadrature point, (nFaces, nQuadraturePoints)."""</span>
+
+        <span class="n">tangents</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"qak,fad-&gt;fqdk"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_shapeFunctionDerivatives</span><span class="p">,</span> <span class="n">faceVertices</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">nDim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">tangents</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">tangents</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">tangents</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_coordinatesOfPointsOnFaces</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">faceVertices</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Where the points are on faces with the given vertices (nFaces, nFaceVertices, nDim): (nPoints, nDim)."""</span>
+
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"qa,fad-&gt;fqd"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_shapeFunctions</span><span class="p">,</span> <span class="n">faceVertices</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nDim</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_coordinatesOfAllPoints</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Where all points are in the current configuration of the particles, (nPoints, nDim)."""</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coordinatesOfPointsOnFaces</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_coordinatesOfFaceVertices</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_verticesOfParticles</span><span class="p">()))</span>
+
+<div class="viewcode-block" id="ContactPointsOnParticleFaces.describe">
+<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.contactpointsonparticlefaces.ContactPointsOnParticleFaces.describe">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">describe</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The number of points, particle faces and quadrature points per face, for the journal.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        str</span>
+<span class="sd">            The description.</span>
+<span class="sd">        """</span>
+
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">nPoints</span><span class="si">}</span><span class="s2"> points (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">faceIDs</span><span class="p">)</span><span class="si">}</span><span class="s2"> particle faces x </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">nQuadraturePoints</span><span class="si">}</span><span class="s2"> quadrature points)"</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ContactPointsOnParticleFaces.currentPointCoordinates">
+<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.contactpointsonparticlefaces.ContactPointsOnParticleFaces.currentPointCoordinates">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">currentPointCoordinates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">FEModel</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Where all points are, in the current configuration of the particles.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        model</span>
+<span class="sd">            The model; unused, the particles know where they are.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        numpy.ndarray</span>
+<span class="sd">            The coordinates, of shape (nPoints, nDim).</span>
+<span class="sd">        """</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coordinatesOfAllPoints</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="ContactPointsOnParticleFaces.locatePoints">
+<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.contactpointsonparticlefaces.ContactPointsOnParticleFaces.locatePoints">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">locatePoints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Locate the given points: the nodes of the kernel functions of their particles, each once, and the sparse</span>
+<span class="sd">        matrix of their interpolation vectors :math:`G(\\boldsymbol{x}_q)` at their current positions.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        points</span>
+<span class="sd">            The indices of the contact points to locate, ascending.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list</span>
+<span class="sd">            The nodes of the kernel functions of the particles of the points.</span>
+<span class="sd">        """</span>
+
+        <span class="n">particleOfPoint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_particleOfFace</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_faceOfPoint</span><span class="p">[</span><span class="n">points</span><span class="p">]]</span>
+        <span class="n">particles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">particleOfPoint</span><span class="p">)</span>
+        <span class="n">localIndexOfNode</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">localNodesOfParticle</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="nb">zip</span><span class="p">(</span>
+                <span class="n">particles</span><span class="p">,</span>
+                <span class="n">locateTheNodesOfParticles</span><span class="p">(</span>
+                    <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_particles</span><span class="p">[</span><span class="n">particle</span><span class="p">]</span><span class="o">.</span><span class="n">kernelFunctions</span> <span class="k">for</span> <span class="n">particle</span> <span class="ow">in</span> <span class="n">particles</span><span class="p">],</span> <span class="n">localIndexOfNode</span>
+                <span class="p">),</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_originsOfLocated</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coordinatesOfAllPoints</span><span class="p">()[</span><span class="n">points</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">points</span><span class="p">)</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nDim</span><span class="p">))</span>
+        <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">localNodesOfParticle</span><span class="p">[</span><span class="n">particle</span><span class="p">]</span> <span class="k">for</span> <span class="n">particle</span> <span class="ow">in</span> <span class="n">particleOfPoint</span><span class="p">]</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_particles</span><span class="p">[</span><span class="n">particle</span><span class="p">]</span><span class="o">.</span><span class="n">getInterpolationVectorLinearizedAboutCenter</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">particle</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">particleOfPoint</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_originsOfLocated</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="n">counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">columns</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">intp</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_interpolationMatrix</span> <span class="o">=</span> <span class="n">csr_matrix</span><span class="p">(</span>
+            <span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="k">if</span> <span class="n">values</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">columns</span><span class="p">)</span> <span class="k">if</span> <span class="n">columns</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">intp</span><span class="p">),</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(([</span><span class="mi">0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">counts</span><span class="p">))),</span>
+            <span class="p">),</span>
+            <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">points</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">localIndexOfNode</span><span class="p">)),</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">localIndexOfNode</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ContactPointsOnParticleFaces.originsOfLocatedPoints">
+<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.contactpointsonparticlefaces.ContactPointsOnParticleFaces.originsOfLocatedPoints">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">originsOfLocatedPoints</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">""":math:`\\boldsymbol{x}_q^n`, where the points were at the update, in the configuration of the particles</span>
+<span class="sd">        then: where they are when the increment they move with is zero.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        numpy.ndarray</span>
+<span class="sd">            The coordinates, of shape (nLocated, nDim).</span>
+<span class="sd">        """</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_originsOfLocated</span></div>
+
+
+<div class="viewcode-block" id="ContactPointsOnParticleFaces.displacementsOfLocatedPoints">
+<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.contactpointsonparticlefaces.ContactPointsOnParticleFaces.displacementsOfLocatedPoints">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">displacementsOfLocatedPoints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">U</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">dU</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">""":math:`C\\, \\Delta\\boldsymbol{U}`, the displacement the points move with, the increment since the update.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        U</span>
+<span class="sd">            The total displacement of the slave part of the block; unused: the nodes of the kernel functions carry the</span>
+<span class="sd">            increment.</span>
+<span class="sd">        dU</span>
+<span class="sd">            The increment of the slave part of the block.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        numpy.ndarray</span>
+<span class="sd">            The displacements, of shape (nLocated, nDim).</span>
+<span class="sd">        """</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interpolationMatrix</span> <span class="o">@</span> <span class="n">dU</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nDim</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="ContactPointsOnParticleFaces.addForceResidual">
+<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.contactpointsonparticlefaces.ContactPointsOnParticleFaces.addForceResidual">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addForceResidual</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">P</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">points</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">forces</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">directions</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Add :math:`C^T (f\\, \\boldsymbol{n})`: the forces of the springs at the given points, distributed over the</span>
+<span class="sd">        nodes of the kernel functions of their particles with their interpolation vectors.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        P</span>
+<span class="sd">            The slave part of the residual contribution; augmented.</span>
+<span class="sd">        points</span>
+<span class="sd">            The located points that carry a force.</span>
+<span class="sd">        forces</span>
+<span class="sd">            The forces of their springs.</span>
+<span class="sd">        directions</span>
+<span class="sd">            The unit directions of their springs.</span>
+<span class="sd">        """</span>
+
+        <span class="n">forcesOnPoints</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">_interpolationMatrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">nDim</span><span class="p">))</span>
+        <span class="n">forcesOnPoints</span><span class="p">[</span><span class="n">points</span><span class="p">]</span> <span class="o">=</span> <span class="n">forces</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">directions</span>
+        <span class="n">P</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nDim</span><span class="p">))[:]</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interpolationMatrix</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">forcesOnPoints</span></div>
+
+
+<div class="viewcode-block" id="ContactPointsOnParticleFaces.interpolationMatrixOfLocatedPoints">
+<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.contactpointsonparticlefaces.ContactPointsOnParticleFaces.interpolationMatrixOfLocatedPoints">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">interpolationMatrixOfLocatedPoints</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">csr_matrix</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The sparse matrix :math:`C` of the interpolation vectors of the located points</span>
+<span class="sd">        over the nodes of the kernel functions of their particles, made when they were located; see</span>
+<span class="sd">        :meth:`~edelweissfe.constraints.base.contactpoints.ContactPoints.interpolationMatrixOfLocatedPoints`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        scipy.sparse.csr_matrix</span>
+<span class="sd">            The matrix.</span>
+<span class="sd">        """</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interpolationMatrix</span></div>
+
+
+<div class="viewcode-block" id="ContactPointsOnParticleFaces.interpolationOfLocatedPoint">
+<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.contactpointsonparticlefaces.ContactPointsOnParticleFaces.interpolationOfLocatedPoint">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">interpolationOfLocatedPoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""The degrees of freedom of the nodes of the kernel functions of a located point's particle, and its</span>
+<span class="sd">        interpolation vector over them.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        k</span>
+<span class="sd">            The index of the located point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple[numpy.ndarray, numpy.ndarray]</span>
+<span class="sd">            The degrees of freedom and the interpolation vector.</span>
+<span class="sd">        """</span>
+
+        <span class="n">C</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interpolationMatrix</span>
+        <span class="n">nodes</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">indices</span><span class="p">[</span><span class="n">C</span><span class="o">.</span><span class="n">indptr</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="p">:</span> <span class="n">C</span><span class="o">.</span><span class="n">indptr</span><span class="p">[</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]]</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">nodes</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">nDim</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nDim</span><span class="p">))</span><span class="o">.</span><span class="n">ravel</span><span class="p">(),</span> <span class="n">C</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">C</span><span class="o">.</span><span class="n">indptr</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="p">:</span> <span class="n">C</span><span class="o">.</span><span class="n">indptr</span><span class="p">[</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]]</span></div>
+
+
+<div class="viewcode-block" id="ContactPointsOnParticleFaces.searchLayout">
+<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.contactpointsonparticlefaces.ContactPointsOnParticleFaces.searchLayout">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">searchLayout</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""The particles, their faces and the quadrature rule identify the contact points in a checkpoint.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict[str, numpy.ndarray]</span>
+<span class="sd">            The numbers of the particles of the faces, the face IDs, and the number of quadrature points per face.</span>
+<span class="sd">        """</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">"slaveParticles"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">particle</span><span class="o">.</span><span class="n">number</span> <span class="k">for</span> <span class="n">particle</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">particlesOfFaces</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">),</span>
+            <span class="s2">"slaveFaces"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">faceIDs</span><span class="p">,</span>
+            <span class="s2">"nQuadraturePoints"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">nQuadraturePoints</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">),</span>
+        <span class="p">}</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Matthias Neuner.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -21,7 +21,7 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Particle managers" href="particle_managers.html" />
+    <link rel="next" title="Axisymmetric particles" href="axisymmetric_particles.html" />
     <link rel="prev" title="Model generators" href="model_generators.html" /> 
 </head>
 
@@ -65,6 +65,7 @@
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Particles</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#module-edelweissmeshfree.particles.base.baseparticle"><code class="docutils literal notranslate"><span class="pre">BaseParticle</span></code> class</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle"><code class="docutils literal notranslate"><span class="pre">BaseParticle</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.characteristicLength"><code class="docutils literal notranslate"><span class="pre">characteristicLength()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#module-edelweissmeshfree.particles.marmot.marmotparticlewrapper"><code class="docutils literal notranslate"><span class="pre">MarmotParticleWrapper</span></code> class</a><ul>
@@ -73,6 +74,7 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="axisymmetric_particles.html">Axisymmetric particles</a></li>
 <li class="toctree-l2"><a class="reference internal" href="particle_managers.html">Particle managers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="points_and_fields.html">Points and fields</a></li>
 <li class="toctree-l2"><a class="reference internal" href="field_output.html">Field output</a></li>
@@ -115,7 +117,7 @@
   <section id="particles">
 <h1>Particles<a class="headerlink" href="#particles" title="Link to this heading"></a></h1>
 <p>A particle enters the discrete system like an EdelweissFE element: its <code class="docutils literal notranslate"><span class="pre">computeKernels(K,</span> <span class="pre">P,</span> <span class="pre">U,</span> <span class="pre">dU,</span> <span class="pre">time,</span> <span class="pre">dT)</span></code>, with
-the argument order of <code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissfe.elements.base.baseelement.BaseElement.computeKernels()</span></code>, adds its internal
+the argument order of <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/model/elements.html#edelweissfe.elements.base.baseelement.BaseElement.computeKernels" title="(in EdelweissFE)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissfe.elements.base.baseelement.BaseElement.computeKernels()</span></code></a>, adds its internal
 forces to the residual <span class="math notranslate nohighlight">\(\mathbf{P}\)</span> and their tangent to <span class="math notranslate nohighlight">\(\mathbf{K}\)</span>. A particle is incremental on the
 current configuration: its kernel functions move with it, and their nodal values are increments, so it reads <code class="docutils literal notranslate"><span class="pre">dU</span></code>,
 not <code class="docutils literal notranslate"><span class="pre">U</span></code>. A Marmot particle whose material cannot integrate the increment – Marmot throws – requests a cutback
@@ -151,6 +153,8 @@ For particles generally a node-wise layout is assumed.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Attributes<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
+<dt><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.axisymmetric" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.axisymmetric"><code class="xref py py-obj docutils literal notranslate"><span class="pre">axisymmetric</span></code></a></dt><dd><p>True if the particle lives in the section r-z of an axisymmetric model, the first coordinate the radius: its volume, its mass and its forces are those of the ring it sweeps about the axis.</p>
+</dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.baseFields" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.baseFields"><code class="xref py py-obj docutils literal notranslate"><span class="pre">baseFields</span></code></a></dt><dd><p>Defines which fields are attached to the particle.</p>
 </dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.dimension" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.dimension"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dimension</span></code></a></dt><dd><p>Defines the dimension of the particle, e.g., 1, 2 or 3.</p>
@@ -196,7 +200,7 @@ For particles generally a node-wise layout is assumed.</p>
 <td><p>Add the residual contribution of a distributed (surface) load on a surface of the particle, the negative of the external load <span class="math notranslate nohighlight">\(-\boldsymbol{f}_\mathrm{ext}\)</span>, and its tangent, which is nonzero only for a load that follows the deformation.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeKernels" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeKernels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeKernels</span></code></a>(K, P, U, dU, timeTotal, dTime)</p></td>
-<td><p>Add the internal forces of the particle to the residual, and their tangent: the signature of <code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissfe.elements.base.baseelement.BaseElement.computeKernels()</span></code>, so that a solver evaluates particles and elements alike.</p></td>
+<td><p>Add the internal forces of the particle to the residual, and their tangent: the signature of <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/model/elements.html#edelweissfe.elements.base.baseelement.BaseElement.computeKernels" title="(in EdelweissFE)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissfe.elements.base.baseelement.BaseElement.computeKernels()</span></code></a>, so that a solver evaluates particles and elements alike.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedDamping" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedDamping"><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeLumpedDamping</span></code></a>(C)</p></td>
 <td><p>Explicit dynamics: add the lumped damping of the particle, on the kernel functions currently assigned: the coefficient of each field's first time derivative, as <a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedInertia" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeLumpedInertia"><code class="xref py py-meth docutils literal notranslate"><span class="pre">computeLumpedInertia()</span></code></a> holds the one of the second.</p></td>
@@ -256,7 +260,7 @@ For particles generally a node-wise layout is assumed.</p>
 <td><p>Set a single property of the particle.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.updatePhysicsExplicit" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.updatePhysicsExplicit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updatePhysicsExplicit</span></code></a>(dU, timeTotal, dTime)</p></td>
-<td><p>Explicit dynamics: take the solution increment on the kernel functions currently assigned, i.e. update the state and the position of the particle, and its velocity and acceleration; see the explicit dynamic solver <code class="xref py py-class docutils literal notranslate"><span class="pre">NED</span></code>.</p></td>
+<td><p>Explicit dynamics: take the solution increment on the kernel functions currently assigned, i.e. update the state and the position of the particle, and its velocity and acceleration; see the explicit dynamic solver <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/analysis/solvers.html#edelweissfe.solvers.nonlinearexplicitdynamic.NED" title="(in EdelweissFE)"><code class="xref py py-class docutils literal notranslate"><span class="pre">NED</span></code></a>.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.updateShapeFunctions" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.updateShapeFunctions"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateShapeFunctions</span></code></a>()</p></td>
 <td><p>Evaluate the shape functions anew at the particle's current position, with the kernel functions it has been assigned.</p></td>
@@ -382,7 +386,7 @@ that follows the deformation.</p>
 <dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeKernels">
 <span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">computeKernels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">K</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">P</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">U</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeTotal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dTime</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particles/base/baseparticle.html#BaseParticle.computeKernels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.computeKernels" title="Link to this definition"></a></dt>
 <dd><p>Add the internal forces of the particle to the residual, and their tangent: the signature of
-<code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissfe.elements.base.baseelement.BaseElement.computeKernels()</span></code>, so that a solver evaluates
+<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/model/elements.html#edelweissfe.elements.base.baseelement.BaseElement.computeKernels" title="(in EdelweissFE)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissfe.elements.base.baseelement.BaseElement.computeKernels()</span></code></a>, so that a solver evaluates
 particles and elements alike.</p>
 <p>A particle is incremental on the current configuration: its kernel functions move with it, and their
 nodal values are increments, so a particle reads <code class="docutils literal notranslate"><span class="pre">dU</span></code>, not <code class="docutils literal notranslate"><span class="pre">U</span></code>.</p>
@@ -689,8 +693,8 @@ The order of the properties is defined by the order of the
 <span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">updatePhysicsExplicit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeTotal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dTime</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particles/base/baseparticle.html#BaseParticle.updatePhysicsExplicit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.updatePhysicsExplicit" title="Link to this definition"></a></dt>
 <dd><p>Explicit dynamics: take the solution increment on the kernel functions currently assigned, i.e. update the
 state and the position of the particle, and its velocity and acceleration; see the explicit dynamic solver
-<code class="xref py py-class docutils literal notranslate"><span class="pre">NED</span></code>. A particle that cannot take the increment requests
-a cutback (<code class="xref py py-class docutils literal notranslate"><span class="pre">CutbackRequest</span></code>), which fails the step.</p>
+<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/analysis/solvers.html#edelweissfe.solvers.nonlinearexplicitdynamic.NED" title="(in EdelweissFE)"><code class="xref py py-class docutils literal notranslate"><span class="pre">NED</span></code></a>. A particle that cannot take the increment requests
+a cutback (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/exceptions.html#edelweissfe.utils.exceptions.CutbackRequest" title="(in EdelweissFE)"><code class="xref py py-class docutils literal notranslate"><span class="pre">CutbackRequest</span></code></a>), which fails the step.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -789,6 +793,19 @@ For higher order (non point) particles, the surface vector might be omitted and 
 </dd></dl>
 
 <dl class="py property">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.axisymmetric">
+<span class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">axisymmetric</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.axisymmetric" title="Link to this definition"></a></dt>
+<dd><p>its
+volume, its mass and its forces are those of the ring it sweeps about the axis. An axisymmetric model holds
+such particles only, any other model none (<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel.prepareYourself" title="edelweissmeshfree.models.mpmmodel.MPMModel.prepareYourself"><code class="xref py py-meth docutils literal notranslate"><span class="pre">prepareYourself()</span></code></a>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if the particle lives in the section r-z of an axisymmetric model, the first coordinate the radius</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
 <dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.baseFields">
 <span class="property"><span class="k"><span class="pre">abstract</span></span><span class="w"> </span><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">baseFields</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.baseFields" title="Link to this definition"></a></dt>
 <dd><p>Defines which fields are attached to the particle.</p>
@@ -798,7 +815,7 @@ For higher order (non point) particles, the surface vector might be omitted and 
 <dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.BaseParticle.connectivityChangesWithMotion">
 <span class="sig-name descname"><span class="pre">connectivityChangesWithMotion</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></span><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle.connectivityChangesWithMotion" title="Link to this definition"></a></dt>
 <dd><p>The kernel functions of a particle reach other nodes as it moves, so its connectivity changes with the motion;
-see <code class="xref py py-attr docutils literal notranslate"><span class="pre">connectivityChangesWithMotion</span></code>.</p>
+see <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/dofnumbering.html#edelweissfe.nodecouplingentity.base.nodecouplingentity.BaseNodeCouplingEntity.connectivityChangesWithMotion" title="(in EdelweissFE)"><code class="xref py py-attr docutils literal notranslate"><span class="pre">connectivityChangesWithMotion</span></code></a>.</p>
 </dd></dl>
 
 <dl class="py property">
@@ -827,6 +844,33 @@ see <code class="xref py py-attr docutils literal notranslate"><span class="pre"
 
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.base.baseparticle.characteristicLength">
+<span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.particles.base.baseparticle.</span></span><span class="sig-name descname"><span class="pre">characteristicLength</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">particle</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/particles/base/baseparticle.html#characteristicLength"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.particles.base.baseparticle.characteristicLength" title="Link to this definition"></a></dt>
+<dd><p>The size of a particle as it is made: the edge of the square (2D) or the cube (3D) of its measure in the model’s
+own space, in the configuration it is made in. That is its volume in 3D and its area in a plane model. An
+axisymmetric particle’s volume is the volume of its ring, <span class="math notranslate nohighlight">\(V = 2 \pi r_c A\)</span> (Pappus, with the radius
+<span class="math notranslate nohighlight">\(r_c\)</span> of its center, the centroid of its area in the section r-z, which is how Marmot places the center), so
+its measure in the section is its area <span class="math notranslate nohighlight">\(A = V / (2 \pi r_c)\)</span>.</p>
+<p>The volume is the undeformed one, the radius the current one: the quotient is the area as made only until the
+particle moves. So the size is taken where the particle is made, and kept: the kernel-matching generator, the
+proximity checks of the particle constraints and the random shift of the particle managers take it when they are
+made, before the analysis moves the particles. Taken after a radial motion <span class="math notranslate nohighlight">\(r_c \to r_c'\)</span>, it would be
+<span class="math notranslate nohighlight">\(\sqrt{A\, r_c / r_c'}\)</span>, not the size of the particle.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>particle</strong> (<a class="reference internal" href="#edelweissmeshfree.particles.base.baseparticle.BaseParticle" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle"><em>BaseParticle</em></a>) – The particle, as it is made.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The size, <span class="math notranslate nohighlight">\(V^{1/n}\)</span> in a plane or a 3D model (<span class="math notranslate nohighlight">\(n\)</span> the dimension), <span class="math notranslate nohighlight">\(\sqrt{A}\)</span> in an
+axisymmetric one.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 <section id="module-edelweissmeshfree.particles.marmot.marmotparticlewrapper">
 <span id="marmotparticlewrapper-class"></span><h2><code class="docutils literal notranslate"><span class="pre">MarmotParticleWrapper</span></code> class<a class="headerlink" href="#module-edelweissmeshfree.particles.marmot.marmotparticlewrapper" title="Link to this heading"></a></h2>
@@ -838,6 +882,8 @@ see <code class="xref py py-attr docutils literal notranslate"><span class="pre"
 <dl class="field-list simple">
 <dt class="field-odd">Attributes<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
+<dt><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.axisymmetric" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.axisymmetric"><code class="xref py py-obj docutils literal notranslate"><span class="pre">axisymmetric</span></code></a></dt><dd><p>True if the particle lives in the section r-z of an axisymmetric model: its integrals are over the rings about the axis (Marmot’s section of the particle).</p>
+</dd>
 <dt><strong>baseFields</strong></dt><dd></dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.connectivityChangesWithMotion" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.connectivityChangesWithMotion"><code class="xref py py-obj docutils literal notranslate"><span class="pre">connectivityChangesWithMotion</span></code></a></dt><dd><p>True: the kernel functions of a particle reach other nodes as it moves.</p>
 </dd>
@@ -854,7 +900,7 @@ see <code class="xref py py-attr docutils literal notranslate"><span class="pre"
 <dt><strong>number</strong></dt><dd></dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.propertyNames" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.propertyNames"><code class="xref py py-obj docutils literal notranslate"><span class="pre">propertyNames</span></code></a></dt><dd><p>Get the list of valid properties for this particle, as strings (the names <a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setProperty" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.setProperty"><code class="xref py py-meth docutils literal notranslate"><span class="pre">setProperty()</span></code></a> takes).</p>
 </dd>
-<dt><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.scalarVariables" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.scalarVariables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scalarVariables</span></code></a></dt><dd><p>No scalar variables, as for every particle; see <code class="xref py py-attr docutils literal notranslate"><span class="pre">edelweissfe.nodecouplingentity.base.nodecouplingentity.BaseNodeCouplingEntity.scalarVariables</span></code>.</p>
+<dt><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.scalarVariables" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.scalarVariables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scalarVariables</span></code></a></dt><dd><p>No scalar variables, as for every particle; see <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/dofnumbering.html#edelweissfe.nodecouplingentity.base.nodecouplingentity.BaseNodeCouplingEntity.scalarVariables" title="(in EdelweissFE)"><code class="xref py py-attr docutils literal notranslate"><span class="pre">edelweissfe.nodecouplingentity.base.nodecouplingentity.BaseNodeCouplingEntity.scalarVariables</span></code></a>.</p>
 </dd>
 </dl>
 </dd>
@@ -911,7 +957,7 @@ see <code class="xref py py-attr docutils literal notranslate"><span class="pre"
 <td><p>Get the underlying MarmotParticle undeformed volume.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.localEntriesOfBlock" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.localEntriesOfBlock"><code class="xref py py-obj docutils literal notranslate"><span class="pre">localEntriesOfBlock</span></code></a>()</p></td>
-<td><p>The entries of the dense block, see <code class="xref py py-func docutils literal notranslate"><span class="pre">denseBlockLocalEntries()</span></code>.</p></td>
+<td><p>The entries of the dense block, see <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/dofnumbering.html#edelweissfe.numerics.systemmatrixcontributor.denseBlockLocalEntries" title="(in EdelweissFE)"><code class="xref py py-func docutils literal notranslate"><span class="pre">denseBlockLocalEntries()</span></code></a>.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.readRestartData" title="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.readRestartData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">readRestartData</span></code></a>(data)</p></td>
 <td><p>Restore the state <code class="xref py py-meth docutils literal notranslate"><span class="pre">getRestartData()</span></code> returned.</p></td>
@@ -1122,7 +1168,7 @@ updated by the underlying MarmotParticle.</p>
 <dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.localEntriesOfBlock">
 <span class="sig-name descname"><span class="pre">localEntriesOfBlock</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.localEntriesOfBlock" title="Link to this definition"></a></dt>
 <dd><p>The entries of the dense block, see
-<code class="xref py py-func docutils literal notranslate"><span class="pre">denseBlockLocalEntries()</span></code>.</p>
+<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/dofnumbering.html#edelweissfe.numerics.systemmatrixcontributor.denseBlockLocalEntries" title="(in EdelweissFE)"><code class="xref py py-func docutils literal notranslate"><span class="pre">denseBlockLocalEntries()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>tuple[<em>ndarray</em>, <em>ndarray</em>]</p>
@@ -1218,6 +1264,18 @@ constraints).</p>
 </dd></dl>
 
 <dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.axisymmetric">
+<span class="sig-name descname"><span class="pre">axisymmetric</span></span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.axisymmetric" title="Link to this definition"></a></dt>
+<dd><p>its integrals are over the rings
+about the axis (Marmot’s section of the particle).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if the particle lives in the section r-z of an axisymmetric model</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
 <dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.connectivityChangesWithMotion">
 <span class="sig-name descname"><span class="pre">connectivityChangesWithMotion</span></span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.connectivityChangesWithMotion" title="Link to this definition"></a></dt>
 <dd><p>the kernel functions of a particle reach other nodes as it moves.</p>
@@ -1249,7 +1307,7 @@ constraints).</p>
 <dt class="sig sig-object py" id="edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.scalarVariables">
 <span class="sig-name descname"><span class="pre">scalarVariables</span></span><a class="headerlink" href="#edelweissmeshfree.particles.marmot.marmotparticlewrapper.MarmotParticleWrapper.scalarVariables" title="Link to this definition"></a></dt>
 <dd><p>No scalar variables, as for every particle; see
-<code class="xref py py-attr docutils literal notranslate"><span class="pre">edelweissfe.nodecouplingentity.base.nodecouplingentity.BaseNodeCouplingEntity.scalarVariables</span></code>.</p>
+<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/dofnumbering.html#edelweissfe.nodecouplingentity.base.nodecouplingentity.BaseNodeCouplingEntity.scalarVariables" title="(in EdelweissFE)"><code class="xref py py-attr docutils literal notranslate"><span class="pre">edelweissfe.nodecouplingentity.base.nodecouplingentity.BaseNodeCouplingEntity.scalarVariables</span></code></a>.</p>
 </dd></dl>
 
 </dd></dl>
@@ -1262,7 +1320,7 @@ constraints).</p>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="model_generators.html" class="btn btn-neutral float-left" title="Model generators" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="particle_managers.html" class="btn btn-neutral float-right" title="Particle managers" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="axisymmetric_particles.html" class="btn btn-neutral float-right" title="Axisymmetric particles" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

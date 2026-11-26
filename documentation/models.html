@@ -76,6 +76,7 @@
 <li class="toctree-l2"><a class="reference internal" href="mpm/material_point_managers.html">Material Point Managers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="model_generators.html">Model generators</a></li>
 <li class="toctree-l2"><a class="reference internal" href="particles.html">Particles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="axisymmetric_particles.html">Axisymmetric particles</a></li>
 <li class="toctree-l2"><a class="reference internal" href="particle_managers.html">Particle managers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="points_and_fields.html">Points and fields</a></li>
 <li class="toctree-l2"><a class="reference internal" href="field_output.html">Field output</a></li>
@@ -123,29 +124,41 @@ domain (cells, material points), the materials, the sets, etc.</p>
 <span id="mpmmodel-class"></span><h2><code class="docutils literal notranslate"><span class="pre">MPMModel</span></code> class<a class="headerlink" href="#module-edelweissmeshfree.models.mpmmodel" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.models.mpmmodel.</span></span><span class="sig-name descname"><span class="pre">MPMModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dimension</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmmodel.html#MPMModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.models.mpmmodel.</span></span><span class="sig-name descname"><span class="pre">MPMModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dimension</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axisymmetric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmmodel.html#MPMModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel" title="Link to this definition"></a></dt>
 <dd><p>This is is a standard mpm model tree.
 It takes care of the correct number of variables,
 for nodes and scalar degrees of freedom, and it manages the fields.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>dimension</strong> (<em>int</em>) – The dimension of the model.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dimension</strong> (<em>int</em>) – The dimension of the model.</p></li>
+<li><p><strong>axisymmetric</strong> (<em>bool</em>) – True if the model is the section r-z of a body of revolution, see
+<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/models.html#edelweissfe.models.femodel.FEModel.axisymmetric" title="(in EdelweissFE)"><code class="xref py py-attr docutils literal notranslate"><span class="pre">axisymmetric</span></code></a>; its particles must be axisymmetric ones, and it
+takes no material points, cells or cell elements, which integrate over the section, not over the rings
+(<a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.prepareYourself" title="edelweissmeshfree.models.mpmmodel.MPMModel.prepareYourself"><code class="xref py py-meth docutils literal notranslate"><span class="pre">prepareYourself()</span></code></a>).</p></li>
+</ul>
 </dd>
 </dl>
 <p class="rubric">Methods</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.acceptTheStateOfTheConstraints" title="edelweissmeshfree.models.mpmmodel.MPMModel.acceptTheStateOfTheConstraints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">acceptTheStateOfTheConstraints</span></code></a>()</p></td>
+<td><p>Let the constraints and the multi-point constraints accept the state of their last evaluation (<code class="docutils literal notranslate"><span class="pre">acceptLastState</span></code>).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.acceptTheStateOfTheEntities" title="edelweissmeshfree.models.mpmmodel.MPMModel.acceptTheStateOfTheEntities"><code class="xref py py-obj docutils literal notranslate"><span class="pre">acceptTheStateOfTheEntities</span></code></a>(time)</p></td>
+<td><p>Let the entities accept their state, and set the new time; see <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/models.html#edelweissfe.models.femodel.FEModel.acceptTheStateOfTheEntities" title="(in EdelweissFE)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">acceptTheStateOfTheEntities()</span></code></a>.</p></td>
+</tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.activeCellsOf" title="edelweissmeshfree.models.mpmmodel.MPMModel.activeCellsOf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">activeCellsOf</span></code></a>(mpmManagers)</p></td>
 <td><p>The cells that are active in any of the MPM managers.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.activeConstraints" title="edelweissmeshfree.models.mpmmodel.MPMModel.activeConstraints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">activeConstraints</span></code></a>()</p></td>
-<td><p>The constraints that take part in the discrete system: all constraints, in their order, that are active, i.e. switched on and within reach (see <code class="xref py py-attr docutils literal notranslate"><span class="pre">active</span></code>).</p></td>
+<td><p>The constraints that take part in the discrete system: all constraints, in their order, that are active, i.e. switched on and within reach (see <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/model/constraints.html#edelweissfe.constraints.base.constraintbase.ConstraintBase.active" title="(in EdelweissFE)"><code class="xref py py-attr docutils literal notranslate"><span class="pre">active</span></code></a>).</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.activeScalarVariables" title="edelweissmeshfree.models.mpmmodel.MPMModel.activeScalarVariables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">activeScalarVariables</span></code></a>()</p></td>
 <td><p>The scalar variables (e.g. Lagrange multipliers) of the active constraints, constraint by constraint: the scalar variables that are numbered in the discrete system (see <a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.activeConstraints" title="edelweissmeshfree.models.mpmmodel.MPMModel.activeConstraints"><code class="xref py py-meth docutils literal notranslate"><span class="pre">activeConstraints()</span></code></a>).</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.advanceToTime" title="edelweissmeshfree.models.mpmmodel.MPMModel.advanceToTime"><code class="xref py py-obj docutils literal notranslate"><span class="pre">advanceToTime</span></code></a>(time)</p></td>
-<td><p>Accept the current state of the model and sub instances, and set the new time.</p></td>
+<td><p>Accept the current state of the model at the end of an increment, and set the new time: the state of its entities (<a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.acceptTheStateOfTheEntities" title="edelweissmeshfree.models.mpmmodel.MPMModel.acceptTheStateOfTheEntities"><code class="xref py py-meth docutils literal notranslate"><span class="pre">acceptTheStateOfTheEntities()</span></code></a>), then that of its constraints (<a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.acceptTheStateOfTheConstraints" title="edelweissmeshfree.models.mpmmodel.MPMModel.acceptTheStateOfTheConstraints"><code class="xref py py-meth docutils literal notranslate"><span class="pre">acceptTheStateOfTheConstraints()</span></code></a>).</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.advanceVelocity" title="edelweissmeshfree.models.mpmmodel.MPMModel.advanceVelocity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">advanceVelocity</span></code></a>(timeIncrement)</p></td>
 <td><p>Advance the velocity of the model by its acceleration over a time increment, <span class="math notranslate nohighlight">\(\boldsymbol{V} \leftarrow \boldsymbol{V} + \Delta t \, \boldsymbol{A}\)</span>, in every node field, on every node.</p></td>
@@ -154,7 +167,7 @@ for nodes and scalar degrees of freedom, and it manages the fields.</p>
 <td><p>Gather the active Nodes, and the NodeFields and NodeSets reduced onto them.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.buildDiscreteSystem" title="edelweissmeshfree.models.mpmmodel.MPMModel.buildDiscreteSystem"><code class="xref py py-obj docutils literal notranslate"><span class="pre">buildDiscreteSystem</span></code></a>()</p></td>
-<td><p>Build the discrete system of the model on its active domain; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">buildDiscreteSystem()</span></code> and <code class="xref py py-class docutils literal notranslate"><span class="pre">MPMDiscreteSystem</span></code>.</p></td>
+<td><p>Build the discrete system of the model on its active domain; see <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/models.html#edelweissfe.models.femodel.FEModel.buildDiscreteSystem" title="(in EdelweissFE)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">buildDiscreteSystem()</span></code></a> and <code class="xref py py-class docutils literal notranslate"><span class="pre">MPMDiscreteSystem</span></code>.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.createElement" title="edelweissmeshfree.models.mpmmodel.MPMModel.createElement"><code class="xref py py-obj docutils literal notranslate"><span class="pre">createElement</span></code></a>(element)</p></td>
 <td><p>Add a freshly created element to the model.</p></td>
@@ -163,7 +176,7 @@ for nodes and scalar degrees of freedom, and it manages the fields.</p>
 <td><p>Add a freshly created node to the model.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.elementsWithKernels" title="edelweissmeshfree.models.mpmmodel.MPMModel.elementsWithKernels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">elementsWithKernels</span></code></a>()</p></td>
-<td><p>The elements of the model that take part in a discrete system: those that carry kernels (see <code class="xref py py-attr docutils literal notranslate"><span class="pre">hasKernels</span></code>).</p></td>
+<td><p>The elements of the model that take part in a discrete system: those that carry kernels (see <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/model/elements.html#edelweissfe.elements.base.baseelement.BaseElement.hasKernels" title="(in EdelweissFE)"><code class="xref py py-attr docutils literal notranslate"><span class="pre">hasKernels</span></code></a>).</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.getActiveSubModel" title="edelweissmeshfree.models.mpmmodel.MPMModel.getActiveSubModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getActiveSubModel</span></code></a>()</p></td>
 <td><p>For many applications only a part of the model is active.</p></td>
@@ -184,13 +197,16 @@ for nodes and scalar degrees of freedom, and it manages the fields.</p>
 <td><p>Remove an element from the model.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.setNewmarkParametersOfEntities" title="edelweissmeshfree.models.mpmmodel.MPMModel.setNewmarkParametersOfEntities"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setNewmarkParametersOfEntities</span></code></a>(beta, gamma)</p></td>
-<td><p>Give the particles the Newmark parameters of the solver, at the start of every step; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">setNewmarkParametersOfEntities()</span></code>.</p></td>
+<td><p>Give the particles the Newmark parameters of the solver, at the start of every step; see <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/models.html#edelweissfe.models.femodel.FEModel.setNewmarkParametersOfEntities" title="(in EdelweissFE)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">setNewmarkParametersOfEntities()</span></code></a>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity" title="edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code></a>()</p></td>
-<td><p>Bring the connectivity up to date with the converged state, before an increment, and say what that changed; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code>.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.thicknessOf" title="edelweissmeshfree.models.mpmmodel.MPMModel.thicknessOf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">thicknessOf</span></code></a>(element)</p></td>
+<td><p>The thickness of a plane model at one of its elements: the thickness of the plane section the element belongs to (<code class="docutils literal notranslate"><span class="pre">*section,</span> <span class="pre">type=plane,</span> <span class="pre">thickness=...</span></code>), by which the element multiplies what it integrates over its area.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.writeRestart" title="edelweissmeshfree.models.mpmmodel.MPMModel.writeRestart"><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeRestart</span></code></a>(restartFile)</p></td>
-<td><p>Write the converged state of the model to a restart checkpoint: EdelweissFE's model state (see <code class="xref py py-meth docutils literal notranslate"><span class="pre">writeRestart()</span></code>), and the state of every material point and particle.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity" title="edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateConnectivity</span></code></a>()</p></td>
+<td><p>Bring the connectivity up to date with the converged state, before an increment, and say what that changed; see <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/models.html#edelweissfe.models.femodel.FEModel.updateConnectivity" title="(in EdelweissFE)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code></a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.writeRestart" title="edelweissmeshfree.models.mpmmodel.MPMModel.writeRestart"><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeRestart</span></code></a>(restartFile)</p></td>
+<td><p>Write the converged state of the model to a restart checkpoint: EdelweissFE's model state (see <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/models.html#edelweissfe.models.femodel.FEModel.writeRestart" title="(in EdelweissFE)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">writeRestart()</span></code></a>), and the state of every material point and particle.</p></td>
 </tr>
 </tbody>
 </table>
@@ -272,7 +288,7 @@ particle.</p>
 <dd><p>Create ScalarVariables for constraints.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>journal</strong> (<em>Journal</em>) – The journal intance.</p>
+<dd class="field-odd"><p><strong>journal</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/journal.html#edelweissfe.journal.journal.Journal" title="(in EdelweissFE)"><em>Journal</em></a>) – The journal intance.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -306,7 +322,7 @@ particle.</p>
 <dd class="field-odd"><p><strong>nodes</strong> – Nodes to be linked</p>
 </dd>
 </dl>
-<p>:param Inside a deferring <code class="xref py py-meth docutils literal notranslate"><span class="pre">changes()</span></code> window this only notes the request; the link is:
+<p>:param Inside a deferring <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/models.html#edelweissfe.models.topologypipeline.TopologyPipeline.changes" title="(in EdelweissFE)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">changes()</span></code></a> window this only notes the request; the link is:
 :param made once:
 :param for these nodes as they are then:
 :param when the window closes.:</p>
@@ -369,7 +385,7 @@ at its time, with a zero increment): each discards a trial state a failed attemp
 In detail, sections are assigned.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>journal</strong> (<em>Journal</em>) – The journal instance.</p>
+<dd class="field-odd"><p><strong>journal</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/journal.html#edelweissfe.journal.journal.Journal" title="(in EdelweissFE)"><em>Journal</em></a>) – The journal instance.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -378,10 +394,16 @@ In detail, sections are assigned.</p>
 <dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel._prepareMaterialPoints">
 <span class="sig-name descname"><span class="pre">_prepareMaterialPoints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">journal</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmmodel.html#MPMModel._prepareMaterialPoints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel._prepareMaterialPoints" title="Link to this definition"></a></dt>
 <dd><p>Initialize the material points for a simulation. They carry their material from their creation; the
-sections are assigned to the finite elements by <code class="xref py py-meth docutils literal notranslate"><span class="pre">prepareYourself()</span></code>.</p>
+sections are assigned to the finite elements by <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/models.html#edelweissfe.models.femodel.FEModel.prepareYourself" title="(in EdelweissFE)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">prepareYourself()</span></code></a>.
+An axisymmetric model takes none: the material points, cells and cell elements of EdelweissMeshfree integrate
+over the section, not over the rings about the axis, and their forces would not balance the ring forces of the
+elements, particles and contact points next to them.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>journal</strong> (<em>Journal</em>) – The journal instance.</p>
+<dd class="field-odd"><p><strong>journal</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/journal.html#edelweissfe.journal.journal.Journal" title="(in EdelweissFE)"><em>Journal</em></a>) – The journal instance.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If the model is axisymmetric and holds material points, cells or cell elements.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -389,11 +411,16 @@ sections are assigned to the finite elements by <code class="xref py py-meth doc
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel._prepareParticles">
 <span class="sig-name descname"><span class="pre">_prepareParticles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">journal</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmmodel.html#MPMModel._prepareParticles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel._prepareParticles" title="Link to this definition"></a></dt>
-<dd><p>Prepare elements for a simulation.
-In detail, sections are assigned.</p>
+<dd><p>Initialize the particles for a simulation, once they are known to integrate as the model does: an
+axisymmetric model integrates over the rings about the axis, and so must its particles
+(<a class="reference internal" href="particles.html#edelweissmeshfree.particles.base.baseparticle.BaseParticle.axisymmetric" title="edelweissmeshfree.particles.base.baseparticle.BaseParticle.axisymmetric"><code class="xref py py-attr docutils literal notranslate"><span class="pre">axisymmetric</span></code></a>), and a plane or a 3D model
+holds no axisymmetric particle.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>journal</strong> (<em>Journal</em>) – The journal instance.</p>
+<dd class="field-odd"><p><strong>journal</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/journal.html#edelweissfe.journal.journal.Journal" title="(in EdelweissFE)"><em>Journal</em></a>) – The journal instance.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If a particle is axisymmetric and the model is not, or vice versa.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -453,18 +480,42 @@ In detail, sections are assigned.</p>
 <dd><p>Resize the existing NodeFields in place for the current <code class="docutils literal notranslate"><span class="pre">self.nodeSets[&quot;all&quot;]</span></code>,
 instead of rebuilding <a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.nodeFields" title="edelweissmeshfree.models.mpmmodel.MPMModel.nodeFields"><code class="xref py py-attr docutils literal notranslate"><span class="pre">nodeFields</span></code></a> from scratch as <a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel._prepareVariablesAndFields" title="edelweissmeshfree.models.mpmmodel.MPMModel._prepareVariablesAndFields"><code class="xref py py-meth docutils literal notranslate"><span class="pre">_prepareVariablesAndFields()</span></code></a>
 does. Used by mesh mutators (e.g. AMR’s <code class="docutils literal notranslate"><span class="pre">hadaptivity._materialize</span></code>) so that NodeField
-identity – and hence any <code class="xref py py-class docutils literal notranslate"><span class="pre">NodeFieldSubset</span></code> or
+identity – and hence any <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/fields.html#edelweissfe.fields.nodefield.NodeFieldSubset" title="(in EdelweissFE)"><code class="xref py py-class docutils literal notranslate"><span class="pre">NodeFieldSubset</span></code></a> or
 reference a consumer cached – survives a topology change. ScalarVariables (e.g. Lagrange
 multipliers of constraints) are rebuilt, but values are preserved by name for constraints
 that still exist, so their converged state survives the refinement too.</p>
 <p>Everything here is recomputed from the current elements, constraints and <code class="docutils literal notranslate"><span class="pre">nodeSets[&quot;all&quot;]</span></code>
 – the node order of the resized fields is the model’s node creation order, which is why one
 call after several mutations yields the same layout as one call per mutation. Inside a
-deferring <code class="xref py py-meth docutils literal notranslate"><span class="pre">changes()</span></code> window the call is therefore only noted, and made once when
+deferring <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/models.html#edelweissfe.models.topologypipeline.TopologyPipeline.changes" title="(in EdelweissFE)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">changes()</span></code></a> window the call is therefore only noted, and made once when
 the window closes.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>journal</strong> (<em>Journal</em>) – The journal instance.</p>
+<dd class="field-odd"><p><strong>journal</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/journal.html#edelweissfe.journal.journal.Journal" title="(in EdelweissFE)"><em>Journal</em></a>) – The journal instance.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.acceptTheStateOfTheConstraints">
+<span class="sig-name descname"><span class="pre">acceptTheStateOfTheConstraints</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.acceptTheStateOfTheConstraints" title="Link to this definition"></a></dt>
+<dd><p>Let the constraints and the multi-point constraints accept the state of their last evaluation
+(<code class="docutils literal notranslate"><span class="pre">acceptLastState</span></code>).</p>
+<p>Of the constraints, only the active ones accept their state (see <a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.activeConstraints" title="edelweissmeshfree.models.mpmmodel.MPMModel.activeConstraints"><code class="xref py py-meth docutils literal notranslate"><span class="pre">activeConstraints()</span></code></a>): a constraint that
+took no part in the increment has no new state, and keeps its history as it was, e.g. the multipliers and the
+frictional history of a contact switched off for a step.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.acceptTheStateOfTheEntities">
+<span class="sig-name descname"><span class="pre">acceptTheStateOfTheEntities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmmodel.html#MPMModel.acceptTheStateOfTheEntities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.acceptTheStateOfTheEntities" title="Link to this definition"></a></dt>
+<dd><p>Let the entities accept their state, and set the new time; see
+<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/models.html#edelweissfe.models.femodel.FEModel.acceptTheStateOfTheEntities" title="(in EdelweissFE)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">acceptTheStateOfTheEntities()</span></code></a>. The material points and the particles
+accept theirs, and their positions, across the available threads, as the elements do: each touches only its own
+state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>time</strong> (<em>float</em>) – The new time.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -474,7 +525,7 @@ the window closes.</p>
 <span class="sig-name descname"><span class="pre">activeConstraints</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.activeConstraints" title="Link to this definition"></a></dt>
 <dd><p>The constraints that take part in the discrete system: all constraints, in their order, that are active,
 i.e. switched on and within reach (see
-<code class="xref py py-attr docutils literal notranslate"><span class="pre">active</span></code>).</p>
+<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/model/constraints.html#edelweissfe.constraints.base.constraintbase.ConstraintBase.active" title="(in EdelweissFE)"><code class="xref py py-attr docutils literal notranslate"><span class="pre">active</span></code></a>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>The active constraints.</p>
@@ -502,10 +553,15 @@ scalar variables that are numbered in the discrete system (see <a class="referen
 
 <dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.advanceToTime">
-<span class="sig-name descname"><span class="pre">advanceToTime</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmmodel.html#MPMModel.advanceToTime"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.advanceToTime" title="Link to this definition"></a></dt>
-<dd><p>Accept the current state of the model and sub instances, and
-set the new time. The material points and the particles accept theirs across the available threads, as the
-elements do (see <code class="xref py py-meth docutils literal notranslate"><span class="pre">advanceToTime()</span></code>): each touches only its own state.</p>
+<span class="sig-name descname"><span class="pre">advanceToTime</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.advanceToTime" title="Link to this definition"></a></dt>
+<dd><p>Accept the current state of the model at the end of an increment, and set the new time: the state of its
+entities (<a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.acceptTheStateOfTheEntities" title="edelweissmeshfree.models.mpmmodel.MPMModel.acceptTheStateOfTheEntities"><code class="xref py py-meth docutils literal notranslate"><span class="pre">acceptTheStateOfTheEntities()</span></code></a>), then that of its constraints
+(<a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.acceptTheStateOfTheConstraints" title="edelweissmeshfree.models.mpmmodel.MPMModel.acceptTheStateOfTheConstraints"><code class="xref py py-meth docutils literal notranslate"><span class="pre">acceptTheStateOfTheConstraints()</span></code></a>).</p>
+<p>Both accept the state of their last evaluation, which must be the one at the configuration accepted. That is
+what every solver evaluates last, except <code class="docutils literal notranslate"><span class="pre">NED</span></code> in a model with entities that carry their own inertia: there
+the constraints are evaluated at the accepted configuration only after the entities are reconnected, so <code class="docutils literal notranslate"><span class="pre">NED</span></code>
+calls the two parts itself, with the reconnection and the evaluation between them (see
+<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/analysis/solvers.html#edelweissfe.solvers.nonlinearexplicitdynamic.NED.acceptIncrement" title="(in EdelweissFE)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">acceptIncrement()</span></code></a>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>time</strong> (<em>float</em>) – The new time.</p>
@@ -563,12 +619,12 @@ not agree with the cells reachable from <code class="docutils literal notranslat
 <dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.buildDiscreteSystem">
 <span class="sig-name descname"><span class="pre">buildDiscreteSystem</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmmodel.html#MPMModel.buildDiscreteSystem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.buildDiscreteSystem" title="Link to this definition"></a></dt>
 <dd><p>Build the discrete system of the model on its active domain; see
-<code class="xref py py-meth docutils literal notranslate"><span class="pre">buildDiscreteSystem()</span></code> and <code class="xref py py-class docutils literal notranslate"><span class="pre">MPMDiscreteSystem</span></code>.</p>
+<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/models.html#edelweissfe.models.femodel.FEModel.buildDiscreteSystem" title="(in EdelweissFE)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">buildDiscreteSystem()</span></code></a> and <code class="xref py py-class docutils literal notranslate"><span class="pre">MPMDiscreteSystem</span></code>.</p>
 <p>The active domain consists of the cells that hold material points, the nodes these cells and the particles’
 kernel functions reach, and the finite elements and cell elements with their nodes. Its degrees of freedom are
 numbered on the active nodes; the model’s node sets are located on their nodes in the active domain. The
 elements the solver computes are the finite elements that carry kernels
-(<code class="xref py py-meth docutils literal notranslate"><span class="pre">elementsWithKernels()</span></code>), the active cells, the cell elements and the
+(<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/models.html#edelweissfe.models.femodel.FEModel.elementsWithKernels" title="(in EdelweissFE)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">elementsWithKernels()</span></code></a>), the active cells, the cell elements and the
 particles.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -586,7 +642,7 @@ particles.</p>
 <dd><p>Add a freshly created element to the model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>element</strong> – The element, already carrying a number obtained from <code class="xref py py-meth docutils literal notranslate"><span class="pre">reserveElementNumbers()</span></code>.</p>
+<dd class="field-odd"><p><strong>element</strong> – The element, already carrying a number obtained from <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/models.html#edelweissfe.models.topologypipeline.TopologyPipeline.reserveElementNumbers" title="(in EdelweissFE)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reserveElementNumbers()</span></code></a>.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -597,7 +653,7 @@ particles.</p>
 <dd><p>Add a freshly created node to the model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>node</strong> – The node, already carrying a label obtained from <code class="xref py py-meth docutils literal notranslate"><span class="pre">reserveNodeNumbers()</span></code>.</p>
+<dd class="field-odd"><p><strong>node</strong> – The node, already carrying a label obtained from <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/models.html#edelweissfe.models.topologypipeline.TopologyPipeline.reserveNodeNumbers" title="(in EdelweissFE)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reserveNodeNumbers()</span></code></a>.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -606,7 +662,7 @@ particles.</p>
 <dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.elementsWithKernels">
 <span class="sig-name descname"><span class="pre">elementsWithKernels</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.elementsWithKernels" title="Link to this definition"></a></dt>
 <dd><p>The elements of the model that take part in a discrete system: those that carry kernels (see
-<code class="xref py py-attr docutils literal notranslate"><span class="pre">hasKernels</span></code>). An entity of the element container that
+<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/model/elements.html#edelweissfe.elements.base.baseelement.BaseElement.hasKernels" title="(in EdelweissFE)"><code class="xref py py-attr docutils literal notranslate"><span class="pre">hasKernels</span></code></a>). An entity of the element container that
 carries geometry only, e.g. a contact facet, has no block in the system matrix and takes no part; its nodes
 have rows only if an element that carries kernels couples them, see <a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.buildDiscreteSystem" title="edelweissmeshfree.models.mpmmodel.MPMModel.buildDiscreteSystem"><code class="xref py py-meth docutils literal notranslate"><span class="pre">buildDiscreteSystem()</span></code></a>.</p>
 <dl class="field-list simple">
@@ -643,7 +699,7 @@ This function returns the active sub model, based on the current state of the mo
 masters, in the given numbering.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>numbering</strong> (<em>DofNumbering</em>) – The numbering of the degrees of freedom.</p>
+<dd class="field-odd"><p><strong>numbering</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/dofnumbering.html#edelweissfe.numerics.dofnumbering.DofNumbering" title="(in EdelweissFE)"><em>DofNumbering</em></a>) – The numbering of the degrees of freedom.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The indices, in no particular order, with repetitions.</p>
@@ -668,7 +724,7 @@ Creates the variables, bundles the fields,
 and initializes elements.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>journal</strong> (<em>Journal</em>) – The journal instance.</p>
+<dd class="field-odd"><p><strong>journal</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/journal.html#edelweissfe.journal.journal.Journal" title="(in EdelweissFE)"><em>Journal</em></a>) – The journal instance.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -682,7 +738,7 @@ and initializes elements.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>restartFile</strong> (<em>File</em>) – An open, readable <code class="xref py py-class docutils literal notranslate"><span class="pre">h5py.File</span></code> (or group) to read the checkpoint from.</p></li>
-<li><p><strong>journal</strong> (<em>Journal</em>) – The journal, for the progress messages of the topology replay.</p></li>
+<li><p><strong>journal</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/journal.html#edelweissfe.journal.journal.Journal" title="(in EdelweissFE)"><em>Journal</em></a>) – The journal, for the progress messages of the topology replay.</p></li>
 </ul>
 </dd>
 </dl>
@@ -703,7 +759,7 @@ and initializes elements.</p>
 <dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.setNewmarkParametersOfEntities">
 <span class="sig-name descname"><span class="pre">setNewmarkParametersOfEntities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmmodel.html#MPMModel.setNewmarkParametersOfEntities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.setNewmarkParametersOfEntities" title="Link to this definition"></a></dt>
 <dd><p>Give the particles the Newmark parameters of the solver, at the start of every step;
-see <code class="xref py py-meth docutils literal notranslate"><span class="pre">setNewmarkParametersOfEntities()</span></code>. Each particle integrates the
+see <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/models.html#edelweissfe.models.femodel.FEModel.setNewmarkParametersOfEntities" title="(in EdelweissFE)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">setNewmarkParametersOfEntities()</span></code></a>. Each particle integrates the
 Newmark scheme at its own evaluation points, with its velocity and acceleration in its state; with
 <span class="math notranslate nohighlight">\(\beta = \gamma = 0\)</span>, which every quasi-static solver passes, and the explicit dynamic solver <code class="docutils literal notranslate"><span class="pre">NED</span></code>,
 which integrates the inertia at the nodes, it carries no inertia. A particle without
@@ -723,13 +779,37 @@ quasi-static solver, and refused by a dynamic one.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.thicknessOf">
+<span class="sig-name descname"><span class="pre">thicknessOf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">element</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.thicknessOf" title="Link to this definition"></a></dt>
+<dd><p>The thickness of a plane model at one of its elements: the thickness of the plane section the element
+belongs to (<code class="docutils literal notranslate"><span class="pre">*section,</span> <span class="pre">type=plane,</span> <span class="pre">thickness=...</span></code>), by which the element multiplies what it integrates over
+its area. What else integrates over the area of the slice – e.g. the contact points, see
+<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/model/constraints.html#edelweissfe.constraints.base.contactpoints.outOfPlaneExtentAt" title="(in EdelweissFE)"><code class="xref py py-func docutils literal notranslate"><span class="pre">outOfPlaneExtentAt()</span></code></a> – takes it from here, so that the
+forces balance at the nodes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>element</strong> – The element.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The thickness.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If no section with a thickness holds the element.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity">
 <span class="sig-name descname"><span class="pre">updateConnectivity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmmodel.html#MPMModel.updateConnectivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.updateConnectivity" title="Link to this definition"></a></dt>
 <dd><p>Bring the connectivity up to date with the converged state, before an increment, and say what that changed;
-see <code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code>. Called by EdelweissFE’s implicit solvers at
+see <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/models.html#edelweissfe.models.femodel.FEModel.updateConnectivity" title="(in EdelweissFE)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">updateConnectivity()</span></code></a>. Called by EdelweissFE’s implicit solvers at
 the start of every increment and of every retry after a cutback, and by the explicit dynamic solver <code class="docutils literal notranslate"><span class="pre">NED</span></code> after
 every increment, on the kernel functions the particles reached, and when it resumes a step (see
-<code class="xref py py-class docutils literal notranslate"><span class="pre">NED</span></code>).</p>
+<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/analysis/solvers.html#edelweissfe.solvers.nonlinearexplicitdynamic.NED" title="(in EdelweissFE)"><code class="xref py py-class docutils literal notranslate"><span class="pre">NED</span></code></a>).</p>
 <p>First the managers assign the material points to the cells they lie in (<a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.mpmManagers" title="edelweissmeshfree.models.mpmmodel.MPMModel.mpmManagers"><code class="xref py py-attr docutils literal notranslate"><span class="pre">mpmManagers</span></code></a>) and the particles
 to the kernel functions they reach (<a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.particleManagers" title="edelweissmeshfree.models.mpmmodel.MPMModel.particleManagers"><code class="xref py py-attr docutils literal notranslate"><span class="pre">particleManagers</span></code></a>), each from its converged state: a failed attempt
 may have left a trial state behind. Then the constraints follow, which couple the nodes the managers have just
@@ -742,9 +822,9 @@ is what rebuilding would give, at a fraction of its cost. Otherwise the active d
 the numbering.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>What changed: <code class="xref py py-attr docutils literal notranslate"><span class="pre">NONE</span></code> if nothing did,
-<code class="xref py py-attr docutils literal notranslate"><span class="pre">LOCATIONS</span></code> if the active nodes are fixed, else
-<code class="xref py py-attr docutils literal notranslate"><span class="pre">NUMBERING</span></code>, or what the constraints changed, if that is more.</p>
+<dd class="field-odd"><p>What changed: <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/models.html#edelweissfe.models.change.Change.NONE" title="(in EdelweissFE)"><code class="xref py py-attr docutils literal notranslate"><span class="pre">NONE</span></code></a> if nothing did,
+<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/models.html#edelweissfe.models.change.Change.LOCATIONS" title="(in EdelweissFE)"><code class="xref py py-attr docutils literal notranslate"><span class="pre">LOCATIONS</span></code></a> if the active nodes are fixed, else
+<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/models.html#edelweissfe.models.change.Change.NUMBERING" title="(in EdelweissFE)"><code class="xref py py-attr docutils literal notranslate"><span class="pre">NUMBERING</span></code></a>, or what the constraints changed, if that is more.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>Change</p>
@@ -756,7 +836,7 @@ the numbering.</p>
 <dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.writeRestart">
 <span class="sig-name descname"><span class="pre">writeRestart</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">restartFile</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmmodel.html#MPMModel.writeRestart"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.writeRestart" title="Link to this definition"></a></dt>
 <dd><p>Write the converged state of the model to a restart checkpoint: EdelweissFE’s model state (see
-<code class="xref py py-meth docutils literal notranslate"><span class="pre">writeRestart()</span></code>), and the state of every material point and particle.</p>
+<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/models.html#edelweissfe.models.femodel.FEModel.writeRestart" title="(in EdelweissFE)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">writeRestart()</span></code></a>), and the state of every material point and particle.</p>
 <p>The material point method and RKPM are updated-Lagrangian: the material points and particles carry the state,
 and their positions follow from it. The connectivity – which cells hold which material points, which kernel
 functions reach which particles, where bonded kernel functions sit – follows from the positions, and is
@@ -778,6 +858,27 @@ rebuilt by the first connectivity update of the resumed run (<a class="reference
 <dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.analyticalFields">
 <span class="sig-name descname"><span class="pre">analyticalFields</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.analyticalFields" title="Link to this definition"></a></dt>
 <dd><p>AnalyticalFields in the model.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.axisymmetric">
+<span class="sig-name descname"><span class="pre">axisymmetric</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.axisymmetric" title="Link to this definition"></a></dt>
+<dd><p>the first coordinate
+is the radius r, the second the axial coordinate z, and every point of the section stands for the ring it
+sweeps about the axis. What the model integrates is then integrated over the rings, with the circumference
+<span class="math notranslate nohighlight">\(2 \pi r\)</span> – the axisymmetric elements their volumes, the contact points their areas (see
+<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/model/constraints.html#edelweissfe.constraints.base.contactpoints.outOfPlaneExtentAt" title="(in EdelweissFE)"><code class="xref py py-func docutils literal notranslate"><span class="pre">outOfPlaneExtentAt()</span></code></a>) –, so that the forces and the
+masses at the nodes are those of the full rings. Set by <code class="docutils literal notranslate"><span class="pre">*job,</span> <span class="pre">domain=axisymmetric</span></code>. The elements must
+then be axisymmetric ones (<code class="docutils literal notranslate"><span class="pre">CAX4</span></code>, <code class="docutils literal notranslate"><span class="pre">CAX8</span></code>, <code class="docutils literal notranslate"><span class="pre">CAX8R</span></code>, <code class="docutils literal notranslate"><span class="pre">GCAX4</span></code>, <code class="docutils literal notranslate"><span class="pre">GCAX8</span></code>, <code class="docutils literal notranslate"><span class="pre">GCAX8R</span></code>, <code class="docutils literal notranslate"><span class="pre">CX8UL</span></code>,
+<code class="docutils literal notranslate"><span class="pre">CX8RUL</span></code>), and a model of plane elements a <code class="docutils literal notranslate"><span class="pre">2d</span></code> job: nothing checks this yet, since an element does not
+tell whether it integrates over rings. Axisymmetric elements in a <code class="docutils literal notranslate"><span class="pre">2d</span></code> job make every contact point stand
+for <span class="math notranslate nohighlight">\(t L_p\)</span> instead of <span class="math notranslate nohighlight">\(2 \pi r L_p\)</span>, the contact too soft by <span class="math notranslate nohighlight">\(2 \pi r / t\)</span>; plane
+elements in an axisymmetric job make it too stiff by the same factor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if the model is the section r-z of a body of revolution about the axis r = 0</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py attribute">
@@ -969,7 +1070,7 @@ rebuilt by the first connectivity update of the resumed run (<a class="reference
 <dl class="py attribute">
 <dt class="sig sig-object py" id="edelweissmeshfree.models.mpmmodel.MPMModel.topology">
 <span class="sig-name descname"><span class="pre">topology</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmmodel.MPMModel.topology" title="Link to this definition"></a></dt>
-<dd><p>How the mesh may change during a run; see <code class="xref py py-class docutils literal notranslate"><span class="pre">TopologyPipeline</span></code>.</p>
+<dd><p>How the mesh may change during a run; see <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/models.html#edelweissfe.models.topologypipeline.TopologyPipeline" title="(in EdelweissFE)"><code class="xref py py-class docutils literal notranslate"><span class="pre">TopologyPipeline</span></code></a>.</p>
 </dd></dl>
 
 <dl class="py attribute">
@@ -1011,11 +1112,11 @@ values, so the raised field matrix bounds it block by block, and its Perron root
 bounds every eigenvalue – for an unsymmetric tangent as well (theory page on the critical time step of EdelweissFE,
 “The particles: the rows inside their field matrix”). Where the constraints raise no diagonal entry, and the weights
 are constant per field, the estimate is the particles’ own. This holds under one condition: every constraint couples
-degrees of freedom of one field of the particles only (a support or a contact of the displacement); a penalty that
-coupled two fields, e.g. the displacement with the nonlocal field, would add to an off-diagonal entry of the field
-matrix, which this form does not hold. This is assumed, not checked. A constraint that couples particles and finite
-elements at once is taken with the larger of the elements’ bound and this one; that this bounds the two together
-is not proven (same page, “What the estimate does not see”).</p>
+degrees of freedom of one field of the particles only (a support, a contact or a tie of the displacement); a
+penalty that coupled two fields, e.g. the displacement with the nonlocal field, would add to an off-diagonal entry
+of the field matrix, which this form does not hold. This is assumed, not checked. A constraint that couples
+particles and finite elements at once is taken with the larger of the elements’ bound and this one; that this
+bounds the two together is not proven (same page, “What the estimate does not see”).</p>
 <p><strong>With carried weights</strong> (see <a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.criticalTimeStepOfEntitiesWithOwnInertia" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.criticalTimeStepOfEntitiesWithOwnInertia"><code class="xref py py-meth docutils literal notranslate"><span class="pre">MPMDiscreteSystem.criticalTimeStepOfEntitiesWithOwnInertia()</span></code></a>, “Weights carried
 from estimate to estimate”), <span class="math notranslate nohighlight">\(\boldsymbol{Q}\)</span> is the field matrix of the weighted matrix
 <span class="math notranslate nohighlight">\(\boldsymbol{W}^{-1}|\boldsymbol{S}|\boldsymbol{W}\)</span>, the row sums are those of its rows, and the
@@ -1027,7 +1128,7 @@ field, and the particles keep them constant in every field a constraint acts on 
 that acts on another field since the estimate, e.g. a contact paired anew – the row is at most <span class="math notranslate nohighlight">\(r_i
 \max_{j \in g} w_j / w_i\)</span>, which is added instead: a bound that holds, if loosely; where it lowers the
 critical time step below the one in use, the particles are estimated anew
-(<code class="xref py py-meth docutils literal notranslate"><span class="pre">isDue()</span></code>), now with
+(<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/theory/criticaltimestep.html#edelweissfe.solvers.base.criticaltimestep.CriticalTimeStepOfEntitiesWithOwnInertia.isDue" title="(in EdelweissFE)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">isDue()</span></code></a>), now with
 weights constant on that field.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1095,9 +1196,9 @@ zero on all other nodes (see <a class="reference internal" href="#edelweissmeshf
 <li><p><strong>locations</strong> (<a class="reference internal" href="numeric_tools.html#edelweissmeshfree.numerics.doflocations.MPMDofLocations" title="edelweissmeshfree.numerics.doflocations.MPMDofLocations"><em>MPMDofLocations</em></a>) – The locations of the entities in the numbering of the degrees of freedom of the active domain; the finite
 elements, the active cells (those that hold material points, sorted by their number), the cell elements and the
 particles, in the order in which the solver computes them, are the elements of the discrete system.</p></li>
-<li><p><strong>nodesWithPersistentFieldValues</strong> (<em>NodeSet</em>) – The nodes that carry their total solution from increment to increment: those of the finite elements and of
+<li><p><strong>nodesWithPersistentFieldValues</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/model/sets.html#edelweissfe.sets.nodeset.NodeSet" title="(in EdelweissFE)"><em>NodeSet</em></a>) – The nodes that carry their total solution from increment to increment: those of the finite elements and of
 the cell elements.</p></li>
-<li><p><strong>nodesWithVolatileFieldValues</strong> (<em>NodeSet</em>) – The nodes of the active cells and of the particles’ kernel functions.</p></li>
+<li><p><strong>nodesWithVolatileFieldValues</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/model/sets.html#edelweissfe.sets.nodeset.NodeSet" title="(in EdelweissFE)"><em>NodeSet</em></a>) – The nodes of the active cells and of the particles’ kernel functions.</p></li>
 <li><p><strong>modelForLinearSolver</strong> – The model reduced to its active domain, for the linear solver.</p></li>
 </ul>
 </dd>
@@ -1109,13 +1210,13 @@ the cell elements.</p></li>
 </dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.constraints" title="edelweissmeshfree.models.mpmmodel.MPMModel.constraints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">constraints</span></code></a></dt><dd><p>The constraints that take part in the discrete system, i.e.</p>
 </dd>
-<dt><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.elements" title="edelweissmeshfree.models.mpmmodel.MPMModel.elements"><code class="xref py py-obj docutils literal notranslate"><span class="pre">elements</span></code></a></dt><dd><p>Everything the solver computes like an element in every evaluation of the model, see <code class="xref py py-meth docutils literal notranslate"><span class="pre">computeElements()</span></code>: the finite elements of the model that carry kernels (<code class="xref py py-attr docutils literal notranslate"><span class="pre">hasKernels</span></code>), and in a meshfree model its cells and particles as well.</p>
+<dt><a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.elements" title="edelweissmeshfree.models.mpmmodel.MPMModel.elements"><code class="xref py py-obj docutils literal notranslate"><span class="pre">elements</span></code></a></dt><dd><p>Everything the solver computes like an element in every evaluation of the model, see <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/analysis/solvers.html#edelweissfe.solvers.nonlinearimplicitstatic.NIST.computeElements" title="(in EdelweissFE)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">computeElements()</span></code></a>: the finite elements of the model that carry kernels (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/model/elements.html#edelweissfe.elements.base.baseelement.BaseElement.hasKernels" title="(in EdelweissFE)"><code class="xref py py-attr docutils literal notranslate"><span class="pre">hasKernels</span></code></a>), and in a meshfree model its cells and particles as well.</p>
 </dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.elementsWithNodalInertia" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.elementsWithNodalInertia"><code class="xref py py-obj docutils literal notranslate"><span class="pre">elementsWithNodalInertia</span></code></a></dt><dd><p>The finite elements, whose inertia, damping and critical time step a solver assembles element by element, at the nodes.</p>
 </dd>
-<dt><a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.entitiesWithOwnInertia" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.entitiesWithOwnInertia"><code class="xref py py-obj docutils literal notranslate"><span class="pre">entitiesWithOwnInertia</span></code></a></dt><dd><p>The particles: they carry their state, and with it their inertia, and their kernel functions move with them; see <code class="xref py py-attr docutils literal notranslate"><span class="pre">entitiesWithOwnInertia</span></code>.</p>
+<dt><a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.entitiesWithOwnInertia" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.entitiesWithOwnInertia"><code class="xref py py-obj docutils literal notranslate"><span class="pre">entitiesWithOwnInertia</span></code></a></dt><dd><p>The particles: they carry their state, and with it their inertia, and their kernel functions move with them; see <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/models.html#edelweissfe.models.discretesystem.DiscreteSystem.entitiesWithOwnInertia" title="(in EdelweissFE)"><code class="xref py py-attr docutils literal notranslate"><span class="pre">entitiesWithOwnInertia</span></code></a>.</p>
 </dd>
-<dt><a class="reference internal" href="numeric_tools.html#edelweissmeshfree.numerics.doflocations.MPMDofLocations.numbering" title="edelweissmeshfree.numerics.doflocations.MPMDofLocations.numbering"><code class="xref py py-obj docutils literal notranslate"><span class="pre">numbering</span></code></a></dt><dd><p>The numbering of the degrees of freedom of the discrete system, which says which node fields and scalar variables have degrees of freedom, and the global index of each; see <code class="xref py py-class docutils literal notranslate"><span class="pre">DofNumbering</span></code>.</p>
+<dt><a class="reference internal" href="numeric_tools.html#edelweissmeshfree.numerics.doflocations.MPMDofLocations.numbering" title="edelweissmeshfree.numerics.doflocations.MPMDofLocations.numbering"><code class="xref py py-obj docutils literal notranslate"><span class="pre">numbering</span></code></a></dt><dd><p>The numbering of the degrees of freedom of the discrete system, which says which node fields and scalar variables have degrees of freedom, and the global index of each; see <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/dofnumbering.html#edelweissfe.numerics.dofnumbering.DofNumbering" title="(in EdelweissFE)"><code class="xref py py-class docutils literal notranslate"><span class="pre">DofNumbering</span></code></a>.</p>
 </dd>
 <dt><a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.particles" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.particles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">particles</span></code></a></dt><dd><p>The particles of the model, a list the solver hands out in chunks, i.e.</p>
 </dd>
@@ -1126,28 +1227,28 @@ the cell elements.</p></li>
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.advanceEntitiesWithOwnInertia" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.advanceEntitiesWithOwnInertia"><code class="xref py py-obj docutils literal notranslate"><span class="pre">advanceEntitiesWithOwnInertia</span></code></a>(dU, timeStep, ...)</p></td>
-<td><p>Every particle takes the increment of the nodes of the kernel functions it was assigned at the start of the increment (<code class="docutils literal notranslate"><span class="pre">updatePhysicsExplicit</span></code>), and moves; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">advanceEntitiesWithOwnInertia()</span></code>.</p></td>
+<td><p>Every particle takes the increment of the nodes of the kernel functions it was assigned at the start of the increment (<code class="docutils literal notranslate"><span class="pre">updatePhysicsExplicit</span></code>), and moves; see <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/models.html#edelweissfe.models.discretesystem.DiscreteSystem.advanceEntitiesWithOwnInertia" title="(in EdelweissFE)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">advanceEntitiesWithOwnInertia()</span></code></a>.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.assembleInternalForceAndMomentumOfEntitiesWithOwnInertia" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.assembleInternalForceAndMomentumOfEntitiesWithOwnInertia"><code class="xref py py-obj docutils literal notranslate"><span class="pre">assembleInternalForceAndMomentumOfEntitiesWithOwnInertia</span></code></a>(...)</p></td>
-<td><p>The internal force of the particles at the state they accepted (<code class="docutils literal notranslate"><span class="pre">computePhysicsKernelsExplicit</span></code>) and their lumped momentum (<code class="docutils literal notranslate"><span class="pre">computeLumpedMomentum</span></code>), at the nodes of their current kernel functions; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleInternalForceAndMomentumOfEntitiesWithOwnInertia()</span></code>.</p></td>
+<td><p>The internal force of the particles at the state they accepted (<code class="docutils literal notranslate"><span class="pre">computePhysicsKernelsExplicit</span></code>) and their lumped momentum (<code class="docutils literal notranslate"><span class="pre">computeLumpedMomentum</span></code>), at the nodes of their current kernel functions; see <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/models.html#edelweissfe.models.discretesystem.DiscreteSystem.assembleInternalForceAndMomentumOfEntitiesWithOwnInertia" title="(in EdelweissFE)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleInternalForceAndMomentumOfEntitiesWithOwnInertia()</span></code></a>.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.assembleLumpedDampingOfEntitiesWithOwnInertia" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.assembleLumpedDampingOfEntitiesWithOwnInertia"><code class="xref py py-obj docutils literal notranslate"><span class="pre">assembleLumpedDampingOfEntitiesWithOwnInertia</span></code></a>(...)</p></td>
-<td><p>The lumped damping of the particles at the nodes of their current kernel functions, as each particle reports it (<code class="docutils literal notranslate"><span class="pre">computeLumpedDamping</span></code>, e.g. <span class="math notranslate nohighlight">\(\eta\, V_{0,p}\, T_A(\boldsymbol{x}_p)\)</span> on a nonlocal field with the nonlocal viscosity <span class="math notranslate nohighlight">\(\eta\)</span>), summed over the particles; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleLumpedDampingOfEntitiesWithOwnInertia()</span></code>.</p></td>
+<td><p>The lumped damping of the particles at the nodes of their current kernel functions, as each particle reports it (<code class="docutils literal notranslate"><span class="pre">computeLumpedDamping</span></code>, e.g. <span class="math notranslate nohighlight">\(\eta\, V_{0,p}\, T_A(\boldsymbol{x}_p)\)</span> on a nonlocal field with the nonlocal viscosity <span class="math notranslate nohighlight">\(\eta\)</span>), summed over the particles; see <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/models.html#edelweissfe.models.discretesystem.DiscreteSystem.assembleLumpedDampingOfEntitiesWithOwnInertia" title="(in EdelweissFE)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleLumpedDampingOfEntitiesWithOwnInertia()</span></code></a>.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.assembleLumpedMassOfEntitiesWithOwnInertia" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.assembleLumpedMassOfEntitiesWithOwnInertia"><code class="xref py py-obj docutils literal notranslate"><span class="pre">assembleLumpedMassOfEntitiesWithOwnInertia</span></code></a>(...)</p></td>
-<td><p>The lumped mass of the particles at the nodes of their current kernel functions, <span class="math notranslate nohighlight">\(m_A = \sum_p \rho_0\, V_{0,p}\, T_A(\boldsymbol{x}_p)\)</span>, as each particle reports it (<code class="docutils literal notranslate"><span class="pre">computeLumpedInertia</span></code>), summed over the particles; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleLumpedMassOfEntitiesWithOwnInertia()</span></code>.</p></td>
+<td><p>The lumped mass of the particles at the nodes of their current kernel functions, <span class="math notranslate nohighlight">\(m_A = \sum_p \rho_0\, V_{0,p}\, T_A(\boldsymbol{x}_p)\)</span>, as each particle reports it (<code class="docutils literal notranslate"><span class="pre">computeLumpedInertia</span></code>), summed over the particles; see <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/models.html#edelweissfe.models.discretesystem.DiscreteSystem.assembleLumpedMassOfEntitiesWithOwnInertia" title="(in EdelweissFE)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleLumpedMassOfEntitiesWithOwnInertia()</span></code></a>.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.carriersOfTheMotion" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.carriersOfTheMotion"><code class="xref py py-obj docutils literal notranslate"><span class="pre">carriersOfTheMotion</span></code></a>()</p></td>
-<td><p>Where the model holds the motion of its particles; see <code class="xref py py-meth docutils literal notranslate"><span class="pre">carriersOfTheMotion()</span></code>.</p></td>
+<td><p>Where the model holds the motion of its particles; see <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/models.html#edelweissfe.models.discretesystem.DiscreteSystem.carriersOfTheMotion" title="(in EdelweissFE)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">carriersOfTheMotion()</span></code></a>.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.criticalTimeStepOfEntitiesWithOwnInertia" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.criticalTimeStepOfEntitiesWithOwnInertia"><code class="xref py py-obj docutils literal notranslate"><span class="pre">criticalTimeStepOfEntitiesWithOwnInertia</span></code></a>(...)</p></td>
-<td><p>An estimate of the critical time step of <code class="docutils literal notranslate"><span class="pre">NED</span></code>'s explicit scheme for the particles, a lower bound of it, from their stiffness at the current state and the assembled lumped mass and damping; <code class="docutils literal notranslate"><span class="pre">NED</span></code> decides when it is taken anew (<code class="xref py py-class docutils literal notranslate"><span class="pre">CriticalTimeStepOfEntitiesWithOwnInertia</span></code>).</p></td>
+<td><p>An estimate of the critical time step of <code class="docutils literal notranslate"><span class="pre">NED</span></code>'s explicit scheme for the particles, a lower bound of it, from their stiffness at the current state and the assembled lumped mass and damping; <code class="docutils literal notranslate"><span class="pre">NED</span></code> decides when it is taken anew (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/theory/criticaltimestep.html#edelweissfe.solvers.base.criticaltimestep.CriticalTimeStepOfEntitiesWithOwnInertia" title="(in EdelweissFE)"><code class="xref py py-class docutils literal notranslate"><span class="pre">CriticalTimeStepOfEntitiesWithOwnInertia</span></code></a>).</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.dofsWithNodalInertia" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.dofsWithNodalInertia"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dofsWithNodalInertia</span></code></a>(fieldNames)</p></td>
 <td><p>The degrees of freedom of the given fields whose inertia is that of the nodes: those of the nodes that carry their total solution, i.e. of the finite elements and of the cell elements.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.readEntryOfNodeField" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.readEntryOfNodeField"><code class="xref py py-obj docutils literal notranslate"><span class="pre">readEntryOfNodeField</span></code></a>(dofVector, nodeField, entry)</p></td>
-<td><p>Read one entry of one node field of the model into a vector of the discrete system, by node; every read of <code class="xref py py-meth docutils literal notranslate"><span class="pre">readStateFromModel()</span></code> goes through here.</p></td>
+<td><p>Read one entry of one node field of the model into a vector of the discrete system, by node; every read of <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/models.html#edelweissfe.models.discretesystem.DiscreteSystem.readStateFromModel" title="(in EdelweissFE)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">readStateFromModel()</span></code></a> goes through here.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">readStateFromModel</span></code>(U[, V, A, dynamicFields])</p></td>
 <td><p>Read the state the model carries from increment to increment into the vectors of a (re)built discrete system, from which the next increment starts (see the documentation page <em>Node field results</em>): the solution <code class="docutils literal notranslate"><span class="pre">U</span></code>, and, for a solver that integrates in time, the velocity <code class="docutils literal notranslate"><span class="pre">V</span></code> and the acceleration <code class="docutils literal notranslate"><span class="pre">A</span></code>.</p></td>
@@ -1156,7 +1257,7 @@ the cell elements.</p></li>
 <td><p>Update the material points with the trial solution increment, before the solver computes the cells, which integrate them: the material points return to their converged state, every active cell (and cell element) interpolates the solution increment to the material points it holds, and the material points evaluate their material.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">withNewLocations</span></code>()</p></td>
-<td><p>The discrete system after a change of the connectivity that leaves the numbering as it is, e.g. the contact search of a constraint: the same numbering, and the locations of the constraints that are active now (see <code class="xref py py-meth docutils literal notranslate"><span class="pre">activeConstraints()</span></code>).</p></td>
+<td><p>The discrete system after a change of the connectivity that leaves the numbering as it is, e.g. the contact search of a constraint: the same numbering, and the locations of the constraints that are active now (see <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/models.html#edelweissfe.models.femodel.FEModel.activeConstraints" title="(in EdelweissFE)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">activeConstraints()</span></code></a>).</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.writeEntryOfNodeField" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.writeEntryOfNodeField"><code class="xref py py-obj docutils literal notranslate"><span class="pre">writeEntryOfNodeField</span></code></a>(dofVector, nodeField, ...)</p></td>
 <td><p>Write a vector of the discrete system to one entry of one node field of the model, by node: on the nodes of the active domain, and zero on all other nodes of the model.</p></td>
@@ -1180,12 +1281,12 @@ the cell elements.</p></li>
 <span class="sig-name descname"><span class="pre">advanceEntitiesWithOwnInertia</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dU</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forEachChunk</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmdiscretesystem.html#MPMDiscreteSystem.advanceEntitiesWithOwnInertia"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.advanceEntitiesWithOwnInertia" title="Link to this definition"></a></dt>
 <dd><p>Every particle takes the increment of the nodes of the kernel functions it was assigned at the start of the
 increment (<code class="docutils literal notranslate"><span class="pre">updatePhysicsExplicit</span></code>), and moves; see
-<code class="xref py py-meth docutils literal notranslate"><span class="pre">advanceEntitiesWithOwnInertia()</span></code>. The particles are
+<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/models.html#edelweissfe.models.discretesystem.DiscreteSystem.advanceEntitiesWithOwnInertia" title="(in EdelweissFE)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">advanceEntitiesWithOwnInertia()</span></code></a>. The particles are
 independent of each other, so they are advanced in the solver’s loop over chunks.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>dU</strong> (<em>DofVector</em>) – The increment of the solution.</p></li>
+<li><p><strong>dU</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/dofnumbering.html#edelweissfe.numerics.dofvector.DofVector" title="(in EdelweissFE)"><em>DofVector</em></a>) – The increment of the solution.</p></li>
 <li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The increment.</p></li>
 <li><p><strong>forEachChunk</strong> (<em>Callable</em><em>[</em><em>[</em><em>list</em><em>, </em><em>Callable</em><em>]</em><em>, </em><em>None</em><em>]</em>) – The solver’s loop over chunks of independent entities.</p></li>
 </ul>
@@ -1198,7 +1299,7 @@ independent of each other, so they are advanced in the solver’s loop over chun
 <span class="sig-name descname"><span class="pre">assembleInternalForceAndMomentumOfEntitiesWithOwnInertia</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">forEachChunk</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmdiscretesystem.html#MPMDiscreteSystem.assembleInternalForceAndMomentumOfEntitiesWithOwnInertia"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.assembleInternalForceAndMomentumOfEntitiesWithOwnInertia" title="Link to this definition"></a></dt>
 <dd><p>The internal force of the particles at the state they accepted (<code class="docutils literal notranslate"><span class="pre">computePhysicsKernelsExplicit</span></code>) and their
 lumped momentum (<code class="docutils literal notranslate"><span class="pre">computeLumpedMomentum</span></code>), at the nodes of their current kernel functions; see
-<code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleInternalForceAndMomentumOfEntitiesWithOwnInertia()</span></code>.
+<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/models.html#edelweissfe.models.discretesystem.DiscreteSystem.assembleInternalForceAndMomentumOfEntitiesWithOwnInertia" title="(in EdelweissFE)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleInternalForceAndMomentumOfEntitiesWithOwnInertia()</span></code></a>.
 Each particle adds into its own part of a scatter vector, in the solver’s loop over chunks.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1219,7 +1320,7 @@ Each particle adds into its own part of a scatter vector, in the solver’s loop
 <dd><p>The lumped damping of the particles at the nodes of their current kernel functions, as each particle reports
 it (<code class="docutils literal notranslate"><span class="pre">computeLumpedDamping</span></code>, e.g. <span class="math notranslate nohighlight">\(\eta\, V_{0,p}\, T_A(\boldsymbol{x}_p)\)</span> on a nonlocal field with
 the nonlocal viscosity <span class="math notranslate nohighlight">\(\eta\)</span>), summed over the particles; see
-<code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleLumpedDampingOfEntitiesWithOwnInertia()</span></code>. Zero
+<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/models.html#edelweissfe.models.discretesystem.DiscreteSystem.assembleLumpedDampingOfEntitiesWithOwnInertia" title="(in EdelweissFE)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleLumpedDampingOfEntitiesWithOwnInertia()</span></code></a>. Zero
 up to round-off is zero, as for the mass.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1240,7 +1341,7 @@ up to round-off is zero, as for the mass.</p>
 <dd><p>The lumped mass of the particles at the nodes of their current kernel functions,
 <span class="math notranslate nohighlight">\(m_A = \sum_p \rho_0\, V_{0,p}\, T_A(\boldsymbol{x}_p)\)</span>, as each particle reports it
 (<code class="docutils literal notranslate"><span class="pre">computeLumpedInertia</span></code>), summed over the particles; see
-<code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleLumpedMassOfEntitiesWithOwnInertia()</span></code>. The one
+<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/models.html#edelweissfe.models.discretesystem.DiscreteSystem.assembleLumpedMassOfEntitiesWithOwnInertia" title="(in EdelweissFE)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleLumpedMassOfEntitiesWithOwnInertia()</span></code></a>. The one
 assembly of this mass: the explicit dynamic solver <code class="docutils literal notranslate"><span class="pre">NED</span></code> divides by it, the implicit dynamic solver adds it to
 the mass of the nodes when it integrates the particles’ inertia there.</p>
 <p>A node carries inertia if its mass is positive beyond round-off, more than
@@ -1264,7 +1365,7 @@ part of a scatter vector.</p>
 <dt class="sig sig-object py" id="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.carriersOfTheMotion">
 <span class="sig-name descname"><span class="pre">carriersOfTheMotion</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmdiscretesystem.html#MPMDiscreteSystem.carriersOfTheMotion"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.carriersOfTheMotion" title="Link to this definition"></a></dt>
 <dd><p>Where the model holds the motion of its particles; see
-<code class="xref py py-meth docutils literal notranslate"><span class="pre">carriersOfTheMotion()</span></code>.
+<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/models.html#edelweissfe.models.discretesystem.DiscreteSystem.carriersOfTheMotion" title="(in EdelweissFE)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">carriersOfTheMotion()</span></code></a>.
 <code class="docutils literal notranslate"><span class="pre">&quot;entities&quot;</span></code> if a particle that integrates its inertia (one with Newmark parameters) carries a velocity or an
 acceleration in its state, <code class="docutils literal notranslate"><span class="pre">&quot;nodes&quot;</span></code> if an incremental node of the active domain carries one in the entries
 <code class="docutils literal notranslate"><span class="pre">V</span></code> and <code class="docutils literal notranslate"><span class="pre">A</span></code> of the model’s node fields.</p>
@@ -1286,7 +1387,7 @@ state, and every particle takes its own from them as it advances.</p>
 <span class="sig-name descname"><span class="pre">criticalTimeStepOfEntitiesWithOwnInertia</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lumpedMass</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lumpedDamping</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forEachChunk</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weightsOfTheEstimate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmdiscretesystem.html#MPMDiscreteSystem.criticalTimeStepOfEntitiesWithOwnInertia"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.criticalTimeStepOfEntitiesWithOwnInertia" title="Link to this definition"></a></dt>
 <dd><p>An estimate of the critical time step of <code class="docutils literal notranslate"><span class="pre">NED</span></code>’s explicit scheme for the particles, a lower bound of it, from
 their stiffness at the current state and the assembled lumped mass and damping; <code class="docutils literal notranslate"><span class="pre">NED</span></code> decides when it is taken
-anew (<code class="xref py py-class docutils literal notranslate"><span class="pre">CriticalTimeStepOfEntitiesWithOwnInertia</span></code>). No stiffness is assembled: every particle bounds
+anew (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/theory/criticaltimestep.html#edelweissfe.solvers.base.criticaltimestep.CriticalTimeStepOfEntitiesWithOwnInertia" title="(in EdelweissFE)"><code class="xref py py-class docutils literal notranslate"><span class="pre">CriticalTimeStepOfEntitiesWithOwnInertia</span></code></a>). No stiffness is assembled: every particle bounds
 the row sums of the absolute value of its own (<code class="docutils literal notranslate"><span class="pre">addBoundOfAbsoluteStiffnessTimes</span></code>), at a cost
 proportional to its nodes.</p>
 <p>It is a property of the ASSEMBLED system: a particle’s own bound, <span class="math notranslate nohighlight">\(\lambda_\mathrm{max}(\boldsymbol{M}_p^{-1}
@@ -1349,7 +1450,7 @@ over a few estimates as long as the stiffness changes slowly from estimate to es
 <p>Where the stiffness changes faster than the weights follow, an estimate with carried weights can be below the
 one with weights constant per field. <code class="docutils literal notranslate"><span class="pre">NED</span></code> starts the weights anew (all zero) whenever an estimate with them
 is below the estimate they started from
-(<code class="xref py py-class docutils literal notranslate"><span class="pre">CriticalTimeStepOfEntitiesWithOwnInertia</span></code>), so that an
+(<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/theory/criticaltimestep.html#edelweissfe.solvers.base.criticaltimestep.CriticalTimeStepOfEntitiesWithOwnInertia" title="(in EdelweissFE)"><code class="xref py py-class docutils literal notranslate"><span class="pre">CriticalTimeStepOfEntitiesWithOwnInertia</span></code></a>), so that an
 increment that is lowered only never falls below the smallest estimate with weights constant per field of the
 step (followed, it can fall below the one of the same configuration, down to the one the weights started
 from). Taking the smaller of the two estimates in every estimate instead would take the columns with weights
@@ -1384,9 +1485,9 @@ row sums of penalty constraints add (<a class="reference internal" href="#edelwe
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>lumpedMass</strong> (<em>DofVector</em>) – The lumped mass of the particles at their current configuration
+<li><p><strong>lumpedMass</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/dofnumbering.html#edelweissfe.numerics.dofvector.DofVector" title="(in EdelweissFE)"><em>DofVector</em></a>) – The lumped mass of the particles at their current configuration
 (<a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.assembleLumpedMassOfEntitiesWithOwnInertia" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.assembleLumpedMassOfEntitiesWithOwnInertia"><code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleLumpedMassOfEntitiesWithOwnInertia()</span></code></a>), which the solver has just assembled.</p></li>
-<li><p><strong>lumpedDamping</strong> (<em>DofVector</em>) – Their lumped damping (<a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.assembleLumpedDampingOfEntitiesWithOwnInertia" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.assembleLumpedDampingOfEntitiesWithOwnInertia"><code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleLumpedDampingOfEntitiesWithOwnInertia()</span></code></a>), likewise.</p></li>
+<li><p><strong>lumpedDamping</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/dofnumbering.html#edelweissfe.numerics.dofvector.DofVector" title="(in EdelweissFE)"><em>DofVector</em></a>) – Their lumped damping (<a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.assembleLumpedDampingOfEntitiesWithOwnInertia" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.assembleLumpedDampingOfEntitiesWithOwnInertia"><code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleLumpedDampingOfEntitiesWithOwnInertia()</span></code></a>), likewise.</p></li>
 <li><p><strong>forEachChunk</strong> (<em>Callable</em><em>[</em><em>[</em><em>list</em><em>, </em><em>Callable</em><em>]</em><em>, </em><em>None</em><em>]</em>) – The solver’s loop over chunks of independent entities.</p></li>
 <li><p><strong>weightsOfTheEstimate</strong> (<em>ndarray</em><em> | </em><em>None</em>) – The weights the last estimate left, a vector of the numbering, zero where a degree of freedom has none yet
 (all zero: the start, with the weights constant per field); replaced in place by the weights for the next
@@ -1428,7 +1529,7 @@ nodes (see <a class="reference internal" href="#edelweissmeshfree.models.mpmdisc
 <dt class="sig sig-object py" id="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.readEntryOfNodeField">
 <span class="sig-name descname"><span class="pre">readEntryOfNodeField</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dofVector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeField</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">entry</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmdiscretesystem.html#MPMDiscreteSystem.readEntryOfNodeField"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.readEntryOfNodeField" title="Link to this definition"></a></dt>
 <dd><p>Read one entry of one node field of the model into a vector of the discrete system, by node; every read of
-<code class="xref py py-meth docutils literal notranslate"><span class="pre">readStateFromModel()</span></code> goes through here.
+<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/models.html#edelweissfe.models.discretesystem.DiscreteSystem.readStateFromModel" title="(in EdelweissFE)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">readStateFromModel()</span></code></a> goes through here.
 The solution <code class="docutils literal notranslate"><span class="pre">U</span></code> is read at the nodes that carry their total solution (those of finite elements and cell
 elements): the incremental nodes start every increment at zero. The velocity <code class="docutils literal notranslate"><span class="pre">V</span></code> and the acceleration <code class="docutils literal notranslate"><span class="pre">A</span></code>
 are read at every node of the active domain: they are carried by node from one discrete system to the next, so
@@ -1437,7 +1538,7 @@ rest.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>dofVector</strong> (<em>DofVector</em>) – The vector of the discrete system, zero, overwritten on the degrees of freedom of the field.</p></li>
+<li><p><strong>dofVector</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/dofnumbering.html#edelweissfe.numerics.dofvector.DofVector" title="(in EdelweissFE)"><em>DofVector</em></a>) – The vector of the discrete system, zero, overwritten on the degrees of freedom of the field.</p></li>
 <li><p><strong>nodeField</strong> – The node field of the model.</p></li>
 <li><p><strong>entry</strong> (<em>str</em>) – The entry.</p></li>
 </ul>
@@ -1456,10 +1557,10 @@ solver’s loop over chunks, on its threads for a parallel solver.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>dU</strong> (<em>DofVector</em>) – The trial solution increment.</p></li>
+<li><p><strong>dU</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/dofnumbering.html#edelweissfe.numerics.dofvector.DofVector" title="(in EdelweissFE)"><em>DofVector</em></a>) – The trial solution increment.</p></li>
 <li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The time step.</p></li>
 <li><p><strong>forEachChunk</strong> (<em>Callable</em><em>[</em><em>[</em><em>list</em><em>, </em><em>Callable</em><em>]</em><em>, </em><em>None</em><em>]</em>) – The solver’s loop over chunks of independent entities, see
-<code class="xref py py-meth docutils literal notranslate"><span class="pre">forEachChunk()</span></code>.</p></li>
+<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/solverbase.html#edelweissfe.solvers.base.nonlinearsolverbase.NonlinearSolverBase.forEachChunk" title="(in EdelweissFE)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forEachChunk()</span></code></a>.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1473,7 +1574,7 @@ the active domain, and zero on all other nodes of the model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>dofVector</strong> (<em>DofVector</em>) – The vector of the discrete system.</p></li>
+<li><p><strong>dofVector</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/dofnumbering.html#edelweissfe.numerics.dofvector.DofVector" title="(in EdelweissFE)"><em>DofVector</em></a>) – The vector of the discrete system.</p></li>
 <li><p><strong>nodeField</strong> – The node field of the model.</p></li>
 <li><p><strong>entry</strong> (<em>str</em>) – The entry.</p></li>
 </ul>
@@ -1489,7 +1590,7 @@ vector of a converged increment: their solution is the coefficients of one incre
 starts them at zero.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>U</strong> (<em>DofVector</em>) – The solution vector of the converged increment, modified in place.</p>
+<dd class="field-odd"><p><strong>U</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/dofnumbering.html#edelweissfe.numerics.dofvector.DofVector" title="(in EdelweissFE)"><em>DofVector</em></a>) – The solution vector of the converged increment, modified in place.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1533,7 +1634,7 @@ of their kernel functions (see <a class="reference internal" href="#edelweissmes
 <dt class="sig sig-object py" id="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.entitiesWithOwnInertia">
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">entitiesWithOwnInertia</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.entitiesWithOwnInertia" title="Link to this definition"></a></dt>
 <dd><p>they carry their state, and with it their inertia, and their kernel functions move with them;
-see <code class="xref py py-attr docutils literal notranslate"><span class="pre">entitiesWithOwnInertia</span></code>.</p>
+see <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/models.html#edelweissfe.models.discretesystem.DiscreteSystem.entitiesWithOwnInertia" title="(in EdelweissFE)"><code class="xref py py-attr docutils literal notranslate"><span class="pre">entitiesWithOwnInertia</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>The particles.</p>

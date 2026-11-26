@@ -121,6 +121,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.particlemanagers.binsofkernelfunctions</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">BinsOfKernelFunctions</span><span class="p">,</span>
 <span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.particles.base.baseparticle</span><span class="w"> </span><span class="kn">import</span> <span class="n">characteristicLength</span>
 
 
 <div class="viewcode-block" id="_KernelFunctionsOfAChunk">
@@ -194,8 +195,9 @@
 <span class="sd">    bondParticlesToKernelFunctions</span>
 <span class="sd">        Whether every kernel function is bonded to the particle of the same position in the domain and moves with it.</span>
 <span class="sd">    randomlyShiftPartliceShapeFunctions</span>
-<span class="sd">        With bonded kernel functions and a float: shift each kernel function off its particle centre at random, scaled</span>
-<span class="sd">        by this factor.</span>
+<span class="sd">        With bonded kernel functions and a float: shift each kernel function off its particle centre at random, at every</span>
+<span class="sd">        update, by up to half this factor times the size of the particle as it was made</span>
+<span class="sd">        (:func:`~edelweissmeshfree.particles.base.baseparticle.characteristicLength`) in each direction.</span>
 <span class="sd">    neighbourListSkinFraction</span>
 <span class="sd">        The skin, as a fraction of the smallest support half-width; 0 searches in every increment.</span>
 <span class="sd">    """</span>
@@ -253,6 +255,12 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">randomlyShiftPartliceShapeFunctions</span><span class="p">,</span> <span class="p">(</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"randomlyShiftPartliceShapeFunctions must be a boolean or a float."</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_randomlyShiftPartliceShapeFunctions</span> <span class="o">=</span> <span class="n">randomlyShiftPartliceShapeFunctions</span>
+        <span class="c1"># the size of each particle as it is made, before it moves: the scale of its random shift</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sizesOfParticles</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">characteristicLength</span><span class="p">(</span><span class="n">particle</span><span class="p">)</span> <span class="k">for</span> <span class="n">particle</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_particles</span><span class="p">])</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">randomlyShiftPartliceShapeFunctions</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
+            <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_particles</span><span class="p">))</span>
+        <span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernelFunctionsAreBondedToParticles</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_particles</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_meshfreeKernelFunctions</span><span class="p">):</span>
@@ -377,22 +385,15 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_journal</span><span class="o">.</span><span class="n">message</span><span class="p">(</span><span class="s2">"Updating kernel function positions..."</span><span class="p">,</span> <span class="s2">"ParticleManager"</span><span class="p">)</span>
 
-        <span class="k">for</span> <span class="n">particle</span><span class="p">,</span> <span class="n">kernelFunction</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_particles</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_meshfreeKernelFunctions</span><span class="p">):</span>
+        <span class="n">shift</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_randomlyShiftPartliceShapeFunctions</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">particle</span><span class="p">,</span> <span class="n">kernelFunction</span><span class="p">,</span> <span class="n">size</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_particles</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_meshfreeKernelFunctions</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sizesOfParticles</span>
+        <span class="p">):</span>
             <span class="n">particleCoordinates</span> <span class="o">=</span> <span class="n">particle</span><span class="o">.</span><span class="n">getCenterCoordinates</span><span class="p">()</span>
-
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_randomlyShiftPartliceShapeFunctions</span><span class="p">:</span>
-                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_randomlyShiftPartliceShapeFunctions</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
-                    <span class="n">particleVol</span> <span class="o">=</span> <span class="n">particle</span><span class="o">.</span><span class="n">getVolumeUndeformed</span><span class="p">()</span>
-                    <span class="n">particleSize</span> <span class="o">=</span> <span class="n">particleVol</span> <span class="o">**</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dimension</span><span class="p">)</span>
-
-                    <span class="n">randdisp</span> <span class="o">=</span> <span class="p">(</span>
-                        <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dimension</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span>
-                        <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">particle</span><span class="o">.</span><span class="n">getVolumeUndeformed</span><span class="p">())</span>
-                        <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_randomlyShiftPartliceShapeFunctions</span>
-                        <span class="o">*</span> <span class="n">particleSize</span>
-                    <span class="p">)</span>
-                    <span class="n">particleCoordinates</span> <span class="o">+=</span> <span class="n">randdisp</span>
-
+            <span class="k">if</span> <span class="n">shift</span><span class="p">:</span>
+                <span class="n">particleCoordinates</span> <span class="o">+=</span> <span class="p">(</span>
+                    <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dimension</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_randomlyShiftPartliceShapeFunctions</span> <span class="o">*</span> <span class="n">size</span>
+                <span class="p">)</span>
             <span class="n">kernelFunction</span><span class="o">.</span><span class="n">moveTo</span><span class="p">(</span><span class="n">particleCoordinates</span><span class="p">)</span></div>
 
 

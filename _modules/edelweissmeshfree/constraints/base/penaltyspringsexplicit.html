@@ -108,15 +108,18 @@
 <span class="c1">#  The full text of the license can be found in the file LICENSE.md at</span>
 <span class="c1">#  the top level directory of EdelweissMeshfree.</span>
 <span class="c1">#  ---------------------------------------------------------------------</span>
-<span class="sd">"""The penalty contact of points of one particle with an obstacle, in an explicit analysis: the force and the bound of</span>
-<span class="sd">the stiffness for the critical time step, the points and the connectivity, written once; a derived class gives the</span>
-<span class="sd">physics, the gap of a point, its gradient and the reach of the obstacle."""</span>
+<span class="sd">"""The penalty contact of points of one particle with an obstacle, in an explicit analysis: the force, the bound of the</span>
+<span class="sd">stiffness for the critical time step and the gaps over the next increment, the points and the connectivity, written</span>
+<span class="sd">once; a derived class gives the physics, the gap of a point, its gradient and the reach of the obstacle."""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">abstractmethod</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.config.phenomena</span><span class="w"> </span><span class="kn">import</span> <span class="n">getFieldSize</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.constraints.base.penaltysprings</span><span class="w"> </span><span class="kn">import</span> <span class="n">smallestGapsWithin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.solvers.base.criticaltimestep</span><span class="w"> </span><span class="kn">import</span> <span class="n">NextIncrement</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.timesteppers.timestep</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeStep</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.utils.facetcontactgeometry</span><span class="w"> </span><span class="kn">import</span> <span class="n">rowDot</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.variables.scalarvariable</span><span class="w"> </span><span class="kn">import</span> <span class="n">ScalarVariable</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.constraints.base.mpmexplicitconstraintbase</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
@@ -128,6 +131,7 @@
     <span class="n">addForcesOfSpringsOnPointsOfParticle</span><span class="p">,</span>
     <span class="n">locateTheNodesOfParticles</span><span class="p">,</span>
 <span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.particles.base.baseparticle</span><span class="w"> </span><span class="kn">import</span> <span class="n">characteristicLength</span>
 
 <span class="c1">#: Below this norm, the gradient of a gap has no direction: the point gets no spring.</span>
 <span class="n">GRADIENT_WITHOUT_DIRECTION</span> <span class="o">=</span> <span class="mf">1e-14</span>
@@ -142,7 +146,8 @@
 <span class="sd">    :math:`\\boldsymbol{n}_p` of the gradient of its gap :math:`g_p`, the outward normal of the obstacle, with the force</span>
 <span class="sd">    :math:`f_p = -k\\, g_p &gt; 0`, which pushes the point out. The force (:meth:`computeKernelsExplicit`) and the bound of</span>
 <span class="sd">    the stiffness for the critical time step (:meth:`addBoundOfAbsoluteStiffnessTimes`) are taken from the same springs</span>
-<span class="sd">    (:meth:`_springs`).</span>
+<span class="sd">    (:meth:`_springs`), over the next increment with the smallest gap of each point within it</span>
+<span class="sd">    (:meth:`_gapsOverTheNextIncrement`).</span>
 
 <span class="sd">    The points, the nodes of the particle's kernel functions and whether the obstacle is within reach are kept current</span>
 <span class="sd">    here (:meth:`updateConnectivity`). A derived class is the physics and a constructor: the gap of a point at a time</span>
@@ -233,7 +238,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_doProximityCheck</span> <span class="o">=</span> <span class="n">doProximityCheck</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_doProximityCheck</span><span class="p">:</span>
             <span class="c1">#: How close the obstacle must be for the constraint to take part.</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_proximityDist</span> <span class="o">=</span> <span class="n">particle</span><span class="o">.</span><span class="n">getVolumeUndeformed</span><span class="p">()</span> <span class="o">**</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">model</span><span class="o">.</span><span class="n">domainSize</span><span class="p">)</span> <span class="o">*</span> <span class="n">proximityFactor</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_proximityDist</span> <span class="o">=</span> <span class="n">characteristicLength</span><span class="p">(</span><span class="n">particle</span><span class="p">)</span> <span class="o">*</span> <span class="n">proximityFactor</span>
 
 <div class="viewcode-block" id="PenaltySpringsOnPointsOfOneParticleExplicit._pointsWhereTheyAreNow">
 <a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.penaltyspringsexplicit.PenaltySpringsOnPointsOfOneParticleExplicit._pointsWhereTheyAreNow">[docs]</a>
@@ -380,6 +385,47 @@
 <span class="sd">        """</span></div>
 
 
+<div class="viewcode-block" id="PenaltySpringsOnPointsOfOneParticleExplicit._gapsOverTheNextIncrement">
+<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.penaltyspringsexplicit.PenaltySpringsOnPointsOfOneParticleExplicit._gapsOverTheNextIncrement">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_gapsOverTheNextIncrement</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">,</span> <span class="n">nextIncrement</span><span class="p">:</span> <span class="n">NextIncrement</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The smallest gap each point may have within the next increment</span>
+<span class="sd">        (:func:`~edelweissfe.constraints.base.penaltysprings.smallestGapsWithin`). The argument there needs a gap</span>
+<span class="sd">        affine in the motion, with the normals held, as within an increment: the gap is linearized about where the</span>
+<span class="sd">        point is now, :math:`g_p + \\nabla g_p \\cdot \\Delta\\boldsymbol{x}_p`, with the motion of the point</span>
+<span class="sd">        :math:`\\Delta\\boldsymbol{x}_p = \\mathbf{I}_p \\Delta\\boldsymbol{U}`</span>
+<span class="sd">        (:meth:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.motionOfPointsOfParticle`), and</span>
+<span class="sd">        the obstacle where it is at the time step of the state. For a plane it is the gap; for a convex obstacle the</span>
+<span class="sd">        signed distance is convex, its linearization a lower bound of it, and the smallest gap of the linearization a</span>
+<span class="sd">        lower bound of the smallest one within the increment, also where a straight motion passes the obstacle and the</span>
+<span class="sd">        true gap is smallest inside the increment.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        points</span>
+<span class="sd">            The points now, one row each.</span>
+<span class="sd">        timeStep</span>
+<span class="sd">            The time step now.</span>
+<span class="sd">        nextIncrement</span>
+<span class="sd">            The next increment the solver may take, restricted to the constraint.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            The smallest gaps.</span>
+<span class="sd">        """</span>
+
+        <span class="n">gradients</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gradientsOfTheGaps</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">gapsAt</span><span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">dU</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">):</span>
+            <span class="n">motion</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">motionOfPointsOfParticle</span><span class="p">(</span><span class="n">dU</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_particle</span><span class="p">,</span> <span class="n">points</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_localNodes</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gapsOfPoints</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">)</span> <span class="o">+</span> <span class="n">rowDot</span><span class="p">(</span><span class="n">gradients</span><span class="p">,</span> <span class="n">motion</span><span class="p">)</span>
+
+        <span class="n">zero</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nDof</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">smallestGapsWithin</span><span class="p">(</span><span class="n">nextIncrement</span><span class="p">,</span> <span class="n">gapsAt</span><span class="p">,</span> <span class="n">zero</span><span class="p">,</span> <span class="n">zero</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">)</span></div>
+
+
 <div class="viewcode-block" id="PenaltySpringsOnPointsOfOneParticleExplicit._springsAt">
 <a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.penaltyspringsexplicit.PenaltySpringsOnPointsOfOneParticleExplicit._springsAt">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_springsAt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">gaps</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SpringsOnPointsOfParticle</span><span class="p">:</span>
@@ -387,6 +433,8 @@
 <span class="sd">        along the unit direction of the gradient of its gap, with the force :math:`f_p = -k\\, g_p` at that gap. A point</span>
 <span class="sd">        whose gradient has no direction (its norm below :data:`GRADIENT_WITHOUT_DIRECTION`) gets no spring: no force,</span>
 <span class="sd">        no reaction and no stiffness.</span>
+<span class="sd">        With the gaps now, the forces on the points; with the smallest gaps over the next increment, those they could</span>
+<span class="sd">        reach there -- the bound reads the stiffness only.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -419,14 +467,17 @@
 
 <div class="viewcode-block" id="PenaltySpringsOnPointsOfOneParticleExplicit._springs">
 <a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.penaltyspringsexplicit.PenaltySpringsOnPointsOfOneParticleExplicit._springs">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_springs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SpringsOnPointsOfParticle</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""The penalty springs at the particle's current position and the gaps now (:meth:`_springsAt`): what the force</span>
-<span class="sd">        and the bound of the stiffness are made from.</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_springs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">,</span> <span class="n">nextIncrement</span><span class="p">:</span> <span class="n">NextIncrement</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SpringsOnPointsOfParticle</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The penalty springs at the particle's current position (:meth:`_springsAt`), at the gaps now, or, given the</span>
+<span class="sd">        next increment, at the smallest gaps within it (:meth:`_gapsOverTheNextIncrement`): what the force and the bound</span>
+<span class="sd">        of the stiffness are made from.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        timeStep</span>
 <span class="sd">            The current time step, for an obstacle that moves.</span>
+<span class="sd">        nextIncrement</span>
+<span class="sd">            The next increment, for the bound over it; None for the state now.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -435,7 +486,11 @@
 <span class="sd">        """</span>
 
         <span class="n">points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_constrained_points</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">))</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_springsAt</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gapsOfPoints</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">))</span></div>
+        <span class="k">if</span> <span class="n">nextIncrement</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">gaps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gapsOfPoints</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">gaps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gapsOverTheNextIncrement</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">nextIncrement</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_springsAt</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">gaps</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="PenaltySpringsOnPointsOfOneParticleExplicit.computeKernelsExplicit">
@@ -470,11 +525,12 @@
         <span class="n">weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
         <span class="n">bound</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
         <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">,</span>
+        <span class="n">nextIncrement</span><span class="p">:</span> <span class="n">NextIncrement</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">"""Add the row sums of the absolute value of the stiffness of the penalty springs (:meth:`_springs`), weighted</span>
 <span class="sd">        by column (see</span>
-<span class="sd">        :func:`~edelweissmeshfree.constraints.base.pointsofparticles.addBoundOfAbsoluteStiffnessOfPointsOfParticle`):</span>
-<span class="sd">        the springs of the points that penetrate now, those of the force.</span>
+<span class="sd">        :func:`~edelweissmeshfree.constraints.base.pointsofparticles.addBoundOfAbsoluteStiffnessOfPointsOfParticle`),</span>
+<span class="sd">        over the next increment if it is given: a point that could close within it has its spring.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -488,9 +544,13 @@
 <span class="sd">            The row sums to augment.</span>
 <span class="sd">        timeStep</span>
 <span class="sd">            The current time step.</span>
+<span class="sd">        nextIncrement</span>
+<span class="sd">            The next increment the solver may take; None to bound the state now alone.</span>
 <span class="sd">        """</span>
 
-        <span class="n">addBoundOfAbsoluteStiffnessOfPointsOfParticle</span><span class="p">(</span><span class="n">bound</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_localNodes</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_springs</span><span class="p">(</span><span class="n">timeStep</span><span class="p">))</span></div>
+        <span class="n">addBoundOfAbsoluteStiffnessOfPointsOfParticle</span><span class="p">(</span>
+            <span class="n">bound</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_localNodes</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_springs</span><span class="p">(</span><span class="n">timeStep</span><span class="p">,</span> <span class="n">nextIncrement</span><span class="p">)</span>
+        <span class="p">)</span></div>
 </div>
 
 </pre></div>

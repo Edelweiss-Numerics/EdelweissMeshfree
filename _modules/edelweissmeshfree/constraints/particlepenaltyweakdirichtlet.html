@@ -75,6 +75,7 @@
   <h1>Source code for edelweissmeshfree.constraints.particlepenaltyweakdirichtlet</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.config.phenomena</span><span class="w"> </span><span class="kn">import</span> <span class="n">getFieldSize</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.solvers.base.criticaltimestep</span><span class="w"> </span><span class="kn">import</span> <span class="n">NextIncrement</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.timesteppers.timestep</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeStep</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.variables.scalarvariable</span><span class="w"> </span><span class="kn">import</span> <span class="n">ScalarVariable</span>
 
@@ -371,6 +372,7 @@
         <span class="n">weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
         <span class="n">bound</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
         <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">,</span>
+        <span class="n">nextIncrement</span><span class="p">:</span> <span class="n">NextIncrement</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">"""Add the row sums of the absolute value of the stiffness of the support in an explicit analysis, weighted by</span>
 <span class="sd">        column, from the same springs as its force (:meth:`_springsOfEachParticle`,</span>
@@ -388,6 +390,8 @@
 <span class="sd">            The row sums to augment.</span>
 <span class="sd">        timeStep</span>
 <span class="sd">            The current time step; unused.</span>
+<span class="sd">        nextIncrement</span>
+<span class="sd">            The next increment the solver may take; unused: the springs of a support act at every state.</span>
 <span class="sd">        """</span>
 
         <span class="k">for</span> <span class="n">localNodes</span><span class="p">,</span> <span class="n">springs</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_springsOfEachParticle</span><span class="p">():</span>

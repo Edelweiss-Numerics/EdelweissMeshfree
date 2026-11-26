@@ -77,6 +77,7 @@
 <li class="toctree-l2"><a class="reference internal" href="mpm/material_point_managers.html">Material Point Managers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="model_generators.html">Model generators</a></li>
 <li class="toctree-l2"><a class="reference internal" href="particles.html">Particles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="axisymmetric_particles.html">Axisymmetric particles</a></li>
 <li class="toctree-l2"><a class="reference internal" href="particle_managers.html">Particle managers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="points_and_fields.html">Points and fields</a></li>
 <li class="toctree-l2"><a class="reference internal" href="field_output.html">Field output</a></li>
@@ -125,7 +126,7 @@ and <code class="docutils literal notranslate"><span class="pre">NISTPArcLength<
 <em>Choosing a solver</em>. Their convergence criterion with the settings of EdelweissMeshfree’s former solvers is a parameter
 set of EdelweissFE’s legacy criterion:</p>
 <p id="module-edelweissmeshfree.solvers.meshfreeconvergencecriterion">The convergence criterion of EdelweissMeshfree’s (deprecated) implicit solvers, as a parameter set of EdelweissFE’s
-legacy criterion (see <code class="xref py py-mod docutils literal notranslate"><span class="pre">edelweissfe.solvers.base.convergencecriteria</span></code>), for EdelweissFE’s implicit solvers
+legacy criterion (see <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/analysis/solvers.html#module-edelweissfe.solvers.base.convergencecriteria" title="(in EdelweissFE)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">edelweissfe.solvers.base.convergencecriteria</span></code></a>), for EdelweissFE’s implicit solvers
 <code class="docutils literal notranslate"><span class="pre">NIST</span></code>, <code class="docutils literal notranslate"><span class="pre">NISTParallel</span></code> and <code class="docutils literal notranslate"><span class="pre">NISTPArcLength</span></code>, which solve an
 <a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">MPMModel</span></code></a> as they solve a finite element model.</p>
 <p>A solver built from Python takes the tolerances per field from its <code class="docutils literal notranslate"><span class="pre">jobInfo</span></code> and the remaining parameters as options:</p>
@@ -185,9 +186,9 @@ increment (see EdelweissFE’s documentation of <code class="docutils literal no
 <p>The implicit solvers EdelweissMeshfree had before EdelweissFE’s implicit solvers solved its models.</p>
 <div class="deprecated">
 <p><span class="versionmodified deprecated">Deprecated since version An: </span><a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">MPMModel</span></code></a> is solved by EdelweissFE’s implicit static solvers
-<code class="xref py py-class docutils literal notranslate"><span class="pre">NIST</span></code>,
-<code class="xref py py-class docutils literal notranslate"><span class="pre">NISTParallel</span></code> and
-<code class="xref py py-class docutils literal notranslate"><span class="pre">NISTPArcLength</span></code>; see the documentation page
+<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/analysis/solvers.html#edelweissfe.solvers.nonlinearimplicitstatic.NIST" title="(in EdelweissFE)"><code class="xref py py-class docutils literal notranslate"><span class="pre">NIST</span></code></a>,
+<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/analysis/solvers.html#edelweissfe.solvers.nonlinearimplicitstaticparallel.NISTParallel" title="(in EdelweissFE)"><code class="xref py py-class docutils literal notranslate"><span class="pre">NISTParallel</span></code></a> and
+<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/analysis/solvers.html#edelweissfe.solvers.nonlinearimplicitstaticparallelarclength.NISTPArcLength" title="(in EdelweissFE)"><code class="xref py py-class docutils literal notranslate"><span class="pre">NISTPArcLength</span></code></a>; see the documentation page
 <em>Choosing a solver</em>.</p>
 </div>
 <p>This package keeps the old solvers, so that the examples which still use them keep working:</p>
@@ -210,13 +211,13 @@ example needs it any more.</p>
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.solvers.deprecated.nqs.</span></span><span class="sig-name descname"><span class="pre">NonlinearQuasistaticSolver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">journal</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/solvers/deprecated/nqs.html#NonlinearQuasistaticSolver"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.solvers.deprecated.nqs.NonlinearQuasistaticSolver" title="Link to this definition"></a></dt>
 <dd><p>This is the nonlinear implicit quasi static solver of EdelweissMeshfree.</p>
 <div class="deprecated">
-<p><span class="versionmodified deprecated">Deprecated since version Use: </span>EdelweissFE’s <code class="xref py py-class docutils literal notranslate"><span class="pre">NIST</span></code> or
-<code class="xref py py-class docutils literal notranslate"><span class="pre">NISTParallel</span></code>, which solve an
+<p><span class="versionmodified deprecated">Deprecated since version Use: </span>EdelweissFE’s <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/analysis/solvers.html#edelweissfe.solvers.nonlinearimplicitstatic.NIST" title="(in EdelweissFE)"><code class="xref py py-class docutils literal notranslate"><span class="pre">NIST</span></code></a> or
+<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/analysis/solvers.html#edelweissfe.solvers.nonlinearimplicitstaticparallel.NISTParallel" title="(in EdelweissFE)"><code class="xref py py-class docutils literal notranslate"><span class="pre">NISTParallel</span></code></a>, which solve an
 <a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">MPMModel</span></code></a> (see <a class="reference internal" href="#module-edelweissmeshfree.solvers.deprecated" title="edelweissmeshfree.solvers.deprecated"><code class="xref py py-mod docutils literal notranslate"><span class="pre">edelweissmeshfree.solvers.deprecated</span></code></a>).</p>
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>journal</strong> (<em>Journal</em>) – The journal instance for logging.</p>
+<dd class="field-odd"><p><strong>journal</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/journal.html#edelweissfe.journal.journal.Journal" title="(in EdelweissFE)"><em>Journal</em></a>) – The journal instance for logging.</p>
 </dd>
 </dl>
 <p class="rubric">Methods</p>
@@ -242,14 +243,14 @@ example needs it any more.</p>
 <li><p><strong>distributedLoads</strong> (<em>list</em>)</p></li>
 <li><p><strong>particleDistributedLoads</strong> (<em>list</em>)</p></li>
 <li><p><strong>elements</strong> (<em>list</em>)</p></li>
-<li><p><strong>Un</strong> (<em>DofVector</em>)</p></li>
+<li><p><strong>Un</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/dofnumbering.html#edelweissfe.numerics.dofvector.DofVector" title="(in EdelweissFE)"><em>DofVector</em></a>)</p></li>
 <li><p><strong>activeCells</strong> (<em>list</em>)</p></li>
 <li><p><strong>cellElements</strong> (<em>list</em>)</p></li>
 <li><p><strong>materialPoints</strong> (<em>list</em>)</p></li>
 <li><p><strong>particles</strong> (<em>list</em>)</p></li>
 <li><p><strong>constraints</strong> (<em>list</em>)</p></li>
 <li><p><strong>timeStep</strong> (<em>TimeStep</em>)</p></li>
-<li><p><strong>locations</strong> (<em>DofLocations</em>)</p></li>
+<li><p><strong>locations</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/dofnumbering.html#edelweissfe.numerics.doflocations.DofLocations" title="(in EdelweissFE)"><em>DofLocations</em></a>)</p></li>
 </ul>
 </dd>
 </dl>
@@ -266,20 +267,20 @@ example needs it any more.</p>
 <li><p><strong>bodyLoads</strong> (<em>list</em>) – The list of bodyload StepActions.</p></li>
 <li><p><strong>distributedLoads</strong> (<em>list</em>) – The list of distributed load StepActions.</p></li>
 <li><p><strong>elements</strong> (<em>list</em>) – The finite elements.</p></li>
-<li><p><strong>Un</strong> (<em>DofVector</em>) – The old solution vector.</p></li>
+<li><p><strong>Un</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/dofnumbering.html#edelweissfe.numerics.dofvector.DofVector" title="(in EdelweissFE)"><em>DofVector</em></a>) – The old solution vector.</p></li>
 <li><p><strong>activeCells</strong> (<em>list</em>) – The list of active cells.</p></li>
 <li><p><strong>cellElements</strong> (<em>list</em>) – The list of cell elements.</p></li>
 <li><p><strong>materialPoints</strong> (<em>list</em>) – The list of material points.</p></li>
 <li><p><strong>particles</strong> (<em>list</em>) – The list of particles.</p></li>
 <li><p><strong>constraints</strong> (<em>list</em>) – The list of constraints.</p></li>
-<li><p><strong>locations</strong> (<em>DofLocations</em>) – The locations of the entities in the discrete system of the current active model.</p></li>
+<li><p><strong>locations</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/dofnumbering.html#edelweissfe.numerics.doflocations.DofLocations" title="(in EdelweissFE)"><em>DofLocations</em></a>) – The locations of the entities in the discrete system of the current active model.</p></li>
 <li><p><strong>linearSolver</strong> – The instance of the linear solver to be used.</p></li>
 <li><p><strong>iterationOptions</strong> (<em>dict</em>) – The specified options controlling the Newton cycle.</p></li>
 <li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The current time increment.</p></li>
 <li><p><strong>model</strong> (<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel"><em>MPMModel</em></a>) – The full MPMModel instance.</p></li>
 <li><p><strong>newtonCache</strong> (<em>tuple</em>) – An arbitrary cache of (expensive) objects, which may be reused across time steps as long as the global system does not change.
 If the system changes, the newtonCache is set to None.</p></li>
-<li><p><strong>initialGuess</strong> (<em>DofVector</em>) – An initial guess DofVector for the Newton scheme, e.g., obtained using extrapolation.</p></li>
+<li><p><strong>initialGuess</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/dofnumbering.html#edelweissfe.numerics.dofvector.DofVector" title="(in EdelweissFE)"><em>DofVector</em></a>) – An initial guess DofVector for the Newton scheme, e.g., obtained using extrapolation.</p></li>
 <li><p><strong>particleDistributedLoads</strong> (<em>list</em>)</p></li>
 </ul>
 </dd>
@@ -309,9 +310,9 @@ If the system changes, the newtonCache is set to None.</p></li>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>computeSystem</strong> – A callback function to compute the system residual for a given solution increment.</p></li>
-<li><p><strong>ddU</strong> (<em>DofVector</em>) – The current solution increment vector.</p></li>
+<li><p><strong>ddU</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/dofnumbering.html#edelweissfe.numerics.dofvector.DofVector" title="(in EdelweissFE)"><em>DofVector</em></a>) – The current solution increment vector.</p></li>
 <li><p><strong>alphas</strong> (<em>list</em>) – The list of alpha values to be tried.</p></li>
-<li><p><strong>computeResidual</strong> (<em>Callable</em><em>[</em><em>[</em><em>DofVector</em><em>]</em><em>, </em><em>DofVector</em><em>]</em>)</p></li>
+<li><p><strong>computeResidual</strong> (<em>Callable</em><em>[</em><em>[</em><a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/dofnumbering.html#edelweissfe.numerics.dofvector.DofVector" title="(in EdelweissFE)"><em>DofVector</em></a><em>]</em><em>, </em><a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/dofnumbering.html#edelweissfe.numerics.dofvector.DofVector" title="(in EdelweissFE)"><em>DofVector</em></a><em>]</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -337,9 +338,9 @@ If the system changes, the newtonCache is set to None.</p></li>
 <li><p><strong>bodyLoads</strong> (<em>list</em><em>[</em><a class="reference internal" href="step_actions.html#edelweissmeshfree.stepactions.base.mpmbodyloadbase.MPMBodyLoadBase" title="edelweissmeshfree.stepactions.base.mpmbodyloadbase.MPMBodyLoadBase"><em>MPMBodyLoadBase</em></a><em>]</em>) – The list of bodyload StepActions.</p></li>
 <li><p><strong>distributedLoads</strong> (<em>list</em><em>[</em><a class="reference internal" href="step_actions.html#edelweissmeshfree.stepactions.base.mpmdistributedloadbase.MPMDistributedLoadBase" title="edelweissmeshfree.stepactions.base.mpmdistributedloadbase.MPMDistributedLoadBase"><em>MPMDistributedLoadBase</em></a><em>]</em>) – The list of distributed load StepActions.</p></li>
 <li><p><strong>particleDistributedLoads</strong> (<em>list</em><em>[</em><a class="reference internal" href="step_actions.html#edelweissmeshfree.stepactions.particledistributedload.ParticleDistributedLoad" title="edelweissmeshfree.stepactions.particledistributedload.ParticleDistributedLoad"><em>ParticleDistributedLoad</em></a><em>]</em>) – The list of particle distributed load StepActions.</p></li>
-<li><p><strong>constraints</strong> (<em>list</em><em>[</em><em>ConstraintBase</em><em>]</em>) – The list of constraints.</p></li>
+<li><p><strong>constraints</strong> (<em>list</em><em>[</em><a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/model/constraints.html#edelweissfe.constraints.base.constraintbase.ConstraintBase" title="(in EdelweissFE)"><em>ConstraintBase</em></a><em>]</em>) – The list of constraints.</p></li>
 <li><p><strong>model</strong> (<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel"><em>MPMModel</em></a>) – The full MPMModel instance.</p></li>
-<li><p><strong>fieldOutputController</strong> (<em>FieldOutputController</em>) – The field output controller.</p></li>
+<li><p><strong>fieldOutputController</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/output/fieldoutput.html#edelweissfe.utils.fieldoutput.FieldOutputController" title="(in EdelweissFE)"><em>FieldOutputController</em></a>) – The field output controller.</p></li>
 <li><p><strong>outputmanagers</strong> – The list of OutputManagerBase instances.</p></li>
 <li><p><strong>userIterationOptions</strong> (<em>dict</em>) – The dict controlling the Newton cycle(s).</p></li>
 <li><p><strong>vciManagers</strong> (<em>list</em>) – The list of VariationallyConsistentIntegrationManager instances.</p></li>
@@ -351,7 +352,7 @@ If the system changes, the newtonCache is set to None.</p></li>
 <li><p><strong>skipZeroIncrements</strong> (<em>bool</em>) – Don’t perform an actual solve if the time increment is zero. This is useful for
 problems with dynamic effects where the first increment(s) may be zero and cannot be correctly solved.</p></li>
 <li><p><strong>particleManagers</strong> (<em>list</em><em>[</em><a class="reference internal" href="particle_managers.html#edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager" title="edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager"><em>BaseParticleManager</em></a><em>]</em>)</p></li>
-<li><p><strong>outputManagers</strong> (<em>list</em><em>[</em><em>OutputManagerBase</em><em>]</em>)</p></li>
+<li><p><strong>outputManagers</strong> (<em>list</em><em>[</em><a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/inputsystem.html#edelweissfe.outputmanagers.base.outputmanagerbase.OutputManagerBase" title="(in EdelweissFE)"><em>OutputManagerBase</em></a><em>]</em>)</p></li>
 <li><p><strong>predictor</strong> (<a class="reference internal" href="#edelweissmeshfree.solvers.deprecated.predictors.basepredictor.BasePredictor" title="edelweissmeshfree.solvers.deprecated.predictors.basepredictor.BasePredictor"><em>BasePredictor</em></a>)</p></li>
 </ul>
 </dd>
@@ -387,13 +388,13 @@ problems with dynamic effects where the first increment(s) may be zero and canno
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.solvers.deprecated.nqsmparclength.</span></span><span class="sig-name descname"><span class="pre">NonlinearQuasistaticMarmotArcLengthSolver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">journal</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/solvers/deprecated/nqsmparclength.html#NonlinearQuasistaticMarmotArcLengthSolver"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.solvers.deprecated.nqsmparclength.NonlinearQuasistaticMarmotArcLengthSolver" title="Link to this definition"></a></dt>
 <dd><p>This is the nonlinear implicit quasi static arc length solver of EdelweissMeshfree.</p>
 <div class="deprecated">
-<p><span class="versionmodified deprecated">Deprecated since version Use: </span>EdelweissFE’s <code class="xref py py-class docutils literal notranslate"><span class="pre">NISTPArcLength</span></code>,
+<p><span class="versionmodified deprecated">Deprecated since version Use: </span>EdelweissFE’s <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/analysis/solvers.html#edelweissfe.solvers.nonlinearimplicitstaticparallelarclength.NISTPArcLength" title="(in EdelweissFE)"><code class="xref py py-class docutils literal notranslate"><span class="pre">NISTPArcLength</span></code></a>,
 which solves an <a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">MPMModel</span></code></a> (see
 <a class="reference internal" href="#module-edelweissmeshfree.solvers.deprecated" title="edelweissmeshfree.solvers.deprecated"><code class="xref py py-mod docutils literal notranslate"><span class="pre">edelweissmeshfree.solvers.deprecated</span></code></a>).</p>
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>journal</strong> (<em>Journal</em>) – The journal instance for logging.</p>
+<dd class="field-odd"><p><strong>journal</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/journal.html#edelweissfe.journal.journal.Journal" title="(in EdelweissFE)"><em>Journal</em></a>) – The journal instance for logging.</p>
 </dd>
 </dl>
 <p class="rubric">Methods</p>
@@ -413,7 +414,7 @@ which solves an <a class="reference internal" href="models.html#edelweissmeshfre
 <dd><p>Create expensive objects, which may be reused if the global system does not change.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>locations</strong> (<em>DofLocations</em>) – The locations of the entities in the discrete system.</p>
+<dd class="field-odd"><p><strong>locations</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/dofnumbering.html#edelweissfe.numerics.doflocations.DofLocations" title="(in EdelweissFE)"><em>DofLocations</em></a>) – The locations of the entities in the discrete system.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The collection of expensive objects.</p>
@@ -437,7 +438,7 @@ which solves an <a class="reference internal" href="models.html#edelweissmeshfre
 <li><p><strong>activeCells</strong> (<em>list</em>) – The list of active cells.</p></li>
 <li><p><strong>materialPoints</strong> (<em>list</em>) – The list of material points.</p></li>
 <li><p><strong>constraints</strong> (<em>list</em>) – The list of constraints.</p></li>
-<li><p><strong>locations</strong> (<em>DofLocations</em>) – The locations of the entities in the discrete system of the current active model.</p></li>
+<li><p><strong>locations</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/dofnumbering.html#edelweissfe.numerics.doflocations.DofLocations" title="(in EdelweissFE)"><em>DofLocations</em></a>) – The locations of the entities in the discrete system of the current active model.</p></li>
 <li><p><strong>linearSolver</strong> – The instance of the linear solver to be used.</p></li>
 <li><p><strong>iterationOptions</strong> (<em>dict</em>) – The specified options controlling the Newton cycle.</p></li>
 <li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The current time increment.</p></li>
@@ -446,10 +447,10 @@ which solves an <a class="reference internal" href="models.html#edelweissmeshfre
 If the system changes, the newtonCache is set to None.</p></li>
 <li><p><strong>particleDistributedLoads</strong> (<em>list</em>)</p></li>
 <li><p><strong>elements</strong> (<em>list</em>)</p></li>
-<li><p><strong>Un</strong> (<em>DofVector</em>)</p></li>
+<li><p><strong>Un</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/dofnumbering.html#edelweissfe.numerics.dofvector.DofVector" title="(in EdelweissFE)"><em>DofVector</em></a>)</p></li>
 <li><p><strong>cellElements</strong> (<em>list</em>)</p></li>
 <li><p><strong>particles</strong> (<em>list</em>)</p></li>
-<li><p><strong>dUGuess</strong> (<em>DofVector</em>)</p></li>
+<li><p><strong>dUGuess</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/dofnumbering.html#edelweissfe.numerics.dofvector.DofVector" title="(in EdelweissFE)"><em>DofVector</em></a>)</p></li>
 <li><p><strong>dLambdaGuess</strong> (<em>float</em>)</p></li>
 <li><p><strong>predictor</strong> (<a class="reference internal" href="#edelweissmeshfree.solvers.deprecated.predictors.basepredictor.BasePredictor" title="edelweissmeshfree.solvers.deprecated.predictors.basepredictor.BasePredictor"><em>BasePredictor</em></a>)</p></li>
 </ul>
@@ -482,15 +483,15 @@ If the system changes, the newtonCache is set to None.</p></li>
 <li><p><strong>timeStepper</strong> – The time stepper instance.</p></li>
 <li><p><strong>linearSolver</strong> – The linear solver instance.</p></li>
 <li><p><strong>model</strong> (<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel"><em>MPMModel</em></a>) – The MPMModel instance.</p></li>
-<li><p><strong>fieldOutputController</strong> (<em>FieldOutputController</em>) – The field output controller instance.</p></li>
-<li><p><strong>arcLengthController</strong> (<em>ArcLengthControllerBase</em>) – The arc length controller instance.</p></li>
+<li><p><strong>fieldOutputController</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/output/fieldoutput.html#edelweissfe.utils.fieldoutput.FieldOutputController" title="(in EdelweissFE)"><em>FieldOutputController</em></a>) – The field output controller instance.</p></li>
+<li><p><strong>arcLengthController</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/analysis/solvers.html#edelweissfe.stepactions.base.arclengthcontrollerbase.ArcLengthControllerBase" title="(in EdelweissFE)"><em>ArcLengthControllerBase</em></a>) – The arc length controller instance.</p></li>
 <li><p><strong>mpmManagers</strong> (<em>list</em><em>[</em><a class="reference internal" href="mpm/material_point_managers.html#edelweissmeshfree.mpmmanagers.base.mpmmanagerbase.MPMManagerBase" title="edelweissmeshfree.mpmmanagers.base.mpmmanagerbase.MPMManagerBase"><em>MPMManagerBase</em></a><em>]</em>) – The list of MPMManagerBase instances.</p></li>
 <li><p><strong>particleManagers</strong> (<em>list</em><em>[</em><a class="reference internal" href="particle_managers.html#edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager" title="edelweissmeshfree.particlemanagers.base.baseparticlemanager.BaseParticleManager"><em>BaseParticleManager</em></a><em>]</em>) – The list of BaseParticleManager instances.</p></li>
 <li><p><strong>dirichlets</strong> (<em>list</em><em>[</em><em>DirichletBase</em><em>]</em>) – The list of DirichletBase instances.</p></li>
 <li><p><strong>bodyLoads</strong> (<em>list</em><em>[</em><a class="reference internal" href="step_actions.html#edelweissmeshfree.stepactions.base.mpmbodyloadbase.MPMBodyLoadBase" title="edelweissmeshfree.stepactions.base.mpmbodyloadbase.MPMBodyLoadBase"><em>MPMBodyLoadBase</em></a><em>]</em>) – The list of MPMBodyLoadBase instances.</p></li>
 <li><p><strong>distributedLoads</strong> (<em>list</em><em>[</em><a class="reference internal" href="step_actions.html#edelweissmeshfree.stepactions.base.mpmdistributedloadbase.MPMDistributedLoadBase" title="edelweissmeshfree.stepactions.base.mpmdistributedloadbase.MPMDistributedLoadBase"><em>MPMDistributedLoadBase</em></a><em>]</em>) – The list of MPMDistributedLoadBase instances.</p></li>
-<li><p><strong>constraints</strong> (<em>list</em><em>[</em><em>ConstraintBase</em><em>]</em>) – The list of ConstraintBase instances.</p></li>
-<li><p><strong>outputManagers</strong> (<em>list</em><em>[</em><em>OutputManagerBase</em><em>]</em>) – The list of OutputManagerBase instances.</p></li>
+<li><p><strong>constraints</strong> (<em>list</em><em>[</em><a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/model/constraints.html#edelweissfe.constraints.base.constraintbase.ConstraintBase" title="(in EdelweissFE)"><em>ConstraintBase</em></a><em>]</em>) – The list of ConstraintBase instances.</p></li>
+<li><p><strong>outputManagers</strong> (<em>list</em><em>[</em><a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/inputsystem.html#edelweissfe.outputmanagers.base.outputmanagerbase.OutputManagerBase" title="(in EdelweissFE)"><em>OutputManagerBase</em></a><em>]</em>) – The list of OutputManagerBase instances.</p></li>
 <li><p><strong>userIterationOptions</strong> (<em>dict</em>) – The user specified iteration options.</p></li>
 <li><p><strong>vciManagers</strong> (<em>list</em>) – The list of VCIManagerBase instances.</p></li>
 <li><p><strong>restartInterval</strong> – The interval to write restart files.</p></li>
@@ -580,7 +581,7 @@ If you want to implement a new extrapolator, you have to inherit from this class
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>dU</strong> (<em>DofVector</em>) – The increment of the solution.</p></li>
+<li><p><strong>dU</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/dofnumbering.html#edelweissfe.numerics.dofvector.DofVector" title="(in EdelweissFE)"><em>DofVector</em></a>) – The increment of the solution.</p></li>
 <li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The current time step.</p></li>
 </ul>
 </dd>
@@ -613,7 +614,7 @@ If you want to implement a new extrapolator, you have to inherit from this class
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>journal</strong> (<em>Journal</em>)</p></li>
+<li><p><strong>journal</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/journal.html#edelweissfe.journal.journal.Journal" title="(in EdelweissFE)"><em>Journal</em></a>)</p></li>
 <li><p><strong>arcLength</strong> (<em>bool</em>)</p></li>
 </ul>
 </dd>
@@ -648,7 +649,7 @@ If you want to implement a new extrapolator, you have to inherit from this class
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>dU</strong> (<em>DofVector</em>) – The increment of the solution.</p></li>
+<li><p><strong>dU</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/dofnumbering.html#edelweissfe.numerics.dofvector.DofVector" title="(in EdelweissFE)"><em>DofVector</em></a>) – The increment of the solution.</p></li>
 <li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The current time step.</p></li>
 <li><p><strong>dLambda</strong> (<em>float</em>)</p></li>
 </ul>
@@ -679,7 +680,7 @@ If you want to implement a new extrapolator, you have to inherit from this class
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>journal</strong> (<em>Journal</em>)</p></li>
+<li><p><strong>journal</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/journal.html#edelweissfe.journal.journal.Journal" title="(in EdelweissFE)"><em>Journal</em></a>)</p></li>
 <li><p><strong>arcLength</strong> (<em>bool</em>)</p></li>
 </ul>
 </dd>
@@ -714,7 +715,7 @@ If you want to implement a new extrapolator, you have to inherit from this class
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>dU</strong> (<em>DofVector</em>) – The increment of the solution.</p></li>
+<li><p><strong>dU</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/dofnumbering.html#edelweissfe.numerics.dofvector.DofVector" title="(in EdelweissFE)"><em>DofVector</em></a>) – The increment of the solution.</p></li>
 <li><p><strong>timeStep</strong> (<em>TimeStep</em>) – The current time step.</p></li>
 <li><p><strong>dLambda</strong> (<em>float</em>)</p></li>
 </ul>

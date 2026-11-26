@@ -85,6 +85,7 @@
 <li class="toctree-l2"><a class="reference internal" href="mpm/material_point_managers.html">Material Point Managers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="model_generators.html">Model generators</a></li>
 <li class="toctree-l2"><a class="reference internal" href="particles.html">Particles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="axisymmetric_particles.html">Axisymmetric particles</a></li>
 <li class="toctree-l2"><a class="reference internal" href="particle_managers.html">Particle managers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="points_and_fields.html">Points and fields</a></li>
 <li class="toctree-l2"><a class="reference internal" href="field_output.html">Field output</a></li>
@@ -379,7 +380,7 @@ coupled model.</p>
 <p>An RKPM model, alone or with finite elements, is solved in explicit dynamics by EdelweissFE’s <code class="docutils literal notranslate"><span class="pre">NED</span></code> (or
 <code class="docutils literal notranslate"><span class="pre">NEDParallel</span></code>, which advances and evaluates the particles on all threads), built into an
 <code class="docutils literal notranslate"><span class="pre">AdaptiveStepForExplicitSimulations</span></code> like any EdelweissFE step. The particles are what <code class="docutils literal notranslate"><span class="pre">NED</span></code> calls entities that
-carry their own inertia; its documentation (<code class="xref py py-class docutils literal notranslate"><span class="pre">NED</span></code>, “Entities that
+carry their own inertia; its documentation (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/analysis/solvers.html#edelweissfe.solvers.nonlinearexplicitdynamic.NED" title="(in EdelweissFE)"><code class="xref py py-class docutils literal notranslate"><span class="pre">NED</span></code></a>, “Entities that
 carry their own inertia”) gives the scheme. Material points, cells, cell elements and constraints with Lagrange
 multipliers are refused. So is a constraint that does not act in an explicit analysis (<code class="docutils literal notranslate"><span class="pre">actsInExplicitAnalysis</span></code>, see
 <a class="reference internal" href="constraints.html"><span class="doc">Constraints</span></a>): the constraints are evaluated at the configuration just accepted, where the nodes of the kernel
@@ -452,7 +453,9 @@ rate-independent material does not depend on the time increment, but for a rate-
 Duvaut-Lions viscosity, it is the stiffness relaxed over that time, softer than the response within an explicit
 increment, and the estimate may be too large; take a smaller <code class="docutils literal notranslate"><span class="pre">courant-number</span></code> there.</p>
 <p>A penalty constraint on the particles – a support (<code class="docutils literal notranslate"><span class="pre">ParticlePenaltyWeakDirichlet</span></code>), a Cartesian boundary or a
-contact with an analytical surface held by a penalty – adds its stiffness to the frequencies of the nodes it couples.
+contact with an analytical surface held by a penalty, a contact of points on their faces with finite elements or with
+a rigid body, or a tie of such points to finite elements, the one whose springs act along every axis
+(<a class="reference internal" href="constraints.html#particle-face-contact"><span class="std std-ref">Contact of particles with finite elements</span></a>) – adds its stiffness to the frequencies of the nodes it couples.
 The constraints bound the row sums of their own stiffness, scaled by the lumped mass, in every increment, and these are
 added to the particles’ row sums inside the field matrix
 (<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmdiscretesystem.CriticalTimeStepEstimateFromTheFieldMatrix" title="edelweissmeshfree.models.mpmdiscretesystem.CriticalTimeStepEstimateFromTheFieldMatrix"><code class="xref py py-class docutils literal notranslate"><span class="pre">CriticalTimeStepEstimateFromTheFieldMatrix</span></code></a>; theory page on the
@@ -466,20 +469,19 @@ little where they raise no diagonal entry. In a field a constraint acts on, the 
 as well.</p></li>
 <li><p><strong>One field per constraint:</strong> this bounds the particles and the constraints together, for the unsymmetric tangent of
 the particles as well, as long as every constraint couples degrees of freedom of one field of the particles only (a
-support or a contact of the displacement). A penalty between two fields is not covered; this is assumed, not
-checked.</p></li>
+support, a contact or a tie of the displacement). A penalty between two fields is not covered; this is assumed,
+not checked.</p></li>
 <li><p><strong>Particles and finite elements:</strong> a constraint that couples both at once – a projectile of elements on a slab of
-particles – is taken with the larger of the elements’ bound and the particles’ field matrix with its rows; that
-this bounds the two together is not proven.</p></li>
-<li><p><strong>Facet contact:</strong> the contact of the vertices of particles with a faceted surface
-(<code class="docutils literal notranslate"><span class="pre">ParticlePenaltyFacetContactExplicit</span></code>) is not in the estimate: keep <span class="math notranslate nohighlight">\(2\sqrt{m/k}\)</span> of its penalty, with
-<span class="math notranslate nohighlight">\(m\)</span> the mass a contact point carries, well above the time increment.</p></li>
+particles, a tie of particles to a far field of elements – is taken with the larger of the elements’ bound and the
+particles’ field matrix with its rows; that this bounds the two together is not proven, and example 195, a tie at
+eight times <span class="math notranslate nohighlight">\(E / h\)</span> that stays stable, is the practical check.</p></li>
 <li><p><strong>Points away from the center:</strong> a constraint on such a point distributes its force, by default, with the shape
 functions there, <span class="math notranslate nohighlight">\(\mathbf{N}\)</span>, while the point moves with the particle’s interpolation linearized about its
 center, <span class="math notranslate nohighlight">\(\mathbf{G}\)</span>: its stiffness is <span class="math notranslate nohighlight">\(k\,\mathbf{N}\mathbf{G}^\mathsf{T}\)</span>, and the bound, which
 takes <span class="math notranslate nohighlight">\(\mathbf{N}\)</span> on both sides, holds only where the two agree – at the center, or with
 <code class="docutils literal notranslate"><span class="pre">interpolationLinearizedAboutCenter</span></code>
-(<a class="reference internal" href="constraints.html#edelweissmeshfree.constraints.base.pointsofparticles.SpringsOnPointsOfParticle" title="edelweissmeshfree.constraints.base.pointsofparticles.SpringsOnPointsOfParticle"><code class="xref py py-class docutils literal notranslate"><span class="pre">SpringsOnPointsOfParticle</span></code></a>).</p></li>
+(<a class="reference internal" href="constraints.html#edelweissmeshfree.constraints.base.pointsofparticles.SpringsOnPointsOfParticle" title="edelweissmeshfree.constraints.base.pointsofparticles.SpringsOnPointsOfParticle"><code class="xref py py-class docutils literal notranslate"><span class="pre">SpringsOnPointsOfParticle</span></code></a>). The contact
+points on the faces of particles always use <span class="math notranslate nohighlight">\(\mathbf{G}\)</span>.</p></li>
 </ul>
 </section>
 <section id="what-to-know">

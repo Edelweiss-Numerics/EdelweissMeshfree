@@ -163,6 +163,14 @@
 
     <span class="nd">@property</span>
     <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">axisymmetric</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""True if the particle lives in the section r-z of an axisymmetric model, the first coordinate the radius: its</span>
+<span class="sd">        volume, its mass and its forces are those of the ring it sweeps about the axis. An axisymmetric model holds</span>
+<span class="sd">        such particles only, any other model none (:meth:`~edelweissmeshfree.models.mpmmodel.MPMModel.prepareYourself`).</span>
+<span class="sd">        """</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">ensightType</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""The shape of the particle in Ensight Gold notation."""</span>
 
@@ -785,6 +793,40 @@
 <span class="sd">            The state.</span>
 <span class="sd">        """</span></div>
 </div>
+
+
+
+<div class="viewcode-block" id="characteristicLength">
+<a class="viewcode-back" href="../../../../documentation/particles.html#edelweissmeshfree.particles.base.baseparticle.characteristicLength">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">characteristicLength</span><span class="p">(</span><span class="n">particle</span><span class="p">:</span> <span class="n">BaseParticle</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The size of a particle as it is made: the edge of the square (2D) or the cube (3D) of its measure in the model's</span>
+<span class="sd">    own space, in the configuration it is made in. That is its volume in 3D and its area in a plane model. An</span>
+<span class="sd">    axisymmetric particle's volume is the volume of its ring, :math:`V = 2 \\pi r_c A` (Pappus, with the radius</span>
+<span class="sd">    :math:`r_c` of its center, the centroid of its area in the section r-z, which is how Marmot places the center), so</span>
+<span class="sd">    its measure in the section is its area :math:`A = V / (2 \\pi r_c)`.</span>
+
+<span class="sd">    The volume is the undeformed one, the radius the current one: the quotient is the area as made only until the</span>
+<span class="sd">    particle moves. So the size is taken where the particle is made, and kept: the kernel-matching generator, the</span>
+<span class="sd">    proximity checks of the particle constraints and the random shift of the particle managers take it when they are</span>
+<span class="sd">    made, before the analysis moves the particles. Taken after a radial motion :math:`r_c \\to r_c'`, it would be</span>
+<span class="sd">    :math:`\\sqrt{A\\, r_c / r_c'}`, not the size of the particle.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    particle</span>
+<span class="sd">        The particle, as it is made.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        The size, :math:`V^{1/n}` in a plane or a 3D model (:math:`n` the dimension), :math:`\\sqrt{A}` in an</span>
+<span class="sd">        axisymmetric one.</span>
+<span class="sd">    """</span>
+
+    <span class="n">measure</span> <span class="o">=</span> <span class="n">particle</span><span class="o">.</span><span class="n">getVolumeUndeformed</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">particle</span><span class="o">.</span><span class="n">axisymmetric</span><span class="p">:</span>
+        <span class="n">measure</span> <span class="o">/=</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">particle</span><span class="o">.</span><span class="n">getCenterCoordinates</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">measure</span> <span class="o">**</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">particle</span><span class="o">.</span><span class="n">dimension</span><span class="p">)</span></div>
 
 </pre></div>
 

@@ -62,6 +62,7 @@
 <li class="toctree-l2"><a class="reference internal" href="mpm/material_point_managers.html">Material Point Managers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="model_generators.html">Model generators</a></li>
 <li class="toctree-l2"><a class="reference internal" href="particles.html">Particles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="axisymmetric_particles.html">Axisymmetric particles</a></li>
 <li class="toctree-l2"><a class="reference internal" href="particle_managers.html">Particle managers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="points_and_fields.html">Points and fields</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Field output</a><ul>
@@ -202,7 +203,7 @@
 <li><p><strong>mpSet</strong> (<a class="reference internal" href="sets.html#edelweissmeshfree.sets.materialpointset.MaterialPointSet" title="edelweissmeshfree.sets.materialpointset.MaterialPointSet"><em>MaterialPointSet</em></a>) – The :class:<a href="#id5"><span class="problematic" id="id6">`</span></a>MaterialPointSet on which this FieldOutput operates.</p></li>
 <li><p><strong>resultName</strong> (<em>str</em>) – The name of the result entry in the :class:<a href="#id7"><span class="problematic" id="id8">`</span></a>ElementBase.</p></li>
 <li><p><strong>model</strong> (<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel"><em>MPMModel</em></a>) – The :class:<a href="#id9"><span class="problematic" id="id10">`</span></a>MPMModel tree instance.</p></li>
-<li><p><strong>journal</strong> (<em>Journal</em>) – The :class:<a href="#id11"><span class="problematic" id="id12">`</span></a>Journal instance for logging.</p></li>
+<li><p><strong>journal</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/journal.html#edelweissfe.journal.journal.Journal" title="(in EdelweissFE)"><em>Journal</em></a>) – The :class:<a href="#id11"><span class="problematic" id="id12">`</span></a>Journal instance for logging.</p></li>
 <li><p><strong>saveHistory</strong> (<em>bool</em>) – If the history of the results should be saved.</p></li>
 <li><p><strong>f_x</strong> – The function to apply to the results.</p></li>
 <li><p><strong>export</strong> (<em>str</em>) – Whether to export the results.</p></li>
@@ -293,7 +294,7 @@ Will use the current solution and reaction vector if result is a nodal result.</
 <li><p><strong>pSet</strong> (<a class="reference internal" href="sets.html#edelweissmeshfree.sets.particleset.ParticleSet" title="edelweissmeshfree.sets.particleset.ParticleSet"><em>ParticleSet</em></a>) – The :class:<a href="#id13"><span class="problematic" id="id14">`</span></a>ParticleSet on which this FieldOutput operates.</p></li>
 <li><p><strong>resultName</strong> (<em>str</em>) – The name of the result entry in the :class:<a href="#id15"><span class="problematic" id="id16">`</span></a>ElementBase.</p></li>
 <li><p><strong>model</strong> (<a class="reference internal" href="models.html#edelweissmeshfree.models.mpmmodel.MPMModel" title="edelweissmeshfree.models.mpmmodel.MPMModel"><em>MPMModel</em></a>) – The :class:<a href="#id17"><span class="problematic" id="id18">`</span></a>MPMModel tree instance.</p></li>
-<li><p><strong>journal</strong> (<em>Journal</em>) – The :class:<a href="#id19"><span class="problematic" id="id20">`</span></a>Journal instance for logging.</p></li>
+<li><p><strong>journal</strong> (<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/journal.html#edelweissfe.journal.journal.Journal" title="(in EdelweissFE)"><em>Journal</em></a>) – The :class:<a href="#id19"><span class="problematic" id="id20">`</span></a>Journal instance for logging.</p></li>
 <li><p><strong>saveHistory</strong> (<em>bool</em>) – If the history of the results should be saved.</p></li>
 <li><p><strong>f_x</strong> – The function to apply to the results.</p></li>
 <li><p><strong>export</strong> (<em>str</em>) – Whether to export the results.</p></li>

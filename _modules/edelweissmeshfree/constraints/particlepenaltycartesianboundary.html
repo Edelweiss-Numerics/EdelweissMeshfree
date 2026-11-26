@@ -83,7 +83,10 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.constraints.base.mpmconstraintbase</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPMConstraintBase</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.models.mpmmodel</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPMModel</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.particles.base.baseparticle</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseParticle</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.particles.base.baseparticle</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BaseParticle</span><span class="p">,</span>
+    <span class="n">characteristicLength</span><span class="p">,</span>
+<span class="p">)</span>
 
 
 <div class="viewcode-block" id="ParticlePenaltyContactCartesianBoundaryConstraint">
@@ -231,9 +234,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_doProximityCheck</span> <span class="o">=</span> <span class="n">doProximityCheck</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_doProximityCheck</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_particleCharacteristicLength_x_proximityFactor</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">particle</span><span class="o">.</span><span class="n">getVolumeUndeformed</span><span class="p">()</span> <span class="o">**</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">domainSize</span><span class="p">)</span> <span class="o">*</span> <span class="n">proximityFactor</span>
-            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_particleCharacteristicLength_x_proximityFactor</span> <span class="o">=</span> <span class="n">characteristicLength</span><span class="p">(</span><span class="n">particle</span><span class="p">)</span> <span class="o">*</span> <span class="n">proximityFactor</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>

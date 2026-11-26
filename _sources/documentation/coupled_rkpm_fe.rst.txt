@@ -3,8 +3,9 @@ Coupled RKPM + FE
 
 An :class:`~edelweissmeshfree.models.mpmmodel.MPMModel` may hold finite elements next to its particles: e.g. a
 structure of finite elements with an RKPM domain where the material is expected to deform strongly. Both are solved
-together, as one discrete system, by EdelweissFE's implicit static solvers (see :doc:`choosing_a_solver`). The time
-integration is quasi-static.
+together, as one discrete system (see :doc:`choosing_a_solver`): quasi-statically by EdelweissFE's implicit static
+solvers, with either of the two ties between the domains below, and in explicit dynamics by ``NED``, with the penalty
+tie.
 
 Two kinds of nodes in one discrete system
 -----------------------------------------
@@ -58,6 +59,63 @@ condition too.
     )
 
 The constraint must be part of the model before ``model.prepareYourself``, which creates the multipliers.
+
+The mortar tie is for implicit analyses in 2D: an explicit solver does not take multipliers. In 3D, and in explicit
+analyses, a **penalty tie** joins the two domains: EdelweissFE's contact constraint with the law ``type=tied`` in an
+input file -- in Python, the field ``contactType="tied"`` of its options --, whose
+contact points are the quadrature points of the faces of the particles at the interface
+(:class:`~edelweissmeshfree.constraints.base.contactpointsonparticlefaces.ContactPointsOnParticleFaces`) and whose
+master is the faceted surface of the elements there. It ties each point once, at the first update, to the closest
+point of its closest facet of the elements, mapped onto the facet's parent face; it keeps a gap or an overlap between
+the two meshes as the state at rest, and holds the point there by springs of the penalty stiffness per unit area
+:math:`k`. See :ref:`particle-face-contact` and examples 194 (the patch test) and 195 (a pulse through the ties, in
+``NED``).
+
+**Which tie.** Where both reach -- an implicit analysis in 2D --, take the mortar tie:
+
+- the **mortar tie** is exact for a linear field: it has no compliance and no parameter, and the traction it
+  transmits is the stress of the field. It needs quadratic element edges, given in the order of their nodes, and no
+  Dirichlet boundary condition on the interface nodes of the elements;
+- the **penalty tie** is as compliant as its springs: the interface opens by :math:`t / k` under the traction
+  :math:`t`, and the traction at its single points varies from point to point, so it is not a measure of the stress
+  there; its resultant over a few particles is (example 194). In exchange it takes any faceted surface of elements as
+  its master, meshes that do not match, and a gap or an overlap at rest; it works in 3D and in ``NED``, and a new mesh
+  of the elements hands it on.
+
+**The penalty.** Choose :math:`k = \beta E / h`, a multiple :math:`\beta` of the stiffness of the material over
+the size :math:`h` of the elements and particles at the interface. Then the opening :math:`t / k` is :math:`1 / \beta`
+of the deformation of one element; a pulse of the root-mean-square circular frequency :math:`\omega` loses
+:math:`(\omega Z / 2 k)^2` of its energy to the reflection at each tie (:math:`Z = \rho c`, the impedance) and is
+delayed by the compliance of the springs; and in ``NED`` the critical time step, which counts the springs, falls as
+:math:`1 / \sqrt{\beta}` once they are stiffer than the elements. Example 195 takes :math:`\beta = 8` and checks the
+reflection and the delay.
+
+.. code-block:: python
+
+    from edelweissfe.constraints.surfacetodeformablesurfacepenalty import (
+        Constraint,
+        SurfaceToDeformableSurfacePenaltySchema,
+    )
+    from edelweissfe.generators.surfaceelementgenerator import buildContactFacets
+    from edelweissmeshfree.constraints.base.contactpointsonparticlefaces import ContactPointsOnParticleFaces
+
+    # the contact facets of the surface "fe_top" of the elements, which a new mesh of the elements regenerates
+    with model.topology.changes():
+        masterFacets, _ = buildContactFacets(model, "fe_top", "fe_top", "midside", "facetConsistent", journal)
+
+    model.constraints["tie"] = Constraint(
+        "tie",
+        model,
+        # 2 x 2 points per face of a particle in 3D; in 2D, 2 points per edge: nQuadraturePoints=2
+        ContactPointsOnParticleFaces(model.surfaces["rkpm_bottom"], model, nQuadraturePoints=4),
+        model.elementSets[masterFacets],
+        journal,
+        configuration=SurfaceToDeformableSurfacePenaltySchema(
+            penalty=8 * E / h, contactType="tied", searchDistance=0.1 * h
+        ),
+    )
+
+As in the examples, it is added to the model before ``model.prepareYourself``.
 
 Building a coupled model
 ------------------------

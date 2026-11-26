@@ -17,6 +17,7 @@ Documentation
    mpm/material_point_managers
    model_generators
    particles
+   axisymmetric_particles
    particle_managers
    points_and_fields
    field_output

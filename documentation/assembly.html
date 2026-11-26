@@ -69,6 +69,7 @@
 <li class="toctree-l2"><a class="reference internal" href="mpm/material_point_managers.html">Material Point Managers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="model_generators.html">Model generators</a></li>
 <li class="toctree-l2"><a class="reference internal" href="particles.html">Particles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="axisymmetric_particles.html">Axisymmetric particles</a></li>
 <li class="toctree-l2"><a class="reference internal" href="particle_managers.html">Particle managers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="points_and_fields.html">Points and fields</a></li>
 <li class="toctree-l2"><a class="reference internal" href="field_output.html">Field output</a></li>
@@ -128,7 +129,7 @@ every contribution its destination in the CSR matrix in advance, and scatters it
 the row and column indices of the contributions exist at all.</p>
 <p>A cell or a particle couples all its degrees of freedom: its block is the dense <code class="docutils literal notranslate"><span class="pre">nDof</span> <span class="pre">x</span> <span class="pre">nDof</span></code> matrix, column-major,
 in its own DOF numbering (EdelweissFE’s
-<code class="xref py py-class docutils literal notranslate"><span class="pre">SystemMatrixContributorBase</span></code>). The Marmot cells and particles,
+<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/dofnumbering.html#edelweissfe.numerics.systemmatrixcontributor.SystemMatrixContributorBase" title="(in EdelweissFE)"><code class="xref py py-class docutils literal notranslate"><span class="pre">SystemMatrixContributorBase</span></code></a>). The Marmot cells and particles,
 extension types outside that base class, declare it themselves.</p>
 </section>
 <section id="switching-it-on">
@@ -140,7 +141,7 @@ extension types outside that base class, declare it themselves.</p>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">NIST</span></code>, <code class="docutils literal notranslate"><span class="pre">NISTParallel</span></code> and <code class="docutils literal notranslate"><span class="pre">NISTPArcLength</span></code> take the option. Nothing else changes: the elements, cells and
 particles ask for the block of their entity as before, and only what sits behind that request differs (EdelweissFE’s
-<code class="xref py py-class docutils literal notranslate"><span class="pre">SystemMatrixAssembly</span></code>). The result is the same up to the order in
+<a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/assembly.html#edelweissfe.numerics.systemmatrixassembly.SystemMatrixAssembly" title="(in EdelweissFE)"><code class="xref py py-class docutils literal notranslate"><span class="pre">SystemMatrixAssembly</span></code></a>). The result is the same up to the order in
 which the contributions are summed.</p>
 </section>
 <section id="what-it-costs">
@@ -169,7 +170,7 @@ memory, look at the rebuild of the discrete system before suspecting the solve.<
 </section>
 <section id="reference">
 <h2>Reference<a class="headerlink" href="#reference" title="Link to this heading"></a></h2>
-<p>The assembly classes are EdelweissFE’s, in <code class="xref py py-mod docutils literal notranslate"><span class="pre">edelweissfe.numerics.systemmatrixassembly</span></code>.</p>
+<p>The assembly classes are EdelweissFE’s, in <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/assembly.html#module-edelweissfe.numerics.systemmatrixassembly" title="(in EdelweissFE)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">edelweissfe.numerics.systemmatrixassembly</span></code></a>.</p>
 </section>
 </section>
 

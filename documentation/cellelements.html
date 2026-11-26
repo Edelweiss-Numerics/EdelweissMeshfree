@@ -81,6 +81,7 @@
 <li class="toctree-l2"><a class="reference internal" href="mpm/material_point_managers.html">Material Point Managers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="model_generators.html">Model generators</a></li>
 <li class="toctree-l2"><a class="reference internal" href="particles.html">Particles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="axisymmetric_particles.html">Axisymmetric particles</a></li>
 <li class="toctree-l2"><a class="reference internal" href="particle_managers.html">Particle managers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="points_and_fields.html">Points and fields</a></li>
 <li class="toctree-l2"><a class="reference internal" href="field_output.html">Field output</a></li>
@@ -136,7 +137,7 @@ If you want to implement a new CellElement, you have to inherit from this class.
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>cellType</strong> – A string identifying the requested element formulation.</p></li>
 <li><p><strong>cellNumber</strong> – A unique integer label used for all kinds of purposes.</p></li>
-<li><p><strong>nodes</strong> (<em>list</em><em>[</em><em>Node</em><em>]</em>) – The list of nodes assigned to this cell.</p></li>
+<li><p><strong>nodes</strong> (<em>list</em><em>[</em><a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/points.html#edelweissfe.points.node.Node" title="(in EdelweissFE)"><em>Node</em></a><em>]</em>) – The list of nodes assigned to this cell.</p></li>
 <li><p><strong>quadratureType</strong> (<em>str</em>) – A string identifying the requested quadrature type.</p></li>
 <li><p><strong>quadratureOrder</strong> (<em>int</em>) – The order of the quadrature rule.</p></li>
 <li><p><strong>cellElType</strong> (<em>str</em>)</p></li>
@@ -184,7 +185,7 @@ If you want to implement a new CellElement, you have to inherit from this class.
 <td><p>Add the residual contribution of a distributed (surface) load on a surface of one assigned material point, the negative of the external load <span class="math notranslate nohighlight">\(-\boldsymbol{f}_\mathrm{ext}\)</span>, and its tangent, which is nonzero only for a load that follows the deformation.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">computeKernels</span></code>(K, P, U, dU, timeTotal, dTime)</p></td>
-<td><p>Add the internal forces of all assigned material points to the residual, and their tangent: the signature of <code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissfe.elements.base.baseelement.BaseElement.computeKernels()</span></code>, so that a solver evaluates cells and elements alike.</p></td>
+<td><p>Add the internal forces of all assigned material points to the residual, and their tangent: the signature of <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/model/elements.html#edelweissfe.elements.base.baseelement.BaseElement.computeKernels" title="(in EdelweissFE)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">edelweissfe.elements.base.baseelement.BaseElement.computeKernels()</span></code></a>, so that a solver evaluates cells and elements alike.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getBoundingBox</span></code>()</p></td>
 <td><p>Get the bounding box min.</p></td>
@@ -310,7 +311,7 @@ This class is not intended to be used directly, but to be subclassed by the actu
 <dt><strong>nMaterialPoints</strong></dt><dd></dd>
 <dt><strong>nNodes</strong></dt><dd></dd>
 <dt><strong>nodes</strong></dt><dd></dd>
-<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.scalarVariables" title="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.scalarVariables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scalarVariables</span></code></a></dt><dd><p>No scalar variables, as for every cell; see <code class="xref py py-attr docutils literal notranslate"><span class="pre">edelweissfe.nodecouplingentity.base.nodecouplingentity.BaseNodeCouplingEntity.scalarVariables</span></code>.</p>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.scalarVariables" title="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.scalarVariables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scalarVariables</span></code></a></dt><dd><p>No scalar variables, as for every cell; see <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/dofnumbering.html#edelweissfe.nodecouplingentity.base.nodecouplingentity.BaseNodeCouplingEntity.scalarVariables" title="(in EdelweissFE)"><code class="xref py py-attr docutils literal notranslate"><span class="pre">edelweissfe.nodecouplingentity.base.nodecouplingentity.BaseNodeCouplingEntity.scalarVariables</span></code></a>.</p>
 </dd>
 </dl>
 </dd>
@@ -352,7 +353,7 @@ This class is not intended to be used directly, but to be subclassed by the actu
 <td><p>Whether <code class="docutils literal notranslate"><span class="pre">coordinate</span></code>, with as many entries as the cell has dimensions, lies in the cell.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">localEntriesOfBlock</span></code>()</p></td>
-<td><p>The entries of the dense block, see <code class="xref py py-func docutils literal notranslate"><span class="pre">denseBlockLocalEntries()</span></code>.</p></td>
+<td><p>The entries of the dense block, see <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/dofnumbering.html#edelweissfe.numerics.systemmatrixcontributor.denseBlockLocalEntries" title="(in EdelweissFE)"><code class="xref py py-func docutils literal notranslate"><span class="pre">denseBlockLocalEntries()</span></code></a>.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">shapeBlock</span></code>(values)</p></td>
 <td><p>Keep the view flat for Cython 1-D memoryview compatibility.</p></td>
@@ -428,7 +429,7 @@ as for an EdelweissFE element.</p>
 <dt><strong>nMaterialPoints</strong></dt><dd></dd>
 <dt><strong>nNodes</strong></dt><dd></dd>
 <dt><strong>nodes</strong></dt><dd></dd>
-<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.scalarVariables" title="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.scalarVariables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scalarVariables</span></code></a></dt><dd><p>No scalar variables, as for every cell; see <code class="xref py py-attr docutils literal notranslate"><span class="pre">edelweissfe.nodecouplingentity.base.nodecouplingentity.BaseNodeCouplingEntity.scalarVariables</span></code>.</p>
+<dt><a class="reference internal" href="cells.html#edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.scalarVariables" title="edelweissmeshfree.cells.marmotcell.marmotcell.MarmotCellWrapper.scalarVariables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scalarVariables</span></code></a></dt><dd><p>No scalar variables, as for every cell; see <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/dofnumbering.html#edelweissfe.nodecouplingentity.base.nodecouplingentity.BaseNodeCouplingEntity.scalarVariables" title="(in EdelweissFE)"><code class="xref py py-attr docutils literal notranslate"><span class="pre">edelweissfe.nodecouplingentity.base.nodecouplingentity.BaseNodeCouplingEntity.scalarVariables</span></code></a>.</p>
 </dd>
 </dl>
 </dd>
@@ -470,7 +471,7 @@ as for an EdelweissFE element.</p>
 <td><p>Whether <code class="docutils literal notranslate"><span class="pre">coordinate</span></code>, with as many entries as the cell has dimensions, lies in the cell.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">localEntriesOfBlock</span></code>()</p></td>
-<td><p>The entries of the dense block, see <code class="xref py py-func docutils literal notranslate"><span class="pre">denseBlockLocalEntries()</span></code>.</p></td>
+<td><p>The entries of the dense block, see <a class="reference external" href="https://edelweiss-numerics.github.io/EdelweissFE/developer/dofnumbering.html#edelweissfe.numerics.systemmatrixcontributor.denseBlockLocalEntries" title="(in EdelweissFE)"><code class="xref py py-func docutils literal notranslate"><span class="pre">denseBlockLocalEntries()</span></code></a>.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">shapeBlock</span></code>(values)</p></td>
 <td><p>Keep the view flat for Cython 1-D memoryview compatibility.</p></td>
