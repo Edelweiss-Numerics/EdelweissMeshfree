@@ -28,6 +28,10 @@ jobs:
 
       - name: Run tests
         shell: bash -leo pipefail {0}
+        # Keep the GIL disabled for the whole session: importing an extension that does not declare free-threading
+        # support (e.g. netCDF4 in the Exodus examples) would otherwise re-enable it for every later test.
+        env:
+          PYTHON_GIL: "0"
         run: |
           pytest .
 

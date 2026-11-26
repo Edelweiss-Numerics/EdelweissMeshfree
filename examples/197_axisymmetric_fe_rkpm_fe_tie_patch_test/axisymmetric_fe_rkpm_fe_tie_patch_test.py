@@ -404,14 +404,17 @@ def test_particles_tied_to_finite_elements_transmit_the_state_of_the_finite_elem
     np.testing.assert_allclose(forcesOfTheTies(ties, state), forcesOfTheTies(reference, state), rtol=5e-3)
 
 
-@pytest.mark.skipif(not isFreeThreadingSupported(), reason="the thread pool runs serially with the GIL enabled")
 def test_the_tie_of_particles_is_the_same_on_1_4_and_8_threads(monkeypatch):
     """The particles, the elements and the ties are evaluated in chunks on the thread pool, whose size the process
     reads from ``OMP_NUM_THREADS`` for every computation; the result does not depend on how many threads share them,
     up to the round-off of the order of the sums. Only the pool changes: the OpenMP parts, such as the assembly, keep
     the thread count the process started with, which OpenMP reads once, when it is loaded. Without free threading the
-    pool runs serially whatever its size, and there is nothing to compare."""
+    pool runs serially whatever its size, and there is nothing to compare. The GIL is checked when the test runs, not
+    when it is collected: an earlier test may have imported an extension that re-enables it (run with
+    ``PYTHON_GIL=0`` to keep it disabled)."""
 
+    if not isFreeThreadingSupported():
+        pytest.skip("the thread pool runs serially with the GIL enabled")
     results = []
     for threads in ("1", "4", "8"):
         monkeypatch.setenv("OMP_NUM_THREADS", threads)
