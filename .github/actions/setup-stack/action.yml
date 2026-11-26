@@ -1,7 +1,7 @@
 name: Set up the stack
 description: >-
-  EdelweissFE's locked conda environment, Marmot, EdelweissFE and EdelweissMeshfree (editable), each
-  from the same-named branch if it exists, else from the PR's base branch.
+  EdelweissFE's locked conda environment, Marmot (its build cached per commit), EdelweissFE and EdelweissMeshfree
+  (editable), each from the same-named branch if it exists, else from the PR's base branch.
 
 inputs:
   edelweissfe_branch:
@@ -46,36 +46,69 @@ runs:
         cache-environment: true
         init-shell: bash
 
+    # The Marmot branch to build against: the requested one, else the same-named branch, else the PR's base branch,
+    # else master. Resolved to its current commit, which keys the cache of the Marmot build below.
+    - name: Resolve Marmot
+      id: marmot
+      shell: bash -eo pipefail {0}
+      # Passed through the environment, never pasted into the script: branch names come from (fork) pull requests
+      # and may contain shell syntax.
+      env:
+        INPUT_REF: ${{ inputs.marmot_branch }}
+        HEAD_REF: ${{ github.head_ref }}
+        BASE_REF: ${{ github.base_ref }}
+        REF_NAME: ${{ github.ref_name }}
+        LOCK_FILE: ${{ runner.temp }}/EdelweissFE/conda-lock.yml
+      run: |
+        URL="https://github.com/MAteRialMOdelingToolbox/Marmot.git"
+        branch=""
+        for candidate in "$INPUT_REF" "$HEAD_REF" "$REF_NAME" "$BASE_REF" master; do
+          [ -n "$candidate" ] || continue
+          sha=$(git ls-remote "$URL" "refs/heads/$candidate" | cut -f1)
+          if [ -n "$sha" ]; then
+            branch=$candidate
+            break
+          fi
+        done
+        if [ -z "$branch" ]; then
+          echo "::error::No Marmot branch found to build against."
+          false
+        fi
+        echo "Using Marmot branch $branch at $sha"
+        echo "branch=$branch" >> "$GITHUB_OUTPUT"
+        echo "sha=$sha" >> "$GITHUB_OUTPUT"
+        # The environment Marmot is compiled in (the lock file lives outside the workspace, out of hashFiles' reach).
+        echo "lock=$(sha256sum "$LOCK_FILE" | cut -c1-16)" >> "$GITHUB_OUTPUT"
+
+    # A Marmot build is reused as long as the Marmot commit, the locked environment and this action are unchanged.
+    - uses: actions/cache@v4
+      id: marmot-cache
+      with:
+        path: ${{ runner.temp }}/marmot
+        key: marmot-${{ runner.os }}-${{ runner.arch }}-${{ steps.marmot.outputs.sha }}-${{ steps.marmot.outputs.lock }}-${{ hashFiles('.github/actions/setup-stack/action.yml') }}
+
+    - name: Build Marmot
+      if: steps.marmot-cache.outputs.cache-hit != 'true'
+      shell: bash -leo pipefail {0}
+      env:
+        MARMOT_BRANCH: ${{ steps.marmot.outputs.branch }}
+        MARMOT_SHA: ${{ steps.marmot.outputs.sha }}
+      run: |
+        # Exactly the resolved commit, even if the branch moved on meanwhile: the cache key names it.
+        echo "Building Marmot branch $MARMOT_BRANCH at $MARMOT_SHA"
+        git init -q "$RUNNER_TEMP/Marmot"
+        git -C "$RUNNER_TEMP/Marmot" fetch -q --depth 1 https://github.com/MAteRialMOdelingToolbox/Marmot.git "$MARMOT_SHA"
+        git -C "$RUNNER_TEMP/Marmot" checkout -q --detach FETCH_HEAD
+        cmake -S "$RUNNER_TEMP/Marmot" -B "$RUNNER_TEMP/Marmot/build" -DCMAKE_INSTALL_PREFIX="$RUNNER_TEMP/marmot" \
+          -DCMAKE_PREFIX_PATH="$CONDA_PREFIX" -DCMAKE_FIND_USE_PACKAGE_REGISTRY=OFF -DBUILD_TESTING=OFF
+        cmake --build "$RUNNER_TEMP/Marmot/build" --parallel 4
+        cmake --install "$RUNNER_TEMP/Marmot/build"
+
+    # Into the environment, where EdelweissMeshfree's setup.py finds Marmot (and Eigen next to it) by default.
     - name: Install Marmot
       shell: bash -leo pipefail {0}
       run: |
-        BRANCH="${{ inputs.marmot_branch || github.head_ref || github.ref_name }}"
-        BASE="${{ github.base_ref || 'master' }}"
-
-        # Helper function for mandatory modules
-        clone_mandatory() {
-          local url=$1
-          local dir=$2
-          if git ls-remote --exit-code --heads "$url" "$BRANCH" > /dev/null 2>&1; then
-            git clone --depth 1 --branch "$BRANCH" "$url" "$dir"
-          elif [ -n "$BASE" ] && git ls-remote --exit-code --heads "$url" "$BASE" > /dev/null 2>&1; then
-            echo "::warning title=Marmot Branch Fallback::Branch '$BRANCH' not found in $url. Falling back to PR base branch '$BASE'."
-            git clone --depth 1 --branch "$BASE" "$url" "$dir"
-          else
-            echo "::warning title=Marmot Branch Fallback::Neither branch '$BRANCH' nor base '$BASE' found in $url. Falling back to default branch."
-            git clone --depth 1 "$url" "$dir"
-          fi
-        }
-
-        # Clone Marmot (the meshfree core and the displacement modules are part of its tree since Marmot#104)
-        clone_mandatory "https://github.com/MAteRialMOdelingToolbox/Marmot.git" "$RUNNER_TEMP/Marmot"
-
-        # Build Marmot
-        mkdir "$RUNNER_TEMP/Marmot/build"
-        cd "$RUNNER_TEMP/Marmot/build"
-        cmake -DCMAKE_INSTALL_PREFIX="$CONDA_PREFIX" -DCMAKE_PREFIX_PATH="$CONDA_PREFIX" -DCMAKE_FIND_USE_PACKAGE_REGISTRY=OFF ..
-        make -j 4 install
-        cd ../..
+        cp -a "$RUNNER_TEMP/marmot/." "$CONDA_PREFIX/"
 
     # --no-deps --no-build-isolation: everything comes from the locked environment, as in
     # EdelweissFE's CI; pip must neither resolve nor build in an isolated environment of its own.
