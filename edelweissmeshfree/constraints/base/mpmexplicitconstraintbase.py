@@ -33,7 +33,8 @@
 #  The full text of the license can be found in the file LICENSE.md at
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
-"""Constraints for explicit analyses only: they act with forces, and have no tangent."""
+"""Constraints for explicit analyses only: they act with forces, and have no tangent; they give the bound of their
+stiffness for the critical time step instead."""
 
 from abc import abstractmethod
 
@@ -46,11 +47,12 @@ from edelweissmeshfree.constraints.base.mpmconstraintbase import MPMConstraintBa
 class MPMExplicitConstraintBase(MPMConstraintBase):
     """The base class of the constraints that act only in an explicit analysis.
 
-    An explicit analysis solves no linear system, so it needs a constraint's forces but not their tangent. A
-    constraint written for it alone -- a penalty contact evaluated on the particles' current positions, say --
-    implements :meth:`computeKernelsExplicit`, EdelweissFE's entry point for evaluating a constraint without a
-    tangent, and has no :meth:`computeKernels`: an implicit solver that is handed such a constraint stops with an
-    error rather than solve with a tangent that is missing.
+    An explicit analysis solves no linear system, so it needs a constraint's forces, and the bound of their stiffness
+    for the critical time step, but not their tangent. A constraint written for it alone -- a penalty contact evaluated
+    on the particles' current positions, say -- implements :meth:`computeKernelsExplicit`, EdelweissFE's entry point for
+    evaluating a constraint without a tangent, and :meth:`addBoundOfAbsoluteStiffnessTimes`, and has no
+    :meth:`computeKernels`: an implicit solver that is handed such a constraint stops with an error rather than solve
+    with a tangent that is missing.
 
     It follows the same sign rule as every other constraint: it adds the *negative* of the force it exerts on its
     nodes to ``P``.
@@ -114,4 +116,43 @@ class MPMExplicitConstraintBase(MPMConstraintBase):
             The residual contribution to augment.
         timeStep
             The current time step.
+        """
+
+    @abstractmethod
+    def addBoundOfAbsoluteStiffnessTimes(
+        self,
+        U_np: np.ndarray,
+        dU: np.ndarray,
+        weights: np.ndarray,
+        bound: np.ndarray,
+        timeStep: TimeStep,
+    ):
+        """Add an upper bound of the row sums of the absolute value of this constraint's stiffness, weighted by column,
+        :math:`b_i \\mathrel{+}= \\sum_j |K_{ij}|\\, w_j`, at the state of its force, for the critical time step of
+        ``NED``: see
+        :meth:`~edelweissfe.constraints.base.constraintbase.ConstraintBase.addBoundOfAbsoluteStiffnessTimes`. The default
+        there bounds the tangent of :meth:`computeKernels`, which this constraint does not have, so it gives the bound
+        itself, in one of two ways:
+
+        * the bound of its springs, taken from the same springs as its force: through
+          :func:`~edelweissmeshfree.constraints.base.pointsofparticles.addBoundOfAbsoluteStiffnessOfPointsOfParticle`,
+          or by deriving from
+          :class:`~edelweissmeshfree.constraints.base.penaltyspringsexplicit.PenaltySpringsOnPointsOfOneParticleExplicit`,
+          which does both;
+        * nothing, saying so, if its stiffness is to stay outside the critical time step, as
+          :class:`~edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit`
+          does.
+
+        Parameters
+        ----------
+        U_np
+            The current solution, restricted to this constraint's degrees of freedom.
+        dU
+            The solution increment, likewise restricted.
+        weights
+            The weight of each column, likewise restricted.
+        bound
+            The row sums to augment, one per degree of freedom of this constraint.
+        timeStep
+            The time step of the state, as for the force.
         """

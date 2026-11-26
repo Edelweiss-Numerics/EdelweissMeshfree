@@ -54,7 +54,9 @@ checked by central differences of its own ``computeKernels`` in
 
 A constraint written for explicit analyses alone, with forces and without a tangent, derives from
 :class:`~edelweissmeshfree.constraints.base.mpmexplicitconstraintbase.MPMExplicitConstraintBase` and implements
-``computeKernelsExplicit(U_np, dU, P, timeStep)``, with the same sign: an implicit solver refuses it. The explicit
+``computeKernelsExplicit(U_np, dU, P, timeStep)``, with the same sign, and
+``addBoundOfAbsoluteStiffnessTimes(U_np, dU, weights, bound, timeStep)``, the bound of its stiffness for the critical
+time step of ``NED`` (from its springs, or nothing, saying so): an implicit solver refuses it. The explicit
 solver, in turn, accepts only a constraint that acts in an explicit analysis (``actsInExplicitAnalysis``): one that
 measures its condition at the particles' current positions, as the penalty contacts do, explicit or not, and as the
 penalty weak Dirichlet condition does where it holds the displacement at zero (a support). A constraint on the
@@ -82,8 +84,12 @@ explicit) take one option, ``interpolationLinearizedAboutCenter``
   The FE-particle impact (:doc:`fe_projectile_on_rkpm_slab`) opts in.
   The two operations such a constraint needs besides its own physics -- locating the nodes of its particles in its
   block, and distributing a force on a point -- are in :mod:`edelweissmeshfree.constraints.base.pointsofparticles`,
-  which the explicit constraints and the support use: a new constraint on points of particles is its physics and a
-  constructor.
+  which the explicit constraints and the support use, with the penalty springs on points of a particle that give a
+  constraint's force and the bound of its stiffness for the critical time step of ``NED`` from the same code. A penalty
+  contact of points of one particle with an obstacle in an explicit analysis derives from
+  :class:`~edelweissmeshfree.constraints.base.penaltyspringsexplicit.PenaltySpringsOnPointsOfOneParticleExplicit`, as
+  the Cartesian boundary and the contact with an analytical surface do: a new one is the gap of a point and its
+  gradient, and a constructor.
 
 The base classes
 ----------------
@@ -98,6 +104,10 @@ The base classes
 
 .. automodule:: edelweissmeshfree.constraints.base.pointsofparticles
    :members:
+
+.. automodule:: edelweissmeshfree.constraints.base.penaltyspringsexplicit
+   :members:
+   :private-members:
 
 ``PenaltyEqualValue`` constraint class
 --------------------------------------

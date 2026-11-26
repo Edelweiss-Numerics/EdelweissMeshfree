@@ -6,18 +6,17 @@ from edelweissfe.surfaces.entitybasedsurface import EntityBasedSurface
 from edelweissfe.timesteppers.timestep import TimeStep
 from edelweissfe.variables.scalarvariable import ScalarVariable
 
-from edelweissmeshfree.constraints.base.mpmexplicitconstraintbase import (
-    MPMExplicitConstraintBase,
+from edelweissmeshfree.constraints.base.penaltyspringsexplicit import (
+    PenaltySpringsOnPointsOfOneParticleExplicit,
 )
 from edelweissmeshfree.constraints.base.pointsofparticles import (
-    addForcesOnPointsOfParticle,
     locateTheNodesOfParticles,
 )
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.particles.base.baseparticle import BaseParticle
 
 
-class ParticlePenaltyCartesianBoundaryConstraintExplicit(MPMExplicitConstraintBase):
+class ParticlePenaltyCartesianBoundaryConstraintExplicit(PenaltySpringsOnPointsOfOneParticleExplicit):
     r"""
     This class implements a Penalty contact boundary constraint for EXPLICIT simulations.
     It prevents a particle from penetrating a defined boundary surface by applying
@@ -30,7 +29,11 @@ class ParticlePenaltyCartesianBoundaryConstraintExplicit(MPMExplicitConstraintBa
 
         \boldsymbol{F}_{\mathrm{penalty}} = -k\, g\, \boldsymbol{n},
 
-    where :math:`g` is the penetration depth, :math:`k` the penalty parameter and :math:`\boldsymbol{n}` the normal.
+    where :math:`g < 0` is the gap of the point to the boundary, :math:`k` the penalty parameter and
+    :math:`\boldsymbol{n}` the unit normal pointing away from the boundary, the gradient of the gap. The force and the
+    bound of its stiffness for the critical time step are those of
+    :class:`~edelweissmeshfree.constraints.base.penaltyspringsexplicit.PenaltySpringsOnPointsOfOneParticleExplicit`; the
+    boundary gives the gap (:meth:`_gapsOfPoints`) and its gradient (:meth:`_gradientsOfTheGaps`).
 
     Parameters
     ----------
@@ -191,60 +194,44 @@ class ParticlePenaltyCartesianBoundaryConstraintExplicit(MPMExplicitConstraintBa
 
         return hasChanged
 
-    def computeKernelsExplicit(self, U_np: np.ndarray, dU: np.ndarray, P: np.ndarray, timeStep: TimeStep):
-        """Add the residual contribution of the penalty force: the negative of the force with which the boundary
-        pushes the particle back, evaluated at the particle's current position.
+    def _gapsOfPoints(self, points: np.ndarray, timeStep: TimeStep) -> np.ndarray:
+        """The gaps of points to the boundary where it is at the end of a time step, negative beyond it: the boundary
+        above the particle (orientation 1.0) or below it (-1.0).
 
         Parameters
         ----------
-        U_np
-            The current solution; unused, the penetration follows from the particle's current position.
-        dU
-            The solution increment; likewise unused.
-        P
-            The residual contribution to augment.
+        points
+            The points, one row each.
         timeStep
-            The current time step.
+            The time step, for the position of the moving boundary.
+
+        Returns
+        -------
+        np.ndarray
+            The gaps.
         """
 
-        # Explicit: calculate wall position at current time
-        # Assuming stepProgress handles linear motion within step or total time
-        currentWallPos = self._boundaryPosition + self._velocity * timeStep.stepProgress
+        wallPosition = self._boundaryPosition + self._velocity * timeStep.stepProgress
+        return -self._orientation * (points[:, self._component] - wallPosition)
 
-        penalty = self._penaltyParameter
-        orientation = self._orientation
-        comp = self._component
+    def _gradientsOfTheGaps(self, points: np.ndarray) -> np.ndarray:
+        """The gradient of the gap of each point: the unit vector along the component the boundary is normal to,
+        pointing away from the boundary, the same for every point.
 
-        total_penalty_force = 0.0
+        Parameters
+        ----------
+        points
+            The points, one row each.
 
-        for p in self._constrained_points:
-            val = p[comp]
+        Returns
+        -------
+        np.ndarray
+            The gradients, one row each.
+        """
 
-            # Calculate penetration g
-            # g > 0 implies penetration
-            # orientation 1.0 (Wall > Point): Penetration if (Point > Wall) -> (Point - Wall) * 1 > 0
-            # orientation -1.0 (Wall < Point): Penetration if (Point < Wall) -> (Point - Wall) * -1 > 0
-            g = orientation * (val - currentWallPos)
-
-            if g > 0:
-                # Force magnitude: proportional to penetration
-                # Force direction: Opposite to penetration direction (pushes particle back)
-                # If orientation is 1.0 (Normal points -x), force should be -x.
-                # If orientation is -1.0 (Normal points +x), force should be +x.
-                # Combined: force_val = -penalty * g * orientation
-                force_scalar = -penalty * g * orientation
-
-                force = np.zeros(self._fieldSize)
-                force[comp] = force_scalar
-                # the vector the force is distributed with (see interpolationVectorAtPointOf)
-                interpolation = self.interpolationVectorAtPointOf(self._particle, p).flatten()
-                addForcesOnPointsOfParticle(
-                    P.reshape(-1, self._fieldSize), self._localNodes, interpolation[np.newaxis, :], force[np.newaxis, :]
-                )
-
-                total_penalty_force += g * penalty
-
-        self.reactionForce = total_penalty_force
+        gradients = np.zeros((len(points), self._fieldSize))
+        gradients[:, self._component] = -self._orientation
+        return gradients
 
 
 def ParticleExplicitPenaltyCartesianBoundaryConstraintFactory(

@@ -47,7 +47,11 @@ autodoc_typehints = "description"
 napoleon_use_admonition_for_notes = True
 numpydoc_show_class_members = True
 numpydoc_class_members_toctree = False
-numpydoc_show_inherited_class_members = True
+# A base whose inherited members are documented with the classes they come from lists its own only: the abstract
+# properties every constraint has (name, nodes, fields, ...) would name a dozen targets each.
+numpydoc_show_inherited_class_members = {
+    "edelweissmeshfree.constraints.base.penaltyspringsexplicit.PenaltySpringsOnPointsOfOneParticleExplicit": False,
+}
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -68,4 +72,3 @@ try:
     pass
 except ImportError:
     pass
-

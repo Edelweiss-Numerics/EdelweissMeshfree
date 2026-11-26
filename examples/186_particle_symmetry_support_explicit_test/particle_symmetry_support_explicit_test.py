@@ -42,8 +42,13 @@ whole one; without the support, it spreads about its own center instead.
 The support has to be stiff against the material it holds: a penalty of the wall's (1e5 per point, about twice the
 stiffness of a particle) lets the plane give way and spring back, and the half projectile is then 10 % off the whole
 one, whatever the particle size, since the stiffness of a particle in plane strain does not change with its size. With
-1e6, below the stable limit of the time increment, the deviation is a few % and shrinks with the particle size: the
-largest deviation is 0.28, 0.090 and 0.033 for particles of 10, 5 and 2.5 mm (of a largest displacement of 6.5 to 8.2).
+1e6, the deviation is a few %: the largest deviation is 0.26 of a largest displacement of 6.6 here. That penalty is
+close to the limit of the time increment: the critical time step of the half projectile with its support is below the
+particles' own, and its time increment slightly below the whole projectile's, so both run to the same time rather
+than for the same number of increments. A refinement study found it shrinking with the particle size, 0.28, 0.090 and 0.033
+for particles of 10, 5 and 2.5 mm, when the support still distributed its force with the shape functions at the
+vertices; here the wall and the support measure and distribute with the particles' interpolation linearized about their
+centers (``interpolationLinearizedAboutCenter``), the vector that moves the vertices, which makes them conservative.
 """
 
 import argparse
@@ -92,6 +97,9 @@ PARTICLE_SIZE = 10.0
 HALF_WIDTH = 50.0
 HEIGHT = 100.0
 VELOCITY = -400e3
+#: The time increment the step asks for, and the duration of the impact that is compared.
+TIME_INCREMENT = 6.0e-7
+DURATION = 101 * TIME_INCREMENT
 
 
 def run_sim(model: str) -> np.ndarray:
@@ -151,7 +159,7 @@ def run_sim(model: str) -> np.ndarray:
     theModel.constraints.update(
         ParticleExplicitPenaltyCartesianBoundaryConstraintFactory(
             "wall", 0.0, 1, theModel.particleSets["projectile_bottom"], "displacement", theModel, location="vertex",
-            vertexIDs=[0, 1, 2, 3], penaltyParameter=PENALTY,
+            vertexIDs=[0, 1, 2, 3], penaltyParameter=PENALTY, interpolationLinearizedAboutCenter=True,
         )
     )  # fmt: skip
 
@@ -159,7 +167,7 @@ def run_sim(model: str) -> np.ndarray:
         # the vertices 0 and 3 of a particle in the left column are on the symmetry plane x = 0
         theModel.constraints["symmetry"] = ParticlePenaltyWeakDirichlet(
             "symmetry", theModel, list(theModel.particleSets["projectile_left"]), "displacement", {0: 0.0}, SUPPORT_PENALTY,
-            constrain=[0, 3],
+            constrain=[0, 3], interpolationLinearizedAboutCenter=True,
         )  # fmt: skip
 
     theModel.prepareYourself(theJournal)
@@ -173,7 +181,6 @@ def run_sim(model: str) -> np.ndarray:
         particle.acceptStateAndPosition()
 
     theModel.particleManagers.append(theParticleManager)
-    incrementSize = 3e-3
     step = AdaptiveStepForExplicitSimulations(
         0,
         theModel,
@@ -183,11 +190,11 @@ def run_sim(model: str) -> np.ndarray:
         NEDParallel({}, theJournal, **{"output-frequency": 1}),
         [],
         StepActionCollection(),
-        stepLength=2.0e-4,
-        startInc=incrementSize,
-        maxInc=incrementSize,
-        minInc=incrementSize / 1e8,
-        maxNumInc=101,
+        stepLength=DURATION,
+        startInc=TIME_INCREMENT / DURATION,
+        maxInc=TIME_INCREMENT / DURATION,
+        minInc=TIME_INCREMENT / DURATION / 1e8,
+        maxNumInc=1000,
     )
 
     try:
