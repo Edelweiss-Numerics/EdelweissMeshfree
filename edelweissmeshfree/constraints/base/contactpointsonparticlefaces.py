@@ -160,8 +160,8 @@ def quadratureRuleOfFace(nDim: int, nQuadraturePoints: int) -> tuple[np.ndarray,
         If the number of points is not :math:`n` (2D) or :math:`n^2` (3D) for some :math:`n \\ge 1`.
     """
 
-    perEdge = round(nQuadraturePoints ** (1.0 / (nDim - 1)))
-    if nQuadraturePoints < 1 or perEdge ** (nDim - 1) != nQuadraturePoints:
+    perEdge = round(nQuadraturePoints ** (1.0 / (nDim - 1))) if nQuadraturePoints >= 1 else 0
+    if perEdge < 1 or perEdge ** (nDim - 1) != nQuadraturePoints:
         raise ValueError(
             f"{nQuadraturePoints} quadrature points per face are not a Gauss rule in {nDim}D: use n points per edge, "
             f"{'n' if nDim == 2 else 'n x n'} per face."
