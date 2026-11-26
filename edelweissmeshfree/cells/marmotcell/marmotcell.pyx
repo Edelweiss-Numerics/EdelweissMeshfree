@@ -241,6 +241,46 @@ cdef class MarmotCellWrapper:
 
         self._assignedMaterialPoints = marmotMaterialPointWrappers
 
+    def setProjectionPoint(self, coordinate: np.ndarray) -> bool:
+        """Set the point (physical coordinates) at which a cell-level projection of the cell (e.g. the volume change
+        of an F-bar cell) is evaluated, until the next :meth:`assignMaterialPoints`; see the Marmot cell. Used by the
+        aggregated material point method to evaluate the projection of all cells of an aggregate at one point.
+
+        Returns
+        -------
+        bool
+            Whether the cell uses the point; ``False`` for cells without such a projection.
+        """
+        cdef double[::1] coords = np.ascontiguousarray(coordinate, dtype=float)
+        return self._marmotCell.setProjectionPoint(&coords[0])
+
+    @property
+    def hasPatchProjection(self) -> bool:
+        """Whether the cell supports a projection over a patch of cells (e.g. F-bar patch), see
+        :class:`~edelweissmeshfree.constraints.cellpatchprojection.CellPatchProjection`."""
+        return self._marmotCell.hasPatchProjection()
+
+    def computeProjectionContribution(self, double[::1] dUc, double[::1] dValue_dQ) -> tuple[float, float]:
+        """Pass 1 of the patch projection: the contribution of the material points of the cell at the increment
+        ``dUc`` (cell dof order). Writes its derivative to ``dValue_dQ``; changes no material point.
+
+        Returns
+        -------
+        tuple[float, float]
+            The weighted value and the weight.
+        """
+        cdef double value = 0.0, weight = 0.0
+        self._marmotCell.computeProjectionContribution(&dUc[0], &value, &weight, &dValue_dQ[0])
+        return value, weight
+
+    def setProjectedValue(self, double value):
+        """Pass 2 of the patch projection: the value of the patch the next evaluations use."""
+        self._marmotCell.setProjectedValue(value)
+
+    def getProjectionSensitivity(self, double[::1] dR_dValue):
+        """The derivative of the residual contributions of the cell w.r.t. the patch value (cell dof order)."""
+        self._marmotCell.getProjectionSensitivity(&dR_dValue[0])
+
     def isCoordinateInCell(self, coordinate: np.ndarray) -> bool:
         """Whether ``coordinate``, with as many entries as the cell has dimensions, lies in the cell."""
 
