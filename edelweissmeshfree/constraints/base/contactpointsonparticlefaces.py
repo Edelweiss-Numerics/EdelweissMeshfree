@@ -61,8 +61,8 @@ the face within an increment and jump back, by :math:`\\boldsymbol{n} \\cdot (G 
 next update takes its origin from the face again.
 
 The particles are updated-Lagrangian: the nodes of their kernel functions carry the increment
-:math:`\\Delta\\boldsymbol{U}` since the last update of the connectivity, which a model with particles makes at the start
-of every increment, not a total displacement. So the displacement a point moves with is that increment: its origin
+:math:`\\Delta\\boldsymbol{U}` since the last update of the connectivity, which a model with particles makes at the
+start of every increment, not a total displacement. So the displacement a point moves with is that increment: its origin
 :math:`\\boldsymbol{x}_q^n` is where it was at the update, and its displacement from there is :math:`c \\cdot
 \\Delta\\boldsymbol{U}` (:meth:`ContactPointsOnParticleFaces.displacementsOfLocatedPoints`). The contact constraints
 pass the total displacement ``U`` and the increment ``dU`` alike, and these points take ``dU``.
@@ -119,8 +119,9 @@ from collections.abc import Iterable
 
 import numpy as np
 from edelweissfe.constraints.base.contactpoints import ContactPoints, circumferenceAt
+from edelweissfe.generators.surfaceelementgenerator import canonicalParentFace
 from edelweissfe.models.femodel import FEModel
-from edelweissfe.utils.parentfacegeometry import parentFaceShapeFunctions
+from edelweissfe.utils.isoparametricshapes import shapeFunctionsAndDerivatives
 from scipy.sparse import csr_matrix
 
 from edelweissmeshfree.constraints.base.pointsofparticles import (
@@ -128,35 +129,48 @@ from edelweissmeshfree.constraints.base.pointsofparticles import (
 )
 
 #: The vertices of each face of a particle, in the Abaqus numbering of the faces (face ID 1 first) that Marmot's
-#: particles and the generators of EdelweissMeshfree use; by the number of vertices of the particle. A face lists its
-#: vertices cyclically, the order of the parent face shape functions ``line2`` and ``quad4``.
+#: particles and the generators of EdelweissMeshfree use; by the number of vertices of the particle. They are the
+#: parent faces of the finite element with the same vertices (``quad4``, ``hexa8``), from EdelweissFE's face tables
+#: (:func:`~edelweissfe.generators.surfaceelementgenerator.canonicalParentFace`): each face lists its vertices
+#: cyclically, in the order of the face shape functions ``bar2`` and ``quad4``.
 verticesOfFace = {
-    4: np.array([[0, 1], [1, 2], [2, 3], [3, 0]]),
-    8: np.array([[0, 3, 2, 1], [4, 5, 6, 7], [0, 1, 5, 4], [1, 2, 6, 5], [2, 3, 7, 6], [3, 0, 4, 7]]),
+    nVertices: np.array([canonicalParentFace(elementType, face)[1] for face in range(1, nFaces + 1)])
+    for nVertices, elementType, nFaces in ((4, "quad4", 4), (8, "hexa8", 6))
 }
 
-#: The Gauss rules on a face, by the spatial dimension and the number of points: parametric coordinates and weights.
-_gaussPoint = 1.0 / np.sqrt(3.0)
-quadratureRulesOfFace = {
-    2: {
-        1: (np.array([[0.0]]), np.array([2.0])),
-        2: (np.array([[-_gaussPoint], [_gaussPoint]]), np.array([1.0, 1.0])),
-    },
-    3: {
-        1: (np.array([[0.0, 0.0]]), np.array([4.0])),
-        4: (
-            np.array(
-                [
-                    [-_gaussPoint, -_gaussPoint],
-                    [_gaussPoint, -_gaussPoint],
-                    [_gaussPoint, _gaussPoint],
-                    [-_gaussPoint, _gaussPoint],
-                ]
-            ),
-            np.array([1.0, 1.0, 1.0, 1.0]),
-        ),
-    },
-}
+
+def quadratureRuleOfFace(nDim: int, nQuadraturePoints: int) -> tuple[np.ndarray, np.ndarray]:
+    """The Gauss rule on a face of a particle: Gauss-Legendre on an edge (2D), its tensor product on a face (3D).
+
+    Parameters
+    ----------
+    nDim
+        The spatial dimension.
+    nQuadraturePoints
+        The number of points on the face: :math:`n` on an edge, :math:`n^2` on a face.
+
+    Returns
+    -------
+    tuple[numpy.ndarray, numpy.ndarray]
+        The parametric coordinates of the points, (nQuadraturePoints, nDim - 1), and their weights.
+
+    Raises
+    ------
+    ValueError
+        If the number of points is not :math:`n` (2D) or :math:`n^2` (3D) for some :math:`n \\ge 1`.
+    """
+
+    perEdge = round(nQuadraturePoints ** (1.0 / (nDim - 1)))
+    if nQuadraturePoints < 1 or perEdge ** (nDim - 1) != nQuadraturePoints:
+        raise ValueError(
+            f"{nQuadraturePoints} quadrature points per face are not a Gauss rule in {nDim}D: use n points per edge, "
+            f"{'n' if nDim == 2 else 'n x n'} per face."
+        )
+    coordinates, weights = np.polynomial.legendre.leggauss(perEdge)
+    if nDim == 2:
+        return coordinates[:, None], weights
+    eta, xi = np.meshgrid(coordinates, coordinates, indexing="ij")
+    return np.column_stack((xi.ravel(), eta.ravel())), np.outer(weights, weights).ravel()
 
 
 class ContactPointsOnParticleFaces(ContactPoints):
@@ -185,14 +199,17 @@ class ContactPointsOnParticleFaces(ContactPoints):
     model
         The model of the particles, whose kind -- 3D, plane or axisymmetric -- the areas are measured as.
     nQuadraturePoints
-        The number of quadrature points per face: 1 (the face's center) or 2 in 2D, 1 or 4 (2 x 2) in 3D.
+        The number of Gauss points per face: :math:`n` on an edge (2D), :math:`n \\times n` on a face (3D). One point,
+        the face's center, loads a quadratic master face only at its midside node and does not integrate the ring
+        weight of an axisymmetric model: take 2 per edge (2 in 2D, 4 in 3D) for a quadratic master or an axisymmetric
+        model (see the module documentation).
     """
 
     #: The points are located on the kernel functions of their particles, which the model connects at an update of the
     #: connectivity (and a checkpoint does not hold).
     locatedOnlyWhenConnected = True
 
-    def __init__(self, faces: dict | Iterable, model: FEModel, nQuadraturePoints: int = 1):
+    def __init__(self, faces: dict | Iterable, model: FEModel, nQuadraturePoints: int):
         pairs = (
             [(particle, faceID) for faceID, particles in faces.items() for particle in particles]
             if isinstance(faces, dict)
@@ -222,18 +239,17 @@ class ContactPointsOnParticleFaces(ContactPoints):
                 f"Particle face IDs follow the Abaqus numbering, 1 to {nFacesOfParticle} for these particles; got "
                 f"{sorted(set(self.faceIDs[outside].tolist()))}."
             )
-        rules = quadratureRulesOfFace[self.nDim]
-        if nQuadraturePoints not in rules:
-            raise ValueError(f"{nQuadraturePoints} quadrature points per face are not supported in {self.nDim}D; use "
-                             f"{' or '.join(map(str, rules))}.")  # fmt: skip
+        parametric, weights = quadratureRuleOfFace(self.nDim, nQuadraturePoints)
         self.nQuadraturePoints = nQuadraturePoints
 
         self._verticesOfFace = verticesOfFace[nVertices][self.faceIDs - 1]
-        parametric, weights = rules[nQuadraturePoints]
-        faceType = "line2" if self.nDim == 2 else "quad4"
+        shapeOfFace = "bar2" if self.nDim == 2 else "quad4"
+        shapeFunctions, derivatives = zip(*(shapeFunctionsAndDerivatives(shapeOfFace, xi) for xi in parametric))
         #: The face's shape functions at its quadrature points, (nQuadraturePoints, nFaceVertices).
-        self._shapeFunctions = parentFaceShapeFunctions(faceType, parametric)
-        self._shapeFunctionDerivatives = self._derivativesOfFaceShapeFunctions(faceType, parametric)
+        self._shapeFunctions = np.array(shapeFunctions)
+        #: Their derivatives with respect to the face's parametric coordinates, (nQuadraturePoints, nFaceVertices,
+        #: nDim - 1).
+        self._shapeFunctionDerivatives = np.array(derivatives)
 
         nFaces = len(self.faceIDs)
         self.nPoints = nFaces * nQuadraturePoints
@@ -286,19 +302,6 @@ class ContactPointsOnParticleFaces(ContactPoints):
             diagonals[particleOfPoint],
             lambda p: f"a face of particle {self._particles[particleOfPoint[p]].number}",
         )
-
-    @staticmethod
-    def _derivativesOfFaceShapeFunctions(faceType: str, parametric: np.ndarray) -> np.ndarray:
-        """The derivatives of the face's shape functions with respect to its parametric coordinates, at the given
-        points: (nPoints, nFaceVertices, nParametric)."""
-
-        if faceType == "line2":
-            return np.broadcast_to(np.array([[-0.5], [0.5]]), (len(parametric), 2, 1)).copy()
-        xi, eta = parametric[:, 0], parametric[:, 1]
-        signs = np.array([[-1.0, -1.0], [1.0, -1.0], [1.0, 1.0], [-1.0, 1.0]])
-        dN_dXi = 0.25 * signs[None, :, 0] * (1.0 + eta[:, None] * signs[None, :, 1])
-        dN_dEta = 0.25 * signs[None, :, 1] * (1.0 + xi[:, None] * signs[None, :, 0])
-        return np.stack((dN_dXi, dN_dEta), axis=-1)
 
     def _verticesOfParticles(self) -> np.ndarray:
         """The current vertices of the particles of the faces, (nParticles, nVertices, nDim)."""

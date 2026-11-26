@@ -68,7 +68,8 @@ inner radius ``a``, outer radius ``b`` and height ``h``:
 
 Its surfaces ``ring_left`` and ``ring_right`` are then the inner and the outer cylinder, ``ring_bottom`` and
 ``ring_top`` the annuli. The section lies in :math:`r \ge 0`: a particle with a vertex below the axis by more than the
-round-off of a mesher (:math:`10^{-12}` of the diagonal of the particle's bounding box) is refused when it is made (a ``ValueError``); a
+round-off of a mesher (:math:`10^{-12}` of the diagonal of the particle's bounding box) is refused when it is made (a
+``ValueError``); a
 particle with an edge on the axis is a particle like any other, and the contact points of that edge stand for rings of
 radius 0, no area: the axis is a line, not a surface of the body.
 
@@ -93,7 +94,8 @@ Loads, supports, contact and ties
   (:class:`~edelweissmeshfree.stepactions.particledistributedload.ParticleDistributedLoad`, ``"pressure"``): Marmot
   integrates it over the ring of each face at the face's radius after the increment: the ring grows with the hoop
   stretch of the face.
-- **Supports at points** (:class:`~edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet`)
+- **Supports at points**
+  (:class:`~edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet`)
   hold a component at the vertices of particles with a spring each. The value held needs no ring weight, but the
   stiffness of a spring competes with the ring stiffness of the particles, which grows with the radius as
   :math:`2 \pi r`: a fixed penalty holds less well far from the axis. A
@@ -105,8 +107,8 @@ Loads, supports, contact and ties
   (:class:`~edelweissmeshfree.constraints.base.contactpointsonparticlefaces.ContactPointsOnParticleFaces`). The
   points take the model and measure their areas when they are made, as the model integrates: in an axisymmetric model,
   every point stands for the area :math:`2 \pi r_q L_q` of its ring, as the points of the faces of axisymmetric
-  elements do (``CX8RUL``, ``GCAX8R``, see EdelweissFE's contact theory, *Plane and axisymmetric models: one rule for
-  the area of a point*), so that the contact forces balance the particles' forces and the elements' forces on the full
+  elements do (``CX8RUL``, ``GCAX8R``, see EdelweissFE's contact theory, :ref:`edelweissfe:contact-out-of-plane`), so
+  that the contact forces balance the particles' forces and the elements' forces on the full
   rings; the constraint refuses points made for a model of another kind. Two points per edge integrate the nodal forces
   of a uniform pressure on a ring exactly. In a plane model, particles are a slice of unit thickness, and so are their
   contact points: the elements they meet must be of plane sections of thickness 1.

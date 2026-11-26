@@ -246,7 +246,7 @@ def test_the_restart_locates_the_points_once_the_particles_are_connected(tmp_pat
     restored = RigidSurfaceContact(
         "contact",
         model,
-        ContactPointsOnParticleFaces([(particle, BOTTOM)], model),
+        ContactPointsOnParticleFaces([(particle, BOTTOM)], model, 1),
         rigidBody,
         JournalStandIn(),
         configuration=SurfaceToDiscreteRigidBodyPenaltySchema(penalty=PENALTY, searchDistance=SEARCH),

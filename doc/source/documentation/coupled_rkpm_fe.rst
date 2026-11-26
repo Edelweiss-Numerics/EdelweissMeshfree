@@ -61,7 +61,8 @@ condition too.
 The constraint must be part of the model before ``model.prepareYourself``, which creates the multipliers.
 
 The mortar tie is for implicit analyses in 2D: an explicit solver does not take multipliers. In 3D, and in explicit
-analyses, a **penalty tie** joins the two domains: EdelweissFE's contact constraint with the law ``type=tied``, whose
+analyses, a **penalty tie** joins the two domains: EdelweissFE's contact constraint with the law ``type=tied`` in an
+input file -- in Python, the field ``contactType="tied"`` of its options --, whose
 contact points are the quadrature points of the faces of the particles at the interface
 (:class:`~edelweissmeshfree.constraints.base.contactpointsonparticlefaces.ContactPointsOnParticleFaces`) and whose
 master is the faceted surface of the elements there. It ties each point once, at the first update, to the closest
@@ -105,6 +106,7 @@ reflection and the delay.
     model.constraints["tie"] = Constraint(
         "tie",
         model,
+        # 2 x 2 points per face of a particle in 3D; in 2D, 2 points per edge: nQuadraturePoints=2
         ContactPointsOnParticleFaces(model.surfaces["rkpm_bottom"], model, nQuadraturePoints=4),
         model.elementSets[masterFacets],
         journal,

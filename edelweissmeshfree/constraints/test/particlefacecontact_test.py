@@ -460,7 +460,7 @@ def test_the_restart_continues_the_pairing():
 def test_faces_of_particles_other_than_quadrilaterals_and_hexahedra_are_refused():
     particle = ParticleStandIn([Node(1, np.zeros(2))], np.zeros(2), np.zeros((3, 2)))
     with pytest.raises(ValueError, match="quadrilateral"):
-        ContactPointsOnParticleFaces([(particle, 1)], MPMModel(2))
+        ContactPointsOnParticleFaces([(particle, 1)], MPMModel(2), 1)
 
 
 @pytest.mark.parametrize("faceID", [0, -1, 5])
@@ -469,7 +469,7 @@ def test_face_ids_outside_the_abaqus_numbering_are_refused(faceID):
     face, and one beyond the last face must not reach an index error."""
 
     with pytest.raises(ValueError, match="1 to 4"):
-        ContactPointsOnParticleFaces([(_particle(0.0, 0.0), 1), (_particle(0.0, 0.0, 2), faceID)], MPMModel(2))
+        ContactPointsOnParticleFaces([(_particle(0.0, 0.0), 1), (_particle(0.0, 0.0, 2), faceID)], MPMModel(2), 1)
 
 
 @pytest.mark.parametrize("nQuadraturePoints", [1, 2])

@@ -14,7 +14,8 @@ of "What the run shows" is the same model, larger and longer; its sizes are give
 
 The model:
 
-- **Projectile**: a steel cube of 50 mm, ``C3D20RUL`` (quadratic updated-Lagrangian hexahedra), ``VONMISES/HUGHES-WINGET``,
+- **Projectile**: a steel cube of 50 mm, ``C3D20RUL`` (quadratic updated-Lagrangian hexahedra),
+  ``VONMISES/HUGHES-WINGET``,
   300 m/s towards the slab, free.
 - **Slab**: 100 mm thick, ``GradientEnhanced6FiniteStrainSQCNIxNSNI/3D/Hexa`` particles of GM7 at finite strains
   (``GM7/COROTATIONAL``), held at its edges.
@@ -115,7 +116,8 @@ couples two bodies of finite elements, with the particles' own contact points: e
 stands for its share of the face. The constraint pairs a point with a facet while the point approaches, pushes it
 back out once it has entered -- never across a convex edge of the projectile, onto the side of the nose it entered
 next to -- and lets it slide from facet to facet; a point that flows past the nose's edge, beside the projectile, is
-released. At the edges, the gap is the distance to the edge (EdelweissFE's contact theory, *Corners of the master*).
+released. At the edges, the gap is the distance to the edge (EdelweissFE's contact theory,
+:ref:`edelweissfe:contact-corners`).
 A point found inside without having been seen approaching gets no force and is reported. The force
 on the particles and the reaction on the projectile's nodes are equal and opposite. See the documentation of the
 constraint for the gap, the pairing and what it reports.
@@ -126,7 +128,8 @@ constraint for the gap, the pairing and what it reports.
   constraints"). A penalty far stiffer than the concrete costs time increments, not stability.
 - **The search distance** must exceed the distance a point travels towards the surface between two updates of the
   connectivity: a model with particles updates it in every increment (a model of finite elements alone only every
-  ``contact-update-frequency`` increments). A point in contact is never lost to it. A warning in the journal says when points enter deeper than half of it.
+  ``contact-update-frequency`` increments). A point in contact is never lost to it. A warning in the journal says when
+  points enter deeper than half of it.
 
 The time increment
 ------------------
@@ -160,9 +163,9 @@ contact forces of both sides, the points in contact and found inside, the deepes
 and nose and the total kinetic energy in every increment. A long run adds a restart output manager, which writes
 checkpoints, and resumes from one (:class:`~edelweissfe.utils.checkpoint.ResumeCheckpoint`, passed to
 ``step.solve``), so that it survives an interruption. Create the constraints, the supports included, before the
-checkpoint is restored: a support holds the positions of the model it is created with. Nothing erodes failed concrete, so the run must stop before the slab engulfs
-the projectile: then a slab particle ends up on the far side of a facet it never approached, and the contact can no
-longer tell inside from outside. An output manager that raises ``ConditionalStop`` ends the step there.
+checkpoint is restored: a support holds the positions of the model it is created with. Nothing erodes failed concrete,
+so the run must stop before the slab engulfs the projectile: then a slab particle ends up on the far side of a facet it
+never approached, and the contact can no longer tell inside from outside. An output manager that raises ``ConditionalStop`` ends the step there.
 
 What to check
 -------------
@@ -193,12 +196,12 @@ projectile's motion, and check:
 
 Example 191 asserts the checks of energy, action and reaction, time increment and search distance on its first 40 us.
 Done on a small slab of the particle size of the production run, over its first 100 us, the checks came out as follows:
-the kinetic energy never exceeded the initial one; action and reaction cancelled to round-off in every increment, and the
-projectile's momentum followed the contact impulse to round-off; halving the time increment changed the penetration by
-about a hundredth of a millimetre, a tenfold larger or smaller penalty by a few tenths of a millimetre, of the order of
-the change of the overlap; the deepest overlap was about a tenth of the search distance and no point was found inside;
-the quarter model followed the whole one to a few tenths of a millimetre. A run resumed from a checkpoint after an
-interruption followed the uninterrupted one.
+the kinetic energy never exceeded the initial one; action and reaction cancelled to round-off in every increment, and
+the projectile's momentum followed the contact impulse to round-off; halving the time increment changed the penetration
+by about a hundredth of a millimetre, a tenfold larger or smaller penalty by a few tenths of a millimetre, of the order
+of the change of the overlap; the deepest overlap was about a tenth of the search distance and no point was found
+inside; the quarter model followed the whole one to a few tenths of a millimetre. A run resumed from a checkpoint after
+an interruption followed the uninterrupted one.
 
 The critical time step of the particles costs a small share of an increment: the particles bound the row
 sums of their absolute stiffness node by node, and only when the margin policy asks for it.
@@ -210,14 +213,14 @@ concrete is resolved by the particles, not by the nonlocal strain.
 What the run shows
 ------------------
 
-The production run is the quarter of a slab of 600 x 600 x 100 mm in seven layers of particles (3087 particles) and of
-the projectile in 2 x 2 x 4 elements, with the contact of this page (four points on every face of the particles near the
-impact), the restart output manager and an output manager that stops the step at a nose depth of 40 mm. The checks held
-over the whole run: the kinetic energy never exceeded the initial one, action and reaction cancelled to round-off, the
-projectile's momentum followed the contact impulse to round-off, no point was found inside, and the deepest overlap
-stayed below a seventh of the search distance. The nose was 12.4 mm deep after 50 us and 20.6 mm after 100 us; with one
-contact point per face instead of four, or with the contact on the vertices of the particles that the points on their
-faces replaced, these depths differ by a few percent.
+A production run is the quarter of a slab of 600 x 600 x 100 mm in a few layers of particles and of the projectile in
+2 x 2 x 4 elements, with the contact of this page (four points on every face of the particles near the impact), the
+restart output manager and an output manager that stops the step at a chosen nose depth. The checks of "What to check"
+hold over such a run: the kinetic energy never exceeds the initial one, action and reaction cancel to round-off, the
+projectile's momentum follows the contact impulse to round-off, no point is found inside, and the deepest overlap stays
+a small fraction of the search distance. The depths of the nose early in the run differ by a few percent between one
+and four contact points per face, or with the contact on the vertices of the particles that the points on their faces
+replaced.
 
 Later quantities are not results of this model: when the nose reaches the stop depth, its velocity then and the force
 late in the run change by tens of percent with the number of contact points per face. Once the concrete under the nose

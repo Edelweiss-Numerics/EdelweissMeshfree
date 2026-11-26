@@ -311,8 +311,8 @@ increment, and the estimate may be too large; take a smaller ``courant-number`` 
 
 A penalty constraint on the particles -- a support (``ParticlePenaltyWeakDirichlet``), a Cartesian boundary or a
 contact with an analytical surface held by a penalty, a contact of points on their faces with finite elements or with
-a rigid body, a tie of them to finite elements, whose springs act along every axis (:ref:`particle-face-contact`) --
-adds its stiffness to the frequencies of the nodes it couples.
+a rigid body, or a tie of such points to finite elements, the one whose springs act along every axis
+(:ref:`particle-face-contact`) -- adds its stiffness to the frequencies of the nodes it couples.
 The constraints bound the row sums of their own stiffness, scaled by the lumped mass, in every increment, and these are
 added to the particles' row sums inside the field matrix
 (:class:`~edelweissmeshfree.models.mpmdiscretesystem.CriticalTimeStepEstimateFromTheFieldMatrix`; theory page on the
