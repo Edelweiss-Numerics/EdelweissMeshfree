@@ -47,10 +47,15 @@ autodoc_typehints = "description"
 napoleon_use_admonition_for_notes = True
 numpydoc_show_class_members = True
 numpydoc_class_members_toctree = False
-# A base whose inherited members are documented with the classes they come from lists its own only: the abstract
-# properties every constraint has (name, nodes, fields, ...) would name a dozen targets each.
+# A class whose inherited members are documented with the classes they come from lists its own only: the properties
+# every constraint has (name, nodes, fields, ...) would name a dozen targets each. The two explicit penalty spring
+# constraints take them from their base, which documents them.
 numpydoc_show_inherited_class_members = {
     "edelweissmeshfree.constraints.base.penaltyspringsexplicit.PenaltySpringsOnPointsOfOneParticleExplicit": False,
+    "edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit."
+    "ParticlePenaltyCartesianBoundaryConstraintExplicit": False,
+    "edelweissmeshfree.constraints.explicit.particlepenaltyrigidbodycontactexplicit."
+    "ParticlePenaltyContactImplicitSurfaceConstraintExplicit": False,
 }
 
 

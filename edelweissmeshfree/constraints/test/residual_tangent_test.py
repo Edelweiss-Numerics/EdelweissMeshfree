@@ -35,7 +35,8 @@ tangent ``K = dP/dU``.
   that reading the wrong one shows.
 - A constraint for explicit analyses only has no tangent; its residual contribution is compared with that of its
   implicit counterpart in the same state, which the check above covers, and its bound of the stiffness for the
-  critical time step with the tangent of the counterpart.
+  critical time step with the tangent of the counterpart. It refuses a location without points, and gives a point
+  whose gap has no gradient no spring.
 - The check above holds at whatever point of a particle a constraint acts. A constraint that acts at a point the user
   names -- the center of the particle, or one of its vertices -- is also checked to measure its condition there.
 - Every constraint is restartable: it declares the state it carries, here none.
@@ -522,3 +523,43 @@ def test_an_explicit_constraint_refuses_an_implicit_analysis(constraintType, mod
     zero = np.zeros(constraint.nDof)
     with pytest.raises(TypeError, match="explicit"):
         constraint.computeKernels(zero, zero, zero, np.zeros((constraint.nDof, constraint.nDof)), TIMESTEP)
+
+
+@pytest.mark.parametrize(
+    "location, ids",
+    [("faces", {}), ("face", {"faceIDs": []}), ("vertex", {"vertexIDs": []})],
+    ids=["unknown location", "no face", "no vertex"],
+)
+def test_an_explicit_contact_refuses_a_location_without_points(location, ids, model):
+    """A location at which the particle has no point -- an unknown one, or an empty list of ids -- is refused when the
+    contact is made, not left to a contact that acts nowhere."""
+
+    with pytest.raises(ValueError, match="location"):
+        ParticlePenaltyContactImplicitSurfaceConstraintExplicit(
+            "c", _movedParticle((0.8, 0.65)), *_circle((0.95, 0.8), 0.2), model, location=location, **ids
+        )
+
+
+def test_a_penetrating_point_whose_gap_has_no_gradient_gets_no_spring(model):
+    """A point inside the obstacle where the gradient of its gap vanishes, e.g. at the center of a circular obstacle,
+    has no direction to be pushed in: it gets no spring, so no force, no reaction and no stiffness."""
+
+    constraint = _connected(
+        ParticlePenaltyContactImplicitSurfaceConstraintExplicit(
+            "c",
+            _movedParticle((0.8, 0.65)),
+            lambda x: -0.01,
+            lambda x: np.zeros(2),
+            model,
+            penaltyParameter=PENALTY,
+            doProximityCheck=False,
+        )
+    )
+
+    zero = np.zeros(constraint.nDof)
+    P = np.zeros(constraint.nDof)
+    constraint.computeKernelsExplicit(zero, zero, P, TIMESTEP)
+    bound = np.zeros(constraint.nDof)
+    constraint.addBoundOfAbsoluteStiffnessTimes(zero, zero, np.ones(constraint.nDof), bound, TIMESTEP)
+    assert constraint.reactionForce == 0.0
+    assert not P.any() and not bound.any()

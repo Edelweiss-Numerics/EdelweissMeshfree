@@ -1,16 +1,11 @@
 from collections.abc import Iterable
 
 import numpy as np
-from edelweissfe.config.phenomena import getFieldSize
 from edelweissfe.surfaces.entitybasedsurface import EntityBasedSurface
 from edelweissfe.timesteppers.timestep import TimeStep
-from edelweissfe.variables.scalarvariable import ScalarVariable
 
 from edelweissmeshfree.constraints.base.penaltyspringsexplicit import (
     PenaltySpringsOnPointsOfOneParticleExplicit,
-)
-from edelweissmeshfree.constraints.base.pointsofparticles import (
-    locateTheNodesOfParticles,
 )
 from edelweissmeshfree.models.mpmmodel import MPMModel
 from edelweissmeshfree.particles.base.baseparticle import BaseParticle
@@ -33,7 +28,8 @@ class ParticlePenaltyCartesianBoundaryConstraintExplicit(PenaltySpringsOnPointsO
     :math:`\boldsymbol{n}` the unit normal pointing away from the boundary, the gradient of the gap. The force and the
     bound of its stiffness for the critical time step are those of
     :class:`~edelweissmeshfree.constraints.base.penaltyspringsexplicit.PenaltySpringsOnPointsOfOneParticleExplicit`; the
-    boundary gives the gap (:meth:`_gapsOfPoints`) and its gradient (:meth:`_gradientsOfTheGaps`).
+    boundary gives the gap (:meth:`_gapsOfPoints`), its gradient (:meth:`_gradientsOfTheGaps`) and its reach
+    (:meth:`_isWithinReach`).
 
     Parameters
     ----------
@@ -68,9 +64,6 @@ class ParticlePenaltyCartesianBoundaryConstraintExplicit(PenaltySpringsOnPointsO
         :meth:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.interpolationVectorAtPointOf`.
     """
 
-    #: Carries nothing from one increment to the next.
-    checkpointedState = {}
-
     def __init__(
         self,
         name: str,
@@ -87,43 +80,23 @@ class ParticlePenaltyCartesianBoundaryConstraintExplicit(PenaltySpringsOnPointsO
         proximityFactor: float = 2.0,
         interpolationLinearizedAboutCenter: bool = False,
     ):
-        self._name = name
-        self.interpolationLinearizedAboutCenter = interpolationLinearizedAboutCenter
-        self._field = "displacement"
-        self._fieldSize = getFieldSize(self._field, model.domainSize)
-
-        # the nodes of the particle's kernel functions, and where they sit in the block (see updateConnectivity)
-        self._nodes = []
-        self._localNodes = np.zeros(0, dtype=int)
-
         self._component = component
-        self.reactionForce = 0.0
-
         self._boundaryPosition = boundaryPosition
-        self._vertexIDs = vertexIDs
-        self._faceIDs = faceIDs
+        self._velocity = velocity
+        super().__init__(
+            name,
+            particle,
+            model,
+            location,
+            faceIDs,
+            vertexIDs,
+            penaltyParameter,
+            doProximityCheck,
+            proximityFactor,
+            interpolationLinearizedAboutCenter,
+        )
 
-        def _getConstraintLocations():
-            if location == "center":
-                return [particle.getCenterCoordinates()]
-            elif location == "face":
-                if self._faceIDs is None:
-                    raise ValueError("faceID must be specified when location is 'face'.")
-                ids = [self._faceIDs] if isinstance(self._faceIDs, int) else self._faceIDs
-                return [particle.getFaceCoordinates(idx) for idx in ids]
-            elif location == "vertex":
-                if self._vertexIDs is None:
-                    raise ValueError("vertexID must be specified when location is 'vertex'.")
-                ids = [self._vertexIDs] if isinstance(self._vertexIDs, int) else self._vertexIDs
-                vertices = particle.getVertexCoordinates()
-                return [vertices[idx] for idx in ids]
-            return []
-
-        self._getConstraintLocations = _getConstraintLocations
         domainSize = model.domainSize
-        self._constrained_points = self._getConstraintLocations()
-        self._particle = particle
-
         if component < 0 or component >= domainSize:
             raise ValueError(f"Component {component} is out of bounds for domain size {domainSize}.")
 
@@ -136,63 +109,21 @@ class ParticlePenaltyCartesianBoundaryConstraintExplicit(PenaltySpringsOnPointsO
         # Determine orientation: 1.0 if boundary is "above" particle, -1.0 if "below"
         self._orientation = 1.0 if boundaryPosition > first_pos else -1.0
 
-        self._velocity = velocity
-        self._penaltyParameter = penaltyParameter
-        self._doProximityCheck = doProximityCheck
+    def _isWithinReach(self, points: list) -> bool:
+        """Whether one of the points is within reach of the boundary, at its position at the start, on either side.
 
-        if self._doProximityCheck:
-            self._proximityDist = particle.getVolumeUndeformed() ** (1.0 / domainSize) * proximityFactor
+        Parameters
+        ----------
+        points
+            The coordinates of each point.
 
-    @property
-    def name(self) -> str:
-        return self._name
-
-    @property
-    def nodes(self) -> list:
-        return self._nodes
-
-    @property
-    def fields(self) -> list:
-        return [[self._field]] * len(self._nodes)
-
-    @property
-    def nDof(self) -> int:
-        return len(self._nodes) * self._fieldSize
-
-    @property
-    def scalarVariables(self) -> list:
-        return []
-
-    def getNumberOfAdditionalNeededScalarVariables(self) -> int:
-        return 0
-
-    def assignAdditionalScalarVariables(self, scalarVariables: list[ScalarVariable]):
-        pass
-
-    def updateConnectivity(self, model):
+        Returns
+        -------
+        bool
+            True if the boundary is within reach.
         """
-        Updates the constraint connectivity.
-        In explicit, this caches the global indices of the nodes for fast access.
-        """
-        # Update current coordinates of constrained points (particle may have moved)
-        self._constrained_points = self._getConstraintLocations()
 
-        # the nodes of the particle's kernel functions, and where they sit in the constraint's block
-        localIndexOfNode = {}
-        [self._localNodes] = locateTheNodesOfParticles([self._particle.kernelFunctions], localIndexOfNode)
-        nodes = list(localIndexOfNode)
-        hasChanged = nodes != self._nodes
-        self._nodes = nodes
-
-        # within reach if one of the constrained points is close enough to the boundary
-        self.withinReach = not self._doProximityCheck or any(
-            abs(p[self._component] - self._boundaryPosition) <= self._proximityDist for p in self._constrained_points
-        )
-
-        if not self.active:
-            self.reactionForce = 0.0
-
-        return hasChanged
+        return any(abs(p[self._component] - self._boundaryPosition) <= self._proximityDist for p in points)
 
     def _gapsOfPoints(self, points: np.ndarray, timeStep: TimeStep) -> np.ndarray:
         """The gaps of points to the boundary where it is at the end of a time step, negative beyond it: the boundary

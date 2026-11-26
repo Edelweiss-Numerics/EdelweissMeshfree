@@ -88,8 +88,9 @@ explicit) take one option, ``interpolationLinearizedAboutCenter``
   constraint's force and the bound of its stiffness for the critical time step of ``NED`` from the same code. A penalty
   contact of points of one particle with an obstacle in an explicit analysis derives from
   :class:`~edelweissmeshfree.constraints.base.penaltyspringsexplicit.PenaltySpringsOnPointsOfOneParticleExplicit`, as
-  the Cartesian boundary and the contact with an analytical surface do: a new one is the gap of a point and its
-  gradient, and a constructor.
+  the Cartesian boundary and the contact with an analytical surface do: the base keeps the points, the nodes and the
+  reach current, so a new one is the gap of a point, its gradient and whether the obstacle is within reach, and a
+  constructor that calls the base's.
 
 The base classes
 ----------------

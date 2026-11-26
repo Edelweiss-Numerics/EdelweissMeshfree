@@ -313,24 +313,31 @@ A penalty constraint on the particles -- a support (``ParticlePenaltyWeakDirichl
 contact with an analytical surface held by a penalty -- adds its stiffness to the frequencies of the nodes it couples.
 The constraints bound the row sums of their own stiffness, scaled by the lumped mass, in every increment, and these are
 added to the particles' row sums inside the field matrix
-(:class:`~edelweissmeshfree.models.mpmdiscretesystem.CriticalTimeStepEstimateFromTheFieldMatrix`): with weights constant
-per field, where they raise no diagonal entry of it, the particles' estimate stands; with carried weights, they also add
-to the rows of the Collatz-Wielandt bound, which can lower the estimate a little where they raise no diagonal entry. A
-support or a contact far stiffer than the particles sets the critical time step. The margin policy of the particles
-watches the estimate with the constraints of the current increment as well (theory page on the critical time step of
-EdelweissFE, "The particles: the rows inside their field matrix"). This holds for the particles and the constraints
-together, for the unsymmetric tangent of the particles as well, as long as every constraint couples degrees of freedom
-of one field of the particles only (a support or a contact of the displacement; a penalty between two fields is not
-covered, and this is assumed, not checked). A constraint that couples particles and finite elements at once -- a
-projectile of elements on a slab of particles -- is taken with the larger of the elements' bound and the particles'
-field matrix with its rows; that this bounds the two together is not proven. The contact of the vertices of particles
-with a faceted surface (``ParticlePenaltyFacetContactExplicit``) is not in the estimate: keep :math:`2\sqrt{m/k}` of its
-penalty, with :math:`m` the mass a contact point carries, well above the time increment. A constraint on a point
-away from the center of a particle distributes its force, by default, with the shape functions there,
-:math:`\mathbf{N}`, while the point moves with the particle's interpolation linearized about its center,
-:math:`\mathbf{G}`: its stiffness is :math:`k\,\mathbf{N}\mathbf{G}^\mathsf{T}`, and the bound, which takes
-:math:`\mathbf{N}` on both sides, holds only where the two agree -- at the center, or with
-``interpolationLinearizedAboutCenter`` (:class:`~edelweissmeshfree.constraints.base.pointsofparticles.SpringsOnPointsOfParticle`).
+(:class:`~edelweissmeshfree.models.mpmdiscretesystem.CriticalTimeStepEstimateFromTheFieldMatrix`; theory page on the
+critical time step of EdelweissFE, "The particles: the rows inside their field matrix"):
+
+- **Weights constant per field:** where the rows raise no diagonal entry of the field matrix, the particles' estimate
+  stands; a support or a contact far stiffer than the particles sets the critical time step.
+- **Carried weights:** the rows also add to the rows of the Collatz-Wielandt bound, which can lower the estimate a
+  little where they raise no diagonal entry. In a field a constraint acts on, the weights stay constant per field.
+- **Margin policy:** the particles' margin policy watches the estimate with the constraints of the current increment
+  as well.
+- **One field per constraint:** this bounds the particles and the constraints together, for the unsymmetric tangent of
+  the particles as well, as long as every constraint couples degrees of freedom of one field of the particles only (a
+  support or a contact of the displacement). A penalty between two fields is not covered; this is assumed, not
+  checked.
+- **Particles and finite elements:** a constraint that couples both at once -- a projectile of elements on a slab of
+  particles -- is taken with the larger of the elements' bound and the particles' field matrix with its rows; that
+  this bounds the two together is not proven.
+- **Facet contact:** the contact of the vertices of particles with a faceted surface
+  (``ParticlePenaltyFacetContactExplicit``) is not in the estimate: keep :math:`2\sqrt{m/k}` of its penalty, with
+  :math:`m` the mass a contact point carries, well above the time increment.
+- **Points away from the center:** a constraint on such a point distributes its force, by default, with the shape
+  functions there, :math:`\mathbf{N}`, while the point moves with the particle's interpolation linearized about its
+  center, :math:`\mathbf{G}`: its stiffness is :math:`k\,\mathbf{N}\mathbf{G}^\mathsf{T}`, and the bound, which
+  takes :math:`\mathbf{N}` on both sides, holds only where the two agree -- at the center, or with
+  ``interpolationLinearizedAboutCenter``
+  (:class:`~edelweissmeshfree.constraints.base.pointsofparticles.SpringsOnPointsOfParticle`).
 
 What to know
 ************
