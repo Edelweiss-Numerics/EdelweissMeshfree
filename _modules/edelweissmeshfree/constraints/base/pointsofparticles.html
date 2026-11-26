@@ -117,15 +117,25 @@
 <span class="sd">:meth:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.interpolationVectorAtPointOf`): the</span>
 <span class="sd">shape functions at the point, or the particle's interpolation linearized about its center, with which it moves the</span>
 <span class="sd">point, the transpose of the point's motion, so that a penalty on the point has a symmetric stiffness and does no work</span>
-<span class="sd">over a closed cycle. The constraints of</span>
-<span class="sd">:mod:`edelweissmeshfree.constraints.explicit` and</span>
-<span class="sd">:class:`~edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet` use both; a new one</span>
-<span class="sd">is then its physics -- the gap, the pairing, the force -- and a constructor.</span>
+<span class="sd">over a closed cycle. The explicit solver bounds that stiffness for its critical time step</span>
+<span class="sd">(:func:`addBoundOfAbsoluteStiffnessOfPointsOfParticle`, the one bound of penalty springs of EdelweissFE,</span>
+<span class="sd">:mod:`edelweissfe.constraints.base.penaltysprings`). A penalty constraint gives its springs on the points of a particle</span>
+<span class="sd">as :class:`SpringsOnPointsOfParticle`, from one method for its force and its bound, so that the two cannot drift apart.</span>
+<span class="sd">A contact of points of one particle with an obstacle in an explicit analysis derives from</span>
+<span class="sd">:class:`~edelweissmeshfree.constraints.base.penaltyspringsexplicit.PenaltySpringsOnPointsOfOneParticleExplicit`, which</span>
+<span class="sd">owns the force and the bound: a new one is then its physics -- the gap and its gradient -- and a constructor. The</span>
+<span class="sd">support :class:`~edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet` gives its</span>
+<span class="sd">springs per particle the same way.</span>
 <span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.constraints.base.penaltysprings</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">SpringGradientOnSharedNodes</span><span class="p">,</span>
+    <span class="n">addBoundOfAbsoluteStiffnessOfSprings</span><span class="p">,</span>
+<span class="p">)</span>
 
 
 <div class="viewcode-block" id="locateTheNodesOfParticles">
@@ -167,7 +177,6 @@
     <span class="n">localNodes</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">interpolations</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">forces</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-    <span class="n">components</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Add the residual contribution of forces on points of one particle, the negative of the forces on the nodes of its</span>
 <span class="sd">    kernel functions: :math:`\\boldsymbol{P}_B \\mathrel{-}= \\sum_p I_{pB}\\, \\boldsymbol{f}_p`, with the vector</span>
@@ -184,15 +193,109 @@
 <span class="sd">    interpolations</span>
 <span class="sd">        The vectors of the points, one row per point: ``nPoints x nNodesOfTheParticle``.</span>
 <span class="sd">    forces</span>
-<span class="sd">        The forces on the points, one row per point: ``nPoints x fieldSize``, or ``nPoints x len(components)``.</span>
-<span class="sd">    components</span>
-<span class="sd">        The components the forces act in, e.g. those a support holds; all if None.</span>
+<span class="sd">        The forces on the points, one row per point: ``nPoints x fieldSize``.</span>
 <span class="sd">    """</span>
 
-    <span class="k">if</span> <span class="n">components</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">PAtNodes</span><span class="p">[</span><span class="n">localNodes</span><span class="p">]</span> <span class="o">-=</span> <span class="n">interpolations</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">forces</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">PAtNodes</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="n">localNodes</span><span class="p">,</span> <span class="n">components</span><span class="p">)]</span> <span class="o">-=</span> <span class="n">interpolations</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">forces</span></div>
+    <span class="n">PAtNodes</span><span class="p">[</span><span class="n">localNodes</span><span class="p">]</span> <span class="o">-=</span> <span class="n">interpolations</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">forces</span></div>
+
+
+
+<div class="viewcode-block" id="SpringsOnPointsOfParticle">
+<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.pointsofparticles.SpringsOnPointsOfParticle">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SpringsOnPointsOfParticle</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Penalty springs on points of one particle. Spring :math:`p` measures a gap :math:`g_p` of its point, positive</span>
+<span class="sd">    where a contact is open, and acts along the unit direction :math:`\\boldsymbol{n}_p` of the gradient of the gap</span>
+<span class="sd">    (for a contact the outward normal of the obstacle, for a support the axis it holds). Its law gives the force</span>
+<span class="sd">    :math:`f_p = -k_p\\, g_p` on the point along :math:`\\boldsymbol{n}_p`, which pushes a closed point out</span>
+<span class="sd">    (:math:`g_p &lt; 0`, :math:`f_p &gt; 0`) and pulls a held point back to where it is held, and the stiffness :math:`k_p =</span>
+<span class="sd">    -\\mathrm{d}f_p/\\mathrm{d}g_p &gt; 0`.</span>
+<span class="sd">    The force :math:`f_p \\boldsymbol{n}_p` reaches the nodes with the vector of the point</span>
+<span class="sd">    (:func:`addForcesOnPointsOfParticle`), and the stiffness is :math:`k_p\\, \\boldsymbol{a}_p \\otimes</span>
+<span class="sd">    \\boldsymbol{a}_p` with :math:`\\boldsymbol{a}_p = \\boldsymbol{I}_p \\otimes \\boldsymbol{n}_p`</span>
+<span class="sd">    (:func:`addBoundOfAbsoluteStiffnessOfPointsOfParticle`). The bound takes the vector of the point for its motion as</span>
+<span class="sd">    well, which it is where the constraint uses the particle's interpolation linearized about its center, or at the</span>
+<span class="sd">    center; elsewhere the point moves with that interpolation, not with the shape functions the force is distributed</span>
+<span class="sd">    with (:meth:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.interpolationVectorAtPointOf`).</span>
+<span class="sd">    """</span>
+
+    <span class="c1">#: The vectors of the points of the springs, one row per spring: ``nSprings x nNodesOfTheParticle``, those the</span>
+    <span class="c1">#: constraint measures and distributes with</span>
+    <span class="c1">#: (:meth:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.interpolationVectorAtPointOf`).</span>
+    <span class="n">interpolations</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+    <span class="c1">#: The unit direction of each spring, that of the gradient of its gap: ``nSprings x fieldSize``.</span>
+    <span class="n">directions</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+    <span class="c1">#: The force of each spring on its point along its direction, :math:`f_p = -k_p\\, g_p`, at the gap it was given.</span>
+    <span class="n">forces</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+    <span class="c1">#: The stiffness of each spring, :math:`k_p = -\\mathrm{d}f_p/\\mathrm{d}g_p`.</span>
+    <span class="n">stiffness</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span></div>
+
+
+
+<div class="viewcode-block" id="addBoundOfAbsoluteStiffnessOfPointsOfParticle">
+<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.pointsofparticles.addBoundOfAbsoluteStiffnessOfPointsOfParticle">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">addBoundOfAbsoluteStiffnessOfPointsOfParticle</span><span class="p">(</span>
+    <span class="n">bound</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">localNodes</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">springs</span><span class="p">:</span> <span class="n">SpringsOnPointsOfParticle</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Add the row sums of the absolute value of the stiffness of penalty springs on points of one particle, weighted</span>
+<span class="sd">    by column (see :meth:`~edelweissfe.constraints.base.constraintbase.ConstraintBase.addBoundOfAbsoluteStiffnessTimes`).</span>
+<span class="sd">    A spring of stiffness :math:`k_p` on the point :math:`p` along the unit direction :math:`\\boldsymbol{n}_p` has the</span>
+<span class="sd">    stiffness :math:`k_p\\, \\boldsymbol{a}_p \\otimes \\boldsymbol{a}_p`, with the vector it acts with,</span>
+<span class="sd">    :math:`\\boldsymbol{a}_p = \\boldsymbol{I}_p \\otimes \\boldsymbol{n}_p`, and the vector :math:`\\boldsymbol{I}_p`</span>
+<span class="sd">    of the point (:attr:`SpringsOnPointsOfParticle.interpolations`), so, with the weights :math:`w_{Cj}` of the columns,</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        b_{Bi} \\mathrel{+}= \\sum_p |k_p|\\, |I_{pB}|\\, |n_{pi}| \\sum_{C,j} |I_{pC}|\\, |n_{pj}|\\, w_{Cj} ,</span>
+
+<span class="sd">    the bound of every penalty spring</span>
+<span class="sd">    (:func:`~edelweissfe.constraints.base.penaltysprings.addBoundOfAbsoluteStiffnessOfSprings`), over the nodes of the</span>
+<span class="sd">    particle's kernel functions.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    bound</span>
+<span class="sd">        The row sums of the constraint, one per degree of freedom of its block (node by node); augmented.</span>
+<span class="sd">    weights</span>
+<span class="sd">        The weights of the columns, likewise.</span>
+<span class="sd">    localNodes</span>
+<span class="sd">        Where the nodes of the particle's kernel functions sit in the block (:func:`locateTheNodesOfParticles`).</span>
+<span class="sd">    springs</span>
+<span class="sd">        The springs.</span>
+<span class="sd">    """</span>
+
+    <span class="n">fieldSize</span> <span class="o">=</span> <span class="n">springs</span><span class="o">.</span><span class="n">directions</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">dofsOfNodes</span> <span class="o">=</span> <span class="n">localNodes</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">fieldSize</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">fieldSize</span><span class="p">)</span>
+    <span class="n">addBoundOfAbsoluteStiffnessOfSprings</span><span class="p">(</span>
+        <span class="n">bound</span><span class="p">,</span>
+        <span class="n">weights</span><span class="p">,</span>
+        <span class="n">springs</span><span class="o">.</span><span class="n">stiffness</span><span class="p">,</span>
+        <span class="p">[</span><span class="n">SpringGradientOnSharedNodes</span><span class="p">(</span><span class="n">springs</span><span class="o">.</span><span class="n">interpolations</span><span class="p">,</span> <span class="n">springs</span><span class="o">.</span><span class="n">directions</span><span class="p">,</span> <span class="n">dofsOfNodes</span><span class="p">)],</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="addForcesOfSpringsOnPointsOfParticle">
+<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.pointsofparticles.addForcesOfSpringsOnPointsOfParticle">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">addForcesOfSpringsOnPointsOfParticle</span><span class="p">(</span>
+    <span class="n">PAtNodes</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">localNodes</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">springs</span><span class="p">:</span> <span class="n">SpringsOnPointsOfParticle</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Add the residual contribution of penalty springs on points of one particle: the negative of the forces</span>
+<span class="sd">    :math:`f_p \\boldsymbol{n}_p` they exert on the nodes of its kernel functions (:func:`addForcesOnPointsOfParticle`).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    PAtNodes</span>
+<span class="sd">        The residual contribution of the constraint, node by node: ``nNodes x fieldSize``; augmented.</span>
+<span class="sd">    localNodes</span>
+<span class="sd">        Where the nodes of the particle's kernel functions sit in the block (:func:`locateTheNodesOfParticles`).</span>
+<span class="sd">    springs</span>
+<span class="sd">        The springs.</span>
+<span class="sd">    """</span>
+
+    <span class="n">addForcesOnPointsOfParticle</span><span class="p">(</span>
+        <span class="n">PAtNodes</span><span class="p">,</span> <span class="n">localNodes</span><span class="p">,</span> <span class="n">springs</span><span class="o">.</span><span class="n">interpolations</span><span class="p">,</span> <span class="n">springs</span><span class="o">.</span><span class="n">forces</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">springs</span><span class="o">.</span><span class="n">directions</span>
+    <span class="p">)</span></div>
 
 </pre></div>
 

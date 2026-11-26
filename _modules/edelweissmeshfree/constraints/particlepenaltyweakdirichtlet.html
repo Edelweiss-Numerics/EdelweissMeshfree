@@ -80,7 +80,9 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.constraints.base.mpmconstraintbase</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPMConstraintBase</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.constraints.base.pointsofparticles</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">addForcesOnPointsOfParticle</span><span class="p">,</span>
+    <span class="n">SpringsOnPointsOfParticle</span><span class="p">,</span>
+    <span class="n">addBoundOfAbsoluteStiffnessOfPointsOfParticle</span><span class="p">,</span>
+    <span class="n">addForcesOfSpringsOnPointsOfParticle</span><span class="p">,</span>
     <span class="n">locateTheNodesOfParticles</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.models.mpmmodel</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPMModel</span>
@@ -126,8 +128,10 @@
 
 <span class="sd">    A support holds only as well as its penalty is stiff against the material next to it: a penalty that is merely</span>
 <span class="sd">    comparable to the stiffness of a particle lets the support give way and spring back, an error that does not shrink</span>
-<span class="sd">    with the particle size. Its upper bound is set by the critical time step of the explicit integration,</span>
-<span class="sd">    :math:`\Delta t &lt; 2 \sqrt{m / k}` with :math:`m` the mass a constrained point carries; see example 186.</span>
+<span class="sd">    with the particle size. A stiffer one costs time increments: the explicit solver adds its springs to the</span>
+<span class="sd">    frequencies of the nodes they hold (:meth:`addBoundOfAbsoluteStiffnessTimes`), and a support far stiffer than</span>
+<span class="sd">    the particles sets the critical time step, about :math:`2 \sqrt{m / k}` with :math:`m` the mass a constrained point</span>
+<span class="sd">    carries; see example 186.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -336,10 +340,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">computeKernelsExplicit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">U_np</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">dU</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">P</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""Add the residual contribution of the support in an explicit analysis: the negative of the forces that hold</span>
 <span class="sd">        the constrained components of the constrained points at their initial positions, measured where the points are</span>
-<span class="sd">        now (see the class documentation). Particle by particle, the forces of its constrained points</span>
-<span class="sd">        :math:`\\boldsymbol{f}_p` reach the nodes of its kernel functions as one product with the interpolation vectors</span>
-<span class="sd">        of the points, :math:`\\boldsymbol{G}^\\mathsf{T} \\boldsymbol{f}`</span>
-<span class="sd">        (:func:`~edelweissmeshfree.constraints.base.pointsofparticles.addForcesOnPointsOfParticle`).</span>
+<span class="sd">        now (see the class documentation), from its springs (:meth:`_springsOfEachParticle`).</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -353,21 +354,85 @@
 <span class="sd">            The current time step; unused.</span>
 <span class="sd">        """</span>
 
-        <span class="n">components</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_prescribedStepDelta</span><span class="p">)</span>
         <span class="n">PAtNodes</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">)</span>
-
-        <span class="k">for</span> <span class="n">p</span><span class="p">,</span> <span class="n">localNodes</span><span class="p">,</span> <span class="n">initialCoordinates</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_constrainedParticles</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_localNodesOfParticle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initialCoordinatesOfConstrainedPoints</span>
-        <span class="p">):</span>
-            <span class="n">coordinates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constrainedCoordinatesOf</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
-            <span class="c1"># one row per constrained point: the vector the force is distributed with (see interpolationVectorAtPointOf)</span>
-            <span class="n">interpolations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolationVectorAtPointOf</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">coordinates</span><span class="p">])</span>
-            <span class="c1"># the forces that pull the constrained components of the points back to their initial positions</span>
-            <span class="n">forces</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_penaltyParameter</span> <span class="o">*</span> <span class="p">(</span><span class="n">coordinates</span><span class="p">[:,</span> <span class="n">components</span><span class="p">]</span> <span class="o">-</span> <span class="n">initialCoordinates</span><span class="p">[:,</span> <span class="n">components</span><span class="p">])</span>
-            <span class="n">addForcesOnPointsOfParticle</span><span class="p">(</span><span class="n">PAtNodes</span><span class="p">,</span> <span class="n">localNodes</span><span class="p">,</span> <span class="n">interpolations</span><span class="p">,</span> <span class="n">forces</span><span class="p">,</span> <span class="n">components</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">localNodes</span><span class="p">,</span> <span class="n">springs</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_springsOfEachParticle</span><span class="p">():</span>
+            <span class="n">addForcesOfSpringsOnPointsOfParticle</span><span class="p">(</span><span class="n">PAtNodes</span><span class="p">,</span> <span class="n">localNodes</span><span class="p">,</span> <span class="n">springs</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prescribedStepDelta</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">penaltyForce</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">P</span><span class="p">[</span><span class="n">i</span> <span class="p">::</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ParticlePenaltyWeakDirichlet.addBoundOfAbsoluteStiffnessTimes">
+<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet.addBoundOfAbsoluteStiffnessTimes">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addBoundOfAbsoluteStiffnessTimes</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">U_np</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">dU</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">bound</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Add the row sums of the absolute value of the stiffness of the support in an explicit analysis, weighted by</span>
+<span class="sd">        column, from the same springs as its force (:meth:`_springsOfEachParticle`,</span>
+<span class="sd">        :func:`~edelweissmeshfree.constraints.base.pointsofparticles.addBoundOfAbsoluteStiffnessOfPointsOfParticle`).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        U_np</span>
+<span class="sd">            The current solution; unused.</span>
+<span class="sd">        dU</span>
+<span class="sd">            The solution increment; unused.</span>
+<span class="sd">        weights</span>
+<span class="sd">            The weight of each column.</span>
+<span class="sd">        bound</span>
+<span class="sd">            The row sums to augment.</span>
+<span class="sd">        timeStep</span>
+<span class="sd">            The current time step; unused.</span>
+<span class="sd">        """</span>
+
+        <span class="k">for</span> <span class="n">localNodes</span><span class="p">,</span> <span class="n">springs</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_springsOfEachParticle</span><span class="p">():</span>
+            <span class="n">addBoundOfAbsoluteStiffnessOfPointsOfParticle</span><span class="p">(</span><span class="n">bound</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">localNodes</span><span class="p">,</span> <span class="n">springs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ParticlePenaltyWeakDirichlet._springsOfEachParticle">
+<a class="viewcode-back" href="../../../documentation/constraints.html#edelweissmeshfree.constraints.particlepenaltyweakdirichtlet.ParticlePenaltyWeakDirichlet._springsOfEachParticle">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_springsOfEachParticle</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">SpringsOnPointsOfParticle</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">"""The springs of the support in an explicit analysis, per constrained particle and per constrained component</span>
+<span class="sd">        :math:`i`: one of the penalty stiffness :math:`k` at each constrained point, along the axis :math:`i`, whose gap</span>
+<span class="sd">        is the displacement of the point from where it is held, :math:`g_p = x_{pi} - X_{pi}`, and whose force</span>
+<span class="sd">        :math:`f_p = -k\\, g_p` pulls it back; with the vector the force is distributed with</span>
+<span class="sd">        (:meth:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.interpolationVectorAtPointOf`).</span>
+<span class="sd">        What the force (:meth:`computeKernelsExplicit`) and the bound of the stiffness</span>
+<span class="sd">        (:meth:`addBoundOfAbsoluteStiffnessTimes`) are made from.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list[tuple[numpy.ndarray, SpringsOnPointsOfParticle]]</span>
+<span class="sd">            Where the nodes of the particle's kernel functions sit in the block, and the springs.</span>
+<span class="sd">        """</span>
+
+        <span class="n">springsOfEachParticle</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">particle</span><span class="p">,</span> <span class="n">localNodes</span><span class="p">,</span> <span class="n">initialCoordinates</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_constrainedParticles</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_localNodesOfParticle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initialCoordinatesOfConstrainedPoints</span>
+        <span class="p">):</span>
+            <span class="n">coordinates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constrainedCoordinatesOf</span><span class="p">(</span><span class="n">particle</span><span class="p">)</span>
+            <span class="n">interpolations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolationVectorAtPointOf</span><span class="p">(</span><span class="n">particle</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">coordinates</span><span class="p">])</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+                <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">coordinates</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">localNodes</span><span class="p">))</span>
+            <span class="p">)</span>
+            <span class="n">stiffness</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">coordinates</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_penaltyParameter</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prescribedStepDelta</span><span class="p">:</span>
+                <span class="n">directions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">coordinates</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">))</span>
+                <span class="n">directions</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+                <span class="n">gaps</span> <span class="o">=</span> <span class="n">coordinates</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">initialCoordinates</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span>
+                <span class="n">springsOfEachParticle</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="p">(</span>
+                        <span class="n">localNodes</span><span class="p">,</span>
+                        <span class="n">SpringsOnPointsOfParticle</span><span class="p">(</span>
+                            <span class="n">interpolations</span><span class="p">,</span> <span class="n">directions</span><span class="p">,</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_penaltyParameter</span> <span class="o">*</span> <span class="n">gaps</span><span class="p">,</span> <span class="n">stiffness</span>
+                        <span class="p">),</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+        <span class="k">return</span> <span class="n">springsOfEachParticle</span></div>
 
 
 <div class="viewcode-block" id="ParticlePenaltyWeakDirichlet._constrainedCoordinatesOf">

@@ -108,7 +108,8 @@
 <span class="c1">#  The full text of the license can be found in the file LICENSE.md at</span>
 <span class="c1">#  the top level directory of EdelweissMeshfree.</span>
 <span class="c1">#  ---------------------------------------------------------------------</span>
-<span class="sd">"""Constraints for explicit analyses only: they act with forces, and have no tangent."""</span>
+<span class="sd">"""Constraints for explicit analyses only: they act with forces, and have no tangent; they give the bound of their</span>
+<span class="sd">stiffness for the critical time step instead."""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">abstractmethod</span>
 
@@ -123,11 +124,12 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">MPMExplicitConstraintBase</span><span class="p">(</span><span class="n">MPMConstraintBase</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""The base class of the constraints that act only in an explicit analysis.</span>
 
-<span class="sd">    An explicit analysis solves no linear system, so it needs a constraint's forces but not their tangent. A</span>
-<span class="sd">    constraint written for it alone -- a penalty contact evaluated on the particles' current positions, say --</span>
-<span class="sd">    implements :meth:`computeKernelsExplicit`, EdelweissFE's entry point for evaluating a constraint without a</span>
-<span class="sd">    tangent, and has no :meth:`computeKernels`: an implicit solver that is handed such a constraint stops with an</span>
-<span class="sd">    error rather than solve with a tangent that is missing.</span>
+<span class="sd">    An explicit analysis solves no linear system, so it needs a constraint's forces, and the bound of their stiffness</span>
+<span class="sd">    for the critical time step, but not their tangent. A constraint written for it alone -- a penalty contact evaluated</span>
+<span class="sd">    on the particles' current positions, say -- implements :meth:`computeKernelsExplicit`, EdelweissFE's entry point for</span>
+<span class="sd">    evaluating a constraint without a tangent, and :meth:`addBoundOfAbsoluteStiffnessTimes`, and has no</span>
+<span class="sd">    :meth:`computeKernels`: an implicit solver that is handed such a constraint stops with an error rather than solve</span>
+<span class="sd">    with a tangent that is missing.</span>
 
 <span class="sd">    It follows the same sign rule as every other constraint: it adds the *negative* of the force it exerts on its</span>
 <span class="sd">    nodes to ``P``.</span>
@@ -196,6 +198,48 @@
 <span class="sd">            The residual contribution to augment.</span>
 <span class="sd">        timeStep</span>
 <span class="sd">            The current time step.</span>
+<span class="sd">        """</span></div>
+
+
+<div class="viewcode-block" id="MPMExplicitConstraintBase.addBoundOfAbsoluteStiffnessTimes">
+<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.mpmexplicitconstraintbase.MPMExplicitConstraintBase.addBoundOfAbsoluteStiffnessTimes">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addBoundOfAbsoluteStiffnessTimes</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">U_np</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">dU</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">bound</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Add an upper bound of the row sums of the absolute value of this constraint's stiffness, weighted by column,</span>
+<span class="sd">        :math:`b_i \\mathrel{+}= \\sum_j |K_{ij}|\\, w_j`, at the state of its force, for the critical time step of</span>
+<span class="sd">        ``NED``: see</span>
+<span class="sd">        :meth:`~edelweissfe.constraints.base.constraintbase.ConstraintBase.addBoundOfAbsoluteStiffnessTimes`. The default</span>
+<span class="sd">        there bounds the tangent of :meth:`computeKernels`, which this constraint does not have, so it gives the bound</span>
+<span class="sd">        itself, in one of two ways:</span>
+
+<span class="sd">        * the bound of its springs, taken from the same springs as its force: through</span>
+<span class="sd">          :func:`~edelweissmeshfree.constraints.base.pointsofparticles.addBoundOfAbsoluteStiffnessOfPointsOfParticle`,</span>
+<span class="sd">          or by deriving from</span>
+<span class="sd">          :class:`~edelweissmeshfree.constraints.base.penaltyspringsexplicit.PenaltySpringsOnPointsOfOneParticleExplicit`,</span>
+<span class="sd">          which does both;</span>
+<span class="sd">        * nothing, saying so, if its stiffness is to stay outside the critical time step, as</span>
+<span class="sd">          :class:`~edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit`</span>
+<span class="sd">          does.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        U_np</span>
+<span class="sd">            The current solution, restricted to this constraint's degrees of freedom.</span>
+<span class="sd">        dU</span>
+<span class="sd">            The solution increment, likewise restricted.</span>
+<span class="sd">        weights</span>
+<span class="sd">            The weight of each column, likewise restricted.</span>
+<span class="sd">        bound</span>
+<span class="sd">            The row sums to augment, one per degree of freedom of this constraint.</span>
+<span class="sd">        timeStep</span>
+<span class="sd">            The time step of the state, as for the force.</span>
 <span class="sd">        """</span></div>
 </div>
 

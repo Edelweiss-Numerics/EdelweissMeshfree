@@ -119,7 +119,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.models.discretesystem</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscreteSystem</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.numerics.dofvector</span><span class="w"> </span><span class="kn">import</span> <span class="n">DofVector</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.sets.nodeset</span><span class="w"> </span><span class="kn">import</span> <span class="n">NodeSet</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.solvers.base.criticaltimestep</span><span class="w"> </span><span class="kn">import</span> <span class="n">CriticalTimeStepEstimate</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.solvers.base.criticaltimestep</span><span class="w"> </span><span class="kn">import</span> <span class="n">CriticalTimeStepEstimateOfTheDofs</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.timesteppers.timestep</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeStep</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.numerics.doflocations</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPMDofLocations</span>
@@ -138,16 +138,38 @@
 
 <div class="viewcode-block" id="CriticalTimeStepEstimateFromTheFieldMatrix">
 <a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmdiscretesystem.CriticalTimeStepEstimateFromTheFieldMatrix">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">CriticalTimeStepEstimateFromTheFieldMatrix</span><span class="p">(</span><span class="n">CriticalTimeStepEstimate</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">CriticalTimeStepEstimateFromTheFieldMatrix</span><span class="p">(</span><span class="n">CriticalTimeStepEstimateOfTheDofs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""The estimate of the critical time step of the particles, from the field matrix :math:`\\boldsymbol{Q}` of the</span>
 <span class="sd">    largest row sums of their mass-scaled stiffness per block of fields (see</span>
-<span class="sd">    :meth:`MPMDiscreteSystem.criticalTimeStepOfEntitiesWithOwnInertia`).</span>
+<span class="sd">    :meth:`MPMDiscreteSystem.criticalTimeStepOfEntitiesWithOwnInertia`), in the form the penalty constraints add to.</span>
+
+<span class="sd">    A penalty constraint acts on one field, and couples it with itself: its row sums :math:`r_i` add to the particles'</span>
+<span class="sd">    row sums :math:`Z_{i g}` within the field block :math:`g` of the degree of freedom :math:`i`, so the diagonal entry of</span>
+<span class="sd">    the field matrix becomes :math:`Q_{gg} = \\max_{i \\in g} (Z_{ig} + r_i)`, the other entries stay. Entry by entry,</span>
+<span class="sd">    the absolute value of the particles' and the constraints' stiffness together is at most the sum of their absolute</span>
+<span class="sd">    values, so the raised field matrix bounds it block by block, and its Perron root, which grows with its entries,</span>
+<span class="sd">    bounds every eigenvalue -- for an unsymmetric tangent as well (theory page on the critical time step of EdelweissFE,</span>
+<span class="sd">    "The particles: the rows inside their field matrix"). Where the constraints raise no diagonal entry, and the weights</span>
+<span class="sd">    are constant per field, the estimate is the particles' own. This holds under one condition: every constraint couples</span>
+<span class="sd">    degrees of freedom of one field of the particles only (a support or a contact of the displacement); a penalty that</span>
+<span class="sd">    coupled two fields, e.g. the displacement with the nonlocal field, would add to an off-diagonal entry of the field</span>
+<span class="sd">    matrix, which this form does not hold. This is assumed, not checked. A constraint that couples particles and finite</span>
+<span class="sd">    elements at once is taken with the larger of the elements' bound and this one; that this bounds the two together</span>
+<span class="sd">    is not proven (same page, "What the estimate does not see").</span>
 
 <span class="sd">    **With carried weights** (see :meth:`MPMDiscreteSystem.criticalTimeStepOfEntitiesWithOwnInertia`, "Weights carried</span>
 <span class="sd">    from estimate to estimate"), :math:`\\boldsymbol{Q}` is the field matrix of the weighted matrix</span>
-<span class="sd">    :math:`\\boldsymbol{W}^{-1}|\\boldsymbol{S}|\\boldsymbol{W}`, and the critical time step of the blocks of each order</span>
-<span class="sd">    is the larger of the one from :math:`\\boldsymbol{Q}` and the one from the rows of the Collatz-Wielandt bound with</span>
-<span class="sd">    the weights scaled by the Perron vector of :math:`\\boldsymbol{Q}`.</span>
+<span class="sd">    :math:`\\boldsymbol{W}^{-1}|\\boldsymbol{S}|\\boldsymbol{W}`, the row sums are those of its rows, and the</span>
+<span class="sd">    critical time step of the blocks of each order is the larger of the one from :math:`\\boldsymbol{Q}` and the one</span>
+<span class="sd">    from the rows of the Collatz-Wielandt bound with the weights scaled by the Perron vector of :math:`\\boldsymbol{Q}`,</span>
+<span class="sd">    to both of which the rows of the penalty constraints add. A constraint's row :math:`r_i` is the row of</span>
+<span class="sd">    :math:`\\boldsymbol{W}^{-1}|\\boldsymbol{S}^\\mathrm{c}|\\boldsymbol{W}` where the weights are constant on its</span>
+<span class="sd">    field, and the particles keep them constant in every field a constraint acts on at the estimate. Elsewhere -- a constraint</span>
+<span class="sd">    that acts on another field since the estimate, e.g. a contact paired anew -- the row is at most :math:`r_i</span>
+<span class="sd">    \\max_{j \\in g} w_j / w_i`, which is added instead: a bound that holds, if loosely; where it lowers the</span>
+<span class="sd">    critical time step below the one in use, the particles are estimated anew</span>
+<span class="sd">    (:meth:`~edelweissfe.solvers.base.criticaltimestep.CriticalTimeStepOfEntitiesWithOwnInertia.isDue`), now with</span>
+<span class="sd">    weights constant on that field.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -157,6 +179,11 @@
 <span class="sd">        Whether each block of fields is integrated by central differences ("second") or by forward Euler ("first").</span>
 <span class="sd">    groupOfDof</span>
 <span class="sd">        The block of fields of each degree of freedom of the numbering; -1 for one of no block.</span>
+<span class="sd">    rowSumsInTheOwnBlock</span>
+<span class="sd">        The row sum :math:`Z_{i g(i)} / w_i` of each degree of freedom within its own block; zero for one of no block.</span>
+<span class="sd">    factorOfThePenaltyRows</span>
+<span class="sd">        The factor :math:`\\max_{j \\in g(i)} w_j / w_i` of the row of a penalty constraint at each degree of freedom:</span>
+<span class="sd">        one where the weights are constant on the block, as they are without carried weights.</span>
 <span class="sd">    collatzWielandtRows</span>
 <span class="sd">        The rows :math:`(|\\boldsymbol{S}|\\boldsymbol{v})_i / v_i` of the Collatz-Wielandt bound with the weights</span>
 <span class="sd">        :math:`v_i = c_{g(i)} w_i`, :math:`\\boldsymbol{c}` the Perron vector of the field matrix of the order; None</span>
@@ -168,13 +195,39 @@
         <span class="n">fieldMatrix</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
         <span class="n">orderOfGroup</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
         <span class="n">groupOfDof</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">rowSumsInTheOwnBlock</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">factorOfThePenaltyRows</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
         <span class="n">collatzWielandtRows</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_fieldMatrix</span> <span class="o">=</span> <span class="n">fieldMatrix</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_orderOfGroup</span> <span class="o">=</span> <span class="n">orderOfGroup</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_groupOfDof</span> <span class="o">=</span> <span class="n">groupOfDof</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rowSumsInTheOwnBlock</span> <span class="o">=</span> <span class="n">rowSumsInTheOwnBlock</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_factorOfThePenaltyRows</span> <span class="o">=</span> <span class="n">factorOfThePenaltyRows</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_collatzWielandtRows</span> <span class="o">=</span> <span class="n">collatzWielandtRows</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_criticalTimeStepOf</span><span class="p">(</span><span class="n">fieldMatrix</span><span class="p">,</span> <span class="n">collatzWielandtRows</span><span class="p">))</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">value</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_criticalTimeStepOf</span><span class="p">(</span><span class="n">fieldMatrix</span><span class="p">,</span> <span class="n">collatzWielandtRows</span><span class="p">),</span> <span class="n">dofs</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">flatnonzero</span><span class="p">(</span><span class="n">groupOfDof</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="CriticalTimeStepEstimateFromTheFieldMatrix.criticalTimeStep">
+<a class="viewcode-back" href="../../../documentation/models.html#edelweissmeshfree.models.mpmdiscretesystem.CriticalTimeStepEstimateFromTheFieldMatrix.criticalTimeStep">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">criticalTimeStep</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rowSumsOfThePenaltyConstraints</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="n">fieldMatrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldMatrix</span>
+        <span class="n">coupled</span> <span class="o">=</span> <span class="p">(</span><span class="n">rowSumsOfThePenaltyConstraints</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_groupOfDof</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">coupled</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="n">penaltyRows</span> <span class="o">=</span> <span class="n">rowSumsOfThePenaltyConstraints</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_factorOfThePenaltyRows</span>
+        <span class="n">fieldMatrix</span> <span class="o">=</span> <span class="n">fieldMatrix</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">sums</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rowSumsInTheOwnBlock</span><span class="p">[</span><span class="n">coupled</span><span class="p">]</span> <span class="o">+</span> <span class="n">penaltyRows</span><span class="p">[</span><span class="n">coupled</span><span class="p">]</span>
+        <span class="n">groups</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_groupOfDof</span><span class="p">[</span><span class="n">coupled</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">groups</span><span class="p">):</span>
+            <span class="n">fieldMatrix</span><span class="p">[</span><span class="n">group</span><span class="p">,</span> <span class="n">group</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">fieldMatrix</span><span class="p">[</span><span class="n">group</span><span class="p">,</span> <span class="n">group</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">sums</span><span class="p">[</span><span class="n">groups</span> <span class="o">==</span> <span class="n">group</span><span class="p">]))</span>
+        <span class="n">collatzWielandtRows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collatzWielandtRows</span>
+        <span class="k">if</span> <span class="n">collatzWielandtRows</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">collatzWielandtRows</span> <span class="o">=</span> <span class="n">collatzWielandtRows</span> <span class="o">+</span> <span class="n">penaltyRows</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_criticalTimeStepOf</span><span class="p">(</span><span class="n">fieldMatrix</span><span class="p">,</span> <span class="n">collatzWielandtRows</span><span class="p">)</span></div>
+
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_criticalTimeStepOf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fieldMatrix</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">collatzWielandtRows</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">""":data:`STABLE_FRACTION_OF_THE_TANGENT_LIMIT` times the smaller of :math:`2/\\sqrt{\\rho}` of the blocks</span>
@@ -707,7 +760,9 @@
 <span class="sd">        constant per field as well, which cost about as much again as those of the carried weights. A degree of</span>
 <span class="sd">        freedom without a weight -- one that has no inertia or damping at the last estimate -- starts at the largest</span>
 <span class="sd">        weight of its block of fields, the weight every degree of freedom of the block has at the start</span>
-<span class="sd">        (:meth:`_weightsOfThisEstimate`).</span>
+<span class="sd">        (:meth:`_weightsOfThisEstimate`). So does every degree of freedom of a field a constraint of the discrete system</span>
+<span class="sd">        acts on: there the weights stay constant per field, so that the rows of the penalty constraints add as they are</span>
+<span class="sd">        (:class:`CriticalTimeStepEstimateFromTheFieldMatrix`).</span>
 
 <span class="sd">        The power iteration shrinks the weights of the degrees of freedom far from the stiffest ones by a factor per</span>
 <span class="sd">        estimate, without limit: within a few dozen estimates they fall below what a double resolves next to the</span>
@@ -731,6 +786,9 @@
 
 <span class="sd">        The result is scaled by :data:`STABLE_FRACTION_OF_THE_TANGENT_LIMIT`, since the explicit scheme of the</span>
 <span class="sd">        particles is not exactly integrated with their tangent: their NSNI stabilization acts on the increment.</span>
+
+<span class="sd">        It is returned with the field matrix and the row sums of every degree of freedom in its own block, to which the</span>
+<span class="sd">        row sums of penalty constraints add (:class:`CriticalTimeStepEstimateFromTheFieldMatrix`).</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -829,17 +887,26 @@
                 <span class="n">weightsOfTheEstimate</span><span class="p">[</span><span class="n">ofTheOrder</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weightsForTheNextEstimate</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
             <span class="n">weightsOfTheEstimate</span><span class="p">[</span><span class="n">groupOfDof</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
 
-        <span class="k">return</span> <span class="n">CriticalTimeStepEstimateFromTheFieldMatrix</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span> <span class="n">orderOfGroup</span><span class="p">,</span> <span class="n">groupOfDof</span><span class="p">,</span> <span class="n">collatzWielandtRows</span><span class="p">)</span></div>
+        <span class="n">rowSumsInTheOwnBlock</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nDof</span><span class="p">)</span>
+        <span class="n">rowSumsInTheOwnBlock</span><span class="p">[</span><span class="n">inAGroup</span><span class="p">]</span> <span class="o">=</span> <span class="n">rowSumsPerWeight</span><span class="p">[</span><span class="n">inAGroup</span><span class="p">,</span> <span class="n">groupOfDof</span><span class="p">[</span><span class="n">inAGroup</span><span class="p">]]</span>
+        <span class="n">factorOfThePenaltyRows</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">nDof</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nGroups</span><span class="p">):</span>
+            <span class="n">ofTheGroup</span> <span class="o">=</span> <span class="n">groupOfDof</span> <span class="o">==</span> <span class="n">group</span>
+            <span class="n">factorOfThePenaltyRows</span><span class="p">[</span><span class="n">ofTheGroup</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">weights</span><span class="p">[</span><span class="n">ofTheGroup</span><span class="p">])</span> <span class="o">/</span> <span class="n">weights</span><span class="p">[</span><span class="n">ofTheGroup</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">CriticalTimeStepEstimateFromTheFieldMatrix</span><span class="p">(</span>
+            <span class="n">Q</span><span class="p">,</span> <span class="n">orderOfGroup</span><span class="p">,</span> <span class="n">groupOfDof</span><span class="p">,</span> <span class="n">rowSumsInTheOwnBlock</span><span class="p">,</span> <span class="n">factorOfThePenaltyRows</span><span class="p">,</span> <span class="n">collatzWielandtRows</span>
+        <span class="p">)</span></div>
 
 
-    <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_weightsOfThisEstimate</span><span class="p">(</span>
-        <span class="n">weightsOfTheEstimate</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">groupOfDof</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">nGroups</span><span class="p">:</span> <span class="nb">int</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">weightsOfTheEstimate</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">groupOfDof</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">nGroups</span><span class="p">:</span> <span class="nb">int</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""The weights an estimate of the critical time step takes, on every degree of freedom: those the last estimate</span>
 <span class="sd">        left, where it left one, and the largest weight of its block of fields where it left none (a degree of freedom</span>
-<span class="sd">        without inertia or damping at the last estimate). One everywhere -- constant per field -- without carried weights,</span>
-<span class="sd">        at their start (all zero), and if a block of fields has none (see</span>
+<span class="sd">        without inertia or damping at the last estimate) or where a constraint of the discrete system acts on its field</span>
+<span class="sd">        (:meth:`_dofsOfTheFieldsOfTheConstraints`). One everywhere -- constant per field -- without carried weights, at</span>
+<span class="sd">        their start (all zero), and if a block of fields has none (see</span>
 <span class="sd">        :meth:`criticalTimeStepOfEntitiesWithOwnInertia`, "Weights carried from estimate to estimate").</span>
 
 <span class="sd">        Parameters</span>
@@ -860,13 +927,32 @@
         <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">groupOfDof</span><span class="p">))</span>
         <span class="k">if</span> <span class="n">weightsOfTheEstimate</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">weights</span>
+        <span class="n">constantPerField</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dofsOfTheFieldsOfTheConstraints</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nGroups</span><span class="p">):</span>
             <span class="n">ofTheGroup</span> <span class="o">=</span> <span class="n">groupOfDof</span> <span class="o">==</span> <span class="n">group</span>
             <span class="n">carried</span> <span class="o">=</span> <span class="n">weightsOfTheEstimate</span><span class="p">[</span><span class="n">ofTheGroup</span><span class="p">]</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">carried</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">):</span>
                 <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">groupOfDof</span><span class="p">))</span>
-            <span class="n">weights</span><span class="p">[</span><span class="n">ofTheGroup</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">carried</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">carried</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">carried</span><span class="p">))</span>
+            <span class="n">weights</span><span class="p">[</span><span class="n">ofTheGroup</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">carried</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">constantPerField</span><span class="p">[</span><span class="n">ofTheGroup</span><span class="p">],</span> <span class="n">carried</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">carried</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">weights</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_dofsOfTheFieldsOfTheConstraints</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The degrees of freedom of the fields the constraints of the discrete system act on, whose weights stay</span>
+<span class="sd">        constant per field (see :class:`CriticalTimeStepEstimateFromTheFieldMatrix`).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        numpy.ndarray</span>
+<span class="sd">            True for every degree of freedom of such a field, a vector of the numbering.</span>
+<span class="sd">        """</span>
+
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">field</span> <span class="k">for</span> <span class="n">constraint</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraints</span> <span class="k">for</span> <span class="n">fieldsOfNode</span> <span class="ow">in</span> <span class="n">constraint</span><span class="o">.</span><span class="n">fields</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">fieldsOfNode</span>
+        <span class="p">}</span>
+        <span class="n">ofTheFields</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numbering</span><span class="o">.</span><span class="n">nDof</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">fields</span> <span class="o">&amp;</span> <span class="bp">self</span><span class="o">.</span><span class="n">numbering</span><span class="o">.</span><span class="n">idcsOfFieldsInDofVector</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">ofTheFields</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">numbering</span><span class="o">.</span><span class="n">idcsOfFieldsInDofVector</span><span class="p">[</span><span class="n">field</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="n">ofTheFields</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_weightsForTheNextEstimate</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>

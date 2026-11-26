@@ -999,27 +999,78 @@ the cells are computed, and the particles as entities that carry their own inert
 system, see <a class="reference internal" href="#edelweissmeshfree.models.mpmmodel.MPMModel.buildDiscreteSystem" title="edelweissmeshfree.models.mpmmodel.MPMModel.buildDiscreteSystem"><code class="xref py py-meth docutils literal notranslate"><span class="pre">buildDiscreteSystem()</span></code></a>.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="edelweissmeshfree.models.mpmdiscretesystem.CriticalTimeStepEstimateFromTheFieldMatrix">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.models.mpmdiscretesystem.</span></span><span class="sig-name descname"><span class="pre">CriticalTimeStepEstimateFromTheFieldMatrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fieldMatrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">orderOfGroup</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">groupOfDof</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">collatzWielandtRows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmdiscretesystem.html#CriticalTimeStepEstimateFromTheFieldMatrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmdiscretesystem.CriticalTimeStepEstimateFromTheFieldMatrix" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edelweissmeshfree.models.mpmdiscretesystem.</span></span><span class="sig-name descname"><span class="pre">CriticalTimeStepEstimateFromTheFieldMatrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fieldMatrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">orderOfGroup</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">groupOfDof</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rowSumsInTheOwnBlock</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">factorOfThePenaltyRows</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">collatzWielandtRows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmdiscretesystem.html#CriticalTimeStepEstimateFromTheFieldMatrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmdiscretesystem.CriticalTimeStepEstimateFromTheFieldMatrix" title="Link to this definition"></a></dt>
 <dd><p>The estimate of the critical time step of the particles, from the field matrix <span class="math notranslate nohighlight">\(\boldsymbol{Q}\)</span> of the
 largest row sums of their mass-scaled stiffness per block of fields (see
-<a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.criticalTimeStepOfEntitiesWithOwnInertia" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.criticalTimeStepOfEntitiesWithOwnInertia"><code class="xref py py-meth docutils literal notranslate"><span class="pre">MPMDiscreteSystem.criticalTimeStepOfEntitiesWithOwnInertia()</span></code></a>).</p>
+<a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.criticalTimeStepOfEntitiesWithOwnInertia" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.criticalTimeStepOfEntitiesWithOwnInertia"><code class="xref py py-meth docutils literal notranslate"><span class="pre">MPMDiscreteSystem.criticalTimeStepOfEntitiesWithOwnInertia()</span></code></a>), in the form the penalty constraints add to.</p>
+<p>A penalty constraint acts on one field, and couples it with itself: its row sums <span class="math notranslate nohighlight">\(r_i\)</span> add to the particles’
+row sums <span class="math notranslate nohighlight">\(Z_{i g}\)</span> within the field block <span class="math notranslate nohighlight">\(g\)</span> of the degree of freedom <span class="math notranslate nohighlight">\(i\)</span>, so the diagonal entry of
+the field matrix becomes <span class="math notranslate nohighlight">\(Q_{gg} = \max_{i \in g} (Z_{ig} + r_i)\)</span>, the other entries stay. Entry by entry,
+the absolute value of the particles’ and the constraints’ stiffness together is at most the sum of their absolute
+values, so the raised field matrix bounds it block by block, and its Perron root, which grows with its entries,
+bounds every eigenvalue – for an unsymmetric tangent as well (theory page on the critical time step of EdelweissFE,
+“The particles: the rows inside their field matrix”). Where the constraints raise no diagonal entry, and the weights
+are constant per field, the estimate is the particles’ own. This holds under one condition: every constraint couples
+degrees of freedom of one field of the particles only (a support or a contact of the displacement); a penalty that
+coupled two fields, e.g. the displacement with the nonlocal field, would add to an off-diagonal entry of the field
+matrix, which this form does not hold. This is assumed, not checked. A constraint that couples particles and finite
+elements at once is taken with the larger of the elements’ bound and this one; that this bounds the two together
+is not proven (same page, “What the estimate does not see”).</p>
 <p><strong>With carried weights</strong> (see <a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.criticalTimeStepOfEntitiesWithOwnInertia" title="edelweissmeshfree.models.mpmdiscretesystem.MPMDiscreteSystem.criticalTimeStepOfEntitiesWithOwnInertia"><code class="xref py py-meth docutils literal notranslate"><span class="pre">MPMDiscreteSystem.criticalTimeStepOfEntitiesWithOwnInertia()</span></code></a>, “Weights carried
 from estimate to estimate”), <span class="math notranslate nohighlight">\(\boldsymbol{Q}\)</span> is the field matrix of the weighted matrix
-<span class="math notranslate nohighlight">\(\boldsymbol{W}^{-1}|\boldsymbol{S}|\boldsymbol{W}\)</span>, and the critical time step of the blocks of each order
-is the larger of the one from <span class="math notranslate nohighlight">\(\boldsymbol{Q}\)</span> and the one from the rows of the Collatz-Wielandt bound with
-the weights scaled by the Perron vector of <span class="math notranslate nohighlight">\(\boldsymbol{Q}\)</span>.</p>
+<span class="math notranslate nohighlight">\(\boldsymbol{W}^{-1}|\boldsymbol{S}|\boldsymbol{W}\)</span>, the row sums are those of its rows, and the
+critical time step of the blocks of each order is the larger of the one from <span class="math notranslate nohighlight">\(\boldsymbol{Q}\)</span> and the one
+from the rows of the Collatz-Wielandt bound with the weights scaled by the Perron vector of <span class="math notranslate nohighlight">\(\boldsymbol{Q}\)</span>,
+to both of which the rows of the penalty constraints add. A constraint’s row <span class="math notranslate nohighlight">\(r_i\)</span> is the row of
+<span class="math notranslate nohighlight">\(\boldsymbol{W}^{-1}|\boldsymbol{S}^\mathrm{c}|\boldsymbol{W}\)</span> where the weights are constant on its
+field, and the particles keep them constant in every field a constraint acts on at the estimate. Elsewhere – a constraint
+that acts on another field since the estimate, e.g. a contact paired anew – the row is at most <span class="math notranslate nohighlight">\(r_i
+\max_{j \in g} w_j / w_i\)</span>, which is added instead: a bound that holds, if loosely; where it lowers the
+critical time step below the one in use, the particles are estimated anew
+(<code class="xref py py-meth docutils literal notranslate"><span class="pre">isDue()</span></code>), now with
+weights constant on that field.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>fieldMatrix</strong> (<em>ndarray</em>) – The field matrix <span class="math notranslate nohighlight">\(\boldsymbol{Q}\)</span> of the particles.</p></li>
 <li><p><strong>orderOfGroup</strong> (<em>list</em><em>[</em><em>str</em><em>]</em>) – Whether each block of fields is integrated by central differences (“second”) or by forward Euler (“first”).</p></li>
 <li><p><strong>groupOfDof</strong> (<em>ndarray</em>) – The block of fields of each degree of freedom of the numbering; -1 for one of no block.</p></li>
+<li><p><strong>rowSumsInTheOwnBlock</strong> (<em>ndarray</em>) – The row sum <span class="math notranslate nohighlight">\(Z_{i g(i)} / w_i\)</span> of each degree of freedom within its own block; zero for one of no block.</p></li>
+<li><p><strong>factorOfThePenaltyRows</strong> (<em>ndarray</em>) – The factor <span class="math notranslate nohighlight">\(\max_{j \in g(i)} w_j / w_i\)</span> of the row of a penalty constraint at each degree of freedom:
+one where the weights are constant on the block, as they are without carried weights.</p></li>
 <li><p><strong>collatzWielandtRows</strong> (<em>ndarray</em><em> | </em><em>None</em>) – The rows <span class="math notranslate nohighlight">\((|\boldsymbol{S}|\boldsymbol{v})_i / v_i\)</span> of the Collatz-Wielandt bound with the weights
 <span class="math notranslate nohighlight">\(v_i = c_{g(i)} w_i\)</span>, <span class="math notranslate nohighlight">\(\boldsymbol{c}\)</span> the Perron vector of the field matrix of the order; None
 without carried weights.</p></li>
 </ul>
 </dd>
 </dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.CriticalTimeStepEstimateFromTheFieldMatrix.criticalTimeStep" title="edelweissmeshfree.models.mpmdiscretesystem.CriticalTimeStepEstimateFromTheFieldMatrix.criticalTimeStep"><code class="xref py py-obj docutils literal notranslate"><span class="pre">criticalTimeStep</span></code></a>(rowSumsOfThePenaltyConstraints)</p></td>
+<td><p>The critical time step of the part with the penalty constraints at its degrees of freedom: <code class="docutils literal notranslate"><span class="pre">value</span></code> where no constraint couples them.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="edelweissmeshfree.models.mpmdiscretesystem.CriticalTimeStepEstimateFromTheFieldMatrix.criticalTimeStep">
+<span class="sig-name descname"><span class="pre">criticalTimeStep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rowSumsOfThePenaltyConstraints</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/edelweissmeshfree/models/mpmdiscretesystem.html#CriticalTimeStepEstimateFromTheFieldMatrix.criticalTimeStep"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#edelweissmeshfree.models.mpmdiscretesystem.CriticalTimeStepEstimateFromTheFieldMatrix.criticalTimeStep" title="Link to this definition"></a></dt>
+<dd><p>The critical time step of the part with the penalty constraints at its degrees of freedom: <code class="docutils literal notranslate"><span class="pre">value</span></code> where
+no constraint couples them.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>rowSumsOfThePenaltyConstraints</strong> (<em>ndarray</em>) – The row sums <span class="math notranslate nohighlight">\(r_i\)</span> of the penalty constraints, one per degree of freedom of the numbering; zero where
+no constraint acts.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The critical time step, at most <code class="docutils literal notranslate"><span class="pre">value</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -1305,7 +1356,9 @@ from). Taking the smaller of the two estimates in every estimate instead would t
 constant per field as well, which cost about as much again as those of the carried weights. A degree of
 freedom without a weight – one that has no inertia or damping at the last estimate – starts at the largest
 weight of its block of fields, the weight every degree of freedom of the block has at the start
-(<code class="xref py py-meth docutils literal notranslate"><span class="pre">_weightsOfThisEstimate()</span></code>).</p>
+(<code class="xref py py-meth docutils literal notranslate"><span class="pre">_weightsOfThisEstimate()</span></code>). So does every degree of freedom of a field a constraint of the discrete system
+acts on: there the weights stay constant per field, so that the rows of the penalty constraints add as they are
+(<a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.CriticalTimeStepEstimateFromTheFieldMatrix" title="edelweissmeshfree.models.mpmdiscretesystem.CriticalTimeStepEstimateFromTheFieldMatrix"><code class="xref py py-class docutils literal notranslate"><span class="pre">CriticalTimeStepEstimateFromTheFieldMatrix</span></code></a>).</p>
 <p>The power iteration shrinks the weights of the degrees of freedom far from the stiffest ones by a factor per
 estimate, without limit: within a few dozen estimates they fall below what a double resolves next to the
 largest weight, and a degree of freedom whose stiffness then changes, e.g. as a particle reaches another kernel
@@ -1326,6 +1379,8 @@ gradients spread evenly in 3D, exact for parallel ones). Every inequality bounds
 stays a lower bound of the critical time step.</p>
 <p>The result is scaled by <a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.STABLE_FRACTION_OF_THE_TANGENT_LIMIT" title="edelweissmeshfree.models.mpmdiscretesystem.STABLE_FRACTION_OF_THE_TANGENT_LIMIT"><code class="xref py py-data docutils literal notranslate"><span class="pre">STABLE_FRACTION_OF_THE_TANGENT_LIMIT</span></code></a>, since the explicit scheme of the
 particles is not exactly integrated with their tangent: their NSNI stabilization acts on the increment.</p>
+<p>It is returned with the field matrix and the row sums of every degree of freedom in its own block, to which the
+row sums of penalty constraints add (<a class="reference internal" href="#edelweissmeshfree.models.mpmdiscretesystem.CriticalTimeStepEstimateFromTheFieldMatrix" title="edelweissmeshfree.models.mpmdiscretesystem.CriticalTimeStepEstimateFromTheFieldMatrix"><code class="xref py py-class docutils literal notranslate"><span class="pre">CriticalTimeStepEstimateFromTheFieldMatrix</span></code></a>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">

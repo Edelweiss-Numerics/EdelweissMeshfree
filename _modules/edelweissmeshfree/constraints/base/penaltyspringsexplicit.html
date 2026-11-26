@@ -1,0 +1,525 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>edelweissmeshfree.constraints.base.penaltyspringsexplicit &mdash; EdelweissMeshfree v26.11 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/custom.css?v=1d735308" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=57c4c7c7"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            EdelweissMeshfree
+              <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../gallery.html">Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation/index.html">Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">EdelweissMeshfree</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">edelweissmeshfree.constraints.base.penaltyspringsexplicit</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for edelweissmeshfree.constraints.base.penaltyspringsexplicit</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1">#  ---------------------------------------------------------------------</span>
+<span class="c1">#</span>
+<span class="c1">#  _____    _      _              _</span>
+<span class="c1"># | ____|__| | ___| |_      _____(_)___ ___</span>
+<span class="c1"># |  _| / _` |/ _ \ \ \ /\ / / _ \ / __/ __|</span>
+<span class="c1"># | |__| (_| |  __/ |\ V  V /  __/ \__ \__ \</span>
+<span class="c1"># |_____\__,_|\___|_| \_/\_/_\___|_|___/___/</span>
+<span class="c1"># |  \/  | ___  ___| |__  / _|_ __ ___  ___</span>
+<span class="c1"># | |\/| |/ _ \/ __| '_ \| |_| '__/ _ \/ _ \</span>
+<span class="c1"># | |  | |  __/\__ \ | | |  _| | |  __/  __/</span>
+<span class="c1"># |_|  |_|\___||___/_| |_|_| |_|  \___|\___|</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1">#  Unit of Strength of Materials and Structural Analysis</span>
+<span class="c1">#  University of Innsbruck,</span>
+<span class="c1">#</span>
+<span class="c1">#  Research Group for Computational Mechanics of Materials</span>
+<span class="c1">#  Institute of Structural Engineering, BOKU University, Vienna</span>
+<span class="c1">#</span>
+<span class="c1">#  2023 - today</span>
+<span class="c1">#</span>
+<span class="c1">#  Matthias Neuner |  matthias.neuner@boku.ac.at</span>
+<span class="c1">#  Thomas Mader    |  thomas.mader@bokut.ac.at</span>
+<span class="c1">#</span>
+<span class="c1">#  This file is part of EdelweissMeshfree.</span>
+<span class="c1">#</span>
+<span class="c1">#  This library is free software; you can redistribute it and/or</span>
+<span class="c1">#  modify it under the terms of the GNU Lesser General Public</span>
+<span class="c1">#  License as published by the Free Software Foundation; either</span>
+<span class="c1">#  version 2.1 of the License, or (at your option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1">#  The full text of the license can be found in the file LICENSE.md at</span>
+<span class="c1">#  the top level directory of EdelweissMeshfree.</span>
+<span class="c1">#  ---------------------------------------------------------------------</span>
+<span class="sd">"""The penalty contact of points of one particle with an obstacle, in an explicit analysis: the force and the bound of</span>
+<span class="sd">the stiffness for the critical time step, the points and the connectivity, written once; a derived class gives the</span>
+<span class="sd">physics, the gap of a point, its gradient and the reach of the obstacle."""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">abstractmethod</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.config.phenomena</span><span class="w"> </span><span class="kn">import</span> <span class="n">getFieldSize</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.timesteppers.timestep</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeStep</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.variables.scalarvariable</span><span class="w"> </span><span class="kn">import</span> <span class="n">ScalarVariable</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.constraints.base.mpmexplicitconstraintbase</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">MPMExplicitConstraintBase</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.constraints.base.pointsofparticles</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">SpringsOnPointsOfParticle</span><span class="p">,</span>
+    <span class="n">addBoundOfAbsoluteStiffnessOfPointsOfParticle</span><span class="p">,</span>
+    <span class="n">addForcesOfSpringsOnPointsOfParticle</span><span class="p">,</span>
+    <span class="n">locateTheNodesOfParticles</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1">#: Below this norm, the gradient of a gap has no direction: the point gets no spring.</span>
+<span class="n">GRADIENT_WITHOUT_DIRECTION</span> <span class="o">=</span> <span class="mf">1e-14</span>
+
+
+<div class="viewcode-block" id="PenaltySpringsOnPointsOfOneParticleExplicit">
+<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.penaltyspringsexplicit.PenaltySpringsOnPointsOfOneParticleExplicit">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PenaltySpringsOnPointsOfOneParticleExplicit</span><span class="p">(</span><span class="n">MPMExplicitConstraintBase</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""The penalty contact of points of one particle -- its center, vertices or face centers -- with an obstacle, in an</span>
+<span class="sd">    explicit analysis. Every point that penetrates the obstacle gets a spring of the penalty stiffness :math:`k`</span>
+<span class="sd">    (:class:`~edelweissmeshfree.constraints.base.pointsofparticles.SpringsOnPointsOfParticle`): along the unit direction</span>
+<span class="sd">    :math:`\\boldsymbol{n}_p` of the gradient of its gap :math:`g_p`, the outward normal of the obstacle, with the force</span>
+<span class="sd">    :math:`f_p = -k\\, g_p &gt; 0`, which pushes the point out. The force (:meth:`computeKernelsExplicit`) and the bound of</span>
+<span class="sd">    the stiffness for the critical time step (:meth:`addBoundOfAbsoluteStiffnessTimes`) are taken from the same springs</span>
+<span class="sd">    (:meth:`_springs`).</span>
+
+<span class="sd">    The points, the nodes of the particle's kernel functions and whether the obstacle is within reach are kept current</span>
+<span class="sd">    here (:meth:`updateConnectivity`). A derived class is the physics and a constructor: the gap of a point at a time</span>
+<span class="sd">    step (:meth:`_gapsOfPoints`), negative where it penetrates, its gradient (:meth:`_gradientsOfTheGaps`), and whether</span>
+<span class="sd">    the points are close enough to the obstacle to take part (:meth:`_isWithinReach`); its constructor sets what the</span>
+<span class="sd">    obstacle needs and calls this one.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    name</span>
+<span class="sd">        The name of the constraint.</span>
+<span class="sd">    particle</span>
+<span class="sd">        The particle whose points the springs act on.</span>
+<span class="sd">    model</span>
+<span class="sd">        The model.</span>
+<span class="sd">    location</span>
+<span class="sd">        Where on the particle the points are: ``"center"``, ``"face"`` (the centers of the faces ``faceIDs``) or</span>
+<span class="sd">        ``"vertex"`` (the vertices ``vertexIDs``).</span>
+<span class="sd">    faceIDs</span>
+<span class="sd">        The faces, one or a list, if ``location`` is ``"face"``.</span>
+<span class="sd">    vertexIDs</span>
+<span class="sd">        The vertices, one or a list, if ``location`` is ``"vertex"``.</span>
+<span class="sd">    penaltyParameter</span>
+<span class="sd">        The penalty stiffness :math:`k` of every spring.</span>
+<span class="sd">    doProximityCheck</span>
+<span class="sd">        Whether the constraint takes part only while the obstacle is within reach (:meth:`_isWithinReach`).</span>
+<span class="sd">    proximityFactor</span>
+<span class="sd">        The reach, in multiples of the edge of a cube of the particle's undeformed volume.</span>
+<span class="sd">    interpolationLinearizedAboutCenter</span>
+<span class="sd">        The vector of a point: the shape functions at it, N (False), or the particle's interpolation linearized about</span>
+<span class="sd">        its center, G (True); see</span>
+<span class="sd">        :meth:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.interpolationVectorAtPointOf`.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If ``location`` is none of the three, if the ids its points need are missing, or if it gives no point.</span>
+<span class="sd">    """</span>
+
+    <span class="c1">#: Carries nothing from one increment to the next.</span>
+    <span class="n">checkpointedState</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">particle</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">,</span>
+        <span class="n">location</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">faceIDs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">vertexIDs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">penaltyParameter</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">doProximityCheck</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+        <span class="n">proximityFactor</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">interpolationLinearizedAboutCenter</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interpolationLinearizedAboutCenter</span> <span class="o">=</span> <span class="n">interpolationLinearizedAboutCenter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_field</span> <span class="o">=</span> <span class="s2">"displacement"</span>
+        <span class="c1">#: The size of the field the springs act on, the displacement.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span> <span class="o">=</span> <span class="n">getFieldSize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_field</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">domainSize</span><span class="p">)</span>
+        <span class="c1">#: The particle whose points the springs act on.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_particle</span> <span class="o">=</span> <span class="n">particle</span>
+        <span class="c1">#: The nodes of the particle's kernel functions, and where they sit in the block of the constraint (see</span>
+        <span class="c1">#: :meth:`updateConnectivity`).</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_localNodes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="c1">#: The penalty stiffness :math:`k` of every spring.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_penaltyParameter</span> <span class="o">=</span> <span class="n">penaltyParameter</span>
+        <span class="c1">#: The sum of the forces of the springs in the last evaluation, :math:`\\sum_p f_p`.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reactionForce</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+        <span class="k">if</span> <span class="n">location</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"center"</span><span class="p">,</span> <span class="s2">"face"</span><span class="p">,</span> <span class="s2">"vertex"</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">"Constraint '</span><span class="si">{:}</span><span class="s2">': location must be 'center', 'face' or 'vertex', not '</span><span class="si">{:}</span><span class="s2">'."</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">location</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">location</span> <span class="o">==</span> <span class="s2">"face"</span> <span class="ow">and</span> <span class="n">faceIDs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"faceID must be specified when location is 'face'."</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">location</span> <span class="o">==</span> <span class="s2">"vertex"</span> <span class="ow">and</span> <span class="n">vertexIDs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"vertexID must be specified when location is 'vertex'."</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_location</span> <span class="o">=</span> <span class="n">location</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_faceIDs</span> <span class="o">=</span> <span class="p">[</span><span class="n">faceIDs</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">faceIDs</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="k">else</span> <span class="n">faceIDs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_vertexIDs</span> <span class="o">=</span> <span class="p">[</span><span class="n">vertexIDs</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">vertexIDs</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="k">else</span> <span class="n">vertexIDs</span>
+        <span class="c1">#: The points of the particle the springs act on, where they are now.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_constrained_points</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pointsWhereTheyAreNow</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constrained_points</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Constraint '</span><span class="si">{:}</span><span class="s2">': no point of the particle at the location '</span><span class="si">{:}</span><span class="s2">'."</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">location</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_doProximityCheck</span> <span class="o">=</span> <span class="n">doProximityCheck</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_doProximityCheck</span><span class="p">:</span>
+            <span class="c1">#: How close the obstacle must be for the constraint to take part.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_proximityDist</span> <span class="o">=</span> <span class="n">particle</span><span class="o">.</span><span class="n">getVolumeUndeformed</span><span class="p">()</span> <span class="o">**</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">model</span><span class="o">.</span><span class="n">domainSize</span><span class="p">)</span> <span class="o">*</span> <span class="n">proximityFactor</span>
+
+<div class="viewcode-block" id="PenaltySpringsOnPointsOfOneParticleExplicit._pointsWhereTheyAreNow">
+<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.penaltyspringsexplicit.PenaltySpringsOnPointsOfOneParticleExplicit._pointsWhereTheyAreNow">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_pointsWhereTheyAreNow</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The points of the particle at its location, where the particle has moved them.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list</span>
+<span class="sd">            The coordinates of each point.</span>
+<span class="sd">        """</span>
+
+        <span class="n">particle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_particle</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_location</span> <span class="o">==</span> <span class="s2">"center"</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">particle</span><span class="o">.</span><span class="n">getCenterCoordinates</span><span class="p">()]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_location</span> <span class="o">==</span> <span class="s2">"face"</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">particle</span><span class="o">.</span><span class="n">getFaceCoordinates</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_faceIDs</span><span class="p">]</span>
+        <span class="n">vertices</span> <span class="o">=</span> <span class="n">particle</span><span class="o">.</span><span class="n">getVertexCoordinates</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">vertices</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vertexIDs</span><span class="p">]</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fields</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[[</span><span class="bp">self</span><span class="o">.</span><span class="n">_field</span><span class="p">]]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">nDof</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">scalarVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+<div class="viewcode-block" id="PenaltySpringsOnPointsOfOneParticleExplicit.getNumberOfAdditionalNeededScalarVariables">
+<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.penaltyspringsexplicit.PenaltySpringsOnPointsOfOneParticleExplicit.getNumberOfAdditionalNeededScalarVariables">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getNumberOfAdditionalNeededScalarVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span></div>
+
+
+<div class="viewcode-block" id="PenaltySpringsOnPointsOfOneParticleExplicit.assignAdditionalScalarVariables">
+<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.penaltyspringsexplicit.PenaltySpringsOnPointsOfOneParticleExplicit.assignAdditionalScalarVariables">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">assignAdditionalScalarVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scalarVariables</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ScalarVariable</span><span class="p">]):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="PenaltySpringsOnPointsOfOneParticleExplicit.updateConnectivity">
+<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.penaltyspringsexplicit.PenaltySpringsOnPointsOfOneParticleExplicit.updateConnectivity">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">updateConnectivity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Take the points where the particle has moved them, locate the nodes of its kernel functions in the block of</span>
+<span class="sd">        the constraint, and decide whether the obstacle is within reach (:meth:`_isWithinReach`, always without a</span>
+<span class="sd">        proximity check).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        model</span>
+<span class="sd">            The model.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">            True if the nodes of the particle's kernel functions changed.</span>
+<span class="sd">        """</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_constrained_points</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pointsWhereTheyAreNow</span><span class="p">()</span>
+
+        <span class="c1"># the nodes of the particle's kernel functions, and where they sit in the constraint's block</span>
+        <span class="n">localIndexOfNode</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_localNodes</span><span class="p">]</span> <span class="o">=</span> <span class="n">locateTheNodesOfParticles</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">_particle</span><span class="o">.</span><span class="n">kernelFunctions</span><span class="p">],</span> <span class="n">localIndexOfNode</span><span class="p">)</span>
+        <span class="n">nodes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">localIndexOfNode</span><span class="p">)</span>
+        <span class="n">hasChanged</span> <span class="o">=</span> <span class="n">nodes</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span> <span class="o">=</span> <span class="n">nodes</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">withinReach</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_doProximityCheck</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isWithinReach</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_constrained_points</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">active</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reactionForce</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+        <span class="k">return</span> <span class="n">hasChanged</span></div>
+
+
+<div class="viewcode-block" id="PenaltySpringsOnPointsOfOneParticleExplicit._isWithinReach">
+<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.penaltyspringsexplicit.PenaltySpringsOnPointsOfOneParticleExplicit._isWithinReach">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_isWithinReach</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Whether one of the points is close enough to the obstacle to take part, within the reach the constructor</span>
+<span class="sd">        took from its ``proximityFactor``.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        points</span>
+<span class="sd">            The coordinates of each point, where it is now.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">            True if the obstacle is within reach.</span>
+<span class="sd">        """</span></div>
+
+
+<div class="viewcode-block" id="PenaltySpringsOnPointsOfOneParticleExplicit._gapsOfPoints">
+<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.penaltyspringsexplicit.PenaltySpringsOnPointsOfOneParticleExplicit._gapsOfPoints">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_gapsOfPoints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The gap of each point to the obstacle where it is at the end of a time step: negative where the point</span>
+<span class="sd">        penetrates.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        points</span>
+<span class="sd">            The points, one row each.</span>
+<span class="sd">        timeStep</span>
+<span class="sd">            The time step, for an obstacle that moves.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            The gaps.</span>
+<span class="sd">        """</span></div>
+
+
+<div class="viewcode-block" id="PenaltySpringsOnPointsOfOneParticleExplicit._gradientsOfTheGaps">
+<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.penaltyspringsexplicit.PenaltySpringsOnPointsOfOneParticleExplicit._gradientsOfTheGaps">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_gradientsOfTheGaps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The gradient of the gap of each point with respect to its position, which points out of the obstacle.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        points</span>
+<span class="sd">            The points, one row each.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            The gradients, one row each.</span>
+<span class="sd">        """</span></div>
+
+
+<div class="viewcode-block" id="PenaltySpringsOnPointsOfOneParticleExplicit._springsAt">
+<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.penaltyspringsexplicit.PenaltySpringsOnPointsOfOneParticleExplicit._springsAt">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_springsAt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">gaps</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SpringsOnPointsOfParticle</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The springs of the points at the gaps given: one of the penalty stiffness at every point with a negative gap,</span>
+<span class="sd">        along the unit direction of the gradient of its gap, with the force :math:`f_p = -k\\, g_p` at that gap. A point</span>
+<span class="sd">        whose gradient has no direction (its norm below :data:`GRADIENT_WITHOUT_DIRECTION`) gets no spring: no force,</span>
+<span class="sd">        no reaction and no stiffness.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        points</span>
+<span class="sd">            The points, one row each.</span>
+<span class="sd">        gaps</span>
+<span class="sd">            Their gaps.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SpringsOnPointsOfParticle</span>
+<span class="sd">            The springs; none if no point penetrates.</span>
+<span class="sd">        """</span>
+
+        <span class="n">closed</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">flatnonzero</span><span class="p">(</span><span class="n">gaps</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">gradients</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gradientsOfTheGaps</span><span class="p">(</span><span class="n">points</span><span class="p">[</span><span class="n">closed</span><span class="p">])</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">))</span>
+        <span class="n">norms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">gradient</span><span class="p">)</span> <span class="k">for</span> <span class="n">gradient</span> <span class="ow">in</span> <span class="n">gradients</span><span class="p">])</span>
+        <span class="n">hasDirection</span> <span class="o">=</span> <span class="n">norms</span> <span class="o">&gt;</span> <span class="n">GRADIENT_WITHOUT_DIRECTION</span>
+        <span class="n">withSpring</span> <span class="o">=</span> <span class="n">closed</span><span class="p">[</span><span class="n">hasDirection</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">SpringsOnPointsOfParticle</span><span class="p">(</span>
+            <span class="c1"># the vector the force is distributed with (see interpolationVectorAtPointOf)</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolationVectorAtPointOf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_particle</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">points</span><span class="p">[</span><span class="n">withSpring</span><span class="p">]]</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">withSpring</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_localNodes</span><span class="p">))),</span>
+            <span class="n">gradients</span><span class="p">[</span><span class="n">hasDirection</span><span class="p">]</span> <span class="o">/</span> <span class="n">norms</span><span class="p">[</span><span class="n">hasDirection</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span>
+            <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_penaltyParameter</span> <span class="o">*</span> <span class="n">gaps</span><span class="p">[</span><span class="n">withSpring</span><span class="p">],</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">withSpring</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_penaltyParameter</span><span class="p">),</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PenaltySpringsOnPointsOfOneParticleExplicit._springs">
+<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.penaltyspringsexplicit.PenaltySpringsOnPointsOfOneParticleExplicit._springs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_springs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SpringsOnPointsOfParticle</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The penalty springs at the particle's current position and the gaps now (:meth:`_springsAt`): what the force</span>
+<span class="sd">        and the bound of the stiffness are made from.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        timeStep</span>
+<span class="sd">            The current time step, for an obstacle that moves.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SpringsOnPointsOfParticle</span>
+<span class="sd">            The springs.</span>
+<span class="sd">        """</span>
+
+        <span class="n">points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_constrained_points</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_springsAt</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gapsOfPoints</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="PenaltySpringsOnPointsOfOneParticleExplicit.computeKernelsExplicit">
+<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.penaltyspringsexplicit.PenaltySpringsOnPointsOfOneParticleExplicit.computeKernelsExplicit">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">computeKernelsExplicit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">U_np</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">dU</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">P</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Add the residual contribution of the penalty forces: the negative of the forces with which the obstacle pushes</span>
+<span class="sd">        the points of the particle out, at its current position (:meth:`_springs`); :attr:`reactionForce` is their sum.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        U_np</span>
+<span class="sd">            The current solution; unused, the points are where the particle is now.</span>
+<span class="sd">        dU</span>
+<span class="sd">            The solution increment; unused.</span>
+<span class="sd">        P</span>
+<span class="sd">            The residual contribution to augment.</span>
+<span class="sd">        timeStep</span>
+<span class="sd">            The current time step.</span>
+<span class="sd">        """</span>
+
+        <span class="n">springs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_springs</span><span class="p">(</span><span class="n">timeStep</span><span class="p">)</span>
+        <span class="n">addForcesOfSpringsOnPointsOfParticle</span><span class="p">(</span><span class="n">P</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_localNodes</span><span class="p">,</span> <span class="n">springs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reactionForce</span> <span class="o">=</span> <span class="n">springs</span><span class="o">.</span><span class="n">forces</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="PenaltySpringsOnPointsOfOneParticleExplicit.addBoundOfAbsoluteStiffnessTimes">
+<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.base.penaltyspringsexplicit.PenaltySpringsOnPointsOfOneParticleExplicit.addBoundOfAbsoluteStiffnessTimes">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addBoundOfAbsoluteStiffnessTimes</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">U_np</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">dU</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">bound</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Add the row sums of the absolute value of the stiffness of the penalty springs (:meth:`_springs`), weighted</span>
+<span class="sd">        by column (see</span>
+<span class="sd">        :func:`~edelweissmeshfree.constraints.base.pointsofparticles.addBoundOfAbsoluteStiffnessOfPointsOfParticle`):</span>
+<span class="sd">        the springs of the points that penetrate now, those of the force.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        U_np</span>
+<span class="sd">            The current solution; unused.</span>
+<span class="sd">        dU</span>
+<span class="sd">            The solution increment; unused.</span>
+<span class="sd">        weights</span>
+<span class="sd">            The weight of each column.</span>
+<span class="sd">        bound</span>
+<span class="sd">            The row sums to augment.</span>
+<span class="sd">        timeStep</span>
+<span class="sd">            The current time step.</span>
+<span class="sd">        """</span>
+
+        <span class="n">addBoundOfAbsoluteStiffnessOfPointsOfParticle</span><span class="p">(</span><span class="n">bound</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_localNodes</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_springs</span><span class="p">(</span><span class="n">timeStep</span><span class="p">))</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Matthias Neuner.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

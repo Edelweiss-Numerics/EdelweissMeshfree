@@ -76,17 +76,11 @@
 <span></span><span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterable</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.config.phenomena</span><span class="w"> </span><span class="kn">import</span> <span class="n">getFieldSize</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.surfaces.entitybasedsurface</span><span class="w"> </span><span class="kn">import</span> <span class="n">EntityBasedSurface</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.timesteppers.timestep</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeStep</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissfe.variables.scalarvariable</span><span class="w"> </span><span class="kn">import</span> <span class="n">ScalarVariable</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.constraints.base.mpmexplicitconstraintbase</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">MPMExplicitConstraintBase</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.constraints.base.pointsofparticles</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">addForcesOnPointsOfParticle</span><span class="p">,</span>
-    <span class="n">locateTheNodesOfParticles</span><span class="p">,</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.constraints.base.penaltyspringsexplicit</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">PenaltySpringsOnPointsOfOneParticleExplicit</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.models.mpmmodel</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPMModel</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">edelweissmeshfree.particles.base.baseparticle</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseParticle</span>
@@ -94,9 +88,12 @@
 
 <div class="viewcode-block" id="ParticlePenaltyContactImplicitSurfaceConstraintExplicit">
 <a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.explicit.particlepenaltyrigidbodycontactexplicit.ParticlePenaltyContactImplicitSurfaceConstraintExplicit">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">ParticlePenaltyContactImplicitSurfaceConstraintExplicit</span><span class="p">(</span><span class="n">MPMExplicitConstraintBase</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ParticlePenaltyContactImplicitSurfaceConstraintExplicit</span><span class="p">(</span><span class="n">PenaltySpringsOnPointsOfOneParticleExplicit</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
-<span class="sd">    Penalty contact constraint for arbitrary implicit surfaces in EXPLICIT simulations.</span>
+<span class="sd">    Penalty contact constraint for arbitrary implicit surfaces in EXPLICIT simulations: the surface gives the signed</span>
+<span class="sd">    distance of a point (:meth:`_gapsOfPoints`), its gradient (:meth:`_gradientsOfTheGaps`) and its reach</span>
+<span class="sd">    (:meth:`_isWithinReach`); the force and the bound of its stiffness for the critical time step are those of</span>
+<span class="sd">    :class:`~edelweissmeshfree.constraints.base.penaltyspringsexplicit.PenaltySpringsOnPointsOfOneParticleExplicit`.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -127,9 +124,6 @@
 <span class="sd">        :meth:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.interpolationVectorAtPointOf`.</span>
 <span class="sd">    """</span>
 
-    <span class="c1">#: Carries nothing from one increment to the next.</span>
-    <span class="n">checkpointedState</span> <span class="o">=</span> <span class="p">{}</span>
-
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -145,158 +139,80 @@
         <span class="n">proximityFactor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2.0</span><span class="p">,</span>
         <span class="n">interpolationLinearizedAboutCenter</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">interpolationLinearizedAboutCenter</span> <span class="o">=</span> <span class="n">interpolationLinearizedAboutCenter</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_field</span> <span class="o">=</span> <span class="s2">"displacement"</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span> <span class="o">=</span> <span class="n">getFieldSize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_field</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">domainSize</span><span class="p">)</span>
-        <span class="c1"># the nodes of the particle's kernel functions, and where they sit in the block (see updateConnectivity)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_localNodes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">_implicit_function</span> <span class="o">=</span> <span class="n">implicit_function</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_gradient_function</span> <span class="o">=</span> <span class="n">gradient_function</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">name</span><span class="p">,</span>
+            <span class="n">particle</span><span class="p">,</span>
+            <span class="n">model</span><span class="p">,</span>
+            <span class="n">location</span><span class="p">,</span>
+            <span class="n">faceIDs</span><span class="p">,</span>
+            <span class="n">vertexIDs</span><span class="p">,</span>
+            <span class="n">penaltyParameter</span><span class="p">,</span>
+            <span class="n">doProximityCheck</span><span class="p">,</span>
+            <span class="n">proximityFactor</span><span class="p">,</span>
+            <span class="n">interpolationLinearizedAboutCenter</span><span class="p">,</span>
+        <span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">reactionForce</span> <span class="o">=</span> <span class="mf">0.0</span>
-
-        <span class="k">def</span><span class="w"> </span><span class="nf">_getConstraintLocations</span><span class="p">():</span>
-            <span class="k">if</span> <span class="n">location</span> <span class="o">==</span> <span class="s2">"center"</span><span class="p">:</span>
-                <span class="k">return</span> <span class="p">[</span><span class="n">particle</span><span class="o">.</span><span class="n">getCenterCoordinates</span><span class="p">()]</span>
-            <span class="k">elif</span> <span class="n">location</span> <span class="o">==</span> <span class="s2">"face"</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">faceIDs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"faceID must be specified when location is 'face'."</span><span class="p">)</span>
-                <span class="n">ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">faceIDs</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">faceIDs</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="k">else</span> <span class="n">faceIDs</span>
-                <span class="k">return</span> <span class="p">[</span><span class="n">particle</span><span class="o">.</span><span class="n">getFaceCoordinates</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">ids</span><span class="p">]</span>
-            <span class="k">elif</span> <span class="n">location</span> <span class="o">==</span> <span class="s2">"vertex"</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">vertexIDs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"vertexID must be specified when location is 'vertex'."</span><span class="p">)</span>
-                <span class="n">ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">vertexIDs</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">vertexIDs</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="k">else</span> <span class="n">vertexIDs</span>
-                <span class="n">vertices</span> <span class="o">=</span> <span class="n">particle</span><span class="o">.</span><span class="n">getVertexCoordinates</span><span class="p">()</span>
-                <span class="k">return</span> <span class="p">[</span><span class="n">vertices</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">ids</span><span class="p">]</span>
-            <span class="k">return</span> <span class="p">[]</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">_getConstraintLocations</span> <span class="o">=</span> <span class="n">_getConstraintLocations</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_domainSize</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">domainSize</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_constrained_points</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getConstraintLocations</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_particle</span> <span class="o">=</span> <span class="n">particle</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">_penaltyParameter</span> <span class="o">=</span> <span class="n">penaltyParameter</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_doProximityCheck</span> <span class="o">=</span> <span class="n">doProximityCheck</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_doProximityCheck</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_proximityDist</span> <span class="o">=</span> <span class="n">particle</span><span class="o">.</span><span class="n">getVolumeUndeformed</span><span class="p">()</span> <span class="o">**</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_domainSize</span><span class="p">)</span> <span class="o">*</span> <span class="n">proximityFactor</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">fields</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
-        <span class="k">return</span> <span class="p">[[</span><span class="bp">self</span><span class="o">.</span><span class="n">_field</span><span class="p">]]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="p">)</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">nDof</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">scalarVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
-        <span class="k">return</span> <span class="p">[]</span>
-
-<div class="viewcode-block" id="ParticlePenaltyContactImplicitSurfaceConstraintExplicit.getNumberOfAdditionalNeededScalarVariables">
-<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.explicit.particlepenaltyrigidbodycontactexplicit.ParticlePenaltyContactImplicitSurfaceConstraintExplicit.getNumberOfAdditionalNeededScalarVariables">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">getNumberOfAdditionalNeededScalarVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-        <span class="k">return</span> <span class="mi">0</span></div>
-
-
-<div class="viewcode-block" id="ParticlePenaltyContactImplicitSurfaceConstraintExplicit.assignAdditionalScalarVariables">
-<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.explicit.particlepenaltyrigidbodycontactexplicit.ParticlePenaltyContactImplicitSurfaceConstraintExplicit.assignAdditionalScalarVariables">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">assignAdditionalScalarVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scalarVariables</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ScalarVariable</span><span class="p">]):</span>
-        <span class="k">pass</span></div>
-
-
-<div class="viewcode-block" id="ParticlePenaltyContactImplicitSurfaceConstraintExplicit.updateConnectivity">
-<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.explicit.particlepenaltyrigidbodycontactexplicit.ParticlePenaltyContactImplicitSurfaceConstraintExplicit.updateConnectivity">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">updateConnectivity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">MPMModel</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Updates the constraint connectivity by refreshing active nodes and positions.</span>
+<div class="viewcode-block" id="ParticlePenaltyContactImplicitSurfaceConstraintExplicit._isWithinReach">
+<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.explicit.particlepenaltyrigidbodycontactexplicit.ParticlePenaltyContactImplicitSurfaceConstraintExplicit._isWithinReach">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_isWithinReach</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Whether the signed distance of one of the points to the surface is below the reach.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        model</span>
-<span class="sd">            The MPM model instance, used to access grid information if needed.</span>
+<span class="sd">        points</span>
+<span class="sd">            The coordinates of each point.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        bool</span>
-<span class="sd">            True if the connectivity has changed (e.g., active nodes or positions), False otherwise.</span>
+<span class="sd">            True if the surface is within reach.</span>
 <span class="sd">        """</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_constrained_points</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getConstraintLocations</span><span class="p">()</span>
 
-        <span class="c1"># the nodes of the particle's kernel functions, and where they sit in the constraint's block</span>
-        <span class="n">localIndexOfNode</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_localNodes</span><span class="p">]</span> <span class="o">=</span> <span class="n">locateTheNodesOfParticles</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">_particle</span><span class="o">.</span><span class="n">kernelFunctions</span><span class="p">],</span> <span class="n">localIndexOfNode</span><span class="p">)</span>
-        <span class="n">nodes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">localIndexOfNode</span><span class="p">)</span>
-        <span class="n">hasChanged</span> <span class="o">=</span> <span class="n">nodes</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span> <span class="o">=</span> <span class="n">nodes</span>
-
-        <span class="c1"># within reach if one of the constrained points is close enough to the surface (signed distance below it)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">withinReach</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_doProximityCheck</span> <span class="ow">or</span> <span class="nb">any</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_implicit_function</span><span class="p">(</span><span class="n">p_coord</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_proximityDist</span> <span class="k">for</span> <span class="n">p_coord</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constrained_points</span>
-        <span class="p">)</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">active</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">reactionForce</span> <span class="o">=</span> <span class="mf">0.0</span>
-
-        <span class="k">return</span> <span class="n">hasChanged</span></div>
+        <span class="k">return</span> <span class="nb">any</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_implicit_function</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_proximityDist</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">points</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="ParticlePenaltyContactImplicitSurfaceConstraintExplicit.computeKernelsExplicit">
-<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.explicit.particlepenaltyrigidbodycontactexplicit.ParticlePenaltyContactImplicitSurfaceConstraintExplicit.computeKernelsExplicit">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">computeKernelsExplicit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">U_np</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">dU</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">P</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Add the residual contribution of the penalty forces: the negative of the forces with which the surface</span>
-<span class="sd">        pushes the particle back, evaluated at the particle's current position.</span>
+<div class="viewcode-block" id="ParticlePenaltyContactImplicitSurfaceConstraintExplicit._gapsOfPoints">
+<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.explicit.particlepenaltyrigidbodycontactexplicit.ParticlePenaltyContactImplicitSurfaceConstraintExplicit._gapsOfPoints">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_gapsOfPoints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">:</span> <span class="n">TimeStep</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The signed distance of each point to the surface, negative inside it.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        U_np</span>
-<span class="sd">            The current solution; unused, the penetration follows from the particle's current position.</span>
-<span class="sd">        dU</span>
-<span class="sd">            The solution increment; likewise unused.</span>
-<span class="sd">        P</span>
-<span class="sd">            The residual contribution to augment.</span>
+<span class="sd">        points</span>
+<span class="sd">            The points, one row each.</span>
 <span class="sd">        timeStep</span>
-<span class="sd">            The current time step information (not used in this constraint but included for interface consistency).</span>
+<span class="sd">            The time step; unused, the surface does not move.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            The signed distances.</span>
 <span class="sd">        """</span>
 
-        <span class="n">total_reaction</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">_implicit_function</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">points</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span></div>
 
-        <span class="k">for</span> <span class="n">p_coord</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constrained_points</span><span class="p">:</span>
-            <span class="n">dist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_implicit_function</span><span class="p">(</span><span class="n">p_coord</span><span class="p">)</span>
 
-            <span class="k">if</span> <span class="n">dist</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">g</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">dist</span><span class="p">)</span>
-                <span class="n">grad</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gradient_function</span><span class="p">(</span><span class="n">p_coord</span><span class="p">)</span>
-                <span class="n">grad_norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">grad</span><span class="p">)</span>
+<div class="viewcode-block" id="ParticlePenaltyContactImplicitSurfaceConstraintExplicit._gradientsOfTheGaps">
+<a class="viewcode-back" href="../../../../documentation/constraints.html#edelweissmeshfree.constraints.explicit.particlepenaltyrigidbodycontactexplicit.ParticlePenaltyContactImplicitSurfaceConstraintExplicit._gradientsOfTheGaps">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_gradientsOfTheGaps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The gradient of the signed distance at each point, pointing out of the surface.</span>
 
-                <span class="n">normal</span> <span class="o">=</span> <span class="n">grad</span> <span class="o">/</span> <span class="n">grad_norm</span> <span class="k">if</span> <span class="n">grad_norm</span> <span class="o">&gt;</span> <span class="mf">1e-14</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_domainSize</span><span class="p">)</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        points</span>
+<span class="sd">            The points, one row each.</span>
 
-                <span class="n">force_vector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_penaltyParameter</span> <span class="o">*</span> <span class="n">g</span> <span class="o">*</span> <span class="n">normal</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            The gradients, one row each.</span>
+<span class="sd">        """</span>
 
-                <span class="c1"># the vector the force is distributed with (see interpolationVectorAtPointOf)</span>
-                <span class="n">interpolation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolationVectorAtPointOf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_particle</span><span class="p">,</span> <span class="n">p_coord</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
-                <span class="n">addForcesOnPointsOfParticle</span><span class="p">(</span>
-                    <span class="n">P</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">),</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_localNodes</span><span class="p">,</span>
-                    <span class="n">interpolation</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:],</span>
-                    <span class="n">force_vector</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:],</span>
-                <span class="p">)</span>
-
-                <span class="n">total_reaction</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_penaltyParameter</span> <span class="o">*</span> <span class="n">g</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">reactionForce</span> <span class="o">=</span> <span class="n">total_reaction</span></div>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">_gradient_function</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">points</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+            <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">points</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldSize</span><span class="p">)</span>
+        <span class="p">)</span></div>
 </div>
 
 
