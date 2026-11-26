@@ -40,7 +40,10 @@ contact constraints of EdelweissFE, which pair them with a master surface of fin
 points (:mod:`edelweissfe.constraints.base.contactpoints`), next to the nodes and the quadrature points of finite
 element faces: a point :math:`\\boldsymbol{x}_q` of a particle face, with :math:`c = G(\\boldsymbol{x}_q)`, at
 :math:`\\boldsymbol{x} = \\boldsymbol{x}_q^n + G(\\boldsymbol{x}_q) \\cdot \\Delta\\boldsymbol{U}`, standing for the
-area :math:`J_q w_q`.
+area :math:`J_q w_q`. The contact with the law ``type=tied``, a tie, takes them alike: it ties faces of particles to
+finite elements. A change of the mesh never regenerates them
+(:meth:`~edelweissfe.constraints.base.contactpoints.ContactPoints.regenerated`), so a tie hands its state on across a
+new mesh of the master only.
 
 A face of a particle moves with its particle: the particle moves every point of its own, a vertex or a point on a
 face, by :math:`\\Delta\\boldsymbol{x} = \\sum_B G_B(\\boldsymbol{x}) \\Delta\\boldsymbol{U}_B`, with its

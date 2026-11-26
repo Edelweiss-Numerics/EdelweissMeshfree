@@ -209,10 +209,11 @@ class MPMModel(FEModel):
 
         super().prepareYourself(journal)
 
-    def advanceToTime(self, time: float):
-        """Accept the current state of the model and sub instances, and
-        set the new time. The material points and the particles accept theirs across the available threads, as the
-        elements do (see :meth:`~edelweissfe.models.femodel.FEModel.advanceToTime`): each touches only its own state.
+    def acceptTheStateOfTheEntities(self, time: float):
+        """Let the entities accept their state, and set the new time; see
+        :meth:`~edelweissfe.models.femodel.FEModel.acceptTheStateOfTheEntities`. The material points and the particles
+        accept theirs, and their positions, across the available threads, as the elements do: each touches only its own
+        state.
 
         Parameters
         ----------
@@ -225,7 +226,7 @@ class MPMModel(FEModel):
 
         self.previousTime = self.time
 
-        return super().advanceToTime(time)
+        super().acceptTheStateOfTheEntities(time)
 
     def setNewmarkParametersOfEntities(self, beta: float, gamma: float):
         """Give the particles the Newmark parameters of the solver, at the start of every step;

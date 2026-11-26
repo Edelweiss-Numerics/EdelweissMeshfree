@@ -51,6 +51,8 @@ from edelweissfe.constraints.surfacetodeformablesurfacepenalty import (
 from edelweissfe.generators.planerectquad import Generator as PlaneRectQuadGenerator
 from edelweissfe.generators.planerectquad import PlaneRectQuadSchema
 from edelweissfe.generators.surfaceelementgenerator import buildContactFacets
+from edelweissfe.models.modelchange import ModelChange
+from edelweissfe.models.modelchangeobserver import ModelChangeType
 from edelweissfe.points.node import Node
 from edelweissfe.sets.elementset import ElementSet
 from edelweissfe.timesteppers.timestep import TimeStep
@@ -82,7 +84,8 @@ class JournalStandIn:
 
 def _masterBlock(model: MPMModel, journal, height: float = 1.0, withBottom: bool = False) -> ElementSet:
     """A block of 4 x 1 plane strain elements below y = 0, of the given height, and the contact facets of its top (and
-    bottom) surface: the master."""
+    bottom) surface: the master. The facets of the top alone are the element set the generator made, which a new mesh
+    of the top (``block_top``) regenerates."""
 
     with model.topology.changes():
         PlaneRectQuadGenerator(
@@ -91,12 +94,11 @@ def _masterBlock(model: MPMModel, journal, height: float = 1.0, withBottom: bool
             journal,
             configuration=PlaneRectQuadSchema(x0=0.0, y0=-height, length=1.0, h=height, nX=4, nY=1, elType="CPE4"),
         )
-        facets = list(
-            model.elementSets[buildContactFacets(model, "block_top", "top", "midside", "facetConsistent", journal)[0]]
-        )
-        if withBottom:
-            facets += list(model.elementSets[buildContactFacets(model, "block_bottom", "bottom", "midside", "facetConsistent", journal)[0]])  # fmt: skip
-    return ElementSet("master", facets)
+        top = model.elementSets[buildContactFacets(model, "block_top", "top", "midside", "facetConsistent", journal)[0]]
+        if not withBottom:
+            return top
+        bottom = buildContactFacets(model, "block_bottom", "bottom", "midside", "facetConsistent", journal)[0]
+    return ElementSet("master", list(top) + list(model.elementSets[bottom]))
 
 
 def _particle(x0: float, y0: float, number: int = 1, angle: float = 0.0) -> ParticleStandIn:
@@ -466,3 +468,131 @@ def test_face_ids_outside_the_abaqus_numbering_are_refused(faceID):
 
     with pytest.raises(ValueError, match="1 to 4"):
         ContactPointsOnParticleFaces([(_particle(0.0, 0.0), 1), (_particle(0.0, 0.0, 2), faceID)])
+
+
+def _tie(model, particles, master, nQuadraturePoints=2, searchDistance=SEARCH):
+    """The tie (``type=tied``) of the bottom faces of the particles to the master, connected."""
+
+    return _contact(
+        model, particles, master, nQuadraturePoints=nQuadraturePoints, contactType="tied", searchDistance=searchDistance
+    )
+
+
+def _particleDisplacedBy(tie, d) -> np.ndarray:
+    """An increment ``dU`` that moves every kernel node of the particles by ``d``, and the nodes of the master not."""
+
+    dU = np.zeros(tie.nDof)
+    nSlaveDof = _degreesOfFreedomOfTheParticles(tie)
+    dU[:nSlaveDof] = np.tile(d, nSlaveDof // 2)
+    return dU
+
+
+@pytest.mark.parametrize("y0", [0.02, 0.0, -0.02])
+def test_a_tied_face_with_a_gap_or_an_overlap_is_at_rest_and_pulled_back_in_every_direction(y0):
+    """The gap (or overlap) of a particle face at the pairing is the state at rest: no force. Moved by ``d`` with its
+    kernel nodes, the face is pulled back with the traction ``-k d``: moved away from the master, into it and along it
+    alike."""
+
+    model = MPMModel(2)
+    master = _masterBlock(model, JournalStandIn())
+    particle = _particle(0.3, y0)
+    tie = _tie(model, [particle], master)
+    assert (tie.stateOfPoints == ContactState.TIED).all()
+
+    np.testing.assert_allclose(_residual(tie), 0.0, atol=1e-12)
+    for d in ([0.0, 0.01], [0.0, -0.01], [0.01, 0.0], [-0.01, 0.005]):
+        dU = _particleDisplacedBy(tie, d)
+        tie.computeKernelsExplicit(dU, dU, np.zeros(tie.nDof), None)
+        np.testing.assert_allclose(tie.getTractions(), np.tile(-PENALTY * np.array(d), (tie.nPoints, 1)), atol=1e-9)
+        np.testing.assert_allclose(tie.contactForceOnSlave, -PENALTY * SIZE * np.array(d), atol=1e-9)
+        np.testing.assert_allclose(tie.contactForceOnSlave + tie.contactForceOnMaster, 0.0, atol=1e-12)
+
+
+def test_the_tangent_of_a_tie_of_particle_faces_is_the_derivative_of_its_residual_contribution():
+    """``K == dP/dU`` by central differences, for tilted faces of two particles astride two elements, one with a gap at
+    rest, one with an overlap; the particle points move with the increment, the master with the total displacement."""
+
+    model = MPMModel(2)
+    master = _masterBlock(model, JournalStandIn())
+    particles = [_particle(0.12, 0.03, 1, angle=0.05), _particle(0.40, -0.02, 2, angle=-0.03)]
+    tie = _tie(model, particles, master)
+    assert (tie.stateOfPoints == ContactState.TIED).all()
+
+    rng = np.random.default_rng(1)
+    dU = 1e-3 * rng.standard_normal(tie.nDof)
+    U = _totalOtherThanTheIncrement(tie, dU, rng)
+    P, K = residualContributionAndTangent(tie, U, dU)
+    dP_dU = finiteDifferenceTangent(tie, U, dU, h=1e-8)
+    assert np.abs(P).max() > 0.0
+    np.testing.assert_allclose(K, dP_dU, atol=1e-6 * np.abs(K).max())
+    np.testing.assert_allclose(K, K.T, atol=1e-12 * np.abs(K).max())
+
+
+def test_a_tied_particle_carries_its_displacement_from_rest_into_the_next_increment():
+    """The particles are updated-Lagrangian: at the next update the tied points are located anew, at the positions the
+    particles moved them to, and the tie measures their displacement from rest from there -- it stays tied to the same
+    point of the master however far it moves."""
+
+    model = MPMModel(2)
+    master = _masterBlock(model, JournalStandIn())
+    particle = _particle(0.3, 0.01)
+    tie = _tie(model, [particle], master)
+    pairing = tie._assignedFacetIdx.copy()
+
+    d = np.array([0.3, 0.4])  # beyond the search distance and the next facet
+    _move(particle, d)
+    tie.updateConnectivity(model)
+    np.testing.assert_array_equal(tie._assignedFacetIdx, pairing)
+    _residual(tie)
+    np.testing.assert_allclose(tie.contactForceOnSlave, -PENALTY * SIZE * d, rtol=1e-12)
+
+
+def test_the_restart_continues_the_tie():
+    """A tie restored from a checkpoint continues: its points stay tied, with their resting offsets, also where the
+    search distance would not tie them at a first update. The checkpoint is read before the particles are connected to
+    their kernel functions, so the points are located at the first update of the resumed run, where the particles have
+    moved them."""
+
+    model = MPMModel(2)
+    master = _masterBlock(model, JournalStandIn())
+    particle = _particle(0.3, 0.01)
+    tie = _tie(model, [particle], master)
+    _move(particle, [0.02, -0.005])
+    tie.updateConnectivity(model)
+    forces = _residual(tie)
+    assert np.abs(forces).max() > 0.0
+
+    restored = _tie(model, [particle], master, searchDistance=1e-9)
+    assert (restored.stateOfPoints != ContactState.TIED).all()
+    kernelFunctions, particle.kernelFunctions = particle.kernelFunctions, None
+    restored.setRestartData(tie.getRestartData())
+    assert (restored.stateOfPoints == ContactState.TIED).all()
+
+    particle.kernelFunctions = kernelFunctions
+    restored.updateConnectivity(model)
+    np.testing.assert_array_equal(_residual(restored), forces)
+
+
+def test_a_new_mesh_of_the_master_keeps_the_tie_of_particle_faces():
+    """A new mesh of the master hands the tie on (EdelweissFE's contact theory, *A tie*, *A new mesh*): the faces of
+    the particles stay tied, displaced from rest as at the last accepted state, so the forces stay as they were. The
+    points of particles are not regenerated; they are located again at the update that follows."""
+
+    model = MPMModel(2)
+    journal = JournalStandIn()
+    master = _masterBlock(model, journal)
+    particles = [_particle(0.12, 0.03, 1, angle=0.05), _particle(0.40, -0.02, 2, angle=-0.03)]
+    tie = _tie(model, particles, master)
+    for particle in particles:
+        _move(particle, [0.01, -0.004])
+    tie.updateConnectivity(model)
+    forces = _residual(tie)
+    assert np.abs(forces).max() > 0.0
+    tie.acceptLastState()
+
+    with model.topology.changes():
+        buildContactFacets(model, "block_top", "top", "midside", "facetConsistent", journal)
+    assert tie.refresh(model, ModelChange(kind=ModelChangeType.REFINEMENT, changedSurfaces={"block_top"}))
+    tie.updateConnectivity(model)
+    assert (tie.stateOfPoints == ContactState.TIED).all()
+    np.testing.assert_allclose(_residual(tie), forces, atol=1e-12 * np.abs(forces).max())
