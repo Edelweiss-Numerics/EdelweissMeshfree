@@ -257,16 +257,18 @@ def run(block: str, size: float = SIZE) -> tuple[MPMModel, list]:
     stepActions = StepActionCollection()
     if block == "particles":
         addParticleBlock(model, journal, -OVERLAP, size)
-        bottom = ContactPointsOnParticleFaces(model.surfaces["block_bottom"], nQuadraturePoints=2)
-        top = ContactPointsOnParticleFaces(model.surfaces["block_top"], nQuadraturePoints=2)
+        bottom = ContactPointsOnParticleFaces(model.surfaces["block_bottom"], model, nQuadraturePoints=2)
+        top = ContactPointsOnParticleFaces(model.surfaces["block_top"], model, nQuadraturePoints=2)
         # the left vertices of the particles on the left side, held in x
         model.constraints["blockLeft"] = ParticlePenaltyWeakDirichlet(
             "blockLeft", model, list(model.particleSets["block_left"]), "displacement", {0: 0.0}, PENALTY * size, [0, 3]
         )
     else:
         addFiniteElementBlock(model, journal, "block", -OVERLAP, HEIGHT + 2 * OVERLAP, BLOCK_MATERIAL, size)
-        bottom = ContactPointsOnSlaveSurface(model.elementSets[facets(model, journal, "block_bottom")], 3, "lower")
-        top = ContactPointsOnSlaveSurface(model.elementSets[facets(model, journal, "block_top")], 3, "upper")
+        bottom = ContactPointsOnSlaveSurface(
+            model.elementSets[facets(model, journal, "block_bottom")], 3, model, "lower"
+        )
+        top = ContactPointsOnSlaveSurface(model.elementSets[facets(model, journal, "block_top")], 3, model, "upper")
         stepActions["dirichlet"]["blockLeft"] = Dirichlet(
             "blockLeft", model.nodeSets["block_left"], "displacement", {0: 0.0}, model, journal
         )
@@ -432,7 +434,7 @@ def loadsOfAUnitPressureOnTheBottom(
     ]
     own = ownPressureLoads(model, ("bottom",))
 
-    points = ContactPointsOnParticleFaces(faces, nQuadraturePoints=nQuadraturePoints)
+    points = ContactPointsOnParticleFaces(faces, model, nQuadraturePoints=nQuadraturePoints)
     nodes = points.locatePoints(np.arange(points.nPoints))
     forcesOnPoints = points.areas[:, None] * np.array([0.0, 1.0])
     centers = centersOfTheKernelFunctions(model)

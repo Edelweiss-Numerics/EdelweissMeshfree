@@ -40,8 +40,8 @@ contact constraints of EdelweissFE, which pair them with a master surface of fin
 points (:mod:`edelweissfe.constraints.base.contactpoints`), next to the nodes and the quadrature points of finite
 element faces: a point :math:`\\boldsymbol{x}_q` of a particle face, with :math:`c = G(\\boldsymbol{x}_q)`, at
 :math:`\\boldsymbol{x} = \\boldsymbol{x}_q^n + G(\\boldsymbol{x}_q) \\cdot \\Delta\\boldsymbol{U}`, standing for the
-area :math:`J_q w_q`. The contact with the law ``type=tied``, a tie, takes them alike: it ties faces of particles to
-finite elements. A change of the mesh never regenerates them
+area of its share of the face (*The area of a point*, below). The contact with the law ``type=tied``, a tie, takes
+them alike: it ties faces of particles to finite elements. A change of the mesh never regenerates them
 (:meth:`~edelweissfe.constraints.base.contactpoints.ContactPoints.regenerated`), so a tie hands its state on across a
 new mesh of the master only.
 
@@ -52,7 +52,7 @@ shape functions linearized about its center
 are affine in :math:`\\boldsymbol{x}`. So a face stays flat if it is flat, and a point at fixed parametric coordinates
 :math:`\\xi_q` of the face stays there. Such a point is a contact point: it sits at
 :math:`\\boldsymbol{x}_q = \\sum_a N_a(\\xi_q) \\boldsymbol{x}_a` (the face's vertices :math:`\\boldsymbol{x}_a`),
-and stands for the area :math:`J_q w_q` of its share of the face. The contact measures its motion with
+and stands for the area of its share of the face, of the measure :math:`J_q w_q`. The contact measures its motion with
 :math:`G(\\boldsymbol{x}_q)`, and its contact force reaches the nodes of the particle's kernel functions with the same
 :math:`G`, the transpose of its motion: the penalty stiffness :math:`k\\, G G^T` is symmetric and the contact
 conservative. It is always :math:`G`, because a point at fixed :math:`\\xi_q` stays on the face only if it moves as
@@ -74,6 +74,32 @@ first moment, everything a particle with a homogeneous deformation can feel. Two
 face of the same size, with which the contact loads the master
 (:mod:`edelweissfe.constraints.surfacetodeformablesurfacepenalty`).
 
+**The area of a point** is the area of the body its share of the face stands for, as the particles integrate, measured
+from the model when the points are made, by the rule of every contact point
+(:mod:`edelweissfe.constraints.base.contactpoints`): its measure :math:`J_q w_q` in the model's own space -- an area in
+3D, a length in 2D -- times the out-of-plane extent :math:`b` of the body at the point, :math:`A_q = b\\, J_q w_q`.
+
+- In 3D, :math:`b = 1`.
+- A **plane model** with particles is a slice of **unit thickness**, :math:`b = 1`: Marmot's plane-strain particles
+  integrate their forces and masses per unit thickness, and so do their points. The finite elements the particles meet
+  must then be of plane sections of thickness 1 for the forces to balance; nothing checks this.
+- In an **axisymmetric model**, the section r-z of a body of revolution
+  (:attr:`~edelweissfe.models.femodel.FEModel.axisymmetric`), the particles are axisymmetric
+  (:meth:`~edelweissmeshfree.models.mpmmodel.MPMModel.prepareYourself` checks them), and a face of a particle is an
+  edge of the section that sweeps a ring (a conical, cylindrical or plane annular strip) about the axis. A point stands
+  for the area of its ring, :math:`b = 2 \\pi r_q`, with the radius :math:`r_q` of the point, so that the contact forces
+  are those of the full rings, as the particles' forces and masses are. A point on the axis stands for a ring of radius
+  0, no area: the axis is a line, not a surface of the body. A point below the axis by no more than the round-off of
+  the diagonal of its particle's bounding box (:data:`~edelweissfe.constraints.base.contactpoints.axisTolerance`, the
+  rule of Marmot's axisymmetric particles and elements for their vertices) is on it; one further below is refused.
+  The rule is EdelweissFE's, for every kind of contact point
+  (:func:`~edelweissfe.constraints.base.contactpoints.circumferenceAt`); the particles give it their diagonals.
+
+The ring weight is linear in :math:`r` along an edge, so one point at the edge's center already gives the exact area of
+its ring, :math:`2 \\pi \\bar r L`. The nodal forces of a constant pressure on the ring,
+:math:`\\int 2 \\pi r\\, G(\\boldsymbol{x})\\, \\mathrm{d}s`, are quadratic along the edge: two points per edge
+integrate them exactly, one point does not.
+
 The load at a free end. The particles balance a homogeneous stress with the traction on their faces distributed with
 their shape functions at the centers of the faces, :math:`N(\\boldsymbol{x}_f)`, one point per face: their smoothed
 gradients integrate :math:`N` over their faces with that rule, and a particle distributes its own pressure on a face
@@ -92,7 +118,7 @@ contact patch test).
 from collections.abc import Iterable
 
 import numpy as np
-from edelweissfe.constraints.base.contactpoints import ContactPoints
+from edelweissfe.constraints.base.contactpoints import ContactPoints, circumferenceAt
 from edelweissfe.models.femodel import FEModel
 from edelweissfe.utils.parentfacegeometry import parentFaceShapeFunctions
 from scipy.sparse import csr_matrix
@@ -137,8 +163,10 @@ class ContactPointsOnParticleFaces(ContactPoints):
     """The quadrature points of faces of particles, used as contact points.
 
     The points are numbered face after face, in the order the faces are given, and within a face by quadrature point.
-    The area each point stands for is taken in the configuration in which the points are made, the reference of the
-    contact: a penalty per unit area times it is the constant stiffness of the point's spring.
+    The area each point stands for is measured when the points are made, from the model, in the configuration of the
+    particles then, the reference of the contact: its measure times the out-of-plane extent of the body at it
+    (see *The area of a point* in the module documentation). A penalty per unit area times it is the constant
+    stiffness of the point's spring.
 
     A located point takes the nodes of its particle's kernel functions into the block of the constraint; a node shared
     by several located points, of one particle or of neighbouring ones, is located once
@@ -154,6 +182,8 @@ class ContactPointsOnParticleFaces(ContactPoints):
         The faces: a surface of particles (face ID -> particles, e.g. from the generators of EdelweissMeshfree or from
         the side sets of an Exodus mesh), or (particle, face ID) pairs. The face IDs follow the Abaqus numbering, from
         1 (:data:`verticesOfFace`); others are refused.
+    model
+        The model of the particles, whose kind -- 3D, plane or axisymmetric -- the areas are measured as.
     nQuadraturePoints
         The number of quadrature points per face: 1 (the face's center) or 2 in 2D, 1 or 4 (2 x 2) in 3D.
     """
@@ -162,7 +192,7 @@ class ContactPointsOnParticleFaces(ContactPoints):
     #: connectivity (and a checkpoint does not hold).
     locatedOnlyWhenConnected = True
 
-    def __init__(self, faces: dict | Iterable, nQuadraturePoints: int = 1):
+    def __init__(self, faces: dict | Iterable, model: FEModel, nQuadraturePoints: int = 1):
         pairs = (
             [(particle, faceID) for faceID, particles in faces.items() for particle in particles]
             if isinstance(faces, dict)
@@ -208,9 +238,54 @@ class ContactPointsOnParticleFaces(ContactPoints):
         nFaces = len(self.faceIDs)
         self.nPoints = nFaces * nQuadraturePoints
         self._faceOfPoint = np.repeat(np.arange(nFaces), nQuadraturePoints)
-        self.areas = (self._jacobians(self._coordinatesOfFaceVertices(vertices)) * weights).ravel()
+        faceVertices = self._coordinatesOfFaceVertices(vertices)
+        measures = (self._jacobians(faceVertices) * weights).ravel()
+        extents = self._outOfPlaneExtentAt(self._coordinatesOfPointsOnFaces(faceVertices), vertices, model)
+        self.areas = measures * extents
+        self.axisymmetric = model.axisymmetric
 
         self.locatePoints(np.zeros(0, dtype=int))
+
+    def _outOfPlaneExtentAt(
+        self, coordinates: np.ndarray, verticesOfParticles: np.ndarray, model: FEModel
+    ) -> np.ndarray:
+        """The out-of-plane extent :math:`b` of the body at the points, by which a point's measure becomes its area: 1
+        in 3D and in a plane model, whose particles are slices of unit thickness, :math:`2 \\pi r` in an axisymmetric
+        model, by EdelweissFE's rule of the axis (:func:`~edelweissfe.constraints.base.contactpoints.circumferenceAt`),
+        with the diagonal of the bounding box of each point's particle for the round-off (see the module
+        documentation).
+
+        Parameters
+        ----------
+        coordinates
+            The points, (nPoints, nDim).
+        verticesOfParticles
+            The vertices of the particles of the faces, (nParticles, nVertices, nDim): the diagonals of their bounding
+            boxes give the round-off of the axis.
+        model
+            The model.
+
+        Returns
+        -------
+        numpy.ndarray
+            :math:`b` at each point.
+
+        Raises
+        ------
+        ValueError
+            If a point of an axisymmetric model lies below the axis by more than the round-off.
+        """
+
+        if not model.axisymmetric:
+            return np.ones(len(coordinates))
+
+        diagonals = np.linalg.norm(verticesOfParticles.max(axis=1) - verticesOfParticles.min(axis=1), axis=-1)
+        particleOfPoint = self._particleOfFace[self._faceOfPoint]
+        return circumferenceAt(
+            coordinates[:, 0],
+            diagonals[particleOfPoint],
+            lambda p: f"a face of particle {self._particles[particleOfPoint[p]].number}",
+        )
 
     @staticmethod
     def _derivativesOfFaceShapeFunctions(faceType: str, parametric: np.ndarray) -> np.ndarray:
@@ -243,11 +318,15 @@ class ContactPointsOnParticleFaces(ContactPoints):
             return np.linalg.norm(tangents[..., 0], axis=-1)
         return np.linalg.norm(np.cross(tangents[..., 0], tangents[..., 1]), axis=-1)
 
+    def _coordinatesOfPointsOnFaces(self, faceVertices: np.ndarray) -> np.ndarray:
+        """Where the points are on faces with the given vertices (nFaces, nFaceVertices, nDim): (nPoints, nDim)."""
+
+        return np.einsum("qa,fad->fqd", self._shapeFunctions, faceVertices).reshape((-1, self.nDim))
+
     def _coordinatesOfAllPoints(self) -> np.ndarray:
         """Where all points are in the current configuration of the particles, (nPoints, nDim)."""
 
-        faceVertices = self._coordinatesOfFaceVertices(self._verticesOfParticles())
-        return np.einsum("qa,fad->fqd", self._shapeFunctions, faceVertices).reshape((-1, self.nDim))
+        return self._coordinatesOfPointsOnFaces(self._coordinatesOfFaceVertices(self._verticesOfParticles()))
 
     def describe(self) -> str:
         """The number of points, particle faces and quadrature points per face, for the journal.

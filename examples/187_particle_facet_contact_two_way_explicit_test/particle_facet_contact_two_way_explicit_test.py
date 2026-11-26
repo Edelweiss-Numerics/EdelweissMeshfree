@@ -273,7 +273,7 @@ def run_sim(
     if impactor == "particles":
         addParticleBlock(model, journal, "impactor", x0Impactor, STANDOFF, IMPACTOR_SIZE, IMPACTOR_SIZE)
         # two quadrature points on the bottom face of every particle of the bottom row
-        contactPoints = ContactPointsOnParticleFaces(model.surfaces["impactor_bottom"], nQuadraturePoints=2)
+        contactPoints = ContactPointsOnParticleFaces(model.surfaces["impactor_bottom"], model, nQuadraturePoints=2)
 
         def impactorVelocity():
             # the particles have the same mass
@@ -283,7 +283,7 @@ def run_sim(
         addFiniteElementBlock(model, journal, "impactor", x0Impactor, STANDOFF, IMPACTOR_SIZE, IMPACTOR_SIZE)
         addContactFacets(model, journal, "impactor_bottom", "impactorBottom")
         # three quadrature points on every facet of the bottom faces of the elements
-        contactPoints = ContactPointsOnSlaveSurface(model.elementSets["impactorBottom_facets"], 3, "contact")
+        contactPoints = ContactPointsOnSlaveSurface(model.elementSets["impactorBottom_facets"], 3, model, "contact")
 
         def impactorVelocity():
             V = model.nodeFields["displacement"]["V"]

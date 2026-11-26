@@ -105,7 +105,7 @@ reflection and the delay.
     model.constraints["tie"] = Constraint(
         "tie",
         model,
-        ContactPointsOnParticleFaces(model.surfaces["rkpm_bottom"], nQuadraturePoints=4),
+        ContactPointsOnParticleFaces(model.surfaces["rkpm_bottom"], model, nQuadraturePoints=4),
         model.elementSets[masterFacets],
         journal,
         configuration=SurfaceToDeformableSurfacePenaltySchema(

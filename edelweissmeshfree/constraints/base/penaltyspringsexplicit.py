@@ -56,6 +56,7 @@ from edelweissmeshfree.constraints.base.pointsofparticles import (
     addForcesOfSpringsOnPointsOfParticle,
     locateTheNodesOfParticles,
 )
+from edelweissmeshfree.particles.base.baseparticle import characteristicLength
 
 #: Below this norm, the gradient of a gap has no direction: the point gets no spring.
 GRADIENT_WITHOUT_DIRECTION = 1e-14
@@ -160,7 +161,7 @@ class PenaltySpringsOnPointsOfOneParticleExplicit(MPMExplicitConstraintBase):
         self._doProximityCheck = doProximityCheck
         if self._doProximityCheck:
             #: How close the obstacle must be for the constraint to take part.
-            self._proximityDist = particle.getVolumeUndeformed() ** (1.0 / model.domainSize) * proximityFactor
+            self._proximityDist = characteristicLength(particle) * proximityFactor
 
     def _pointsWhereTheyAreNow(self) -> list:
         """The points of the particle at its location, where the particle has moved them.

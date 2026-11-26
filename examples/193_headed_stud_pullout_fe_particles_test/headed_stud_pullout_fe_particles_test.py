@@ -268,7 +268,7 @@ def run(size: float) -> tuple[PullForce, SurfaceContact]:
     contact = SurfaceContact(
         "contact",
         model,
-        ContactPointsOnParticleFaces(faces, nQuadraturePoints=2),
+        ContactPointsOnParticleFaces(faces, model, nQuadraturePoints=2),
         headBoundary,
         journal,
         configuration=SurfaceToDeformableSurfacePenaltySchema(penalty=CONTACT_PENALTY, searchDistance=0.5),

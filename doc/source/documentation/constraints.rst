@@ -235,8 +235,12 @@ kind, next to the nodes and the quadrature points of finite element faces: quadr
 a surface of particles, as the generators and the side sets of an Exodus mesh make them, or (particle, face) pairs
 (:class:`~edelweissmeshfree.constraints.base.contactpointsonparticlefaces.ContactPointsOnParticleFaces`). Each moves
 with the particle's interpolation linearized about its center, :math:`\mathbf{G}` (see *Points of a particle* above),
-its force reaches the nodes of the particle's kernel functions with the same :math:`\mathbf{G}`, and it stands for its
-share of the face, so the penalty is a stiffness per unit area, as for finite elements. The particles are
+its force reaches the nodes of the particle's kernel functions with the same :math:`\mathbf{G}`, and it stands for the
+area of its share of the face, so the penalty is a stiffness per unit area, as for finite elements. The points measure
+their areas from the model when they are made, as the particles integrate: in 3D the area of the share; in a plane
+model a particle is a slice of **unit thickness**, so a point stands for its length times 1, and the finite elements
+the particles meet must be of plane sections of thickness 1 for the forces to balance (nothing checks it); in an
+axisymmetric model the area of its ring about the axis (:doc:`axisymmetric_particles`). The particles are
 updated-Lagrangian: the nodes of their kernel functions carry the increment, so the displacement a point moves with is
 the increment, from where the point was at the last update of the connectivity, its origin.
 

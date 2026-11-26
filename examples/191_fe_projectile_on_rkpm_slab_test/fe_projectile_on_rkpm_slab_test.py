@@ -254,6 +254,7 @@ def addTheContact(model: MPMModel, facets: list, journal: Journal) -> SurfaceCon
         model,
         ContactPointsOnParticleFaces(
             [(particle, faceID) for particle in particlesNearTheImpact for faceID in range(1, 7)],
+            model,
             nQuadraturePoints=4,
         ),
         ElementSet("projectile_contact", facets),

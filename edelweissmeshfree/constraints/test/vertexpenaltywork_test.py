@@ -187,7 +187,7 @@ def test_a_contact_on_a_face_does_no_work_over_a_closed_cycle(particleType):
     contact = SurfaceContact(
         "contact",
         masterModel,
-        ContactPointsOnParticleFaces([(particle, 3)], nQuadraturePoints=2),
+        ContactPointsOnParticleFaces([(particle, 3)], masterModel, nQuadraturePoints=2),
         masterModel.elementSets[facets],
         _JournalStandIn(),
         configuration=SurfaceToDeformableSurfacePenaltySchema(penalty=PENALTY / H, searchDistance=0.5 * H),

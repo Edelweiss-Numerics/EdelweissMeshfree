@@ -83,16 +83,18 @@ class JournalStandIn:
 
 
 def _masterBlock(model: MPMModel, journal, height: float = 1.0, withBottom: bool = False) -> ElementSet:
-    """A block of 4 x 1 plane strain elements below y = 0, of the given height, and the contact facets of its top (and
-    bottom) surface: the master. The facets of the top alone are the element set the generator made, which a new mesh
-    of the top (``block_top``) regenerates."""
+    """A block of 4 x 1 plane strain elements (axisymmetric ones in an axisymmetric model) below y = 0, of the given
+    height, and the contact facets of its top (and bottom) surface: the master. The facets of the top alone are the
+    element set the generator made, which a new mesh of the top (``block_top``) regenerates."""
 
     with model.topology.changes():
         PlaneRectQuadGenerator(
             "block",
             model,
             journal,
-            configuration=PlaneRectQuadSchema(x0=0.0, y0=-height, length=1.0, h=height, nX=4, nY=1, elType="CPE4"),
+            configuration=PlaneRectQuadSchema(
+                x0=0.0, y0=-height, length=1.0, h=height, nX=4, nY=1, elType="CAX4" if model.axisymmetric else "CPE4"
+            ),
         )
         top = model.elementSets[buildContactFacets(model, "block_top", "top", "midside", "facetConsistent", journal)[0]]
         if not withBottom:
@@ -136,7 +138,7 @@ def _contact(
     contact = SurfaceContact(
         "contact",
         model,
-        ContactPointsOnParticleFaces([(particle, 1) for particle in particles], nQuadraturePoints),
+        ContactPointsOnParticleFaces([(particle, 1) for particle in particles], model, nQuadraturePoints),
         master,
         journal or JournalStandIn(),
         configuration=SurfaceToDeformableSurfacePenaltySchema(
@@ -284,7 +286,7 @@ def test_an_overlap_at_the_first_update_can_be_ramped_out():
         contact = SurfaceContact(
             "contact",
             model,
-            ContactPointsOnParticleFaces([(particle, 1) for particle in particles], 2),
+            ContactPointsOnParticleFaces([(particle, 1) for particle in particles], model, 2),
             _masterBlock(model, JournalStandIn()),
             JournalStandIn(),
             configuration=SurfaceToDeformableSurfacePenaltySchema(
@@ -458,7 +460,7 @@ def test_the_restart_continues_the_pairing():
 def test_faces_of_particles_other_than_quadrilaterals_and_hexahedra_are_refused():
     particle = ParticleStandIn([Node(1, np.zeros(2))], np.zeros(2), np.zeros((3, 2)))
     with pytest.raises(ValueError, match="quadrilateral"):
-        ContactPointsOnParticleFaces([(particle, 1)])
+        ContactPointsOnParticleFaces([(particle, 1)], MPMModel(2))
 
 
 @pytest.mark.parametrize("faceID", [0, -1, 5])
@@ -467,7 +469,87 @@ def test_face_ids_outside_the_abaqus_numbering_are_refused(faceID):
     face, and one beyond the last face must not reach an index error."""
 
     with pytest.raises(ValueError, match="1 to 4"):
-        ContactPointsOnParticleFaces([(_particle(0.0, 0.0), 1), (_particle(0.0, 0.0, 2), faceID)])
+        ContactPointsOnParticleFaces([(_particle(0.0, 0.0), 1), (_particle(0.0, 0.0, 2), faceID)], MPMModel(2))
+
+
+@pytest.mark.parametrize("nQuadraturePoints", [1, 2])
+def test_an_axisymmetric_point_stands_for_the_area_of_its_ring(nQuadraturePoints):
+    """Made for an axisymmetric model, the points of the bottom faces of a row of particles stand for the annulus they
+    sweep, :math:`\\pi (r_o^2 - r_i^2)`, and the points of the outer faces of a column for the cylinder,
+    :math:`2 \\pi r L`, whatever the rule; and every point for the ring of its share of the edge, at its own radius. Made
+    for a plane model, a point stands for its length times the unit thickness of the particles."""
+
+    row = [_particle(0.5 + i * SIZE, 0.0, i + 1) for i in range(4)]
+    column = [_particle(0.5, j * SIZE, j + 1) for j in range(3)]
+    rInner, rOuter = 0.5, 0.5 + 4 * SIZE
+
+    annulus = ContactPointsOnParticleFaces([(p, 1) for p in row], MPMModel(2, axisymmetric=True), nQuadraturePoints)
+    cylinder = ContactPointsOnParticleFaces([(p, 2) for p in column], MPMModel(2, axisymmetric=True), nQuadraturePoints)
+    plane = ContactPointsOnParticleFaces([(p, 1) for p in row], MPMModel(2), nQuadraturePoints)
+
+    assert annulus.axisymmetric and cylinder.axisymmetric and not plane.axisymmetric
+    assert plane.areas.sum() == pytest.approx(4 * SIZE, rel=1e-14)
+    assert annulus.areas.sum() == pytest.approx(np.pi * (rOuter**2 - rInner**2), rel=1e-12)
+    assert cylinder.areas.sum() == pytest.approx(2 * np.pi * (0.5 + SIZE) * 3 * SIZE, rel=1e-12)
+    radii = annulus.currentPointCoordinates(None)[:, 0]
+    np.testing.assert_allclose(annulus.areas, 2 * np.pi * radii * plane.areas, rtol=1e-14)
+
+
+def test_a_point_on_the_axis_stands_for_no_area_and_one_below_it_by_more_than_the_round_off_is_refused():
+    """The axis is a line, not a surface of the body: the points of a face on the axis stand for rings of radius 0, and
+    a face reaching the axis for the disk it sweeps, :math:`\\pi R^2`. A vertex below the axis by the round-off of a
+    mesher counts as on it, as Marmot's axisymmetric particles accept it; further below, a point is refused. The points
+    lie inside their face, so it is the points of the face along r < 0 that are refused (Marmot refuses the particle
+    for its vertex already)."""
+
+    model = MPMModel(2, axisymmetric=True)
+    onTheAxis = _particle(-1e-17, 0.0)
+    axis = ContactPointsOnParticleFaces([(onTheAxis, 4)], model, 2)
+    disk = ContactPointsOnParticleFaces([(onTheAxis, 1)], model, 2)
+
+    np.testing.assert_array_equal(axis.areas, 0.0)
+    assert disk.areas.sum() == pytest.approx(np.pi * SIZE**2, rel=1e-12)
+    with pytest.raises(ValueError, match="r >= 0"):
+        ContactPointsOnParticleFaces([(_particle(-1e-3, 0.0), 4)], model, 2)
+
+
+def test_an_axisymmetric_face_pressed_into_the_master_transmits_the_force_of_its_ring():
+    """An overlap d of a face of an axisymmetric particle: the pressure is the penalty times d, as in a plane model, and
+    the force is that pressure on the annulus the face sweeps, equal and opposite on the master."""
+
+    model = MPMModel(2, axisymmetric=True)
+    master = _masterBlock(model, JournalStandIn())
+    particle = _particle(0.3, -0.02)
+    contact = _contact(model, [particle], master, nQuadraturePoints=2)
+
+    assert contact.slave.axisymmetric
+    assert (contact.stateOfPoints == ContactState.IN_CONTACT).all()
+    _residual(contact)
+    ring = np.pi * ((0.3 + SIZE) ** 2 - 0.3**2)
+    np.testing.assert_allclose(contact.getNormalPressures(), PENALTY * 0.02, rtol=1e-12)
+    np.testing.assert_allclose(contact.contactForceOnSlave, [0.0, PENALTY * 0.02 * ring], atol=1e-12)
+    np.testing.assert_allclose(contact.contactForceOnSlave + contact.contactForceOnMaster, 0.0, atol=1e-12)
+    assert contact.penaltyEnergy == pytest.approx(0.5 * PENALTY * ring * 0.02**2)
+
+
+def test_points_made_for_a_plane_model_are_refused_by_the_contact_of_an_axisymmetric_one():
+    """Points made for a plane model stand for slices of unit thickness, not for rings: the contact of an axisymmetric
+    model refuses them, and the other way round."""
+
+    for madeFor, contactIn in (
+        (MPMModel(2), MPMModel(2, axisymmetric=True)),
+        (MPMModel(2, axisymmetric=True), MPMModel(2)),
+    ):
+        points = ContactPointsOnParticleFaces([(_particle(0.3, -0.02), 1)], madeFor, 2)
+        with pytest.raises(ValueError, match="axisymmetric"):
+            SurfaceContact(
+                "contact",
+                contactIn,
+                points,
+                _masterBlock(contactIn, JournalStandIn()),
+                JournalStandIn(),
+                configuration=SurfaceToDeformableSurfacePenaltySchema(penalty=PENALTY, searchDistance=SEARCH),
+            )
 
 
 def _tie(model, particles, master, nQuadraturePoints=2, searchDistance=SEARCH):

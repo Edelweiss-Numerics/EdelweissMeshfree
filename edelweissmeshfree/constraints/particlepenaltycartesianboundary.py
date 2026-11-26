@@ -8,7 +8,10 @@ from edelweissfe.variables.scalarvariable import ScalarVariable
 
 from edelweissmeshfree.constraints.base.mpmconstraintbase import MPMConstraintBase
 from edelweissmeshfree.models.mpmmodel import MPMModel
-from edelweissmeshfree.particles.base.baseparticle import BaseParticle
+from edelweissmeshfree.particles.base.baseparticle import (
+    BaseParticle,
+    characteristicLength,
+)
 
 
 class ParticlePenaltyContactCartesianBoundaryConstraint(MPMConstraintBase):
@@ -154,9 +157,7 @@ class ParticlePenaltyContactCartesianBoundaryConstraint(MPMConstraintBase):
         self._doProximityCheck = doProximityCheck
 
         if self._doProximityCheck:
-            self._particleCharacteristicLength_x_proximityFactor = (
-                particle.getVolumeUndeformed() ** (1.0 / domainSize) * proximityFactor
-            )
+            self._particleCharacteristicLength_x_proximityFactor = characteristicLength(particle) * proximityFactor
 
     @property
     def name(self) -> str:

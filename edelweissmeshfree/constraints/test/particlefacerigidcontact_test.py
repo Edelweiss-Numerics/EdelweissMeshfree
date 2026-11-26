@@ -138,7 +138,7 @@ def _contact(model, rigidBody, particles, nQuadraturePoints=1, contactType="line
     contact = RigidSurfaceContact(
         "contact",
         model,
-        ContactPointsOnParticleFaces([(particle, BOTTOM) for particle in particles], nQuadraturePoints),
+        ContactPointsOnParticleFaces([(particle, BOTTOM) for particle in particles], model, nQuadraturePoints),
         rigidBody,
         JournalStandIn(),
         configuration=SurfaceToDiscreteRigidBodyPenaltySchema(
@@ -246,7 +246,7 @@ def test_the_restart_locates_the_points_once_the_particles_are_connected(tmp_pat
     restored = RigidSurfaceContact(
         "contact",
         model,
-        ContactPointsOnParticleFaces([(particle, BOTTOM)]),
+        ContactPointsOnParticleFaces([(particle, BOTTOM)], model),
         rigidBody,
         JournalStandIn(),
         configuration=SurfaceToDiscreteRigidBodyPenaltySchema(penalty=PENALTY, searchDistance=SEARCH),

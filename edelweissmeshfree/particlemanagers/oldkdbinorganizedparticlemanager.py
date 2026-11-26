@@ -42,6 +42,7 @@ from edelweissmeshfree.meshfree.particlekerneldomain import ParticleKernelDomain
 from edelweissmeshfree.particlemanagers.base.baseparticlemanager import (
     BaseParticleManager,
 )
+from edelweissmeshfree.particles.base.baseparticle import characteristicLength
 
 
 class _KDBinOrganizer:
@@ -162,9 +163,10 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
         Whether to bond the particles to the kernel functions (one particle per kernel function).
         If True, the kernel functions are moved to the particle center coordinates at each update.
     randomlyShiftPartliceShapeFunctions
-        Whether to randomly shift the shape functions a bit to avoid alignment artifacts.
-        If a float value is given, this value is used as the maximum shift factor in each direction, which is scaled with the approximate particle size:
-        randdisp = (np.random.rand(self._dimension) - 0.5) * np.sqrt(particle.getVolumeUndeformed()) * randomlyShiftPartliceShapeFunctions * particleSize
+        With bonded kernel functions and a float: shift each kernel function off its particle centre at random, to avoid
+        alignment artifacts, at every update, by up to half this factor times the size of the particle as it was made
+        (:func:`~edelweissmeshfree.particles.base.baseparticle.characteristicLength`) in each direction:
+        ``(np.random.rand(dimension) - 0.5) * randomlyShiftPartliceShapeFunctions * size``.
     """
 
     def __init__(
@@ -185,6 +187,12 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
         if not isinstance(randomlyShiftPartliceShapeFunctions, (bool, float)):
             raise ValueError("randomlyShiftPartliceShapeFunctions must be a boolean or a float.")
         self._randomlyShiftPartliceShapeFunctions = randomlyShiftPartliceShapeFunctions
+        # the size of each particle as it is made, before it moves: the scale of its random shift
+        self._sizesOfParticles = (
+            np.array([characteristicLength(particle) for particle in self._particles])
+            if isinstance(randomlyShiftPartliceShapeFunctions, float)
+            else np.zeros(len(self._particles))
+        )
 
         if self.kernelFunctionsAreBondedToParticles:
             if len(self._particles) != len(self._meshfreeKernelFunctions):
@@ -223,21 +231,15 @@ class KDBinOrganizedParticleManager(BaseParticleManager):
                 f"Updating kernel function positions for the bonding definition with {len(self._particles)} particles.",
                 "ParticleManager",
             )
-            for particle, kernelFunction in zip(self._particles, self._meshfreeKernelFunctions):
+            shift = isinstance(self._randomlyShiftPartliceShapeFunctions, float)
+            for particle, kernelFunction, size in zip(
+                self._particles, self._meshfreeKernelFunctions, self._sizesOfParticles
+            ):
                 particleCoordinates = particle.getCenterCoordinates()
-                if self._randomlyShiftPartliceShapeFunctions:
-                    if isinstance(self._randomlyShiftPartliceShapeFunctions, float):
-                        particleVol = particle.getVolumeUndeformed()
-                        # particleSize = np.pow(particleVol, 1.0 / self._dimension)
-                        particleSize = particleVol ** (1.0 / self._dimension)
-                        randdisp = (
-                            (np.random.rand(self._dimension) - 0.5)
-                            * np.sqrt(particle.getVolumeUndeformed())
-                            * self._randomlyShiftPartliceShapeFunctions
-                            * particleSize
-                        )
-                    particleCoordinates += randdisp
-
+                if shift:
+                    particleCoordinates += (
+                        (np.random.rand(self._dimension) - 0.5) * self._randomlyShiftPartliceShapeFunctions * size
+                    )
                 kernelFunction.moveTo(particleCoordinates)
 
             self.signalizeKernelFunctionUpdate()

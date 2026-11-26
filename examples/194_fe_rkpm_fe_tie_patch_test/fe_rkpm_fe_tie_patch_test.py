@@ -320,12 +320,12 @@ def run(
     stepActions = StepActionCollection()
     if middle == "particles":
         addParticleBlock(model, journal, offset, particleSize)
-        bottom = ContactPointsOnParticleFaces(model.surfaces["block_bottom"], nQuadraturePoints=4)
-        top = ContactPointsOnParticleFaces(model.surfaces["block_top"], nQuadraturePoints=4)
+        bottom = ContactPointsOnParticleFaces(model.surfaces["block_bottom"], model, nQuadraturePoints=4)
+        top = ContactPointsOnParticleFaces(model.surfaces["block_top"], model, nQuadraturePoints=4)
     else:
         addFiniteElementBlock(model, journal, "block", offset, MIDDLE)
-        bottom = ContactPointsOnSlaveSurface(model.elementSets[facets(model, journal, "block_back")], 3, "lower")
-        top = ContactPointsOnSlaveSurface(model.elementSets[facets(model, journal, "block_front")], 3, "upper")
+        bottom = ContactPointsOnSlaveSurface(model.elementSets[facets(model, journal, "block_back")], 3, model, "lower")
+        top = ContactPointsOnSlaveSurface(model.elementSets[facets(model, journal, "block_front")], 3, model, "upper")
     holdTheSides(model, journal, load, middle, particleSize, stepActions)
 
     configuration = SurfaceToDeformableSurfacePenaltySchema(penalty=PENALTY, contactType="tied", searchDistance=1.0)

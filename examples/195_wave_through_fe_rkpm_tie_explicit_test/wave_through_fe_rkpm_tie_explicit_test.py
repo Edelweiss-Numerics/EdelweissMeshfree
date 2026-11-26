@@ -319,13 +319,13 @@ def tieTheSegment(model: MPMModel, journal: Journal, segment: str, size: float):
     masters = {name: facets(model, journal, face) for name, face in MASTERS.items()}
     if segment == "particles":
         ends = [
-            ContactPointsOnParticleFaces(model.surfaces[f"segment_{end}"], nQuadraturePoints=4)
+            ContactPointsOnParticleFaces(model.surfaces[f"segment_{end}"], model, nQuadraturePoints=4)
             for end in ("bottom", "top")
         ]
     else:
         # 3: the points of a triangle rule on each of the triangles a facet splits the parent face into
         ends = [
-            ContactPointsOnSlaveSurface(model.elementSets[facets(model, journal, f"segment_{face}")], 3, name)
+            ContactPointsOnSlaveSurface(model.elementSets[facets(model, journal, f"segment_{face}")], 3, model, name)
             for face, name in (("back", "first"), ("front", "second"))
         ]
     configuration = SurfaceToDeformableSurfacePenaltySchema(

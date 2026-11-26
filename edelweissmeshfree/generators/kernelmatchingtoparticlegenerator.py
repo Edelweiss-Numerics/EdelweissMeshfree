@@ -44,6 +44,7 @@ from edelweissmeshfree.meshfree.kernelfunctions.base.basemeshfreekernelfunction 
     BaseMeshfreeKernelFunction,
 )
 from edelweissmeshfree.models.mpmmodel import MPMModel
+from edelweissmeshfree.particles.base.baseparticle import characteristicLength
 from edelweissmeshfree.sets.particleset import ParticleSet
 
 
@@ -84,8 +85,6 @@ def generateKernelMatchingToParticle(
 
     kernelFunctionNumber = firstKernelFunctionNumber
 
-    nDim = model.domainSize
-
     nodes = []
 
     currentKernelFunctionNumber = firstKernelFunctionNumber
@@ -95,17 +94,11 @@ def generateKernelMatchingToParticle(
     for particle in theParticlesToBeMatched:
 
         position = particle.getCenterCoordinates()
-        particleVolume = particle.getVolumeUndeformed()
+        size = characteristicLength(particle)
+        supportSize = supportScalingFactor * size
 
-        characteristicLength = particleVolume ** (1.0 / nDim)
-        supportSize = supportScalingFactor * characteristicLength
-
-        minCharacteristicLength = (
-            min(minCharacteristicLength, characteristicLength)
-            if minCharacteristicLength > 0.0
-            else characteristicLength
-        )
-        maxCharacteristicLength = max(maxCharacteristicLength, characteristicLength)
+        minCharacteristicLength = min(minCharacteristicLength, size) if minCharacteristicLength > 0.0 else size
+        maxCharacteristicLength = max(maxCharacteristicLength, size)
 
         node = Node(
             currentKernelFunctionNumber,

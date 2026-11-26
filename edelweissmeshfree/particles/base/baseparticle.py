@@ -86,6 +86,14 @@ class BaseParticle(BaseNodeCouplingEntity):
 
     @property
     @abstractmethod
+    def axisymmetric(self) -> bool:
+        """True if the particle lives in the section r-z of an axisymmetric model, the first coordinate the radius: its
+        volume, its mass and its forces are those of the ring it sweeps about the axis. An axisymmetric model holds
+        such particles only, any other model none (:meth:`~edelweissmeshfree.models.mpmmodel.MPMModel.prepareYourself`).
+        """
+
+    @property
+    @abstractmethod
     def ensightType(self) -> str:
         """The shape of the particle in Ensight Gold notation."""
 
@@ -606,3 +614,34 @@ class BaseParticle(BaseNodeCouplingEntity):
         restartData
             The state.
         """
+
+
+def characteristicLength(particle: BaseParticle) -> float:
+    """The size of a particle as it is made: the edge of the square (2D) or the cube (3D) of its measure in the model's
+    own space, in the configuration it is made in. That is its volume in 3D and its area in a plane model. An
+    axisymmetric particle's volume is the volume of its ring, :math:`V = 2 \\pi r_c A` (Pappus, with the radius
+    :math:`r_c` of its center, the centroid of its area in the section r-z, which is how Marmot places the center), so
+    its measure in the section is its area :math:`A = V / (2 \\pi r_c)`.
+
+    The volume is the undeformed one, the radius the current one: the quotient is the area as made only until the
+    particle moves. So the size is taken where the particle is made, and kept: the kernel-matching generator, the
+    proximity checks of the particle constraints and the random shift of the particle managers take it when they are
+    made, before the analysis moves the particles. Taken after a radial motion :math:`r_c \\to r_c'`, it would be
+    :math:`\\sqrt{A\\, r_c / r_c'}`, not the size of the particle.
+
+    Parameters
+    ----------
+    particle
+        The particle, as it is made.
+
+    Returns
+    -------
+    float
+        The size, :math:`V^{1/n}` in a plane or a 3D model (:math:`n` the dimension), :math:`\\sqrt{A}` in an
+        axisymmetric one.
+    """
+
+    measure = particle.getVolumeUndeformed()
+    if particle.axisymmetric:
+        measure /= 2.0 * np.pi * particle.getCenterCoordinates()[0]
+    return measure ** (1.0 / particle.dimension)
