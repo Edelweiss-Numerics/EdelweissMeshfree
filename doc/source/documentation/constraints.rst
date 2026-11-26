@@ -55,8 +55,10 @@ checked by central differences of its own ``computeKernels`` in
 A constraint written for explicit analyses alone, with forces and without a tangent, derives from
 :class:`~edelweissmeshfree.constraints.base.mpmexplicitconstraintbase.MPMExplicitConstraintBase` and implements
 ``computeKernelsExplicit(U_np, dU, P, timeStep)``, with the same sign, and
-``addBoundOfAbsoluteStiffnessTimes(U_np, dU, weights, bound, timeStep)``, the bound of its stiffness for the critical
-time step of ``NED`` (from its springs, or nothing, saying so): an implicit solver refuses it. The explicit
+``addBoundOfAbsoluteStiffnessTimes(U_np, dU, weights, bound, timeStep, nextIncrement=None)``, the bound of its
+stiffness for the critical time step of ``NED`` (from its springs, or nothing, saying so), with ``nextIncrement`` over
+the states the next increment can reach (``follow-critical-time-step``; the springs at the smallest gap of each point
+within it): an implicit solver refuses it. The explicit
 solver, in turn, accepts only a constraint that acts in an explicit analysis (``actsInExplicitAnalysis``): one that
 measures its condition at the particles' current positions, as the penalty contacts do, explicit or not, and as the
 penalty weak Dirichlet condition does where it holds the displacement at zero (a support). A constraint on the
@@ -69,8 +71,8 @@ the center, :math:`\mathbf{G}`
 the displacement, the motion of the point. The shape functions at the point, :math:`\mathbf{N}`
 (:meth:`~edelweissmeshfree.particles.base.baseparticle.BaseParticle.getInterpolationVector`), are exact at an arbitrary
 location and differ from :math:`\mathbf{G}` away from the center. The constraints that act on points of particles (the
-penalty weak Dirichlet condition, the cartesian boundaries, the rigid body contacts, the facet contact, implicit and
-explicit) take one option, ``interpolationLinearizedAboutCenter``
+penalty weak Dirichlet condition, the cartesian boundaries, the rigid body contacts, implicit and explicit) take one
+option, ``interpolationLinearizedAboutCenter``
 (:meth:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.interpolationVectorAtPointOf`):
 
 - ``False``, the default: they measure the field at the point and distribute their force there with :math:`\mathbf{N}`.
@@ -79,9 +81,10 @@ explicit) take one option, ``interpolationLinearizedAboutCenter``
   can feed energy into softened material next to a support.
 - ``True``: they use :math:`\mathbf{G}` for both, for every field: the stiffness
   :math:`k\,\mathbf{G}\mathbf{G}^\mathsf{T}` is symmetric and the constraint conservative;
-  ``edelweissmeshfree/constraints/test/vertexpenaltywork_test.py`` checks that a support and a facet contact on the
-  vertices of a real particle then do no work over a closed cycle.
-  The FE-particle impact (:doc:`fe_projectile_on_rkpm_slab`) opts in.
+  ``edelweissmeshfree/constraints/test/vertexpenaltywork_test.py`` checks that a support on the vertices then does no
+  work over a closed cycle, nor does a contact on a face of a real particle, whose contact points always use
+  :math:`\mathbf{G}`.
+  The FE-particle impact (:doc:`fe_projectile_on_rkpm_slab`) opts in for its supports.
   The two operations such a constraint needs besides its own physics -- locating the nodes of its particles in its
   block, and distributing a force on a point -- are in :mod:`edelweissmeshfree.constraints.base.pointsofparticles`,
   which the explicit constraints and the support use, with the penalty springs on points of a particle that give a
@@ -91,6 +94,10 @@ explicit) take one option, ``interpolationLinearizedAboutCenter``
   the Cartesian boundary and the contact with an analytical surface do: the base keeps the points, the nodes and the
   reach current, so a new one is the gap of a point, its gradient and whether the obstacle is within reach, and a
   constructor that calls the base's.
+
+The contact points on the faces of particles (:ref:`the contact, the tie and the rigid contact of particle faces
+<particle-face-contact>`) have no such option: they always use :math:`\mathbf{G}`, since a point on a face stays on
+it only if it moves as the particle moves the face.
 
 The base classes
 ----------------
@@ -215,14 +222,167 @@ Constraints for explicit analyses
    :members:
    :private-members:
 
-``ParticlePenaltyFacetContactExplicit`` constraint class
-********************************************************
+.. _particle-face-contact:
 
-Contact between particles and a body of finite elements: the vertices of the particles against the faceted boundary
-of the finite elements, which EdelweissFE's surface element generator creates. The theory is in the class
-documentation; its tests are ``edelweissmeshfree/constraints/test/particlepenaltyfacetcontactexplicit_test.py``
-(pairing, entering, tunnelling, the exchange of momentum) and example 185 (the same result as an analytic wall).
+Contact of particles with finite elements
+-----------------------------------------
 
-.. automodule:: edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit
+Particles meet a body of finite elements through EdelweissFE's contact constraint,
+:mod:`edelweissfe.constraints.surfacetodeformablesurfacepenalty`, the same one that couples two bodies of finite
+elements: it is one contact for every kind of contact point (see EdelweissFE's contact theory,
+:ref:`edelweissfe:contact-points` and :ref:`edelweissfe:contact-one-constraint`). The contact points of particles are a
+third kind, next to the nodes and the quadrature points of finite element faces: quadrature points on faces of particles
+-- a surface of particles, as the generators and the side sets of an Exodus mesh make them, or (particle, face) pairs
+(:class:`~edelweissmeshfree.constraints.base.contactpointsonparticlefaces.ContactPointsOnParticleFaces`). Each moves
+with the particle's interpolation linearized about its center, :math:`\mathbf{G}` (see *Points of a particle* above),
+its force reaches the nodes of the particle's kernel functions with the same :math:`\mathbf{G}`, and it stands for the
+area of its share of the face, so the penalty is a stiffness per unit area, as for finite elements. The points measure
+their areas from the model when they are made, as the particles integrate: in 3D the area of the share; in a plane model
+a particle is a slice of **unit thickness**, so a point stands for its length times 1, and the finite elements the
+particles meet must be of plane sections of thickness 1 for the forces to balance (nothing checks it); in an
+axisymmetric model the area of its ring about the axis (:doc:`axisymmetric_particles`). The particles are
+updated-Lagrangian: the nodes of their kernel functions carry the increment, so the displacement a point moves with is
+the increment, from where the point was at the last update of the connectivity, its origin.
+
+The master is the faceted boundary of the finite elements, which EdelweissFE's surface element generator creates; it may
+have corners, convex and re-entrant, such as the crests and roots of a thread (EdelweissFE's contact theory,
+:ref:`edelweissfe:contact-corners`). An overlap at the start is either real, such as a groove cut smaller than the
+thread, and pushed apart, at once or over a time (``initialOverlap=pushApart``, the default), or an error of the
+geometry, and adjusted: kept as the stress-free state (``initialOverlap=adjust``;
+:ref:`edelweissfe:contact-initial-overlap`). The flat faces of particles that approximate a curved interface are the
+second kind: they are chords of its arcs and lie inside it by their sag, an error of the geometry (``adjust``). The
+contact acts in implicit and explicit analyses. In ``NED``, the stiffness of its springs adds to the frequencies of the
+nodes they couple, on the particles' side inside their field matrix (:doc:`choosing_a_solver`), on the side of the
+finite elements as for any penalty constraint.
+
+Its tests are ``edelweissmeshfree/constraints/test/particlefacecontact_test.py`` (the force of a pressed face, the
+tangent by central differences, pairing, entering, tunnelling, an overlap at the start ramped out or adjusted,
+restart) and examples 185 (the same result as an analytic wall), 187 (impact of particles and of finite elements on
+finite elements, and a stiff contact that sets the time increment), 191 (:doc:`fe_projectile_on_rkpm_slab`), 192 (the
+contact patch test, implicit: the pressure a block of particles transmits between two platens of finite elements,
+against a block of finite elements; uniform away from the free ends of the particles, and why not at them, see the
+module of the contact points) and 193 (a toy pull-out: the head of a stud of finite elements bearing on
+particles, implicit).
+
+The same constraint with the law ``type=tied`` -- the input-file spelling; in Python the field of its options is
+``contactType="tied"`` (``type`` would shadow the builtin), the other options keep their names -- **ties** particles to
+finite elements (EdelweissFE's contact theory, :ref:`edelweissfe:contact-tie`; it is not EdelweissFE's ``tie``
+constraint, which eliminates the degrees of freedom of slave nodes, see :ref:`edelweissfe:contact-two-ties`). At the
+first update, every point of a face of a particle within ``searchDistance`` of the master is paired once with the
+closest point of its closest facet, mapped onto the facet's parent face, and held there in every direction by penalty
+springs, in tension and in compression. A gap or an overlap of the two surfaces at the pairing -- two meshes of one
+curved surface never coincide -- is part of the state at rest. The particles are updated-Lagrangian, as for the contact:
+at every update the tied points are located again, where the particles have moved them, and their displacement from rest
+is measured from there, so a point stays tied to the same point of the master however far it moves. The tie joins a
+region of particles to a far field of finite elements, in implicit and explicit analyses, where the mortar tie of
+:doc:`coupled_rkpm_fe` (implicit, 2D) does not reach. A new mesh of the elements hands the tie on (EdelweissFE's contact
+theory, :ref:`edelweissfe:contact-tie`): the same points stay tied to the same points of the master, displaced from rest
+as at the last accepted state.
+
+- **What the tie accepts in** ``NED``: the state of the evaluation after the particles are reconnected, the first at
+  the accepted configuration. That state is what a checkpoint holds.
+- **No new mesh during the analysis**: ``NED`` does not implement model modifiers that act after the start of the
+  analysis in a model with particles, and refuses them (``NotImplementedError``).
+- **What a new mesh starts from**: in a following step, or in a run resumed from the checkpoint, the accepted state
+  above. The points of particles are never regenerated by a change of the mesh, so they need no interpolation from old
+  points to new ones.
+
+Its tests are in the same file (at rest with a gap and with an overlap, pulled back in every direction, the tangent, a
+particle that moves on, a restart, a new mesh of the master) and examples 194 and 195:
+
+- 194, the patch test of the tie, implicit: a column of particles between two blocks of elements, stretched and
+  sheared, with a gap or an overlap at the start. It transmits the force of the column, and the error halves with the
+  size of the particles; the traction at single points varies. The mechanism is that of example
+  192: the particles balance a homogeneous stress with their shape functions at the centers of their faces, the tie
+  loads them with :math:`\mathbf{G}` at 2 x 2 points per face, and the particles deviate slightly from the homogeneous
+  state within two or three particles of a side of the column. The four springs of a face hold it against the tilts of
+  that deviation, so the stiffer the tie, the more the traction varies across a face. The traction of a tie at a single
+  point of particles is therefore not a measure of the stress there; its resultant over a few particles is. In shear,
+  the springs that hold the sides of the particles add a smaller band and their compliance; the module says why.
+- 195, explicit: a pulse through a bar of elements with a tied segment, against the bar of elements alone. A segment
+  of elements tied in reflects what the two springs of its ties reflect, transmits the rest, and delays the transmitted
+  pulse by their compliance, to first order in how finely the elements resolve the pulse. A segment of particles
+  changes the pulse more: it reflects more at its ends, and delays the pulse along its length, by a phase speed of its
+  own. Both shrink with the size of the particles and elements, the reflection faster than the ties' own. The state
+  the ties accept in ``NED`` hands them on to a new mesh of the elements without a jump of their forces; the test makes
+  that mesh by hand in the middle of the pulse, standing for a refinement in a following step or a resumed run.
+
+The springs of the tie raise the frequencies of the points they hold, which ``NED``'s critical time step counts, like
+the contact's normal spring, along every axis (:doc:`choosing_a_solver`).
+
+**Moving a deck from** ``ParticlePenaltyFacetContactExplicit``. The contact of the vertices of particles with a faceted
+surface is replaced by this contact, as in examples 185, 187 and 191:
+
+- **Why.** It was a second contact next to EdelweissFE's, without its corners of the master, its overlap at the start,
+  its implicit path and its rigid bodies; it acted on the vertices, with a penalty per point, in explicit analyses
+  only, and its springs were not in the critical time step of ``NED``. The contact above is one constraint for every
+  kind of contact point, the faces of particles included.
+- **The points.** Contact points on the faces of the particles that can meet the surface, a surface of particles or
+  (particle, face) pairs, instead of the particles whose vertices met it. The option
+  ``interpolationLinearizedAboutCenter`` is gone: the points always move, and distribute their force, with
+  :math:`\mathbf{G}`, which the option chose; its default, :math:`\mathbf{N}`, is not available.
+- **The penalty**, a stiffness per unit area. The old contact put its penalty :math:`k_v` at every vertex of every
+  given particle: :math:`n_v` vertices on a face of the area :math:`A_f` (2 in 2D, 4 in 3D), so
+  :math:`p = k_v\, n_v / A_f` per unit area keeps the stiffness of the face, whatever the number of contact points
+  per face. Example 191: :math:`2 \times 10^5` per vertex, faces of 20 mm x 20 mm, so :math:`2 \times 10^5 \cdot 4 /
+  400 = 2 \times 10^3`.
+- **The master** is a surface of finite elements of the model, which takes the reaction. A deck whose facets were moved
+  by something else (``twoWayCoupling=False``, such as a fixed floor) holds the nodes of a layer of elements under
+  the surface (example 185), meets a discrete rigid body (below), or, for a plane, uses the Cartesian boundary
+  (:class:`~edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit.ParticlePenaltyCartesianBoundaryConstraintExplicit`).
+- **The other arguments.** ``searchDistance`` moves into the options of the contact; the contact searches every
+  increment in a model with particles. ``entryDepthWarningFraction`` is gone: the contact reports a point that enters
+  deeper than half the search distance. ``nQuadraturePoints`` is required: one point per face is the face's center;
+  take 2 per edge (2 in 2D, 4 in 3D) for a quadratic master or an axisymmetric model.
+- **The outputs** have EdelweissFE's names: ``contactForceOnParticles`` is ``contactForceOnSlave``, and
+  ``numberOfPointsInContact`` is ``numberOfPointsWithASpring``; ``penaltyEnergy``, ``deepestPenetration``,
+  ``numberOfPointsFoundInside`` and ``contactForceOnMaster`` keep their names.
+- **The time increment.** The springs now enter ``NED``'s critical time step: a stiff penalty lowers the time
+  increment, where the old contact left it to the user to keep :math:`2\sqrt{m/k}` above it (example 187 tests a
+  stiff contact that sets the time increment). Choose the penalty as for a tie, :math:`k = \beta E / h`
+  (:doc:`coupled_rkpm_fe`).
+
+Example 191 before and after (``facets`` are the facets of the projectile; ``particles`` those it can reach; the
+penalty was per vertex, it is per unit area now; all six faces of every particle, also the inner ones, which the
+projectile meets as it penetrates):
+
+.. code-block:: python
+
+    # before
+    contact = ParticlePenaltyFacetContactExplicit(
+        "contact", model, particles, facets, penaltyPerVertex, searchDistance, journal,
+        interpolationLinearizedAboutCenter=True,
+    )
+
+    # after
+    contact = Constraint(  # edelweissfe.constraints.surfacetodeformablesurfacepenalty
+        "contact",
+        model,
+        ContactPointsOnParticleFaces(
+            [(particle, faceID) for particle in particles for faceID in range(1, 7)], model, nQuadraturePoints=4
+        ), ElementSet("projectile_contact", facets),
+        journal,
+        configuration=SurfaceToDeformableSurfacePenaltySchema(penalty=penaltyPerArea, searchDistance=searchDistance),
+    )
+
+Contact of particles with a rigid body
+--------------------------------------
+
+The same contact points meet a discrete rigid body -- a support, an indenter, a projectile that does not deform --
+through EdelweissFE's :mod:`edelweissfe.constraints.surfacetodiscreterigidbodypenalty`, the contact of the faces and
+nodes of finite elements with a rigid body (EdelweissFE's contact theory,
+:ref:`edelweissfe:integrated-contact-rigid-body`): the constraint is built with
+:class:`~edelweissmeshfree.constraints.base.contactpointsonparticlefaces.ContactPointsOnParticleFaces` in place of the
+faces of elements. Each point is paired with the plane of its closest triangle of the rigid surface, which moves and
+rotates with the body's reference point; the force of a point reaches the nodes of the kernel functions of its
+particle with :math:`\mathbf{G}`, and the reference
+point with the force and its moment. Points farther than the search distance from the rigid surface take no part
+until they approach. Its tests are ``edelweissmeshfree/constraints/test/particlefacerigidcontact_test.py`` (the force
+and the moment of a pressed face, action = reaction, the tangent by central differences against a moved and rotated
+body, a particle that approaches), on stand-ins of particles with given vertices and interpolation vectors, not on
+Marmot particles. The particle constraints for analytical surfaces above
+(``ParticlePenaltyRigidBodyContact``, with an implicit function) remain the way to describe a boundary by a formula
+rather than by a mesh.
+
+.. automodule:: edelweissmeshfree.constraints.base.contactpointsonparticlefaces
    :members:
-   :private-members:

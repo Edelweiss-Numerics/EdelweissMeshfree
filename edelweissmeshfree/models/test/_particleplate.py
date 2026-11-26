@@ -24,9 +24,10 @@
 #  The full text of the license can be found in the file LICENSE.md at
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
-"""A plate of 8 x 4 plane strain quadrilateral particles of the size ``H``, on B-spline kernel functions bonded to
-them, for the tests of the models and the constraints: a displacement particle with J2 plasticity (elastic here) and a
-gradient-enhanced one with damage, in ``MATERIALS``. Skipped where Marmot is not built."""
+"""A plate of 8 x 4 (or nX x nY) plane strain quadrilateral particles of the size ``H``, on B-spline kernel functions
+bonded to them, for the tests of the models and the constraints: a displacement particle with J2 plasticity (elastic
+here) and a gradient-enhanced one with damage, in ``MATERIALS``; and the section r-z of a ring of axisymmetric
+particles, the plate moved out to an inner radius (``AXISYMMETRIC``). Skipped where Marmot is not built."""
 
 import numpy as np
 import pytest
@@ -45,10 +46,33 @@ MATERIALS = {
         "material": "GRADIENTENHANCEDCOMPRESSIBLENEOHOOKEDAMAGE",
         "properties": np.array([K, G, 1e-3, 1e-2, 5.0, RHO]),
     },
+    "DisplacementSQCNI/PlaneStrain/Quad": {
+        "material": "CompressibleNeoHooke",
+        "properties": np.array([K, G, RHO]),
+    },
+    "DisplacementSQCNI/Axisymmetric/Quad": {
+        "material": "CompressibleNeoHooke",
+        "properties": np.array([K, G, RHO]),
+    },
+    "GradientEnhancedFiniteStrainSQCNIxNSNI/Axisymmetric/Quad": {
+        "material": "GRADIENTENHANCEDCOMPRESSIBLENEOHOOKEDAMAGE",
+        "properties": np.array([K, G, 1e-3, 1e-2, 5.0, RHO]),
+    },
 }
 
+#: The axisymmetric particles of ``MATERIALS``: their plate is the section r-z of a ring, in an axisymmetric model.
+AXISYMMETRIC = {"DisplacementSQCNI/Axisymmetric/Quad", "GradientEnhancedFiniteStrainSQCNIxNSNI/Axisymmetric/Quad"}
 
-def particlePlate(particleType: str, supportFactor: float, kernelOrder: int):
+
+def particlePlate(
+    particleType: str,
+    supportFactor: float,
+    kernelOrder: int,
+    nX: int = 8,
+    nY: int = 4,
+    innerRadius: float = 2 * H,
+    randomShift: bool | float = False,
+):
     """The model of the plate, connected.
 
     Parameters
@@ -59,6 +83,14 @@ def particlePlate(particleType: str, supportFactor: float, kernelOrder: int):
         The support radius of the kernel functions, in units of ``H``.
     kernelOrder
         The continuity order of the B-spline kernel functions.
+    nX, nY
+        The particles along x and y (for the axisymmetric particles, along the radius and the axis).
+    innerRadius
+        For the axisymmetric particles: the inner radius of the ring, where the plate starts; a plane plate starts at
+        x = 0.
+    randomShift
+        The random shift of the kernel functions off their particles
+        (:class:`~edelweissmeshfree.particlemanagers.kdbinorganizedparticlemanager.KDBinOrganizedParticleManager`).
 
     Returns
     -------
@@ -88,8 +120,9 @@ def particlePlate(particleType: str, supportFactor: float, kernelOrder: int):
         pytest.skip("Marmot is not built")
 
     journal = Journal()
-    model = MPMModel(2)
-    nX, nY = 8, 4
+    axisymmetric = particleType in AXISYMMETRIC
+    model = MPMModel(2, axisymmetric=axisymmetric)
+    x0 = innerRadius if axisymmetric else 0.0
 
     def kernelFunction(node):
         return MarmotMeshfreeKernelFunctionWrapper(
@@ -103,11 +136,15 @@ def particlePlate(particleType: str, supportFactor: float, kernelOrder: int):
 
     approximation = MarmotMeshfreeApproximationWrapper("ReproducingKernel", 2, completenessOrder=1)
     model = generateRectangularKernelFunctionGrid(
-        model, journal, kernelFunction, x0=0.5 * H, y0=0.5 * H, l=(nX - 1) * H, h=(nY - 1) * H, nX=nX, nY=nY
+        model, journal, kernelFunction, x0=x0 + 0.5 * H, y0=0.5 * H, l=(nX - 1) * H, h=(nY - 1) * H, nX=nX, nY=nY
     )
-    model = generateRectangularQuadParticleGrid(model, journal, particle, l=nX * H, h=nY * H, nX=nX, nY=nY, name="b")
+    model = generateRectangularQuadParticleGrid(
+        model, journal, particle, x0=x0, l=nX * H, h=nY * H, nX=nX, nY=nY, name="b"
+    )
     domain = ParticleKernelDomain(list(model.particles.values()), list(model.meshfreeKernelFunctions.values()))
-    manager = KDBinOrganizedParticleManager(domain, 2, journal, bondParticlesToKernelFunctions=True)
+    manager = KDBinOrganizedParticleManager(
+        domain, 2, journal, bondParticlesToKernelFunctions=True, randomlyShiftPartliceShapeFunctions=randomShift
+    )
     model.particleKernelDomains["b"] = domain
     model.prepareYourself(journal)
     model.particleManagers.append(manager)

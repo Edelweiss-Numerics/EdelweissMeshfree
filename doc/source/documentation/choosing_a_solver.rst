@@ -310,7 +310,9 @@ Duvaut-Lions viscosity, it is the stiffness relaxed over that time, softer than 
 increment, and the estimate may be too large; take a smaller ``courant-number`` there.
 
 A penalty constraint on the particles -- a support (``ParticlePenaltyWeakDirichlet``), a Cartesian boundary or a
-contact with an analytical surface held by a penalty -- adds its stiffness to the frequencies of the nodes it couples.
+contact with an analytical surface held by a penalty, a contact of points on their faces with finite elements or with
+a rigid body, or a tie of such points to finite elements, the one whose springs act along every axis
+(:ref:`particle-face-contact`) -- adds its stiffness to the frequencies of the nodes it couples.
 The constraints bound the row sums of their own stiffness, scaled by the lumped mass, in every increment, and these are
 added to the particles' row sums inside the field matrix
 (:class:`~edelweissmeshfree.models.mpmdiscretesystem.CriticalTimeStepEstimateFromTheFieldMatrix`; theory page on the
@@ -324,20 +326,19 @@ critical time step of EdelweissFE, "The particles: the rows inside their field m
   as well.
 - **One field per constraint:** this bounds the particles and the constraints together, for the unsymmetric tangent of
   the particles as well, as long as every constraint couples degrees of freedom of one field of the particles only (a
-  support or a contact of the displacement). A penalty between two fields is not covered; this is assumed, not
-  checked.
+  support, a contact or a tie of the displacement). A penalty between two fields is not covered; this is assumed,
+  not checked.
 - **Particles and finite elements:** a constraint that couples both at once -- a projectile of elements on a slab of
-  particles -- is taken with the larger of the elements' bound and the particles' field matrix with its rows; that
-  this bounds the two together is not proven.
-- **Facet contact:** the contact of the vertices of particles with a faceted surface
-  (``ParticlePenaltyFacetContactExplicit``) is not in the estimate: keep :math:`2\sqrt{m/k}` of its penalty, with
-  :math:`m` the mass a contact point carries, well above the time increment.
+  particles, a tie of particles to a far field of elements -- is taken with the larger of the elements' bound and the
+  particles' field matrix with its rows; that this bounds the two together is not proven, and example 195, a tie at
+  eight times :math:`E / h` that stays stable, is the practical check.
 - **Points away from the center:** a constraint on such a point distributes its force, by default, with the shape
   functions there, :math:`\mathbf{N}`, while the point moves with the particle's interpolation linearized about its
   center, :math:`\mathbf{G}`: its stiffness is :math:`k\,\mathbf{N}\mathbf{G}^\mathsf{T}`, and the bound, which
   takes :math:`\mathbf{N}` on both sides, holds only where the two agree -- at the center, or with
   ``interpolationLinearizedAboutCenter``
-  (:class:`~edelweissmeshfree.constraints.base.pointsofparticles.SpringsOnPointsOfParticle`).
+  (:class:`~edelweissmeshfree.constraints.base.pointsofparticles.SpringsOnPointsOfParticle`). The contact
+  points on the faces of particles always use :math:`\mathbf{G}`.
 
 What to know
 ************

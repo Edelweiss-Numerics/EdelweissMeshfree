@@ -126,6 +126,7 @@ cdef class MarmotParticleWrapper:
         self._ensightType           = self._marmotParticle.getParticleShape().decode('utf-8')
         self._nVertices             = self._marmotParticle.getNumberOfVertices()
         self._nDim                  = self._marmotParticle.getDimension()
+        self._axisymmetric          = self._marmotParticle.getSection() == Section.Axisymmetric
         self._nBaseDof              = self._marmotParticle.getNBaseDof()
         # self._assignedKernelFunctions = list()
 
@@ -154,6 +155,12 @@ cdef class MarmotParticleWrapper:
     @property
     def dimension(self):
         return self._nDim
+
+    @property
+    def axisymmetric(self) -> bool:
+        """True if the particle lives in the section r-z of an axisymmetric model: its integrals are over the rings
+        about the axis (Marmot's section of the particle)."""
+        return self._axisymmetric
 
     @property
     def baseFields(self):

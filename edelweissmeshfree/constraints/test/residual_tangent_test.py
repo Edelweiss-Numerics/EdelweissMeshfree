@@ -36,7 +36,8 @@ tangent ``K = dP/dU``.
 - A constraint for explicit analyses only has no tangent; its residual contribution is compared with that of its
   implicit counterpart in the same state, which the check above covers, and its bound of the stiffness for the
   critical time step with the tangent of the counterpart. It refuses a location without points, and gives a point
-  whose gap has no gradient no spring.
+  whose gap has no gradient no spring. Its bound over the next increment (``NED``'s ``follow-critical-time-step``)
+  holds the spring of a point that could close within it.
 - The check above holds at whatever point of a particle a constraint acts. A constraint that acts at a point the user
   names -- the center of the particle, or one of its vertices -- is also checked to measure its condition there.
 - Every constraint is restartable: it declares the state it carries, here none.
@@ -47,6 +48,7 @@ The particles, cells and material points are stand-ins with fixed shape function
 import numpy as np
 import pytest
 from edelweissfe.points.node import Node
+from edelweissfe.solvers.base.criticaltimestep import NextIncrement
 from edelweissfe.timesteppers.timestep import TimeStep
 from edelweissfe.utils.residualtangentcheck import (
     finiteDifferenceTangent,
@@ -563,3 +565,106 @@ def test_a_penetrating_point_whose_gap_has_no_gradient_gets_no_spring(model):
     constraint.addBoundOfAbsoluteStiffnessTimes(zero, zero, np.ones(constraint.nDof), bound, TIMESTEP)
     assert constraint.reactionForce == 0.0
     assert not P.any() and not bound.any()
+
+
+@pytest.mark.parametrize(
+    "constraintType",
+    [ParticlePenaltyCartesianBoundaryConstraintExplicit, ParticlePenaltyContactImplicitSurfaceConstraintExplicit],
+)
+def test_over_the_next_increment_an_explicit_contact_bounds_a_point_that_could_close(constraintType, model):
+    """The particle's center lies 0.1 below the boundary (y = 0.75) or outside the circle, and is not in contact now:
+    its bound is zero. Over a next increment in which the particle moves up by 0.2, the center closes within it, and the
+    bound holds its spring; over one in which it moves up by 0.05, or down, it does not."""
+
+    particle = _movedParticle((0.8, 0.65))
+    if constraintType is ParticlePenaltyCartesianBoundaryConstraintExplicit:
+        constraint = constraintType("c", particle, 1, 0.75, model, penaltyParameter=PENALTY)
+    else:
+        constraint = constraintType(
+            "c", particle, *_circle((0.8, 0.95), 0.2), model, penaltyParameter=PENALTY, doProximityCheck=False
+        )
+    _connected(constraint)
+
+    zero = np.zeros(constraint.nDof)
+    weights = np.random.default_rng(3).uniform(0.5, 2.0, constraint.nDof)
+
+    def boundOverAMotionUpBy(motion: float) -> np.ndarray:
+        dU = np.tile((0.0, motion), constraint.nDof // 2)
+        bound = np.zeros(constraint.nDof)
+        constraint.addBoundOfAbsoluteStiffnessTimes(
+            zero, zero, weights, bound, TIMESTEP, NextIncrement(dU, np.zeros_like(dU), TIMESTEP)
+        )
+        return bound
+
+    now = np.zeros(constraint.nDof)
+    constraint.addBoundOfAbsoluteStiffnessTimes(zero, zero, weights, now, TIMESTEP)
+    assert not now.any()
+    assert boundOverAMotionUpBy(0.2).max() == pytest.approx(
+        PENALTY
+        * np.max(np.abs(constraint.interpolationVectorAtPointOf(particle, particle.center)))
+        * np.abs(constraint.interpolationVectorAtPointOf(particle, particle.center))
+        @ weights[1::2],
+        rel=1e-12,
+    )
+    assert not boundOverAMotionUpBy(0.05).any()
+    assert not boundOverAMotionUpBy(-0.2).any()
+
+
+def test_over_the_next_increment_a_moving_cartesian_boundary_reaches_a_point_at_rest(model):
+    """The boundary moves down by 0.2 over the step; the particle's center lies 0.1 below it and stays where it is. Over
+    a next increment at the end of which the boundary has passed the center, the bound holds its spring."""
+
+    constraint = _connected(
+        ParticlePenaltyCartesianBoundaryConstraintExplicit(
+            "c", _movedParticle((0.8, 0.65)), 1, 0.75, model, velocity=-0.2, penaltyParameter=PENALTY
+        )
+    )
+    zero = np.zeros(constraint.nDof)
+    weights = np.ones(constraint.nDof)
+    atTheStart, atTheEnd = TimeStep(0, 0.0, 0.0, 0.0, 0.0, 0.0), TimeStep(1, 0.75, 0.75, 0.75, 0.75, 0.75)
+
+    bound = np.zeros(constraint.nDof)
+    constraint.addBoundOfAbsoluteStiffnessTimes(
+        zero, zero, weights, bound, atTheStart, NextIncrement(zero, zero, atTheStart)
+    )
+    assert not bound.any()
+    constraint.addBoundOfAbsoluteStiffnessTimes(
+        zero, zero, weights, bound, atTheStart, NextIncrement(zero, zero, atTheEnd)
+    )
+    assert bound.max() > 0.0
+
+
+def test_over_the_next_increment_a_point_that_passes_inside_a_curved_surface_has_its_spring(model):
+    """The particle's center moves straight past a circle by 1.0: it is outside at the start of the next increment and
+    at its end, at the same distance, and inside on the way, where the distance is smallest. The true distance at the
+    corners of the increment misses that point; the distance linearized about where the point is now, with the normal
+    held, which for a convex obstacle is a lower bound of it, has it closed within the increment, and the bound holds
+    its spring, along the normal of now."""
+
+    center = np.array((0.8, 0.65))
+    circleCenter = center + (0.5, 0.45)
+    distance, _ = circle = _circle(circleCenter, 0.5)
+    particle = _movedParticle(center)
+    constraint = _connected(
+        ParticlePenaltyContactImplicitSurfaceConstraintExplicit(
+            "c", particle, *circle, model, penaltyParameter=PENALTY, doProximityCheck=False
+        )
+    )
+    motion = np.array((1.0, 0.0))
+    assert distance(center) > 0.0 and distance(center + motion) == pytest.approx(distance(center), rel=1e-12)
+    assert distance(center + 0.5 * motion) < 0.0, "the motion passes inside the circle"
+
+    zero = np.zeros(constraint.nDof)
+    dU = np.tile(motion, constraint.nDof // 2)
+    weights = np.ones(constraint.nDof)
+    bound = np.zeros(constraint.nDof)
+    constraint.addBoundOfAbsoluteStiffnessTimes(
+        zero, zero, weights, bound, TIMESTEP, NextIncrement(dU, np.zeros_like(dU), TIMESTEP)
+    )
+    normal = (center - circleCenter) / np.linalg.norm(center - circleCenter)
+    interpolation = np.abs(constraint.interpolationVectorAtPointOf(particle, center))
+    np.testing.assert_allclose(
+        bound.reshape((-1, 2)),
+        PENALTY * np.outer(interpolation, np.abs(normal)) * (interpolation.sum() * np.abs(normal).sum()),
+        rtol=1e-12,
+    )

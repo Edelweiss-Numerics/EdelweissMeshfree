@@ -35,32 +35,45 @@
 #  ---------------------------------------------------------------------
 """A particle projectile falls onto a floor: once onto an analytic wall
 (:class:`~edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit.ParticlePenaltyCartesianBoundaryConstraintExplicit`),
-once onto a strip of Line2 contact facets at the same place
-(:class:`~edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit`).
-The contact points (the vertices of the bottom particles) and the penalty are the same, so the two must agree to
-round-off: the facet contact sums the forces of all particles in one block, the wall in one block per particle, so the
-sums are taken in another order. The floor is rigid: the facets are not part of the model, and the contact applies no
-reaction to them.
+once onto the top of a block of finite elements at the same place, through EdelweissFE's contact constraint
+(:mod:`edelweissfe.constraints.surfacetodeformablesurfacepenalty`) with one contact point at the center of the bottom
+face of every particle of the bottom row
+(:class:`~edelweissmeshfree.constraints.base.contactpointsonparticlefaces.ContactPointsOnParticleFaces`). The wall acts
+at the same points, with the penalty per unit area times the area a point stands for, so the two must agree to
+round-off: the contact sums the forces of all particles in one block, the wall in one block per particle, so the sums
+are taken in another order. The floor is held: its nodes are fixed, and the contact's reaction on them goes into the
+support.
 """
 
 import argparse
 
 import numpy as np
 import pytest
-from edelweissfe.elements.contactsurfaceelement import Line2ContactFacet
+from edelweissfe.constraints.surfacetodeformablesurfacepenalty import (
+    Constraint as SurfaceContact,
+)
+from edelweissfe.constraints.surfacetodeformablesurfacepenalty import (
+    SurfaceToDeformableSurfacePenaltySchema,
+)
+from edelweissfe.generators.planerectquad import Generator as PlaneRectQuadGenerator
+from edelweissfe.generators.planerectquad import PlaneRectQuadSchema
+from edelweissfe.generators.surfaceelementgenerator import buildContactFacets
 from edelweissfe.journal.journal import Journal
-from edelweissfe.points.node import Node
+from edelweissfe.sections.plane import PlaneSectionSchema
+from edelweissfe.sections.plane import Section as PlaneSection
+from edelweissfe.sets.elementset import ElementSet
 from edelweissfe.solvers.nonlinearexplicitdynamicparallel import NEDParallel
+from edelweissfe.stepactions.dirichlet import StepAction as Dirichlet
 from edelweissfe.steps.adaptivestepforexplicitsimulations import (
     AdaptiveStepForExplicitSimulations,
 )
 from edelweissfe.steps.stepmanager import StepActionCollection
 
+from edelweissmeshfree.constraints.base.contactpointsonparticlefaces import (
+    ContactPointsOnParticleFaces,
+)
 from edelweissmeshfree.constraints.explicit.particlepenaltycartesianboundaryexplicit import (
     ParticleExplicitPenaltyCartesianBoundaryConstraintFactory,
-)
-from edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit import (
-    ParticlePenaltyFacetContactExplicit,
 )
 from edelweissmeshfree.fieldoutput.fieldoutput import MPMFieldOutputController
 from edelweissmeshfree.generators.rectangularkernelfunctiongridgenerator import (
@@ -84,24 +97,39 @@ from edelweissmeshfree.particles.marmot.marmotparticlewrapper import (
     MarmotParticleWrapper,
 )
 
-PENALTY = 1e5
+#: The interface stiffness per unit area of the floor.
+PENALTY_PER_AREA = 2e4
+#: The size of the particles, and of the elements of the floor.
+PARTICLE_SIZE = 10.0
 #: The floor is at y = 0, the projectile starts this far above it.
 STANDOFF = 1.0
 VELOCITY = -400e3
 
 
-def floorFacets(xMin: float, xMax: float, nFacets: int) -> list:
-    """Line2 contact facets along y = 0, traversed from +x to -x so that their normals point up, out of the floor."""
+def addTheFloor(model: MPMModel, journal: Journal) -> ElementSet:
+    """A row of quadratic plane strain elements, ``CPE8UL``, below y = 0, held by its nodes, heavy enough that it does
+    not set the critical time step; returns the contact facets of its top surface, whose normals point up, out of
+    the floor."""
 
-    x = np.linspace(xMax, xMin, nFacets + 1)
-    nodes = [Node(100000 + i, np.array([xi, 0.0])) for i, xi in enumerate(x)]
-    facets = []
-    for i in range(nFacets):
-        facet = Line2ContactFacet("Line2ContactFacet", 100000 + i)
-        facet.setNodes([nodes[i], nodes[i + 1]])
-        facet.initializeElement()
-        facets.append(facet)
-    return facets
+    with model.topology.changes():
+        PlaneRectQuadGenerator(
+            "floor",
+            model,
+            journal,
+            configuration=PlaneRectQuadSchema(
+                x0=-50.0, y0=-PARTICLE_SIZE, length=200.0, h=PARTICLE_SIZE, nX=20, nY=1, elType="CPE8UL"
+            ),
+        )
+        facetSet, _ = buildContactFacets(model, "floor_top", "floorTop", "midside", "facetConsistent", journal)
+    E, nu, density = 78200.0, 0.3, 1.0
+    model.sections["floor"] = PlaneSection(
+        "floor",
+        model,
+        {"name": "CompressibleNeoHooke", "properties": np.array([E / (3 * (1 - 2 * nu)), E / (2 * (1 + nu)), density])},
+        [model.elementSets["floor_all"]],
+        configuration=PlaneSectionSchema(thickness=1.0),
+    )
+    return model.elementSets[facetSet]
 
 
 def run_sim(floor: str):
@@ -121,8 +149,10 @@ def run_sim(floor: str):
     dimension = 2
     theJournal = Journal(verbose=False)
     theModel = MPMModel(dimension)
+    # the floor's nodes first, the kernel functions' nodes after them
+    floorFacets = addTheFloor(theModel, theJournal) if floor == "facets" else None
 
-    particleSize = 10.0
+    particleSize = PARTICLE_SIZE
     length, height = 100.0, 200.0
     nX, nY = int(length / particleSize), int(height / particleSize)
 
@@ -133,7 +163,7 @@ def run_sim(floor: str):
 
     generateRectangularKernelFunctionGrid(
         theModel, theJournal, theKernelFunctionFactory, x0=0.0, y0=STANDOFF, h=height, l=length, nX=nX, nY=nY,
-        name="projectile",
+        name="projectile", firstKernelFunctionNumber=max(theModel.nodes, default=0) + 1,
     )  # fmt: skip
 
     theApproximation = MarmotMeshfreeApproximationWrapper("ReproducingKernel", dimension, completenessOrder=1)
@@ -163,21 +193,28 @@ def run_sim(floor: str):
     )
     theModel.particleKernelDomains["projectile"] = theParticleKernelDomain
 
-    bottomParticles = list(theModel.particleSets["projectile_bottom"])
     facetContact = None
+    stepActions = StepActionCollection()
     if floor == "wall":
         theModel.constraints.update(
             ParticleExplicitPenaltyCartesianBoundaryConstraintFactory(
-                "floor", 0.0, 1, bottomParticles, "displacement", theModel, location="vertex",
-                vertexIDs=[0, 1, 2, 3], penaltyParameter=PENALTY,
+                "floor", 0.0, 1, theModel.surfaces["projectile_bottom"], "displacement", theModel,
+                penaltyParameter=PENALTY_PER_AREA * particleSize, interpolationLinearizedAboutCenter=True,
             )
         )  # fmt: skip
     elif floor == "facets":
-        facetContact = ParticlePenaltyFacetContactExplicit(
-            "floor", theModel, bottomParticles, floorFacets(-50.0, 150.0, 40), PENALTY, 5.0, theJournal,
-            twoWayCoupling=False,
-        )  # fmt: skip
+        facetContact = SurfaceContact(
+            "floor",
+            theModel,
+            ContactPointsOnParticleFaces(theModel.surfaces["projectile_bottom"], theModel, nQuadraturePoints=1),
+            floorFacets,
+            theJournal,
+            configuration=SurfaceToDeformableSurfacePenaltySchema(penalty=PENALTY_PER_AREA, searchDistance=5.0),
+        )
         theModel.constraints["floor"] = facetContact
+        stepActions["dirichlet"]["floor"] = Dirichlet(
+            "floor", theModel.nodeSets["floor_all"], "displacement", {0: 0.0, 1: 0.0}, theModel, theJournal
+        )
 
     theModel.prepareYourself(theJournal)
 
@@ -199,7 +236,7 @@ def run_sim(floor: str):
         {},
         NEDParallel({}, theJournal, **{"output-frequency": 1}),
         [],
-        StepActionCollection(),
+        stepActions,
         stepLength=2.0e-4,
         startInc=incrementSize,
         maxInc=incrementSize,

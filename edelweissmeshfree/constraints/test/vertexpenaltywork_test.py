@@ -24,27 +24,35 @@
 #  The full text of the license can be found in the file LICENSE.md at
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
-"""A penalty on the vertices of particles with ``interpolationLinearizedAboutCenter`` is conservative in an explicit
-analysis: driven around a closed cycle of nodal motion, a support and a facet contact on the vertices of a real particle
-do no net work.
+"""A penalty on points of particles that distributes its force with the particle's shape functions linearized about
+its center is conservative in an explicit analysis: driven around a closed cycle of nodal motion, a support on the
+vertices with ``interpolationLinearizedAboutCenter`` and a contact on a face of a real particle (whose contact points
+always use them) do no net work.
 
-A vertex moves with its particle, by the particle's shape functions linearized about its center times the nodal
-increment, and with the option the constraints distribute their force with the same vector: the penalty stiffness is
-symmetric, and the work over a closed cycle vanishes up to the second-order path dependence of the particle's
-deformation gradient. With the default, the shape functions at the vertex (which do not move it), the stiffness is
-unsymmetric: the cycle then does work of the order of the penalty energy, which is what pumped energy into the crushed
-concrete beside the supports of the FE-particle impact; the last test shows it. Skipped where Marmot is not built.
+A vertex, or a point on a face, moves with its particle, by the particle's shape functions linearized about its center
+times the nodal increment, and these constraints distribute their force with the same vector: the penalty
+stiffness is symmetric, and the work over a closed cycle vanishes up to the second-order path dependence of the
+particle's deformation gradient. With the default, the shape functions at the vertex (which do not move it), the
+stiffness is unsymmetric: the cycle then does work of the order of the penalty energy, which is what pumped energy into
+the crushed concrete beside the supports of the FE-particle impact; the second test shows it. Skipped where Marmot is
+not built.
 """
 
 import numpy as np
 import pytest
-from edelweissfe.elements.contactsurfaceelement import Line2ContactFacet
-from edelweissfe.points.node import Node
-from edelweissfe.variables.fieldvariable import FieldVariable
-
-from edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit import (
+from edelweissfe.constraints.surfacetodeformablesurfacepenalty import (
+    Constraint as SurfaceContact,
+)
+from edelweissfe.constraints.surfacetodeformablesurfacepenalty import (
     ContactState,
-    ParticlePenaltyFacetContactExplicit,
+    SurfaceToDeformableSurfacePenaltySchema,
+)
+from edelweissfe.generators.planerectquad import Generator as PlaneRectQuadGenerator
+from edelweissfe.generators.planerectquad import PlaneRectQuadSchema
+from edelweissfe.generators.surfaceelementgenerator import buildContactFacets
+
+from edelweissmeshfree.constraints.base.contactpointsonparticlefaces import (
+    ContactPointsOnParticleFaces,
 )
 from edelweissmeshfree.constraints.particlepenaltyweakdirichtlet import (
     ParticlePenaltyWeakDirichlet,
@@ -81,11 +89,12 @@ def _move(particle, displacementOfNodes: np.ndarray):
     particle.acceptStateAndPosition()
 
 
-def _workAndEnergyOverACycle(constraint, particle, nSteps: int = 200) -> tuple[float, float]:
+def _workAndEnergyOverACycle(constraint, particle, nSteps: int = 200, update=None) -> tuple[float, float]:
     """Drive the nodes of a particle around the closed cycle u(t) = a (cos t - 1) e1 + a sin t e2 of two random nodal
     fields, and integrate the work of the constraint's force on the nodes (trapezoidal, exact for a constant
-    stiffness). Returns the work and the largest penalty energy of the cycle, k/2 times the squared motion of the
-    vertices."""
+    stiffness). ``update``, if given, is called after every step, as an explicit analysis updates the connectivity
+    in every increment. Returns the work and the largest penalty energy of the cycle, k/2 times the squared motion of
+    the vertices."""
 
     rng = np.random.default_rng(42)
     nodesOfParticle = [kf.node for kf in particle.kernelFunctions]
@@ -106,6 +115,8 @@ def _workAndEnergyOverACycle(constraint, particle, nSteps: int = 200) -> tuple[f
     for n in range(nSteps):
         dU = u[n + 1] - u[n]
         _move(particle, dU)
+        if update is not None:
+            update()
         nextForce = forceOnTheNodes()
         work += 0.5 * np.sum((force + nextForce) * dU)
         force = nextForce
@@ -149,9 +160,9 @@ def test_with_the_shape_functions_at_the_vertices_a_support_does_work_over_a_clo
 
 
 @pytest.mark.parametrize("particleType", PARTICLE_TYPES)
-def test_a_facet_contact_on_the_vertices_does_no_work_over_a_closed_cycle(particleType):
-    """The top vertices of a particle are pressed 3 a into a flat, fixed master facet (the bottom of a body above it)
-    and driven around the cycle while staying in contact."""
+def test_a_contact_on_a_face_does_no_work_over_a_closed_cycle(particleType):
+    """The top face of a particle is pressed 3 a into a flat, fixed master surface (the bottom of a block of finite
+    elements above it) and driven around the cycle while staying in contact."""
 
     model = particlePlate(particleType, 2.4, 3)
     particle = _particleOnTheTop(model)
@@ -159,32 +170,35 @@ def test_a_facet_contact_on_the_vertices_does_no_work_over_a_closed_cycle(partic
     top = vertices[:, 1].max()
     left, right = vertices[:, 0].min() - H, vertices[:, 0].max() + H
     standoff = 0.1 * H
-    # the bottom face of the master body runs from left to right, so that its normal points down, out of the body
-    nodes = [Node(1000 + i, np.array([x, top + standoff])) for i, x in enumerate((left, right))]
-    for node in nodes:
-        node.fields["displacement"] = FieldVariable(node, "displacement")
-    facet = Line2ContactFacet("Line2ContactFacet", 1)
-    facet.setNodes(nodes)
-    facet.initializeElement()
-    contact = ParticlePenaltyFacetContactExplicit(
+
+    masterModel = MPMModel(2)
+    with masterModel.topology.changes():
+        PlaneRectQuadGenerator(
+            "block",
+            masterModel,
+            _JournalStandIn(),
+            configuration=PlaneRectQuadSchema(
+                x0=left, y0=top + standoff, length=right - left, h=H, nX=1, nY=1, elType="CPE4"
+            ),
+        )
+        facets, _ = buildContactFacets(
+            masterModel, "block_bottom", "master", "midside", "facetConsistent", _JournalStandIn()
+        )
+    contact = SurfaceContact(
         "contact",
-        MPMModel(2),
-        [particle],
-        [facet],
-        PENALTY,
-        0.5 * H,
+        masterModel,
+        ContactPointsOnParticleFaces([(particle, 3)], masterModel, nQuadraturePoints=2),
+        masterModel.elementSets[facets],
         _JournalStandIn(),
-        twoWayCoupling=False,
-        interpolationLinearizedAboutCenter=True,
+        configuration=SurfaceToDeformableSurfacePenaltySchema(penalty=PENALTY / H, searchDistance=0.5 * H),
     )
 
-    contact.updateConnectivity(model)
+    contact.updateConnectivity(masterModel)
     _move(particle, np.tile([0.0, standoff + 3 * AMPLITUDE], (len(particle.kernelFunctions), 1)))
-    contact.updateConnectivity(model)
-    inContact = contact.stateOfPoints == ContactState.IN_CONTACT
-    assert np.count_nonzero(inContact) == 2
+    contact.updateConnectivity(masterModel)
+    assert np.count_nonzero(contact.stateOfPoints == ContactState.IN_CONTACT) == 2
 
-    work, energy = _workAndEnergyOverACycle(contact, particle)
+    work, energy = _workAndEnergyOverACycle(contact, particle, update=lambda: contact.updateConnectivity(masterModel))
 
-    assert contact.numberOfPointsInContact == 2, "the cycle must keep both top vertices in contact"
+    assert contact.numberOfPointsWithASpring == 2, "the cycle must keep a spring on both points of the top face"
     assert abs(work) < 1e-3 * energy, f"the contact does net work {work:.3e} over a cycle (penalty energy {energy:.3e})"

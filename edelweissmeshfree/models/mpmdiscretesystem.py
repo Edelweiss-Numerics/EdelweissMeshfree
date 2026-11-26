@@ -74,11 +74,11 @@ class CriticalTimeStepEstimateFromTheFieldMatrix(CriticalTimeStepEstimateOfTheDo
     bounds every eigenvalue -- for an unsymmetric tangent as well (theory page on the critical time step of EdelweissFE,
     "The particles: the rows inside their field matrix"). Where the constraints raise no diagonal entry, and the weights
     are constant per field, the estimate is the particles' own. This holds under one condition: every constraint couples
-    degrees of freedom of one field of the particles only (a support or a contact of the displacement); a penalty that
-    coupled two fields, e.g. the displacement with the nonlocal field, would add to an off-diagonal entry of the field
-    matrix, which this form does not hold. This is assumed, not checked. A constraint that couples particles and finite
-    elements at once is taken with the larger of the elements' bound and this one; that this bounds the two together
-    is not proven (same page, "What the estimate does not see").
+    degrees of freedom of one field of the particles only (a support, a contact or a tie of the displacement); a
+    penalty that coupled two fields, e.g. the displacement with the nonlocal field, would add to an off-diagonal entry
+    of the field matrix, which this form does not hold. This is assumed, not checked. A constraint that couples
+    particles and finite elements at once is taken with the larger of the elements' bound and this one; that this
+    bounds the two together is not proven (same page, "What the estimate does not see").
 
     **With carried weights** (see :meth:`MPMDiscreteSystem.criticalTimeStepOfEntitiesWithOwnInertia`, "Weights carried
     from estimate to estimate"), :math:`\\boldsymbol{Q}` is the field matrix of the weighted matrix

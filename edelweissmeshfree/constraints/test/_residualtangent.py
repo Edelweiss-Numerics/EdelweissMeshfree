@@ -169,7 +169,8 @@ class KernelFunctionStandIn:
 
 
 class ParticleStandIn:
-    """What a constraint asks of a particle: its kernel functions, some points on it, and its shape functions.
+    """What a constraint asks of a particle: its kernel functions, some points on it, its size, and its shape functions;
+    a particle of a plane or a 3D model.
 
     Parameters
     ----------
@@ -183,12 +184,18 @@ class ParticleStandIn:
         The undeformed volume.
     """
 
+    axisymmetric = False
+
     def __init__(self, nodes: list, center, vertices, volume: float = 1.0):
         self._nodes = nodes
         self.kernelFunctions = [KernelFunctionStandIn(node) for node in nodes]
         self.center = np.asarray(center, dtype=float)
         self.vertices = np.asarray(vertices, dtype=float)
         self._volume = volume
+
+    @property
+    def dimension(self) -> int:
+        return len(self.center)
 
     def getCenterCoordinates(self) -> np.ndarray:
         return self.center

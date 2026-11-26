@@ -36,9 +36,10 @@ from edelweissfe.timesteppers.timestep import TimeStep
 
 from edelweissmeshfree.models.test._criticaltimestep import (
     estimateOfTheSystem,
+    exactCriticalTimeStepOfTheSystem,
     serially,
 )
-from edelweissmeshfree.models.test._particleplate import particlePlate
+from edelweissmeshfree.models.test._particleplate import H, particlePlate
 
 
 def _isStable(model, dt: float, nIncrements: int = 400) -> bool:
@@ -86,6 +87,10 @@ def _isStable(model, dt: float, nIncrements: int = 400) -> bool:
         # the displacement block; the nonlocal field, of first and of second order, is tested in
         # solvers/test/ned_gradientenhancedparticles_test.py.
         ("GradientEnhancedFiniteStrainSQCNIxNSNI/PlaneStrain/Quad", 2.8, 3),
+        # the section r-z of a ring, the plate at an inner radius of twice its particles' size (the axisymmetric
+        # displacement particle has its lumped mass and tangent, so the next test estimates its critical time step, but
+        # no explicit update, which this one integrates)
+        ("GradientEnhancedFiniteStrainSQCNIxNSNI/Axisymmetric/Quad", 2.8, 3),
     ],
 )
 def test_the_estimate_is_stable_and_within_a_factor_of_the_critical_time_step(particleType, supportFactor, kernelOrder):
@@ -208,3 +213,44 @@ def test_with_carried_weights_the_rows_of_a_penalty_support_bound_the_exact_eige
     else:
         assert estimate.value == pytest.approx(withoutWeights.value, rel=1e-12)
         assert estimate.criticalTimeStep(rowSums) == pytest.approx(withoutWeights.criticalTimeStep(rowSums), rel=1e-12)
+
+
+@pytest.mark.parametrize(
+    "axisymmetricParticle, planeStrainTwin, supportFactor",
+    [
+        ("DisplacementSQCNI/Axisymmetric/Quad", "DisplacementSQCNI/PlaneStrain/Quad", 2.2),
+        (
+            "GradientEnhancedFiniteStrainSQCNIxNSNI/Axisymmetric/Quad",
+            "GradientEnhancedFiniteStrainSQCNIxNSNI/PlaneStrain/Quad",
+            2.8,
+        ),
+    ],
+)
+def test_the_estimate_of_axisymmetric_particles_is_as_tight_as_that_of_their_plane_strain_twins(
+    axisymmetricParticle, planeStrainTwin, supportFactor
+):
+    """On a grid of 24 x 24 particles, the section of a thick ring at an inner radius of ten particles, the estimate of
+    the critical time step is a lower bound of the exact one (from the eigenvalues of the assembled system), below it by
+    the same factor as for the plane strain twin, within a few percent: the ring weight scales the mass and the
+    stiffness of a particle alike, and the hoop terms, of the order of :math:`(h / r)^2`, a percent here, of the gradient
+    terms of the particle's size, are small next to them. What is lost is the Collatz-Wielandt bound of the absolute
+    value of the stiffness with weights constant per field, and the Cauchy-Schwarz bound of the particles' rows. Weights
+    carried over a few estimates take a step of the power iteration each and close part of that gap, again for both
+    alike."""
+
+    from edelweissmeshfree.models.mpmdiscretesystem import (
+        STABLE_FRACTION_OF_THE_TANGENT_LIMIT,
+    )
+
+    def exactOverEstimates(particleType):
+        system = particlePlate(particleType, supportFactor, 3, nX=24, nY=24, innerRadius=10 * H).buildDiscreteSystem()
+        exact = exactCriticalTimeStepOfTheSystem(system)
+        weights = np.zeros(system.numbering.nDof)
+        estimates = [estimateOfTheSystem(system, weights).value for _ in range(20)]
+        return [exact * STABLE_FRACTION_OF_THE_TANGENT_LIMIT / estimate for estimate in (estimates[0], estimates[-1])]
+
+    axisymmetric, planeStrain = exactOverEstimates(axisymmetricParticle), exactOverEstimates(planeStrainTwin)
+
+    for constant, carried in (axisymmetric, planeStrain):
+        assert 1.0 <= carried < constant
+    np.testing.assert_allclose(axisymmetric, planeStrain, rtol=0.05)

@@ -67,11 +67,16 @@ class MPMModel(FEModel):
     ----------
     dimension
         The dimension of the model.
+    axisymmetric
+        True if the model is the section r-z of a body of revolution, see
+        :attr:`~edelweissfe.models.femodel.FEModel.axisymmetric`; its particles must be axisymmetric ones, and it
+        takes no material points, cells or cell elements, which integrate over the section, not over the rings
+        (:meth:`prepareYourself`).
     """
 
     identification = "MPMModel"
 
-    def __init__(self, dimension: int):
+    def __init__(self, dimension: int, axisymmetric: bool = False):
         self.cells = {}  #: The collection of Cells in the present model.
         self.cellSets = {}  #: The collection of CellSets in the present model.
         self.materialPoints = {}  #: The collection of MaterialPoints in the present model.
@@ -91,7 +96,7 @@ class MPMModel(FEModel):
         #: update of the connectivity, see :meth:`updateConnectivity`.
         self.vciManagers = []
 
-        super().__init__(dimension)
+        super().__init__(dimension, axisymmetric)
 
     def _populateNodeFieldVariablesFromCells(
         self,
@@ -160,27 +165,58 @@ class MPMModel(FEModel):
     def _prepareMaterialPoints(self, journal: Journal):
         """Initialize the material points for a simulation. They carry their material from their creation; the
         sections are assigned to the finite elements by :meth:`~edelweissfe.models.femodel.FEModel.prepareYourself`.
+        An axisymmetric model takes none: the material points, cells and cell elements of EdelweissMeshfree integrate
+        over the section, not over the rings about the axis, and their forces would not balance the ring forces of the
+        elements, particles and contact points next to them.
 
         Parameters
         ----------
         journal
             The journal instance.
+
+        Raises
+        ------
+        ValueError
+            If the model is axisymmetric and holds material points, cells or cell elements.
         """
+        if self.axisymmetric and (self.materialPoints or self.cells or self.cellElements):
+            raise ValueError(
+                f"The model is axisymmetric (MPMModel(..., axisymmetric=True)), but it holds {len(self.materialPoints)} "
+                f"material points, {len(self.cells)} cells and {len(self.cellElements)} cell elements: these integrate "
+                "over the section, not over the rings about the axis; an axisymmetric model takes axisymmetric "
+                "particles and elements only."
+            )
         for mp in self.materialPoints.values():
             mp.initializeYourself()
 
     def _prepareParticles(self, journal: Journal):
-        """Prepare elements for a simulation.
-        In detail, sections are assigned.
-
+        """Initialize the particles for a simulation, once they are known to integrate as the model does: an
+        axisymmetric model integrates over the rings about the axis, and so must its particles
+        (:attr:`~edelweissmeshfree.particles.base.baseparticle.BaseParticle.axisymmetric`), and a plane or a 3D model
+        holds no axisymmetric particle.
 
         Parameters
         ----------
         journal
             The journal instance.
+
+        Raises
+        ------
+        ValueError
+            If a particle is axisymmetric and the model is not, or vice versa.
         """
-        # for section in self.sections.values():
-        #     section.assignSectionPropertiesToModel(self)
+
+        numbersOfOtherParticles = [p.number for p in self.particles.values() if p.axisymmetric != self.axisymmetric]
+        if numbersOfOtherParticles:
+            modelKind = "axisymmetric" if self.axisymmetric else "not axisymmetric"
+            particleKind = "not axisymmetric" if self.axisymmetric else "axisymmetric"
+            raise ValueError(
+                f"The model is {modelKind} (MPMModel(..., axisymmetric={self.axisymmetric})), but "
+                f"{len(numbersOfOtherParticles)} of its particles are {particleKind} (e.g. particle "
+                f"{numbersOfOtherParticles[0]}): in an axisymmetric model every "
+                "particle integrates over the rings about the axis (Marmot's '<name>/Axisymmetric/<shape>' particles), "
+                "in any other model none does."
+            )
 
         for p in self.particles.values():
             p.initializeYourself()
@@ -209,10 +245,11 @@ class MPMModel(FEModel):
 
         super().prepareYourself(journal)
 
-    def advanceToTime(self, time: float):
-        """Accept the current state of the model and sub instances, and
-        set the new time. The material points and the particles accept theirs across the available threads, as the
-        elements do (see :meth:`~edelweissfe.models.femodel.FEModel.advanceToTime`): each touches only its own state.
+    def acceptTheStateOfTheEntities(self, time: float):
+        """Let the entities accept their state, and set the new time; see
+        :meth:`~edelweissfe.models.femodel.FEModel.acceptTheStateOfTheEntities`. The material points and the particles
+        accept theirs, and their positions, across the available threads, as the elements do: each touches only its own
+        state.
 
         Parameters
         ----------
@@ -225,7 +262,7 @@ class MPMModel(FEModel):
 
         self.previousTime = self.time
 
-        return super().advanceToTime(time)
+        super().acceptTheStateOfTheEntities(time)
 
     def setNewmarkParametersOfEntities(self, beta: float, gamma: float):
         """Give the particles the Newmark parameters of the solver, at the start of every step;

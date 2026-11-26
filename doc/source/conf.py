@@ -31,6 +31,9 @@ extensions = [
     "sphinxcontrib.bibtex",
 ]
 
+#: EdelweissFE's documentation, whose theory pages (contact, critical time step) these pages refer to.
+intersphinx_mapping = {"edelweissfe": ("https://edelweiss-numerics.github.io/EdelweissFE", None)}
+
 bibtex_bibfiles = ["publications.bib"]
 bibtex_default_style = "unsrt"
 

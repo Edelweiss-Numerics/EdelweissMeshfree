@@ -39,6 +39,7 @@ stiffness for the critical time step instead."""
 from abc import abstractmethod
 
 import numpy as np
+from edelweissfe.solvers.base.criticaltimestep import NextIncrement
 from edelweissfe.timesteppers.timestep import TimeStep
 
 from edelweissmeshfree.constraints.base.mpmconstraintbase import MPMConstraintBase
@@ -126,10 +127,11 @@ class MPMExplicitConstraintBase(MPMConstraintBase):
         weights: np.ndarray,
         bound: np.ndarray,
         timeStep: TimeStep,
+        nextIncrement: NextIncrement | None = None,
     ):
         """Add an upper bound of the row sums of the absolute value of this constraint's stiffness, weighted by column,
-        :math:`b_i \\mathrel{+}= \\sum_j |K_{ij}|\\, w_j`, at the state of its force, for the critical time step of
-        ``NED``: see
+        :math:`b_i \\mathrel{+}= \\sum_j |K_{ij}|\\, w_j`, at the state of its force, or over the states the next
+        increment can reach if it is given, for the critical time step of ``NED``: see
         :meth:`~edelweissfe.constraints.base.constraintbase.ConstraintBase.addBoundOfAbsoluteStiffnessTimes`. The default
         there bounds the tangent of :meth:`computeKernels`, which this constraint does not have, so it gives the bound
         itself, in one of two ways:
@@ -139,9 +141,7 @@ class MPMExplicitConstraintBase(MPMConstraintBase):
           or by deriving from
           :class:`~edelweissmeshfree.constraints.base.penaltyspringsexplicit.PenaltySpringsOnPointsOfOneParticleExplicit`,
           which does both;
-        * nothing, saying so, if its stiffness is to stay outside the critical time step, as
-          :class:`~edelweissmeshfree.constraints.explicit.particlepenaltyfacetcontactexplicit.ParticlePenaltyFacetContactExplicit`
-          does.
+        * nothing, saying so in its documentation, if its stiffness is to stay outside the critical time step.
 
         Parameters
         ----------
@@ -155,4 +155,6 @@ class MPMExplicitConstraintBase(MPMConstraintBase):
             The row sums to augment, one per degree of freedom of this constraint.
         timeStep
             The time step of the state, as for the force.
+        nextIncrement
+            The next increment, restricted to this constraint's degrees of freedom; None for the state alone.
         """

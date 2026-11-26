@@ -33,15 +33,18 @@
 #  The full text of the license can be found in the file LICENSE.md at
 #  the top level directory of EdelweissMeshfree.
 #  ---------------------------------------------------------------------
-"""The penalty contact of points of one particle with an obstacle, in an explicit analysis: the force and the bound of
-the stiffness for the critical time step, the points and the connectivity, written once; a derived class gives the
-physics, the gap of a point, its gradient and the reach of the obstacle."""
+"""The penalty contact of points of one particle with an obstacle, in an explicit analysis: the force, the bound of the
+stiffness for the critical time step and the gaps over the next increment, the points and the connectivity, written
+once; a derived class gives the physics, the gap of a point, its gradient and the reach of the obstacle."""
 
 from abc import abstractmethod
 
 import numpy as np
 from edelweissfe.config.phenomena import getFieldSize
+from edelweissfe.constraints.base.penaltysprings import smallestGapsWithin
+from edelweissfe.solvers.base.criticaltimestep import NextIncrement
 from edelweissfe.timesteppers.timestep import TimeStep
+from edelweissfe.utils.facetcontactgeometry import rowDot
 from edelweissfe.variables.scalarvariable import ScalarVariable
 
 from edelweissmeshfree.constraints.base.mpmexplicitconstraintbase import (
@@ -53,6 +56,7 @@ from edelweissmeshfree.constraints.base.pointsofparticles import (
     addForcesOfSpringsOnPointsOfParticle,
     locateTheNodesOfParticles,
 )
+from edelweissmeshfree.particles.base.baseparticle import characteristicLength
 
 #: Below this norm, the gradient of a gap has no direction: the point gets no spring.
 GRADIENT_WITHOUT_DIRECTION = 1e-14
@@ -65,7 +69,8 @@ class PenaltySpringsOnPointsOfOneParticleExplicit(MPMExplicitConstraintBase):
     :math:`\\boldsymbol{n}_p` of the gradient of its gap :math:`g_p`, the outward normal of the obstacle, with the force
     :math:`f_p = -k\\, g_p > 0`, which pushes the point out. The force (:meth:`computeKernelsExplicit`) and the bound of
     the stiffness for the critical time step (:meth:`addBoundOfAbsoluteStiffnessTimes`) are taken from the same springs
-    (:meth:`_springs`).
+    (:meth:`_springs`), over the next increment with the smallest gap of each point within it
+    (:meth:`_gapsOverTheNextIncrement`).
 
     The points, the nodes of the particle's kernel functions and whether the obstacle is within reach are kept current
     here (:meth:`updateConnectivity`). A derived class is the physics and a constructor: the gap of a point at a time
@@ -156,7 +161,7 @@ class PenaltySpringsOnPointsOfOneParticleExplicit(MPMExplicitConstraintBase):
         self._doProximityCheck = doProximityCheck
         if self._doProximityCheck:
             #: How close the obstacle must be for the constraint to take part.
-            self._proximityDist = particle.getVolumeUndeformed() ** (1.0 / model.domainSize) * proximityFactor
+            self._proximityDist = characteristicLength(particle) * proximityFactor
 
     def _pointsWhereTheyAreNow(self) -> list:
         """The points of the particle at its location, where the particle has moved them.
@@ -282,11 +287,51 @@ class PenaltySpringsOnPointsOfOneParticleExplicit(MPMExplicitConstraintBase):
             The gradients, one row each.
         """
 
+    def _gapsOverTheNextIncrement(
+        self, points: np.ndarray, timeStep: TimeStep, nextIncrement: NextIncrement
+    ) -> np.ndarray:
+        """The smallest gap each point may have within the next increment
+        (:func:`~edelweissfe.constraints.base.penaltysprings.smallestGapsWithin`). The argument there needs a gap
+        affine in the motion, with the normals held, as within an increment: the gap is linearized about where the
+        point is now, :math:`g_p + \\nabla g_p \\cdot \\Delta\\boldsymbol{x}_p`, with the motion of the point
+        :math:`\\Delta\\boldsymbol{x}_p = \\mathbf{I}_p \\Delta\\boldsymbol{U}`
+        (:meth:`~edelweissmeshfree.constraints.base.mpmconstraintbase.MPMConstraintBase.motionOfPointsOfParticle`), and
+        the obstacle where it is at the time step of the state. For a plane it is the gap; for a convex obstacle the
+        signed distance is convex, its linearization a lower bound of it, and the smallest gap of the linearization a
+        lower bound of the smallest one within the increment, also where a straight motion passes the obstacle and the
+        true gap is smallest inside the increment.
+
+        Parameters
+        ----------
+        points
+            The points now, one row each.
+        timeStep
+            The time step now.
+        nextIncrement
+            The next increment the solver may take, restricted to the constraint.
+
+        Returns
+        -------
+        np.ndarray
+            The smallest gaps.
+        """
+
+        gradients = self._gradientsOfTheGaps(points)
+
+        def gapsAt(U, dU, timeStep):
+            motion = self.motionOfPointsOfParticle(dU, self._particle, points, self._localNodes, self._fieldSize)
+            return self._gapsOfPoints(points, timeStep) + rowDot(gradients, motion)
+
+        zero = np.zeros(self.nDof)
+        return smallestGapsWithin(nextIncrement, gapsAt, zero, zero, timeStep)
+
     def _springsAt(self, points: np.ndarray, gaps: np.ndarray) -> SpringsOnPointsOfParticle:
         """The springs of the points at the gaps given: one of the penalty stiffness at every point with a negative gap,
         along the unit direction of the gradient of its gap, with the force :math:`f_p = -k\\, g_p` at that gap. A point
         whose gradient has no direction (its norm below :data:`GRADIENT_WITHOUT_DIRECTION`) gets no spring: no force,
         no reaction and no stiffness.
+        With the gaps now, the forces on the points; with the smallest gaps over the next increment, those they could
+        reach there -- the bound reads the stiffness only.
 
         Parameters
         ----------
@@ -316,14 +361,17 @@ class PenaltySpringsOnPointsOfOneParticleExplicit(MPMExplicitConstraintBase):
             np.full(len(withSpring), self._penaltyParameter),
         )
 
-    def _springs(self, timeStep: TimeStep) -> SpringsOnPointsOfParticle:
-        """The penalty springs at the particle's current position and the gaps now (:meth:`_springsAt`): what the force
-        and the bound of the stiffness are made from.
+    def _springs(self, timeStep: TimeStep, nextIncrement: NextIncrement | None = None) -> SpringsOnPointsOfParticle:
+        """The penalty springs at the particle's current position (:meth:`_springsAt`), at the gaps now, or, given the
+        next increment, at the smallest gaps within it (:meth:`_gapsOverTheNextIncrement`): what the force and the bound
+        of the stiffness are made from.
 
         Parameters
         ----------
         timeStep
             The current time step, for an obstacle that moves.
+        nextIncrement
+            The next increment, for the bound over it; None for the state now.
 
         Returns
         -------
@@ -332,7 +380,11 @@ class PenaltySpringsOnPointsOfOneParticleExplicit(MPMExplicitConstraintBase):
         """
 
         points = np.array(self._constrained_points, dtype=float).reshape((-1, self._fieldSize))
-        return self._springsAt(points, self._gapsOfPoints(points, timeStep))
+        if nextIncrement is None:
+            gaps = self._gapsOfPoints(points, timeStep)
+        else:
+            gaps = self._gapsOverTheNextIncrement(points, timeStep, nextIncrement)
+        return self._springsAt(points, gaps)
 
     def computeKernelsExplicit(self, U_np: np.ndarray, dU: np.ndarray, P: np.ndarray, timeStep: TimeStep):
         """Add the residual contribution of the penalty forces: the negative of the forces with which the obstacle pushes
@@ -361,11 +413,12 @@ class PenaltySpringsOnPointsOfOneParticleExplicit(MPMExplicitConstraintBase):
         weights: np.ndarray,
         bound: np.ndarray,
         timeStep: TimeStep,
+        nextIncrement: NextIncrement | None = None,
     ):
         """Add the row sums of the absolute value of the stiffness of the penalty springs (:meth:`_springs`), weighted
         by column (see
-        :func:`~edelweissmeshfree.constraints.base.pointsofparticles.addBoundOfAbsoluteStiffnessOfPointsOfParticle`):
-        the springs of the points that penetrate now, those of the force.
+        :func:`~edelweissmeshfree.constraints.base.pointsofparticles.addBoundOfAbsoluteStiffnessOfPointsOfParticle`),
+        over the next increment if it is given: a point that could close within it has its spring.
 
         Parameters
         ----------
@@ -379,6 +432,10 @@ class PenaltySpringsOnPointsOfOneParticleExplicit(MPMExplicitConstraintBase):
             The row sums to augment.
         timeStep
             The current time step.
+        nextIncrement
+            The next increment the solver may take; None to bound the state now alone.
         """
 
-        addBoundOfAbsoluteStiffnessOfPointsOfParticle(bound, weights, self._localNodes, self._springs(timeStep))
+        addBoundOfAbsoluteStiffnessOfPointsOfParticle(
+            bound, weights, self._localNodes, self._springs(timeStep, nextIncrement)
+        )

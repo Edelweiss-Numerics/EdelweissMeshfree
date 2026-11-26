@@ -75,6 +75,12 @@ cdef extern from "Marmot/MarmotParticleLibrary.h" nogil:
                                int sizeMaterialProperties,
                                const MarmotMeshfreeApproximation& approximation) except +
 
+cdef extern from "Marmot/MarmotParticle.h" namespace "Marmot::Discretizations::Meshfree":
+    # the section of a particle: what its integrals measure, its domain or the ring it sweeps about the axis
+    cdef enum class Section:
+        Cartesian
+        Axisymmetric
+
 # Every method of a Marmot particle may throw: a default that refuses (e.g. the explicit path of a particle that
 # has none), or a check of its arguments. Each is declared "except +", which turns the C++ exception into a Python
 # exception (RuntimeError, ValueError, ...); without it, the exception would end the process in std::terminate.
@@ -150,6 +156,8 @@ cdef extern from "Marmot/MarmotParticle.h":
 
         int getDimension() except +
 
+        Section getSection() except +
+
         int getNumberOfVertices() except +
 
         int getNBaseDof() except +
@@ -224,6 +232,7 @@ cdef class MarmotParticleWrapper:
 
     cdef int _nStateVars
     cdef int _nDim
+    cdef bool _axisymmetric
 
     cdef list[MarmotMeshfreeKernelFunctionWrapper] _assignedKernelFunctions
     cdef list _nodes
